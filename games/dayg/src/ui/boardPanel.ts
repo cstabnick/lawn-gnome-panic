@@ -76,6 +76,7 @@ export function createBoardPanel(ui: HTMLElement, deps: { host: SimHost; inv: In
     'max-height:calc(100dvh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;' +
     'background:rgba(18,22,16,0.95);color:#eee;font:14px system-ui,sans-serif;padding:12px 14px;border-radius:10px;' +
     'z-index:60;touch-action:pan-y;pointer-events:auto';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);
 
   let current: BoardId | null = null;

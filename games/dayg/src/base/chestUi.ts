@@ -83,6 +83,7 @@ export function createChestUi(ui: HTMLElement, deps: { inv: InventorySystem; cap
 
   const closeBtn = el('button', `position:absolute;top:8px;right:8px;width:${CLOSE_PX}px;height:${CLOSE_PX}px;border:none;` +
     'border-radius:8px;background:#2d3a25;color:#eee;font:22px system-ui,sans-serif;cursor:pointer;touch-action:manipulation', '✕');
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   closeBtn.type = 'button';
   closeBtn.setAttribute('aria-label', 'Close chest');
 

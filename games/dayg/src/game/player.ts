@@ -112,6 +112,37 @@ export function createPlayerController(deps: { bus: Bus; collider: Collider }): 
     p.fallFromY = p.pos.y;
   };
 
+  const isClearAt = (x: number, y: number, z: number): boolean =>
+    collider.inBounds(x, z) && collider.move({ x, y, z }, 0, 0, PLAYER_RADIUS, PLAYER_HEIGHT, STEP_UP, out) === null;
+
+  /** Finds a clear landing spot past a climbed/vaulted face (on top of the block or safely across a thin wall). */
+  const findClearLanding = (from: Vec3, dx: number, dz: number, baseDist: number, topY: number): Vec3 | null => {
+    const px = -dz, pz = dx;
+    for (const d of [baseDist, baseDist + 0.5, baseDist + 1.0, baseDist + 1.6]) {
+      for (const lat of [0, 0.5, -0.5]) {
+        const nx = from.x + dx * d + px * lat;
+        const nz = from.z + dz * d + pz * lat;
+        const ny = collider.groundAt(nx, nz, topY + STEP_UP);
+        if (ny <= topY + STEP_UP && isClearAt(nx, ny, nz)) return { x: nx, y: ny, z: nz };
+      }
+    }
+    return null;
+  };
+
+  /** Radial spiral nudge if the player ever ends up overlapping a block. */
+  const unstuck = (p: PlayerState): void => {
+    if (isClearAt(p.pos.x, p.pos.y, p.pos.z)) return;
+    for (const r of [0.35, 0.7, 1.1, 1.6, 2.2]) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const nx = p.pos.x + Math.cos(a) * r;
+        const nz = p.pos.z + Math.sin(a) * r;
+        const ny = collider.groundAt(nx, nz, p.pos.y + STEP_UP);
+        if (isClearAt(nx, ny, nz)) { p.pos.set(nx, ny, nz); return; }
+      }
+    }
+  };
+
   const startClimb = (p: PlayerState, e: Extra, pl: Plan): void => {
     const dx = Math.sin(p.facing), dz = Math.cos(p.facing);
     e.dirX = dx; e.dirZ = dz;
@@ -119,8 +150,10 @@ export function createPlayerController(deps: { bus: Bus; collider: Collider }): 
     p.sprinting = false;
     if (pl.kind === 'vault') {
       const d = pl.hit.distance + PAST_FACE;
+      const land = findClearLanding(p.pos, dx, dz, d, pl.hit.topY);
+      if (!land) { emitHint(); return; }
       e.vaultFrom = { x: p.pos.x, y: p.pos.y, z: p.pos.z };
-      e.vaultTo = { x: p.pos.x + dx * d, y: pl.hit.topY, z: p.pos.z + dz * d };
+      e.vaultTo = land;
       p.vaulting = CLIMB.vaultSeconds;
       return;
     }
@@ -222,12 +255,13 @@ export function createPlayerController(deps: { bus: Bus; collider: Collider }): 
     }
     p.pos.y += c.speed * dt;
     if (p.pos.y >= c.topY) {
-      p.pos.x += e.dirX * e.stepPast;
-      p.pos.z += e.dirZ * e.stepPast;
-      p.pos.y = c.topY;
+      const land = findClearLanding(p.pos, e.dirX, e.dirZ, e.stepPast, c.topY);
+      if (land) p.pos.set(land.x, land.y, land.z);
+      else p.pos.y = c.topY;
       p.climbing = null;
       p.grounded = true;
       p.fallFromY = null;
+      unstuck(p);
       const height = c.topY - c.startY;
       if (height > VAULT_MAX) bus.emit('climbed', { height, via: c.via });
     }
@@ -335,6 +369,7 @@ export function createPlayerController(deps: { bus: Bus; collider: Collider }): 
       p.pos.x = out.x; p.pos.z = out.z;
       p.speed = dt > 0 ? Math.hypot(out.x - ox, out.z - oz) / dt : 0;
       applyGround(p, dt);
+      unstuck(p);
 
       // Step noise.
       if (p.grounded && p.speed > 0.2) {

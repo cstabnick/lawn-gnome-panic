@@ -1,0 +1,198 @@
+// Admin Trainer menu (F9 or gear button): God Mode, Fly/Noclip, Region Teleport, Kits, Hatless & World controls.
+import type { RegionDef, RegionId, WeatherKind } from '../sim/types';
+
+export interface TrainerState {
+  godMode: boolean;
+  flyMode: boolean;
+  flySpeed: number;
+}
+
+export interface TrainerDeps {
+  regions: readonly RegionDef[];
+  onTeleport(region: RegionId): void;
+  onGiveKit(kit: 'survival' | 'combat' | 'build' | 'climb' | 'acorns' | 'heal'): void;
+  onHatless(action: 'spawn5' | 'clear'): void;
+  onSetTime(hour: number): void;
+  onCycleWeather(): WeatherKind;
+  onSetTimeScale(scale: number): void;
+}
+
+export interface TrainerPanel {
+  root: HTMLElement;
+  state: TrainerState;
+  toggle(): void;
+  open(): void;
+  close(): void;
+  isOpen(): boolean;
+}
+
+const CSS = `
+#dayg-trainer{position:fixed;top:calc(68px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:70;
+  width:min(320px,92vw);max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y:auto;background:rgba(16,20,14,0.96);border:1px solid #56614a;border-radius:12px;padding:12px;box-sizing:border-box;
+  color:#eee;font:13px system-ui,sans-serif;pointer-events:auto;display:none;flex-direction:column;gap:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+#dayg-trainer.dt-open{display:flex}
+#dayg-trainer .dt-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #2f3a28;padding-bottom:6px}
+#dayg-trainer .dt-title{font-weight:700;font-size:15px;color:#e8c35a}
+#dayg-trainer .dt-sec{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-top:2px}
+#dayg-trainer .dt-row{display:flex;flex-wrap:wrap;gap:6px}
+#dayg-trainer .dt-btn{min-height:44px;min-width:44px;padding:6px 10px;border-radius:8px;border:1px solid #56614a;
+  background:#2d3a25;color:#eee;font:13px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;flex:1 1 auto}
+#dayg-trainer .dt-btn.dt-on{background:#4f6b3a;border-color:#e8c35a;color:#fff;font-weight:600}
+#dayg-trainer select{min-height:44px;flex:1 1 160px;padding:6px 8px;border-radius:8px;border:1px solid #56614a;background:#1d241a;color:#eee;font:13px system-ui,sans-serif}
+#dayg-trainer-btn{position:fixed;top:calc(120px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:40;
+  min-width:44px;min-height:44px;padding:0 6px;border-radius:8px;border:1px solid #56614a;background:rgba(29,36,26,0.82);
+  color:#e8c35a;font:700 13px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;pointer-events:auto}`;
+
+export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerPanel {
+  if (!document.getElementById('dayg-trainer-style')) {
+    const st = document.createElement('style');
+    st.id = 'dayg-trainer-style';
+    st.textContent = CSS;
+    document.head.appendChild(st);
+  }
+
+  const state: TrainerState = { godMode: false, flyMode: false, flySpeed: 18 };
+  const root = document.createElement('div');
+  root.id = 'dayg-trainer';
+  root.setAttribute('role', 'dialog');
+  root.setAttribute('aria-label', 'Admin Trainer');
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'dayg-trainer-btn';
+  toggleBtn.type = 'button';
+  toggleBtn.textContent = '⚙ F9';
+  toggleBtn.title = 'Admin Trainer (F9)';
+  toggleBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+  toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+  ui.appendChild(toggleBtn);
+
+  const mkBtn = (label: string, onClick: () => void): HTMLButtonElement => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dt-btn';
+    b.textContent = label;
+    b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+    return b;
+  };
+
+  const head = document.createElement('div');
+  head.className = 'dt-head';
+  const title = document.createElement('div');
+  title.className = 'dt-title';
+  title.textContent = 'Admin Trainer';
+  const closeBtn = mkBtn('✕', () => close());
+  closeBtn.style.flex = '0 0 44px';
+  head.append(title, closeBtn);
+
+  // Modes
+  const modesSec = document.createElement('div');
+  modesSec.className = 'dt-sec';
+  modesSec.textContent = 'Player Cheats';
+  const modesRow = document.createElement('div');
+  modesRow.className = 'dt-row';
+  const godBtn = mkBtn('God Mode: OFF', () => {
+    state.godMode = !state.godMode;
+    godBtn.textContent = `God Mode: ${state.godMode ? 'ON' : 'OFF'}`;
+    godBtn.classList.toggle('dt-on', state.godMode);
+  });
+  const flyBtn = mkBtn('Fly / Noclip: OFF', () => {
+    state.flyMode = !state.flyMode;
+    flyBtn.textContent = `Fly / Noclip: ${state.flyMode ? 'ON' : 'OFF'}`;
+    flyBtn.classList.toggle('dt-on', state.flyMode);
+  });
+  modesRow.append(godBtn, flyBtn);
+
+  const speedRow = document.createElement('div');
+  speedRow.className = 'dt-row';
+  for (const [label, spd] of [['Fly 1x', 12], ['Fly 2x', 24], ['Fly 4x', 48]] as const) {
+    const b = mkBtn(label, () => {
+      state.flySpeed = spd;
+      for (const child of speedRow.children) child.classList.remove('dt-on');
+      b.classList.add('dt-on');
+    });
+    if (spd === 24) b.classList.add('dt-on');
+    speedRow.appendChild(b);
+  }
+  state.flySpeed = 24;
+
+  // Teleport
+  const tpSec = document.createElement('div');
+  tpSec.className = 'dt-sec';
+  tpSec.textContent = 'Teleport to Region';
+  const tpRow = document.createElement('div');
+  tpRow.className = 'dt-row';
+  const sel = document.createElement('select');
+  for (const r of deps.regions) {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.name;
+    sel.appendChild(opt);
+  }
+  const tpBtn = mkBtn('Go', () => deps.onTeleport(sel.value as RegionId));
+  tpBtn.style.flex = '0 0 64px';
+  tpRow.append(sel, tpBtn);
+
+  // Kits & Heal
+  const kitSec = document.createElement('div');
+  kitSec.className = 'dt-sec';
+  kitSec.textContent = 'Items & Health';
+  const kitRow = document.createElement('div');
+  kitRow.className = 'dt-row';
+  kitRow.append(
+    mkBtn('Heal All', () => deps.onGiveKit('heal')),
+    mkBtn('+50 Acorns', () => deps.onGiveKit('acorns')),
+    mkBtn('Combat Kit', () => deps.onGiveKit('combat')),
+    mkBtn('Build Kit', () => deps.onGiveKit('build')),
+    mkBtn('Climb Kit', () => deps.onGiveKit('climb')),
+    mkBtn('Survival Kit', () => deps.onGiveKit('survival')),
+  );
+
+  // Hatless
+  const zSec = document.createElement('div');
+  zSec.className = 'dt-sec';
+  zSec.textContent = 'Hatless';
+  const zRow = document.createElement('div');
+  zRow.className = 'dt-row';
+  zRow.append(
+    mkBtn('Spawn 5 Nearby', () => deps.onHatless('spawn5')),
+    mkBtn('Clear All', () => deps.onHatless('clear')),
+  );
+
+  // World
+  const wSec = document.createElement('div');
+  wSec.className = 'dt-sec';
+  wSec.textContent = 'World & Time';
+  const tRow = document.createElement('div');
+  tRow.className = 'dt-row';
+  tRow.append(
+    mkBtn('Dawn', () => deps.onSetTime(7)),
+    mkBtn('Noon', () => deps.onSetTime(12)),
+    mkBtn('Dusk', () => deps.onSetTime(19.5)),
+    mkBtn('Night', () => deps.onSetTime(23)),
+  );
+  const wRow = document.createElement('div');
+  wRow.className = 'dt-row';
+  const weatherBtn = mkBtn('Cycle Weather', () => {
+    const w = deps.onCycleWeather();
+    weatherBtn.textContent = `Weather: ${w}`;
+  });
+  wRow.append(
+    weatherBtn,
+    mkBtn('Sim 1x', () => deps.onSetTimeScale(1)),
+    mkBtn('Sim 5x', () => deps.onSetTimeScale(5)),
+    mkBtn('Sim 20x', () => deps.onSetTimeScale(20)),
+  );
+
+  root.append(head, modesSec, modesRow, speedRow, tpSec, tpRow, kitSec, kitRow, zSec, zRow, wSec, tRow, wRow);
+  ui.appendChild(root);
+
+  let openFlag = false;
+  function open(): void { openFlag = true; root.classList.add('dt-open'); }
+  function close(): void { openFlag = false; root.classList.remove('dt-open'); }
+  function toggle(): void { if (openFlag) close(); else open(); }
+
+  return { root, state, toggle, open, close, isOpen: () => openFlag };
+}

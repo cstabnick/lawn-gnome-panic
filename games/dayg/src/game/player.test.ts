@@ -171,4 +171,19 @@ describe('climbing', () => {
     expect(p.climbing).toBeNull();
     expect(events.fell).toHaveLength(0);
   });
+
+  it('vaulting a thin wall with a taller block right behind it never traps the player inside a block', () => {
+    const map = makeMap();
+    map.blocks.push(
+      { id: 'thin-wall', kind: 'wall', x0: 150, x1: 150.6, z0: 200, z1: 220, y: 0, h: 1.2 },
+      { id: 'pillar-behind', kind: 'wall', x0: 150.8, x1: 155, z0: 205, z1: 215, y: 0, h: 5 },
+    );
+    const { at, press, run } = setup(map);
+    const p = at(149.4, 0, 210, FACE_EAST);
+    press(p, mods(), 1);
+    run(p, input({ moveZ: 1 }), 0.5);
+    const collider = createCollider(map);
+    const out = { x: 0, y: 0, z: 0 };
+    expect(collider.move(p.pos, 0, 0, 0.45, 1.7, 0.5, out)).toBeNull();
+  });
 });

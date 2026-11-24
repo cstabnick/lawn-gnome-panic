@@ -4,7 +4,7 @@ import { DOM } from '../config';
 import type { RegionDef, DistrictId } from '../sim/types';
 
 const CSS = `
-#${DOM.map}{position:fixed;inset:0;z-index:52;display:none;flex-direction:column;background:#10140e;color:#eee;
+#${DOM.map}{position:fixed;inset:0;z-index:52;display:none;flex-direction:column;background:#10140e;color:#eee;pointer-events:auto;
   font:14px system-ui,sans-serif;user-select:none;-webkit-user-select:none;box-sizing:border-box;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #${DOM.map}.mp-open{display:flex}

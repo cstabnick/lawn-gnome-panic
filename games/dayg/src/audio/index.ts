@@ -10,7 +10,7 @@ import { renderEvent } from './eventSynth';
 import { createMusic, type Music } from './music';
 import { type AudioSettings, clampSettings, loadSettings, saveSettings } from './settings';
 import { surfaceFor, type Surface } from './surfaces';
-import { renderStep, renderUi, rng, type UiSound } from './synth';
+import { renderStep, renderUi, renderAttack, rng, type UiSound } from './synth';
 import { createVoiceBudget, type VoiceBudget, type VoiceKind } from './voices';
 
 // Bus levels in dB (music-ui-and-tech.md 3.2). Ambience and world SFX share the "sfx" slider in phase 1.
@@ -38,6 +38,8 @@ export interface Audio {
   tick(dt: number, info: AudioInfo): void;
   /** A UI sound, through the UI bus. */
   ui(kind: UiSound): void;
+  /** Melee swing/hit sound, through the SFX bus. */
+  attack(hit: boolean): void;
   getSettings(): AudioSettings;
   setSettings(settings: AudioSettings): void;
   /** Plays a test tap and a footstep, for the settings panel. */
@@ -185,7 +187,7 @@ export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<t
   deps.bus.on('noise', (e) => {
     if (e.source !== 'step' || !graph) return;
     const surface: Surface = surfaceFor(info.traits);
-    const loud = Math.min(1, Math.max(0.2, e.radius / 25));
+    const loud = Math.min(0.42, Math.max(0.08, (e.radius / 25) * 0.4));
     play(buffer(`step:${surface}`, (sr) => renderStep(surface, sr, 1)), graph.sfx, 'step', loud);
   });
 
@@ -243,6 +245,10 @@ export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<t
       g.bedGain.gain.setTargetAtTime(p.gain, now, 1.5);
     },
     ui: uiSound,
+    attack(hit: boolean) {
+      if (!graph) return;
+      play(buffer(`atk:${hit ? 1 : 0}`, (sr) => renderAttack(hit, sr)), graph.sfx, 'sfx', 0.7);
+    },
     getSettings: () => ({ ...settings }),
     setSettings(next) {
       settings = clampSettings(next);
@@ -252,7 +258,7 @@ export function createAudio(deps: { bus: Bus; seed: number; store?: Parameters<t
     },
     test() {
       uiSound('tap');
-      if (graph) play(buffer('step:grass', (sr) => renderStep('grass', sr, 1)), graph.sfx, 'step', 0.8);
+      if (graph) play(buffer('step:grass', (sr) => renderStep('grass', sr, 1)), graph.sfx, 'step', 0.35);
     },
     running: () => graph?.ctx.state === 'running',
   };

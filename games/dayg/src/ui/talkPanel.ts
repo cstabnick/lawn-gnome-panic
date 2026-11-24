@@ -59,6 +59,7 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
     'font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;z-index:50;touch-action:pan-y;pointer-events:auto;' +
     '-webkit-overflow-scrolling:touch;border:1px solid #56614a';
   root.hidden = true;
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);
 
   let npcId: NpcId | null = null;

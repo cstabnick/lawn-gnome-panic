@@ -83,16 +83,17 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
 
   const root = el('div');
   root.id = DOM_MORE.ledger;
-  root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;background:rgba(18,22,16,0.96);' +
+  root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;background:rgba(18,22,16,0.96);pointer-events:auto;' +
     'color:#eee;font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;' +
     'padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) ' +
     'calc(12px + env(safe-area-inset-left));';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   root.hidden = true;
   ui.appendChild(root);
 
   // Online sits at right 60 px, so this stays within 52 px of width.
   const journalBtn = button('Journal', () => toggle(), 'position:absolute;top:calc(72px + env(safe-area-inset-top));' +
-    'right:calc(8px + env(safe-area-inset-right));z-index:40;padding:0 4px;font-size:12px;box-sizing:border-box;');
+    'right:calc(8px + env(safe-area-inset-right));z-index:40;padding:0 4px;font-size:12px;box-sizing:border-box;pointer-events:auto;');
   journalBtn.id = 'dayg-ledger-btn';
   journalBtn.title = 'Journal (J)';
   ui.appendChild(journalBtn);

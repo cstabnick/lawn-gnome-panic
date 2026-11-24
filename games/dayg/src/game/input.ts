@@ -24,13 +24,13 @@ export function createInput(canvas: HTMLCanvasElement, touch: TouchSource): Inpu
   addEventListener('keydown', (e) => {
     held.add(e.code);
     if (!e.repeat) edges.add(e.code);
-    if (e.code === 'Tab' || e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+    if (e.code === 'Tab' || e.code === 'Space' || e.code === 'F9' || e.code.startsWith('Arrow')) e.preventDefault();
   });
   addEventListener('keyup', (e) => held.delete(e.code));
   addEventListener('blur', () => held.clear());
 
   canvas.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || !lockAllowed) return;
     // The first click only takes the pointer; swings need the lock.
     if (locked()) attackEdge = true;
     else tryLock();
@@ -63,11 +63,12 @@ export function createInput(canvas: HTMLCanvasElement, touch: TouchSource): Inpu
         sprint: down('ShiftLeft', 'ShiftRight'),
         crouch: edge('KeyC'),
         action: edge('KeyE'),
-        attack: attackEdge,
+        attack: attackEdge || edge('KeyF'),
         climb: edge('Space'),
         inventory: edge('Tab', 'KeyI'),
         view: edge('KeyV'),
         map: edge('KeyM'),
+        trainer: edge('F9'),
       };
 
       const t = touch.read();

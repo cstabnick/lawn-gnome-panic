@@ -29,8 +29,9 @@ export function createAudioPanel(ui: HTMLElement, audio: Audio): AudioPanel {
   root.id = 'dayg-audio';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Sound settings');
-  root.style.cssText = 'position:fixed;inset:0;z-index:53;display:none;align-items:center;justify-content:center;' +
+  root.style.cssText = 'position:fixed;inset:0;z-index:53;display:none;align-items:center;justify-content:center;pointer-events:auto;' +
     'background:rgba(0,0,0,.6);padding:12px;box-sizing:border-box;color:#eee;font:14px system-ui,sans-serif;user-select:none';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
 
   const card = document.createElement('div');
   card.style.cssText = 'width:100%;max-width:420px;max-height:100%;overflow:auto;box-sizing:border-box;padding:16px;' +

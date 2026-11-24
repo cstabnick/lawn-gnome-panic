@@ -15,7 +15,7 @@ const DRAG_PX = 6;
 const FALLBACK_ICON = '📦';
 
 const CSS = `
-#${DOM.inv}{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:#12160f;color:#eee;
+#${DOM.inv}{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:#12160f;color:#eee;pointer-events:auto;
   font:14px system-ui,sans-serif;cursor:default;user-select:none;-webkit-user-select:none;box-sizing:border-box;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #${DOM.inv}.iv-open{display:flex}
@@ -178,6 +178,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   info.append(infoText, infoActions, busyWrap);
 
   root.append(top, body, info);
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);
 
   let open = false;

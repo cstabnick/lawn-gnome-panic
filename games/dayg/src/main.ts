@@ -5,7 +5,7 @@ import { CLIMB_KIT, FEED, FISTS, MOVE, NOISE, STAMINA, START_KIT, SUN } from './
 import { getItem } from './items/defs';
 import { createRng, hashString } from './sim/rng';
 import { TUNING } from './sim/tuning';
-import type { ItemStack, MapKind, WeatherKind } from './sim/types';
+import type { ItemStack, MapKind, RegionId, WeatherKind } from './sim/types';
 import { LOCAL_PLAYER, createWorld, hashWorld, hourOf, runDays, stepWorld } from './sim/world';
 import { regionsFor } from './sim/regionsFull';
 import { questTitle } from './sim/quests';
@@ -19,7 +19,8 @@ import { createCameraRig } from './game/camera';
 import { createPlayerController, createPlayerState } from './game/player';
 import { createInventory } from './game/inventory';
 import { createNeedsSystem } from './game/needs';
-import { createBodySystem } from './game/body';
+import { createBody, createBodySystem } from './game/body';
+import { pickZoneSpawn } from './game/spawn';
 import { createCampSystem } from './game/camp';
 import { createUseApi } from './game/useItem';
 import { createSimFeed } from './game/simFeed';
@@ -70,6 +71,7 @@ import { createRespawner } from './game/respawn';
 import { createBuildSystem } from './game/building';
 import { createPiecesView } from './scene/pieces';
 import { createBuildPanel } from './ui/buildPanel';
+import { createTrainerPanel } from './ui/trainerPanel';
 import { createFarmSystem } from './game/farming';
 import { createTrapSystem } from './game/traps';
 import { createLanterns } from './scene/lanterns';
@@ -141,17 +143,17 @@ const touch = createTouchControls(ui);
 const input = createInput(canvas, touch);
 const rig = createCameraRig(camera, collider, interior);
 if (params.has('yaw') && Number.isFinite(Number(params.get('yaw')))) rig.yaw = Number(params.get('yaw'));
-const spawn = spawnParam && (spawnParam.length === 2 || spawnParam.length === 3) && spawnParam.every(Number.isFinite)
-  ? { x: spawnParam[0], y: collider.groundAt(spawnParam[0], spawnParam[1], spawnParam[2] ?? 1e6), z: spawnParam[1] }
-  : mapData.playerSpawn;
-const player = createPlayerState(spawn);
+const gameRng = createRng(hashString(`${seed}:player`));
+const rng = (): number => gameRng.next();
+const zoneSpawn = spawnParam && (spawnParam.length === 2 || spawnParam.length === 3) && spawnParam.every(Number.isFinite)
+  ? { pos: { x: spawnParam[0], y: collider.groundAt(spawnParam[0], spawnParam[1], spawnParam[2] ?? 1e6), z: spawnParam[1] }, region: null as RegionId | null }
+  : pickZoneSpawn(mapData, regionsFor(map), collider, rng);
+const player = createPlayerState(zoneSpawn.pos);
 const getPlayer = (): PlayerState => player;
 const controller = createPlayerController({ bus, collider });
 const playerView = createPlayerView(scene);
 
 // ------------------------------------------------------------------ survival, items, UI
-const gameRng = createRng(hashString(`${seed}:player`));
-const rng = (): number => gameRng.next();
 const interact = createInteract();
 const inv = createInventory([...START_KIT, ...(climbKit ? CLIMB_KIT : []), ...(buildKit ? BUILD_KIT : [])]);
 const needs = createNeedsSystem(bus, TUNING);
@@ -228,6 +230,11 @@ bus.on('entered-building', (e) => {
   hud.toast(buildingIndex.byId(e.building)?.def.name ?? e.building);
 });
 bus.on('player-shattered', (e) => {
+  if (trainerPanel.state.godMode) {
+    Object.assign(body.state, createBody());
+    player.alive = true;
+    return;
+  }
   player.alive = false;
   recap.show(e.cause, regionName(), clock.day, clock.hourOfDay);
 });
@@ -252,19 +259,96 @@ function climbHintText(h: ClimbHint | null): string | null {
   }
 }
 
+const WEATHERS: readonly WeatherKind[] = ['clear', 'fog', 'drizzle', 'rain', 'storm'];
+const trainerPanel = createTrainerPanel(ui, {
+  regions: regionsFor(map),
+  onTeleport(region) {
+    const r = regionsFor(map).find((x) => x.id === region);
+    if (!r) return;
+    const cx = (r.rect.x0 + r.rect.x1) / 2, cz = (r.rect.z0 + r.rect.z1) / 2;
+    const cy = collider.groundAt(cx, cz, 1e6);
+    player.pos.set(cx, cy, cz);
+    player.vel.set(0, 0, 0);
+    player.grounded = true;
+    player.fallFromY = null;
+    player.region = region;
+    hud.toast(`Teleported to ${r.name}`);
+  },
+  onGiveKit(kit) {
+    if (kit === 'heal') {
+      Object.assign(body.state, createBody());
+      needs.state.warmth = needs.state.water = needs.state.food = needs.state.calm = 100;
+      player.stamina = STAMINA.max;
+      hud.toast('Healed all cracks, infection & needs');
+    } else if (kit === 'acorns') {
+      const rec = host.world.players[LOCAL_PLAYER];
+      if (rec) rec.acorns += 50;
+      hud.toast('+50 acorns');
+    } else if (kit === 'combat') {
+      for (const s of [{ def: 'thorn-dagger', count: 1, condition: 1 }, { def: 'acorn-club', count: 1, condition: 1 }, { def: 'glaze-pot', count: 2, condition: 1 }, { def: 'salt-pinch', count: 2, condition: 1 }]) inv.add(s);
+      hud.toast('Added Combat Kit');
+    } else {
+      const list = kit === 'build' ? BUILD_KIT : kit === 'climb' ? CLIMB_KIT : START_KIT;
+      for (const s of list) inv.add({ ...s });
+      hud.toast(`Added ${kit} kit`);
+    }
+  },
+  onHatless(action) {
+    if (action === 'spawn5') {
+      const r = player.region ?? regionsFor(map)[0]?.id ?? 'forecourt';
+      hatless.spawn(r, 5, []);
+      hud.toast('Spawned 5 Hatless');
+    } else {
+      const n = hatless.despawnAll();
+      hud.toast(`Cleared ${n} Hatless`);
+    }
+  },
+  onSetTime(hour) {
+    const dayBase = Math.floor(clock.sunHours / 24) * 24;
+    clock.sunHours = dayBase + hour;
+    hud.toast(`Time set to ${String(Math.floor(hour)).padStart(2, '0')}:00`);
+  },
+  onCycleWeather() {
+    const idx = WEATHERS.indexOf(world.weather.kind);
+    const next = WEATHERS[(idx + 1) % WEATHERS.length];
+    world.weather.kind = next;
+    return next;
+  },
+  onSetTimeScale(scale) {
+    clock.setRate(scale);
+    hud.toast(`Sim speed ${scale}x`);
+  },
+});
+if (params.get('trainer') === '1') trainerPanel.open();
+if (zoneSpawn.region) {
+  const rName = world.graph.byId[zoneSpawn.region]?.name;
+  if (rName) hud.toast(`Woke up in ${rName}`);
+}
+
 let last = performance.now();
 let wasOpen = false;   // any panel open last frame: plays the open and close sounds
+let lastLockAllowed = true;
+let attackCd = 0;
 function frame(now: number): void {
   // The first rAF timestamp can precede the performance.now() taken at module load; never step backwards.
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
   last = now;
+  if (attackCd > 0) attackCd = Math.max(0, attackCd - dt);
   const hours = clock.update(dt);
   const inp = input.read(dt);
   if (inp.inventory) panel.toggle();
   if (inp.map && !panel.isOpen()) mapPanel.toggle();
+  if (inp.trainer) trainerPanel.toggle();
   mapPanel.tick();
   const openNow = panel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || ledgerPanel.isOpen();
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
+  const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
+    || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
+    || dBuildPanel.isOpen() || trainerPanel.isOpen() || !player.alive;
+  if (!anyPanelOpen !== lastLockAllowed) {
+    lastLockAllowed = !anyPanelOpen;
+    input.setPointerLockAllowed(lastLockAllowed);
+  }
   const here = player.region ? regionsFor(map).find((r) => r.id === player.region) : undefined;
   audio.tick(dt, {
     district: here?.district ?? null, traits: here?.traits ?? [], weather: world.weather.kind,
@@ -273,11 +357,17 @@ function frame(now: number): void {
     panelOpen: talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen(),
     menu: roomPanel.isOpen(),
   });
-  touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !audioPanel.isOpen() && !chestUi.isOpen() && player.alive);
-  if (panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen() || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen() || dBuildPanel.isOpen()
-    || use.busy() !== null || base.busy() !== null || !player.alive) {
+  touch.setVisible(!panel.isOpen() && !mapPanel.isOpen() && !audioPanel.isOpen() && !chestUi.isOpen() && !trainerPanel.isOpen() && player.alive);
+  if (anyPanelOpen || use.busy() !== null || base.busy() !== null) {
     inp.moveX = 0; inp.moveZ = 0;
     inp.sprint = false; inp.climb = false; inp.attack = false; inp.action = false;
+  }
+
+  if (trainerPanel.state.godMode) {
+    player.stamina = STAMINA.max;
+    needs.state.warmth = 100; needs.state.water = 100; needs.state.food = 100; needs.state.calm = 100;
+    body.state.infection = null;
+    body.state.cracks = { head: 0, chest: 0, armL: 0, armR: 0, legL: 0, legR: 0 };
   }
 
   if (build.active()) inp.attack = false;
@@ -291,19 +381,37 @@ function frame(now: number): void {
     hasRope: inv.countTag('ROPE') > 0,
     hasLadder: inv.countTag('LADDER') > 0,
   };
-  controller.update(player, inp, rig.yaw, dt, mods);
+  if (trainerPanel.state.flyMode && !anyPanelOpen) {
+    const fx = Math.sin(rig.yaw), fz = Math.cos(rig.yaw);
+    const rx = -Math.cos(rig.yaw), rz = Math.sin(rig.yaw);
+    const spd = trainerPanel.state.flySpeed * dt;
+    player.pos.x += (rx * inp.moveX + fx * inp.moveZ) * spd;
+    player.pos.z += (rz * inp.moveX + fz * inp.moveZ) * spd;
+    if (inp.climb) player.pos.y += spd * 1.5;
+    if (inp.crouch || inp.sprint) player.pos.y -= spd * 0.7;
+    player.grounded = false;
+    player.fallFromY = null;
+    player.vel.set(0, 0, 0);
+    player.speed = trainerPanel.state.flySpeed;
+    player.region = collider.regionAt(player.pos.x, player.pos.z);
+  } else {
+    controller.update(player, inp, rig.yaw, dt, mods);
+  }
   interior.update(player.pos, dt);
-  const hint = controller.climbHint(player, mods);
+  const hint = trainerPanel.state.flyMode ? null : controller.climbHint(player, mods);
   touch.setClimbHint(hint !== null);
 
-  if (inp.attack && player.stamina >= STAMINA.attackCost) {
+  if (inp.attack && attackCd <= 0 && (trainerPanel.state.godMode || player.stamina >= STAMINA.attackCost)) {
+    attackCd = 0.35;
     const held = inv.held();
     const props = held ? getItem(held.def).props : undefined;
     const reach = (props?.reach ?? FISTS.reach) + 0.6;
     const damage = props?.damage ?? FISTS.damage;
     const hits = hatless.strike(player.pos, player.facing, reach, damage);
     if (hits === 0) base.strike(player.pos, player.facing, reach, damage);
-    player.stamina -= STAMINA.attackCost;
+    playerView.triggerAttack(hits > 0);
+    audio.attack(hits > 0);
+    if (!trainerPanel.state.godMode) player.stamina -= STAMINA.attackCost;
     bus.emit('noise', { x: player.pos.x, z: player.pos.z, radius: NOISE.attack, source: 'attack' });
   }
   if (inp.action) interact.trigger();

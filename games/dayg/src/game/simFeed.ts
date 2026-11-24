@@ -50,17 +50,25 @@ export function createSimFeed(deps: FeedDeps): SimFeed {
     if (fresh.length > 0) npcs.show(fresh, spotsOf('npc', current));
   };
 
-  /** Moves the local player into region r (null: out of the map). The host moves the bubble; the feed shows its Hatless. */
+  /** Moves the local player into region r (null: out of the map). Keeps nearby & hunting Hatless instead of wiping on borders. */
   const enter = (r: RegionId | null): void => {
     const alive = hatless.aliveCount();
     host.apply({ kind: 'enter-region', region: r, alive });
     current = r;
     hold = null;
-    hatless.despawnAll();
+    const keep = new Set<RegionId>();
+    if (r !== null) {
+      keep.add(r);
+      for (const nb of world.graph.neighbours[r] ?? []) keep.add(nb.to);
+    }
+    hatless.pruneOutside(keep, getPlayer().pos, 85);
     npcs.clear();
     if (r === null) return;
     const b = bubbleIn(world, r);
-    if (b && b.owner === host.me) hatless.spawn(r, b.hatless, spotsOf('hatless', r));
+    if (b && b.owner === host.me) {
+      const need = Math.max(0, b.hatless - hatless.countInRegion(r));
+      if (need > 0) hatless.spawn(r, need, spotsOf('hatless', r));
+    }
     syncNpcs();
   };
 

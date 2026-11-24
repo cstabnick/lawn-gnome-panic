@@ -19,6 +19,7 @@ export interface InputState {
   inventory: boolean;             // edge: open or close the pack
   view: boolean;                  // edge: third / first person
   map: boolean;                   // edge: open or close the world map
+  trainer?: boolean;              // edge: toggle admin trainer (F9)
 }
 export interface TouchSource { root: HTMLElement; read(): Partial<InputState>; setVisible(on: boolean): void; setClimbHint(on: boolean): void; active(): boolean }
 export interface Input { read(dt: number): InputState; setPointerLockAllowed(allowed: boolean): void }
@@ -45,8 +46,8 @@ export interface PlayerState {
 export interface MoveMods { speedMul: number; staminaRegenMul: number; canSprint: boolean; carryRatio: number; hasRope: boolean; hasLadder: boolean }
 export interface ClimbHint { kind: 'vault' | 'route' | 'rope' | 'ladder' | 'too-high' | 'down'; height: number }
 export interface PlayerController { update(p: PlayerState, input: InputState, yaw: number, dt: number, mods: MoveMods): void; climbHint(p: PlayerState, mods: MoveMods): ClimbHint | null }
-export interface PlayerViewOpts { held: ItemId | null; back: ItemId | null; head: ItemId | null; hatSlips: boolean; dead: boolean }
-export interface PlayerView { model: GnomeModel; update(p: PlayerState, dt: number, opts: PlayerViewOpts): void }
+export interface PlayerViewOpts { held: ItemId | null; back: ItemId | null; head: ItemId | null; hatSlips: boolean; dead: boolean; close?: boolean }
+export interface PlayerView { model: GnomeModel; update(p: PlayerState, dt: number, opts: PlayerViewOpts): void; triggerAttack(hit?: boolean): void }
 export interface WorldView { root: THREE.Group; containerObjects: Map<string, THREE.Object3D>; addRoute(route: ClimbRouteDef, fromY: number, topY: number): void; setContainerOpened(id: string): void; update(focus: Vec3): void }
 export interface Sky { update(clock: Clock, weather: WeatherState, focus: THREE.Vector3, dt: number): void }
 
@@ -114,6 +115,8 @@ export interface Hud { root: HTMLElement; update(s: HudState): void; prompt(text
 export interface HatlessSystem {
   spawn(region: RegionId, count: number, spots: readonly SpotDef[], from?: { x: number; z: number }): void;
   despawnAll(): number;                             // removes every L0 Hatless, returns how many were alive
+  pruneOutside(keepRegions: ReadonlySet<RegionId>, playerPos: Vec3, maxDist: number): number;
+  countInRegion(region: RegionId): number;
   update(dt: number, ctx: { night: boolean; fog: boolean }): void;
   strike(origin: Vec3, facing: number, reach: number, damage: number): number; // hits landed
   aliveCount(): number;

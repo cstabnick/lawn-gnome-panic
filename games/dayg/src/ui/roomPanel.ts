@@ -87,6 +87,7 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
     'padding:max(env(safe-area-inset-top),12px) max(env(safe-area-inset-right),12px) ' +
     'max(env(safe-area-inset-bottom),12px) max(env(safe-area-inset-left),12px)';
   const inner = el('div', 'max-width:480px;margin:0 auto;padding-bottom:24px');
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   root.append(inner);
 
   function open(): void {

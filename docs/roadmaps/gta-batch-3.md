@@ -22,9 +22,9 @@ with deferred items listed).
 
 | Epic | Name | Kind | Wave | Depends on | Status | Branch | Merge | Notes / deferred |
 |---|---|---|---|---|---|---|---|---|
-| E01 | World expansion and site plan | Engine | 1 | – | planned | | | |
-| E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | planned | | | |
-| E04 | Story bible and world writing | Story (docs) | 1 | – | planned | | | |
+| E01 | World expansion and site plan | Engine | 1 | – | running | epic/E01-* | | |
+| E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | running | epic/E02-* | | |
+| E04 | Story bible and world writing | Story (docs) | 1 | – | running | epic/E04-* | | |
 | E03 | Bugs and quest reliability sweep | Fix | 2 | – | planned | | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | planned | | | |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | planned | | | |

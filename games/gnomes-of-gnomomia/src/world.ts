@@ -7,7 +7,7 @@ import { WORLD, type ZoneId } from './config';
 import { ZONES } from './content';
 import { buildDressing, updateDressing } from './dressing';
 import { onSettingsChange, settings } from './settings';
-import { chunkFlora, groundColourAt, heightAt, themeZoneAt, zoneAt, zoneRectDistance, type Flora, type FloraKind } from './terrain';
+import { buildChunkBuffers, chunkFlora, groundColourAt, heightAt, themeZoneAt, zoneAt, zoneRectDistance, type Flora, type FloraKind } from './terrain';
 
 // Phones (coarse pointer) get a smaller sun shadow map to keep the frame rate up.
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -32,7 +32,7 @@ interface Chunk {
   flora: THREE.InstancedMesh[];
 }
 /** Built chunks, by key. */
-const built = new Map<string, Chunk>();
+const built = new Map<number, Chunk>();
 let walkDirty = true;
 let walkCache: THREE.Object3D[] = [];
 
@@ -167,31 +167,40 @@ function buildFlora(group: THREE.Group, items: readonly Flora[]): THREE.Instance
 
 // ---------------------------------------------------------------- chunks
 
-const keyOf = (ci: number, cj: number) => `${ci},${cj}`;
+const keyOf = (ci: number, cj: number): number => (ci + 32768) * 65536 + (cj + 32768);
 
 /** A terrain chunk: one plane of WORLD.chunk metres (32x32 cells at LOD 0, 8x8 at LOD 1), one colour per triangle. */
 function buildChunk(ci: number, cj: number, lod: number, cx: number, cz: number): Chunk {
   const C = WORLD.chunk;
   const n = lod === 0 ? 32 : 8;
-  const indexed = new THREE.PlaneGeometry(C, C, n, n).rotateX(-Math.PI / 2).translate(cx, 0, cz);
-  const grid = indexed.getAttribute('position') as THREE.BufferAttribute;
-  for (let i = 0; i < grid.count; i++) grid.setY(i, heightAt(grid.getX(i), grid.getZ(i)));
-  const geo = indexed.toNonIndexed();
-  indexed.dispose();
-  const pos = geo.getAttribute('position') as THREE.BufferAttribute;
-  const colours = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i += 3) {
-    const x = (pos.getX(i) + pos.getX(i + 1) + pos.getX(i + 2)) / 3;
-    const z = (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3;
-    tmpColour.setHex(groundColourAt(x, z));
-    for (let k = 0; k < 3; k++) {
-      colours[(i + k) * 3] = tmpColour.r;
-      colours[(i + k) * 3 + 1] = tmpColour.g;
-      colours[(i + k) * 3 + 2] = tmpColour.b;
+  let geo: THREE.BufferGeometry;
+  const wasmBufs = buildChunkBuffers(cx, cz, C, n);
+  if (wasmBufs) {
+    geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(wasmBufs.positions, 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(wasmBufs.normals, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(wasmBufs.colors, 3));
+  } else {
+    const indexed = new THREE.PlaneGeometry(C, C, n, n).rotateX(-Math.PI / 2).translate(cx, 0, cz);
+    const grid = indexed.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < grid.count; i++) grid.setY(i, heightAt(grid.getX(i), grid.getZ(i)));
+    geo = indexed.toNonIndexed();
+    indexed.dispose();
+    const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+    const colours = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i += 3) {
+      const x = (pos.getX(i) + pos.getX(i + 1) + pos.getX(i + 2)) / 3;
+      const z = (pos.getZ(i) + pos.getZ(i + 1) + pos.getZ(i + 2)) / 3;
+      tmpColour.setHex(groundColourAt(x, z));
+      for (let k = 0; k < 3; k++) {
+        colours[(i + k) * 3] = tmpColour.r;
+        colours[(i + k) * 3 + 1] = tmpColour.g;
+        colours[(i + k) * 3 + 2] = tmpColour.b;
+      }
     }
+    geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+    geo.computeVertexNormals();
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
-  geo.computeVertexNormals();
   const terrain = new THREE.Mesh(geo, terrainMat);
   terrain.receiveShadow = true;
   // LOD 1 sits a little low so its seams with LOD 0 neighbours are hidden.
@@ -240,7 +249,7 @@ function streamChunks(focus: THREE.Vector3): void {
   plannedZ = fz;
 
   // Wanted chunks: centre within viewRadius, and part of the world (not the void).
-  const wanted = new Map<string, Wanted>();
+  const wanted = new Map<number, Wanted>();
   const i0 = Math.floor((fx - R) / C) - 1, i1 = Math.floor((fx + R) / C) + 1;
   const j0 = Math.floor((fz - R) / C) - 1, j1 = Math.floor((fz + R) / C) + 1;
   for (let ci = i0; ci <= i1; ci++) {

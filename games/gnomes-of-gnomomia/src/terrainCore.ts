@@ -17,6 +17,7 @@
 import { PAINT_SURFACES, TUNING, WORLD, type Condition, type Deck, type WorldObjectDef, type ZoneDef, type ZoneExit, type ZoneId } from './config';
 import { FURNITURE_RADIUS } from './data/interiors';
 import { DeltaGrid, PaintGrid, applyStamps, stampBounds, type PathDef, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
+import { registerTerrainWasm, type ChunkMeshBuffers } from './wasm/terrainWasm';
 
 // ---------------------------------------------------------------- helpers
 
@@ -96,7 +97,12 @@ export interface Terrain {
   passes(): readonly Pass[];
   passOpen(p: Pass): boolean;
   distToRoad(x: number, z: number): number;
+  isWithinRoad(x: number, z: number, maxDist: number): boolean;
   heightAt(x: number, z: number): number;
+  /** Builds non-indexed terrain chunk attributes (positions, flat normals, linear-sRGB colours) in Wasm when ready. */
+  buildChunkBuffers(cx: number, cz: number, chunkSize: number, segments: number): ChunkMeshBuffers | null;
+  /** Builds a pxCount x pxCount packed ABGR Uint32Array for a minimap chunk tile in Wasm when ready. */
+  buildMinimapPixels(x0: number, z0: number, chunkSize: number, pxCount: number, waterLevel: number): Uint32Array | null;
   deckLayout(): readonly { deck: Deck; top: number; ramp: { minX: number; maxX: number; minZ: number; maxZ: number } }[];
   surfacesAt(x: number, z: number): number[];
   /** A collider added at run time (camp tents, standing stones...). Never baked; always checked live. */
@@ -152,18 +158,22 @@ export function createTerrain(input: TerrainInput): Terrain {
   let memoH = 0;
   let roads: RoadSeg[] | null = null;
   const roadBuckets = new Map<number, RoadSeg[]>();
+  const cutBuckets = new Map<number, RoadSeg[]>();
+  const CUT_BUCKET_PAD = WORLD.roadHalfWidth + 10.5;
   let passList: Pass[] = [];
   /** Segments the ridge is cut along: every pass, plus the in-zone road from the shrine to each pass exit. */
   let cutRoads: RoadSeg[] = [];
   let deckInfos: DeckInfo[] | null = null;
   /** Colliders from zone data (houses, shrines, walls, deck posts, interiors), built on first use. */
   const staticColliders: Buckets = new Map();
+  const staticCircleList: Circle[] = [];
   let staticDone = false;
   /** Colliders of flora chunks, by chunk key, so a chunk's can be removed again. */
   const floraColliders: Buckets = new Map();
   const floraCircles = new Map<number, Circle[]>();
   /** Colliders from addCollider(). */
   const extraColliders: Buckets = new Map();
+  const extraCircleList: Circle[] = [];
   const floraCache = new Map<number, Flora[]>();
 
   function collectStamps(): Stamp[] {
@@ -293,6 +303,21 @@ export function createTerrain(input: TerrainInput): Terrain {
         }
       }
     }
+    cutBuckets.clear();
+    for (const s of cutRoads) {
+      const i0 = Math.floor((Math.min(s.ax, s.bx) - CUT_BUCKET_PAD) / ROAD_CELL);
+      const i1 = Math.floor((Math.max(s.ax, s.bx) + CUT_BUCKET_PAD) / ROAD_CELL);
+      const j0 = Math.floor((Math.min(s.az, s.bz) - CUT_BUCKET_PAD) / ROAD_CELL);
+      const j1 = Math.floor((Math.max(s.az, s.bz) + CUT_BUCKET_PAD) / ROAD_CELL);
+      for (let i = i0; i <= i1; i++) {
+        for (let j = j0; j <= j1; j++) {
+          const k = bucketKey(i, j);
+          let list = cutBuckets.get(k);
+          if (!list) { list = []; cutBuckets.set(k, list); }
+          list.push(s);
+        }
+      }
+    }
   }
 
   /** Every road: shrine to region, shrine to exit, the passes between zones, and authored roads. For drawing and for keeping flora off. */
@@ -333,8 +358,10 @@ export function createTerrain(input: TerrainInput): Terrain {
 
   function distToCut(x: number, z: number): number {
     initRoads();
-    let bestSq = Infinity;
-    for (const s of cutRoads) {
+    const list = cutBuckets.get(bucketKey(Math.floor(x / ROAD_CELL), Math.floor(z / ROAD_CELL)));
+    if (!list) return 1e3;
+    let bestSq = 1e6;
+    for (const s of list) {
       const d2 = distToSegSq(x, z, s.ax, s.az, s.bx, s.bz);
       if (d2 < bestSq) bestSq = d2;
     }
@@ -520,10 +547,13 @@ export function createTerrain(input: TerrainInput): Terrain {
   /** Adds a ground-level collision circle (blocks walkers within WORLD.groundBand of the ground). world.ts calls this for
    * props it builds (camp tents, standing stones, signposts); terrain adds houses, shrines, walls, deck posts and flora. */
   function addCollider(x: number, z: number, r: number): void {
-    bucketAdd(extraColliders, x, z, r);
+    extraCircleList.push(bucketAdd(extraColliders, x, z, r));
+    wasmBridge.onExtraCollider(x, z, r);
   }
 
-  const addStatic = (x: number, z: number, r: number): void => { bucketAdd(staticColliders, x, z, r); };
+  const addStatic = (x: number, z: number, r: number): void => {
+    staticCircleList.push(bucketAdd(staticColliders, x, z, r));
+  };
 
   /** A building interior: the room's walls, its furniture, and its bookshelves and lecterns (which are objects). */
   function addInteriorColliders(def: ZoneDef): void {
@@ -797,9 +827,11 @@ export function createTerrain(input: TerrainInput): Terrain {
     memoX = NaN;
     roads = null;
     roadBuckets.clear();
+    cutBuckets.clear();
     deckInfos = null;
     stamps = collectStamps();
     purgeBuckets(staticColliders);
+    staticCircleList.length = 0;
     staticDone = false;
     const C = WORLD.chunk;
     // Flora reads heights, roads, regions, lakes, houses and decks within a few metres, so grow the box.
@@ -821,17 +853,48 @@ export function createTerrain(input: TerrainInput): Terrain {
       const box = rect ?? { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
       for (const id of walk.tilesIn(box)) walk.deleteTile(id);
     }
+    wasmBridge.onInvalidate();
   }
 
+  const wasmBridge = registerTerrainWasm(
+    {
+      allZones: ALL,
+      outdoorZones: OUTDOOR,
+      indoorZones: INDOOR,
+      interiorZones: INTERIORS,
+      passes,
+      passOpen,
+      roadSegments,
+      cutRoadSegments: () => { initRoads(); return cutRoads; },
+      decks: initDecks,
+      stamps: () => stamps,
+      staticCircles: () => { initStaticColliders(); return staticCircleList; },
+      extraCircles: () => extraCircleList,
+      ensureFloraCircles: (ci, cj) => {
+        const key = bucketKey(ci, cj);
+        if (!floraCache.has(key)) chunkFlora(ci, cj);
+        return floraCircles.get(key) ?? [];
+      },
+      walkGrid: () => walk,
+      deltas: () => deltas,
+      paint: () => paint,
+    },
+    standY,
+    isBlocked,
+  );
+
   return {
-    zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, heightAt, deckLayout, surfacesAt,
+    zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, isWithinRoad, heightAt,
+    buildChunkBuffers: wasmBridge.buildChunkBuffers,
+    buildMinimapPixels: wasmBridge.buildMinimapPixels,
+    deckLayout, surfacesAt,
     addCollider, chunkFlora, isBlocked, findFreeSpot, isBlockedAt, standY, groundColourAt, regionNameAt, staticSolidAt,
-    setWalkGrid(grid) { walk = grid; },
+    setWalkGrid(grid) { walk = grid; wasmBridge.onWalkGridChange(); },
     get walkGrid() { return walk; },
     get deltas() { return deltas; },
-    setDeltas(grid) { deltas = grid; memoX = NaN; },
+    setDeltas(grid) { deltas = grid; memoX = NaN; wasmBridge.onDeltasChange(); },
     get paint() { return paint; },
-    setPaint(grid) { paint = grid; },
+    setPaint(grid) { paint = grid; wasmBridge.onPaintChange(); },
     invalidate,
   };
 }

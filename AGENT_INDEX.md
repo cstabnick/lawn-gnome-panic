@@ -134,6 +134,8 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/roadmaps/gta-hangar-boathouse.md` | Gnome Theft Auto: Hangar Two and the Mossbank Boathouse |
 | `docs/roadmaps/gta-save-trainer.md` | Gnome Theft Auto: Save Trainer pop-out and its registry |
 | `docs/roadmaps/gta-performance-pass-2.md` | Gnome Theft Auto: two perf rounds with measurements |
+| `docs/roadmaps/gta-wasm-perf.md` | Gnome Theft Auto: WebAssembly (SIMD terrain/fields/chunk mesher, static batch packer, delta-stream culler) + scene-graph render plan |
+| `docs/roadmaps/gnomomia-wasm-perf.md` | Gnomes of Gnomomia: WebAssembly terrain, 3D A* pathfinding, chunk mesher & minimap tile kernel |
 | `docs/roadmaps/gta-birding.md` | Gnome Theft Auto: binoculars, 28 birds, the Reedwatch Hide |
 | `docs/roadmaps/gta-npc-planes.md` | Gnome Theft Auto: NPC sky traffic and the banner plane |
 | `docs/roadmaps/gta-fishing.md` | Gnome Theft Auto: fishing, The Bent Pin, 24 fish |

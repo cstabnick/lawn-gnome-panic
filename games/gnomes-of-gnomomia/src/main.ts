@@ -51,13 +51,14 @@ import { createSettings } from './ui/settings';
 import { createDockVolumeButton } from './ui/volumeButton';
 import { onSettingsChange, settings } from './settings';
 import { runSimVisualizer } from './sim/visualizer';
+import { initGnomomiaWasm } from './wasm/terrainWasm';
 import { beginFrame, endFrame, initProfiler, timed } from '@lawn/profiler';
 
 // Opt-in hitch profiler (?profile, see packages/profiler); off, it costs one boolean check per system.
 initProfiler('gnomes-of-gnomomia', { context: () => ({ zone: state.zone }) });
 
-// The custom gnome (Gnome Creator) must be loaded before the player model is built.
-await loadMyGnome();
+// The custom gnome (Gnome Creator) and the Wasm terrain/pathfinding kernel load before the world is built.
+await Promise.all([loadMyGnome(), initGnomomiaWasm()]);
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;

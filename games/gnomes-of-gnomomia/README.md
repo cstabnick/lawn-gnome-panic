@@ -85,3 +85,8 @@ Simulated gnomes walk between the shrine, doorways, NPCs, regions and path point
 - `npm run sim:town -w games/gnomes-of-gnomomia` (flags `--town=<id>`, `--policy=<p>`, `--seed=<n>`, `--json`): one row per town and policy (legs, ok%, median seconds per leg, threats inside town), then every failed leg. Exits 1 on a failed leg or a threat.
 - `npx vitest run src/sim/townWalk.test.ts` (part of `npm test`): the scripted tour of every town.
 - In `npm run dev`, `http://localhost:5291/?townwalk=thatchford&offline` drops a fresh character in Thatchford and walks it round the same tour with real click-to-move. Demo: `npm run demo -- games/gnomes-of-gnomomia/demos/town-walk-thatchford.json --gif`.
+
+### WebAssembly kernel (`assembly/kernel.ts` → `src/wasm/`)
+
+- Terrain height/walkability queries, 2D & 3D grid A* with line-of-sight smoothing (`findPath` / `findPath3`), terrain chunk `BufferGeometry` mesh generation (`buildChunkBuffers`), and minimap `ImageData` tile rasterisation (`buildMinimapPixels`) run in a compiled AssemblyScript WebAssembly module (`src/wasm/terrainWasm.ts`, roadmap in [docs/roadmaps/gnomomia-wasm-perf.md](../../docs/roadmaps/gnomomia-wasm-perf.md)).
+- After editing `assembly/kernel.ts`, recompile with `npm run build:wasm -w games/gnomes-of-gnomomia`. Benchmark with `npm run bench:wasm -w games/gnomes-of-gnomomia`; pass `?wasm=0` in the URL to compare against the TypeScript fallback.

@@ -6,7 +6,8 @@ import type { GnomeModel } from '@lawn/gnome';
 import { PLAYER_ID, SPAWN, TUNING, PLAYER_LOOK, UI, WORLD } from './config';
 import { findPath3 } from './pathfind';
 import type { Point3 } from './pathfind';
-import { distToRoad, findFreeSpot, heightAt, standY } from './terrain';
+import { findFreeSpot, heightAt, isWithinRoad, standY } from './terrain';
+import { ROAD_COST_TAG, type TaggedRoadCost } from './wasm/terrainWasm';
 import { getEntity } from './entities';
 import { pickUpLoot } from './inventory';
 import { bus, say } from './events';
@@ -145,17 +146,19 @@ export function playPlayerEmote(id: string): boolean {
 /** Step cost per cell for click-to-move: roads cost TUNING.roadPathBias, open ground 1. Memoised per cell for one search. */
 function roadCostFn(): (x: number, z: number) => number {
   const memo = new Map<number, number>();
-  return (x, z) => {
+  const fn: TaggedRoadCost = (x, z) => {
     const i = Math.round(x);
     const j = Math.round(z);
     const key = (i + 4096) * 8192 + (j + 4096);
     let c = memo.get(key);
     if (c === undefined) {
-      c = distToRoad(i, j) < WORLD.roadHalfWidth ? TUNING.roadPathBias : 1;
+      c = isWithinRoad(i, j, WORLD.roadHalfWidth) ? TUNING.roadPathBias : 1;
       memo.set(key, c);
     }
     return c;
   };
+  fn[ROAD_COST_TAG] = TUNING.roadPathBias;
+  return fn;
 }
 
 /** Path from the player's current spot to (x, z), ending at height y (default: the ground there). */

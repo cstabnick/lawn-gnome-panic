@@ -8,6 +8,8 @@
     "build": "tsc --noEmit && node scripts/check-bake.mjs && vite build",
     "bake-walk": "node scripts/bake-walk.mjs",
     "check-bake": "node scripts/check-bake.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "bench:wasm": "node scripts/bench-wasm.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint:content": "node scripts/lint-content.mjs",
@@ -27,14 +29,15 @@
     "@lawn/gnome": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",
-    "@lawn/platform": "*",
     "@lawn/music": "*",
+    "@lawn/platform": "*",
     "@lawn/prefabs": "*",
     "@lawn/profiler": "*",
     "three": "0.187.0"
   },
   "devDependencies": {
     "@types/three": "0.187.0",
+    "assemblyscript": "^0.28.20",
     "typescript": "7.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.0"

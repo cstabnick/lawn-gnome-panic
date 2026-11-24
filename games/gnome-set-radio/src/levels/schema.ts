@@ -35,7 +35,21 @@ export type GsrBuildingArch =
   | 'dead-wax-gate'
   | 'monolith-spire'
   | 'choir-amphitheater'
-  | 'turntable-crown';
+  | 'turntable-crown'
+  | 'abstract-office-slab'
+  | 'cantilever-tower'
+  | 'stepped-monolith';
+
+export type GsrArenaShape =
+  | 'octagonal-plaza'
+  | 's-curve-viaduct'
+  | 'crucible-ring'
+  | 'spiral-spire'
+  | 'canyon-alley'
+  | 'dome-atrium'
+  | 'hedged-diamond'
+  | 'relay-cross'
+  | 'vinyl-disc';
 
 export interface GsrBuilding {
   id: string;
@@ -202,6 +216,7 @@ export interface GsrLevelData {
   gangName: string;
   gangLeader: string;
   trackId: GsrTrackId;
+  arenaShape?: GsrArenaShape;
   skyTheme?: 'velvet' | 'bongo' | 'kiln' | 'birdbath' | 'mulch' | 'mall' | 'citadel' | 'subsoil' | 'zenith';
   skyTop: string;
   skyBottom: string;

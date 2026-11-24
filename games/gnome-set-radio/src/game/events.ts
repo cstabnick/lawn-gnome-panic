@@ -60,6 +60,8 @@ export interface EventRuntime {
 export interface LevelSession {
   levelId: GsrLevelId;
   events: Map<string, EventRuntime>;
+  storyOrder: string[];
+  activeStoryIndex: number;
   bossUnlocked: boolean;
   levelCleared: boolean;
   activeBanner: { speaker: string; text: string; ttl: number } | null;
@@ -70,25 +72,31 @@ export interface LevelSession {
 
 export function createLevelSession(doc: GsrLevelDoc, levelId: GsrLevelId): LevelSession {
   const events = new Map<string, EventRuntime>();
+  const storyOrder: string[] = [];
   for (const ev of doc.data.events) {
+    if (ev.kind === 'story') {
+      storyOrder.push(ev.id);
+    }
     events.set(ev.id, {
       def: ev,
       progress: 0,
       completed: false,
-      active: ev.kind === 'story', // main story events can be tackled immediately in any order!
+      active: false,
       hitIds: new Set<string>(),
     });
+  }
+  if (storyOrder.length > 0) {
+    const firstStory = events.get(storyOrder[0]!);
+    if (firstStory) firstStory.active = true;
   }
   return {
     levelId,
     events,
+    storyOrder,
+    activeStoryIndex: 0,
     bossUnlocked: false,
     levelCleared: false,
-    activeBanner: {
-      speaker: 'DJ Broadcast',
-      text: `Welcome to ${doc.name}! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events in any order!`,
-      ttl: 5.5,
-    },
+    activeBanner: null,
     bossHp: 3,
     bossMaxHp: 3,
     bossWavePhase: 0,
@@ -118,20 +126,29 @@ export function advanceEvent(
   session: LevelSession,
   eventId: string,
   targetId?: string,
-): { completedNow: boolean; bossJustUnlocked: boolean; levelJustCleared: boolean; line: string | null } {
+): {
+  completedNow: boolean;
+  bossJustUnlocked: boolean;
+  levelJustCleared: boolean;
+  line: string | null;
+  nextStoryEventId: string | null;
+} {
   const ev = session.events.get(eventId);
   if (!ev || ev.completed) {
-    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null };
+    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null, nextStoryEventId: null };
+  }
+  if (ev.def.kind === 'story' && !ev.active) {
+    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null, nextStoryEventId: null };
   }
   if (targetId && ev.hitIds.has(targetId)) {
-    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null };
+    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null, nextStoryEventId: null };
   }
   if (targetId) ev.hitIds.add(targetId);
   ev.active = true;
   ev.progress = Math.min(ev.def.targetCount, ev.progress + 1);
 
   if (ev.progress < ev.def.targetCount) {
-    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null };
+    return { completedNow: false, bossJustUnlocked: false, levelJustCleared: false, line: null, nextStoryEventId: null };
   }
 
   ev.completed = true;
@@ -143,9 +160,35 @@ export function advanceEvent(
 
   let bossJustUnlocked = false;
   let levelJustCleared = false;
+  let nextStoryEventId: string | null = null;
 
   if (ev.def.kind === 'story') {
-    bossJustUnlocked = checkBossUnlock(session);
+    let nextIdx = -1;
+    for (let i = session.activeStoryIndex + 1; i < session.storyOrder.length; i++) {
+      const candidate = session.events.get(session.storyOrder[i]!);
+      if (candidate && !candidate.completed) {
+        nextIdx = i;
+        break;
+      }
+    }
+    if (nextIdx === -1) {
+      for (let i = 0; i < session.storyOrder.length; i++) {
+        const candidate = session.events.get(session.storyOrder[i]!);
+        if (candidate && !candidate.completed) {
+          nextIdx = i;
+          break;
+        }
+      }
+    }
+    if (nextIdx !== -1) {
+      session.activeStoryIndex = nextIdx;
+      const nextEv = session.events.get(session.storyOrder[nextIdx]!)!;
+      nextEv.active = true;
+      nextStoryEventId = nextEv.def.id;
+    } else {
+      session.activeStoryIndex = session.storyOrder.length;
+      bossJustUnlocked = checkBossUnlock(session);
+    }
   } else if (ev.def.kind === 'boss') {
     session.levelCleared = true;
     levelJustCleared = true;
@@ -156,5 +199,6 @@ export function advanceEvent(
     bossJustUnlocked,
     levelJustCleared,
     line: ev.def.completeLine,
+    nextStoryEventId,
   };
 }

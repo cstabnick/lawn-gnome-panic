@@ -46,40 +46,53 @@ export const GAME_INTRO_CUTSCENE: CutsceneDef = {
     {
       speaker: 'DJ Broadcast',
       role: 'Pirate Radio Host',
-      text: 'Yo, Ley-Line Runners! Welcome up to the Broadcast Archipelago—pirate radio from Turfton’s streets just lit up the sky-rails!',
+      text: 'Yo, fresh runner! High above the garden in the Upper Aether, leaked pirate radio from Turfton tangles with glowing ley-lines—braiding into floating sky-islands and grindable Signal Rails!',
       mutterHz: 98,
       camera: 'dj-booth',
       titleCard: {
         badge: 'PIRATE TRANSMISSION · 108.0',
-        name: 'DJ BROADCAST',
-        subtitle: 'Upper Aether · Sky-Chain of Living Frequencies',
+        name: 'THE BROADCAST ARCHIPELAGO',
+        subtitle: 'Upper Aether · Sky-Islands & Ley-Line Signal Rails',
         accentColor: '#00e5ff',
       },
     },
     {
+      speaker: 'Glide',
+      role: 'Ley-Line Runner · Rail Carver',
+      text: 'Where the signal knots tightest, ordinary things wake up! Upright pianos, bongos, foundry kilns, and arcade cabinets—The Woken, sprouting clay-glaze eyes and beats of their own.',
+      mutterHz: 112,
+      camera: 'wide-orbit',
+    },
+    {
       speaker: 'Spin',
       role: 'Ley-Line Runner · Trick Specialist',
-      text: 'Eight turf-war gangs locked the Frequency Ladder! Good thing our squad—me, Tag, and Glide—brought Aether Rollerblades!',
+      text: 'Eight turf-war gangs have locked down the Frequency Ladder climbing into the clouds. Each gang’s crew will test you one quest at a time before their Leader steps onto the stage!',
       mutterHz: 118,
-      camera: 'crew-lineup',
+      camera: 'sky-ascend',
       titleCard: {
-        badge: 'THE CREW · LEY-LINE RUNNERS',
-        name: 'SPIN, TAG & GLIDE',
-        subtitle: 'Trick Specialists · Graffiti Aces · Rail Carvers',
+        badge: 'THE FREQUENCY LADDER · 8 DISTRICTS',
+        name: 'GANG TURF & BOSS STAGES',
+        subtitle: 'Clear Every Crew Quest to Challenge Each Leader',
         accentColor: '#ff4ecd',
       },
     },
     {
       speaker: 'Tag',
       role: 'Ley-Line Runner · Graffiti Ace',
-      text: 'Tag every gang billboard, grind the glowing ley-lines, and pop a Breakdance when the beat drops—Glide’s already eyeing that first rail!',
+      text: 'Good thing you’ve got Aether Rollerblades! You’re riding with our squad—me, Spin, Glide, and DJ Broadcast on the pirate deck—ready to paint every sky-island in Turfton color.',
       mutterHz: 124,
       camera: 'crew-lineup',
+      titleCard: {
+        badge: 'THE CREW · LEY-LINE RUNNERS',
+        name: 'SPIN, TAG & GLIDE',
+        subtitle: 'Trick Specialists · Graffiti Aces · Rail Carvers',
+        accentColor: '#ffd740',
+      },
     },
     {
       speaker: 'DJ Broadcast',
       role: 'Pirate Radio Host',
-      text: 'Show ‘em how Turfton skates, runner! Hit the plaza, clear the gang events, and take back the frequency—you’re live on the air!',
+      text: 'Quick rig check: Skate with WASD or Arrows, Jump & Double-Jump with Space, jump onto any glowing rail or billboard to Grind, hug buildings to Wall-Ride, Spray with F, and Trick with E right on the beat!',
       mutterHz: 96,
       camera: 'player-hero',
     },
@@ -90,6 +103,7 @@ export interface AreaCutsceneBundle {
   levelIntro: CutsceneDef;
   bossIntro: CutsceneDef;
   bossDefeat: CutsceneDef;
+  questIntros?: Record<string, CutsceneDef>;
   extra?: readonly CutsceneDef[];
 }
 
@@ -184,6 +198,52 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
         },
       ],
     },
+    questIntros: {
+      'vk-pluck-chase': {
+        id: 'quest-vk-pluck-chase',
+        kind: 'special',
+        areaId: 'velvet-keys',
+        title: 'Handoff: Out-Groove Pluck',
+        beats: [
+          {
+            speaker: 'Pluck',
+            role: 'Ivory Syndicate · Upright Bass Runner',
+            text: 'So you tagged our conservatory billboards—cute! Around Velvet Keys, street paint doesn’t earn a recital pass unless you can keep time with a walking D Dorian bassline.',
+            mutterHz: 108,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Saxy Sal',
+            role: 'Ivory Syndicate · Plaza Alto Busker',
+            text: 'Pluck’s bouncing past the Piano Fountain on a single steel endpin! Boost with Shift and spray him three times if you want the Ivory Syndicate to take you seriously.',
+            mutterHz: 118,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'vk-tune-dishes': {
+        id: 'quest-vk-tune-dishes',
+        kind: 'special',
+        areaId: 'velvet-keys',
+        title: 'Handoff: Tune the Courtyard Dishes',
+        beats: [
+          {
+            speaker: 'Saxy Sal',
+            role: 'Ivory Syndicate · Plaza Alto Busker',
+            text: 'Whoa—you actually out-grooved Pluck! Maestro Upright hates Ley-Line Runners messing with conservatory acoustics, so he locked the rooftop dishes to pure recital frequency.',
+            mutterHz: 118,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Pluck',
+            role: 'Ivory Syndicate · Upright Bass Runner',
+            text: 'Grind the bridges linking the Vinyl Rotunda, Espresso-Dew Cafe, and Brass-Bell Amphitheater to retune all three Relay Dishes—then Maestro’s Penthouse Stage opens up!',
+            mutterHz: 108,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+    },
   },
 
   'bongo-basin': {
@@ -275,6 +335,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
           camera: 'sky-ascend',
         },
       ],
+    },
+    questIntros: {
+      'bb-bongo-chain': {
+        id: 'quest-bb-bongo-chain',
+        kind: 'special',
+        areaId: 'bongo-basin',
+        title: 'Handoff: Bongo Bounce Jam',
+        beats: [
+          {
+            speaker: 'Rimshot Rizzo',
+            role: 'Rip-Skin Collective · Viaduct Pace-Setter',
+            text: 'Alright, you painted the toll decks—now show us your bounce! The Rip-Skin Collective built this four-tier S-curve for riders who never drop a beat in mid-air.',
+            mutterHz: 124,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Timbale Tobe',
+            role: 'Rip-Skin Collective · Toll-Gate Percussionist',
+            text: 'Hit all five glowing Bongo Pads from the Big Acorn Diner up to the Cloverleaf Crown—every drum skin resets your Air-Jump, so chain ’em clean!',
+            mutterHz: 102,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'bb-black-dew-relays': {
+        id: 'quest-bb-black-dew-relays',
+        kind: 'special',
+        areaId: 'bongo-basin',
+        title: 'Handoff: Hijack the Black Dew Relays',
+        beats: [
+          {
+            speaker: 'Timbale Tobe',
+            role: 'Rip-Skin Collective · Toll-Gate Percussionist',
+            text: 'Clean aerial cadence, runner! Still, Conga King Kora says pirate broadcasts don’t run on air—our Black Dew relays fuel the whole Master Clock.',
+            mutterHz: 102,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Rimshot Rizzo',
+            role: 'Rip-Skin Collective · Viaduct Pace-Setter',
+            text: 'Check the Southbound Viaduct, West Toll-Gate Deck, and Conga Grain-Silo. Spray-tune all three Black Dew relays if you’re bold enough to hijack our tempo!',
+            mutterHz: 124,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'bb-clear-drumline': {
+        id: 'quest-bb-clear-drumline',
+        kind: 'special',
+        areaId: 'bongo-basin',
+        title: 'Handoff: Clear the Drumline',
+        beats: [
+          {
+            speaker: 'Rimshot Rizzo',
+            role: 'Rip-Skin Collective · Viaduct Pace-Setter',
+            text: 'You hijacked the Dew relays?! That’s a declaration of rhythm war on the Rip-Skin Collective—Brenda’s chili-bowl truce is officially over!',
+            mutterHz: 124,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Timbale Tobe',
+            role: 'Rip-Skin Collective · Toll-Gate Percussionist',
+            text: 'Our three Conga Sentries are marching the 4-meter Southbound Viaduct Span! Silence the drumline and Kora will meet you on the Cloverleaf Crown.',
+            mutterHz: 102,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
     },
   },
 
@@ -368,6 +496,52 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
         },
       ],
     },
+    questIntros: {
+      'ck-cymbal-patrol': {
+        id: 'quest-ck-cymbal-patrol',
+        kind: 'special',
+        areaId: 'chrome-kiln',
+        title: 'Handoff: Mute the Anvil Patrol',
+        beats: [
+          {
+            speaker: 'Trundle',
+            role: 'Glaze Grinders · Molten Glaze Hauler',
+            text: 'Hey! Watch where you sling that neon paint—you almost splashed my 900-degree boot glaze! Local 404 doesn’t let outside skaters tag the smelter stacks for free.',
+            mutterHz: 94,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Slaghammer Salvo',
+            role: 'Glaze Grinders · Union Shop Steward',
+            text: 'Our three Anvil Sentries just clocked in on the East Glaze-Press Hall roof. Take the green ramp up and mute their 138 BPM clang if you want union clearance!',
+            mutterHz: 88,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'ck-vent-dishes': {
+        id: 'quest-ck-vent-dishes',
+        kind: 'special',
+        areaId: 'chrome-kiln',
+        title: 'Handoff: Tune the Smelter Dishes',
+        beats: [
+          {
+            speaker: 'Slaghammer Salvo',
+            role: 'Glaze Grinders · Union Shop Steward',
+            text: 'Welp, there goes the foundry whistle—you silenced the Anvil Patrol clean! Inspector Clem just flipped the "DAYS SINCE GLAZE SPILL" sign back to zero.',
+            mutterHz: 88,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Trundle',
+            role: 'Glaze Grinders · Molten Glaze Hauler',
+            text: 'Still gotta prove you can ride the heat! Launch off the canyon’s Updraft Vents to tune the three Smelter Dishes on the Chimney, Canteen, and Crucible Crown!',
+            mutterHz: 94,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+    },
   },
 
   'neon-birdbath': {
@@ -459,6 +633,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
           camera: 'sky-ascend',
         },
       ],
+    },
+    questIntros: {
+      'nb-mist-rings': {
+        id: 'quest-nb-mist-rings',
+        kind: 'special',
+        areaId: 'neon-birdbath',
+        title: 'Handoff: Fly the Mist Rings',
+        beats: [
+          {
+            speaker: 'Vapor Vesper',
+            role: 'Splash-Back Skaters · Spire Aerial Guide',
+            text: 'Fresh neon on the rim, runner! Up here at Neon Birdbath Spire, the Splash-Back Skaters live by one rule: never skate flat when the mist geysers can carry you into the clouds.',
+            mutterHz: 130,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Gus',
+            role: 'Splash-Back Skaters · Lydian Mist Bassist',
+            text: 'Hit the Mist Geysers and glass lagoon rails, then pop an Air-Jump through all four green Mist Rings—let’s see if a Turfton runner can hold 170 BPM in mid-air!',
+            mutterHz: 104,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'nb-gus-chase': {
+        id: 'quest-nb-gus-chase',
+        kind: 'special',
+        areaId: 'neon-birdbath',
+        title: 'Handoff: Out-Skate Gus',
+        beats: [
+          {
+            speaker: 'Gus',
+            role: 'Splash-Back Skaters · Lydian Mist Bassist',
+            text: 'Alright, you’ve got air—my cousin Pluck down in Velvet Keys warned me you had serious hops! Still, nobody laps the Mist Lagoon faster than a Woken bass on glass rails.',
+            mutterHz: 104,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Vapor Vesper',
+            role: 'Splash-Back Skaters · Spire Aerial Guide',
+            text: 'Gus is carving loops around the water rim—cut inside across the mist pools and hit Spray (F) three times to tag him out!',
+            mutterHz: 130,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'nb-tune-spouts': {
+        id: 'quest-nb-tune-spouts',
+        kind: 'special',
+        areaId: 'neon-birdbath',
+        title: 'Handoff: Tune the Pirate Beacons',
+        beats: [
+          {
+            speaker: 'Vapor Vesper',
+            role: 'Splash-Back Skaters · Spire Aerial Guide',
+            text: 'Whoa, you beat Gus around his own lagoon! Fountainhead Finn says only true midnight-radio legends get to touch DJ Broadcast’s old spire hardware.',
+            mutterHz: 130,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Gus',
+            role: 'Splash-Back Skaters · Lydian Mist Bassist',
+            text: 'Climb to the East Mist-Spa, West Observatory, and 16.5-meter Apex Beacon—tune all three Pirate Beacons to summon Finn for the final Lydian encore!',
+            mutterHz: 104,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
     },
   },
 
@@ -552,6 +794,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
         },
       ],
     },
+    questIntros: {
+      'ma-bumper-chain': {
+        id: 'quest-ma-bumper-chain',
+        kind: 'special',
+        areaId: 'mulch-alley',
+        title: 'Handoff: CRT Bumper Chain',
+        beats: [
+          {
+            speaker: 'Bootleg Bramble',
+            role: 'Token Sharks · CRT Tape Vault',
+            text: 'Nice tags on the alley walls, kid—too bad Token Shark turf runs on high-score combos, not spray cans alone. Nobody reaches Don Compost’s vault from street level!',
+            mutterHz: 108,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Pixel Pip',
+            role: 'Token Sharks · Bootleg Tape Runner',
+            text: 'Bounce across all four glowing CRT Bumper Pads from the alley floor up to the Pinball Mezzanine—each bumper resets your Air-Jump like a free extra ball!',
+            mutterHz: 136,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'ma-pip-chase': {
+        id: 'quest-ma-pip-chase',
+        kind: 'special',
+        areaId: 'mulch-alley',
+        title: 'Handoff: Catch Pixel Pip',
+        beats: [
+          {
+            speaker: 'Pixel Pip',
+            role: 'Token Sharks · Bootleg Tape Runner',
+            text: '1-UP! You actually nailed the CRT Bumper Chain! Alright, Ley-Line Runner—let’s see if your Turfton blades can catch the fastest courier in Mulch Alley!',
+            mutterHz: 136,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Bootleg Bramble',
+            role: 'Token Sharks · CRT Tape Vault',
+            text: 'Pip’s weaving down the neon switchbacks with Don Compost’s master cassette! Boost with Shift and spray (F) three times before she ghosts you!',
+            mutterHz: 108,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'ma-tune-cabinets': {
+        id: 'quest-ma-tune-cabinets',
+        kind: 'special',
+        areaId: 'mulch-alley',
+        title: 'Handoff: Hack Bootleg Cabinets',
+        beats: [
+          {
+            speaker: 'Bootleg Bramble',
+            role: 'Token Sharks · CRT Tape Vault',
+            text: 'You caught Pip AND kept your combo alive?! Quarter-Slot Quinn’s coin-door is rattling—he doesn’t hand out Sky-Mall coordinates to unverified rookies.',
+            mutterHz: 108,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Pixel Pip',
+            role: 'Token Sharks · Bootleg Tape Runner',
+            text: 'Hit the CRT Repair Loft, Bootleg Vault, and Pinball Mezzanine to spray-hack all three Bootleg Cabinets—once the cipher drops, Quinn will meet you on the Marquee Tower!',
+            mutterHz: 136,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+    },
   },
 
   'tupperware-mall': {
@@ -643,6 +953,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
           camera: 'sky-ascend',
         },
       ],
+    },
+    questIntros: {
+      'tm-carl-chase': {
+        id: 'quest-tm-carl-chase',
+        kind: 'special',
+        areaId: 'tupperware-mall',
+        title: 'Handoff: Out-Drift Cartwheel Carl',
+        beats: [
+          {
+            speaker: 'Cartwheel Carl',
+            role: 'Clearance Crew · Atrium Cart Captain',
+            text: 'SQUEAK-SQUEAK! Unauthorized graffiti in the Sky-Mall atrium?! The Clearance Crew owns every aisle under this Tupperware dome—and my front caster takes corners at sixty!',
+            mutterHz: 96,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Coupon Cora',
+            role: 'Clearance Crew · Food-Court DJ',
+            text: 'Carl loops right past the Food Court Island! Cut the inside rail, boost with Shift, and tag him three times with Spray (F) to mark down his ego!',
+            mutterHz: 138,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'tm-clearance-rings': {
+        id: 'quest-tm-clearance-rings',
+        kind: 'special',
+        areaId: 'tupperware-mall',
+        title: 'Handoff: Fly the Clearance Rings',
+        beats: [
+          {
+            speaker: 'Coupon Cora',
+            role: 'Clearance Crew · Food-Court DJ',
+            text: 'Haha, you out-drifted Carl’s squeaky wheel! Still, Barcode Betty locks the upper dome behind our sky-aisle clearance gates—no receipt, no roof access.',
+            mutterHz: 138,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Cartwheel Carl',
+            role: 'Clearance Crew · Atrium Cart Captain',
+            text: 'Launch off the Escalator Hub and central Updraft Vents to fly through all four Clearance Rings—let’s see if Ley-Line Runners qualify for upper-mezzanine air!',
+            mutterHz: 96,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'tm-pa-speakers': {
+        id: 'quest-tm-pa-speakers',
+        kind: 'special',
+        areaId: 'tupperware-mall',
+        title: 'Handoff: Hijack Mall PA',
+        beats: [
+          {
+            speaker: 'Cartwheel Carl',
+            role: 'Clearance Crew · Atrium Cart Captain',
+            text: 'All four Clearance Rings punched! Betty’s laser scanner is heating up—she’s blasting 126 BPM store announcements across the whole Tupperware lid to drown out your pirate signal.',
+            mutterHz: 96,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Coupon Cora',
+            role: 'Clearance Crew · Food-Court DJ',
+            text: 'Ride up to Clay-Mart Wing, the Escalator Hub, and Checkout Tower to hijack all three Mall PA Speakers—then Betty’s Checkout showdown goes live!',
+            mutterHz: 138,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
     },
   },
 
@@ -736,6 +1114,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
         },
       ],
     },
+    questIntros: {
+      'hc-no-grinding': {
+        id: 'quest-hc-no-grinding',
+        kind: 'special',
+        areaId: 'hoa-citadel',
+        title: 'Handoff: Silence Citation Patrol',
+        beats: [
+          {
+            speaker: 'Beige-Swatch Bertha',
+            role: 'Bylaw Brass · Trim & Topiary Marshal',
+            text: 'Scandalous! Neon paint over Eggshell Swatch #04?! Inspector Vance-Bot’s HOA Covenant strictly forbids unapproved pigment, unauthorized inline wheels, and any tempo above a brisk walk!',
+            mutterHz: 126,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Clipboard Clive',
+            role: 'Bylaw Brass · Deputy Citation Officer',
+            text: 'Three Citation Sentries are marching the Hedge Depot and Gazebo walkways with brass whistles at the ready. Keep off the grass—or silence all three patrols if you dare!',
+            mutterHz: 110,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'hc-tune-jammers': {
+        id: 'quest-hc-tune-jammers',
+        kind: 'special',
+        areaId: 'hoa-citadel',
+        title: 'Handoff: Flip Compliance Jammers',
+        beats: [
+          {
+            speaker: 'Clipboard Clive',
+            role: 'Bylaw Brass · Deputy Citation Officer',
+            text: 'Form 88-Z! You silenced the Citation Patrol AND ground straight past our "NO GRINDING" placards?! That’s three separate infractions in one combo!',
+            mutterHz: 110,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Beige-Swatch Bertha',
+            role: 'Bylaw Brass · Trim & Topiary Marshal',
+            text: 'No matter—our three Compliance Jammers on the Permit Office, Beige Archive, and Gazebo Tribunal will keep pirate radio locked below the terrace!',
+            mutterHz: 126,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'hc-defiance-rings': {
+        id: 'quest-hc-defiance-rings',
+        kind: 'special',
+        areaId: 'hoa-citadel',
+        title: 'Handoff: Fly the Defiance Rings',
+        beats: [
+          {
+            speaker: 'Beige-Swatch Bertha',
+            role: 'Bylaw Brass · Trim & Topiary Marshal',
+            text: 'Every jammer flipped to pirate brass?! The hedges are swaying in F# harmonic minor—Inspector Vance-Bot is spooling up the Megaphone Spire!',
+            mutterHz: 126,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Clipboard Clive',
+            role: 'Bylaw Brass · Deputy Citation Officer',
+            text: 'If you insist on trespassing past regulation airspace, hit the garden updrafts and clear all four Defiance Rings—then face the Inspector’s final sentencing!',
+            mutterHz: 110,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+    },
   },
 
   'subsoil-relay': {
@@ -827,6 +1273,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
           camera: 'sky-ascend',
         },
       ],
+    },
+    questIntros: {
+      'sr-flip-dishes': {
+        id: 'quest-sr-flip-dishes',
+        kind: 'special',
+        areaId: 'subsoil-relay',
+        title: 'Handoff: Sync Acoustic Dishes',
+        beats: [
+          {
+            speaker: 'Sub-Bass Sable',
+            role: 'Deep-Cut Syndicate · Frequency Dish Spotter',
+            text: 'Stop right there, runner. You tagged the outer relay pylons, so listen: the Deep-Cut Syndicate isn’t some turf gang hoarding airtime—we’re anchoring DJ Moleman’s 108.0 subsoil wave.',
+            mutterHz: 116,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Reel-to-Reel Rex',
+            role: 'Deep-Cut Syndicate · Tape Archive Sentinel',
+            text: 'If you really mean to converge all eight bands, spray-tune the three Acoustic Dishes on Subsoil Bunker, Echo Chamber, and the Scaffolding Ring—and feel the spire resonate!',
+            mutterHz: 92,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'sr-subsoil-rings': {
+        id: 'quest-sr-subsoil-rings',
+        kind: 'special',
+        areaId: 'subsoil-relay',
+        title: 'Handoff: Thread Sub-Bass Rings',
+        beats: [
+          {
+            speaker: 'Reel-to-Reel Rex',
+            role: 'Deep-Cut Syndicate · Tape Archive Sentinel',
+            text: 'Hear that low rumble through your skates? All three dishes are locking phase at 166 BPM! Static-Crown Sol warned us a Ley-Line Runner might wake what sleeps above the eighth rung.',
+            mutterHz: 92,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Sub-Bass Sable',
+            role: 'Deep-Cut Syndicate · Frequency Dish Spotter',
+            text: 'Ride the deep updraft vents between the steel scaffolding decks and thread all four Sub-Bass Rings—only a skater who rides the shockwave can climb the fork!',
+            mutterHz: 116,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'sr-reel-patrol': {
+        id: 'quest-sr-reel-patrol',
+        kind: 'special',
+        areaId: 'subsoil-relay',
+        title: 'Handoff: Silence Tape Sentries',
+        beats: [
+          {
+            speaker: 'Sub-Bass Sable',
+            role: 'Deep-Cut Syndicate · Frequency Dish Spotter',
+            text: 'You threaded the Sub-Bass Rings cleanly... alright, Turfton runner, there’s only one seal left between the eight districts and the Silent Frequency above.',
+            mutterHz: 116,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Reel-to-Reel Rex',
+            role: 'Deep-Cut Syndicate · Tape Archive Sentinel',
+            text: 'Our three Tape Sentries are guarding the Cassette Archive deck! Silence their lock-loops and Static-Crown Sol will face you at the 16-meter Tuning-Fork Apex!',
+            mutterHz: 92,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
     },
   },
 
@@ -981,6 +1495,74 @@ export const AREA_CUTSCENES: Record<GsrAreaId, AreaCutsceneBundle> = {
         ],
       },
     ],
+    questIntros: {
+      'zh-echo-chase': {
+        id: 'quest-zh-echo-chase',
+        kind: 'special',
+        areaId: 'zero-hz-zenith',
+        title: 'Handoff: Catch Dead-Wax Echo',
+        beats: [
+          {
+            speaker: 'Dead-Wax Echo',
+            role: 'Unfired Choir · Unfired Herald',
+            text: 'Your paint brought color back to the Dead-Wax Gate... yet the Unfired Choir remembers the quiet before Turfton ever spun a single record.',
+            mutterHz: 110,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Mute Metronome',
+            role: 'Unfired Choir · Zero-Beat Keeper',
+            text: '*(Clicks steadily in E Dorian)* Echo glides along the inner vinyl groove—boost with Shift and tag them three times with Spray (F) to keep the needle moving!',
+            mutterHz: 86,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'zh-choir-rings': {
+        id: 'quest-zh-choir-rings',
+        kind: 'special',
+        areaId: 'zero-hz-zenith',
+        title: 'Handoff: Thread Encore Rings',
+        beats: [
+          {
+            speaker: 'Mute Metronome',
+            role: 'Unfired Choir · Zero-Beat Keeper',
+            text: '*(Rings softly as color floods its pendulum)* Every district’s pulse is echoing through your skates now—Velvet Keys, Bongo Basin, Chrome Kiln, all climbing into the silent groove.',
+            mutterHz: 86,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Dead-Wax Echo',
+            role: 'Unfired Choir · Unfired Herald',
+            text: 'Launch off the Choir Amphitheater and zenith vents to thread all four Golden Groove Rings—show The Original Needle that all eight styles belong in the sky!',
+            mutterHz: 110,
+            camera: 'wide-orbit',
+          },
+        ],
+      },
+      'zh-tune-tracks': {
+        id: 'quest-zh-tune-tracks',
+        kind: 'special',
+        areaId: 'zero-hz-zenith',
+        title: 'Handoff: Wake the Four Tracks',
+        beats: [
+          {
+            speaker: 'Dead-Wax Echo',
+            role: 'Unfired Choir · Unfired Herald',
+            text: 'The whole vinyl spiral is glowing gold! Only the Four-Track Monolith still holds the silence between the eight gangs and our Choir.',
+            mutterHz: 110,
+            camera: 'sidekicks-pan',
+          },
+          {
+            speaker: 'Mute Metronome',
+            role: 'Unfired Choir · Zero-Beat Keeper',
+            text: '*(Ticks in triumphant unison)* Tune the three Harmonic Beacons across Dead-Wax Gate, Echo-Null Pedestal, and the Four-Track Monolith—and awaken the Turntable Crown!',
+            mutterHz: 86,
+            camera: 'boss-stage',
+          },
+        ],
+      },
+    },
   },
 };
 
@@ -990,6 +1572,7 @@ export const ALL_CUTSCENES: readonly CutsceneDef[] = [
     bundle.levelIntro,
     bundle.bossIntro,
     bundle.bossDefeat,
+    ...Object.values(bundle.questIntros ?? {}),
     ...(bundle.extra ?? []),
   ]),
 ];

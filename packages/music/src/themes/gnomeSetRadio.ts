@@ -31,7 +31,7 @@ import {
   createUprightBass,
   createVibraphone,
 } from '../instruments';
-import { createFx, createPanner } from '../mix';
+import { createFx, createPanner, createStereoBus } from '../mix';
 import {
   createDubThrowHandler,
   createEffectRack,
@@ -77,6 +77,10 @@ export type GsrTrackFlavor =
   | 'jazz'
   | 'bongo'
   | 'liquid'
+  | 'chiptune'
+  | 'mallsoft'
+  | 'skaBrass'
+  | 'darkJungle'
   | 'finale';
 
 export interface GsrTrackMeta {
@@ -102,6 +106,10 @@ export interface GsrMusicOptions {
   boss?: () => boolean;
   skillPeak?: () => boolean;
   hype?: () => number;
+  wallRiding?: () => boolean;
+  comboTier?: () => number;
+  speedNorm?: () => number;
+  trickPulse?: () => boolean;
   onBeat?: (step: number, bar: number, section?: string) => void;
 }
 
@@ -357,17 +365,17 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
   'mulch-alley-chiptune-funk': {
     id: 'mulch-alley-chiptune-funk',
     areaNumber: 5,
-    flavor: 'house',
+    flavor: 'chiptune',
     title: 'Quarter-Slot Groove',
     areaName: 'Mulch Alley Arcade',
     gangName: 'The Token Sharks',
-    style: 'Filter-House Chiptune Funk',
-    bpm: 120,
+    style: '8-Bit Chiptune Slap-Funk',
+    bpm: 128,
     key: 'C',
     mode: 'aeolian',
     progression: 'Cm7 - Abmaj7 - Fm7 - G7',
-    motifNote: 'Bouncy arcade vibraphone & Rhodes hooks pumped through a French-house filter.',
-    beatNote: 'Four-on-the-floor house groove alternating with Funky Drummer breaks.',
+    motifNote: 'Crisp 8-bit square-wave arpeggiator & leads paired with arcade vibraphone over slap bass.',
+    beatNote: 'Punchy Funky Drummer & Think breakbeats with fast 16th-note chiptune sparkles.',
     color: '#b388ff',
     rootMidi: 36, // C2
     degrees: [0, 5, 3, 4],
@@ -378,14 +386,13 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     chopAmount: 0.22,
     swing: 0.1,
     hasUprightBass: false,
-    hasPiano: true,
-    hasRhodes: true,
+    hasPiano: false,
+    hasRhodes: false,
     hasVibes: true,
     hasHorn: false,
     hasHarp: false,
     hasBongoRip: false,
     bongoIntensity: 0,
-    fourOnFloor: true,
     leadPattern: [0, 2, 4, -1, 5, 4, 2, -1, 3, 4, 2, 0, -1, 4, 2, -1],
     altLeadPattern: [4, 5, 7, -1, 5, 4, 2, -1, 4, 2, 0, -1, 2, 4, 2, -1],
     bassStyle: 'slap',
@@ -402,17 +409,17 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
   'sky-mall-future-funk': {
     id: 'sky-mall-future-funk',
     areaNumber: 6,
-    flavor: 'house',
+    flavor: 'mallsoft',
     title: 'Clearance Aisle Strut',
     areaName: 'Tupperware Sky-Mall',
     gangName: 'The Clearance Crew',
-    style: 'Future-Funk Filter-House',
-    bpm: 126,
+    style: 'Mallsoft Future-Funk',
+    bpm: 122,
     key: 'Bb',
     mode: 'ionian',
     progression: 'Bbmaj7 - Gm7 - Cm7 - F9',
-    motifNote: 'Lush Rhodes & felt piano disco stabs through a sweeping house low-pass filter.',
-    beatNote: 'Four-on-the-floor kick with crisp open-hat lifts, bongo accents & filter breakdowns.',
+    motifNote: 'Lush chorused Bb Ionian vapor-pads, PA chime sparkles, Rhodes & warm horn swells.',
+    beatNote: 'Four-on-the-floor disco pocket with open-hat lifts, bongo accents & filter sweeps.',
     color: '#ff80ab',
     rootMidi: 46, // Bb2
     degrees: [0, 5, 1, 4],
@@ -423,7 +430,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     chopAmount: 0.14,
     swing: 0.08,
     hasUprightBass: false,
-    hasPiano: true,
+    hasPiano: false,
     hasRhodes: true,
     hasVibes: false,
     hasHorn: true,
@@ -447,17 +454,17 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
   'hoa-bylaw-brass-step': {
     id: 'hoa-bylaw-brass-step',
     areaNumber: 7,
-    flavor: 'dub',
+    flavor: 'skaBrass',
     title: 'Code 404B March',
     areaName: 'HOA Citadel Terrace',
     gangName: 'The Bylaw Brass',
-    style: 'Heavy Dub-Brass Big-Beat',
-    bpm: 112,
+    style: 'Ska-Punk Brass-Step',
+    bpm: 136,
     key: 'F#',
     mode: 'harmonic',
-    progression: 'F#m - Dmaj7 (Dub Vamp) / Bm7 - C#7',
-    motifNote: 'Stately French horn fanfares & dub-echoed felt piano skanks with echo throws.',
-    beatNote: 'Heavy stomping Apache break with upright bass ostinato & spacious dub drops.',
+    progression: 'F#m - Dmaj7 - Bm7 - C#7',
+    motifNote: 'Offbeat ska piano skank chords & punchy staccato ska-punk horn stabs.',
+    beatNote: 'Driving Apache/Think breakbeat with brisk walking upright bass.',
     color: '#ffd740',
     rootMidi: 42, // F#2
     degrees: [0, 5, 0, 5],
@@ -491,17 +498,17 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
   'subsoil-relay-jungle': {
     id: 'subsoil-relay-jungle',
     areaNumber: 8,
-    flavor: 'dub',
+    flavor: 'darkJungle',
     title: '108.0 Sky-Leak',
     areaName: 'Subsoil Relay Tower',
     gangName: 'The Deep-Cut Syndicate',
-    style: 'Dark Dub-Jungle & Acid Sub',
+    style: 'Dark Reese-Sub Jungle & Sonar Dub',
     bpm: 166,
     key: 'C',
     mode: 'phrygian',
     progression: 'Cm7 - Dbmaj7 (Phrygian Dub Vamp)',
-    motifNote: 'Nocturnal dub Rhodes echoes, Phrygian horn swells & late-set polyrhythmic acid.',
-    beatNote: 'Rolling Amen + Think dual-chop jungle break with deep sub-bass & dub breakdowns.',
+    motifNote: 'Detuned dark Reese/sub pulse, nocturnal sonar-ping dub echoes & Phrygian horns.',
+    beatNote: 'Dual-chopped Amen + Think jungle break with deep sub drops & late-set acid.',
     color: '#69f0ae',
     rootMidi: 36, // C2
     degrees: [0, 1, 0, 1],
@@ -540,13 +547,13 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     title: 'Zero-Hz Encore',
     areaName: 'The Silent Frequency',
     gangName: 'The Unfired Choir',
-    style: 'Grand Symphonic Jungle-Jazz-Bongo Finale',
+    style: 'Grand 8-Region Symphonic Medley Finale',
     bpm: 158,
     key: 'E',
     mode: 'dorian',
     progression: 'Em9 - A13 - Dmaj9 - Bm7',
-    motifNote: 'Unites felt piano, walking upright bass, harp cascades, and French horn fanfare.',
-    beatNote: 'Full bongo rip percussion interlocked with chopped Amen breaks & grand intermission.',
+    motifNote: 'True medley: Jazz + Chiptune sparkle (A), Bongo + Ska Brass (B), full ensemble + Harp cascades (C).',
+    beatNote: 'Chopped Amen + Apache breaks interlocking bongo rip, ska skanks & grand intermission.',
     color: '#ffffff',
     rootMidi: 40, // E2
     degrees: [0, 3, 6, 4],
@@ -684,6 +691,30 @@ const HORN_RIFFS: Record<GsrTrackFlavor, readonly (HornHit | null)[]> = {
     null, null, null, null, { deg: 3, interval: 4, dur: 0.26 }, null, null, null,
     null, null, { deg: 2, interval: 4, dur: 0.22 }, null, null, null, null, null,
   ],
+  chiptune: [
+    { deg: 0, interval: 4, dur: 0.12 }, null, null, { deg: 2, interval: 4, dur: 0.12 }, null, null, { deg: 4, interval: 7, dur: 0.14 }, null,
+    null, null, { deg: 5, interval: 2, dur: 0.12 }, null, null, null, null, null,
+    { deg: 0, interval: 4, dur: 0.12 }, null, null, { deg: 4, interval: 6, dur: 0.12 }, null, null, { deg: 2, interval: 4, dur: 0.14 }, null,
+    null, null, { deg: 4, interval: 2, dur: 0.12 }, null, null, null, { deg: 0, interval: 4, dur: 0.12 }, null,
+  ],
+  mallsoft: [
+    { deg: 0, interval: 4, dur: 0.28 }, null, null, null, null, null, { deg: 4, interval: 6, dur: 0.24 }, null,
+    null, null, null, null, { deg: 2, interval: 4, dur: 0.22 }, null, null, null,
+    { deg: 3, interval: 4, dur: 0.26 }, null, null, null, null, null, { deg: 4, interval: 7, dur: 0.24 }, null,
+    null, null, { deg: 2, interval: 4, dur: 0.22 }, null, null, null, null, null,
+  ],
+  skaBrass: [
+    null, null, { deg: 0, interval: 2, dur: 0.09 }, null, { deg: 4, interval: 4, dur: 0.09 }, null, { deg: 0, interval: 4, dur: 0.11 }, null,
+    null, null, { deg: 2, interval: 4, dur: 0.09 }, null, null, null, { deg: 4, interval: 6, dur: 0.11 }, null,
+    null, null, { deg: 0, interval: 4, dur: 0.09 }, null, { deg: 5, interval: 2, dur: 0.09 }, null, { deg: 4, interval: 2, dur: 0.11 }, null,
+    null, null, { deg: 2, interval: 4, dur: 0.09 }, null, { deg: 4, interval: 6, dur: 0.12 }, null, null, null,
+  ],
+  darkJungle: [
+    { deg: 0, interval: 4, dur: 0.26 }, null, null, null, null, null, null, null,
+    null, null, { deg: 1, interval: 4, dur: 0.24 }, null, null, null, null, null,
+    null, null, null, null, { deg: 4, interval: 3, dur: 0.26 }, null, null, null,
+    null, null, { deg: 1, interval: 6, dur: 0.22 }, null, null, null, null, null,
+  ],
   finale: [
     { deg: 0, interval: 4, dur: 0.24 }, null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 4, interval: 7, dur: 0.22 }, null,
     null, null, { deg: 6, interval: 4, dur: 0.18 }, null, null, null, null, null,
@@ -700,8 +731,17 @@ const FLAIR_PATTERNS: Record<GsrTrackFlavor, readonly number[]> = {
   acid: [0, -1, 2, -1, 4, -1, 6, 4, -1, 2, 0, -1, 4, -1, -1, -1, 0, -1, 4, -1, 5, 4, 2, -1, 4, -1, 6, 4, 2, -1, 0, -1],
   house: [4, -1, 2, 4, -1, 5, 4, -1, 2, 0, 2, -1, 4, -1, 7, -1, 5, -1, 4, 2, -1, 4, 5, -1, 7, -1, 5, 4, 2, -1, 0, -1],
   liquid: [4, -1, 6, 7, -1, 4, 3, -1, 2, -1, 4, 3, -1, 2, 0, -1, 2, -1, 4, 6, -1, 7, 6, -1, 4, -1, 3, 2, -1, 0, -1, -1],
+  chiptune: [0, 2, 4, 7, -1, 5, 4, 2, 0, -1, 4, 5, 7, -1, 4, 2, 0, 4, 7, 9, -1, 7, 5, 4, 2, -1, 4, 5, 4, 2, 0, -1],
+  mallsoft: [4, -1, 5, 4, -1, 2, 4, -1, 5, -1, 7, 5, 4, -1, 2, -1, 4, -1, 6, 5, -1, 4, 2, -1, 0, -1, 2, 4, -1, 5, 4, -1],
+  skaBrass: [0, -1, 2, 4, -1, 2, 4, 6, -1, 4, 2, -1, 0, -1, 4, -1, 4, -1, 5, 6, -1, 4, 2, -1, 0, 2, 4, -1, 6, 4, 2, -1],
+  darkJungle: [0, -1, 1, -1, 4, -1, 3, 1, -1, 0, 1, 4, -1, 3, 1, -1, 4, -1, 5, 4, -1, 3, 1, -1, 0, 1, 3, -1, 4, 1, 0, -1],
   finale: [0, 2, 4, -1, 6, -1, 7, 6, 4, -1, 2, 4, -1, 6, 4, -1, 7, -1, 6, 4, 5, -1, 4, 2, 0, -1, 2, 4, 6, -1, 4, -1],
 };
+
+// 8-bit square chiptune arpeggio cycles (diatonic offsets from bar root)
+const CHIP_ARP_A: readonly number[] = [0, 2, 4, 7, 4, 2, 0, 4, 0, 3, 5, 7, 5, 3, 4, 2];
+const CHIP_ARP_B: readonly number[] = [0, 4, 7, 9, 7, 4, 2, 4, 0, 4, 7, 5, 4, 2, 4, 7];
+const COMBO_ARP_DEGS: readonly number[] = [0, 2, 4, 7, 4, 2, 5, 4];
 
 function buildBassLine(
   spec: TrackSpec,
@@ -848,18 +888,22 @@ export function buildGnomeSetRadioTrack(
   });
 
   // High-passed bus for harmonic layers (>210 Hz so bass stays clean), with groove sidechain duck & house filter
-  const houseFilter = keep(new T.Filter({ frequency: 18000, type: 'lowpass', Q: spec.flavor === 'house' ? 2.2 : 0.7 })).connect(masterLp);
+  const houseFilter = keep(new T.Filter({
+    frequency: 18000,
+    type: 'lowpass',
+    Q: spec.flavor === 'house' || spec.flavor === 'mallsoft' ? 2.0 : 0.7,
+  })).connect(masterLp);
   const harmDuck = keep(new T.Gain(1)).connect(houseFilter);
   const harmHp = keep(new T.Filter({ frequency: 210, type: 'highpass' })).connect(harmDuck);
 
   // Percussion (clean punchy kicks, bright snare/hats, balanced stereo placement)
   const kit = createKit(T, keep, masterLp, fx, {
-    grit: spec.flavor === 'acid' ? 0.18 : 0.12,
+    grit: spec.flavor === 'acid' || spec.flavor === 'darkJungle' ? 0.18 : 0.12,
     swing: spec.swing,
     snareLp: 6200,
     hatVolume: -11,
     kickVolume: spec.flavor === 'jazz' ? -3.5 : -2.5,
-    kickPitch: spec.flavor === 'house' || spec.flavor === 'acid' ? 'D1' : 'C1',
+    kickPitch: spec.flavor === 'house' || spec.flavor === 'acid' || spec.flavor === 'mallsoft' ? 'D1' : 'C1',
   });
   const bongoPan = createPanner(T, keep, -0.24, masterLp);
   const bongos = spec.hasBongoRip
@@ -875,7 +919,7 @@ export function buildGnomeSetRadioTrack(
       envelope: { attack: 0.001, decay: 0.032, sustain: 0, release: 0.01 },
     }),
   ).connect(grindHatHp);
-  grindClosedHat.volume.value = -6;
+  grindClosedHat.volume.value = -11;
 
   const grindOpenPan = createPanner(T, keep, 0.30, masterLp);
   const grindSizzleBp = keep(new T.Filter({ frequency: 10500, type: 'bandpass', Q: 1.6 })).connect(grindOpenPan);
@@ -885,7 +929,29 @@ export function buildGnomeSetRadioTrack(
       envelope: { attack: 0.002, decay: 0.14, sustain: 0, release: 0.05 },
     }),
   ).connect(grindSizzleBp);
-  grindOpenHat.volume.value = -7;
+  grindOpenHat.volume.value = -12;
+
+  // Dedicated Wall-Ride snare/scrape accent & Combo Tier >= 1 syncopated shaker
+  const wallPan = createPanner(T, keep, 0.22, harmHp);
+  const wallBp = keep(new T.Filter({ frequency: 2800, type: 'bandpass', Q: 2.2 }))
+    .fan(wallPan, keep(new T.Gain(0.18)).connect(fx.rev));
+  const wallNoise = keep(
+    new T.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.002, decay: 0.042, sustain: 0, release: 0.015 },
+    }),
+  ).connect(wallBp);
+  wallNoise.volume.value = -14;
+
+  const comboShakerPan = createPanner(T, keep, -0.32, harmHp);
+  const comboShakerHp = keep(new T.Filter({ frequency: 5800, type: 'highpass' })).connect(comboShakerPan);
+  const comboShaker = keep(
+    new T.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: { attack: 0.002, decay: 0.032, sustain: 0, release: 0.01 },
+    }),
+  ).connect(comboShakerHp);
+  comboShaker.volume.value = -16;
 
   // Airborne wind-rush noise layer (post-masterLp so it stays airy while music muffles)
   const airWindGain = keep(new T.Gain(0)).connect(out);
@@ -943,21 +1009,130 @@ export function buildGnomeSetRadioTrack(
   const subBass = !spec.hasUprightBass
     ? keep(
         new T.MonoSynth({
-          oscillator: { type: spec.bassStyle === 'acid' ? 'sawtooth' : 'triangle' },
-          filter: { frequency: 420, type: 'lowpass', Q: 1.2 },
-          envelope: { attack: 0.008, decay: 0.25, sustain: 0.45, release: 0.14 },
+          oscillator:
+            spec.flavor === 'darkJungle'
+              ? { type: 'fatsawtooth', count: 2, spread: 16 }
+              : { type: spec.bassStyle === 'acid' ? 'sawtooth' : 'triangle' },
+          filter: {
+            frequency: spec.flavor === 'darkJungle' ? 280 : 420,
+            type: 'lowpass',
+            Q: spec.flavor === 'darkJungle' ? 2.2 : 1.2,
+          },
+          envelope:
+            spec.flavor === 'darkJungle'
+              ? { attack: 0.012, decay: 0.34, sustain: 0.58, release: 0.2 }
+              : { attack: 0.008, decay: 0.25, sustain: 0.45, release: 0.14 },
           filterEnvelope: {
             attack: 0.006,
             decay: 0.22,
             sustain: 0.2,
             release: 0.15,
-            baseFrequency: 110,
+            baseFrequency: spec.flavor === 'darkJungle' ? 92 : 110,
             octaves: 1.4,
           },
         }),
       ).connect(masterLp)
     : null;
-  if (subBass) subBass.volume.value = -10;
+  if (subBass) subBass.volume.value = spec.flavor === 'darkJungle' ? -9.5 : -10;
+
+  // Dedicated 8-bit Square Chiptune Arpeggiator / Lead (Area 5 & Finale Groove A/C)
+  const hasChipVoice = spec.flavor === 'chiptune' || spec.flavor === 'finale';
+  const chipPan = hasChipVoice ? createPanner(T, keep, -0.22, harmHp) : null;
+  const chipLp =
+    hasChipVoice && chipPan
+      ? keep(new T.Filter({ frequency: 4800, type: 'lowpass', rolloff: -12 })).fan(
+          chipPan,
+          keep(new T.Gain(0.18)).connect(fx.rev),
+          keep(new T.Gain(0.24)).connect(fx.delay),
+        )
+      : null;
+  const chipSynth =
+    hasChipVoice && chipLp
+      ? keep(
+          new T.MonoSynth({
+            oscillator: { type: 'square' },
+            filter: { frequency: 3400, type: 'lowpass', Q: 1.2 },
+            envelope: { attack: 0.002, decay: 0.1, sustain: 0.14, release: 0.06 },
+            filterEnvelope: {
+              attack: 0.002,
+              decay: 0.09,
+              sustain: 0.12,
+              release: 0.05,
+              baseFrequency: 880,
+              octaves: 1.8,
+            },
+          }),
+        ).connect(chipLp)
+      : null;
+  if (chipSynth) chipSynth.volume.value = spec.flavor === 'chiptune' ? -13 : -15;
+
+  // Dedicated Chorused Vapor-Pad (Area 6 Mallsoft & Finale Groove C)
+  const hasMallPad = spec.flavor === 'mallsoft' || spec.flavor === 'finale';
+  const mallPadBus = hasMallPad
+    ? createStereoBus(T, keep, harmHp, {
+        width: 0.54,
+        chorusFreq: 0.85,
+        chorusDepth: 0.48,
+        chorusWet: 0.45,
+        highpass: 240,
+      })
+    : null;
+  const mallPadPre =
+    hasMallPad && mallPadBus
+      ? keep(new T.Filter({ frequency: 2400, type: 'lowpass', rolloff: -12 })).fan(
+          mallPadBus,
+          keep(new T.Gain(0.26)).connect(fx.rev),
+          keep(new T.Gain(0.14)).connect(fx.delay),
+        )
+      : null;
+  const mallPad =
+    hasMallPad && mallPadPre
+      ? keep(
+          new T.PolySynth(T.Synth, {
+            oscillator: { type: 'triangle' },
+            envelope: { attack: 0.28, decay: 0.65, sustain: 0.72, release: 1.1 },
+          }),
+        ).connect(mallPadPre)
+      : null;
+  if (mallPad) {
+    mallPad.maxPolyphony = 6;
+    mallPad.volume.value = spec.flavor === 'mallsoft' ? -13 : -15.5;
+  }
+
+  // Key-locked PolySynth Chime & Sparkle voices (Mallsoft PA chime, Trick Pulse, Combo Tier >= 2, Wall Shimmer)
+  const chimePan = createPanner(T, keep, 0.26, harmHp);
+  const chimeLp = keep(new T.Filter({ frequency: 5200, type: 'lowpass', rolloff: -12 })).fan(
+    chimePan,
+    keep(new T.Gain(0.32)).connect(fx.rev),
+    keep(new T.Gain(0.24)).connect(fx.delay),
+  );
+  const chimeSynth = keep(
+    new T.PolySynth(T.FMSynth, {
+      harmonicity: 2,
+      modulationIndex: 1.4,
+      oscillator: { type: 'sine' },
+      modulation: { type: 'sine' },
+      envelope: { attack: 0.004, decay: 0.42, sustain: 0.08, release: 0.35 },
+      modulationEnvelope: { attack: 0.002, decay: 0.14, sustain: 0.02, release: 0.12 },
+    }),
+  ).connect(chimeLp);
+  chimeSynth.maxPolyphony = 10;
+  chimeSynth.volume.value = -13;
+
+  const sparklePan = createPanner(T, keep, -0.28, harmHp);
+  const sparkleLp = keep(new T.Filter({ frequency: 5600, type: 'lowpass', rolloff: -12 })).fan(
+    sparklePan,
+    keep(new T.Gain(0.26)).connect(fx.rev),
+    keep(new T.Gain(0.22)).connect(fx.delay),
+  );
+  const sparkleSynth = keep(
+    new T.PolySynth(T.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 0.18, sustain: 0.06, release: 0.14 },
+    }),
+  ).connect(sparkleLp);
+  sparkleSynth.maxPolyphony = 10;
+  sparkleSynth.volume.value = -14.5;
 
   // Dedicated Acid 303 Voice (sonically bounded resonance & drive)
   const hasAcidVoice = spec.bassStyle === 'acid' || spec.id === 'subsoil-relay-jungle';
@@ -1047,7 +1222,8 @@ export function buildGnomeSetRadioTrack(
       evaluate(ctx) {
         const air = Boolean(ctx.events.air);
         const grinding = Boolean(ctx.events.grinding);
-        if (air) return 2100;
+        const speedNorm = Number(ctx.events.speedNorm ?? 0);
+        if (air) return 3600;
         if (ctx.section === 'intro') {
           return 650 + ((ctx.stepIdx + 1) / introTotalSteps) * 15500;
         }
@@ -1055,7 +1231,7 @@ export function buildGnomeSetRadioTrack(
           const outroProg = (ctx.barInSection * 16 + ctx.step) / (ctx.sectionLen * 16);
           return Math.max(950, 16000 - outroProg * 12500);
         }
-        return grinding ? 19500 : 18500;
+        return (grinding ? 19200 : 17800) + speedNorm * 1800;
       },
     }),
     createFilterSweepHandler({
@@ -1066,11 +1242,12 @@ export function buildGnomeSetRadioTrack(
       rampS: 0.26,
       thresholdHz: 180,
       evaluate(ctx) {
-        if (spec.flavor === 'house') {
+        if (spec.flavor === 'house' || spec.flavor === 'mallsoft') {
           const phase = ((ctx.barInSection % 4) * 16 + ctx.step) / 64;
+          const floor = spec.flavor === 'mallsoft' ? 2200 : 1800;
           return ctx.section === 'intermission'
             ? 1100 + Math.sin(phase * Math.PI) * 1800
-            : 1800 + Math.sin(phase * Math.PI) * 11500;
+            : floor + Math.sin(phase * Math.PI) * 11500;
         }
         return ctx.section === 'intermission' ? 12000 : 18000;
       },
@@ -1081,7 +1258,7 @@ export function buildGnomeSetRadioTrack(
       sendGain: fx.throwSend,
       throwGain: 0.72,
       shouldThrow: (ctx) =>
-        (spec.flavor === 'dub' || ctx.section === 'dubBreak') &&
+        (spec.flavor === 'dub' || spec.flavor === 'darkJungle' || ctx.section === 'dubBreak') &&
         (ctx.step === 4 || ctx.step === 12) &&
         ctx.barInSection % 2 === 1,
       shouldReset: (ctx) => ctx.section !== 'intermission',
@@ -1124,6 +1301,7 @@ export function buildGnomeSetRadioTrack(
   let lastAir = false;
   let lastBossBus = false;
   let lastFlairBus = false;
+  let lastShelfGain = 3.2;
 
   const loop = keep(
     new T.Loop((time) => {
@@ -1151,10 +1329,20 @@ export function buildGnomeSetRadioTrack(
       const boss = opts.boss?.() ?? false;
       const skillPeak = opts.skillPeak?.() ?? false;
       const hype = Math.max(0, Math.min(1, opts.hype?.() ?? 0.35));
+      const wallRiding = opts.wallRiding?.() ?? false;
+      const comboTier = Math.max(0, Math.min(3, Math.floor(opts.comboTier?.() ?? 0)));
+      const speedNorm = Math.max(0, Math.min(1, opts.speedNorm?.() ?? 0));
+      const trickPulse = opts.trickPulse?.() ?? false;
 
       if (air !== lastAir) {
         lastAir = air;
-        airWindGain.gain.rampTo(air ? 0.085 : 0, 0.45, time);
+        airWindGain.gain.rampTo(air ? 0.024 : 0, 0.45, time);
+      }
+
+      const targetShelfGain = 3.2 + speedNorm * 2.0 + (comboTier >= 3 ? 1.8 : 0);
+      if (Math.abs(targetShelfGain - lastShelfGain) > 0.25) {
+        lastShelfGain = targetShelfGain;
+        airShelf.gain.rampTo(targetShelfGain, 0.25, time);
       }
 
       effectRack.step({
@@ -1165,7 +1353,7 @@ export function buildGnomeSetRadioTrack(
         barInSection: barInSec,
         sectionLen: secLen,
         section: sectionKind,
-        events: { grinding, air, boss, skillPeak, hype },
+        events: { grinding, air, boss, skillPeak, hype, speedNorm, comboTier },
       });
 
       const h = humanize(stepIdx, 0.08);
@@ -1209,8 +1397,23 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 2. Bongo Rip Percussion
-      if (bongos && sectionKind !== 'outro') {
+      // 1c. Wall-Ride Snare/Shimmer Accent & Combo Tier >= 1 Syncopated Shaker
+      if (wallRiding) {
+        if (step % 2 === 1) {
+          wallNoise.triggerAttackRelease('32n', time, 0.72 * h);
+        }
+        if (step % 4 === 2) {
+          const shimmerMidi = degreeToMidi(spec.rootMidi + 24, mode, barDeg + 4);
+          sparkleSynth.triggerAttackRelease([midiToNote(shimmerMidi)], 0.1, time, 0.42 * h);
+        }
+      }
+      if (comboTier >= 1 && (step % 4 === 2 || step === 7 || step === 15)) {
+        comboShaker.triggerAttackRelease('32n', time, (step % 4 === 2 ? 0.72 : 0.45) * h);
+      }
+
+      // 2. Bongo Rip Percussion (Finale reserves full bongo rip for Groove B & C)
+      const bongoActive = bongos && sectionKind !== 'outro' && !(spec.flavor === 'finale' && sectionKind === 'grooveA');
+      if (bongoActive && bongos) {
         const bongoPat = bar8 === 3 || bar8 === 7 ? BONGO_FILL : BONGO_A;
         const hit = bongoPat[step];
         const secScale = sectionKind === 'intermission' ? 0.55 : 1;
@@ -1233,7 +1436,14 @@ export function buildGnomeSetRadioTrack(
         const bassLine = buildBassLine(spec, barDeg, nextDeg, sectionKind);
         const bassNote = bassLine[step];
         if (bassNote !== null) {
-          const dur = spec.bassStyle === 'walking' ? 0.24 : 0.14;
+          const dur =
+            spec.flavor === 'darkJungle'
+              ? step === 0
+                ? 0.34
+                : 0.24
+              : spec.bassStyle === 'walking'
+                ? 0.24
+                : 0.14;
           if (uprightBass) uprightBass.play(bassNote, dur, time, 0.85 * h);
           else if (subBass) subBass.triggerAttackRelease(midiToNote(bassNote), dur, time, 0.82 * h);
         }
@@ -1255,26 +1465,63 @@ export function buildGnomeSetRadioTrack(
         }
       }
 
-      // 4. Syncopated Piano / Rhodes Comping (dub skank on dub tracks)
-      if (sectionKind !== 'outro') {
-        const isDub = spec.flavor === 'dub' || sectionKind === 'dubBreak';
-        const isCompStep = isDub
-          ? step === 2 || step === 6 || step === 10 || step === 14
-          : step === 0 || step === 6 || step === 10 || (step === 14 && bar8 % 2 === 1);
-        if (isCompStep) {
-          const dur = isDub ? 0.12 : step === 0 ? 0.36 : 0.16;
-          const vel = sectionKind === 'intermission' ? 0.45 : 0.62;
-          if (piano) piano.play(chord, dur, time, vel * h);
-          if (rhodes && (isDub || step === 0 || step === 10)) rhodes.play(chord, dur * 1.1, time, (vel - 0.04) * h);
+      // 3c. 8-bit Square Chiptune Arpeggiator / Lead (Area 5 & Finale Groove A/C)
+      const chipActive =
+        chipSynth &&
+        sectionKind !== 'outro' &&
+        (spec.flavor === 'chiptune' || (spec.flavor === 'finale' && (sectionKind === 'grooveA' || sectionKind === 'grooveC')));
+      if (chipActive && chipSynth) {
+        const isSpare = sectionKind === 'intro' || sectionKind === 'intermission';
+        if (!isSpare || step % 2 === 0) {
+          const arp = useB ? CHIP_ARP_B : CHIP_ARP_A;
+          const arpDeg = arp[step]!;
+          const chipMidi = degreeToMidi(spec.rootMidi + 24, mode, barDeg + arpDeg);
+          const chipVel = (isSpare ? 0.42 : spec.flavor === 'finale' ? 0.52 : 0.64) * h;
+          chipSynth.triggerAttackRelease(midiToNote(chipMidi), 0.09, time, chipVel);
         }
       }
 
-      // 5. Harp Arpeggios (Liquid / Finale, shines in intermissions too)
-      if (harp && sectionKind !== 'outro' && step === 0 && (bar8 % 2 === 0 || sectionKind === 'intermission' || hype > 0.5)) {
+      // 4. Syncopated Piano / Rhodes Comping (dub & skaBrass offbeat skanks on 2, 6, 10, 14)
+      if (sectionKind !== 'outro') {
+        const isDub = spec.flavor === 'dub' || sectionKind === 'dubBreak';
+        const isSka = spec.flavor === 'skaBrass' || (spec.flavor === 'finale' && sectionKind === 'grooveB');
+        const isOffbeatSkank = isDub || isSka;
+        const isCompStep = isOffbeatSkank
+          ? step === 2 || step === 6 || step === 10 || step === 14
+          : step === 0 || step === 6 || step === 10 || (step === 14 && bar8 % 2 === 1);
+        if (isCompStep) {
+          const dur = isSka ? 0.095 : isDub ? 0.12 : step === 0 ? 0.36 : 0.16;
+          const vel = sectionKind === 'intermission' ? 0.45 : isSka ? 0.68 : 0.62;
+          if (piano) piano.play(chord, dur, time, vel * h);
+          if (rhodes && (isOffbeatSkank || step === 0 || step === 10)) rhodes.play(chord, dur * 1.1, time, (vel - 0.04) * h);
+        }
+      }
+
+      // 4b. Mallsoft Chorused Vapor-Pad & PA Chime Sparkle (Area 6 & Finale Groove C/Intermission)
+      const padActive =
+        mallPad &&
+        step === 0 &&
+        sectionKind !== 'outro' &&
+        (spec.flavor === 'mallsoft' || (spec.flavor === 'finale' && (sectionKind === 'grooveC' || sectionKind === 'intermission')));
+      if (padActive && mallPad) {
+        mallPad.triggerAttackRelease(chord.map(midiToNote), 1.6, time, 0.5 * h);
+        if (spec.flavor === 'mallsoft' && sectionKind !== 'intro') {
+          const paChime = [0, 4, 9].map((d) => midiToNote(degreeToMidi(spec.rootMidi + 24, mode, barDeg + d)));
+          chimeSynth.triggerAttackRelease(paChime, 0.32, time, 0.48 * h);
+        }
+      }
+
+      // 5. Harp Arpeggios (Liquid / Finale, cascades in Groove C & shines in intermissions)
+      const harpTrigger =
+        harp &&
+        sectionKind !== 'outro' &&
+        step === 0 &&
+        ((spec.flavor === 'finale' && sectionKind === 'grooveC') || bar8 % 2 === 0 || sectionKind === 'intermission' || hype > 0.5);
+      if (harpTrigger && harp) {
         harp.arp(chord.slice(0, 4), time, 0.05, 0.58 * h);
       }
 
-      // 6. Vibraphone & French Horn Motifs
+      // 6. Vibraphone, Nocturnal Sonar Pings & French Horn Motifs
       if (sectionKind !== 'intro' && sectionKind !== 'outro') {
         const pat = useB && spec.altLeadPattern ? spec.altLeadPattern : spec.leadPattern;
         const leadOffset = pat[step];
@@ -1284,42 +1531,66 @@ export function buildGnomeSetRadioTrack(
             vibes.play(melodyMidi, 0.2, time, (sectionKind === 'intermission' ? 0.48 : 0.58) * h);
           }
           if (horn && sectionKind !== 'intermission' && (hype > 0.55 || bar8 % 4 === 2) && step % 4 === 0) {
-            horn.play(melodyMidi - 12, 0.26, time, 0.66 * h);
+            const hornDur = spec.flavor === 'skaBrass' ? 0.12 : 0.26;
+            horn.play(melodyMidi - 12, hornDur, time, 0.66 * h);
           }
+        }
+        if (spec.flavor === 'darkJungle' && vibes && ((step === 4 && bar8 % 2 === 0) || (step === 12 && bar8 % 2 === 1))) {
+          const pingMidi = degreeToMidi(spec.rootMidi + 36, mode, barDeg + (step === 4 ? 4 : 1));
+          vibes.play(pingMidi, 0.36, time, 0.54 * h);
         }
       }
 
-      // 7. Per-Flavor Horn Add-Ins & Boss Brass Fanfares (smooth crossfade bus)
+      // 7. Per-Flavor Horn Add-Ins, Ska Brass Stabs & Boss Brass Fanfares (smooth crossfade bus)
+      const isSkaSection =
+        (spec.flavor === 'skaBrass' && sectionKind !== 'intro' && sectionKind !== 'outro' && sectionKind !== 'intermission') ||
+        (spec.flavor === 'finale' && sectionKind === 'grooveB');
       const loopHornAddIn =
         !boss &&
-        ((sectionKind === 'grooveB' && barInSec >= 4) ||
+        (isSkaSection ||
+          (sectionKind === 'grooveB' && barInSec >= 4) ||
           (sectionKind === 'grooveC' && barInSec >= 12));
       const bossBusActive = boss || loopHornAddIn;
       if (bossBusActive !== lastBossBus) {
         lastBossBus = bossBusActive;
         bossBusGain.gain.rampTo(bossBusActive ? 1 : 0, 0.32, time);
       }
-      const hornRiff = HORN_RIFFS[spec.flavor];
+      const hornRiffFlavor: GsrTrackFlavor =
+        spec.flavor === 'finale' && sectionKind === 'grooveB' ? 'skaBrass' : spec.flavor;
+      const hornRiff = HORN_RIFFS[hornRiffFlavor];
       const hornHit = hornRiff[(barInSec % 2) * 16 + step];
       if (hornHit && bossBusActive) {
         const rootNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg);
         const harmNote = degreeToMidi(spec.rootMidi + 12, mode, barDeg + hornHit.deg + hornHit.interval);
-        const notes = boss
+        const notes = boss || isSkaSection
           ? [midiToNote(rootNote), midiToNote(harmNote)]
           : [midiToNote(rootNote)];
-        const vel = (boss ? 0.68 : 0.5) * h;
+        const vel = (boss ? 0.68 : isSkaSection ? 0.56 : 0.5) * h;
         bossBrass.triggerAttackRelease(notes, hornHit.dur, time, vel);
       }
 
-      // 8. Novel Encore / Flair Voice: Groove C showcase (bars 8..15) + Skill-Expression combo pop-ins
+      // 7b. Combo Tier >= 2 Harmonic Arp/Sparkle & Trick Pulse Pentatonic Sting (PolySynths)
+      if (comboTier >= 2 && step % 2 === 0 && sectionKind !== 'outro') {
+        const arpDeg = COMBO_ARP_DEGS[(step / 2) % COMBO_ARP_DEGS.length]!;
+        const octOffset = comboTier >= 3 ? 36 : 24;
+        const sparkleMidi = degreeToMidi(spec.rootMidi + octOffset, mode, barDeg + arpDeg);
+        sparkleSynth.triggerAttackRelease([midiToNote(sparkleMidi)], 0.14, time, (comboTier >= 3 ? 0.58 : 0.46) * h);
+      }
+      if (trickPulse) {
+        const stingNotes = [0, 2, 4, 7].map((d) => midiToNote(degreeToMidi(spec.rootMidi + 24, mode, barDeg + d)));
+        chimeSynth.triggerAttackRelease(stingNotes, 0.22, time, 0.62 * h);
+      }
+
+      // 8. Novel Encore / Flair Voice: Groove C showcase (bars 8..15), Combo Tier 3 euphoria & Skill-Expression pop-ins
       const isGrooveCShowcase = sectionKind === 'grooveC' && barInSec >= 8;
+      const isComboEuphoria = comboTier >= 3 && sectionKind !== 'intro' && sectionKind !== 'outro';
       const isSkillPop =
         (skillPeak || hype >= 0.78) &&
         sectionKind !== 'intro' &&
         sectionKind !== 'outro' &&
         sectionKind !== 'intermission' &&
         barInSec % 2 === 1;
-      const flairBusActive = isGrooveCShowcase || isSkillPop;
+      const flairBusActive = isGrooveCShowcase || isSkillPop || isComboEuphoria;
       if (flairBusActive !== lastFlairBus) {
         lastFlairBus = flairBusActive;
         flairBusGain.gain.rampTo(flairBusActive ? 1 : 0, 0.32, time);
@@ -1328,8 +1599,9 @@ export function buildGnomeSetRadioTrack(
         const flairPat = FLAIR_PATTERNS[spec.flavor];
         const flairDeg = flairPat[(barInSec % 2) * 16 + step] ?? -1;
         if (flairDeg >= 0) {
-          const flairMidi = Math.min(84, degreeToMidi(spec.rootMidi + 24, mode, barDeg + flairDeg));
-          const flairVel = (isGrooveCShowcase ? 0.68 : 0.62) * h;
+          const baseOct = isComboEuphoria ? 36 : 24;
+          const flairMidi = Math.min(isComboEuphoria ? 96 : 84, degreeToMidi(spec.rootMidi + baseOct, mode, barDeg + flairDeg));
+          const flairVel = (isGrooveCShowcase || isComboEuphoria ? 0.68 : 0.62) * h;
           flairSynth.triggerAttackRelease(midiToNote(flairMidi), 0.14, time, flairVel);
         }
       }

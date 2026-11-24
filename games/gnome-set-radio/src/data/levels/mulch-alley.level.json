@@ -54,6 +54,7 @@
     "gangName": "The Token Sharks",
     "gangLeader": "Quarter-Slot Quinn",
     "trackId": "mulch-alley-chiptune-funk",
+    "arenaShape": "canyon-alley",
     "skyTheme": "mulch",
     "skyTop": "#14051c",
     "skyBottom": "#ff5252",
@@ -66,7 +67,11 @@
       { "id": "bootleg-tape-vault", "x": -28, "z": -16, "w": 20, "d": 18, "yBase": 0, "h": 8.0, "color": "#2b1224", "roofColor": "#ffd740", "accentColor": "#ff4ecd", "label": "Bootleg Tape Vault", "arch": "mulch-club-annex" },
       { "id": "pinball-mezzanine", "x": 28, "z": -16, "w": 20, "d": 18, "yBase": 0, "h": 9.5, "color": "#1f193b", "roofColor": "#ff5252", "accentColor": "#00e5ff", "label": "Pinball Mezzanine", "arch": "arcade-marquee" },
       { "id": "quinns-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 10.0, "color": "#180d29", "roofColor": "#2b1640", "accentColor": "#ff5252", "label": "Quinn's Arcade Base", "arch": "alley-tenement" },
-      { "id": "quinns-marquee-tower", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.0, "h": 4.0, "color": "#240b24", "roofColor": "#ffd740", "accentColor": "#00e5ff", "label": "Quinn's Marquee Tower", "arch": "crt-spire" }
+      { "id": "quinns-marquee-tower", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.0, "h": 4.0, "color": "#240b24", "roofColor": "#ffd740", "accentColor": "#00e5ff", "label": "Quinn's Marquee Tower", "arch": "crt-spire" },
+      { "id": "ma-office-sw", "x": -42, "z": 58, "w": 12, "d": 12, "yBase": 0, "h": 5.0, "color": "#241638", "roofColor": "#ff5252", "accentColor": "#ffd740", "label": "SW Canyon Office Slab", "arch": "abstract-office-slab" },
+      { "id": "ma-office-w", "x": -62, "z": -2, "w": 12, "d": 12, "yBase": 0, "h": 5.5, "color": "#26122a", "roofColor": "#ffd740", "accentColor": "#ff4ecd", "label": "West Rim Office Slab", "arch": "abstract-office-slab" },
+      { "id": "ma-office-e", "x": 62, "z": -2, "w": 12, "d": 12, "yBase": 0, "h": 6.0, "color": "#1d1836", "roofColor": "#00e5ff", "accentColor": "#ff5252", "label": "East Rim Stepped Monolith", "arch": "stepped-monolith" },
+      { "id": "ma-office-ne", "x": 38, "z": -56, "w": 12, "d": 12, "yBase": 0, "h": 6.5, "color": "#211233", "roofColor": "#ff4ecd", "accentColor": "#00e5ff", "label": "NE Rim Cantilever Tower", "arch": "cantilever-tower" }
     ],
     "ramps": [
       { "id": "ma-ramp-token", "x": -26, "z": 38, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.2, "yaw": 3.14159, "color": "#ff5252" },
@@ -85,7 +90,11 @@
       { "id": "ma-rail-sign-2", "points": [[-18, 8.3, -16], [0, 9.2, -16], [18, 9.8, -16]], "color": "#ff5252", "glowColor": "#ff5252", "speedBoost": 1.32 },
       { "id": "ma-rail-vault-to-tower", "points": [[-28, 8.3, -25], [-20, 9.5, -36], [-15, 10.3, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.34 },
       { "id": "ma-rail-pinball-to-tower", "points": [[28, 9.8, -25], [20, 10.1, -36], [15, 10.3, -42]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.34 },
-      { "id": "ma-rail-marquee-halo", "points": [[-16, 10.4, -42], [-8, 14.4, -42], [0, 14.8, -48], [8, 14.4, -42], [16, 10.4, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 }
+      { "id": "ma-rail-marquee-halo", "points": [[-16, 10.4, -42], [-8, 14.4, -42], [0, 14.8, -48], [8, 14.4, -42], [16, 10.4, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 },
+      { "id": "ma-rail-edge-sw", "points": [[-40, 5.3, 52], [-34, 4.8, 42], [-28, 4.5, 34]], "color": "#ff5252", "glowColor": "#ff5252", "speedBoost": 1.28 },
+      { "id": "ma-rail-edge-w", "points": [[-40, 5.8, 10], [-58, 5.8, 2], [-56, 5.8, -10], [-40, 6.5, -14]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.3 },
+      { "id": "ma-rail-edge-e", "points": [[40, 6.3, 10], [58, 6.3, 2], [56, 6.3, -10], [40, 7.2, -14]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.3 },
+      { "id": "ma-rail-edge-ne", "points": [[34, 6.8, -52], [40, 6.8, -48], [32, 8.0, -34]], "color": "#ff4ecd", "glowColor": "#ff4ecd", "speedBoost": 1.32 }
     ],
     "billboards": [
       { "id": "ma-bb-1", "x": -26, "y": 4.2, "z": 24, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Token Sharks", "eventId": "ma-tag-alley", "color": "#ff5252" },

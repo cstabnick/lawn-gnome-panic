@@ -226,10 +226,14 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     trailL.mat.opacity = trailAlpha;
     trailR.mat.opacity = trailAlpha;
 
-    const wallTarget = s.wallRiding ? s.wallSide * (Math.PI * 0.42) : 0;
+    const wallTarget = s.wallRiding ? -s.wallSide * (Math.PI * 0.42) : 0;
     wallTilt = lerp(wallTilt, wallTarget, 1 - Math.exp(-16 * dt));
 
-    root.position.set(s.x, s.y + 0.05, s.z);
+    root.position.set(
+      s.x - (s.wallRiding ? s.wallNormalX * 0.16 : 0),
+      s.y + 0.05,
+      s.z - (s.wallRiding ? s.wallNormalZ * 0.16 : 0),
+    );
     root.rotation.order = 'YXZ';
     root.rotation.y = s.yaw + s.trickSpin;
     root.rotation.z = s.wallRiding ? wallTilt : -s.lean - s.roll * 0.6 + wallTilt;
@@ -316,7 +320,7 @@ export function createRiderView(scene: THREE.Scene): RiderView {
       armLz = 1.15 + bal;
       armRz = -1.15 + bal;
     } else if (s.wallRiding) {
-      rigRy = -0.32 * (s.wallSide || 1);
+      rigRy = 0.32 * (s.wallSide || 1);
       rigRx = 0.14;
       rigY = Math.abs(wallTilt) * 0.28;
       legLx = 0.4;

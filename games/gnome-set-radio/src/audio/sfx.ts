@@ -122,7 +122,9 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       const grindOscLp = ctx.createBiquadFilter();
       grindOscLp.type = 'lowpass';
       grindOscLp.frequency.value = 620;
-      grindOsc.connect(grindOscLp).connect(grindGain);
+      const grindOscGain = ctx.createGain();
+      grindOscGain.gain.value = 0.42;
+      grindOsc.connect(grindOscLp).connect(grindOscGain).connect(grindGain);
       grindOsc.start();
 
       // 3. Wall-ride scrape
@@ -229,7 +231,7 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
         rollBearingGain.gain.setTargetAtTime(rolling && spd > 0.6 ? 0.015 + speedNorm * 0.032 : 0, t, 0.05);
         rollBearingOsc.frequency.setTargetAtTime(75 + speedNorm * 90, t, 0.05);
         const carving = Math.abs(s.carveSlip) > 0.22 || (s.braking && spd > 1.5);
-        scrubGain.gain.setTargetAtTime(rolling && carving ? (s.braking ? 0.08 : Math.min(0.065, Math.abs(s.carveSlip) * 0.14)) : 0, t, 0.04);
+        scrubGain.gain.setTargetAtTime(rolling && carving ? (s.braking ? 0.042 : Math.min(0.038, Math.abs(s.carveSlip) * 0.09)) : 0, t, 0.04);
         if (rolling && spd > 2.5 && !s.braking) {
           const stepIdx = Math.floor(s.stridePhase / Math.PI);
           if (stepIdx !== lastStrideStep) {
@@ -239,17 +241,17 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
         }
       }
       if (grindGain) {
-        grindGain.gain.setTargetAtTime(s.grinding ? 0.14 : 0, t, 0.03);
+        grindGain.gain.setTargetAtTime(s.grinding ? 0.052 : 0, t, 0.03);
       }
       if (wallGain) {
-        wallGain.gain.setTargetAtTime(s.wallRiding ? 0.11 : 0, t, 0.04);
+        wallGain.gain.setTargetAtTime(s.wallRiding ? 0.045 : 0, t, 0.04);
       }
       if (boostGain) {
-        boostGain.gain.setTargetAtTime(s.boosting ? 0.12 : 0, t, 0.05);
+        boostGain.gain.setTargetAtTime(s.boosting ? 0.042 : 0, t, 0.05);
       }
       if (airWindGain && airWindFilter) {
         const airborne = !s.grounded && !s.grinding;
-        airWindGain.gain.setTargetAtTime(airborne ? 0.025 + speedNorm * 0.035 : 0, t, 0.22);
+        airWindGain.gain.setTargetAtTime(airborne ? 0.008 + speedNorm * 0.014 : 0, t, 0.22);
         airWindFilter.frequency.setTargetAtTime(900 + speedNorm * 1200 + Math.abs(s.vy) * 40, t, 0.22);
       }
     },
@@ -279,13 +281,13 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       noiseBurst('lowpass', 900, 260, 0.8, 0.09, 0.08 + amt * 0.1);
     },
     grindStart() {
-      tone('square', 920, 1480, 0.07, 0.1);
-      tone('triangle', 1420, 2100, 0.1, 0.12, 0.02);
-      noiseBurst('bandpass', 3800, 2200, 3.0, 0.09, 0.12);
+      tone('square', 920, 1480, 0.07, 0.055);
+      tone('triangle', 1420, 2100, 0.1, 0.065, 0.02);
+      noiseBurst('bandpass', 3800, 2200, 3.0, 0.09, 0.05);
     },
     wallRideStart() {
       tone('triangle', 260, 180, 0.09, 0.14);
-      noiseBurst('bandpass', 1400, 900, 1.6, 0.1, 0.12);
+      noiseBurst('bandpass', 1400, 900, 1.6, 0.1, 0.05);
     },
     trick(mult) {
       const semitones = Math.min(12, Math.max(0, mult - 1) * 2);
@@ -307,7 +309,7 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
     },
     boostStart() {
       tone('sawtooth', 160, 480, 0.22, 0.11);
-      noiseBurst('bandpass', 600, 2400, 0.9, 0.24, 0.14);
+      noiseBurst('bandpass', 600, 2400, 0.9, 0.24, 0.055);
     },
     bounce(kind) {
       if (kind === 'bongo-pad') {

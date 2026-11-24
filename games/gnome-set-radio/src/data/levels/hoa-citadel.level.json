@@ -54,6 +54,7 @@
     "gangName": "The Bylaw Brass",
     "gangLeader": "Inspector Vance-Bot",
     "trackId": "hoa-bylaw-brass-step",
+    "arenaShape": "hedged-diamond",
     "skyTheme": "citadel",
     "skyTop": "#14261c",
     "skyBottom": "#ffd740",
@@ -66,7 +67,11 @@
       { "id": "beige-archive", "x": -28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 8.0, "color": "#6d5c4d", "roofColor": "#fff59d", "accentColor": "#ffd740", "label": "Beige Swatch Archive", "arch": "hoa-manor" },
       { "id": "gazebo-tribunal", "x": 28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 9.5, "color": "#4e342e", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Gazebo Tribunal", "arch": "topiary-pavilion" },
       { "id": "vance-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 10.5, "color": "#3e2723", "roofColor": "#6d5c4d", "accentColor": "#ffd740", "label": "Citadel Terrace", "arch": "hoa-manor" },
-      { "id": "vance-megaphone-spire", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.5, "h": 4.0, "color": "#2e7d32", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Vance-Bot's Megaphone Spire", "arch": "megaphone-tower" }
+      { "id": "vance-megaphone-spire", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.5, "h": 4.0, "color": "#2e7d32", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Vance-Bot's Megaphone Spire", "arch": "megaphone-tower" },
+      { "id": "hc-office-sw", "x": -58, "z": 16, "w": 12, "d": 14, "yBase": 0, "h": 5.0, "color": "#4e342e", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Zoning Annex West", "arch": "abstract-office-slab" },
+      { "id": "hc-office-se", "x": 58, "z": 16, "w": 12, "d": 14, "yBase": 0, "h": 5.5, "color": "#2e7d32", "roofColor": "#69f0ae", "accentColor": "#ffd740", "label": "Ordinance Overlook East", "arch": "cantilever-tower" },
+      { "id": "hc-office-nw", "x": -48, "z": -32, "w": 14, "d": 12, "yBase": 0, "h": 6.5, "color": "#5d4037", "roofColor": "#fff59d", "accentColor": "#ffd740", "label": "Covenant Bureau NW", "arch": "stepped-monolith" },
+      { "id": "hc-office-ne", "x": 48, "z": -32, "w": 14, "d": 12, "yBase": 0, "h": 6.8, "color": "#3e2723", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Bylaw Compliance Wing NE", "arch": "abstract-office-slab" }
     ],
     "ramps": [
       { "id": "hc-ramp-permit", "x": -28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.2, "yaw": 3.14159, "color": "#ffd740" },
@@ -82,7 +87,11 @@
       { "id": "hc-rail-beige-to-gazebo", "points": [[-17, 8.3, -18], [0, 9.0, -18], [17, 9.8, -18]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.3 },
       { "id": "hc-rail-beige-to-vance", "points": [[-28, 8.3, -27], [-20, 9.6, -36], [-15, 10.8, -42]], "color": "#fff59d", "glowColor": "#fff59d", "speedBoost": 1.32 },
       { "id": "hc-rail-gazebo-to-vance", "points": [[28, 9.8, -27], [20, 10.3, -36], [15, 10.8, -42]], "color": "#69f0ae", "glowColor": "#69f0ae", "speedBoost": 1.34 },
-      { "id": "hc-rail-spire-halo", "points": [[-16, 10.9, -42], [-8, 14.9, -42], [0, 15.3, -48], [8, 14.9, -42], [16, 10.9, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 }
+      { "id": "hc-rail-spire-halo", "points": [[-16, 10.9, -42], [-8, 14.9, -42], [0, 15.3, -48], [8, 14.9, -42], [16, 10.9, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 },
+      { "id": "hc-rail-edge-sw", "points": [[-36, 4.5, 28], [-48, 5.3, 22], [-56, 5.3, 12]], "color": "#ffd740", "glowColor": "#69f0ae", "speedBoost": 1.28 },
+      { "id": "hc-rail-edge-se", "points": [[36, 5.5, 28], [48, 5.8, 22], [56, 5.8, 12]], "color": "#69f0ae", "glowColor": "#ffd740", "speedBoost": 1.28 },
+      { "id": "hc-rail-edge-wnw", "points": [[-50, 5.3, 6], [-50, 6.2, -10], [-48, 6.8, -26]], "color": "#fff59d", "glowColor": "#ffd740", "speedBoost": 1.3 },
+      { "id": "hc-rail-edge-ene", "points": [[50, 5.8, 6], [50, 6.5, -10], [48, 7.1, -26]], "color": "#69f0ae", "glowColor": "#fff59d", "speedBoost": 1.3 }
     ],
     "billboards": [
       { "id": "hc-bb-1", "x": -28, "y": 4.2, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "The Bylaw Brass", "eventId": "hc-tag-bylaws", "color": "#ffd740" },

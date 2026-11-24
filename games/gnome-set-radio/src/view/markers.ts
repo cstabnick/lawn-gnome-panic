@@ -318,13 +318,24 @@ export function createMarkerSystem(
     }
   }
 
+  const isTargetVisible = (tgt: MarkerTarget, session: LevelSession): boolean => {
+    const ev = session.events.get(tgt.eventId);
+    if (!ev || ev.completed) return false;
+    if (tgt.kind === 'boss' || ev.def.kind === 'boss') {
+      if (!session.bossUnlocked || !ev.active) return false;
+    } else if (!ev.active) {
+      return false;
+    }
+    return !tgt.isDone(session);
+  };
+
   return {
     update(t, beatPulse, session) {
       for (let i = 0; i < targets.length; i++) {
         const tgt = targets[i]!;
-        const done = tgt.isDone(session);
-        tgt.marker.root.visible = !done;
-        if (done) continue;
+        const visible = isTargetVisible(tgt, session);
+        tgt.marker.root.visible = visible;
+        if (!visible) continue;
 
         const p = tgt.getPos();
         tgt.marker.root.position.set(p.x, p.y, p.z);
@@ -344,7 +355,7 @@ export function createMarkerSystem(
     nearestTarget(x, y, z, session) {
       let best: { label: string; kind: 'story' | 'boss' | 'side'; x: number; y: number; z: number; dist: number } | null = null;
       for (const tgt of targets) {
-        if (tgt.isDone(session)) continue;
+        if (!isTargetVisible(tgt, session)) continue;
         const p = tgt.getPos();
         const dist = Math.hypot(p.x - x, p.y - y, p.z - z);
         if (!best || (tgt.kind === 'boss' && best.kind !== 'boss') || (tgt.kind === best.kind && dist < best.dist)) {

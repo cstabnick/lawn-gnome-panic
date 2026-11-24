@@ -58,6 +58,7 @@
     "gangName": "The Glaze Grinders",
     "gangLeader": "Furnace Vera",
     "trackId": "chrome-kiln-funk",
+    "arenaShape": "crucible-ring",
     "skyTheme": "kiln",
     "skyTop": "#1b0b26",
     "skyBottom": "#ff4f1f",
@@ -148,6 +149,62 @@
         "accentColor": "#ff6d00",
         "label": "Crucible Crown",
         "arch": "kiln-chimney"
+      },
+      {
+        "id": "ck-edge-west",
+        "x": -72,
+        "z": -14,
+        "w": 10,
+        "d": 14,
+        "yBase": 0,
+        "h": 5.8,
+        "color": "#382f3b",
+        "roofColor": "#1a1117",
+        "accentColor": "#ff6d00",
+        "label": "West Glaze Assay Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "ck-edge-east",
+        "x": 72,
+        "z": -14,
+        "w": 10,
+        "d": 14,
+        "yBase": 0,
+        "h": 5.6,
+        "color": "#332a36",
+        "roofColor": "#1a1117",
+        "accentColor": "#76ff03",
+        "label": "East Foundry Telemetry Tower",
+        "arch": "cantilever-tower"
+      },
+      {
+        "id": "ck-edge-ne",
+        "x": 34,
+        "z": -56,
+        "w": 10,
+        "d": 10,
+        "yBase": 0,
+        "h": 6.4,
+        "color": "#2f242c",
+        "roofColor": "#1a1117",
+        "accentColor": "#00e5ff",
+        "label": "NE Cooling Manifold Monolith",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "ck-edge-sw",
+        "x": -52,
+        "z": 50,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 5.0,
+        "color": "#382f3b",
+        "roofColor": "#1a1117",
+        "accentColor": "#ffd740",
+        "label": "SW Union Dispatch Office",
+        "arch": "abstract-office-slab"
       }
     ],
     "ramps": [
@@ -224,6 +281,34 @@
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.28
+      },
+      {
+        "id": "ck-rail-edge-west",
+        "points": [[-62, 2.4, 0], [-72, 6.0, -8], [-72, 6.0, -20], [-54, 4.0, -26]],
+        "color": "#ff6d00",
+        "glowColor": "#ff6d00",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ck-rail-edge-east",
+        "points": [[62, 2.4, 0], [72, 5.8, -8], [72, 5.8, -20], [56, 3.8, -28]],
+        "color": "#76ff03",
+        "glowColor": "#76ff03",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ck-rail-edge-ne",
+        "points": [[44, 2.4, -28], [52, 6.6, -44], [52, 6.6, -54], [32, 7.8, -36]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "ck-rail-edge-sw",
+        "points": [[-58, 3.6, 24], [-52, 5.2, 44], [-50, 5.2, 54], [-30, 2.2, 36]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.26
       }
     ],
     "billboards": [

@@ -1,5 +1,5 @@
-import { groundHeightAt, nearestRailPoint, sampleSurfaceHeight } from '../levels/loader';
-import type { GsrLevelDoc, GsrRail } from '../levels/schema';
+import { getAllRails, groundHeightAt, nearestRailPoint, sampleSurfaceHeight } from '../levels/loader';
+import type { GsrArenaShape, GsrLevelDoc, GsrRail } from '../levels/schema';
 import { createSkateChassis, stepGroundChassis, syncChassisFromSkater, type SkateChassis } from './skateVehicle';
 
 export type TrickAnimKind = 'frontflip' | 'spin360' | 'grab' | 'cork' | 'grindHop' | 'groundSpin';
@@ -315,7 +315,7 @@ export function stepSkater(
   // Handle Rail Grinding
   if (s.grinding && s.railId) {
     s.airJumpsLeft = s.maxAirJumps;
-    const rail = doc.data.rails.find((r) => r.id === s.railId);
+    const rail = getAllRails(doc).find((r) => r.id === s.railId);
     if (!rail) {
       s.grinding = false;
       s.railId = null;
@@ -621,7 +621,7 @@ export function stepSkater(
     }
   }
   for (const bb of doc.data.billboards) {
-    if (nextY < bb.y - 0.5 || nextY > bb.y + bb.h + 0.6) continue;
+    if (nextY < bb.y - 0.5 || nextY > bb.y + bb.h - 0.15) continue;
     const minR = r + 0.75;
     const dx = s.x - bb.x;
     const dz = s.z - bb.z;
@@ -640,17 +640,10 @@ export function stepSkater(
     }
   }
 
-  // Keep inside island bounds (bounce back onto edge if near rim)
+  // Keep inside island bounds (respecting arenaShape perimeter)
   const limX = doc.bounds.w * 0.5 - 2;
   const limZ = doc.bounds.d * 0.5 - 2;
-  if (Math.abs(s.x) > limX) {
-    s.x = Math.sign(s.x) * limX;
-    s.vx *= -0.4;
-    bumpedWall = true;
-  }
-  if (Math.abs(s.z) > limZ) {
-    s.z = Math.sign(s.z) * limZ;
-    s.vz *= -0.4;
+  if (clampToArenaPerimeter(s, doc.data.arenaShape, limX, limZ)) {
     bumpedWall = true;
   }
   if (bumpedWall) {
@@ -662,7 +655,7 @@ export function stepSkater(
 
   // Rail snap check (when airborne or pressing grind)
   if (prevButtons.railCooldown <= 0 && (!s.grounded || input.grind)) {
-    const near = nearestRailPoint(doc.data.rails, s.x, nextY, s.z);
+    const near = nearestRailPoint(getAllRails(doc), s.x, nextY, s.z);
     if (near && near.dist <= SKATER_TUNE.railSnapDist && s.vy <= 4) {
       s.grinding = true;
       s.grounded = false;
@@ -728,4 +721,120 @@ export function stepSkater(
 
   s.maxCombo = Math.max(s.maxCombo, s.comboMult);
   return res;
+}
+
+function bounceInward(s: SkaterState, nx: number, nz: number): void {
+  const vn = s.vx * nx + s.vz * nz;
+  if (vn < 0) {
+    s.vx -= 1.4 * vn * nx;
+    s.vz -= 1.4 * vn * nz;
+  }
+}
+
+function clampToArenaPerimeter(
+  s: SkaterState,
+  shape: GsrArenaShape | undefined,
+  limX: number,
+  limZ: number,
+): boolean {
+  let bumped = false;
+
+  if (shape === 'dome-atrium' || shape === 'vinyl-disc' || shape === 'spiral-spire') {
+    const maxR = Math.min(limX, limZ) * (shape === 'spiral-spire' ? 0.88 : 1);
+    const dist = Math.hypot(s.x, s.z);
+    if (dist > maxR && dist > 1e-4) {
+      const nx = -s.x / dist;
+      const nz = -s.z / dist;
+      s.x = (s.x / dist) * maxR;
+      s.z = (s.z / dist) * maxR;
+      bounceInward(s, nx, nz);
+      bumped = true;
+    }
+    return bumped;
+  }
+
+  if (shape === 's-curve-viaduct') {
+    if (Math.abs(s.z) > limZ) {
+      s.z = Math.sign(s.z) * limZ;
+      s.vz *= -0.4;
+      bumped = true;
+    }
+    const u = Math.max(-1, Math.min(1, s.z / limZ));
+    const wave = 0.28 * Math.sin(u * Math.PI);
+    const minX = -limX * (0.68 - wave);
+    const maxX = limX * (0.68 + wave);
+    if (s.x < minX) {
+      s.x = minX;
+      s.vx = Math.abs(s.vx) * 0.4;
+      bumped = true;
+    } else if (s.x > maxX) {
+      s.x = maxX;
+      s.vx = -Math.abs(s.vx) * 0.4;
+      bumped = true;
+    }
+    return bumped;
+  }
+
+  if (shape === 'canyon-alley') {
+    if (Math.abs(s.z) > limZ) {
+      s.z = Math.sign(s.z) * limZ;
+      s.vz *= -0.4;
+      bumped = true;
+    }
+    const az = Math.abs(s.z) / limZ;
+    const maxHalfX = az < 0.14 ? 0.9 * limX : az < 0.46 ? 0.5 * limX : 0.66 * limX;
+    if (Math.abs(s.x) > maxHalfX) {
+      s.x = Math.sign(s.x) * maxHalfX;
+      s.vx *= -0.4;
+      bumped = true;
+    }
+    return bumped;
+  }
+
+  // Outer box clamp for rectangular, octagonal, diamond, and cross decks
+  if (Math.abs(s.x) > limX) {
+    s.x = Math.sign(s.x) * limX;
+    s.vx *= -0.4;
+    bumped = true;
+  }
+  if (Math.abs(s.z) > limZ) {
+    s.z = Math.sign(s.z) * limZ;
+    s.vz *= -0.4;
+    bumped = true;
+  }
+
+  if (shape === 'hedged-diamond' || shape === 'octagonal-plaza' || shape === 'crucible-ring') {
+    const maxSum = shape === 'hedged-diamond' ? 1.22 : shape === 'crucible-ring' ? 1.52 : 1.72;
+    const sum = Math.abs(s.x) / limX + Math.abs(s.z) / limZ;
+    if (sum > maxSum) {
+      const sx = s.x >= 0 ? 1 : -1;
+      const sz = s.z >= 0 ? 1 : -1;
+      const ax = sx / limX;
+      const az = sz / limZ;
+      const denom = ax * ax + az * az;
+      const excess = sum - maxSum;
+      s.x -= (excess * ax) / denom;
+      s.z -= (excess * az) / denom;
+      const invLen = 1 / Math.sqrt(denom);
+      bounceInward(s, -ax * invLen, -az * invLen);
+      bumped = true;
+    }
+  } else if (shape === 'relay-cross') {
+    const armX = limX * 0.46;
+    const armZ = limZ * 0.46;
+    if (Math.abs(s.x) > armX && Math.abs(s.z) > armZ) {
+      const penX = Math.abs(s.x) - armX;
+      const penZ = Math.abs(s.z) - armZ;
+      if (penX < penZ) {
+        s.x = Math.sign(s.x) * armX;
+        s.vx *= -0.4;
+      } else {
+        s.z = Math.sign(s.z) * armZ;
+        s.vz *= -0.4;
+      }
+      bumped = true;
+    }
+  }
+
+  return bumped;
 }

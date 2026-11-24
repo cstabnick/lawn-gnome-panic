@@ -59,6 +59,7 @@
     "gangName": "The Splash-Back Skaters",
     "gangLeader": "Fountainhead Finn",
     "trackId": "neon-birdbath-liquid",
+    "arenaShape": "spiral-spire",
     "skyTheme": "birdbath",
     "skyTop": "#0e1d4a",
     "skyBottom": "#ff52d9",
@@ -149,6 +150,62 @@
         "accentColor": "#00e5ff",
         "label": "Birdbath Apex Lighthouse",
         "arch": "lighthouse-spire"
+      },
+      {
+        "id": "nb-office-nw",
+        "x": -46,
+        "z": -42,
+        "w": 14,
+        "d": 12,
+        "yBase": 0,
+        "h": 6.5,
+        "color": "#1b2747",
+        "roofColor": "#00e5ff",
+        "accentColor": "#ff4ecd",
+        "label": "NW Terrace Cantilever Tower",
+        "arch": "cantilever-tower"
+      },
+      {
+        "id": "nb-office-ne",
+        "x": 42,
+        "z": -40,
+        "w": 14,
+        "d": 12,
+        "yBase": 0,
+        "h": 6.0,
+        "color": "#202e54",
+        "roofColor": "#69f0ae",
+        "accentColor": "#00e5ff",
+        "label": "NE Terrace Office Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "nb-office-sw",
+        "x": -34,
+        "z": 50,
+        "w": 14,
+        "d": 10,
+        "yBase": 0,
+        "h": 4.8,
+        "color": "#223157",
+        "roofColor": "#ffd740",
+        "accentColor": "#ff4ecd",
+        "label": "SW Promenade Monolith",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "nb-office-se",
+        "x": 42,
+        "z": 48,
+        "w": 12,
+        "d": 10,
+        "yBase": 0,
+        "h": 5.2,
+        "color": "#1e2c52",
+        "roofColor": "#ff4ecd",
+        "accentColor": "#00e5ff",
+        "label": "SE Promenade Office Slab",
+        "arch": "abstract-office-slab"
       }
     ],
     "ramps": [
@@ -232,6 +289,34 @@
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.3
+      },
+      {
+        "id": "nb-rail-office-sw",
+        "points": [[-26, 5.1, 50], [-40, 5.1, 46], [-52, 3.8, 32]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "nb-rail-office-se",
+        "points": [[34, 5.5, 48], [46, 5.5, 44], [54, 3.8, 32]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "nb-rail-office-nw",
+        "points": [[-44, 6.8, -36], [-48, 6.8, -48], [-32, 7.2, -48]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "nb-rail-office-ne",
+        "points": [[36, 6.3, -44], [46, 6.3, -36], [48, 4.2, -26]],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.32
       }
     ],
     "billboards": [

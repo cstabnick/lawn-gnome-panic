@@ -559,7 +559,7 @@ export function createGangCrew(
     checkShoutouts(px, py, pz, elapsed, onShout) {
       for (const m of skaters) {
         const dist = Math.hypot(px - m.x, py - m.y, pz - m.z);
-        if (dist < 9.5 && elapsed - m.lastShoutAt > 11) {
+        if (dist < 7.5 && elapsed - m.lastShoutAt > 28) {
           m.lastShoutAt = elapsed;
           const line = m.variant.shoutouts[m.shoutIdx % m.variant.shoutouts.length]!;
           m.shoutIdx++;

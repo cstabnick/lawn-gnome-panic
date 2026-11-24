@@ -63,6 +63,7 @@
     "gangName": "The Ivory Syndicate",
     "gangLeader": "Maestro Upright",
     "trackId": "ivory-jungle-jazz",
+    "arenaShape": "octagonal-plaza",
     "skyTheme": "velvet",
     "skyTop": "#3b1363",
     "skyBottom": "#ff7ac8",
@@ -153,6 +154,62 @@
         "accentColor": "#ffd740",
         "label": "Velvet Keys Postcard Kiosk",
         "arch": "cafe-terrace"
+      },
+      {
+        "id": "vk-edge-west",
+        "x": -64,
+        "z": -16,
+        "w": 10,
+        "d": 14,
+        "yBase": 0,
+        "h": 5.6,
+        "color": "#2f224f",
+        "roofColor": "#171126",
+        "accentColor": "#00e5ff",
+        "label": "West Conservatory Annex",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "vk-edge-east-n",
+        "x": 64,
+        "z": -16,
+        "w": 10,
+        "d": 14,
+        "yBase": 0,
+        "h": 5.8,
+        "color": "#342354",
+        "roofColor": "#171126",
+        "accentColor": "#ff4ecd",
+        "label": "East Brass Publishing Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "vk-edge-east-s",
+        "x": 64,
+        "z": 18,
+        "w": 10,
+        "d": 14,
+        "yBase": 0,
+        "h": 4.8,
+        "color": "#2f224f",
+        "roofColor": "#171126",
+        "accentColor": "#ffd740",
+        "label": "Cantilever Jazz Agency",
+        "arch": "cantilever-tower"
+      },
+      {
+        "id": "vk-edge-south-w",
+        "x": -32,
+        "z": 54,
+        "w": 14,
+        "d": 10,
+        "yBase": 0,
+        "h": 5.0,
+        "color": "#3d2f5e",
+        "roofColor": "#171126",
+        "accentColor": "#00e5ff",
+        "label": "South Plaza Records Office",
+        "arch": "abstract-office-slab"
       }
     ],
     "ramps": [
@@ -222,6 +279,34 @@
         "points": [[56, 2.2, -34], [58, 2.6, 0], [56, 2.2, 34]],
         "color": "#ffd740",
         "glowColor": "#ffd740",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "rail-edge-west-office",
+        "points": [[-58, 2.8, -32], [-64, 5.8, -24], [-64, 5.8, -12], [-59, 2.8, -2]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "rail-edge-east-north",
+        "points": [[52, 3.6, -40], [64, 6.0, -24], [64, 6.0, -12], [58, 2.8, -2]],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "rail-edge-east-south",
+        "points": [[58, 2.8, 2], [64, 5.0, 12], [64, 5.0, 24], [55, 2.4, 34]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "rail-edge-south-west",
+        "points": [[-48, 3.6, 41], [-38, 5.2, 52], [-26, 5.2, 52], [-22, 3.2, 30]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
         "speedBoost": 1.26
       }
     ],

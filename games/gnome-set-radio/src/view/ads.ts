@@ -362,15 +362,20 @@ export function getBrandAdTexture(brandId?: string, fallbackIdx = 0): THREE.Canv
   return tex;
 }
 
-export function buildPerimeterAds(
-  doc: GsrLevelDoc,
-  group: THREE.Group,
-  track: <T extends { dispose(): void }>(x: T) => T,
-): void {
+export interface PerimeterAdSpec {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  w: number;
+  h: number;
+}
+
+export function getPerimeterAdSpecs(doc: GsrLevelDoc): PerimeterAdSpec[] {
   const halfW = doc.bounds.w * 0.5 - 5.5;
   const halfD = doc.bounds.d * 0.5 - 5.5;
-  const areaOffset = doc.data.areaNumber * 3;
-  const spots: { x: number; z: number; yaw: number }[] = [
+  const placements: { x: number; z: number; yaw: number }[] = [
     { x: -halfW * 0.55, z: -halfD, yaw: 0 },
     { x: halfW * 0.55, z: -halfD, yaw: 0 },
     { x: -halfW * 0.55, z: halfD, yaw: Math.PI },
@@ -380,11 +385,38 @@ export function buildPerimeterAds(
     { x: halfW, z: -halfD * 0.45, yaw: -Math.PI / 2 },
     { x: halfW, z: halfD * 0.45, yaw: -Math.PI / 2 },
   ];
+  return placements.map((p, idx) => ({
+    id: `perim-ad-${idx}`,
+    x: p.x,
+    y: 3.1,
+    z: p.z,
+    yaw: p.yaw,
+    w: 7.4,
+    h: 3.8,
+  }));
+}
+
+export function buildPerimeterAds(
+  doc: GsrLevelDoc,
+  group: THREE.Group,
+  track: <T extends { dispose(): void }>(x: T) => T,
+): void {
+  const areaOffset = doc.data.areaNumber * 3;
+  const spots = getPerimeterAdSpecs(doc);
 
   const frameMat = track(new THREE.MeshStandardMaterial({ color: '#1b1d28', roughness: 0.5 }));
+  const grindBarMat = track(
+    new THREE.MeshStandardMaterial({
+      color: '#00e5ff',
+      emissive: '#00e5ff',
+      emissiveIntensity: 0.9,
+      roughness: 0.25,
+    }),
+  );
   const postGeo = track(new THREE.CylinderGeometry(0.14, 0.16, 2.2, 8));
   const frameGeo = track(new THREE.BoxGeometry(7.4, 3.8, 0.24));
   const panelGeo = track(new THREE.BoxGeometry(7.0, 3.4, 0.34));
+  const grindBarGeo = track(new THREE.BoxGeometry(7.6, 0.14, 0.2));
 
   const districtBrand = DISTRICT_BRAND_BY_AREA[doc.data.areaNumber];
   spots.forEach((sp, idx) => {
@@ -399,7 +431,7 @@ export function buildPerimeterAds(
       }),
     );
     const holder = new THREE.Group();
-    holder.position.set(sp.x, 3.1, sp.z);
+    holder.position.set(sp.x, sp.y, sp.z);
     holder.rotation.y = sp.yaw;
 
     const frame = new THREE.Mesh(frameGeo, frameMat);
@@ -408,6 +440,10 @@ export function buildPerimeterAds(
     const panel = new THREE.Mesh(panelGeo, panelMat);
     panel.userData.sprayable = true;
     holder.add(panel);
+
+    const grindBar = new THREE.Mesh(grindBarGeo, grindBarMat);
+    grindBar.position.set(0, 2.06, 0);
+    holder.add(grindBar);
 
     for (const lx of [-2.4, 2.4]) {
       const post = new THREE.Mesh(postGeo, frameMat);

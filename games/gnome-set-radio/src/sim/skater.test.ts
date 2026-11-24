@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HELPER_GNOMES } from '../data/helpers';
 import { computeStyleRank } from '../game/events';
 import { LEVEL_ORDER, LEVELS, sampleSurfaceHeight } from '../levels/loader';
+import { getPerimeterAdSpecs } from '../view/ads';
 import { REGIONAL_GRAFFITI } from '../view/graffiti';
 import { createSkater, stepSkater } from './skater';
 
@@ -328,5 +329,133 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     const res = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
     expect(res.bumped).toBe(true);
     expect(Math.hypot(s.x - prop.x, s.z - prop.z)).toBeGreaterThanOrEqual(0.6);
+  });
+
+  it('sets wallNormalX/Z and wallSide consistently on ±X and ±Z building walls', () => {
+    const doc = LEVELS['velvet-keys'];
+    const b = doc.data.buildings[0]!;
+    const cases = [
+      {
+        label: '+X wall moving -Z',
+        x: b.x + b.w * 0.5 + 0.3,
+        z: b.z,
+        vx: -2,
+        vz: -12,
+        moveX: 0,
+        moveZ: -1,
+        normX: 1,
+        normZ: 0,
+        wallSide: -1 as const,
+      },
+      {
+        label: '-X wall moving -Z',
+        x: b.x - b.w * 0.5 - 0.3,
+        z: b.z,
+        vx: 2,
+        vz: -12,
+        moveX: 0,
+        moveZ: -1,
+        normX: -1,
+        normZ: 0,
+        wallSide: 1 as const,
+      },
+      {
+        label: '+Z wall moving +X',
+        x: b.x,
+        z: b.z + b.d * 0.5 + 0.3,
+        vx: 12,
+        vz: -2,
+        moveX: 1,
+        moveZ: 0,
+        normX: 0,
+        normZ: 1,
+        wallSide: -1 as const,
+      },
+      {
+        label: '-Z wall moving +X',
+        x: b.x,
+        z: b.z - b.d * 0.5 - 0.3,
+        vx: 12,
+        vz: 2,
+        moveX: 1,
+        moveZ: 0,
+        normX: 0,
+        normZ: -1,
+        wallSide: 1 as const,
+      },
+    ];
+
+    for (const c of cases) {
+      const s = createSkater(doc);
+      s.x = c.x;
+      s.y = b.yBase + 1.4;
+      s.z = c.z;
+      s.vx = c.vx;
+      s.vy = 0;
+      s.vz = c.vz;
+      s.grounded = false;
+      const btn = { jump: false, trick: false, railCooldown: 0 };
+      const res = stepSkater(
+        s,
+        doc,
+        { moveX: c.moveX, moveZ: c.moveZ, jump: false, grind: false, trick: false, boost: false },
+        1 / 60,
+        btn,
+      );
+      expect(res.wallRideStarted, c.label).toBe(true);
+      expect(s.wallRiding, c.label).toBe(true);
+      expect(s.wallNormalX, c.label).toBe(c.normX);
+      expect(s.wallNormalZ, c.label).toBe(c.normZ);
+      expect(s.wallSide, c.label).toBe(c.wallSide);
+    }
+  });
+
+  it('snaps into grinding when jumping near a gang billboard or perimeter ad top edge', () => {
+    const doc = LEVELS['velvet-keys'];
+    const bb = doc.data.billboards[0]!;
+    {
+      const s = createSkater(doc);
+      s.x = bb.x;
+      s.y = bb.y + bb.h + 0.5;
+      s.z = bb.z;
+      s.vx = Math.cos(bb.yaw) * 10;
+      s.vy = 1.0;
+      s.vz = -Math.sin(bb.yaw) * 10;
+      s.grounded = false;
+      const btn = { jump: false, trick: false, railCooldown: 0 };
+      const res = stepSkater(
+        s,
+        doc,
+        { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false },
+        1 / 60,
+        btn,
+      );
+      expect(res.grindStarted).toBe(true);
+      expect(s.grinding).toBe(true);
+      expect(s.railId).toBe(`rail-bb-${bb.id}`);
+    }
+
+    const ad = getPerimeterAdSpecs(doc)[0]!;
+    {
+      const s = createSkater(doc);
+      s.x = ad.x;
+      s.y = ad.y + ad.h * 0.5 + 0.2;
+      s.z = ad.z;
+      s.vx = Math.cos(ad.yaw) * 10;
+      s.vy = -1.0;
+      s.vz = -Math.sin(ad.yaw) * 10;
+      s.grounded = false;
+      const btn = { jump: false, trick: false, railCooldown: 0 };
+      const res = stepSkater(
+        s,
+        doc,
+        { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false },
+        1 / 60,
+        btn,
+      );
+      expect(res.grindStarted).toBe(true);
+      expect(s.grinding).toBe(true);
+      expect(s.railId).toBe(`rail-${ad.id}`);
+    }
   });
 });

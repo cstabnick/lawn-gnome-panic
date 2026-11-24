@@ -155,6 +155,7 @@ Online game IDs are the keys of `GAMES` in `packages/mp/src/protocol.ts`; a new 
 | `docs/roadmaps/gnomillion.md` | Once in a Gnomillion build plan (engine, host/guest net, UI, achievements) |
 | `docs/roadmaps/nothing-left-to-collect.md` | Nothing Left to Collect design (chapters, eggs, soundtracks, achievements) and its 4-epic build plan |
 | `docs/roadmaps/gnome-set-radio-regions.md` | Gnom Set Radio Regions 5–9 expansion roadmap (architecture, prefabs, writing beats; Regions 1–4 in `docs/design/gnome-set-radio/regions-architecture.md`) |
+| `docs/roadmaps/gnome-set-radio-polish-2.md` | Gnom Set Radio polish pass 2: wall-ride 180° fix, grindable billboards, audio mix & music overhaul, HUD de-spam, fresh-player intro & sequential gang quests, next-3-worlds sky vista, music-synced skybox visualizers, diverse arena shapes & edge office grind circuits |
 | `docs/roadmaps/level-format.md` | The level format + editor plan (what is built, what is later: Front, Golf, Club Gnome) |
 | `docs/roadmaps/gnomomia-economy-scaling.md` | Gnomomia economy plan: economy sim, retune of XP/coins/skills, quest gates |
 | `docs/roadmaps/gnomomia-rebalance-raids.md` | Gnomomia re-simulation and raids: kill credit, five horn-call raids with helpers and reforging, `sim:raid`, the farm report, 4 epics of worker issues |

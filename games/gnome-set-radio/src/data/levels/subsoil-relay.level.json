@@ -53,6 +53,7 @@
     "gangName": "The Deep-Cut Syndicate",
     "gangLeader": "Static-Crown Sol",
     "trackId": "subsoil-relay-jungle",
+    "arenaShape": "relay-cross",
     "skyTheme": "subsoil",
     "skyTop": "#0d061c",
     "skyBottom": "#7c4dff",
@@ -65,7 +66,11 @@
       { "id": "echo-chamber", "x": -28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 9.0, "color": "#251442", "roofColor": "#00e5ff", "accentColor": "#7c4dff", "label": "Echo Chamber", "arch": "acoustic-dish" },
       { "id": "scaffolding-ring", "x": 28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 11.0, "color": "#1c1836", "roofColor": "#7c4dff", "accentColor": "#ffab40", "label": "Scaffolding Ring", "arch": "antenna-rig" },
       { "id": "fork-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 12.0, "color": "#160d2e", "roofColor": "#2d1f54", "accentColor": "#7c4dff", "label": "Relay Base Deck", "arch": "relay-bunker" },
-      { "id": "tuning-fork-apex", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 12.0, "h": 4.0, "color": "#221247", "roofColor": "#ffab40", "accentColor": "#00e5ff", "label": "Tuning-Fork Apex", "arch": "tuning-spire" }
+      { "id": "tuning-fork-apex", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 12.0, "h": 4.0, "color": "#221247", "roofColor": "#ffab40", "accentColor": "#00e5ff", "label": "Tuning-Fork Apex", "arch": "tuning-spire" },
+      { "id": "sr-office-south", "x": -24, "z": 62, "w": 12, "d": 14, "yBase": 0, "h": 4.8, "color": "#261b47", "roofColor": "#7c4dff", "accentColor": "#ffab40", "label": "South Relay Switchhouse", "arch": "abstract-office-slab" },
+      { "id": "sr-office-west", "x": -58, "z": -18, "w": 12, "d": 14, "yBase": 0, "h": 5.5, "color": "#1e163d", "roofColor": "#00e5ff", "accentColor": "#7c4dff", "label": "West Sub-Bass Annex", "arch": "cantilever-tower" },
+      { "id": "sr-office-east", "x": 58, "z": 16, "w": 12, "d": 14, "yBase": 0, "h": 6.0, "color": "#251442", "roofColor": "#ffab40", "accentColor": "#00e5ff", "label": "East Patch Bay", "arch": "stepped-monolith" },
+      { "id": "sr-office-north", "x": 34, "z": -62, "w": 10, "d": 10, "yBase": 0, "h": 7.0, "color": "#1c1836", "roofColor": "#7c4dff", "accentColor": "#ffab40", "label": "North Telemetry Wing", "arch": "abstract-office-slab" }
     ],
     "ramps": [
       { "id": "sr-ramp-bunker", "x": -28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.5, "yaw": 3.14159, "color": "#7c4dff" },
@@ -81,7 +86,11 @@
       { "id": "sr-rail-echo-to-scaff", "points": [[-17, 9.3, -18], [0, 10.4, -18], [17, 11.3, -18]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.32 },
       { "id": "sr-rail-echo-to-apex", "points": [[-28, 9.3, -27], [-20, 11.0, -36], [-15, 12.3, -42]], "color": "#7c4dff", "glowColor": "#7c4dff", "speedBoost": 1.35 },
       { "id": "sr-rail-scaff-to-apex", "points": [[28, 11.3, -27], [20, 11.8, -36], [15, 12.3, -42]], "color": "#ffab40", "glowColor": "#ffab40", "speedBoost": 1.35 },
-      { "id": "sr-rail-apex-halo", "points": [[-16, 12.4, -42], [-8, 16.4, -42], [0, 16.8, -48], [8, 16.4, -42], [16, 12.4, -42]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.42 }
+      { "id": "sr-rail-apex-halo", "points": [[-16, 12.4, -42], [-8, 16.4, -42], [0, 16.8, -48], [8, 16.4, -42], [16, 12.4, -42]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.42 },
+      { "id": "sr-rail-edge-south", "points": [[-18, 5.1, 62], [-24, 5.1, 56], [-24, 4.8, 44]], "color": "#7c4dff", "glowColor": "#ffab40", "speedBoost": 1.28 },
+      { "id": "sr-rail-edge-west", "points": [[-50, 5.8, -24], [-58, 5.8, -16], [-42, 5.2, 8]], "color": "#00e5ff", "glowColor": "#7c4dff", "speedBoost": 1.3 },
+      { "id": "sr-rail-edge-east", "points": [[38, 6.8, 26], [54, 6.3, 18], [52, 6.3, 4], [40, 6.8, -2]], "color": "#ffab40", "glowColor": "#00e5ff", "speedBoost": 1.32 },
+      { "id": "sr-rail-edge-north", "points": [[26, 11.3, -32], [24, 8.6, -46], [24, 7.3, -58]], "color": "#7c4dff", "glowColor": "#00e5ff", "speedBoost": 1.34 }
     ],
     "billboards": [
       { "id": "sr-bb-1", "x": -28, "y": 4.5, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Deep-Cut Syndicate", "eventId": "sr-tag-dishes", "color": "#7c4dff" },

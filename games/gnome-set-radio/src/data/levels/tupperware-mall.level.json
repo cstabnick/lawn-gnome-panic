@@ -54,6 +54,7 @@
     "gangName": "The Clearance Crew",
     "gangLeader": "Barcode Betty",
     "trackId": "sky-mall-future-funk",
+    "arenaShape": "dome-atrium",
     "skyTheme": "mall",
     "skyTop": "#1c1238",
     "skyBottom": "#4dd0e1",
@@ -66,7 +67,11 @@
       { "id": "escalator-hub", "x": 0, "z": 2, "w": 18, "d": 14, "yBase": 0, "h": 6.5, "color": "#262c52", "roofColor": "#fff59d", "accentColor": "#4dd0e1", "label": "Escalator Hub", "arch": "atrium-bridge" },
       { "id": "clearance-mezzanine", "x": -30, "z": -18, "w": 22, "d": 18, "yBase": 0, "h": 8.5, "color": "#2f2247", "roofColor": "#4dd0e1", "accentColor": "#fff59d", "label": "Clearance Mezzanine", "arch": "storefront-wing" },
       { "id": "checkout-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 9.0, "color": "#211c3d", "roofColor": "#3c3266", "accentColor": "#ff8a80", "label": "Checkout Mezzanine", "arch": "storefront-wing" },
-      { "id": "checkout-tower", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 9.0, "h": 4.0, "color": "#2a1b45", "roofColor": "#ff8a80", "accentColor": "#4dd0e1", "label": "Checkout Tower", "arch": "register-spire" }
+      { "id": "checkout-tower", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 9.0, "h": 4.0, "color": "#2a1b45", "roofColor": "#ff8a80", "accentColor": "#4dd0e1", "label": "Checkout Tower", "arch": "register-spire" },
+      { "id": "tm-office-sw", "x": -28, "z": 52, "w": 12, "d": 10, "yBase": 0, "h": 4.8, "color": "#2b244a", "roofColor": "#4dd0e1", "accentColor": "#fff59d", "label": "SW Atrium Stepped Monolith", "arch": "stepped-monolith" },
+      { "id": "tm-office-e", "x": 58, "z": 16, "w": 12, "d": 12, "yBase": 0, "h": 5.4, "color": "#262045", "roofColor": "#ff8a80", "accentColor": "#4dd0e1", "label": "East Atrium Office Slab", "arch": "abstract-office-slab" },
+      { "id": "tm-office-ne", "x": 34, "z": -50, "w": 12, "d": 10, "yBase": 0, "h": 6.4, "color": "#241d42", "roofColor": "#fff59d", "accentColor": "#ff8a80", "label": "NE Atrium Cantilever Tower", "arch": "cantilever-tower" },
+      { "id": "tm-office-nw", "x": -54, "z": -26, "w": 12, "d": 12, "yBase": 0, "h": 6.8, "color": "#2d2147", "roofColor": "#4dd0e1", "accentColor": "#ff8a80", "label": "NW Atrium Office Slab", "arch": "abstract-office-slab" }
     ],
     "ramps": [
       { "id": "tm-ramp-food", "x": -28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.0, "yaw": 3.14159, "color": "#4dd0e1" },
@@ -82,7 +87,11 @@
       { "id": "tm-rail-mart-to-hub", "points": [[17, 5.5, 22], [10, 6.2, 12], [6, 6.8, 6]], "color": "#ff8a80", "glowColor": "#ff8a80", "speedBoost": 1.28 },
       { "id": "tm-rail-hub-to-mezz", "points": [[-8, 6.8, -2], [-16, 7.8, -10], [-20, 8.8, -16]], "color": "#fff59d", "glowColor": "#fff59d", "speedBoost": 1.3 },
       { "id": "tm-rail-mezz-to-checkout", "points": [[-30, 8.8, -27], [-22, 9.1, -36], [-15, 9.3, -42]], "color": "#4dd0e1", "glowColor": "#4dd0e1", "speedBoost": 1.34 },
-      { "id": "tm-rail-atrium-ring", "points": [[-16, 9.4, -42], [-8, 13.4, -42], [0, 13.8, -48], [8, 13.4, -42], [16, 9.4, -42]], "color": "#ff8a80", "glowColor": "#ff8a80", "speedBoost": 1.38 }
+      { "id": "tm-rail-atrium-ring", "points": [[-16, 9.4, -42], [-8, 13.4, -42], [0, 13.8, -48], [8, 13.4, -42], [16, 9.4, -42]], "color": "#ff8a80", "glowColor": "#ff8a80", "speedBoost": 1.38 },
+      { "id": "tm-rail-edge-sw", "points": [[-18, 3.2, 50], [-28, 5.1, 52], [-34, 5.1, 44], [-30, 4.3, 32]], "color": "#4dd0e1", "glowColor": "#4dd0e1", "speedBoost": 1.28 },
+      { "id": "tm-rail-edge-e", "points": [[36, 5.5, 26], [54, 5.7, 20], [54, 5.7, 8], [28, 6.0, 6]], "color": "#ff8a80", "glowColor": "#ff8a80", "speedBoost": 1.3 },
+      { "id": "tm-rail-edge-ne", "points": [[36, 6.7, -40], [46, 6.7, -34], [32, 5.2, -16]], "color": "#fff59d", "glowColor": "#fff59d", "speedBoost": 1.32 },
+      { "id": "tm-rail-edge-nw", "points": [[-44, 7.1, -34], [-54, 7.1, -24], [-42, 7.8, -12]], "color": "#4dd0e1", "glowColor": "#4dd0e1", "speedBoost": 1.32 }
     ],
     "billboards": [
       { "id": "tm-bb-1", "x": -28, "y": 4.0, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Clearance Crew", "eventId": "tm-tag-mall", "color": "#4dd0e1" },

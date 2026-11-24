@@ -3,7 +3,14 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, GNORMAN_LOOK } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import { groundHeightAt } from '../levels/loader';
-import type { GsrAmbientNpc, GsrBillboard, GsrBuilding, GsrInteractive, GsrLevelDoc } from '../levels/schema';
+import type {
+  GsrAmbientNpc,
+  GsrArenaShape,
+  GsrBillboard,
+  GsrBuilding,
+  GsrInteractive,
+  GsrLevelDoc,
+} from '../levels/schema';
 import { buildPerimeterAds, getBrandAdTexture } from './ads';
 import { createAtmosphereMotes } from './atmosphere';
 import { createGangCrew, type GangCrewSystem } from './gangCrew';
@@ -11,6 +18,7 @@ import { getVinylsForLevel, type GoldenVinylDef } from '../data/vinyls';
 import type { GsrLevelId } from '../levels/loader';
 import { createRegionalSkybox } from './skybox';
 import { createSkyTraffic } from './skyTraffic';
+import { createSkyVisualizer } from './skyVisualizer';
 import { buildTransitGates, type TransitGateEntry } from './transitGates';
 import { getFacadeTexture, getGroundTexture, getToonGradientMap } from './toon';
 
@@ -74,7 +82,7 @@ export interface WorldVisuals {
   showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
   triggerBossHit(): void;
   setFlowVisible(v: boolean): void;
-  update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number): void;
+  update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number, comboMult?: number): void;
   dispose(): void;
 }
 
@@ -95,18 +103,20 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   group.add(skyTraffic.group);
   disposables.push(skyTraffic);
 
-  // 2. Floating Island Ground + Under-Skirt
+  const skyVis = createSkyVisualizer(doc);
+  group.add(skyVis.group);
+  disposables.push(skyVis);
+
+  // 2. Floating Island Ground + Sculpted Cliff Skirt + Neon Perimeter Curb
   const w = doc.bounds.w;
   const d = doc.bounds.d;
-  const gGeo = track(new THREE.PlaneGeometry(w, d, 48, 48));
-  gGeo.rotateX(-Math.PI / 2);
-  const posAttr = gGeo.attributes.position as THREE.BufferAttribute;
-  for (let i = 0; i < posAttr.count; i++) {
-    const x = posAttr.getX(i);
-    const z = posAttr.getZ(i);
-    posAttr.setY(i, groundHeightAt(doc, x, z));
-  }
-  gGeo.computeVertexNormals();
+  const halfW = w * 0.5;
+  const halfD = d * 0.5;
+  const arenaShape = doc.data.arenaShape;
+  const outline = buildArenaOutline(arenaShape, halfW, halfD);
+  const ringPts = subdividePolygon(outline, 4.5);
+
+  const gGeo = track(buildArenaGroundGeometry(doc, ringPts, halfW, halfD));
   const toonMap = getToonGradientMap();
   const gMat = track(
     flatLayer(
@@ -123,12 +133,87 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   ground.userData.sprayable = true;
   group.add(ground);
 
-  // Island cliff skirt underneath (offset slightly below y=0 to avoid coplanar face)
-  const skirtGeo = track(new THREE.CylinderGeometry(w * 0.52, w * 0.22, 18, 12));
-  const skirtMat = track(new THREE.MeshStandardMaterial({ color: '#1b122b', roughness: 0.95 }));
+  // Sculpted cliff skirt underneath (starts cleanly below ground to avoid coplanar faces)
+  const skirtGeo = track(buildArenaSkirtGeometry(doc, ringPts));
+  const skirtMat = track(new THREE.MeshStandardMaterial({ color: '#1b122b', roughness: 0.95, flatShading: true }));
   const skirt = new THREE.Mesh(skirtGeo, skirtMat);
-  skirt.position.set(0, -9.2, 0);
   group.add(skirt);
+
+  // Glowing neon perimeter curb ring around the polygon outline
+  const curbCurvePts = buildCurbCurvePoints(doc, outline);
+  const curbCurve = new THREE.CatmullRomCurve3(curbCurvePts, true, 'catmullrom', 0.12);
+  const curbGeo = track(new THREE.TubeGeometry(curbCurve, Math.max(48, curbCurvePts.length * 2), 0.22, 6, true));
+  const curbMat = track(
+    new THREE.MeshStandardMaterial({
+      color: doc.data.accentColor,
+      emissive: doc.data.accentColor,
+      emissiveIntensity: 0.78,
+      roughness: 0.25,
+    }),
+  );
+  const curbMesh = new THREE.Mesh(curbGeo, curbMat);
+  group.add(curbMesh);
+
+  // Arena-shape signature architectural features
+  if (arenaShape === 'dome-atrium') {
+    const atriumR = Math.min(halfW, halfD) * 0.92;
+    const skyDomeMat = track(
+      new THREE.MeshStandardMaterial({
+        color: '#80f5ff',
+        emissive: doc.data.accentColor,
+        emissiveIntensity: 0.25,
+        transparent: true,
+        opacity: 0.16,
+        roughness: 0.2,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
+    const skyCollar = new THREE.Mesh(
+      track(new THREE.CylinderGeometry(atriumR * 0.94, atriumR, 2.8, 36, 1, true)),
+      skyDomeMat,
+    );
+    skyCollar.position.set(0, 26, 0);
+    group.add(skyCollar);
+
+    const skyRimMat = track(
+      new THREE.MeshStandardMaterial({
+        color: doc.data.accentColor,
+        emissive: doc.data.accentColor,
+        emissiveIntensity: 0.65,
+        transparent: true,
+        opacity: 0.55,
+        roughness: 0.25,
+      }),
+    );
+    const skyRim = new THREE.Mesh(track(new THREE.TorusGeometry(atriumR, 0.26, 8, 48)), skyRimMat);
+    skyRim.rotation.x = Math.PI / 2;
+    skyRim.position.set(0, 24.6, 0);
+    group.add(skyRim);
+  } else if (arenaShape === 'vinyl-disc') {
+    const discR = Math.min(halfW, halfD);
+    const grooveRadii = [0.24, 0.41, 0.58, 0.75, 0.9];
+    for (let i = 0; i < grooveRadii.length; i++) {
+      const rMid = discR * grooveRadii[i]!;
+      const col = i % 2 === 0 ? doc.data.accentColor : '#ffd740';
+      const ringGeo = track(new THREE.RingGeometry(rMid - 0.22, rMid + 0.22, 48));
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = track(
+        flatLayer(
+          new THREE.MeshBasicMaterial({
+            color: col,
+            transparent: true,
+            opacity: 0.45,
+            side: THREE.DoubleSide,
+          }),
+          LAYER.marking,
+        ),
+      );
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.y = 0.14;
+      group.add(ringMesh);
+    }
+  }
 
   // 3. Road paths (using @lawn/depth LAYER.road + pathIdx stagger so crossing roads never z-fight!)
   const roadMat = track(flatLayer(new THREE.MeshStandardMaterial({ color: '#191b26', roughness: 0.75 }), LAYER.road));
@@ -323,6 +408,18 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     const panel = new THREE.Mesh(track(new THREE.BoxGeometry(bb.w, bb.h, 0.36)), panelMat);
     panel.userData.sprayable = true;
     holder.add(panel);
+
+    const grindBarMat = track(
+      new THREE.MeshStandardMaterial({
+        color: bb.color,
+        emissive: bb.color,
+        emissiveIntensity: 0.9,
+        roughness: 0.25,
+      }),
+    );
+    const grindBar = new THREE.Mesh(track(new THREE.BoxGeometry(bb.w + 0.5, 0.14, 0.18)), grindBarMat);
+    grindBar.position.set(0, bb.h * 0.5 + 0.3, 0);
+    holder.add(grindBar);
 
     const legH = 0.6;
     const legGeo = track(new THREE.CylinderGeometry(0.1, 0.1, legH, 8));
@@ -858,12 +955,13 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         entry.root.scale.setScalar(1.35);
       }
     },
-    update(t, beatPulse, bossActive, bossWavePhase, hype = 0.3) {
+    update(t, beatPulse, bossActive, bossWavePhase, hype = 0.35, comboMult = 1) {
       const dt = lastT > 0 ? Math.min(0.05, Math.max(0.001, t - lastT)) : 0.016;
       lastT = t;
       gangCrew.update(t, dt, beatPulse);
       skybox.update(t, beatPulse, hype);
       skyTraffic.update(t, beatPulse, hype);
+      skyVis.update(t, beatPulse, hype, comboMult);
       transitGates.update(t, beatPulse);
       atmosphereMotes.update(t, dt, beatPulse);
       for (const v of goldenVinyls.values()) {
@@ -1260,7 +1358,358 @@ function decorateBuilding(
     band.position.set(b.x, b.yBase + b.h * 0.5, b.z);
     group.add(band);
     addCornerPosts(0.12, 0.16, 2.1, glowMat);
+  } else if (arch === 'abstract-office-slab') {
+    const mullionGeo = track(new THREE.BoxGeometry(0.28, Math.max(1.2, b.h * 0.72), 0.24));
+    const slots = b.w >= 18 ? [-b.w * 0.3, 0, b.w * 0.3] : [-b.w * 0.24, b.w * 0.24];
+    for (const ox of slots) {
+      for (const sz of [-1, 1]) {
+        const mullion = new THREE.Mesh(mullionGeo, glowMat);
+        mullion.position.set(b.x + ox, b.yBase + b.h * 0.5, b.z + sz * (b.d * 0.5 + 0.22));
+        mullion.rotation.z = 0.16;
+        group.add(mullion);
+      }
+    }
+    const stripeGeo = track(new THREE.BoxGeometry(b.w + 0.46, 0.24, b.d + 0.46));
+    for (const f of [0.34, 0.68]) {
+      const stripe = new THREE.Mesh(stripeGeo, glowMat);
+      stripe.position.set(b.x, b.yBase + b.h * f, b.z);
+      group.add(stripe);
+    }
+    const fin = new THREE.Mesh(track(new THREE.BoxGeometry(0.32, 2.2, b.d * 0.64)), darkMat);
+    fin.position.set(b.x, roofTop + 0.95, b.z);
+    fin.rotation.x = -0.18;
+    group.add(fin);
+    const finCap = new THREE.Mesh(track(new THREE.BoxGeometry(0.38, 0.2, b.d * 0.64)), glowMat);
+    finCap.position.set(b.x, roofTop + 2.24, b.z - 0.23);
+    finCap.rotation.x = -0.18;
+    group.add(finCap);
+  } else if (arch === 'cantilever-tower') {
+    const ledge = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 1.6, 0.42, b.d + 2.6)), darkMat);
+    ledge.position.set(b.x, b.yBase + b.h * 0.54, b.z + 1.1);
+    group.add(ledge);
+    const lip = new THREE.Mesh(track(new THREE.BoxGeometry(b.w + 1.72, 0.18, 0.26)), glowMat);
+    lip.position.set(b.x, b.yBase + b.h * 0.54 + 0.34, b.z + b.d * 0.5 + 2.56);
+    group.add(lip);
+    const strutGeo = track(new THREE.CylinderGeometry(0.16, 0.22, Math.max(1.4, b.h * 0.44), 8));
+    for (const sx of [-1, 1]) {
+      const strut = new THREE.Mesh(strutGeo, glowMat);
+      strut.position.set(b.x + sx * (b.w * 0.34), b.yBase + b.h * 0.3, b.z + b.d * 0.5 + 1.12);
+      strut.rotation.x = 0.42;
+      group.add(strut);
+    }
+    const mast = new THREE.Mesh(track(new THREE.CylinderGeometry(0.1, 0.2, 4.2, 8)), darkMat);
+    mast.position.set(b.x, roofTop + 2.0, b.z);
+    group.add(mast);
+    const beacon = new THREE.Mesh(track(new THREE.SphereGeometry(0.34, 10, 8)), glowMat);
+    beacon.position.set(b.x, roofTop + 4.15, b.z);
+    group.add(beacon);
+  } else if (arch === 'stepped-monolith') {
+    const tier = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.68, 1.8, b.d * 0.68)), darkMat);
+    tier.position.set(b.x, roofTop + 0.84, b.z);
+    group.add(tier);
+    const tierCap = new THREE.Mesh(track(new THREE.BoxGeometry(b.w * 0.72, 0.18, b.d * 0.72)), glowMat);
+    tierCap.position.set(b.x, roofTop + 1.78, b.z);
+    group.add(tierCap);
+    const spineGeo = track(new THREE.BoxGeometry(0.54, Math.max(1.2, b.h * 0.84), 0.26));
+    for (const sz of [-1, 1]) {
+      const spine = new THREE.Mesh(spineGeo, glowMat);
+      spine.position.set(b.x, b.yBase + b.h * 0.5, b.z + sz * (b.d * 0.5 + 0.22));
+      group.add(spine);
+    }
+    const crownFin = new THREE.Mesh(track(new THREE.BoxGeometry(0.34, 2.3, b.d * 0.5)), glowMat);
+    crownFin.position.set(b.x, roofTop + 2.75, b.z);
+    crownFin.rotation.z = 0.22;
+    group.add(crownFin);
   }
+}
+
+export function buildArenaOutline(shape: GsrArenaShape | undefined, halfW: number, halfD: number): THREE.Vector2[] {
+  let pts: THREE.Vector2[];
+
+  if (shape === 'octagonal-plaza') {
+    const c = 0.28;
+    const cx = halfW * (1 - c);
+    const cz = halfD * (1 - c);
+    pts = [
+      new THREE.Vector2(halfW, -cz),
+      new THREE.Vector2(halfW, cz),
+      new THREE.Vector2(cx, halfD),
+      new THREE.Vector2(-cx, halfD),
+      new THREE.Vector2(-halfW, cz),
+      new THREE.Vector2(-halfW, -cz),
+      new THREE.Vector2(-cx, -halfD),
+      new THREE.Vector2(cx, -halfD),
+    ];
+  } else if (shape === 's-curve-viaduct') {
+    pts = [];
+    const steps = 12;
+    for (let i = 0; i <= steps; i++) {
+      const u = -1 + (2 * i) / steps;
+      const z = u * halfD;
+      const x = halfW * (0.68 + 0.28 * Math.sin(u * Math.PI));
+      pts.push(new THREE.Vector2(x, z));
+    }
+    for (let i = steps; i >= 0; i--) {
+      const u = -1 + (2 * i) / steps;
+      const z = u * halfD;
+      const x = -halfW * (0.68 - 0.28 * Math.sin(u * Math.PI));
+      pts.push(new THREE.Vector2(x, z));
+    }
+  } else if (shape === 'crucible-ring') {
+    const a = 0.45;
+    const b = 0.76;
+    pts = [
+      new THREE.Vector2(halfW, -a * halfD),
+      new THREE.Vector2(halfW, a * halfD),
+      new THREE.Vector2(b * halfW, a * halfD),
+      new THREE.Vector2(b * halfW, b * halfD),
+      new THREE.Vector2(a * halfW, b * halfD),
+      new THREE.Vector2(a * halfW, halfD),
+      new THREE.Vector2(-a * halfW, halfD),
+      new THREE.Vector2(-a * halfW, b * halfD),
+      new THREE.Vector2(-b * halfW, b * halfD),
+      new THREE.Vector2(-b * halfW, a * halfD),
+      new THREE.Vector2(-halfW, a * halfD),
+      new THREE.Vector2(-halfW, -a * halfD),
+      new THREE.Vector2(-b * halfW, -a * halfD),
+      new THREE.Vector2(-b * halfW, -b * halfD),
+      new THREE.Vector2(-a * halfW, -b * halfD),
+      new THREE.Vector2(-a * halfW, -halfD),
+      new THREE.Vector2(a * halfW, -halfD),
+      new THREE.Vector2(a * halfW, -b * halfD),
+      new THREE.Vector2(b * halfW, -b * halfD),
+      new THREE.Vector2(b * halfW, -a * halfD),
+    ];
+  } else if (shape === 'spiral-spire') {
+    const count = 20;
+    pts = [];
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2;
+      const r = 0.92 + 0.08 * Math.cos(ang * 5);
+      pts.push(new THREE.Vector2(Math.cos(ang) * halfW * r, -Math.sin(ang) * halfD * r));
+    }
+  } else if (shape === 'canyon-alley') {
+    pts = [
+      new THREE.Vector2(0.68 * halfW, -halfD),
+      new THREE.Vector2(0.68 * halfW, -0.52 * halfD),
+      new THREE.Vector2(0.52 * halfW, -0.38 * halfD),
+      new THREE.Vector2(0.52 * halfW, -0.18 * halfD),
+      new THREE.Vector2(0.92 * halfW, -0.1 * halfD),
+      new THREE.Vector2(0.92 * halfW, 0.1 * halfD),
+      new THREE.Vector2(0.52 * halfW, 0.18 * halfD),
+      new THREE.Vector2(0.52 * halfW, 0.38 * halfD),
+      new THREE.Vector2(0.68 * halfW, 0.52 * halfD),
+      new THREE.Vector2(0.68 * halfW, halfD),
+      new THREE.Vector2(-0.68 * halfW, halfD),
+      new THREE.Vector2(-0.68 * halfW, 0.52 * halfD),
+      new THREE.Vector2(-0.52 * halfW, 0.38 * halfD),
+      new THREE.Vector2(-0.52 * halfW, 0.18 * halfD),
+      new THREE.Vector2(-0.92 * halfW, 0.1 * halfD),
+      new THREE.Vector2(-0.92 * halfW, -0.1 * halfD),
+      new THREE.Vector2(-0.52 * halfW, -0.18 * halfD),
+      new THREE.Vector2(-0.52 * halfW, -0.38 * halfD),
+      new THREE.Vector2(-0.68 * halfW, -0.52 * halfD),
+      new THREE.Vector2(-0.68 * halfW, -halfD),
+    ];
+  } else if (shape === 'dome-atrium') {
+    const count = 24;
+    pts = [];
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2;
+      pts.push(new THREE.Vector2(Math.cos(ang) * halfW, -Math.sin(ang) * halfD));
+    }
+  } else if (shape === 'hedged-diamond') {
+    const tip = 0.22;
+    pts = [
+      new THREE.Vector2(halfW, -tip * halfD),
+      new THREE.Vector2(halfW, tip * halfD),
+      new THREE.Vector2(tip * halfW, halfD),
+      new THREE.Vector2(-tip * halfW, halfD),
+      new THREE.Vector2(-halfW, tip * halfD),
+      new THREE.Vector2(-halfW, -tip * halfD),
+      new THREE.Vector2(-tip * halfW, -halfD),
+      new THREE.Vector2(tip * halfW, -halfD),
+    ];
+  } else if (shape === 'relay-cross') {
+    const a = 0.46;
+    pts = [
+      new THREE.Vector2(halfW, -a * halfD),
+      new THREE.Vector2(halfW, a * halfD),
+      new THREE.Vector2(a * halfW, a * halfD),
+      new THREE.Vector2(a * halfW, halfD),
+      new THREE.Vector2(-a * halfW, halfD),
+      new THREE.Vector2(-a * halfW, a * halfD),
+      new THREE.Vector2(-halfW, a * halfD),
+      new THREE.Vector2(-halfW, -a * halfD),
+      new THREE.Vector2(-a * halfW, -a * halfD),
+      new THREE.Vector2(-a * halfW, -halfD),
+      new THREE.Vector2(a * halfW, -halfD),
+      new THREE.Vector2(a * halfW, -a * halfD),
+    ];
+  } else if (shape === 'vinyl-disc') {
+    const count = 28;
+    pts = [];
+    for (let i = 0; i < count; i++) {
+      const ang = (i / count) * Math.PI * 2;
+      pts.push(new THREE.Vector2(Math.cos(ang) * halfW, -Math.sin(ang) * halfD));
+    }
+  } else {
+    pts = [
+      new THREE.Vector2(halfW, -halfD),
+      new THREE.Vector2(halfW, halfD),
+      new THREE.Vector2(-halfW, halfD),
+      new THREE.Vector2(-halfW, -halfD),
+    ];
+  }
+
+  // Ensure consistent winding (negative signed area in XZ so (0, p_i, p_{i+1}) faces +Y)
+  let area2 = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]!;
+    const q = pts[(i + 1) % pts.length]!;
+    area2 += p.x * q.y - q.x * p.y;
+  }
+  if (area2 > 0) pts.reverse();
+  return pts;
+}
+
+function subdividePolygon(outline: readonly THREE.Vector2[], maxSegLen: number): THREE.Vector2[] {
+  const out: THREE.Vector2[] = [];
+  for (let i = 0; i < outline.length; i++) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % outline.length]!;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const steps = Math.max(1, Math.ceil(len / maxSegLen));
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      out.push(new THREE.Vector2(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t));
+    }
+  }
+  return out;
+}
+
+function buildCurbCurvePoints(doc: GsrLevelDoc, outline: readonly THREE.Vector2[]): THREE.Vector3[] {
+  const pts: THREE.Vector3[] = [];
+  for (let i = 0; i < outline.length; i++) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % outline.length]!;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    // Add short lead-in/out samples on long straight segments so CatmullRom stays tight at corners
+    const steps = len > 8 ? Math.max(3, Math.ceil(len / 8)) : 1;
+    for (let s = 0; s < steps; s++) {
+      const t = s / steps;
+      const x = a.x + (b.x - a.x) * t;
+      const z = a.y + (b.y - a.y) * t;
+      pts.push(new THREE.Vector3(x, groundHeightAt(doc, x, z) + 0.16, z));
+    }
+  }
+  return pts;
+}
+
+function buildArenaGroundGeometry(
+  doc: GsrLevelDoc,
+  ringPts: readonly THREE.Vector2[],
+  halfW: number,
+  halfD: number,
+): THREE.BufferGeometry {
+  const n = ringPts.length;
+  const rings = 24;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  // Center vertex (index 0)
+  positions.push(0, groundHeightAt(doc, 0, 0), 0);
+  uvs.push(0.5, 0.5);
+
+  for (let r = 1; r <= rings; r++) {
+    const t = r / rings;
+    for (let i = 0; i < n; i++) {
+      const p = ringPts[i]!;
+      const x = p.x * t;
+      const z = p.y * t;
+      positions.push(x, groundHeightAt(doc, x, z), z);
+      uvs.push(x / (halfW * 2) + 0.5, 0.5 - z / (halfD * 2));
+    }
+  }
+
+  // Center fan
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    indices.push(0, 1 + i, 1 + next);
+  }
+
+  // Concentric ring quads
+  for (let r = 1; r < rings; r++) {
+    const baseA = 1 + (r - 1) * n;
+    const baseB = 1 + r * n;
+    for (let i = 0; i < n; i++) {
+      const next = (i + 1) % n;
+      const a0 = baseA + i;
+      const a1 = baseA + next;
+      const b0 = baseB + i;
+      const b1 = baseB + next;
+      indices.push(a0, b0, b1);
+      indices.push(a0, b1, a1);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function buildArenaSkirtGeometry(doc: GsrLevelDoc, ringPts: readonly THREE.Vector2[]): THREE.BufferGeometry {
+  const n = ringPts.length;
+  const positions: number[] = [];
+  const indices: number[] = [];
+
+  // 3 vertical tiers: top rim (0.18m below ground), mid cliff ledge (-6.5m), bottom keel (-18.2m)
+  for (let i = 0; i < n; i++) {
+    const p = ringPts[i]!;
+    const gy = groundHeightAt(doc, p.x, p.y);
+    positions.push(p.x * 0.996, gy - 0.18, p.y * 0.996);
+  }
+  for (let i = 0; i < n; i++) {
+    const p = ringPts[i]!;
+    positions.push(p.x * 0.78, -6.5, p.y * 0.78);
+  }
+  for (let i = 0; i < n; i++) {
+    const p = ringPts[i]!;
+    positions.push(p.x * 0.36, -18.2, p.y * 0.36);
+  }
+  const bottomCenterIdx = n * 3;
+  positions.push(0, -18.8, 0);
+
+  for (let tier = 0; tier < 2; tier++) {
+    const rowA = tier * n;
+    const rowB = (tier + 1) * n;
+    for (let i = 0; i < n; i++) {
+      const next = (i + 1) % n;
+      const t0 = rowA + i;
+      const t1 = rowA + next;
+      const b0 = rowB + i;
+      const b1 = rowB + next;
+      indices.push(t0, b0, b1);
+      indices.push(t0, b1, t1);
+    }
+  }
+
+  // Bottom cap facing downward (-Y)
+  const botRow = 2 * n;
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    indices.push(bottomCenterIdx, botRow + next, botRow + i);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
 }
 
 function createSpeechBubbleSprite(

@@ -6,6 +6,7 @@ export interface HelperGnomeHandle {
   showFact(levelId: GsrLevelId, factIdx?: number): void;
   showHint(levelId: GsrLevelId, session: LevelSession, showUnstuck?: boolean): void;
   hide(): void;
+  notifyProgress(): void;
   tick(dt: number, levelId: GsrLevelId, session: LevelSession): void;
   resetForLevel(levelId: GsrLevelId): void;
   dispose(): void;
@@ -61,9 +62,17 @@ export function createHelperGnome(
   container.appendChild(card);
 
   let visibleTtl = 0;
-  let factTimer = 10;
-  let idleHintTimer = 38;
+  let idleHintTimer = 75;
+  let lastProgressKey = '';
   let factCursor = 0;
+
+  function getProgressKey(session: LevelSession): string {
+    let key = '';
+    for (const ev of session.events.values()) {
+      key += `${ev.progress}:${ev.completed ? 1 : 0};`;
+    }
+    return key;
+  }
 
   function renderProfile(p: HelperGnomeProfile, badge: string, msg: string, showUnstuck: boolean, ttl: number): void {
     card.style.borderColor = p.accentColor;
@@ -107,31 +116,34 @@ export function createHelperGnome(
   function showHint(levelId: GsrLevelId, session: LevelSession, showUnstuck = true): void {
     const p = HELPER_GNOMES[levelId];
     renderProfile(p, 'ROUTE HINT', pickHint(p, session), showUnstuck, 10.5);
-    idleHintTimer = 40;
+    idleHintTimer = 75;
   }
 
   return {
     showFact,
     showHint,
     hide,
+    notifyProgress() {
+      idleHintTimer = 75;
+    },
     resetForLevel() {
       hide();
-      factTimer = 9;
-      idleHintTimer = 38;
+      idleHintTimer = 75;
+      lastProgressKey = '';
     },
     tick(dt, levelId, session) {
       if (visibleTtl > 0) {
         visibleTtl -= dt;
         if (visibleTtl <= 0) hide();
       }
-      factTimer -= dt;
-      if (factTimer <= 0) {
-        factTimer = 46;
-        if (visibleTtl <= 0) showFact(levelId);
+      const progressKey = getProgressKey(session);
+      if (progressKey !== lastProgressKey) {
+        lastProgressKey = progressKey;
+        idleHintTimer = 75;
       }
       idleHintTimer -= dt;
       if (idleHintTimer <= 0) {
-        idleHintTimer = 45;
+        idleHintTimer = 75;
         if (visibleTtl <= 0 && !session.levelCleared) showHint(levelId, session, true);
       }
     },

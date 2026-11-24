@@ -33,6 +33,14 @@ describe('Gnom Set Radio music', () => {
     expect(area3?.key).toBe('E');
   });
 
+  it('Areas 5-9 have updated distinct BPMs, keys, and styles', () => {
+    expect(GSR_TRACKS.find((t) => t.id === 'mulch-alley-chiptune-funk')?.bpm).toBe(128);
+    expect(GSR_TRACKS.find((t) => t.id === 'sky-mall-future-funk')?.bpm).toBe(122);
+    expect(GSR_TRACKS.find((t) => t.id === 'hoa-bylaw-brass-step')?.bpm).toBe(136);
+    expect(GSR_TRACKS.find((t) => t.id === 'subsoil-relay-jungle')?.bpm).toBe(166);
+    expect(GSR_TRACKS.find((t) => t.id === 'zero-hz-zenith')?.bpm).toBe(158);
+  });
+
   it('reactive grinding, boss & skillPeak hooks have zero conflicts and add events on all tracks', () => {
     for (const id of ['ivory-jungle-jazz', 'bongo-rip-mix', 'pirate-radio-hub', 'chrome-kiln-funk'] as const) {
       const baseEvents = captureNoteEvents((T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, id, 7), 30);
@@ -66,12 +74,59 @@ describe('Gnom Set Radio music', () => {
     }
   });
 
+  it('new reactive hooks (wallRiding, comboTier, speedNorm, trickPulse) stay conflict-free and in key', () => {
+    for (const track of GSR_TRACKS) {
+      const baseEvents = captureNoteEvents((T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, track.id, 3), 24);
+      const conflicts: string[] = [];
+
+      const wallEvents = captureNoteEvents(
+        (T, keep, out) =>
+          buildGnomeSetRadioTrack(T, keep, out, track.id, 3, {
+            wallRiding: () => true,
+            speedNorm: () => 0.85,
+          }),
+        24,
+        conflicts,
+      );
+      expect(conflicts).toEqual([]);
+      expect(wallEvents.length).toBeGreaterThan(baseEvents.length);
+
+      let pulseStep = 0;
+      const comboAndTrickEvents = captureNoteEvents(
+        (T, keep, out) =>
+          buildGnomeSetRadioTrack(T, keep, out, track.id, 3, {
+            comboTier: () => 3,
+            speedNorm: () => 1,
+            trickPulse: () => pulseStep++ % 8 === 0,
+          }),
+        24,
+        conflicts,
+      );
+      expect(conflicts).toEqual([]);
+      expect(comboAndTrickEvents.length).toBeGreaterThan(baseEvents.length);
+
+      const theory = analyzeTheory(
+        (T, keep, out) =>
+          buildGnomeSetRadioTrack(T, keep, out, track.id, 3, {
+            wallRiding: () => true,
+            comboTier: () => 3,
+            speedNorm: () => 1,
+            trickPulse: () => true,
+          }),
+        24,
+      );
+      expect(theory.detectedKey.inScaleRatio).toBeGreaterThan(0.85);
+    }
+  });
+
   it('extended grooveC showcase runs conflict-free and stays in key', () => {
-    const conflicts: string[] = [];
-    const build: Build = (T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, 'ivory-jungle-jazz', 1);
-    captureNoteEvents(build, 90, conflicts);
-    expect(conflicts).toEqual([]);
-    const theory = analyzeTheory(build, 90);
-    expect(theory.detectedKey.inScaleRatio).toBeGreaterThan(0.85);
+    for (const id of ['ivory-jungle-jazz', 'mulch-alley-chiptune-funk', 'sky-mall-future-funk', 'hoa-bylaw-brass-step', 'subsoil-relay-jungle', 'zero-hz-zenith'] as const) {
+      const conflicts: string[] = [];
+      const build: Build = (T, keep, out) => buildGnomeSetRadioTrack(T, keep, out, id, 1);
+      captureNoteEvents(build, 90, conflicts);
+      expect(conflicts).toEqual([]);
+      const theory = analyzeTheory(build, 90);
+      expect(theory.detectedKey.inScaleRatio).toBeGreaterThan(0.85);
+    }
   });
 });

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { getArchipelagoNode } from '../data/archipelago';
-import type { GsrLevelId } from '../levels/loader';
+import { LEVEL_ORDER, type GsrLevelId } from '../levels/loader';
 import type { GsrLevelDoc } from '../levels/schema';
+import { buildDistantWorldDiorama } from './distantWorlds';
 import { buildTransitCableCurve, getNeighborIslandPos } from './transitGates';
 
 export interface RegionalSkybox {
@@ -234,60 +235,71 @@ export function createRegionalSkybox(doc: GsrLevelDoc): RegionalSkybox {
     group.add(new THREE.Mesh(arcGeo, arcMat));
   }
 
-  // Connected neighbor island silhouettes + glowing sky-cables from each Transit Gate
+  // Connected neighbor world dioramas (N+1, N-1, express links) + sweeping sky-ladder arc (N+1 -> N+2 -> N+3)
+  const curIdx = LEVEL_ORDER.indexOf(doc.id as GsrLevelId);
   const archNode = getArchipelagoNode(doc.id as GsrLevelId);
+
+  const addLeyLineSkyCable = (fromPos: THREE.Vector3, toPos: THREE.Vector3, color: string) => {
+    const start = new THREE.Vector3(fromPos.x, fromPos.y + 1.5, fromPos.z);
+    const end = new THREE.Vector3(toPos.x, toPos.y + 1.5, toPos.z);
+    const mid = start.clone().lerp(end, 0.5);
+    mid.y += Math.max(12, Math.abs(end.y - start.y) * 0.45);
+    const curve = new THREE.CatmullRomCurve3([start, mid, end]);
+    const mat = track(new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.72 }));
+    group.add(new THREE.Mesh(track(new THREE.TubeGeometry(curve, 28, 0.3, 6, false)), mat));
+  };
+
   if (archNode) {
     for (let i = 0; i < archNode.links.length; i++) {
       const link = archNode.links[i]!;
       const target = getArchipelagoNode(link.targetId);
       const nPos = getNeighborIslandPos(link);
-      const nx = nPos.x;
-      const ny = nPos.y;
-      const nz = nPos.z;
 
-      const nHolder = new THREE.Group();
-      nHolder.position.set(nx, ny, nz);
-
-      const nBody = new THREE.Mesh(islandGeo, islandMat);
-      nBody.position.y = -8.5;
-      nHolder.add(nBody);
-
-      const nCapMat = track(
-        new THREE.MeshStandardMaterial({
-          color: target.color,
-          emissive: target.color,
-          emissiveIntensity: 0.45,
-          roughness: 0.6,
-        }),
-      );
-      const nCap = new THREE.Mesh(capGeo, nCapMat);
-      nCap.position.y = 0.2;
-      nHolder.add(nCap);
-
-      const beaconMat = track(
-        new THREE.MeshStandardMaterial({
-          color: link.color,
-          emissive: link.color,
-          emissiveIntensity: 0.9,
-          roughness: 0.2,
-        }),
-      );
-      const landmark =
-        target.silhouette === 'vinyl' || target.silhouette === 'zenith'
-          ? new THREE.Mesh(track(new THREE.CylinderGeometry(7.5, 7.5, 0.6, 18)), beaconMat)
-          : target.silhouette === 'kiln' || target.silhouette === 'subsoil'
-          ? new THREE.Mesh(track(new THREE.ConeGeometry(4.5, 16, 8)), beaconMat)
-          : new THREE.Mesh(track(new THREE.BoxGeometry(8, 9, 8)), beaconMat);
-      landmark.position.y = 6.5;
-      nHolder.add(landmark);
+      const nHolder = buildDistantWorldDiorama(target, track);
+      nHolder.position.copy(nPos);
+      nHolder.rotation.y = Math.atan2(-nPos.x, -nPos.z);
 
       group.add(nHolder);
-      floaters.push({ obj: nHolder, baseY: ny, phase: i * 1.7 + 0.5, spin: 0.05 });
+      floaters.push({ obj: nHolder, baseY: nPos.y, phase: i * 1.7 + 0.5, spin: 0.04 });
 
-      // Sweeping transit cable from the island's physical Transit Gate to the neighbor silhouette
+      // Sweeping transit cable from the island's physical Transit Gate to the neighbor diorama
       const linkCurve = buildTransitCableCurve(link);
       const linkMat = track(new THREE.MeshBasicMaterial({ color: link.color, transparent: true, opacity: 0.72 }));
       group.add(new THREE.Mesh(track(new THREE.TubeGeometry(linkCurve, 28, 0.28, 6, false)), linkMat));
+    }
+
+    // Sweeping sky-ladder arc for upcoming worlds N+2 and N+3 extending past N+1
+    const next1Id = curIdx >= 0 ? LEVEL_ORDER[curIdx + 1] : undefined;
+    const primaryNextLink = next1Id ? archNode.links.find((l) => l.targetId === next1Id) : undefined;
+    if (primaryNextLink) {
+      let prevPos = getNeighborIslandPos(primaryNextLink);
+      const arcSteps = [
+        { offset: 2, dist: 205, elevAboveBase: 42, bearingOffset: 0.26, scale: 1.25 },
+        { offset: 3, dist: 265, elevAboveBase: 72, bearingOffset: 0.52, scale: 1.45 },
+      ] as const;
+
+      for (const step of arcSteps) {
+        const nextId = LEVEL_ORDER[curIdx + step.offset];
+        if (!nextId) break;
+        const targetNode = getArchipelagoNode(nextId);
+        const bearing = primaryNextLink.vistaBearing + step.bearingOffset;
+        const pos = new THREE.Vector3(
+          Math.cos(bearing) * step.dist,
+          18 + step.elevAboveBase,
+          Math.sin(bearing) * step.dist,
+        );
+
+        const diorama = buildDistantWorldDiorama(targetNode, track);
+        diorama.position.copy(pos);
+        diorama.scale.setScalar(step.scale);
+        diorama.rotation.y = Math.atan2(-pos.x, -pos.z);
+
+        group.add(diorama);
+        floaters.push({ obj: diorama, baseY: pos.y, phase: step.offset * 1.9 + 0.8, spin: 0.04 });
+
+        addLeyLineSkyCable(prevPos, pos, targetNode.color);
+        prevPos = pos;
+      }
     }
   }
 

@@ -28,7 +28,7 @@ describe('Gnom Set Radio Cast, Jingles & Cutscenes', () => {
     expect(crewCount).toBe(18);
   });
 
-  it('defines 1 game intro, 24 cutscenes for areas 1-8, and 5 special cutscenes for area 9 (30 total)', () => {
+  it('defines 1 game intro, 24 cutscenes for areas 1-8, 5 special cutscenes for area 9, and 25 quest intros (55 total)', () => {
     expect(GAME_INTRO_CUTSCENE.beats.length).toBeGreaterThanOrEqual(3);
     for (const id of AREA_ORDER_ALL) {
       const bundle = AREA_CUTSCENES[id];
@@ -37,7 +37,7 @@ describe('Gnom Set Radio Cast, Jingles & Cutscenes', () => {
       expect(bundle.bossDefeat.beats.length).toBeGreaterThan(0);
     }
     expect(AREA_CUTSCENES['zero-hz-zenith'].extra).toHaveLength(2);
-    expect(ALL_CUTSCENES).toHaveLength(30);
+    expect(ALL_CUTSCENES).toHaveLength(55);
   });
 
   it('resolves every crew and gnome-sidekick equipment prefab in @lawn/prefabs', () => {

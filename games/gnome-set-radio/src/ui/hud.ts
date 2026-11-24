@@ -1,5 +1,5 @@
 import { createVolumeButton, type VolumeStore } from '@arcade/volume';
-import type { LevelSession } from '../game/events';
+import type { EventRuntime, LevelSession } from '../game/events';
 import type { GsrLevelDoc } from '../levels/schema';
 import type { SkaterState } from '../sim/skater';
 import type { GraffitiDesign } from '../view/graffiti';
@@ -43,7 +43,9 @@ function buildHudCss(): string {
 #gsr-hud .gsr-btns{display:flex;gap:6px;align-items:center;pointer-events:auto;flex-wrap:wrap}
 #gsr-hud .gsr-btn{min-height:44px;min-width:44px;padding:6px 11px;border-radius:10px;background:rgba(18,8,34,0.88);color:#fff;font-weight:800;font-size:12px;cursor:pointer;font-family:system-ui,sans-serif}
 #gsr-hud .gsr-obj{position:absolute;right:12px;top:72px;max-width:min(250px,46vw);background:rgba(18,8,34,0.8);border:1px solid #ff4ecd;border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.35;font-family:system-ui,sans-serif;pointer-events:auto}
-#gsr-hud .gsr-obj-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:900;color:#ffd740;margin-bottom:3px;cursor:pointer}
+#gsr-hud .gsr-obj-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:900;color:#ffd740;margin-bottom:3px;letter-spacing:0.4px}
+#gsr-hud .gsr-side-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:5px;padding:4px 0 0;border:none;border-top:1px solid rgba(255,255,255,0.16);background:none;color:#00e5ff;font-weight:800;font-size:10px;cursor:pointer;text-align:left;font-family:system-ui,sans-serif}
+#gsr-hud .gsr-side-list{margin-top:3px;display:none}
 #gsr-hud .gsr-bossbar{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:rgba(18,8,34,0.92);border:2px solid #ff5252;border-radius:10px;padding:6px 14px;display:none;flex-direction:column;align-items:center;gap:4px;min-width:220px;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
 #gsr-hud .gsr-bossname{font-size:11px;font-weight:900;color:#ff5252;letter-spacing:0.8px;font-family:system-ui,sans-serif}
 #gsr-hud .gsr-bosspips{display:flex;gap:6px;width:100%}
@@ -57,10 +59,10 @@ function buildHudCss(): string {
 #gsr-hud .gsr-badges{display:flex;gap:6px}
 #gsr-hud .gsr-badge{font-size:13px;padding:2px 8px;background:#120624;border:1px solid #00e5ff;color:#69f0ae}
 #gsr-hud .gsr-slamwrap{position:fixed;left:0;right:0;top:11%;text-align:center;pointer-events:none}
-#gsr-hud .gsr-slam{font-size:clamp(34px,6.5vw,76px);color:#fff;text-shadow:3px 3px 0 #120624,6px 6px 0 #ff4ecd;animation:gsr-slam 1.05s linear forwards}
+#gsr-hud .gsr-slam{font-size:clamp(20px, 3.4vw, 38px);color:#fff;text-shadow:3px 3px 0 #120624,6px 6px 0 #ff4ecd;animation:gsr-slam 1.05s linear forwards}
 #gsr-hud .gsr-hype{font-size:clamp(16px,2.5vw,26px);color:#ffd740;text-shadow:2px 2px 0 #120624}
 #gsr-hud .gsr-bankwrap{position:fixed;left:0;right:0;top:46%;transform:translateY(-50%);text-align:center;animation:gsr-fade 1.5s linear forwards}
-#gsr-hud .gsr-bankbig{font-size:clamp(46px,9vw,108px);color:#ffd740;text-shadow:4px 4px 0 #120624,8px 8px 0 #00e5ff;animation:gsr-pop .4s ease-out both}
+#gsr-hud .gsr-bankbig{font-size:clamp(28px, 5vw, 56px);color:#ffd740;text-shadow:4px 4px 0 #120624,8px 8px 0 #00e5ff;animation:gsr-pop .4s ease-out both}
 #gsr-hud .gsr-speed{position:fixed;right:14px;bottom:14px;width:min(190px,42vw);text-align:right}
 #gsr-hud .gsr-kmh{font-size:clamp(30px,5vw,52px);text-shadow:3px 3px 0 #120624,5px 5px 0 #ff4ecd}
 #gsr-hud .gsr-meter{height:12px;background:rgba(18,8,34,0.72);border:2px solid #120624;transform:skewX(-10deg);overflow:hidden}
@@ -146,12 +148,8 @@ export function createHud(
     b.onclick = onClick;
     return b;
   };
-  const netBtn = mkBtn('🌐 Online', '#69f0ae', () => opts.onOpenRoom?.());
-  btnRow.appendChild(netBtn);
   btnRow.appendChild(mkBtn('🗺️ Map', '#00e5ff', () => opts.onOpenMap?.()));
   btnRow.appendChild(mkBtn('🎵 Music', '#00e5ff', opts.onOpenMusic));
-  btnRow.appendChild(mkBtn('💡 Helper', '#69f0ae', opts.onOpenHelper));
-  btnRow.appendChild(mkBtn('🗺️ Areas', '#ff4ecd', opts.onOpenAreas));
   btnRow.appendChild(mkBtn('⏸', '#ffd740', opts.onTogglePause));
   const vol = createVolumeButton(btnRow, opts.volume);
   vol.element.style.pointerEvents = 'auto';
@@ -159,18 +157,25 @@ export function createHud(
 
   const objBox = document.createElement('div');
   objBox.className = 'gsr-obj';
-  let objCollapsed = false;
+  let sideCollapsed = true;
+  let sideHeaderText = 'SIDE QUESTS (0/0)';
   const objHead = document.createElement('div');
   objHead.className = 'gsr-obj-head';
-  objHead.innerHTML = '<span>EVENTS (ANY ORDER)</span><span id="gsr-obj-chev">▾</span>';
-  const objList = document.createElement('div');
-  objHead.onclick = () => {
-    objCollapsed = !objCollapsed;
-    objList.style.display = objCollapsed ? 'none' : 'block';
-    const chev = objHead.querySelector('#gsr-obj-chev');
-    if (chev) chev.textContent = objCollapsed ? '▸' : '▾';
+  objHead.textContent = 'STORY 0/0';
+  const activeQuestEl = document.createElement('div');
+  const sideWrap = document.createElement('div');
+  const sideToggle = document.createElement('button');
+  sideToggle.type = 'button';
+  sideToggle.className = 'gsr-side-toggle';
+  const sideList = document.createElement('div');
+  sideList.className = 'gsr-side-list';
+  sideToggle.onclick = () => {
+    sideCollapsed = !sideCollapsed;
+    sideList.style.display = sideCollapsed ? 'none' : 'block';
+    sideToggle.textContent = `${sideCollapsed ? '▸' : '▾'} ${sideHeaderText}`;
   };
-  objBox.append(objHead, objList);
+  sideWrap.append(sideToggle, sideList);
+  objBox.append(objHead, activeQuestEl, sideWrap);
   hud.appendChild(objBox);
 
   const bossBar = document.createElement('div');
@@ -273,11 +278,14 @@ export function createHud(
       <button class="gsr-pbtn" id="gsr-p-resume" style="background:#00e5ff;color:#120624;border:none;">▶ Resume</button>
       <button class="gsr-pbtn" id="gsr-p-restart" style="border-color:#69f0ae;">↻ Restart Area</button>
       <button class="gsr-pbtn" id="gsr-p-unstuck" style="border-color:#ffd740;">↩ Unstuck to Spawn</button>
+      <button class="gsr-pbtn" id="gsr-p-helper" style="border-color:#69f0ae;">💡 Helper</button>
+      <button class="gsr-pbtn" id="gsr-p-net" style="border-color:#69f0ae;">🌐 Online Lobby</button>
       <button class="gsr-pbtn" id="gsr-p-music" style="border-color:#00e5ff;">🎵 Music Explorer</button>
       <button class="gsr-pbtn" id="gsr-p-areas" style="border-color:#ff4ecd;">🗺️ Area Select</button>
     </div>
   `;
   container.appendChild(pauseModal);
+  const netBtn = pauseModal.querySelector('#gsr-p-net') as HTMLButtonElement;
   pauseModal.querySelector('#gsr-p-resume')?.addEventListener('click', opts.onTogglePause);
   pauseModal.querySelector('#gsr-p-restart')?.addEventListener('click', () => {
     pauseModal.style.display = 'none';
@@ -286,6 +294,14 @@ export function createHud(
   pauseModal.querySelector('#gsr-p-unstuck')?.addEventListener('click', () => {
     opts.onTogglePause();
     opts.onUnstuck();
+  });
+  pauseModal.querySelector('#gsr-p-helper')?.addEventListener('click', () => {
+    opts.onTogglePause();
+    opts.onOpenHelper();
+  });
+  netBtn.addEventListener('click', () => {
+    opts.onTogglePause();
+    opts.onOpenRoom?.();
   });
   pauseModal.querySelector('#gsr-p-music')?.addEventListener('click', () => {
     opts.onTogglePause();
@@ -304,6 +320,8 @@ export function createHud(
   let lastPrompt = '';
   let lastBossKey = '';
   let displayedScore = 0;
+  let lastTrickSlamAt = -Infinity;
+  let slamTrickTimer: ReturnType<typeof setTimeout> | null = null;
 
   return {
     setVisible(v) {
@@ -316,6 +334,13 @@ export function createHud(
       netBtn.textContent = text;
     },
     slamTrick(name, mult, onBeat = false) {
+      const now = performance.now();
+      if (now - lastTrickSlamAt < 450) return;
+      lastTrickSlamAt = now;
+      if (slamTrickTimer !== null) {
+        clearTimeout(slamTrickTimer);
+        slamTrickTimer = null;
+      }
       slamLayer.querySelectorAll('.gsr-slamwrap').forEach((n) => n.remove());
       const wrap = document.createElement('div');
       wrap.className = 'gsr-slamwrap';
@@ -327,7 +352,10 @@ export function createHud(
       el.innerHTML = `${name}! <div class="gsr-hype">${hype} ×${mult}${beatBadge}</div>`;
       wrap.appendChild(el);
       slamLayer.appendChild(wrap);
-      setTimeout(() => wrap.remove(), 1100);
+      slamTrickTimer = setTimeout(() => {
+        wrap.remove();
+        slamTrickTimer = null;
+      }, 1100);
     },
     slamBank(points) {
       const wrap = document.createElement('div');
@@ -403,24 +431,63 @@ export function createHud(
         );
       }
 
-      const lines: string[] = [];
+      const storyEvents: EventRuntime[] = [];
+      const sideEvents: EventRuntime[] = [];
+      let bossEvent: EventRuntime | null = null;
       let bossEvRuntime: { title: string; progress: number; targetCount: number } | null = null;
       for (const ev of session.events.values()) {
         if (ev.def.kind === 'boss') {
+          bossEvent = ev;
           bossEvRuntime = { title: ev.def.title, progress: ev.progress, targetCount: ev.def.targetCount };
-          if (!session.bossUnlocked) {
-            lines.push(`<div style="color:#888;">🔒 BOSS: ${ev.def.title}</div>`);
-            continue;
-          }
+        } else if (ev.def.kind === 'side') {
+          sideEvents.push(ev);
+        } else {
+          storyEvents.push(ev);
         }
-        const icon = ev.completed ? '✅' : ev.def.kind === 'boss' ? '👑' : ev.def.kind === 'side' ? '⭐' : '🎯';
-        const color = ev.completed ? '#69f0ae' : ev.def.kind === 'boss' ? '#ff5252' : ev.def.kind === 'side' ? '#00e5ff' : '#fff';
-        lines.push(`<div style="color:${color};">${icon} ${ev.def.title} (${ev.progress}/${ev.def.targetCount})</div>`);
       }
-      const objHtml = lines.join('');
-      if (objHtml !== lastObjHtml) {
-        lastObjHtml = objHtml;
-        objList.innerHTML = objHtml;
+      const storyDone = storyEvents.filter((e) => e.completed).length;
+      const storyTotal = storyEvents.length;
+      const headText = `STORY ${storyDone}/${storyTotal}`;
+
+      let activeHtml = '';
+      if (session.levelCleared) {
+        activeHtml = '<div style="color:#69f0ae;">✅ AREA CLEARED!</div>';
+      } else if (session.bossUnlocked && bossEvent && !bossEvent.completed) {
+        activeHtml = `<div style="color:#ff5252;">👑 ${bossEvent.def.title} (${bossEvent.progress}/${bossEvent.def.targetCount})</div>`;
+      } else {
+        const activeStory =
+          storyEvents.find((e) => !e.completed && e.progress > 0) ?? storyEvents.find((e) => !e.completed);
+        if (activeStory) {
+          activeHtml = `<div style="color:#fff;">🎯 ${activeStory.def.title} (${activeStory.progress}/${activeStory.def.targetCount})</div>`;
+        } else {
+          activeHtml = '<div style="color:#69f0ae;">✅ STORY COMPLETE</div>';
+        }
+      }
+
+      const sideDone = sideEvents.filter((e) => e.completed).length;
+      const nextSideHeader = `SIDE QUESTS (${sideDone}/${sideEvents.length})`;
+      const sideHtml = sideEvents
+        .map((ev) => {
+          const icon = ev.completed ? '✅' : '⭐';
+          const color = ev.completed ? '#69f0ae' : '#00e5ff';
+          return `<div style="color:${color};">${icon} ${ev.def.title} (${ev.progress}/${ev.def.targetCount})</div>`;
+        })
+        .join('');
+
+      const objKey = `${headText}|${activeHtml}|${nextSideHeader}|${sideHtml}`;
+      if (objKey !== lastObjHtml) {
+        lastObjHtml = objKey;
+        objHead.textContent = headText;
+        activeQuestEl.innerHTML = activeHtml;
+        if (sideEvents.length > 0) {
+          sideWrap.style.display = 'block';
+          sideHeaderText = nextSideHeader;
+          sideToggle.textContent = `${sideCollapsed ? '▸' : '▾'} ${sideHeaderText}`;
+          sideList.innerHTML = sideHtml;
+          sideList.style.display = sideCollapsed ? 'none' : 'block';
+        } else {
+          sideWrap.style.display = 'none';
+        }
       }
 
       const bossKey =

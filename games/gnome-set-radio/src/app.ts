@@ -188,6 +188,7 @@ export function startApp(): void {
   let pluckHitCooldown = 0;
   let sentryHitCooldown = 0;
   let skillFlairTimer = 0;
+  let trickMusicPulse = false;
 
   type TransitState =
     | { phase: 'ride'; t: number; dur: number; fadeStart: number; targetId: GsrLevelId; curve: THREE.CatmullRomCurve3 }
@@ -224,6 +225,14 @@ export function startApp(): void {
         boss: () => musicExplorer.getReactiveOverrides()?.boss?.() ?? (session.bossUnlocked && !session.levelCleared),
         skillPeak: () => musicExplorer.getReactiveOverrides()?.skillPeak?.() ?? (skater.comboMult >= 4 || skillFlairTimer > 0),
         hype: () => musicExplorer.getReactiveOverrides()?.hype?.() ?? Math.min(1, 0.3 + skater.comboMult * 0.12),
+        wallRiding: () => skater.wallRiding,
+        comboTier: () => (skater.comboMult >= 7 ? 3 : skater.comboMult >= 4 ? 2 : skater.comboMult >= 2 ? 1 : 0),
+        speedNorm: () => Math.min(1, skater.speedKmh / 90),
+        trickPulse: () => {
+          const v = trickMusicPulse;
+          trickMusicPulse = false;
+          return v;
+        },
         onBeat(step, _bar, section) {
           if (step % 4 === 0) beatPulse = 1;
           musicExplorer.onBeat(step, section);
@@ -500,14 +509,7 @@ export function startApp(): void {
     // Every start of an area (first visit, restart, replay, next area) plays its level intro.
     // The game intro comes first, once, before the first area.
     const afterAreaIntro = () => {
-      if (progress.introSeen) {
-        const crewSpeaker = doc.data.areaNumber % 2 === 0 ? 'Tag' : 'Spin';
-        session.activeBanner = {
-          speaker: crewSpeaker,
-          text: `Area ${doc.data.areaNumber}: ${doc.name} is live! Clear the ${doc.data.events.filter((e) => e.kind === 'story').length} gang events—boss awaits on the main stage!`,
-          ttl: 5.5,
-        };
-      }
+      session.activeBanner = null;
       if (options?.fromTransit) {
         transit = {
           phase: 'fade-to-player-out',
@@ -571,7 +573,7 @@ export function startApp(): void {
         mutter.say(result.line, ev?.def.kind === 'boss' ? 76 : 112);
         if (ev) world?.showSpeechBubble(ev.def.id, ev.def.character, result.line, 5.0);
       }
-      helper.showFact(currentLevelId);
+      helper.notifyProgress();
       if (result.bossJustUnlocked) {
         effects.emit({ type: 'bossUnlock' });
         if (!autostart && !noCutscenes && world) {
@@ -588,6 +590,28 @@ export function startApp(): void {
         }
       } else if (!result.levelJustCleared) {
         effects.emit({ type: 'eventComplete' });
+        if (result.nextStoryEventId) {
+          const questIntro = AREA_CUTSCENES[currentLevelId].questIntros?.[result.nextStoryEventId];
+          if (questIntro && !autostart && !noCutscenes && world) {
+            playing = false;
+            hud.setVisible(false);
+            input.setTouchVisible(false);
+            cutscene.play(questIntro, world.gangCrew.getAnchors(), () => {
+              hud.setVisible(true);
+              input.setTouchVisible(true);
+              playing = true;
+            });
+          } else {
+            const nextEv = session.events.get(result.nextStoryEventId);
+            if (nextEv) {
+              session.activeBanner = {
+                speaker: nextEv.def.character,
+                text: nextEv.def.introLine,
+                ttl: 5.0,
+              };
+            }
+          }
+        }
       }
       if (result.levelJustCleared) {
         effects.emit({ type: 'levelClear' });
@@ -853,6 +877,7 @@ export function startApp(): void {
       helper.tick(dt, currentLevelId, session);
 
       if (stepRes.trickTriggered) {
+        trickMusicPulse = true;
         if (skater.comboMult >= 4) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
         if (onBeatNow) {
           skater.comboScore += 50;
@@ -904,6 +929,7 @@ export function startApp(): void {
             : `${sprayVerb} to tag ${bb.def.gangName} billboard!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            trickMusicPulse = true;
             skater.yaw = Math.atan2(bb.def.x - skater.x, bb.def.z - skater.z);
             if (skater.grounded && skater.chassis) {
               syncChassisFromSkater(skater.chassis, skater.x, skater.y, skater.z, skater.vx, skater.vz, skater.yaw);
@@ -989,6 +1015,7 @@ export function startApp(): void {
             promptText = `${sprayVerb} to tune ${item.def.label ?? 'Device'}`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
+              trickMusicPulse = true;
               world.markInteractiveDone(id);
               effects.emit({ type: 'spray', isTarget: true, x: item.def.x, y: item.def.y + 0.8, z: item.def.z, color: '#ff4ecd', count: 16, celebrate: true, shake: 0.16, shakeDur: 0.16 });
               skater.boost = Math.min(100, skater.boost + 25);
@@ -1005,6 +1032,7 @@ export function startApp(): void {
           promptText = `${sprayVerb} to tag the Bassist!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            trickMusicPulse = true;
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             pluckHitCooldown = 0.8;
             world.pluckNpc.surge = 1.8;
@@ -1024,6 +1052,7 @@ export function startApp(): void {
             promptText = `${sprayVerb} to silence Sentry!`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
+              trickMusicPulse = true;
               hitstopTimer = Math.max(hitstopTimer, 0.045);
               se.tagged = true;
               sentryHitCooldown = 0.4;
@@ -1052,20 +1081,22 @@ export function startApp(): void {
         }
       }
 
-      // Ambient NPC proximity lines
-      for (const npc of world.ambientNpcs) {
-        const d = Math.hypot(skater.x - npc.def.x, skater.y - npc.def.y, skater.z - npc.def.z);
-        if (d < 3.4 && elapsed - npc.talkedAt > 12) {
-          npc.talkedAt = elapsed;
-          world.showSpeechBubble(npc.def.id, npc.def.name, npc.def.line, 4.5);
+      // Ambient NPC proximity lines & gang crew shoutouts (paused during active story banners)
+      if (!session.activeBanner) {
+        for (const npc of world.ambientNpcs) {
+          const d = Math.hypot(skater.x - npc.def.x, skater.y - npc.def.y, skater.z - npc.def.z);
+          if (d < 3.4 && elapsed - npc.talkedAt > 30) {
+            npc.talkedAt = elapsed;
+            world.showSpeechBubble(npc.def.id, npc.def.name, npc.def.line, 4.5);
+          }
         }
-      }
 
-      // Skating gang crew shoutouts when player skates nearby
-      world.gangCrew.checkShoutouts(skater.x, skater.y, skater.z, elapsed, (id, speaker, line, hz) => {
-        world?.showSpeechBubble(id, speaker, line, 4.5);
-        mutter.say(line, hz);
-      });
+        // Skating gang crew shoutouts when player skates nearby
+        world.gangCrew.checkShoutouts(skater.x, skater.y, skater.z, elapsed, (id, speaker, line, hz) => {
+          world?.showSpeechBubble(id, speaker, line, 4.5);
+          mutter.say(line, hz);
+        });
+      }
 
       // Boss encounter + interactive bass shockwave
       if (session.bossUnlocked && !session.levelCleared && world.bossActor) {
@@ -1100,6 +1131,7 @@ export function startApp(): void {
           promptText = `${sprayVerb} to tag the Boss!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
+            trickMusicPulse = true;
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             bossHitCooldown = 0.9;
             world.bossActor.hits++;
@@ -1161,7 +1193,7 @@ export function startApp(): void {
             discoveredRoofs.add(b.id);
             skater.totalScore += 150;
             sfx.onBeat();
-            locationToast.show('📍 ROOFTOP DISCOVERED', b.label.toUpperCase(), '+150 STYLE', doc.data.accentColor);
+            radioTicker.announce(`Rooftop Discovered: ${b.label}! (+150)`, 4.0);
             break;
           }
         }
@@ -1203,6 +1235,7 @@ export function startApp(): void {
       if (inp.sprayEdge && !sprayConsumed && (skater.grounded || skater.wallRiding || skater.grinding)) {
         const hit = graffiti.sprayAt(skater, activeTag, world.group);
         if (hit.hit) {
+          trickMusicPulse = true;
           effects.emit({ type: 'spray', isTarget: false, x: hit.x, y: hit.y, z: hit.z, color: activeTag.primary, count: 14, shake: 0.08, shakeDur: 0.1 });
           net.sendSpray(currentLevelId, hit.x, hit.y, hit.z, activeTag.id);
           skater.comboScore += 150;
@@ -1220,7 +1253,7 @@ export function startApp(): void {
       const hype = Math.min(1, 0.3 + skater.comboMult * 0.12);
       net.setPose(currentLevelId, skater);
       remoteRiders.update(currentLevelId, dt);
-      world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype);
+      world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype, skater.comboMult);
       markers?.update(elapsed, beatPulse, session);
       const nearest = markers?.nearestTarget(skater.x, skater.y, skater.z, session);
       const compass = nearest

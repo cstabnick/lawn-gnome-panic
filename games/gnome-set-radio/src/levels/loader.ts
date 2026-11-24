@@ -8,6 +8,7 @@ import tupperwareMallRaw from '../data/levels/tupperware-mall.level.json';
 import hoaCitadelRaw from '../data/levels/hoa-citadel.level.json';
 import subsoilRelayRaw from '../data/levels/subsoil-relay.level.json';
 import zeroHzZenithRaw from '../data/levels/zero-hz-zenith.level.json';
+import { getPerimeterAdSpecs } from '../view/ads';
 import type { GsrBuilding, GsrLevelDoc, GsrRail, GsrRamp } from './schema';
 
 export type GsrLevelId =
@@ -134,4 +135,49 @@ export function nearestRailPoint(
     }
   }
   return best;
+}
+
+const allRailsCache = new WeakMap<GsrLevelDoc, GsrRail[]>();
+
+function makeTopEdgeRail(
+  id: string,
+  x: number,
+  railY: number,
+  z: number,
+  yaw: number,
+  width: number,
+  color: string,
+): GsrRail {
+  const halfLen = width * 0.5 + 0.3;
+  const dx = Math.cos(yaw) * halfLen;
+  const dz = -Math.sin(yaw) * halfLen;
+  return {
+    id,
+    points: [
+      [x - dx, railY, z - dz],
+      [x + dx, railY, z + dz],
+    ],
+    color,
+    glowColor: color,
+    speedBoost: 1.22,
+  };
+}
+
+/** All grindable rails in the level: explicit ley-line rails plus billboard & perimeter-ad top rails. */
+export function getAllRails(doc: GsrLevelDoc): GsrRail[] {
+  const cached = allRailsCache.get(doc);
+  if (cached) return cached;
+
+  const billboardRails: GsrRail[] = [
+    ...doc.data.billboards.map((bb) =>
+      makeTopEdgeRail(`rail-bb-${bb.id}`, bb.x, bb.y + bb.h + 0.72, bb.z, bb.yaw, bb.w, bb.color),
+    ),
+    ...getPerimeterAdSpecs(doc).map((sp) =>
+      makeTopEdgeRail(`rail-${sp.id}`, sp.x, sp.y + sp.h * 0.5 + 0.12, sp.z, sp.yaw, sp.w, '#00e5ff'),
+    ),
+  ];
+
+  const all = [...doc.data.rails, ...billboardRails];
+  allRailsCache.set(doc, all);
+  return all;
 }

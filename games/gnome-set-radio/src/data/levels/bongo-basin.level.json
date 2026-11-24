@@ -59,6 +59,7 @@
     "gangName": "The Rip-Skin Collective",
     "gangLeader": "Conga King Kora",
     "trackId": "bongo-rip-mix",
+    "arenaShape": "s-curve-viaduct",
     "skyTheme": "bongo",
     "skyTop": "#240b36",
     "skyBottom": "#ff9100",
@@ -149,6 +150,62 @@
         "accentColor": "#ff9100",
         "label": "Kora's Bongo Crown",
         "arch": "drum-silo"
+      },
+      {
+        "id": "bb-edge-nw",
+        "x": -67,
+        "z": -38,
+        "w": 10,
+        "d": 10,
+        "yBase": 0,
+        "h": 6.2,
+        "color": "#3d261c",
+        "roofColor": "#1c120d",
+        "accentColor": "#ffd740",
+        "label": "NW Freight Dispatch Monolith",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "bb-edge-ne",
+        "x": 34,
+        "z": -55,
+        "w": 12,
+        "d": 10,
+        "yBase": 0,
+        "h": 5.6,
+        "color": "#453328",
+        "roofColor": "#1c120d",
+        "accentColor": "#00e5ff",
+        "label": "North Viaduct Control Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "bb-edge-se",
+        "x": 52,
+        "z": 48,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 5.4,
+        "color": "#4a241b",
+        "roofColor": "#1c120d",
+        "accentColor": "#ff5252",
+        "label": "SE Highway Logistics Tower",
+        "arch": "cantilever-tower"
+      },
+      {
+        "id": "bb-edge-sw",
+        "x": -22,
+        "z": 54,
+        "w": 12,
+        "d": 10,
+        "yBase": 0,
+        "h": 4.8,
+        "color": "#3d261c",
+        "roofColor": "#1c120d",
+        "accentColor": "#ff9100",
+        "label": "Southbound Weighbridge Office",
+        "arch": "abstract-office-slab"
       }
     ],
     "ramps": [
@@ -224,6 +281,34 @@
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.28
+      },
+      {
+        "id": "bb-rail-edge-nw",
+        "points": [[-60, 2.6, -36], [-56, 6.4, -44], [-52, 6.4, -52], [-34, 4.0, -40]],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "bb-rail-edge-ne",
+        "points": [[16, 6.0, -54], [26, 5.8, -54], [34, 7.8, -32]],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "bb-rail-edge-se",
+        "points": [[60, 2.6, 36], [52, 5.6, 46], [46, 5.6, 52], [38, 3.8, 39]],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "bb-rail-edge-sw",
+        "points": [[-24, 1.6, 32], [-22, 5.0, 50], [-16, 5.0, 56], [-4, 2.0, 42]],
+        "color": "#ff9100",
+        "glowColor": "#ff9100",
+        "speedBoost": 1.26
       }
     ],
     "billboards": [

@@ -15,8 +15,10 @@ import {
   FOUNTAINS,
   groundHeightAt,
   isNearShop,
+  JUNGLE_CAMPS,
   RELIC_ALTAR,
   STRUCTURES,
+  type JungleCampSpec,
 } from './map';
 import { createMoveState, stepHeroMovement, type MoveInput, type MoveState } from './movement';
 
@@ -151,6 +153,23 @@ export interface AoeZoneEntity {
   explodeDmg?: number;
 }
 
+export interface NeutralEntity {
+  id: number;
+  campId: string;
+  kind: 'beetle' | 'golem';
+  homeX: number;
+  homeZ: number;
+  x: number;
+  y: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  bounty: number;
+  aggroSlot: number;
+  fireCooldown: number;
+}
+
 export interface RelicState {
   spawned: boolean;
   alive: boolean;
@@ -190,6 +209,8 @@ export interface MatchState {
   waveCount: number;
   heroes: HeroEntity[];
   creeps: CreepEntity[];
+  neutrals: NeutralEntity[];
+  campTimers: Record<string, number>;
   structures: StructureEntity[];
   orbs: SoulOrbEntity[];
   turrets: TurretEntity[];
@@ -291,6 +312,11 @@ export function createMatchState(slots: SlotSetup[], seed = 1337): MatchState {
     aggroTimer: 0,
   }));
 
+  const campTimers: Record<string, number> = {};
+  for (const camp of JUNGLE_CAMPS) {
+    campTimers[camp.id] = 40; // Initial jungle spawn at 0:40
+  }
+
   const state: MatchState = {
     timeS: 0,
     nextEntityId: 1,
@@ -298,6 +324,8 @@ export function createMatchState(slots: SlotSetup[], seed = 1337): MatchState {
     waveCount: 0,
     heroes,
     creeps: [],
+    neutrals: [],
+    campTimers,
     structures,
     orbs: [],
     turrets: [],
@@ -520,6 +548,55 @@ function applyDamageToHero(state: MatchState, victim: HeroEntity, amount: number
   }
 }
 
+export function spawnJungleCamp(state: MatchState, camp: JungleCampSpec): void {
+  const count = camp.tier === 'small' ? 2 : 1;
+  for (let i = 0; i < count; i++) {
+    const ox = count === 2 ? (i === 0 ? -1.4 : 1.4) : 0;
+    const x = camp.x + ox;
+    const z = camp.z;
+    state.neutrals.push({
+      id: state.nextEntityId++,
+      campId: camp.id,
+      kind: camp.tier === 'small' ? 'beetle' : 'golem',
+      homeX: x,
+      homeZ: z,
+      x,
+      y: groundHeightAt(x, z),
+      z,
+      hp: camp.tier === 'small' ? 240 : 480,
+      maxHp: camp.tier === 'small' ? 240 : 480,
+      damage: camp.tier === 'small' ? 16 : 28,
+      bounty: camp.tier === 'small' ? 95 : 210,
+      aggroSlot: -1,
+      fireCooldown: 0.4,
+    });
+  }
+}
+
+function handleNeutralDeath(state: MatchState, n: NeutralEntity, killerSlot: number): void {
+  if (killerSlot >= 0 && state.heroes[killerSlot]) {
+    const killer = state.heroes[killerSlot];
+    const instant = Math.round(n.bounty * 0.7);
+    const orbVal = Math.round(n.bounty * 0.3);
+    awardAcorns(killer, instant, 'lastHit');
+    killer.hp = Math.min(killer.maxHp, killer.hp + 35);
+    state.orbs.push({
+      id: state.nextEntityId++,
+      team: killer.team,
+      x: n.x,
+      y: n.y + 0.9,
+      z: n.z,
+      acorns: orbVal,
+      ttl: ECONOMY.orbLifetimeS,
+    });
+  }
+  const remainingInCamp = state.neutrals.some((other) => other !== n && other.campId === n.campId && other.hp > 0);
+  if (!remainingInCamp) {
+    const camp = JUNGLE_CAMPS.find((c) => c.id === n.campId);
+    if (camp) state.campTimers[camp.id] = camp.respawnS;
+  }
+}
+
 function handleCreepDeath(state: MatchState, creep: CreepEntity, killerSlot: number): void {
   if (killerSlot >= 0 && state.heroes[killerSlot]?.team !== creep.team) {
     const killer = state.heroes[killerSlot];
@@ -685,6 +762,7 @@ function fireWeapon(state: MatchState, h: HeroEntity): void {
     let hitTarget:
       | { kind: 'orb'; orb: SoulOrbEntity }
       | { kind: 'creep'; creep: CreepEntity }
+      | { kind: 'neutral'; neutral: NeutralEntity }
       | { kind: 'hero'; hero: HeroEntity }
       | { kind: 'structure'; st: StructureEntity }
       | { kind: 'relic' }
@@ -720,6 +798,17 @@ function fireWeapon(state: MatchState, h: HeroEntity): void {
         bestT = hit.t;
         hitKind = 'body';
         hitTarget = { kind: 'creep', creep: cr };
+      }
+    }
+
+    // 3b. Check neutral jungle creeps
+    for (const n of state.neutrals) {
+      if (n.hp <= 0) continue;
+      const hit = intersectRaySphere(ox, oy, oz, dx, dy, dz, n.x, n.y + 0.65, n.z, n.kind === 'golem' ? 0.95 : 0.72, bestT);
+      if (hit && hit.t < bestT) {
+        bestT = hit.t;
+        hitKind = 'body';
+        hitTarget = { kind: 'neutral', neutral: n };
       }
     }
 
@@ -770,6 +859,14 @@ function fireWeapon(state: MatchState, h: HeroEntity): void {
       state.events.push({ type: 'damage', targetKind: 'creep', x: cr.x, y: cr.y + 0.8, z: cr.z, amount: Math.round(dmg), sourceSlot: h.slot });
       if (cr.hp <= 0) {
         handleCreepDeath(state, cr, h.slot);
+      }
+    } else if (hitTarget?.kind === 'neutral') {
+      const n = hitTarget.neutral;
+      n.hp -= dmg;
+      n.aggroSlot = h.slot;
+      state.events.push({ type: 'damage', targetKind: 'creep', x: n.x, y: n.y + 0.9, z: n.z, amount: Math.round(dmg), sourceSlot: h.slot });
+      if (n.hp <= 0) {
+        handleNeutralDeath(state, n, h.slot);
       }
     } else if (hitTarget?.kind === 'structure') {
       damageStructure(state, hitTarget.st, dmg, h.slot);
@@ -1450,6 +1547,49 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
   }
   state.creeps = state.creeps.filter((c) => c.hp > 0);
 
+  // Step Jungle Camps & Neutrals
+  for (const camp of JUNGLE_CAMPS) {
+    const aliveInCamp = state.neutrals.some((n) => n.campId === camp.id && n.hp > 0);
+    if (!aliveInCamp) {
+      state.campTimers[camp.id] = Math.max(0, (state.campTimers[camp.id] ?? 0) - dt);
+      if (state.campTimers[camp.id] <= 0) {
+        spawnJungleCamp(state, camp);
+      }
+    }
+  }
+  for (const n of state.neutrals) {
+    if (n.hp <= 0) continue;
+    n.fireCooldown = Math.max(0, n.fireCooldown - dt);
+    const target = n.aggroSlot >= 0 ? state.heroes[n.aggroSlot] : undefined;
+    const distHome = Math.hypot(n.x - n.homeX, n.z - n.homeZ);
+    if (target && target.alive && distHome <= 14 && Math.hypot(target.move.pos.x - n.homeX, target.move.pos.z - n.homeZ) <= 15) {
+      const dx = target.move.pos.x - n.x;
+      const dz = target.move.pos.z - n.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (d <= 2.4) {
+        if (n.fireCooldown <= 0) {
+          n.fireCooldown = 1.1;
+          applyDamageToHero(state, target, n.damage, -1);
+        }
+      } else {
+        n.x += (dx / d) * 4.4 * dt;
+        n.z += (dz / d) * 4.4 * dt;
+        n.y = groundHeightAt(n.x, n.z);
+      }
+    } else {
+      n.aggroSlot = -1;
+      if (distHome > 0.3) {
+        const dx = n.homeX - n.x;
+        const dz = n.homeZ - n.z;
+        n.x += (dx / distHome) * 5.0 * dt;
+        n.z += (dz / distHome) * 5.0 * dt;
+        n.y = groundHeightAt(n.x, n.z);
+      }
+      n.hp = Math.min(n.maxHp, n.hp + 25 * dt);
+    }
+  }
+  state.neutrals = state.neutrals.filter((n) => n.hp > 0);
+
   // Step structures
   for (const st of state.structures) {
     if (st.hp <= 0) continue;
@@ -1616,6 +1756,13 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
             if (cr.hp <= 0) handleCreepDeath(state, cr, zn.ownerSlot);
           }
         }
+        for (const n of state.neutrals) {
+          if (n.hp > 0 && Math.hypot(n.x - zn.x, n.z - zn.z) <= zn.radius) {
+            n.hp -= zn.explodeDmg;
+            n.aggroSlot = zn.ownerSlot;
+            if (n.hp <= 0) handleNeutralDeath(state, n, zn.ownerSlot);
+          }
+        }
       }
       state.zones.splice(i, 1);
       continue;
@@ -1633,6 +1780,13 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
         if (cr.team !== zn.team && cr.hp > 0 && Math.hypot(cr.x - zn.x, cr.z - zn.z) <= zn.radius) {
           cr.hp -= zn.dps * 0.25;
           if (cr.hp <= 0) handleCreepDeath(state, cr, zn.ownerSlot);
+        }
+      }
+      for (const n of state.neutrals) {
+        if (n.hp > 0 && Math.hypot(n.x - zn.x, n.z - zn.z) <= zn.radius) {
+          n.hp -= zn.dps * 0.25;
+          n.aggroSlot = zn.ownerSlot;
+          if (n.hp <= 0) handleNeutralDeath(state, n, zn.ownerSlot);
         }
       }
     }

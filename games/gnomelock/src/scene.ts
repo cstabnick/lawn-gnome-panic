@@ -19,6 +19,7 @@ import { HEROES } from './sim/heroes';
 import {
   FOUNTAINS,
   groundHeightAt,
+  JUNGLE_CAMPS,
   MAP_BOUNDS,
   MAP_WALLS,
   RELIC_ALTAR,
@@ -66,6 +67,7 @@ export class GnomelockScene {
     }
   >();
   private creepMeshes = new Map<number, { group: THREE.Group; hpGroup: THREE.Group; hpFill: THREE.Mesh; execPip: THREE.Mesh }>();
+  private neutralMeshes = new Map<number, { group: THREE.Group; hpGroup: THREE.Group; hpFill: THREE.Mesh }>();
   private orbMeshes = new Map<number, THREE.Group>();
   private turretMeshes = new Map<number, THREE.Group>();
   private zoneMeshes = new Map<number, THREE.Object3D>();
@@ -202,6 +204,18 @@ export class GnomelockScene {
       const fMesh = new THREE.Mesh(fGeo, fMat);
       fMesh.position.set(f.x, groundHeightAt(f.x, f.z) + 0.02, f.z);
       this.scene.add(fMesh);
+    }
+
+    // Jungle camp pads
+    for (const camp of JUNGLE_CAMPS) {
+      const cGeo = new THREE.RingGeometry(2.6, 3.3, 20);
+      cGeo.rotateX(-Math.PI / 2);
+      const cMesh = new THREE.Mesh(
+        cGeo,
+        flatLayer(new THREE.MeshBasicMaterial({ color: 0x6f8f3a, transparent: true, opacity: 0.45 }), LAYER.area),
+      );
+      cMesh.position.set(camp.x, groundHeightAt(camp.x, camp.z) + 0.03, camp.z);
+      this.scene.add(cMesh);
     }
 
     // 3. Parkour walls & garden sheds (non-flush trims so zero z-fighting!)
@@ -606,6 +620,58 @@ export class GnomelockScene {
       if (!activeCreepIds.has(id)) {
         this.scene.remove(entry.group);
         this.creepMeshes.delete(id);
+      }
+    }
+
+    // 2b. Sync Neutral Jungle Creeps (Clay Beetles & Moss Golems)
+    const activeNeutralIds = new Set<number>();
+    for (const n of state.neutrals) {
+      activeNeutralIds.add(n.id);
+      let nEntry = this.neutralMeshes.get(n.id);
+      if (!nEntry) {
+        const group = new THREE.Group();
+        const isGolem = n.kind === 'golem';
+        const body = new THREE.Mesh(
+          isGolem ? new THREE.DodecahedronGeometry(0.75, 0) : new THREE.SphereGeometry(0.46, 10, 8),
+          new THREE.MeshStandardMaterial({ color: isGolem ? 0x5c7a3b : 0x8b5a2b, roughness: 0.85 }),
+        );
+        body.position.y = isGolem ? 0.8 : 0.45;
+        if (!isGolem) body.scale.set(1.1, 0.75, 1.3);
+        const eye1 = new THREE.Mesh(
+          new THREE.SphereGeometry(0.09, 6, 6),
+          new THREE.MeshBasicMaterial({ color: 0xffd54f }),
+        );
+        eye1.position.set(-0.2, isGolem ? 0.95 : 0.55, isGolem ? 0.62 : 0.48);
+        const eye2 = eye1.clone();
+        eye2.position.x = 0.2;
+        const hpGroup = new THREE.Group();
+        hpGroup.position.y = isGolem ? 1.85 : 1.15;
+        const hpBg = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.1, 0.14),
+          new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide }),
+        );
+        hpBg.userData.zfightOk = true;
+        const hpFill = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.02, 0.09),
+          new THREE.MeshBasicMaterial({ color: 0xffa94d, side: THREE.DoubleSide }),
+        );
+        hpFill.position.z = 0.03;
+        hpFill.userData.zfightOk = true;
+        hpGroup.add(hpBg, hpFill);
+        group.add(body, eye1, eye2, hpGroup);
+        this.scene.add(group);
+        nEntry = { group, hpGroup, hpFill };
+        this.neutralMeshes.set(n.id, nEntry);
+      }
+      nEntry.group.position.set(n.x, n.y, n.z);
+      const nFrac = Math.max(0.01, n.hp / n.maxHp);
+      nEntry.hpFill.scale.x = nFrac;
+      nEntry.hpGroup.quaternion.copy(this.camera.quaternion);
+    }
+    for (const [id, entry] of this.neutralMeshes) {
+      if (!activeNeutralIds.has(id)) {
+        this.scene.remove(entry.group);
+        this.neutralMeshes.delete(id);
       }
     }
 

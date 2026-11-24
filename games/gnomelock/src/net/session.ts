@@ -212,6 +212,16 @@ export function startOnlineSession(
           hp: c.hp,
           maxHp: c.maxHp,
         })),
+        neutrals: state.neutrals.map((n) => ({
+          id: n.id,
+          campId: n.campId,
+          kind: n.kind,
+          x: n.x,
+          y: n.y,
+          z: n.z,
+          hp: n.hp,
+          maxHp: n.maxHp,
+        })),
         orbs: state.orbs.map((o) => ({
           id: o.id,
           team: o.team,

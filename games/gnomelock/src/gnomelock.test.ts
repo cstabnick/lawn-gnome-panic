@@ -284,4 +284,37 @@ describe('Gnomelock items, prefabs, and gear sync', () => {
     expect(custom.slots[3].userId).toBe('u_moss456');
     expect(custom.botSkills).toEqual([1.0, 0.82, 1.15, 1.0]);
   });
+
+  it('spawns jungle camps at 40s, aggros when shot, and awards Acorns + orb on kill', () => {
+    const state = createMatchState([
+      { heroId: 'potsworth', name: 'P0', isBot: false },
+      { heroId: 'bramble', name: 'B1', isBot: true },
+      { heroId: 'tansy', name: 'T2', isBot: true },
+      { heroId: 'fernwick', name: 'F3', isBot: true },
+    ]);
+    const idle: HeroActionInput = {
+      move: { forward: 0, right: 0, yaw: 0, jumpPressed: false, dashPressed: false, slideHeld: false },
+      pitch: 0,
+      fireHeld: false,
+      reloadPressed: false,
+      abilityPressed: null,
+    };
+
+    expect(state.neutrals.length).toBe(0);
+    for (let i = 0; i < 41; i++) {
+      stepWorld(state, [idle, idle, idle, idle], 1.0);
+    }
+    // 2 small camps (2 beetles each) + 2 medium camps (1 golem each) = 6 neutrals
+    expect(state.neutrals.length).toBe(6);
+
+    const golem = state.neutrals.find((n) => n.kind === 'golem')!;
+    golem.hp = 10;
+    state.heroes[0].move.pos = { x: golem.x, y: golem.y, z: golem.z + 5 };
+    const acornsBefore = state.heroes[0].acorns;
+    stepWorld(state, [{ ...idle, fireHeld: true }, idle, idle, idle], 1 / 30);
+
+    expect(state.heroes[0].acorns).toBeGreaterThan(acornsBefore + 100);
+    expect(state.orbs.length).toBeGreaterThanOrEqual(1);
+    expect(state.campTimers[golem.campId]).toBeCloseTo(70, 0);
+  });
 });

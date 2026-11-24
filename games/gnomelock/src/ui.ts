@@ -797,6 +797,12 @@ export class GnomelockUI {
       ctx.fillRect(toMx(cr.x) - 1, toMy(cr.z) - 1, 2, 2);
     }
 
+    // Jungle Neutrals
+    for (const n of state.neutrals) {
+      ctx.fillStyle = n.kind === 'golem' ? '#a9e34b' : '#ffd43b';
+      ctx.fillRect(toMx(n.x) - 2, toMy(n.z) - 2, 4, 4);
+    }
+
     // Heroes
     for (const h of state.heroes) {
       if (!h.alive) continue;

@@ -101,6 +101,21 @@ export const FOUNTAINS: Record<Team, { x: number; z: number; radius: number }> =
 
 export const RELIC_ALTAR = { x: 0, z: 0, maxHp: 2200, radius: 1.8 } as const;
 
+export interface JungleCampSpec {
+  id: string;
+  tier: 'small' | 'medium';
+  x: number;
+  z: number;
+  respawnS: number;
+}
+
+export const JUNGLE_CAMPS: readonly JungleCampSpec[] = [
+  { id: 'camp-amber-w', tier: 'small', x: -28, z: -26, respawnS: 55 },
+  { id: 'camp-amber-e', tier: 'medium', x: 28, z: -26, respawnS: 70 },
+  { id: 'camp-sapphire-w', tier: 'medium', x: -28, z: 26, respawnS: 70 },
+  { id: 'camp-sapphire-e', tier: 'small', x: 28, z: 26, respawnS: 55 },
+];
+
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);

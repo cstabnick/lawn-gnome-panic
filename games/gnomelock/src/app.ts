@@ -251,6 +251,15 @@ export function bootGnomelock(): void {
       bounty: 0,
       lastDamagedBySlot: -1,
     }));
+    state.neutrals = snap.neutrals.map((n) => ({
+      ...n,
+      homeX: n.x,
+      homeZ: n.z,
+      damage: 0,
+      bounty: 0,
+      aggroSlot: -1,
+      fireCooldown: 0,
+    }));
     state.orbs = snap.orbs.map((o) => ({ ...o, acorns: 0, ttl: 1 }));
     for (const ss of snap.structures) {
       const st = state.structures.find((x) => x.id === ss.id);

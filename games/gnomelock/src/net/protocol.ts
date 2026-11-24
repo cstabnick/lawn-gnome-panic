@@ -105,6 +105,17 @@ export interface NetOrbSnap {
   z: number;
 }
 
+export interface NetNeutralSnap {
+  id: number;
+  campId: string;
+  kind: 'beetle' | 'golem';
+  x: number;
+  y: number;
+  z: number;
+  hp: number;
+  maxHp: number;
+}
+
 export interface NetStructureSnap {
   id: string;
   hp: number;
@@ -122,6 +133,7 @@ export interface WorldSnapshotMsg {
   relicClaimedBy: Team | null;
   heroes: NetHeroSnap[];
   creeps: NetCreepSnap[];
+  neutrals: NetNeutralSnap[];
   orbs: NetOrbSnap[];
   structures: NetStructureSnap[];
 }

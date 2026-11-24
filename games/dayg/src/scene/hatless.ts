@@ -149,8 +149,13 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   let authority = true;        // false on a viewer: puppets only, hits are queued for the owner
   let extraFn: (() => { key: string; pos: Vec3 }[]) | null = null;
   let remoteScratch: ((key: string, strength: number, from: { x: number; z: number }) => void) | null = null;
+  let npcTargetFn: (() => { key: string; pos: Vec3 }[]) | null = null;
+  let npcScratch: ((key: string, strength: number, from: { x: number; z: number }) => void) | null = null;
   const strikes: { x: number; y: number; z: number; f: number; reach: number; dmg: number }[] = [];
-  const extras = (): { key: string; pos: Vec3 }[] => (extraFn ? extraFn() : []);
+  const extras = (): { key: string; pos: Vec3 }[] => [
+    ...(extraFn ? extraFn() : []),
+    ...(npcTargetFn ? npcTargetFn() : []),
+  ];
 
   // Hearing: a Hatless within the noise's radius that is not already hunting is drawn to it.
   // Noise from inside a building reaches a Hatless in a different space muffled.
@@ -394,6 +399,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
           const strength = Math.min(1, 0.5 + 0.1 * others);
           const from = { x: h.pos.x, z: h.pos.z };
           if (key === null) bus.emit('player-hit', { strength, from });
+          else if (key.startsWith('npc:')) npcScratch?.(key, strength, from);
           else remoteScratch?.(key, strength, from);
         }
       } else {
@@ -603,6 +609,8 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     drainStrikes() { return strikes.splice(0); },
     setExtraTargets(fn) { extraFn = fn; },
     onRemoteScratch(fn) { remoteScratch = fn; },
+    setNpcTargets(fn) { npcTargetFn = fn; },
+    onNpcScratch(fn) { npcScratch = fn; },
     setHazards() {},
     spawn(region, count, spots, from) {
       if (count <= 0 || !authority) return;

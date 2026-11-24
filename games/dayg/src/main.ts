@@ -78,6 +78,9 @@ import { createFarmSystem } from './game/farming';
 import { createTrapSystem } from './game/traps';
 import { createLanterns } from './scene/lanterns';
 import { createMowingFx } from './scene/mowingFx';
+import { createSettlementsView } from './scene/settlementsView';
+import { createRadioSystem } from './scene/radios';
+import { createVignetteSystem } from './scene/vignettes';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -172,6 +175,13 @@ host.apply({ kind: 'player-join', name: 'You', look: '', userId: null, region: p
 const sim = { world, streams };
 const hatless = createHatlessSystem({ scene, collider, bus, getPlayer, coarse });
 const npcs = createNpcActors({ scene, collider, getPlayer });
+npcs.setHatless?.(hatless);
+npcs.onFallen?.((_id, name) => { hud.toast(`${name} was overwhelmed by the Hatless!`); });
+hatless.setNpcTargets?.(() => npcs.combatTargets?.() ?? []);
+hatless.onNpcScratch?.((key, strength, from) => { npcs.receiveHit?.(key, strength, from); });
+const settlementsView = createSettlementsView({ scene, map: mapData, regions: regionsFor(map), collider });
+const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
+const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
 createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
 
@@ -347,12 +357,13 @@ function frame(now: number): void {
   if (inp.inventory) panel.toggle();
   if (inp.map && !panel.isOpen()) mapPanel.toggle();
   if (inp.trainer) trainerPanel.toggle();
+  if (inp.radio) radios.togglePortable();
   mapPanel.tick();
   const openNow = panel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || ledgerPanel.isOpen();
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
   const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
     || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
-    || dBuildPanel.isOpen() || trainerPanel.isOpen() || !player.alive;
+    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || !player.alive;
   if (!anyPanelOpen !== lastLockAllowed) {
     lastLockAllowed = !anyPanelOpen;
     input.setPointerLockAllowed(lastLockAllowed);
@@ -430,6 +441,8 @@ function frame(now: number): void {
   feed.update(dt, hours);
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
+  settlementsView.update(dt);
+  radios.update(dt);
   camp.update(dt, hours, world.weather);
   base.update(dt, hours);
   build.update(dt);

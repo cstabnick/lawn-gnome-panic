@@ -69,6 +69,7 @@ export function createInput(canvas: HTMLCanvasElement, touch: TouchSource): Inpu
         view: edge('KeyV'),
         map: edge('KeyM'),
         trainer: edge('F9'),
+        radio: edge('KeyR'),
       };
 
       const t = touch.read();

@@ -20,6 +20,7 @@ export interface InputState {
   view: boolean;                  // edge: third / first person
   map: boolean;                   // edge: open or close the world map
   trainer?: boolean;              // edge: toggle admin trainer (F9)
+  radio?: boolean;                // edge: toggle/tune portable radio (R)
 }
 export interface TouchSource { root: HTMLElement; read(): Partial<InputState>; setVisible(on: boolean): void; setClimbHint(on: boolean): void; active(): boolean }
 export interface Input { read(dt: number): InputState; setPointerLockAllowed(allowed: boolean): void }
@@ -127,9 +128,23 @@ export interface HatlessSystem {
   drainStrikes(): { x: number; y: number; z: number; f: number; reach: number; dmg: number }[];
   setExtraTargets(fn: (() => { key: string; pos: Vec3 }[]) | null): void;
   onRemoteScratch(fn: (key: string, strength: number, from: { x: number; z: number }) => void): void;
+  setNpcTargets?(fn: (() => { key: string; pos: Vec3 }[]) | null): void;
+  onNpcScratch?(fn: (key: string, strength: number, from: { x: number; z: number }) => void): void;
   setHazards(fn: ((x: number, z: number) => number) | null): void;   // damage per second at a point
 }
-export interface NpcActors { show(npcs: readonly { id: NpcId; name: string; lookSeed: number }[], spots: readonly SpotDef[]): void; remove(id: NpcId): void; clear(): void; update(dt: number): void; ids(): NpcId[]; nearest(pos: Vec3, radius: number): NpcId | null; positionOf(id: NpcId): Vec3 | null }
+export interface NpcActors {
+  show(npcs: readonly { id: NpcId; name: string; lookSeed: number }[], spots: readonly SpotDef[]): void;
+  remove(id: NpcId): void;
+  clear(): void;
+  update(dt: number): void;
+  ids(): NpcId[];
+  nearest(pos: Vec3, radius: number): NpcId | null;
+  positionOf(id: NpcId): Vec3 | null;
+  combatTargets?(): { key: string; pos: Vec3 }[];
+  receiveHit?(key: string, strength: number, from: { x: number; z: number }): void;
+  setHatless?(h: HatlessSystem): void;
+  onFallen?(fn: (id: NpcId, name: string) => void): void;
+}
 export interface SimFeed { update(dt: number, sunHoursAdvanced: number): void; promoted(): RegionId | null }
 export interface CampSystem { update(dt: number, sunHours: number, weather: WeatherState): void; placeFire(x: number, y: number, z: number, burnHours: number): boolean; nearFire(pos: Vec3): boolean; firesLit(): number; sleeping(): boolean }
 export interface ContainerSystem { update(dt: number): void }

@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Planning done: all 22 briefs written and committed; plan PR open. Wave 1 (E01, E02, E04) is next or running: check the tracking table, merge finished lead branches, then start the next wave.
+Wave 1: E04 merged; E01, E02 running. E08 (wave 2, no open dependencies) started early in the free slot. When E01 lands start E05; when E02 lands start E03. Keep at most 3 leads running.
 
 ## Tracking
 
@@ -27,7 +27,7 @@ with deferred items listed).
 | E04 | Story bible and world writing | Story (docs) | 1 | – | merged | epic/E04-story | c9a94025 | names final (see E04/spine.md); new objective types needed (golf-hole, jam-game, skate-line, ski-run, tow-ski, ride-passenger, dig, interior-visit) each with a fallback; E18 builds the journal 'Later' shelf; rulings R-158..R-167 taken |
 | E03 | Bugs and quest reliability sweep | Fix | 2 | – | planned | | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | planned | | | |
-| E08 | Economy, ownership and inventory | Engine | 2 | – | planned | | | |
+| E08 | Economy, ownership and inventory | Engine | 2 | – | running | epic/E08-economy | | |
 | E06 | Sky, weather and time | Engine | 3 | – | planned | | | |
 | E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | planned | | | |
 | E09 | Sound, voice, animation and direction | Polish | 3 | – | planned | | | |

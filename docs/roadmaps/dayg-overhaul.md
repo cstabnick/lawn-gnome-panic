@@ -15,9 +15,52 @@ This roadmap groups all 23 requested DayG fixes, redesigns, and new gameplay sys
 | **3** | Persistent Owned Worlds & Loot Respawn | Toggleable loot respawning (default OFF), persistent player-owned worlds (local + `@lawn/cloudsave`), seamless `@lawn/mp` join-by-code | Done |
 | **4** | Living World: Settlements, Combat, Radios & Lore | Constructed survivor settlements with defenses, world biome diversity, zombies attacking/interacting with survivors, camp & portable radios with music/talk, environmental storytelling vignettes | Done |
 | **5** | Branching Survivor Stories, Journal, Cooking & Collectibles | Persistent survivors with mutually exclusive branching arcs, relationship & status journal, cooking system, unique collectibles & turn-in unlocks | Done |
-| **6** | Player Camps, NPC Hiring & Turret/Security Base Building | Turrets, alarms, watchtowers & reinforced gates; establishing a player camp, hiring NPCs with roles & security demands | Pass 2 In Progress |
-| **7** | Vehicles & Modular Franken-Build Modding | 4 distinct vehicles (bicycle, mower kart, trike, utility van/tractor) + modular swappable parts (engines, belts, oils, wheels) with visible mounted 3D parts and mix-and-match effects | Pass 2 In Progress |
-| **8** | Visual World Overhaul, Top-Down World-Render Map & 8 Zombie Animations | Procedural CanvasTextures, per-region biome dressing (trees, arches, boardwalks, lamps), real top-down world-render map, 8 unique zombie locomotion/idle/lunge/stagger/crumble animations | Planned |
+| **6** | Player Camps, NPC Hiring & Turret/Security Base Building | 8 security defenses (turrets, searchlights, alarms, watchtowers, gates, spikes), Mk I–III upgrades, repair, autonomous patrolling/fighting crew, production & morale | Done |
+| **7** | Vehicles & Modular Franken-Build Modding | 5 distinct vehicles (bicycle, mower kart, trike, utility tractor, hearse-buggy) + 6 modular swappable slots (24 parts) with visible mounted 3D parts and 9 Franken-Build synergies | Done |
+| **8** | Visual World Overhaul, Top-Down World-Render Map & 8 Zombie Animations | Procedural CanvasTextures, per-region biome dressing (trees, arches, boardwalks, lamps), real top-down world-render map, 8 unique zombie locomotion/idle/lunge/stagger/crumble animations | Done |
+
+---
+
+## Pass 2 Deep-Dive Progress
+- **Wave 1 Complete**:
+  - Epics 1–2: Weapon-aware melee animations (thrust/cleave/punch) + impact particle bursts, backpack category filter tabs + sort + Shift/double-click quick-transfer + zoom/reset 3D preview + compass strip & quick-hand HUD bar + trainer live pos/stamina/time-slider.
+  - Epics 3–4: World JSON export/import & delete + configurable loot respawn interval, constructed guardhouses/bunkers/biome landmarks, full NPC patrol/engage/flee/recover AI with floating HP bars, 5-station radio with tuning static & Now Playing pill, 16 lore dioramas.
+  - Epic 5: 3-stage branching stories (`0..3`) + 8 3D named survivors with interactive dialogue modal, dedicated Campfire Cooking UI with 10 meals & Heat/Timing bar minigame, 16 collectibles + Curio Display Rack at Lychgate Waystation, upgraded Journal.
+- **Wave 2 Complete**:
+  - Epic 6: 8 security defenses (incl. `searchlight-tower` & `auto-crossbow`), Mk I–III defense upgrades & repair, autonomous patrolling/fighting camp crew, crew production (`Collect`), dynamic morale & role reassignment.
+  - Epic 7: 5 vehicles (added `hearse-buggy`), 6 modular slots (`engine`, `belt`, `oil`, `wheels`, `exhaust`, `bumper`; 24 parts), 9 Franken-Build synergies, spinning wheels, wobble, headlights (`L`), horn (`H`), exhaust particles, mobile driving pedals (`GAS`/`BRAKE`/`HORN`/`EXIT`).
+  - Epic 8: Procedural CanvasTextures (`worldBuilder.ts`), biome ground patches & trees/wildflowers/night streetlamps (`worldAtmosphere.ts`), real top-down world-render map (`mapPanel.ts`), 8 unique zombie walk animations + idle/lunge/stagger variants (`hatless.ts`).
+
+---
+
+## 24/24 Requirements Coverage Matrix
+
+| # | Original & Follow-Up Request | Epic | Status |
+|---|---|---|---|
+| 1 | Redo inventory UI & all UI + 3D player preview + right-side drag-and-drop loot + fix UI clicks taking back into game | Epics 1, 2 | Done |
+| 2 | Fix melee attack & play attack animations | Epic 1 | Done |
+| 3 | Fix zombies randomly despawning/spawning | Epic 1 | Done |
+| 4 | Make footsteps quieter | Epic 1 | Done |
+| 5 | Survivor settlements with constructed buildings & defenses | Epic 4 | Done |
+| 6 | Zombies interact with survivors like players | Epic 4 | Done |
+| 7 | Pre-breakout & post-breakout environmental storytelling | Epic 4 | Done |
+| 8 | Make the world more diverse & visually interesting | Epics 4, 8 | Done |
+| 9 | Fix climbing over a wall getting stuck | Epic 1 | Done |
+| 10 | Spawn player in different zones each time | Epic 1 | Done |
+| 11 | Toggleable loot respawning (default OFF) | Epic 3 | Done |
+| 12 | Persistent world owned by a player that others can join | Epic 3 | Done |
+| 13 | Admin trainer menu (fly, god mode, teleport, kits, etc.) | Epic 1 | Done |
+| 14 | Radios with talk and music in camps + portable | Epic 4 | Done |
+| 15 | Persistent survivors with mutually exclusive branching stories | Epic 5 | Done |
+| 16 | Establish camp & hire NPCs who want security measures | Epic 6 | Done |
+| 17 | Security measures & base building with turrets | Epic 6 | Done |
+| 18 | Journal with relationships, people met & last known status | Epic 5 | Done |
+| 19 | Ability to cook foods | Epic 5 | Done |
+| 20 | Unique collectibles with turn-in unlocks | Epic 5 | Done |
+| 21 | Unique zombie walk animations (8 archetypes + idle/lunge/stagger) | Epics 1, 8 | Done |
+| 22 | Vehicles (5 distinct vehicles) | Epic 7 | Done |
+| 23 | Modular vehicle modding with visible mounted engines/parts & goofy Franken-Build boosts | Epic 7 | Done |
+| 24 | Real top-down world-render map | Epic 8 | Done |
 
 ---
 

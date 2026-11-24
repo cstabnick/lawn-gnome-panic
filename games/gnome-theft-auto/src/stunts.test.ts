@@ -140,13 +140,13 @@ describe('stunts persistence & lifecycle', () => {
     const launchStep = stunts.update(dt, player, [v]);
     expect(launchStep.airborne).toBe(true);
     // Launched along the slope (sine of 14 degrees times speed), not straight up at 18 m/s
-    expect(v.vy).toBeGreaterThan(6);
-    expect(v.vy).toBeLessThan(10);
+    expect(v.vy).toBeGreaterThan(8);
+    expect(v.vy).toBeLessThan(12);
 
-    // Simulate the flight: gravity 22 as vehicles.ts stepOther applies it, horizontal motion along the ramp heading
+    // Simulate the flight: gravity 30 (ARCADE_AIR in vehicles.ts), horizontal motion along the ramp heading
     let landed = false;
     for (let i = 0; i < 120; i++) {
-      v.vy -= 22 * dt;
+      v.vy -= 30 * dt;
       v.y += v.vy * dt;
       v.x += fxDir * v.speed * dt;
       v.z += fzDir * v.speed * dt;

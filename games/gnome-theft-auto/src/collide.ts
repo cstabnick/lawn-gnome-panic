@@ -8,6 +8,44 @@ import { groundAt } from './terrain';
  */
 export interface Pushed { x: number; z: number; hit: boolean; nx: number; nz: number }
 
+/** Radius of a round collider: half its shorter side. */
+export function roundRadius(b: Box): number {
+  return Math.min(b.maxX - b.minX, b.maxZ - b.minZ) / 2;
+}
+
+/** A round collider (vertical cylinder) of radius r centred on (cx, cz), up to height h. See Box.shape. */
+export function roundBox(cx: number, cz: number, r: number, h: number): Box {
+  return { minX: cx - r, maxX: cx + r, minZ: cz - r, maxZ: cz + r, h, shape: 'round' };
+}
+
+/**
+ * The round version of a box made from a round prefab's bounds: same centre and height, radius `r` (default half the
+ * box's shorter side, i.e. the circle inscribed in it). Use it for trunks, silos, towers, fountains, toadstool stems.
+ */
+export function roundOf(b: Box, r = roundRadius(b)): Box {
+  return roundBox((b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2, r, b.h);
+}
+
+/** Push a round collider onto `boxes` (scenery builders: E01/E10/E11/E13/E14 sites use this for round things). Returns it. */
+export function placeRoundBox(boxes: Box[], cx: number, cz: number, r: number, h: number): Box {
+  const b = roundBox(cx, cz, r, h);
+  boxes.push(b);
+  return b;
+}
+
+/** True when (x, z) grown by r overlaps box b in plan (round boxes as circles). */
+function overlaps(b: Box, x: number, z: number, r: number): boolean {
+  if (b.shape === 'round') {
+    const R = roundRadius(b) + r;
+    const ex = x - (b.minX + b.maxX) / 2, ez = z - (b.minZ + b.maxZ) / 2;
+    return ex * ex + ez * ez < R * R;
+  }
+  const cx = Math.max(b.minX, Math.min(x, b.maxX));
+  const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
+  const dx = x - cx, dz = z - cz;
+  return r > 0 ? dx * dx + dz * dz < r * r : x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ;
+}
+
 // ---- Spatial grid ---------------------------------------------------------------------------------------------------
 // The world holds thousands of boxes (towers, trees, fences). Every query below looks only at the boxes in the grid
 // cells it touches. The grid is built lazily per boxes array and rebuilt when the array's length changes, so callers
@@ -50,6 +88,20 @@ export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly 
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
    for (const b of g.cells.get(cellKey(i, j)) ?? EMPTY) {
     if (b.h <= y) continue;
+    if (b.shape === 'round') {
+      // Cylinder: circle vs circle.
+      const ox = (b.minX + b.maxX) / 2, oz = (b.minZ + b.maxZ) / 2;
+      const R = roundRadius(b) + r;
+      const ex = x - ox, ez = z - oz;
+      const e2 = ex * ex + ez * ez;
+      if (e2 >= R * R) continue;
+      hit = true;
+      const e = Math.sqrt(e2);
+      if (e > 1e-6) { nx = ex / e; nz = ez / e; } else { nx = 0; nz = 1; }
+      x = ox + nx * R;
+      z = oz + nz * R;
+      continue;
+    }
     const cx = Math.max(b.minX, Math.min(x, b.maxX));
     const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
     const dx = x - cx;
@@ -105,6 +157,11 @@ export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number,
     x += sx; z += sz;
     const p = pushOutOfBoxes(x, z, r, boxes, y);
     x = p.x; z = p.z;
+    // Two boxes touching (a seam, an inside corner): a push out of one can leave it in the other, so push once more.
+    if (p.hit) {
+      const q = pushOutOfBoxes(x, z, r, boxes, y);
+      if (q.hit) { x = q.x; z = q.z; }
+    }
     if (p.hit) {
       hit = true; nx = p.nx; nz = p.nz;
       const into = Math.min(0, rx * nx + rz * nz);
@@ -137,7 +194,7 @@ export function wallBounce(vx: number, vz: number, nx: number, nz: number, resti
 /** True when the point is inside a box taller than y. */
 export function insideBox(x: number, y: number, z: number, boxes: readonly Box[]): boolean {
   for (const b of gridOf(boxes).cells.get(cellKey(Math.floor(x / CELL), Math.floor(z / CELL))) ?? EMPTY) {
-    if (y < b.h && x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ) return true;
+    if (y < b.h && overlaps(b, x, z, 0)) return true;
   }
   return false;
 }
@@ -152,6 +209,7 @@ export function groundHeight(x: number, z: number, r: number, boxes: readonly Bo
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
     for (const b of g.cells.get(cellKey(i, j)) ?? EMPTY) {
       if (b.h <= best || b.h > maxY + 0.35) continue;
+      if (b.shape === 'round') { if (overlaps(b, x, z, r)) best = b.h; continue; }
       const cx = Math.max(b.minX, Math.min(x, b.maxX));
       const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
       const dx = x - cx;

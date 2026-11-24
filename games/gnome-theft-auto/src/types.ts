@@ -58,7 +58,13 @@ export type GunKind =
 export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
-export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number }
+/**
+ * A collider: an axis-aligned box from minX..maxX, minZ..maxZ, up to height h. With `shape: 'round'` it is a vertical
+ * cylinder instead, centred on the box centre with radius min(width, depth) / 2 (make one with `roundBox` in collide.ts):
+ * round prefabs (trunks, silos, towers, fountains) then do not snag a vehicle on a square corner padded to the diagonal.
+ * Code that reads the min/max fields directly still sees the bounding square, which is the conservative answer.
+ */
+export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number; shape?: 'round' }
 
 /** One placed vending machine. `object` is the prefab group (origin on the ground, rotation.y = yaw, front/chute on its local +z); `box` is its collider in world.boxes. */
 export interface VendingSpot {
@@ -353,14 +359,24 @@ export interface ChaseCamera {
     mode: CameraMode,
     input: InputState,
     world: World,
-    extra?: { boost?: boolean; airborne?: boolean },
+    extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number } },
   ): void;
+  // update: `extra.eye` is the world point of the gnome's eyes (on foot: head height; seated: the seat plus head height).
+  // While firstPerson is on and eye is given, the camera sits there; without eye it falls back to the chase view.
   /** Unit vector of the camera's forward direction (the crosshair ray goes from the camera along it). */
   aimDir(out: THREE.Vector3): THREE.Vector3;
   /** Kick the view up by `pitch` radians (gun recoil); it settles back by itself within a fraction of a second. */
   kick(pitch: number): void;
-  /** Add camera trauma shake (decays smoothly). */
+  /** Add camera trauma shake (decays smoothly). Scaled inside by SHAKE_SCALE and the Options "Screen shake" level (viewPrefs.ts). */
   shake?(amount: number): void;
+  /**
+   * First-person view on or off (the V key, the eye touch button and the Options row drive it through app.ts). While on,
+   * `update` places the camera at the gnome's eyes (or the driver's seat) instead of the chase position. Cutscenes, the
+   * showroom and mount sequences call setFirstPerson(false) / restore it themselves.
+   */
+  setFirstPerson(on: boolean): void;
+  /** True while the first-person view is on. */
+  readonly firstPerson: boolean;
   /** Orbit this showroom target (the Pay 'n' Glaze shop's vehicle) while set; null returns to the normal views. */
   /** Orbit this target (the Pay 'n' Glaze showroom). `centered` keeps it mid-screen (no room made for the shop sheet); `distance` overrides the orbit distance. null leaves the showroom. */
   showroom(target: { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number } | null): void;
@@ -388,6 +404,8 @@ export interface Player {
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
   /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
   updateRiding(dt: number, lean?: number, horn?: boolean): void;
+  /** Re-place the seated gnome after its vehicle moved again later in the frame (no animation step). */
+  reseat?(): void;
   /** Draws the gnome for one frame of a mount sequence (see mount.ts). The vehicle is not set until the gnome is seated. `v` and
    *  `seat`: the vehicle being got into or out of, so a seated gnome holds its wheel and lets go of it smoothly (driverHands.ts). */
   drawMount(pose: MountPose, dt: number, v?: Vehicle, seat?: number): void;
@@ -585,6 +603,16 @@ export interface Traffic {
   debugGhosts?(): readonly { id: number; kind: VehicleKind; x: number; z: number; live: boolean; from: number; to: number }[];
   /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
   ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
+  /**
+   * The NPC driver whose head is hit by a bullet at (x, y, z): a sphere of radius 0.45 at the rider's head (seat + head
+   * height). Returns the vehicle, or null. Cops are not traffic drivers and never match.
+   */
+  driverAt?(x: number, y: number, z: number): Vehicle | null;
+  /**
+   * Crack v's NPC driver: like ejectDriver (rider removed, v.driver = 'none', the car leaves the population) but the car
+   * rolls to a stop where it is. Returns where the cracked gnome falls and its look, or null when v has no NPC driver.
+   */
+  crackDriver?(v: Vehicle): { x: number; z: number; look: GnomeLook } | null;
   /** Dispatch a multi-vehicle convoy along a sequence of road node IDs. */
   spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[];
   /**

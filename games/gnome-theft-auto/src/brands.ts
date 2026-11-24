@@ -194,7 +194,7 @@ const yawToward = (x: number, z: number, tx: number, tz: number): number => Math
  */
 export const BILLBOARD_SPOTS: readonly BillboardSpot[] = [
   // South highway pair: Buck-Iron vs. Razor-Back facing outbound & inbound Cloverfield traffic.
-  { id: 'south-buck-iron', brand: 'buck-iron', x: 16, z: 235, y: 0, yaw: yawToward(16, 235, 0, 210), scale: 1 },
+  { id: 'south-buck-iron', brand: 'buck-iron', x: 16, z: 240, y: 0, yaw: yawToward(16, 240, 0, 210), scale: 1 },
   { id: 'south-razor-back', brand: 'razor-back', x: -16, z: 255, y: 0, yaw: yawToward(-16, 255, 0, 230), scale: 1 },
   { id: 'south-kiln-shield', brand: 'kiln-shield', x: 52, z: 412, y: 0, yaw: yawToward(52, 412, 10, 390), scale: 1 },
 

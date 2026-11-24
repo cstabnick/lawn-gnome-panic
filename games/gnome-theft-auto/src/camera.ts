@@ -7,6 +7,7 @@ import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 import { groundAt, heightAt } from './terrain';
 import { deckCeilingAbove } from './highways/deck';
 import { AIM } from './gunMods';
+import { SHAKE_FACTOR, getShakeLevel } from './viewPrefs';
 
 interface View {
   /** Base distance from the look point. */
@@ -52,6 +53,36 @@ const MARCH_BACKOFF = 0.35;
 const CAM_RADIUS = 0.32;
 const MIN_CAM_DIST = 0.55;
 const CLIP_RECOVER_RATE = 10;
+/** Anti-jump tuning: how fast the shoulder look point and the camera distance ease inward, and when a change counts. */
+export const CAM_STEADY = {
+  /** Shoulder look point: ease-in rate per second (out uses CLIP_RECOVER_RATE). */
+  shoulderInRate: 25,
+  /** Camera distance: ease-in rate per second. */
+  clipInRate: 30,
+  /** Ignore changes of the safe distance smaller than this (metres). */
+  hysteresis: 0.15,
+  /** A clip distance change above this (metres) within `jumpWindow` seconds pauses the yaw auto-follow. */
+  jumpDist: 0.5,
+  jumpWindow: 0.2,
+  /** The look target blends from the view direction to the look point between these camera-to-look distances. */
+  lookBlendMin: 0.25,
+  lookBlendMax: 0.6,
+  /** Rising ground only blocks the camera above this rise, and below this height over it. */
+  groundRise: 0.8,
+  groundBand: 0.3,
+  /** Look-ahead: the safe distance also counts rays turned up to `feelerSpread` radians either side, each allowed `feelerSlope` metres more per radian. This makes the distance change gradually as a corner swings into the ray. */
+  feelerSpread: 0.85,
+  feelerStep: 0.06,
+  feelerDepth: 4,
+  feelerSlope: 10,
+};
+/** First person: field of view, near plane, pitch limit (radians). */
+export const FP_FOV = 75;
+const FP_NEAR = 0.05;
+const FP_PITCH = 1.2;
+/** Every shake(amount) is multiplied by this and by the Options level (viewPrefs.ts SHAKE_FACTOR), then capped at SHAKE_CAP. */
+export const SHAKE_SCALE = 0.4;
+export const SHAKE_CAP = 0.3;
 const FOV_BASE = 62;
 const FOV_SPEED_MAX = 14;
 const FOV_SPEED_GAIN = 0.4;
@@ -98,7 +129,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       mode: CameraMode,
       input: InputState,
       world: World,
-      extra?: { boost?: boolean; airborne?: boolean },
+      extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number } },
     ) {
       time += dt;
       // The showroom orbits its vehicle instead: the target, mode and world are ignored while it is set.
@@ -109,13 +140,24 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const v = VIEW[mode];
       // Aim blend: foot view only (the other modes ignore setAim).
       const a = mode === 'foot' ? aimT : 0;
+      const fp = firstPerson && extra?.eye ? extra.eye : null;
+      if (!fp && fpApplied) {
+        // Leaving first person: restore the lens and cut the chase view in.
+        fpApplied = false;
+        camera.near = savedNear;
+        camera.updateProjectionMatrix();
+        smoothed = null;
+        clippedDist = -1;
+        shoulderClip = -1;
+        clipHist.length = 0;
+      }
 
       // Orbit input, and how long since the player last dragged. Aiming slows the look down.
       if (input.camYaw !== 0 || input.camPitch !== 0) sinceDrag = 0;
       else sinceDrag += dt;
       const lookScale = 1 + (aimZoom - 1) * a;
       chase.yaw += input.camYaw / lookScale;
-      chase.pitch = clamp(chase.pitch + input.camPitch / lookScale, PITCH_MIN, PITCH_MAX);
+      chase.pitch = clamp(chase.pitch + input.camPitch / lookScale, fp ? -FP_PITCH : PITCH_MIN, fp ? FP_PITCH : PITCH_MAX);
 
       // Target speed, from its movement since the last frame.
       let speed = 0;
@@ -127,8 +169,44 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       }
       lastTarget = { x: target.x, y: target.y, z: target.z };
 
-      // Drift back behind the target when the player is not steering the view.
-      if (sinceDrag > v.followAfter && speed >= v.followMinSpeed) {
+      if (fp) {
+        if (!fpApplied) {
+          fpApplied = true;
+          savedNear = camera.near;
+          camera.near = FP_NEAR;
+          camera.updateProjectionMatrix();
+        }
+        // Drive and fly drift back behind the vehicle; on foot the view stays where the player put it.
+        if (mode === 'drive' || mode === 'fly') {
+          if (sinceDrag > v.followAfter) chase.yaw += clamp(angleDiff(targetYaw, chase.yaw), -v.followRate * dt, v.followRate * dt);
+        }
+        recoil *= Math.exp(-RECOIL_DECAY * dt);
+        shakeAmt *= Math.exp(-9 * dt);
+        if (shakeAmt < 0.001) shakeAmt = 0;
+        const sx = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+        const sy = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt * 0.7 : 0;
+        const sz = shakeAmt > 0 ? (Math.random() - 0.5) * shakeAmt : 0;
+        camera.position.set(fp.x + sx, fp.y + sy, fp.z + sz);
+        const p = chase.pitch - recoil;
+        const cpp = Math.cos(p);
+        camera.lookAt(
+          camera.position.x + Math.sin(chase.yaw) * cpp,
+          camera.position.y - Math.sin(p),
+          camera.position.z + Math.cos(chase.yaw) * cpp,
+        );
+        const fpFov = FP_FOV / lookScale;
+        const fpRate = mode === 'foot' ? FOV_RATE * (1 + 2 * a) : FOV_RATE;
+        camera.fov += (fpFov - camera.fov) * (1 - Math.exp(-fpRate * dt));
+        if (Math.abs(camera.fov - appliedFov) > FOV_EPS) {
+          camera.updateProjectionMatrix();
+          appliedFov = camera.fov;
+        }
+        return;
+      }
+
+      // Drift back behind the target when the player is not steering the view (not while the clip distance is jumping).
+      clipHold = Math.max(0, clipHold - dt);
+      if (sinceDrag > v.followAfter && speed >= v.followMinSpeed && clipHold <= 0) {
         const diff = angleDiff(targetYaw, chase.yaw);
         const step = clamp(diff, -v.followRate * dt, v.followRate * dt);
         chase.yaw += step;
@@ -157,7 +235,18 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const rawLook = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
       // Ground under the player: the clip march treats rising ground as a wall (see isBlocked).
       const baseGround = heightAt(target.x, target.z);
-      const look = shoulder > 0.01 ? clipPoint(pivot, rawLook, world, 0.25, baseGround) : pivot;
+      let look = pivot;
+      if (shoulder > 0.01) {
+        // Ease the clipped shoulder distance so the look point never flips between pivot and shoulder in one frame.
+        const rawLen = pivot.distanceTo(rawLook);
+        const wanted = pivot.distanceTo(clipPoint(pivot, rawLook, world, 0.25, baseGround));
+        if (shoulderClip < 0) shoulderClip = wanted;
+        else shoulderClip += (wanted - shoulderClip) * (1 - Math.exp(-(wanted < shoulderClip ? CAM_STEADY.shoulderInRate : CLIP_RECOVER_RATE) * dt));
+        const used = Math.min(shoulderClip, rawLen);
+        look = rawLen > 1e-6 ? new THREE.Vector3().lerpVectors(pivot, rawLook, used / rawLen) : pivot;
+      } else {
+        shoulderClip = -1;
+      }
       const effPitch = chase.pitch - recoil;
       const cp = Math.cos(effPitch);
       const fx = Math.sin(chase.yaw) * cp;
@@ -181,23 +270,40 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
 
       // No clipping: pull in immediately on wall contact, ease back out smoothly when clear.
       const rawDist = look.distanceTo(out);
-      const safeDist = clipDist(look, out, world, baseGround);
-      if (clippedDist < 0 || safeDist < clippedDist) clippedDist = safeDist;
-      else clippedDist += (safeDist - clippedDist) * (1 - Math.exp(-CLIP_RECOVER_RATE * dt));
-      const useDist = Math.min(rawDist, clippedDist);
-      const placed = rawDist > 1e-5
-        ? new THREE.Vector3().lerpVectors(look, out, useDist / rawDist)
-        : look.clone();
+      const safeDist = clipDistSmooth(pivot, pivot.clone().add(out).sub(look), world, baseGround);
+      // Hysteresis: a ray grazing a corner flips the march result by a step; ignore small changes.
+      if (safeHeld < 0 || Math.abs(safeDist - safeHeld) >= CAM_STEADY.hysteresis) safeHeld = safeDist;
+      if (clippedDist < 0) clippedDist = safeHeld;
+      else clippedDist += (safeHeld - clippedDist) * (1 - Math.exp(-(safeHeld < clippedDist ? CAM_STEADY.clipInRate : CLIP_RECOVER_RATE) * dt));
+      const placeAt = (d: number): THREE.Vector3 => (rawDist > 1e-5 ? new THREE.Vector3().lerpVectors(look, out, Math.min(rawDist, d) / rawDist) : look.clone());
+      let placed = placeAt(clippedDist);
+      // Never end a frame inside a box: fall back to the safe distance.
+      if (isBlocked(placed.x, placed.y, placed.z, 0.1, world, baseGround)) {
+        const rawSafe = clipDist(look, out, world, baseGround);
+        safeHeld = Math.min(safeDist, rawSafe);
+        clippedDist = Math.min(clippedDist, rawSafe);
+        placed = placeAt(clippedDist);
+      }
+      // Remember the recent clip distances: a big change inside the window pauses the yaw follow.
+      clipHist.push({ t: time, d: clippedDist });
+      while (clipHist.length > 1 && time - clipHist[0].t > CAM_STEADY.jumpWindow) clipHist.shift();
+      if (Math.abs(clippedDist - clipHist[0].d) > CAM_STEADY.jumpDist) clipHold = CAM_STEADY.jumpWindow;
       const placedFloor = groundAt(placed.x, placed.z, target.y + 1) + MIN_Y;
       if (placed.y < placedFloor) placed.y = placedFloor;
       // Under a skyway viaduct (highways/deck.ts): keep the camera below the deck so the player stays in view.
       const ceiling = deckCeilingAbove(placed.x, placed.z, target.y + 0.5);
       if (ceiling !== null && placed.y > ceiling - 0.4) placed.y = Math.max(target.y + 0.6, ceiling - 0.4);
       camera.position.copy(placed);
-      if (placed.distanceTo(look) > 0.25) {
+      // Blend the look direction between the view direction (camera at the look point) and the look point itself.
+      const toLook = placed.distanceTo(look);
+      const bt = clamp((toLook - CAM_STEADY.lookBlendMin) / (CAM_STEADY.lookBlendMax - CAM_STEADY.lookBlendMin), 0, 1);
+      if (bt >= 1) {
         camera.lookAt(look);
       } else {
-        camera.lookAt(placed.x + fx * 10, placed.y + fy * 10, placed.z + fz * 10);
+        const dx = lerp(fx, bt > 0 ? (look.x - placed.x) / toLook : fx, bt);
+        const dy = lerp(fy, bt > 0 ? (look.y - placed.y) / toLook : fy, bt);
+        const dz = lerp(fz, bt > 0 ? (look.z - placed.z) / toLook : fz, bt);
+        camera.lookAt(placed.x + dx * 10, placed.y + dy * 10, placed.z + dz * 10);
       }
 
       // Widen the lens a little with speed and turbo boost.
@@ -214,7 +320,13 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       recoil = clamp(recoil + pitch, 0, RECOIL_MAX);
     },
     shake(amount: number) {
-      shakeAmt = Math.min(0.65, shakeAmt + amount);
+      shakeAmt = Math.min(SHAKE_CAP, shakeAmt + amount * SHAKE_SCALE * SHAKE_FACTOR[getShakeLevel()]);
+    },
+    setFirstPerson(on: boolean) {
+      firstPerson = on;
+    },
+    get firstPerson(): boolean {
+      return firstPerson;
     },
     setAim(t: number, zoom: number) {
       aimT = clamp(t, 0, 1);
@@ -302,8 +414,16 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let appliedFov = camera.fov;
   let recoil = 0;
   let shakeAmt = 0;
+  /** First-person view (setFirstPerson). */
+  let firstPerson = false;
   let shoulder = 0;
   let clippedDist = -1;
+  let safeHeld = -1;
+  let shoulderClip = -1;
+  let clipHold = 0;
+  const clipHist: { t: number; d: number }[] = [];
+  let fpApplied = false;
+  let savedNear = camera.near;
   /** Aim blend (0..1) and total zoom at full aim, set every frame by setAim. */
   let aimT = 0;
   let aimZoom = 1;
@@ -322,7 +442,7 @@ function lerp(a: number, b: number, t: number): number {
 /** A point is blocked by a box, or by ground that rises above the player's ground and reaches up to the point. */
 function isBlocked(x: number, y: number, z: number, radius: number, world: World, baseGround: number): boolean {
   const ground = heightAt(x, z);
-  if (ground > baseGround + 0.3 && y < ground + 0.3) return true;
+  if (ground > baseGround + CAM_STEADY.groundRise && y < ground + CAM_STEADY.groundBand) return true;
   return pushOutOfBoxes(x, z, radius, world.boxes, y - 0.15).hit || insideBox(x, y, z, world.boxes);
 }
 
@@ -343,6 +463,44 @@ function clipPoint(from: THREE.Vector3, to: THREE.Vector3, world: World, radius:
     }
   }
   return to.clone();
+}
+
+/** clipDist plus look-ahead feelers turned either side of the ray (see CAM_STEADY.feelerSlope), so the result is Lipschitz in yaw. */
+function clipDistSmooth(from: THREE.Vector3, to: THREE.Vector3, world: World, baseGround: number): number {
+  const center = clipDist(from, to, world, baseGround);
+  let best = center;
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  const probe = new THREE.Vector3();
+  const slope = CAM_STEADY.feelerSlope;
+  const at = (th: number, sign: number): number => {
+    const c = Math.cos(th);
+    const s = Math.sin(th);
+    probe.set(from.x + dx * c + sign * dz * s, to.y, from.z + dz * c - sign * dx * s);
+    const d = clipDist(from, probe, world, baseGround);
+    best = Math.min(best, d + slope * th);
+    return d;
+  };
+  // Where neighbouring feelers differ by more than the slope allows, bisect: the edge of a corner is where the distance is steepest.
+  const refine = (a: number, fa: number, b: number, fb: number, sign: number, depth: number): void => {
+    if (depth <= 0 || Math.abs(fa - fb) <= slope * (b - a)) return;
+    const m = (a + b) / 2;
+    const fm = at(m, sign);
+    refine(a, fa, m, fm, sign, depth - 1);
+    refine(m, fm, b, fb, sign, depth - 1);
+  };
+  for (const sign of [1, -1]) {
+    let prevTh = 0;
+    let prev = center;
+    for (let th = CAM_STEADY.feelerStep; th <= CAM_STEADY.feelerSpread; th += CAM_STEADY.feelerStep) {
+      if (slope * prevTh >= best) break;
+      const d = at(th, sign);
+      refine(prevTh, prev, th, d, sign, CAM_STEADY.feelerDepth);
+      prevTh = th;
+      prev = d;
+    }
+  }
+  return best;
 }
 
 /** Walk from `from` towards `to`; return the max unobstructed distance, backed off by MARCH_BACKOFF. */

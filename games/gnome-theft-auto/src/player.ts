@@ -45,6 +45,8 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
 
   // Reused every frame: no per-frame allocation.
   const leanQ = new THREE.Quaternion();
+  /** The rider lean passed to the last updateRiding, reused by reseat. */
+  let lastLean = 0;
   const pos = new THREE.Vector3();
   const vel = new THREE.Vector3();
   const state: PlayerState = {
@@ -348,9 +350,28 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       if ((input.fire || aiming) && !p.swimming) model.arms.right.rotation.x = -Math.PI / 2;
     },
 
+    reseat() {
+      // The vehicle moved after updateRiding placed the gnome this frame (collideVehicles, stepKnock, the body's suspension
+      // heave in syncVehicleMesh(v, dt) raising seatLift): move the gnome by the same amount, so at speed it stays in the
+      // seat instead of trailing a frame behind and clipping through the body (L18).
+      const v = p.vehicle;
+      if (!v) return;
+      const ox = pos.x, oy = pos.y, oz = pos.z;
+      seatWorld(v, pos, p.seat);
+      model.object.position.x += pos.x - ox;
+      model.object.position.y += pos.y - oy;
+      model.object.position.z += pos.z - oz;
+      p.x = v.x;
+      p.y = v.y;
+      p.z = v.z;
+      model.object.quaternion.copy(v.object.quaternion);
+      if (!v.spec.flies) model.object.quaternion.multiply(leanQ.setFromAxisAngle(AXIS_Z, lastLean));
+    },
+
     updateRiding(dt: number, lean = 0, horn = false) {
       const v = p.vehicle;
       if (!v) return;
+      lastLean = lean;
       p.x = v.x;
       p.y = v.y;
       p.z = v.z;

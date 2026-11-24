@@ -6,7 +6,8 @@ import { VEHICLES } from '../config';
 import { planRoute } from '../errands';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Box, Npc, Vehicle } from '../types';
-import { collideVehicles, createVehicle, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
+import { collideVehicles, createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
+import { stepNpcCar } from '../npcChassis';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
@@ -78,7 +79,7 @@ function steerToward(v: Vehicle, tx: number, tz: number, speed: number, dt: numb
   const steer = Math.max(-1, Math.min(1, -diff * 2.2));
   const turnScale = Math.abs(diff) > 0.45 ? 0.55 : 1;
   const throttle = Math.min(1, (speed * turnScale) / Math.max(1, v.spec.maxSpeed));
-  stepVehicle(v, { throttle, steer, lift: 0 }, dt, deps.world);
+  stepNpcCar(v, { throttle, steer, lift: 0 }, dt, deps.world);
   syncVehicleMesh(v, dt);
 }
 

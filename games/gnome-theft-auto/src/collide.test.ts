@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groundHeight, pushOutOfBoxes, sweepCircleBoxes, wallBounce } from './collide';
+import { groundHeight, insideBox, pushOutOfBoxes, roundBox, sweepCircleBoxes, wallBounce } from './collide';
 import type { Box } from './types';
 
 describe('swept circle vs boxes', () => {
@@ -77,5 +77,30 @@ describe('rooftop groundHeight', () => {
   it('ignores roofs taller than maxY + step tolerance', () => {
     expect(groundHeight(20, 20, 0.35, boxes, 12)).toBe(12);
     expect(groundHeight(12, 12, 0.35, boxes, 0)).toBe(0);
+  });
+});
+
+describe('round colliders (Box.shape round)', () => {
+  it('a circle slides round a round box instead of catching on its bounding square corner', () => {
+    const boxes = [roundBox(0, 0, 2, 5)];
+    // (2.4, 2.4) is inside the square grown by r (corner at (2, 2)) but clear of the circle (distance 3.39 > 3).
+    expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(false);
+    const p = pushOutOfBoxes(2, 0.5, 1, boxes, 0);
+    expect(p.hit).toBe(true);
+    expect(Math.hypot(p.x, p.z)).toBeCloseTo(3, 6);
+    expect(Math.hypot(p.nx, p.nz)).toBeCloseTo(1, 6);
+  });
+
+  it('insideBox and groundHeight treat a round box as a circle', () => {
+    const boxes = [roundBox(0, 0, 2, 5)];
+    expect(insideBox(1.9, 1, 0, boxes)).toBe(true);
+    expect(insideBox(1.6, 1, 1.6, boxes)).toBe(false);
+    expect(groundHeight(1.6, 1.6, 0.1, boxes, 10)).toBeLessThan(5);
+    expect(groundHeight(0.5, 0.5, 0.1, boxes, 10)).toBe(5);
+  });
+
+  it('a square box keeps its old behaviour (no shape field)', () => {
+    const boxes: Box[] = [{ minX: -2, maxX: 2, minZ: -2, maxZ: 2, h: 5 }];
+    expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(true);
   });
 });

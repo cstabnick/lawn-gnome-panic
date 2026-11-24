@@ -10,7 +10,7 @@ import {
   GNOMA_TRUCK, GNOMECINO, GREENHOUSE_STRIP, HIGHWAYS, HOSPITAL, LANE_OFFSET, MULCH_CLUB, PATIO_HEIGHTS,
   PAY_N_GLAZE, ROAD_LINES, ROAD_WIDTH, SIDEWALK_WIDTH, SIDE_VALVE, SPAWN, THORNE_TOWER, VIEW, WORLD_HALF, biomeAt,
 } from './config';
-import { insideBox } from './collide';
+import { insideBox, roundOf } from './collide';
 import { glazeShopColliders } from './glazeBay';
 import { type GroundKind, TILE, groundTexture, planarUv } from './textures';
 import { buildBiomes } from './biomes';
@@ -802,7 +802,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   /** The park: fountain, picnic tables and bushes (the old layout shifted to the park block). */
   const buildPark = (): void => {
     const { x: px, z: pz } = PARK_CENTRE;
-    boxes.push(boxOf(instantiate(scene, measure('stone-fountain', { footprint: 8 }, 0), px, pz)));
+    boxes.push(roundOf(boxOf(instantiate(scene, measure('stone-fountain', { footprint: 8 }, 0), px, pz))));
     for (const [x, z] of [[-39, 20], [-21, 20], [-39, 40], [-21, 40]]) {
       boxes.push(boxOf(instantiate(scene, measure('picnic-table', { scale: 1.6 }, 0), x, z)));
     }

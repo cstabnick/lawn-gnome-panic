@@ -11,12 +11,12 @@ import { aboveGround, groundAt, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
 import { GLAZE_KINDS, isCraftKind } from './glazeStore';
-import { initAir } from './craft/flight';
+import { initAir, PLANE_REVERSE_FRAC } from './craft/flight';
 import { stepAircraft } from './craft/aircraft';
 import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
 import { poseControl, registerDriveControls } from './driveGrips';
 import { clearWaterlog, waterlogSpeedMult } from './waterlog';
-import { stripLooseParts } from './debris';
+import { forgetLostParts, hideLostParts, restoreLostParts, stripLooseParts } from './debris';
 import {
   attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, resolveBodyPrefab, setWheelPose, type GlazeRig, type Loadout,
 } from '@lawn/glaze';
@@ -102,9 +102,17 @@ export interface PartsHooks {
   beforeDamage(v: Vehicle, body: THREE.Group, fromLevel: number, toLevel: number): void;
   /** v was just blown up (explodeVehicle), before its materials are charred. */
   exploded(v: Vehicle): void;
+  /** A hard hit on v's side (nx, nz), a unit direction from the vehicle centre toward the hit, at `impact` m/s. */
+  knock?(v: Vehicle, nx: number, nz: number, impact: number): void;
 }
 let partsHooks: PartsHooks | null = null;
 export function setPartsHooks(h: PartsHooks | null): void { partsHooks = h; }
+
+/** A hard hit on v's side (nx, nz) toward the hit: a loose part may come off there (the hooks decide). Exploded wrecks skip it. */
+export function knockParts(v: Vehicle, nx: number, nz: number, impact: number): void {
+  if (v.exploded) return;
+  partsHooks?.knock?.(v, nx, nz, impact);
+}
 
 /** Damage level for a hit-point fraction: with n stages, hp 1 is level 0 and the levels split the rest evenly (0 hp = wrecked). */
 export function damageLevelFor(hp: number, stages: number): number {
@@ -122,6 +130,8 @@ function applyDamageLevel(v: Vehicle, level: number): void {
   stripLooseParts(body);
   // setPrefabDamage rebuilt the body's children: dress them again.
   v.rig?.apply();
+  // Parts knocked off earlier stay off through the rebuild.
+  hideLostParts(v);
   v.damage = level;
   // The rebuilt model has new pivot objects: pick them up again (keeping the rotor and propeller spin).
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
@@ -174,6 +184,9 @@ export function explodeVehicle(v: Vehicle): void {
 export function repairVehicle(v: Vehicle): void {
   v.hp = 1;
   clearWaterlog(v);
+  // Knocked-off parts come back on repair: show them (a repair at damage 0 does not rebuild), then forget them.
+  restoreLostParts(v);
+  forgetLostParts(v);
   if (v.damage !== 0) applyDamageLevel(v, 0);
 }
 
@@ -363,10 +376,13 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   const g = groundAt(v.x, v.z, v.y);
   const air = v.y - g > 0.05;
 
-  // Throttle. Planes never reverse: brakes stop them at zero.
+  // Throttle. In the air planes never reverse; on the ground, nearly stopped, the brake backs them up slowly.
+  const backMax = PLANE_REVERSE_FRAC * spec.maxSpeed;
   if (c.throttle > 0) v.speed = Math.min(spec.maxSpeed, v.speed + spec.accel * c.throttle * dt);
-  else if (c.throttle < 0) v.speed = Math.max(0, v.speed - 1.5 * spec.accel * dt);
-  else v.speed *= Math.pow(air ? 0.93 : 0.5, dt);
+  else if (c.throttle < 0) {
+    if (!air && v.speed <= 1) v.speed = Math.max(-backMax, v.speed - 0.15 * spec.accel * -c.throttle * dt);
+    else v.speed = Math.max(0, v.speed - 1.5 * spec.accel * dt);
+  } else v.speed *= Math.pow(air ? 0.93 : 0.5, dt);
 
   // Vertical. Lift authority grows from 0 at 0.7 stall to full at stall.
   const auth = clamp((v.speed - 0.7 * stall) / (0.3 * stall), 0, 1);
@@ -394,9 +410,13 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   }
 
   // Steering: no turning while nearly stopped, and none on the ground below speed 3.
-  const gate = !air && v.speed < 3 ? 0 : clamp(v.speed / stall, 0, 1);
-  v.yaw -= c.steer * spec.turnRate * dt * gate;
+  const aSpeed = Math.abs(v.speed);
+  const gate = !air ? (aSpeed >= 3 ? clamp(aSpeed / stall, 0, 1) : aSpeed > 0.3 ? 0.35 : 0) : clamp(v.speed / stall, 0, 1);
+  v.yaw -= c.steer * spec.turnRate * dt * gate * (v.speed < 0 ? -1 : 1);
 }
+
+/** Arcade ground vehicles in the air (ramp jumps, hops): downward pull in m/s^2. Landing snaps to the ground, no bounce. */
+export const ARCADE_AIR = { gravity: 30 };
 
 /** Every vehicle that is not a piloted plane: ground vehicles, the Whirligig, and unpiloted flyers. */
 function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void {
@@ -420,7 +440,7 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
     else if (v.y >= ceiling) { v.y = ceiling; v.vy = 0; }
   } else if (v.y > g || v.vy > 0) {
     // Lowrider hydraulic hop / trip-mine fling arc on ground vehicles.
-    v.vy -= 22 * dt;
+    v.vy -= ARCADE_AIR.gravity * dt;
     v.y += v.vy * dt;
     if (v.y <= g) {
       v.y = g;
@@ -489,6 +509,7 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
     v.slideZ = 0;
     if (v.driver === 'player' && b.impact > 6) play('bump');
     if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
+    knockParts(v, -sw.nx, -sw.nz, b.impact);
   }
   const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
   v.x = kept.x;
@@ -753,6 +774,9 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
         damageVehicle(b, dmg * (2 * ma) / total);
         a.lastHit = now;
         b.lastHit = now;
+        // The normal points from a to b: a is hit on its b side (+n), b on its a side (-n).
+        knockParts(a, nx, nz, closing);
+        knockParts(b, -nx, -nz, closing);
         if (a.driver === 'player' || b.driver === 'player') play('bump');
       }
     }
@@ -777,6 +801,7 @@ export function stepKnock(list: Vehicle[], dt: number, world: World): void {
       const b = wallBounce(k.x, k.z, sw.nx, sw.nz);
       k.x = b.vx;
       k.z = b.vz;
+      knockParts(v, -sw.nx, -sw.nz, b.impact);
     }
     const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
     v.x = kept.x;
@@ -882,6 +907,7 @@ export function setVehicleLook(v: Vehicle, look: Loadout): void {
   if (!v.rig) {
     // Boats and aircraft have no glaze rig: a new paint re-tints the prefab body.
     if (isCraftKind(v.kind) && next.paint !== before) repaintVehicle(v, next.paint);
+    hideLostParts(v);
     return;
   }
   v.rig.set(next);
@@ -891,4 +917,6 @@ export function setVehicleLook(v: Vehicle, look: Loadout): void {
     const old = pivotsById.get(v.id);
     pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
   }
+  // A re-dress must not bring back parts knocked off.
+  hideLostParts(v);
 }

@@ -64,6 +64,8 @@ export const KEYS = {
   confirm: 'Enter',
   /** Sim jobs (jobs/hud.ts): the job action (accept a call, drop cargo, next fare). */
   jobAction: 'KeyI',
+  /** First-person view on / off (camera.ts setFirstPerson, viewPrefs.ts). Every letter is taken; F5 as in many PC games (default prevented). */
+  firstPerson: 'F5',
 } as const;
 
 export type KeyAction = keyof typeof KEYS;

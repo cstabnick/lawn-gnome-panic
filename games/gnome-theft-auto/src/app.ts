@@ -6,6 +6,10 @@ import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
 import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere } from './atmosphere';
 import { createChaseCamera } from './camera';
+import { createCasings } from './casings';
+import { KEYS, isTyping } from './keys';
+import { registerAction } from './ui/actions';
+import { getFirstPersonPref, setFirstPersonPref } from './viewPrefs';
 import {
   BAIL_MIN_ALTITUDE, BIOME_NAMES, CULVERT_PORTALS, DEFAULT_LOOK, GUNS, GUN_ORDER, HEAT, MOWER_TINTS, PAY_N_GLAZE, VEHICLE_SHOT_DAMAGE, PLAYER, CRACK_LINES, RUNOVER_LINES, SIDE_VALVE, STEAL_LINES, VIEW, CRACKED_TEXT, TESSIE, TAXI,
 } from './config';
@@ -72,12 +76,12 @@ import { surfaceAt } from './surfaces';
 import * as terrain from './terrain';
 import { aboveGround, heightAt } from './terrain';
 import { createTraffic } from './traffic';
-import type { BiomeId, Blip, CameraMode, Driver, HudRoute, Vehicle, VehicleKind } from './types';
+import type { BiomeId, Blip, CameraMode, Driver, HudRoute, Npc, Vehicle, VehicleKind } from './types';
 import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
   repairVehicle, setDamageHook, setDoorOpen, setVehicleHeadlights, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks, beginVehicleFrame,
-  setVehicleLook,
+  setVehicleLook, seatWorld,
 } from './vehicles';
 import { isBoat, stepIdleBoats } from './boats';
 import { createBoatTraffic } from './boatTraffic';
@@ -1182,8 +1186,7 @@ function blowUp(v: Vehicle): void {
 
 /** A bullet at (x, y, z): crack whoever it hits. */
 function hitTest(x: number, y: number, z: number): boolean {
-  const n = npcs.hitTest(x, y, z);
-  if (n) {
+  function crackNpc(n: Npc): void {
     const name = n.name;
     ambulances.dispatch(n.x, n.z, n.look.shirt);
     quests.onCracked(n);
@@ -1194,7 +1197,23 @@ function hitTest(x: number, y: number, z: number): boolean {
     void achievements.increment('gta-rainmaker');
     if (Math.random() < 0.5) hud.toast(`${name}: "${pickLine(CRACK_LINES)}"`);
     play('crack');
+  }
+  const n = npcs.hitTest(x, y, z);
+  if (n) {
+    crackNpc(n);
     return true;
+  }
+  // A bullet to an NPC driver's head cracks them out of the car, which rolls on without them.
+  const dv = traffic.driverAt?.(x, y, z);
+  if (dv) {
+    const out = traffic.crackDriver?.(dv);
+    if (out) {
+      const d = npcs.spawnFleeing(out.x, out.z, player.x, player.z, out.look);
+      crackNpc(d);
+      void achievements.increment('gta-driver-down');
+      fx.spark(x, y, z);
+      return true;
+    }
   }
   const o = watch.hitTest(x, y, z);
   if (o) {
@@ -1315,6 +1334,31 @@ function wakeAtHospital(): void {
 // ---- Frame loop --------------------------------------------------------------------------------------------------
 const aim = new THREE.Vector3();
 const muzzle = new THREE.Vector3();
+const casings = createCasings(scene);
+const CARTRIDGE_GUNS = ['pistol', 'smg', 'shotgun', 'rifle'];
+// First person: eye heights as a share of the gnome's measured height, and how far the eyes sit ahead of the body.
+const FP_EYE = { foot: 0.9, seated: 0.62, footFallback: 1.0, seatedFallback: 0.7, forward: 0.12 };
+const gnomeHeight = ((): number => { const b = new THREE.Box3().setFromObject(player.model.object); return b.isEmpty() ? 0 : b.max.y - b.min.y; })();
+const EYE_FOOT = gnomeHeight > 0 ? FP_EYE.foot * gnomeHeight : FP_EYE.footFallback;
+const EYE_SEATED = gnomeHeight > 0 ? FP_EYE.seated * gnomeHeight : FP_EYE.seatedFallback;
+const eyePos = new THREE.Vector3();
+let fpHid = false;
+let scopeWasUp = false;
+function firstPersonAllowed(): boolean {
+  return !cutscene.active && !chase.showroomActive && !mount && deathT <= 0 && !player.airborne && !player.ragdolling
+    && !scopeWasUp && !introTour.active;
+}
+function toggleFirstPerson(): void {
+  const on = !getFirstPersonPref();
+  setFirstPersonPref(on);
+  hud.toast(on ? 'First person on' : 'Third person');
+}
+registerAction('firstPerson', { run: toggleFirstPerson });
+window.addEventListener('keydown', (e) => {
+  if (e.code !== KEYS.firstPerson || e.repeat || isTyping(e)) return;
+  e.preventDefault();
+  toggleFirstPerson();
+});
 const target = new THREE.Vector3();
 let lastHeatLevel = 0;
 let questHinted = false;
@@ -1706,6 +1750,8 @@ function frame(now: number): void {
   collideVehicles(vehicles, dt);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
+  // The vehicles moved again above (bumps, knocks, the body's suspension heave): keep the player's gnome in its seat.
+  if (player.vehicle) player.reseat?.();
   section('npcs');
   npcs.update(dt, world, simX, simZ, vehicles);
   section('police');
@@ -1785,7 +1831,13 @@ function frame(now: number): void {
     playGunShot(weapons.gun, shot.sound);
     shotAchievements(shot.sound, achievements);
     chase.kick(shot.recoil);
+    if (!player.swimming) {
+      const sy = v ? v.yaw : player.yaw;
+      casings.eject(weapons.gun, muzzle.x, muzzle.y, muzzle.z, sy, v ? Math.sin(sy) * v.speed : 0, v ? Math.cos(sy) * v.speed : 0);
+      if (CARTRIDGE_GUNS.includes(weapons.gun)) void achievements.increment('gta-shell-collector');
+    }
   }
+  casings.update(dt);
   if (weapons.reloading && !reloadWasOn) play('reload');
   for (const w of vehicles) {
     if (!w.exploded || Math.hypot(w.x - player.x, w.z - player.z) > 160) continue;
@@ -2033,9 +2085,17 @@ function frame(now: number): void {
     showcaseLeft -= dt;
     chase.showroom(showcaseLeft > 0 ? { x: v.x, y: v.y, z: v.z, radius: v.spec.radius, centered: true, distance: 3.6 } : null);
   }
-  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne });
+  const fp = getFirstPersonPref() && firstPersonAllowed();
+  chase.setFirstPerson(fp);
+  if (v) { seatWorld(v, eyePos, player.seat); eyePos.y += EYE_SEATED; }
+  else eyePos.set(player.x + Math.sin(player.yaw) * FP_EYE.forward, player.y + EYE_FOOT, player.z + Math.cos(player.yaw) * FP_EYE.forward);
+  // Hide our own gnome while first person is on, and restore only what we hid.
+  if (fp && !fpHid && player.model.object.visible) { player.model.object.visible = false; fpHid = true; }
+  else if (!fp && fpHid) { if (deathT <= 0) player.model.object.visible = true; fpHid = false; }
+  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne, eye: fp ? eyePos : undefined });
   // The birding scope takes the camera to the gnome's eye; the chase camera follows its aim so the view stays when it comes down.
   const scopeAim = birding.applyCamera(dt);
+  scopeWasUp = !!scopeAim;
   if (scopeAim) { chase.yaw = scopeAim.yaw; chase.pitch = scopeAim.pitch; }
 
   section('world-events');

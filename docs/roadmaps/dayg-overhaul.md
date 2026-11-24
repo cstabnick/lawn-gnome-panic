@@ -30,6 +30,12 @@ This roadmap groups all 23 requested DayG fixes, redesigns, and new gameplay sys
   - Epic 6: 8 security defenses (incl. `searchlight-tower` & `auto-crossbow`), Mk I–III defense upgrades & repair, autonomous patrolling/fighting camp crew, crew production (`Collect`), dynamic morale & role reassignment.
   - Epic 7: 5 vehicles (added `hearse-buggy`), 6 modular slots (`engine`, `belt`, `oil`, `wheels`, `exhaust`, `bumper`; 24 parts), 9 Franken-Build synergies, spinning wheels, wobble, headlights (`L`), horn (`H`), exhaust particles, mobile driving pedals (`GAS`/`BRAKE`/`HORN`/`EXIT`).
   - Epic 8: Procedural CanvasTextures (`worldBuilder.ts`), biome ground patches & trees/wildflowers/night streetlamps (`worldAtmosphere.ts`), real top-down world-render map (`mapPanel.ts`), 8 unique zombie walk animations + idle/lunge/stagger variants (`hatless.ts`).
+- **Pass 3 Complete**:
+  - Atmospheric 3D Rain/Drizzle & Night Fireflies / Fog Spores (`worldAtmosphere.ts`).
+  - Combat crosshair, hit-marker `✕` flash, and red damage vignette (`combatFx.ts`).
+  - Dedicated DayZ-style Survival Crafting & Blueprints panel (`craftPanel.ts`, `KeyK` / `Craft` button, 8 craftable gear/bandage/repair/ration blueprints).
+  - Dynamic Supply Drop world events with orange flare smoke beacons, Hatless attraction, map markers & trainer spawn button (`worldEvents.ts`).
+  - Live Vehicle Driving Telemetry Strip (speed, fuel %, HP %, synergies) + real fuel consumption & ramming wear (`vehiclesView.ts`).
 
 ---
 

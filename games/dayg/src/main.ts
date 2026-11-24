@@ -89,6 +89,10 @@ import { createVehiclePanel, type VehiclePanel } from './ui/vehiclePanel';
 import { createNamedSurvivorsView } from './scene/namedSurvivorsView';
 import { createCookingPanel } from './ui/cookingPanel';
 import { createWorldAtmosphere } from './scene/worldAtmosphere';
+import { createCombatFx } from './ui/combatFx';
+import { createCraftPanel } from './ui/craftPanel';
+import { createWorldEvents } from './scene/worldEvents';
+import { saveVehicleStore } from './vehicles/model';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -194,6 +198,8 @@ const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), in
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const namedSurvivorsView = createNamedSurvivorsView({ scene, ui, regions: regionsFor(map), interact, collider, world: host.world, onToast: (t) => hud.toast(t) });
 const cookingPanel = createCookingPanel(ui, { inv, needs, camp, getPlayer, bus, onToast: (t) => hud.toast(t) });
+const combatFx = createCombatFx(ui);
+bus.on('player-hit', (e) => { if (!trainerPanel.state.godMode) combatFx.flashDamage(e.strength); });
 const campView = createCampView({ scene, hatless, onToast: (t) => hud.toast(t) });
 let vehiclePanel!: VehiclePanel;
 const vehicles: VehicleSystem = createVehicleSystem({
@@ -210,6 +216,23 @@ vehiclePanel = createVehiclePanel(ui, {
   store: vehicles.store,
   onRebuild: (id) => vehicles.rebuild(id),
   onDrive: (id) => vehicles.enterVehicle(id),
+});
+const worldEvents = createWorldEvents({
+  scene,
+  regions: regionsFor(map),
+  collider,
+  interact,
+  hatless,
+  bus,
+  onReward(reward) {
+    const rec = host.world.players[LOCAL_PLAYER];
+    if (rec) rec.acorns += reward.acorns;
+    for (const it of reward.items) inv.add({ def: it.def, count: it.count, condition: 1 });
+    vehicles.store.stash.push(reward.vehiclePartId);
+    saveVehicleStore(vehicles.store);
+    hud.toast(`📦 Supply Drop: +${reward.acorns} acorns, gear & vehicle part!`);
+  },
+  onToast: (t) => hud.toast(t),
 });
 const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
 createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
@@ -240,6 +263,8 @@ const mapPanel = createMapPanel(ui, {
       out.push({ x: campPanel.state.center.x, z: campPanel.state.center.z, label: `⛺ ${campPanel.state.name}`, color: '#7bd389' });
     }
     for (const vp of vehicles.getPositions()) out.push({ x: vp.x, z: vp.z, label: vp.label, color: '#8fd3ff' });
+    const dropM = worldEvents.activeMarker();
+    if (dropM) out.push(dropM);
     return out;
   },
 });
@@ -384,6 +409,16 @@ const trainerPanel = createTrainerPanel(ui, {
   onGiveVehicleParts() {
     vehicles.giveAllParts();
   },
+  onTriggerSupplyDrop() {
+    worldEvents.triggerDrop();
+  },
+});
+const craftPanel = createCraftPanel(ui, {
+  inv,
+  body,
+  world: host.world,
+  isGodMode: () => trainerPanel.state.godMode,
+  onToast: (t) => hud.toast(t),
 });
 if (params.get('trainer') === '1') trainerPanel.open();
 const campPanel = createCampPanel(ui, {
@@ -419,7 +454,8 @@ function frame(now: number): void {
   const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
     || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
     || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || vehiclePanel.isOpen()
-    || namedSurvivorsView.isOpen() || cookingPanel.isOpen() || !player.alive;
+    || namedSurvivorsView.isOpen() || cookingPanel.isOpen() || craftPanel.isOpen() || !player.alive;
+  combatFx.setCrosshairVisible(!anyPanelOpen);
   if (!anyPanelOpen !== lastLockAllowed) {
     lastLockAllowed = !anyPanelOpen;
     input.setPointerLockAllowed(lastLockAllowed);
@@ -494,6 +530,7 @@ function frame(now: number): void {
     const hits = hatless.strike(player.pos, player.facing, reach, damage);
     if (hits === 0) base.strike(player.pos, player.facing, reach, damage);
     playerView.triggerAttack(hits > 0);
+    if (hits > 0) combatFx.flashHit();
     audio.attack(hits > 0);
     if (!trainerPanel.state.godMode) player.stamina -= STAMINA.attackCost;
     bus.emit('noise', { x: player.pos.x, z: player.pos.z, radius: NOISE.attack, source: 'attack' });
@@ -507,7 +544,8 @@ function frame(now: number): void {
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
   settlementsView.update(dt);
-  worldAtmosphere.update(dt, clock.night);
+  worldAtmosphere.update(dt, clock.night, world.weather.kind, player.pos);
+  worldEvents.update(dt);
   radios.update(dt);
   collectiblesView.update(dt);
   namedSurvivorsView.update(dt);

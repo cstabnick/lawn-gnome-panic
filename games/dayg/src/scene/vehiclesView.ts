@@ -93,7 +93,10 @@ export function createVehicleSystem(deps: {
     mkPadBtn('BRAKE', 'rgba(110,45,38,0.85)', () => { touchThrottle = -1; }, () => { touchThrottle = 0; }),
     mkPadBtn('GAS', 'rgba(65,105,52,0.9)', () => { touchThrottle = 1; }, () => { touchThrottle = 0; }),
   );
-  driveHud.append(leftPads, rightPads);
+  const telemetryPill = document.createElement('div');
+  telemetryPill.style.cssText = 'padding:8px 14px;border-radius:10px;background:rgba(14,18,13,0.86);border:1px solid var(--dg-border);' +
+    'color:var(--dg-text);font:600 12px var(--dg-font);text-align:center;pointer-events:none;white-space:nowrap';
+  driveHud.append(leftPads, telemetryPill, rightPads);
   if (typeof document !== 'undefined') document.getElementById('ui')?.appendChild(driveHud);
 
   function triggerHorn(): void {
@@ -397,13 +400,18 @@ export function createVehicleSystem(deps: {
       if (inp.climb) { exitVehicle(); return; }
 
       const st = evaluateVehicle(v);
+      const isPedal = v.parts.engine === 'eng-pedal-crank';
+      const curFuel = v.fuel ?? 100;
+      const outOfFuel = !isPedal && curFuel <= 0;
       const accelInput = touchThrottle !== 0 ? touchThrottle : inp.moveZ;
-      if (Math.abs(accelInput) > 0.05) {
+      if (Math.abs(accelInput) > 0.05 && !outOfFuel) {
         speed += accelInput * st.accel * dt;
+        if (!isPedal) v.fuel = Math.max(0, curFuel - dt * 0.65);
       } else {
         speed *= Math.max(0, 1 - 3.5 * dt);
       }
-      speed = Math.max(-st.topSpeed * 0.45, Math.min(st.topSpeed, speed));
+      const cap = outOfFuel ? 1.5 : st.topSpeed;
+      speed = Math.max(-cap * 0.45, Math.min(cap, speed));
 
       if (Math.abs(speed) > 0.25) {
         const steer = -inp.moveX * st.handling * dt * (speed >= 0 ? 1 : -1);
@@ -426,6 +434,9 @@ export function createVehicleSystem(deps: {
         for (const w of m.wheels) w.rotation.x += speed * dt * 2.4;
       }
 
+      const synTag = st.synergies.length > 0 ? ` · ${st.synergies[0].split('(')[0].trim()}` : '';
+      telemetryPill.textContent = `${Math.abs(speed).toFixed(1)} gm/s · Fuel ${isPedal ? '∞' : `${Math.round(v.fuel ?? 100)}%`} · HP ${Math.round(v.hp ?? 100)}${synTag}`;
+
       const p = getPlayer();
       p.pos.set(v.x, v.y + 0.55, v.z);
       p.facing = v.yaw;
@@ -444,7 +455,11 @@ export function createVehicleSystem(deps: {
         spawnExhaustPuff(v, flame);
       }
       if (Math.abs(speed) >= 4) {
-        hatless.strike({ x: v.x, y: v.y, z: v.z }, v.yaw, 2.2, st.ramDamage);
+        const hits = hatless.strike({ x: v.x, y: v.y, z: v.z }, v.yaw, 2.2, st.ramDamage);
+        if (hits > 0) {
+          const wear = v.parts.bumper === 'bmp-spiked-plow' || v.parts.bumper === 'bmp-cowcatcher' ? 0.4 : 1.5;
+          v.hp = Math.max(10, (v.hp ?? 100) - wear);
+        }
       }
     },
   };

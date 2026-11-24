@@ -1,14 +1,14 @@
 // Per-region biome diversity & lush 3D environmental dressing (trees, deadwood, wildflowers, boulders, night streetlamps).
 import * as THREE from 'three';
 import { flatLayer, LAYER } from '@lawn/depth';
-import type { RegionDef } from '../sim/types';
+import type { RegionDef, WeatherKind } from '../sim/types';
 import type { Collider } from '../world/collide';
 
 export function createWorldAtmosphere(deps: {
   scene: THREE.Scene;
   regions: readonly RegionDef[];
   collider: Collider;
-}): { update(dt: number, night: boolean): void } {
+}): { update(dt: number, night: boolean, weather?: WeatherKind, focus?: { x: number; y: number; z: number }): void } {
   const { scene, regions, collider } = deps;
   const root = new THREE.Group();
   root.name = 'dayg-world-atmosphere';
@@ -121,13 +121,77 @@ export function createWorldAtmosphere(deps: {
     }
   });
 
+  // 3D Rain / Drizzle particles centered around player
+  const RAIN_N = 260;
+  const rainPos = new Float32Array(RAIN_N * 3);
+  for (let i = 0; i < RAIN_N; i++) {
+    rainPos[i * 3] = (Math.random() - 0.5) * 32;
+    rainPos[i * 3 + 1] = Math.random() * 14;
+    rainPos[i * 3 + 2] = (Math.random() - 0.5) * 32;
+  }
+  const rainGeo = new THREE.BufferGeometry();
+  rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+  const rainMat = new THREE.PointsMaterial({ color: 0xbfd4e6, size: 0.14, transparent: true, opacity: 0.55, depthWrite: false });
+  const rainPts = new THREE.Points(rainGeo, rainMat);
+  rainPts.visible = false;
+  root.add(rainPts);
+
+  // Night Fireflies / Fog Spores
+  const FLY_N = 90;
+  const flyPos = new Float32Array(FLY_N * 3);
+  for (let i = 0; i < FLY_N; i++) {
+    flyPos[i * 3] = (Math.random() - 0.5) * 36;
+    flyPos[i * 3 + 1] = 0.5 + Math.random() * 3.5;
+    flyPos[i * 3 + 2] = (Math.random() - 0.5) * 36;
+  }
+  const flyGeo = new THREE.BufferGeometry();
+  flyGeo.setAttribute('position', new THREE.BufferAttribute(flyPos, 3));
+  const flyMat = new THREE.PointsMaterial({ color: 0xffe066, size: 0.18, transparent: true, opacity: 0.85, depthWrite: false });
+  const flyPts = new THREE.Points(flyGeo, flyMat);
+  flyPts.visible = false;
+  root.add(flyPts);
+
   let wasNight: boolean | null = null;
+  let flyT = 0;
   return {
-    update(_dt: number, night: boolean) {
-      if (night === wasNight) return;
-      wasNight = night;
-      for (const l of nightLights) l.intensity = night ? 1.5 : 0;
-      for (const m of lampBulbs) m.color.setHex(night ? 0xffe49e : 0x6f756e);
+    update(dt: number, night: boolean, weather: WeatherKind = 'clear', focus?: { x: number; y: number; z: number }) {
+      if (night !== wasNight) {
+        wasNight = night;
+        for (const l of nightLights) l.intensity = night ? 1.5 : 0;
+        for (const m of lampBulbs) m.color.setHex(night ? 0xffe49e : 0x6f756e);
+      }
+
+      const fx = focus?.x ?? 320;
+      const fy = focus?.y ?? 0;
+      const fz = focus?.z ?? 320;
+
+      const isWet = weather === 'drizzle' || weather === 'rain' || weather === 'storm';
+      rainPts.visible = isWet;
+      if (isWet) {
+        rainPts.position.set(fx, fy, fz);
+        const speed = weather === 'storm' ? 22 : weather === 'rain' ? 16 : 10;
+        rainMat.opacity = weather === 'storm' ? 0.72 : weather === 'rain' ? 0.55 : 0.35;
+        const arr = rainGeo.attributes.position.array as Float32Array;
+        for (let i = 0; i < RAIN_N; i++) {
+          arr[i * 3 + 1] -= speed * dt;
+          if (arr[i * 3 + 1] < 0) arr[i * 3 + 1] = 14;
+        }
+        rainGeo.attributes.position.needsUpdate = true;
+      }
+
+      const showFlies = night || weather === 'fog';
+      flyPts.visible = showFlies;
+      if (showFlies) {
+        flyT += dt;
+        flyPts.position.set(fx, fy, fz);
+        flyMat.color.setHex(weather === 'fog' ? 0xa5d6a7 : 0xffe066);
+        const arr = flyGeo.attributes.position.array as Float32Array;
+        for (let i = 0; i < FLY_N; i++) {
+          arr[i * 3] += Math.sin(flyT * 1.4 + i) * 0.4 * dt;
+          arr[i * 3 + 1] += Math.cos(flyT * 1.8 + i * 0.7) * 0.25 * dt;
+        }
+        flyGeo.attributes.position.needsUpdate = true;
+      }
     },
   };
 }

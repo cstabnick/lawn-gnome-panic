@@ -19,6 +19,7 @@ export interface TrainerDeps {
   onToggleLootRespawn?: () => boolean;
   onGiveVehicleParts?: () => void;
   onUnlockAllLore?: () => void;
+  onTriggerSupplyDrop?: () => void;
 }
 
 export interface TrainerPanel {
@@ -228,6 +229,9 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     mkBtn('Sim 5x', () => deps.onSetTimeScale(5)),
     mkBtn('Sim 20x', () => deps.onSetTimeScale(20)),
   );
+  if (deps.onTriggerSupplyDrop) {
+    wRow.append(mkBtn('Spawn Supply Drop', () => deps.onTriggerSupplyDrop!()));
+  }
   if (deps.onToggleLootRespawn) {
     const lootBtn = mkBtn('Loot Respawn: OFF', () => {
       const on = deps.onToggleLootRespawn!();

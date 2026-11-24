@@ -702,5 +702,15 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       }
       return n;
     },
+    nearestPos(pos, radius) {
+      let best: Vec3 | null = null;
+      let bestD = radius;
+      for (const h of all) {
+        if (h.mode === 'crumble') continue;
+        const d = Math.hypot(h.pos.x - pos.x, h.pos.z - pos.z);
+        if (d <= bestD) { bestD = d; best = { x: h.pos.x, y: h.pos.y, z: h.pos.z }; }
+      }
+      return best;
+    },
   };
 }

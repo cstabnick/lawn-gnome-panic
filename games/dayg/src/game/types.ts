@@ -123,6 +123,7 @@ export interface HatlessSystem {
   strike(origin: Vec3, facing: number, reach: number, damage: number): number; // hits landed
   aliveCount(): number;
   nearCount(pos: Vec3, radius: number): number;
+  nearestPos?(pos: Vec3, radius: number): Vec3 | null;
   exportState(): HatlessNet[];                      // roadmap 4.11 (phases 4-8): the owner's Hatless for viewers
   applyRemote(list: readonly HatlessNet[]): void;   // viewers: puppets driven by the owner's list
   setAuthority(owner: boolean): void;               // false = puppets, no AI; strike queues the hit instead

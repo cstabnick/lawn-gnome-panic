@@ -82,6 +82,8 @@ import { createSettlementsView } from './scene/settlementsView';
 import { createRadioSystem } from './scene/radios';
 import { createVignetteSystem } from './scene/vignettes';
 import { createCollectiblesView } from './scene/collectiblesView';
+import { createCampView } from './scene/campView';
+import { createCampPanel } from './ui/campPanel';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -184,6 +186,7 @@ const settlementsView = createSettlementsView({ scene, map: mapData, regions: re
 const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
 const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
+const campView = createCampView({ scene, hatless, onToast: (t) => hud.toast(t) });
 const feed = createSimFeed({ sim, map: mapData, bus, clock, hatless, npcs, getPlayer, host });
 createContainerSystem({ map: mapData, worldView, interact, sim, bus, panel, inv, getPlayer, host });
 
@@ -340,6 +343,13 @@ const trainerPanel = createTrainerPanel(ui, {
   },
 });
 if (params.get('trainer') === '1') trainerPanel.open();
+const campPanel = createCampPanel(ui, {
+  world: host.world,
+  getPlayer,
+  isGodMode: () => trainerPanel.state.godMode,
+  onSync: (c) => campView.sync(c),
+  onToast: (t) => hud.toast(t),
+});
 if (zoneSpawn.region) {
   const rName = world.graph.byId[zoneSpawn.region]?.name;
   if (rName) hud.toast(`Woke up in ${rName}`);
@@ -365,7 +375,7 @@ function frame(now: number): void {
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
   const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
     || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
-    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || !player.alive;
+    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || !player.alive;
   if (!anyPanelOpen !== lastLockAllowed) {
     lastLockAllowed = !anyPanelOpen;
     input.setPointerLockAllowed(lastLockAllowed);
@@ -446,6 +456,7 @@ function frame(now: number): void {
   settlementsView.update(dt);
   radios.update(dt);
   collectiblesView.update(dt);
+  campView.update(dt);
   camp.update(dt, hours, world.weather);
   base.update(dt, hours);
   build.update(dt);

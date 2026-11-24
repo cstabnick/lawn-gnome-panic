@@ -24,7 +24,7 @@ with deferred items listed).
 |---|---|---|---|---|---|---|---|---|
 | E01 | World expansion and site plan | Engine | 1 | – | running | epic/E01-* | | |
 | E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | running | epic/E02-* | | |
-| E04 | Story bible and world writing | Story (docs) | 1 | – | running | epic/E04-* | | |
+| E04 | Story bible and world writing | Story (docs) | 1 | – | merged | epic/E04-story | c9a94025 | names final (see E04/spine.md); new objective types needed (golf-hole, jam-game, skate-line, ski-run, tow-ski, ride-passenger, dig, interior-visit) each with a fallback; E18 builds the journal 'Later' shelf; rulings R-158..R-167 taken |
 | E03 | Bugs and quest reliability sweep | Fix | 2 | – | planned | | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | planned | | | |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | planned | | | |

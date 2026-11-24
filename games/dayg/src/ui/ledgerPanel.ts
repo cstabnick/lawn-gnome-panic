@@ -14,8 +14,8 @@ const TABS: readonly { id: LedgerTab; label: string }[] = [
   { id: 'people', label: 'People' }, { id: 'factions', label: 'Factions' },
   { id: 'quests', label: 'Quests' }, { id: 'skills', label: 'Skills' },
 ];
-const BUTTON_CSS = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#2d3a25;color:#eee;font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;';
+const BUTTON_CSS = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation;';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -83,8 +83,8 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
 
   const root = el('div');
   root.id = DOM_MORE.ledger;
-  root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;background:rgba(18,22,16,0.96);pointer-events:auto;' +
-    'color:#eee;font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;' +
+  root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;background:var(--dg-bg);backdrop-filter:blur(6px);pointer-events:auto;' +
+    'color:var(--dg-text);font:14px var(--dg-font);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;' +
     'padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) ' +
     'calc(12px + env(safe-area-inset-left));';
   root.addEventListener('mousedown', (e) => e.stopPropagation());

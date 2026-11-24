@@ -36,6 +36,7 @@ import { createContainerSystem } from './scene/containers';
 import { createTouchControls } from './ui/touch';
 import { createInventoryPanel } from './ui/inventoryPanel';
 import { createHud } from './ui/hud';
+import { installDaygTheme } from './ui/theme';
 import { createRecap } from './ui/recap';
 import { createBaseSystem } from './base/system';
 import { createBaseView } from './base/view';
@@ -155,6 +156,7 @@ const playerView = createPlayerView(scene);
 
 // ------------------------------------------------------------------ survival, items, UI
 const interact = createInteract();
+installDaygTheme();
 const inv = createInventory([...START_KIT, ...(climbKit ? CLIMB_KIT : []), ...(buildKit ? BUILD_KIT : [])]);
 const needs = createNeedsSystem(bus, TUNING);
 const body = createBodySystem(bus, rng, TUNING);

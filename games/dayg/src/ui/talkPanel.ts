@@ -55,9 +55,9 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
   const { host, npcs, interact, inv, bus, getPlayer } = deps;
   const root = el('div');
   root.id = DOM_MORE.talk;
-  root.style.cssText = 'position:fixed;box-sizing:border-box;background:rgba(18,22,16,0.95);color:#eee;' +
-    'font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;z-index:50;touch-action:pan-y;pointer-events:auto;' +
-    '-webkit-overflow-scrolling:touch;border:1px solid #56614a';
+  root.style.cssText = 'position:fixed;box-sizing:border-box;background:var(--dg-surface);color:var(--dg-text);backdrop-filter:blur(6px);' +
+    'font:14px var(--dg-font);overflow-y:auto;overflow-x:hidden;z-index:50;touch-action:pan-y;pointer-events:auto;' +
+    '-webkit-overflow-scrolling:touch;border:1px solid var(--dg-border);box-shadow:var(--dg-shadow)';
   root.hidden = true;
   root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);

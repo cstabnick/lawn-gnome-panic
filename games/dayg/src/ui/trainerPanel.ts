@@ -29,21 +29,22 @@ export interface TrainerPanel {
 const CSS = `
 #dayg-trainer{position:fixed;top:calc(68px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:70;
   width:min(320px,92vw);max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  overflow-y:auto;background:rgba(16,20,14,0.96);border:1px solid #56614a;border-radius:12px;padding:12px;box-sizing:border-box;
-  color:#eee;font:13px system-ui,sans-serif;pointer-events:auto;display:none;flex-direction:column;gap:10px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  overflow-y:auto;background:var(--dg-surface);border:1px solid var(--dg-border-strong);border-radius:12px;padding:12px;box-sizing:border-box;
+  color:var(--dg-text);font:13px var(--dg-font);pointer-events:auto;display:none;flex-direction:column;gap:10px;
+  box-shadow:var(--dg-shadow);backdrop-filter:blur(6px)}
 #dayg-trainer.dt-open{display:flex}
-#dayg-trainer .dt-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #2f3a28;padding-bottom:6px}
-#dayg-trainer .dt-title{font-weight:700;font-size:15px;color:#e8c35a}
-#dayg-trainer .dt-sec{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.7;margin-top:2px}
+#dayg-trainer .dt-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--dg-border);padding-bottom:6px}
+#dayg-trainer .dt-title{font-weight:700;font-size:15px;color:var(--dg-accent)}
+#dayg-trainer .dt-sec{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dg-muted);margin-top:2px}
 #dayg-trainer .dt-row{display:flex;flex-wrap:wrap;gap:6px}
-#dayg-trainer .dt-btn{min-height:44px;min-width:44px;padding:6px 10px;border-radius:8px;border:1px solid #56614a;
-  background:#2d3a25;color:#eee;font:13px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;flex:1 1 auto}
-#dayg-trainer .dt-btn.dt-on{background:#4f6b3a;border-color:#e8c35a;color:#fff;font-weight:600}
-#dayg-trainer select{min-height:44px;flex:1 1 160px;padding:6px 8px;border-radius:8px;border:1px solid #56614a;background:#1d241a;color:#eee;font:13px system-ui,sans-serif}
+#dayg-trainer .dt-btn{min-height:44px;min-width:44px;padding:6px 10px;border-radius:8px;border:1px solid var(--dg-border);
+  background:var(--dg-surface-2);color:var(--dg-text);font:13px var(--dg-font);cursor:pointer;touch-action:manipulation;flex:1 1 auto}
+#dayg-trainer .dt-btn:hover{background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
+#dayg-trainer .dt-btn.dt-on{background:#4f6b3a;border-color:var(--dg-accent);color:#fff;font-weight:600}
+#dayg-trainer select{min-height:44px;flex:1 1 160px;padding:6px 8px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);color:var(--dg-text);font:13px var(--dg-font)}
 #dayg-trainer-btn{position:fixed;top:calc(120px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:40;
-  min-width:44px;min-height:44px;padding:0 6px;border-radius:8px;border:1px solid #56614a;background:rgba(29,36,26,0.82);
-  color:#e8c35a;font:700 13px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;pointer-events:auto}`;
+  min-width:44px;min-height:44px;padding:0 6px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface);
+  color:var(--dg-accent);font:700 13px var(--dg-font);cursor:pointer;touch-action:manipulation;pointer-events:auto}`;
 
 export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerPanel {
   if (!document.getElementById('dayg-trainer-style')) {

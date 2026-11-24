@@ -72,7 +72,7 @@ export function createChestUi(ui: HTMLElement, deps: { inv: InventorySystem; cap
   const panel = el('div', `position:relative;box-sizing:border-box;width:100%;min-width:0;max-width:560px;overflow-x:hidden;` +
     `max-height:calc(100% - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;` +
     '-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 14px 16px;border-radius:14px;' +
-    'background:rgba(18,22,16,0.97);box-shadow:0 8px 28px rgba(0,0,0,0.5)');
+    'background:var(--dg-surface);border:1px solid var(--dg-border);box-shadow:var(--dg-shadow)');
 
   const titleEl = el('div', `font-size:18px;font-weight:bold;padding-right:${CLOSE_PX + 8}px;margin-bottom:12px;min-height:${CLOSE_PX}px;` +
     'display:flex;align-items:center');

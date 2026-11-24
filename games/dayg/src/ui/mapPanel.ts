@@ -4,15 +4,16 @@ import { DOM } from '../config';
 import type { RegionDef, DistrictId } from '../sim/types';
 
 const CSS = `
-#${DOM.map}{position:fixed;inset:0;z-index:52;display:none;flex-direction:column;background:#10140e;color:#eee;pointer-events:auto;
-  font:14px system-ui,sans-serif;user-select:none;-webkit-user-select:none;box-sizing:border-box;
+#${DOM.map}{position:fixed;inset:0;z-index:52;display:none;flex-direction:column;background:var(--dg-bg);color:var(--dg-text);pointer-events:auto;
+  font:14px var(--dg-font);user-select:none;-webkit-user-select:none;box-sizing:border-box;backdrop-filter:blur(6px);
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #${DOM.map}.mp-open{display:flex}
-#${DOM.map} .mp-top{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #2f3a28;min-height:56px;box-sizing:border-box}
-#${DOM.map} .mp-title{font-weight:700;font-size:18px;flex:1;min-width:0}
-#${DOM.map} .mp-note{font-size:12px;opacity:.8}
-#${DOM.map} .mp-close{width:48px;height:48px;border:none;border-radius:8px;background:#2d3a25;color:#eee;font:22px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;flex:none}
-#${DOM.map} .mp-stage{flex:1;min-height:0;position:relative;padding:8px;box-sizing:border-box}
+#${DOM.map} .mp-top{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--dg-border);background:var(--dg-surface);min-height:58px;box-sizing:border-box}
+#${DOM.map} .mp-title{font-weight:700;font-size:18px;flex:1;min-width:0;color:var(--dg-accent)}
+#${DOM.map} .mp-note{font-size:12px;color:var(--dg-muted)}
+#${DOM.map} .mp-close{width:48px;height:48px;border:1px solid var(--dg-border);border-radius:var(--dg-radius);background:var(--dg-surface-2);color:var(--dg-text);font:22px var(--dg-font);cursor:pointer;touch-action:manipulation;flex:none}
+#${DOM.map} .mp-close:hover{background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
+#${DOM.map} .mp-stage{flex:1;min-height:0;position:relative;padding:10px;box-sizing:border-box}
 #${DOM.map} svg{width:100%;height:100%;display:block;touch-action:none}`;
 
 // One hue per district, so the map reads as groups of regions.

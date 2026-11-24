@@ -99,12 +99,12 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
     '.dayg-hud-pulse{animation:dayg-hud-pulse 1s ease-in-out infinite}' +
     '@keyframes dayg-toast-out{to{opacity:0}}' +
     '.dayg-hud-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:fit-content;max-width:100%;' +
-    'margin-left:auto;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.32)}' +
+    'margin-left:auto;padding:2px 7px;border-radius:6px;background:rgba(14,18,13,.62);border:1px solid rgba(72,86,64,.45);backdrop-filter:blur(4px)}' +
     '.dayg-hud-prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(276px + env(safe-area-inset-bottom));' +
-    'max-width:60vw;padding:7px 14px;border-radius:999px;background:rgba(20,26,20,.78);text-align:center;white-space:normal;' +
-    'font-size:13px;display:none}' +
+    'max-width:60vw;padding:8px 16px;border-radius:999px;background:rgba(14,18,13,.84);border:1px solid rgba(111,130,98,.6);text-align:center;white-space:normal;' +
+    'font-size:13px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4)}' +
     '.dayg-hud-busy{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(340px + env(safe-area-inset-bottom));' +
-    'width:40vw;max-width:260px;display:none;text-align:center;background:rgba(20,26,20,.6);border-radius:8px;padding:5px 8px 6px}' +
+    'width:40vw;max-width:260px;display:none;text-align:center;background:rgba(14,18,13,.78);border:1px solid rgba(72,86,64,.6);border-radius:10px;padding:6px 10px 7px}' +
     '@media (orientation: landscape){' +
     '.dayg-hud-prompt,.dayg-hud-busy{left:33.3333%;right:33.3333%;width:auto;max-width:none;transform:none}' +
     '.dayg-hud-prompt{bottom:calc(120px + env(safe-area-inset-bottom))}' +
@@ -116,8 +116,8 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
   left.style.cssText = 'position:absolute;left:calc(8px + env(safe-area-inset-left));' +
     `top:calc(4px + env(safe-area-inset-top));display:flex;gap:6px;align-items:flex-start;max-height:${LAYOUT.topBar - 8}px`;
   const bars = document.createElement('div');
-  bars.style.cssText = 'display:flex;flex-direction:column;gap:1px;width:130px;padding:2px 5px;box-sizing:border-box;' +
-    'border-radius:6px;background:rgba(0,0,0,.32)';
+  bars.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:134px;padding:4px 6px;box-sizing:border-box;' +
+    'border-radius:8px;background:rgba(14,18,13,.62);border:1px solid rgba(72,86,64,.45);backdrop-filter:blur(4px)';
   const barEls: Record<string, { fill: HTMLDivElement; row: HTMLDivElement }> = {};
   for (const n of [...NEEDS, { key: 'stamina', label: 'Stamina' }]) {
     const row = document.createElement('div');

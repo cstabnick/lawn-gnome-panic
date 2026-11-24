@@ -1,12 +1,12 @@
-// The pack screen, Tarkov/DayZ style: a full-screen inventory with an equipment column, a backpack grid, a loot column
-// while searching, drag and drop between every slot, and an info bar with the selected item's actions.
-// Opening it releases the pointer lock so the cursor shows and clicks reach the grid.
+// The pack screen, Tarkov/DayZ style: unified theme, live 3D rotating player gnome preview, equipment grid,
+// backpack grid, right-side loot column with full drag-and-drop (loot <-> pack <-> hands <-> worn), and item inspector.
 import { prefabIconElement } from '@lawn/prefabs';
 import { DOM } from '../config';
 import { getItem } from '../items/defs';
 import type { WornSlot } from '../items/defs';
 import type { ItemStack } from '../sim/types';
 import type { InventoryPanel, InventorySystem, RecipeDef, StackRef, UseAction, UseApi } from '../game/types';
+import { createPlayerPreview } from './playerPreview';
 
 const WORN: readonly WornSlot[] = ['head', 'back', 'neck', 'body'];
 const WORN_LABEL: Record<WornSlot, string> = { head: 'Head', back: 'Back', neck: 'Neck', body: 'Body' };
@@ -15,45 +15,52 @@ const DRAG_PX = 6;
 const FALLBACK_ICON = '📦';
 
 const CSS = `
-#${DOM.inv}{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:#12160f;color:#eee;pointer-events:auto;
-  font:14px system-ui,sans-serif;cursor:default;user-select:none;-webkit-user-select:none;box-sizing:border-box;
+#${DOM.inv}{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:var(--dg-bg);color:var(--dg-text);pointer-events:auto;
+  font:14px var(--dg-font);cursor:default;user-select:none;-webkit-user-select:none;box-sizing:border-box;backdrop-filter:blur(6px);
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 #${DOM.inv}.iv-open{display:flex}
-#${DOM.inv} .iv-top{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid #2f3a28;min-height:56px;box-sizing:border-box}
-#${DOM.inv} .iv-title{font-weight:700;font-size:18px;white-space:nowrap}
-#${DOM.inv} .iv-meters{flex:1;display:flex;gap:12px;min-width:0}
+#${DOM.inv} .iv-top{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--dg-border);background:var(--dg-surface);min-height:58px;box-sizing:border-box}
+#${DOM.inv} .iv-title{font-weight:700;font-size:18px;letter-spacing:.02em;white-space:nowrap;color:var(--dg-accent)}
+#${DOM.inv} .iv-meters{flex:1;display:flex;gap:14px;min-width:0}
 #${DOM.inv} .iv-meter{flex:1;max-width:240px;min-width:0}
-#${DOM.inv} .iv-meter-label{font-size:12px;opacity:.85;white-space:nowrap}
-#${DOM.inv} .iv-track{height:8px;background:#333;border-radius:4px;overflow:hidden}
-#${DOM.inv} .iv-fill{height:100%;width:0;background:#7fa35a}
-#${DOM.inv} .iv-close{width:48px;height:48px;border:none;border-radius:8px;background:#2d3a25;color:#eee;font:22px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;flex:none}
-#${DOM.inv} .iv-body{flex:1;min-height:0;display:grid;grid-template-columns:230px minmax(0,1fr) 280px;gap:12px;padding:12px;box-sizing:border-box}
-#${DOM.inv} .iv-col{min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column;gap:14px}
-#${DOM.inv} .iv-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:6px}
-#${DOM.inv} .iv-equip{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-#${DOM.inv} .iv-equip-label{width:58px;font-size:13px;opacity:.85}
-#${DOM.inv} .iv-grid{display:grid;grid-template-columns:repeat(auto-fill,${CELL_PX}px);gap:6px;align-content:start}
+#${DOM.inv} .iv-meter-label{font-size:12px;color:var(--dg-muted);margin-bottom:3px;white-space:nowrap}
+#${DOM.inv} .iv-track{height:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);border-radius:4px;overflow:hidden}
+#${DOM.inv} .iv-fill{height:100%;width:0;background:var(--dg-ok);transition:width .15s ease}
+#${DOM.inv} .iv-close{width:48px;height:48px;border:1px solid var(--dg-border);border-radius:var(--dg-radius);background:var(--dg-surface-2);color:var(--dg-text);font:22px var(--dg-font);cursor:pointer;touch-action:manipulation;flex:none}
+#${DOM.inv} .iv-close:hover{background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
+#${DOM.inv} .iv-body{flex:1;min-height:0;display:grid;grid-template-columns:270px minmax(0,1fr) 300px;gap:12px;padding:12px;box-sizing:border-box}
+#${DOM.inv} .iv-col{min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column;gap:12px;background:var(--dg-surface);border:1px solid var(--dg-border);border-radius:var(--dg-radius);padding:12px;box-sizing:border-box}
+#${DOM.inv} .iv-preview{position:relative;height:200px;border-radius:var(--dg-radius);border:1px solid var(--dg-border);background:radial-gradient(circle at 50% 45%,#283424 0%,#151b13 100%);overflow:hidden;flex:none}
+#${DOM.inv} .iv-h{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dg-muted);margin-bottom:6px}
+#${DOM.inv} .iv-equip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#${DOM.inv} .iv-equip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border-radius:8px;background:rgba(0,0,0,0.18);border:1px solid rgba(72,86,64,0.45)}
+#${DOM.inv} .iv-equip-label{font-size:11px;color:var(--dg-muted);text-align:center}
+#${DOM.inv} .iv-grid{display:grid;grid-template-columns:repeat(auto-fill,${CELL_PX}px);gap:7px;align-content:start}
 #${DOM.inv} .iv-cell{position:relative;width:${CELL_PX}px;height:${CELL_PX}px;min-width:44px;min-height:44px;box-sizing:border-box;border-radius:8px;
-  border:2px solid #56614a;background:#1d241a;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:pointer}
-#${DOM.inv} .iv-cell.iv-empty{border-style:dashed;opacity:.7}
-#${DOM.inv} .iv-cell.iv-sel{border-color:#e8c35a;box-shadow:0 0 0 1px #e8c35a inset}
+  border:2px solid var(--dg-border);background:var(--dg-surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:pointer;transition:border-color .12s ease,background-color .12s ease}
+#${DOM.inv} .iv-cell:hover{border-color:var(--dg-border-strong);background:var(--dg-surface-hover)}
+#${DOM.inv} .iv-cell.iv-empty{border-style:dashed;opacity:.75}
+#${DOM.inv} .iv-cell.iv-sel{border-color:var(--dg-accent);box-shadow:0 0 0 1px var(--dg-accent) inset,0 0 12px var(--dg-accent-dim)}
 #${DOM.inv} .iv-cell.iv-over{border-color:#8fd3ff;background:#23324a}
-#${DOM.inv} .iv-count{position:absolute;top:2px;right:4px;font:bold 12px system-ui,sans-serif;text-shadow:0 0 3px #000}
-#${DOM.inv} .iv-litres{position:absolute;top:2px;left:4px;font:bold 11px system-ui,sans-serif;text-shadow:0 0 3px #000}
-#${DOM.inv} .iv-cond{position:absolute;left:3px;right:3px;bottom:2px;height:4px;background:#222;border-radius:2px;overflow:hidden}
+#${DOM.inv} .iv-count{position:absolute;top:2px;right:4px;font:bold 12px var(--dg-font);text-shadow:0 1px 3px #000}
+#${DOM.inv} .iv-litres{position:absolute;top:2px;left:4px;font:bold 11px var(--dg-font);text-shadow:0 1px 3px #000}
+#${DOM.inv} .iv-cond{position:absolute;left:3px;right:3px;bottom:2px;height:4px;background:#111;border-radius:2px;overflow:hidden}
+#${DOM.inv} .iv-loot-card{padding:10px;border-radius:8px;background:rgba(232,195,90,0.06);border:1px solid var(--dg-border-strong);display:flex;flex-direction:column;gap:8px}
 #${DOM.inv} .iv-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#${DOM.inv} .iv-btn{min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid #56614a;background:#2d3a25;color:#eee;
-  font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#${DOM.inv} .iv-btn{min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);color:var(--dg-text);
+  font:14px var(--dg-font);cursor:pointer;touch-action:manipulation}
+#${DOM.inv} .iv-btn:hover:not(:disabled){background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
 #${DOM.inv} .iv-btn:disabled{opacity:.45;cursor:default}
-#${DOM.inv} .iv-info{border-top:1px solid #2f3a28;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;min-height:72px;box-sizing:border-box}
+#${DOM.inv} .iv-info{border-top:1px solid var(--dg-border);background:var(--dg-surface);padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;min-height:74px;box-sizing:border-box}
 #${DOM.inv} .iv-info-text{flex:1 1 220px;min-width:0}
 #${DOM.inv} .iv-info-actions{display:flex;gap:8px;flex-wrap:wrap}
 #${DOM.inv} .iv-busy{flex:1 1 200px;min-width:160px;display:none}
-#${DOM.inv} .iv-ghost{position:fixed;width:56px;height:56px;transform:translate(-50%,-50%);pointer-events:none;z-index:60;opacity:.85;
-  border-radius:8px;background:#2d3a25;border:2px solid #e8c35a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#${DOM.inv} .iv-ghost{position:fixed;width:56px;height:56px;transform:translate(-50%,-50%);pointer-events:none;z-index:60;opacity:.9;
+  border-radius:8px;background:var(--dg-surface);border:2px solid var(--dg-accent);box-shadow:var(--dg-shadow);display:flex;align-items:center;justify-content:center;overflow:hidden}
 @media (max-width:820px){
   #${DOM.inv} .iv-body{grid-template-columns:minmax(0,1fr);overflow:auto}
   #${DOM.inv} .iv-col{overflow:visible}
+  #${DOM.inv} .iv-preview{height:170px}
   #${DOM.inv} .iv-meter-label{font-size:11px}
 }`;
 
@@ -67,12 +74,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: stri
 }
 
 function fmt(n: number): string { return String(Number(n.toFixed(1))); }
-
-function refKey(r: StackRef): string {
-  if (r.where === 'hand') return `hand:${r.index}`;
-  if (r.where === 'worn') return `worn:${r.slot}`;
-  return `pack:${r.index}`;
-}
 
 function keyRef(k: string): StackRef {
   const [where, v] = k.split(':');
@@ -88,7 +89,7 @@ function stackCell(stack: ItemStack | null, key: string, label: string, selected
   cell.title = stack ? getItem(stack.def).name : label;
   if (!stack) {
     cell.append(el('span', '', label));
-    (cell.lastElementChild as HTMLElement).style.cssText = 'font-size:12px;opacity:.6;text-align:center;padding:2px';
+    (cell.lastElementChild as HTMLElement).style.cssText = 'font-size:11px;color:var(--dg-muted);text-align:center;padding:2px';
     return cell;
   }
   const def = getItem(stack.def);
@@ -100,7 +101,7 @@ function stackCell(stack: ItemStack | null, key: string, label: string, selected
   const cond = el('div', 'iv-cond');
   const c = Math.max(0, Math.min(1, stack.condition));
   const bar = el('div');
-  bar.style.cssText = `height:100%;width:${c * 100}%;background:${c > 0.5 ? '#7fa35a' : c > 0.2 ? '#d9a441' : '#c0623a'}`;
+  bar.style.cssText = `height:100%;width:${c * 100}%;background:${c > 0.5 ? 'var(--dg-ok)' : c > 0.2 ? 'var(--dg-warn)' : 'var(--dg-danger)'}`;
   cond.append(bar);
   cell.append(cond);
   return cell;
@@ -108,7 +109,7 @@ function stackCell(stack: ItemStack | null, key: string, label: string, selected
 
 function lootCell(stack: ItemStack, index: number, selected: boolean): HTMLDivElement {
   const cell = stackCell(stack, `loot:${index}`, '', selected);
-  delete cell.dataset.drop;   // loot is taken, never dropped onto
+  delete cell.dataset.drop;   // loot is taken or dragged out, never dropped onto
   return cell;
 }
 
@@ -145,9 +146,9 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Pack');
 
-  // Top bar, built once: title, weight and bulk meters, close.
+  // Top bar: title, weight and bulk meters, close.
   const top = el('div', 'iv-top');
-  const title = el('div', 'iv-title', 'Pack');
+  const title = el('div', 'iv-title', 'Pack & Gear');
   const meters = el('div', 'iv-meters');
   const weight = meterEl();
   const bulk = meterEl();
@@ -159,11 +160,16 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
 
   const body = el('div', 'iv-body');
   const equipCol = el('div', 'iv-col');
+  const previewBox = el('div', 'iv-preview');
+  const preview = createPlayerPreview(previewBox);
+  const equipWrap = el('div');
+  equipCol.append(previewBox, equipWrap);
+
   const packCol = el('div', 'iv-col');
   const sideCol = el('div', 'iv-col');
   body.append(equipCol, packCol, sideCol);
 
-  // Info bar, built once; its contents are refilled on render. The busy bar is updated by the ticker.
+  // Info bar: selected item details and action buttons.
   const info = el('div', 'iv-info');
   const infoText = el('div', 'iv-info-text');
   const infoActions = el('div', 'iv-info-actions');
@@ -172,7 +178,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   busyLabel.style.cssText = 'font-size:13px;margin-bottom:4px';
   const busyTrack = el('div', 'iv-track');
   const busyFill = el('div', 'iv-fill');
-  busyFill.style.background = '#e8c35a';
+  busyFill.style.background = 'var(--dg-accent)';
   busyTrack.append(busyFill);
   busyWrap.append(busyLabel, busyTrack);
   info.append(infoText, infoActions, busyWrap);
@@ -184,7 +190,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   let open = false;
   let selKey: string | null = null;
   let loot: Loot | null = null;
-  let drag: { key: string; from: StackRef; x: number; y: number; active: boolean; ghost: HTMLElement | null } | null = null;
+  let drag: { key: string; from: StackRef | null; lootIdx: number | null; x: number; y: number; active: boolean; ghost: HTMLElement | null } | null = null;
   let suppressClick = false;
 
   function selectedStack(): { stack: ItemStack; ref: StackRef } | null {
@@ -195,22 +201,23 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   }
 
   function renderEquip(): void {
-    equipCol.replaceChildren();
-    equipCol.append(el('div', 'iv-h', 'Hands'));
+    equipWrap.replaceChildren();
+    equipWrap.append(el('div', 'iv-h', 'Hands & Worn'));
+    const grid = el('div', 'iv-equip-grid');
     for (let i = 0; i < 2; i++) {
       const key = `hand:${i}`;
-      const row = el('div', 'iv-equip');
-      row.append(el('div', 'iv-equip-label', i === 0 ? 'Hand' : 'Hand 2'), stackCell(inv.get({ where: 'hand', index: i as 0 | 1 }), key, '', selKey === key));
-      equipCol.append(row);
+      const card = el('div', 'iv-equip');
+      card.append(el('div', 'iv-equip-label', i === 0 ? 'Main Hand' : 'Off Hand'), stackCell(inv.get({ where: 'hand', index: i as 0 | 1 }), key, '', selKey === key));
+      grid.append(card);
     }
-    equipCol.append(el('div', 'iv-h', 'Worn'));
     for (const slotName of WORN) {
       const key = `worn:${slotName}`;
-      const row = el('div', 'iv-equip');
-      row.append(el('div', 'iv-equip-label', WORN_LABEL[slotName]),
+      const card = el('div', 'iv-equip');
+      card.append(el('div', 'iv-equip-label', WORN_LABEL[slotName]),
         stackCell(inv.get({ where: 'worn', slot: slotName }), key, WORN_LABEL[slotName], selKey === key));
-      equipCol.append(row);
+      grid.append(card);
     }
+    equipWrap.append(grid);
   }
 
   function renderPack(): void {
@@ -221,25 +228,27 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
     inv.state.pack.forEach((stack, index) => {
       grid.append(stackCell(stack, `pack:${index}`, '', selKey === `pack:${index}`));
     });
-    grid.append(stackCell(null, `pack:${count}`, 'Drop here', false));   // empty end cell: a drop target that appends
+    grid.append(stackCell(null, `pack:${count}`, 'Drop here', false));
     packCol.append(grid);
   }
 
   function renderSide(): void {
     sideCol.replaceChildren();
     if (loot) {
-      sideCol.append(el('div', 'iv-h', `Searching: ${loot.title}`));
+      const card = el('div', 'iv-loot-card');
+      card.append(el('div', 'iv-h', `Loot: ${loot.title}`));
       const grid = el('div', 'iv-grid');
       if (loot.items.length === 0) grid.append(el('div', '', 'Nothing left.'));
       loot.items.forEach((stack, index) => grid.append(lootCell(stack, index, selKey === `loot:${index}`)));
-      sideCol.append(grid);
+      card.append(grid);
       if (loot.items.length > 0) {
-        sideCol.append(textButton('Take all', () => {
+        card.append(textButton('Take all', () => {
           for (let i = (loot?.items.length ?? 0) - 1; i >= 0; i--) loot?.onTake(i);
           selKey = null;
           render();
         }));
       }
+      sideCol.append(card);
     }
     sideCol.append(el('div', 'iv-h', 'Recipes'));
     for (const r of use.recipes()) {
@@ -248,7 +257,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       row.append(textButton(r.def.name, () => startRecipe(r.def), !r.ok || use.busy() !== null));
       if (!r.ok && r.why) {
         const why = el('span', '', r.why);
-        why.style.cssText = 'font-size:12px;opacity:.75';
+        why.style.cssText = 'font-size:12px;color:var(--dg-muted)';
         row.append(why);
       }
       sideCol.append(row);
@@ -265,7 +274,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       infoText.append(el('div', 'iv-name', `${def.name}${extra}`));
       (infoText.lastElementChild as HTMLElement).style.cssText = 'font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
       infoText.append(el('div', '', `${fmt(def.weight * sel.stack.count)} kg · ${fmt(def.bulk * sel.stack.count)} L · ${Math.round(sel.stack.condition * 100)}% condition`));
-      (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:12px;opacity:.8';
+      (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:12px;color:var(--dg-muted)';
       const ref = sel.ref;
       for (const action of use.actionsFor(ref)) {
         infoActions.append(textButton(action.label, () => run(action)));
@@ -277,7 +286,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       const stack = loot.items[index];
       if (stack) {
         const def = getItem(stack.def);
-        infoText.append(el('div', '', `${def.name}${stack.count > 1 ? ` ×${stack.count}` : ''} · on the ground`));
+        infoText.append(el('div', '', `${def.name}${stack.count > 1 ? ` ×${stack.count}` : ''} · drag to pack or tap Take`));
         (infoText.lastElementChild as HTMLElement).style.cssText = 'font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
         infoActions.append(textButton('Take', () => {
           loot?.onTake(index);
@@ -287,18 +296,23 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
         return;
       }
     }
-    infoText.append(el('div', '', 'Select an item. Drag items between slots, or tap one for its actions.'));
-    (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:13px;opacity:.7';
+    infoText.append(el('div', '', 'Drag items between Loot, Pack, Hands & Worn slots — or tap an item for actions.'));
+    (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:13px;color:var(--dg-muted)';
   }
 
   function render(): void {
     if (!open) return;
     weight.label.textContent = `${fmt(inv.weight())} / ${fmt(inv.carryCapacity())} kg`;
     weight.fill.style.width = `${Math.min(100, inv.carryCapacity() > 0 ? (inv.weight() / inv.carryCapacity()) * 100 : 0)}%`;
-    weight.fill.style.background = inv.weight() > inv.carryCapacity() ? '#c0623a' : '#7fa35a';
+    weight.fill.style.background = inv.weight() > inv.carryCapacity() ? 'var(--dg-danger)' : 'var(--dg-ok)';
     bulk.label.textContent = `${fmt(inv.bulkUsed())} / ${fmt(inv.bulkCapacity())} L`;
     bulk.fill.style.width = `${Math.min(100, inv.bulkCapacity() > 0 ? (inv.bulkUsed() / inv.bulkCapacity()) * 100 : 0)}%`;
-    bulk.fill.style.background = inv.bulkUsed() > inv.bulkCapacity() ? '#c0623a' : '#7fa35a';
+    bulk.fill.style.background = inv.bulkUsed() > inv.bulkCapacity() ? 'var(--dg-danger)' : 'var(--dg-ok)';
+    preview.sync({
+      held: inv.state.hands[0]?.def ?? null,
+      back: inv.state.worn.back?.def ?? null,
+      head: inv.state.worn.head?.def ?? null,
+    });
     renderEquip();
     renderPack();
     renderSide();
@@ -325,25 +339,35 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
     render();
   }
 
-  // Pointer handling: a short press selects; a press that moves past DRAG_PX drags the stack to the cell under the pointer.
   function cellAt(x: number, y: number): HTMLElement | null {
     const node = document.elementFromPoint(x, y);
     return node instanceof HTMLElement ? node.closest<HTMLElement>('[data-key]') : null;
+  }
+
+  function dragStackOf(d: NonNullable<typeof drag>): ItemStack | null {
+    if (d.lootIdx !== null && loot) return loot.items[d.lootIdx] ?? null;
+    return d.from ? inv.get(d.from) : null;
   }
 
   root.addEventListener('pointerdown', (e) => {
     const cell = (e.target as HTMLElement).closest<HTMLElement>('[data-key]');
     if (!cell || !cell.dataset.key) return;
     const key = cell.dataset.key;
-    drag = { key, from: keyRef(key), x: e.clientX, y: e.clientY, active: false, ghost: null };
-    if (key.startsWith('loot:') || !inv.get(keyRef(key))) return;   // only stacks can be dragged; loot is tapped
-    e.preventDefault();
+    if (key.startsWith('loot:')) {
+      const idx = Number(key.split(':')[1]);
+      drag = { key, from: null, lootIdx: idx, x: e.clientX, y: e.clientY, active: false, ghost: null };
+      if (loot?.items[idx]) e.preventDefault();
+      return;
+    }
+    const ref = keyRef(key);
+    drag = { key, from: ref, lootIdx: null, x: e.clientX, y: e.clientY, active: false, ghost: null };
+    if (inv.get(ref)) e.preventDefault();
   });
 
   window.addEventListener('pointermove', (e) => {
     if (!drag || !open) return;
-    if (!drag.active && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > DRAG_PX && !drag.key.startsWith('loot:')) {
-      const stack = inv.get(drag.from);
+    if (!drag.active && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > DRAG_PX) {
+      const stack = dragStackOf(drag);
       if (!stack) return;
       drag.active = true;
       deps.onSound?.('grab');
@@ -365,22 +389,33 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
     drag = null;
     if (!d || !open) return;
     if (d.ghost) d.ghost.remove();
+    for (const c of root.querySelectorAll('.iv-over')) c.classList.remove('iv-over');
     if (d.active) {
       suppressClick = true;
       const target = cellAt(e.clientX, e.clientY);
       const dropKey = target?.dataset.drop;
       if (dropKey && dropKey !== d.key) {
-        const moving = inv.get(d.from);
-        const onto = inv.get(keyRef(dropKey));
-        if (inv.move(d.from, keyRef(dropKey))) {
-          deps.onSound?.(moving && onto && moving.def === onto.def ? 'stack' : 'drop');
+        if (d.lootIdx !== null && loot) {
+          const itemDef = loot.items[d.lootIdx]?.def;
+          const targetRef = keyRef(dropKey);
+          loot.onTake(d.lootIdx);
+          if (itemDef && targetRef.where !== 'pack') {
+            const idx = inv.state.pack.map((s) => s.def).lastIndexOf(itemDef);
+            if (idx >= 0) inv.move({ where: 'pack', index: idx }, targetRef);
+          }
+          deps.onSound?.('drop');
+        } else if (d.from) {
+          const moving = inv.get(d.from);
+          const onto = inv.get(keyRef(dropKey));
+          if (inv.move(d.from, keyRef(dropKey))) {
+            deps.onSound?.(moving && onto && moving.def === onto.def ? 'stack' : 'drop');
+          }
         }
       }
       selKey = null;
       render();
       return;
     }
-    // A tap: select the cell (or deselect it when tapped twice).
     if (suppressClick) { suppressClick = false; return; }
     if (d.key === selKey) selKey = null;
     else selKey = d.key;
@@ -395,7 +430,6 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
 
   inv.onChange(() => { if (open) render(); });
 
-  // Keeps the busy bar moving while a timed use runs, and rebuilds once when it finishes.
   let wasBusy = false;
   setInterval(() => {
     if (!open) return;
@@ -408,8 +442,8 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   function setOpen(on: boolean): void {
     open = on;
     root.classList.toggle('iv-open', on);
+    preview.setActive(on);
     if (on) {
-      // The game captures the mouse for looking; release it so the cursor shows over the pack.
       if (document.pointerLockElement) document.exitPointerLock();
       render();
     } else {

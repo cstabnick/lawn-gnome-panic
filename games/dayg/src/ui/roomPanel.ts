@@ -21,10 +21,10 @@ const MODES: readonly { value: RoomMode; label: string; enabled: boolean }[] = [
   { value: 'full', label: 'Full (later)', enabled: false },
 ];
 
-const SURFACE = 'min-height:44px;min-width:44px;padding:8px 14px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#2d3a25;color:#eee;font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;box-sizing:border-box';
-const INPUT = 'box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#1d241a;color:#eee;font:15px system-ui,sans-serif';
+const SURFACE = 'min-height:44px;min-width:44px;padding:8px 14px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation;box-sizing:border-box';
+const INPUT = 'box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:15px var(--dg-font)';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -82,7 +82,7 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
   root.id = DOM_MORE.room;
   root.hidden = true;
   root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;' +
-    'background:rgba(18,22,16,0.97);color:#eee;font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;' +
+    'background:var(--dg-bg);backdrop-filter:blur(6px);color:var(--dg-text);font:14px var(--dg-font);overflow-y:auto;overflow-x:hidden;' +
     '-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;' +
     'padding:max(env(safe-area-inset-top),12px) max(env(safe-area-inset-right),12px) ' +
     'max(env(safe-area-inset-bottom),12px) max(env(safe-area-inset-left),12px)';

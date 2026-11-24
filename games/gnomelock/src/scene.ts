@@ -13,7 +13,8 @@ import {
   type GnomeLook,
   type GnomeModel,
 } from '@lawn/gnome';
-import { buildHeld } from '@lawn/prefabs';
+import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { VfxSystem } from './particles';
 import { TEAM_COLORS, type Team } from './sim/config';
 import { HEROES } from './sim/heroes';
 import {
@@ -45,7 +46,8 @@ interface Particle {
 interface TowerVisual {
   group: THREE.Group;
   shieldMesh: THREE.Mesh;
-  beamLine: THREE.Line;
+  beamMesh: THREE.Mesh;
+  haloMesh: THREE.Mesh | null;
   hpBarFill: THREE.Mesh;
 }
 
@@ -81,6 +83,8 @@ export class GnomelockScene {
   private spellFx: SpellFx[] = [];
   private castTimers = new Map<number, number>();
   private skyUniforms = { uTime: { value: 0 } };
+  private vfx: VfxSystem;
+  private shakeMag = 0;
   private currentFov = 74;
   private camPos = new THREE.Vector3(0, 6, -120);
   private camLook = new THREE.Vector3(0, 3, -100);
@@ -128,6 +132,7 @@ export class GnomelockScene {
     this.muzzleLight = new THREE.PointLight(0xffd54f, 0, 12);
     this.scene.add(this.muzzleLight);
 
+    this.vfx = new VfxSystem(this.scene);
     this.buildSkybox();
     this.buildArena();
     const relic = this.buildRelicAltar();
@@ -398,6 +403,67 @@ export class GnomelockScene {
       this.scene.add(ped, crystal, pole, flag);
     }
 
+    // 3c. Overhead Stone Garden Arches + Hanging Lanterns + Perimeter Mushrooms + Workshop Prefab Props
+    for (const az of [-60, -24, 24, 60]) {
+      const isAmber = az < 0;
+      const col = isAmber ? 0xff6b35 : 0x4fd8ff;
+      const ay = groundHeightAt(0, az);
+      const arch = new THREE.Group();
+      arch.position.set(0, ay, az);
+      const colGeo = new THREE.BoxGeometry(1.1, 7.6, 1.1);
+      const pL = new THREE.Mesh(colGeo, wallMat);
+      pL.position.set(-10.5, 3.8, 0);
+      const pR = new THREE.Mesh(colGeo, wallMat);
+      pR.position.set(10.5, 3.8, 0);
+      const lintel = new THREE.Mesh(new THREE.BoxGeometry(22.6, 0.9, 1.35), trimMat);
+      lintel.position.set(0, 8.05, 0);
+      const lantern = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.48, 0),
+        new THREE.MeshBasicMaterial({ color: col }),
+      );
+      lantern.position.set(0, 7.0, 0);
+      arch.add(pL, pR, lintel, lantern);
+      this.scene.add(arch);
+    }
+
+    // Perimeter giant garden mushrooms & mossy boulders
+    for (let mz = -85; mz <= 85; mz += 28) {
+      for (const side of [-1, 1]) {
+        const mx = side * 34.5;
+        const my = groundHeightAt(mx, mz);
+        const capCol = mz < 0 ? 0xc8402e : 0x2f8fd0;
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.32, 0.48, 1.6, 8),
+          new THREE.MeshStandardMaterial({ color: 0xf0e6d0, roughness: 0.8 }),
+        );
+        stem.position.set(mx, my + 0.8, mz);
+        const cap = new THREE.Mesh(
+          new THREE.ConeGeometry(1.35, 1.1, 10),
+          new THREE.MeshStandardMaterial({ color: capCol, roughness: 0.65 }),
+        );
+        cap.position.set(mx, my + 2.0, mz);
+        this.scene.add(stem, cap);
+      }
+    }
+
+    // @lawn/prefabs workshop props near mid-lane sheds & base shops
+    const propPlacements: { id: string; x: number; z: number; scale: number; rotY?: number }[] = [
+      { id: 'wooden-chest', x: -21.2, z: -2.4, scale: 1.4, rotY: 0.5 },
+      { id: 'clay-jar', x: -21.0, z: 2.5, scale: 1.5 },
+      { id: 'watering-can', x: 21.2, z: -2.4, scale: 1.5, rotY: -0.5 },
+      { id: 'torch', x: 21.0, z: 2.6, scale: 1.4 },
+      { id: 'wooden-chest', x: -5.5, z: -114, scale: 1.4 },
+      { id: 'clay-jar', x: 5.5, z: -114, scale: 1.5 },
+      { id: 'wooden-chest', x: -5.5, z: 114, scale: 1.4 },
+      { id: 'clay-jar', x: 5.5, z: 114, scale: 1.5 },
+    ];
+    for (const pp of propPlacements) {
+      const m = buildPrefab(pp.id, { scale: pp.scale });
+      m.position.set(pp.x, groundHeightAt(pp.x, pp.z), pp.z);
+      if (pp.rotY) m.rotation.y = pp.rotY;
+      this.scene.add(m);
+    }
+
     // 4. Structures (T1-T3 + Ancient Ceramic Patron)
     for (const st of STRUCTURES) {
       const grp = new THREE.Group();
@@ -464,20 +530,39 @@ export class GnomelockScene {
       hpBarFill.position.set(0, baseH + 3.1, 0.04);
       grp.add(hpBg, hpBarFill);
 
-      // Tower laser beam
-      const beamGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0, baseH + 1.5, 0),
-        new THREE.Vector3(0, baseH + 1.5, 0),
-      ]);
-      const beamLine = new THREE.Line(
-        beamGeo,
-        new THREE.LineBasicMaterial({ color: st.team === 0 ? 0xff7a1a : 0x4fd8ff }),
+      // 4 stone buttresses around tower plinth (proud of plinth)
+      for (let bi = 0; bi < 4; bi++) {
+        const ang = (bi * Math.PI) / 2 + Math.PI / 4;
+        const buttress = new THREE.Mesh(
+          new THREE.BoxGeometry(0.45, baseH * 0.55, 0.7),
+          new THREE.MeshStandardMaterial({ color: 0x7a6958, roughness: 0.85 }),
+        );
+        buttress.position.set(Math.cos(ang) * baseR * 0.88, baseH * 0.28, Math.sin(ang) * baseR * 0.88);
+        buttress.rotation.y = -ang;
+        grp.add(buttress);
+      }
+
+      // Rotating Patron halo for tier 4
+      let haloMesh: THREE.Mesh | null = null;
+      if (st.tier === 4) {
+        haloMesh = new THREE.Mesh(
+          new THREE.TorusGeometry(baseR * 1.4, 0.14, 8, 24),
+          new THREE.MeshBasicMaterial({ color: teamCol }),
+        );
+        haloMesh.position.y = baseH + 2.6;
+        grp.add(haloMesh);
+      }
+
+      // Tower 3D glowing cylinder beam
+      const beamMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.14, 1, 8),
+        new THREE.MeshBasicMaterial({ color: st.team === 0 ? 0xff7a1a : 0x4fd8ff, transparent: true, opacity: 0.85 }),
       );
-      beamLine.visible = false;
-      this.scene.add(beamLine);
+      beamMesh.visible = false;
+      this.scene.add(beamMesh);
 
       this.scene.add(grp);
-      this.towerVisuals.set(st.id, { group: grp, shieldMesh, beamLine, hpBarFill });
+      this.towerVisuals.set(st.id, { group: grp, shieldMesh, beamMesh, haloMesh, hpBarFill });
     }
   }
 
@@ -603,43 +688,47 @@ export class GnomelockScene {
     return entry;
   }
 
-  spawnEvents(events: readonly SimEvent[]): void {
+  spawnEvents(events: readonly SimEvent[], state?: MatchState): void {
     for (const ev of events) {
       if (ev.type === 'shot') {
         this.recoilTimers.set(ev.slot, 0.11);
         this.muzzleLight.position.set(ev.ox, ev.oy + 0.15, ev.oz);
-        this.muzzleLight.intensity = 2.8;
-        const pts = [new THREE.Vector3(ev.ox, ev.oy, ev.oz), new THREE.Vector3(ev.tx, ev.ty, ev.tz)];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        const col = ev.team === 0 ? 0xffb347 : 0x5cc8ff;
-        const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: col }));
-        this.scene.add(line);
-        this.tracers.push({ line, ttl: 0.07 });
-      } else if (ev.type === 'orbConfirm' || ev.type === 'orbDeny' || ev.type === 'heroKill') {
-        const col = ev.type === 'orbConfirm' ? 0xffd54f : ev.type === 'orbDeny' ? 0xff4d6d : 0xd9814f;
-        const count = ev.type === 'heroKill' ? 14 : 7;
-        for (let i = 0; i < count; i++) {
-          const m = new THREE.Mesh(
-            new THREE.BoxGeometry(0.14, 0.14, 0.14),
-            new THREE.MeshBasicMaterial({ color: col }),
-          );
-          m.position.set(ev.x, ev.y, ev.z);
-          this.scene.add(m);
-          this.particles.push({
-            mesh: m,
-            vx: (Math.random() - 0.5) * 8,
-            vy: 2 + Math.random() * 6,
-            vz: (Math.random() - 0.5) * 8,
-            ttl: 0.55,
-          });
+        this.muzzleLight.intensity = 3.2;
+        const heroId = state?.heroes[ev.slot]?.heroId ?? 'fernwick';
+        this.vfx.spawnProjectile(heroId, ev.team, ev.ox, ev.oy, ev.oz, ev.tx, ev.ty, ev.tz, ev.hitKind);
+        if (ev.slot === 0) this.shakeMag = Math.max(this.shakeMag, 0.045);
+      } else if (ev.type === 'orbConfirm' || ev.type === 'orbDeny') {
+        const col = ev.type === 'orbConfirm' ? 0xffd54f : 0xff4d6d;
+        this.vfx.burst(ev.x, ev.y, ev.z, col, 12, { speed: 8, up: 4.5 });
+      } else if (ev.type === 'heroKill') {
+        this.vfx.burst(ev.x, ev.y, ev.z, 0xd9814f, 24, { speed: 10, up: 7, ttl: 0.75 });
+        this.vfx.burst(ev.x, ev.y, ev.z, 0xffd54f, 10, { speed: 7, up: 5, ttl: 0.55 });
+        this.shakeMag = Math.max(this.shakeMag, 0.18);
+      } else if (ev.type === 'towerDown') {
+        this.vfx.burst(ev.x, ev.y + 1.5, ev.z, 0xd9cbb8, 28, { speed: 12, up: 9, scale: 1.5, ttl: 0.9 });
+        this.vfx.burst(ev.x, ev.y + 1.5, ev.z, 0xff7a1a, 14, { speed: 9, up: 6, ttl: 0.7 });
+        this.shakeMag = Math.max(this.shakeMag, 0.3);
+      } else if (ev.type === 'moveTech') {
+        const h = state?.heroes[ev.slot];
+        if (h) {
+          const p = h.move.pos;
+          const col = ev.kind === 'wallJump' ? 0x8ce99a : ev.kind === 'dash' ? 0x74b9ff : 0xd9cbb8;
+          this.vfx.dustPuff(p.x, p.y, p.z, col, 5, 1.8);
+        }
+      } else if (ev.type === 'dashJump') {
+        const h = state?.heroes[ev.slot];
+        if (h) {
+          this.vfx.dustPuff(h.move.pos.x, h.move.pos.y, h.move.pos.z, 0x74b9ff, 8, 2.4);
         }
       } else if (ev.type === 'ability') {
         this.castTimers.set(ev.slot, 0.25);
+        if (ev.ability === 'X') this.shakeMag = Math.max(this.shakeMag, 0.2);
         this.spellFx.push(
-          createSpellVfx(this.scene, ev.heroId, ev.ability, ev.x, ev.y, ev.z, ev.tx, ev.ty, ev.tz),
+          createSpellVfx(this.scene, this.vfx, ev.heroId, ev.ability, ev.x, ev.y, ev.z, ev.tx, ev.ty, ev.tz),
         );
       } else if (ev.type === 'bombExplode') {
-        this.spellFx.push(createBombExplosionVfx(this.scene, ev.x, ev.y, ev.z, ev.radius));
+        this.shakeMag = Math.max(this.shakeMag, 0.22);
+        this.spellFx.push(createBombExplosionVfx(this.scene, this.vfx, ev.x, ev.y, ev.z, ev.radius));
       }
     }
   }
@@ -852,11 +941,13 @@ export class GnomelockScene {
       vis.group.visible = st.hp > 0;
       vis.shieldMesh.visible = st.invulnerable && st.hp > 0;
       vis.hpBarFill.scale.x = Math.max(0.01, st.hp / st.maxHp);
-      vis.beamLine.visible = false;
+      vis.beamMesh.visible = false;
+      if (vis.haloMesh) vis.haloMesh.rotation.y += dt * 1.4;
       if (st.hp > 0 && st.targetId) {
         let tx = st.x;
         let ty = st.y + 1;
         let tz = st.z;
+        let hasBeamTarget = false;
         if (st.targetId.startsWith('hero:')) {
           const slot = Number(st.targetId.split(':')[1]);
           const th = state.heroes[slot];
@@ -864,7 +955,7 @@ export class GnomelockScene {
             tx = th.move.pos.x;
             ty = th.move.pos.y + 0.8;
             tz = th.move.pos.z;
-            vis.beamLine.visible = true;
+            hasBeamTarget = true;
           }
         } else if (st.targetId.startsWith('creep:')) {
           const cid = Number(st.targetId.split(':')[1]);
@@ -873,13 +964,17 @@ export class GnomelockScene {
             tx = tc.x;
             ty = tc.y + 0.5;
             tz = tc.z;
-            vis.beamLine.visible = true;
+            hasBeamTarget = true;
           }
         }
-        if (vis.beamLine.visible) {
-          const posAttr = vis.beamLine.geometry.attributes.position as THREE.BufferAttribute;
-          posAttr.setXYZ(1, tx, ty, tz);
-          posAttr.needsUpdate = true;
+        if (hasBeamTarget) {
+          const start = new THREE.Vector3(st.x, st.y + (st.tier === 4 ? 5.9 : 4.1 + st.tier * 0.65), st.z);
+          const end = new THREE.Vector3(tx, ty, tz);
+          const dist = Math.max(0.5, start.distanceTo(end));
+          vis.beamMesh.visible = true;
+          vis.beamMesh.position.copy(start).lerp(end, 0.5);
+          vis.beamMesh.scale.set(1, dist, 1);
+          vis.beamMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.sub(start).normalize());
         }
       }
     }
@@ -933,24 +1028,30 @@ export class GnomelockScene {
         if (zn.kind === 'blackhole') {
           const grp = new THREE.Group();
           const core = new THREE.Mesh(
-            new THREE.SphereGeometry(1.4, 16, 14),
-            new THREE.MeshBasicMaterial({ color: 0x090514 }),
+            new THREE.SphereGeometry(1.5, 16, 14),
+            new THREE.MeshBasicMaterial({ color: 0x05020c }),
           );
           core.position.y = 1.6;
-          const ring = new THREE.Mesh(
-            new THREE.TorusGeometry(2.6, 0.22, 8, 24),
+          const ring1 = new THREE.Mesh(
+            new THREE.TorusGeometry(2.7, 0.24, 8, 24),
             new THREE.MeshBasicMaterial({ color: 0xa65cff }),
           );
-          ring.position.y = 1.6;
-          ring.rotation.x = Math.PI / 2.4;
+          ring1.position.y = 1.6;
+          ring1.rotation.x = Math.PI / 2.4;
+          const ring2 = new THREE.Mesh(
+            new THREE.TorusGeometry(3.4, 0.14, 8, 24),
+            new THREE.MeshBasicMaterial({ color: 0x4fd8ff }),
+          );
+          ring2.position.y = 1.6;
+          ring2.rotation.x = -Math.PI / 3.0;
           const groundRingGeo = new THREE.RingGeometry(zn.radius - 0.35, zn.radius, 32);
           groundRingGeo.rotateX(-Math.PI / 2);
           const groundRing = new THREE.Mesh(
             groundRingGeo,
-            flatLayer(new THREE.MeshBasicMaterial({ color: 0x7d4bb0, transparent: true, opacity: 0.45 }), LAYER.decal),
+            flatLayer(new THREE.MeshBasicMaterial({ color: 0x7d4bb0, transparent: true, opacity: 0.48 }), LAYER.decal),
           );
           groundRing.position.y = 0.04;
-          grp.add(core, ring, groundRing);
+          grp.add(core, ring1, ring2, groundRing);
           m = grp;
         } else if (zn.kind === 'bomb') {
           const grp = new THREE.Group();
@@ -989,11 +1090,16 @@ export class GnomelockScene {
       }
       if (zn.kind === 'blackhole') {
         m.position.set(zn.x, zn.y, zn.z);
-        m.rotation.y += dt * 4.2;
+        m.rotation.y += dt * 4.8;
+        if (Math.random() < 0.75) this.vfx.spawnVortexMote(zn.x, zn.y, zn.z, zn.radius);
       } else if (zn.kind === 'bomb') {
         m.position.set(zn.x, zn.y, zn.z);
       } else {
         m.position.set(zn.x, zn.y + 0.04, zn.z);
+        if (Math.random() < 0.25) {
+          const col = zn.kind === 'sap' ? 0xff9f43 : zn.kind === 'spore' ? 0x7cc44f : 0xff4d6d;
+          this.vfx.dustPuff(zn.x + (Math.random() - 0.5) * zn.radius, zn.y, zn.z + (Math.random() - 0.5) * zn.radius, col, 1, 1.5);
+        }
       }
     }
     for (const [id, m] of this.zoneMeshes) {
@@ -1003,7 +1109,8 @@ export class GnomelockScene {
       }
     }
 
-    // 7. Tracers, Particles & Spell VFX
+    // 7. Tracers, Particles, VfxSystem & Spell VFX
+    this.vfx.update(dt, state.timeS);
     for (let i = this.spellFx.length - 1; i >= 0; i--) {
       const fx = this.spellFx[i];
       fx.ttl -= dt;
@@ -1035,9 +1142,15 @@ export class GnomelockScene {
       }
     }
 
-    // 8. Over-the-shoulder 3rd-person camera with dynamic FOV kick
+    // 8. Over-the-shoulder 3rd-person camera with dynamic FOV kick & micro-shake
     const local = state.heroes[localSlot];
     if (local) {
+      if (local.alive && local.move.sliding && Math.random() < 0.55) {
+        this.vfx.dustPuff(local.move.pos.x, local.move.pos.y, local.move.pos.z, 0xd9cbb8, 1, 1.3);
+      }
+      if (local.alive && local.move.flowTier === 3 && Math.random() < 0.35) {
+        this.vfx.dustPuff(local.move.pos.x, local.move.pos.y + 0.4, local.move.pos.z, 0xffd54f, 1, 1.1);
+      }
       const spd = Math.hypot(local.move.vel.x, local.move.vel.z);
       const targetFov = ads ? 54 : 74 + Math.min(10, Math.max(0, spd - 9) * 1.1) + (local.move.flowTier === 3 ? 4 : 0);
       this.currentFov += (targetFov - this.currentFov) * Math.min(1, 10 * dt);
@@ -1068,6 +1181,11 @@ export class GnomelockScene {
       this.camLook.lerp(new THREE.Vector3(lx, ly, lz), Math.min(1, 26 * dt));
 
       this.camera.position.copy(this.camPos);
+      if (this.shakeMag > 0.002) {
+        this.camera.position.x += (Math.random() - 0.5) * this.shakeMag;
+        this.camera.position.y += (Math.random() - 0.5) * this.shakeMag;
+        this.shakeMag = Math.max(0, this.shakeMag - dt * 1.1);
+      }
       this.camera.lookAt(this.camLook);
     }
 

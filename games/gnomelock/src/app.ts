@@ -277,7 +277,7 @@ export function bootGnomelock(): void {
   }
 
   function processEvents(st: MatchState): void {
-    scene.spawnEvents(st.events);
+    scene.spawnEvents(st.events, st);
     const localTeam: Team = st.heroes[localSlot]?.team ?? 0;
 
     for (const ev of st.events) {

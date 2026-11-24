@@ -11,6 +11,7 @@ import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { mountSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
 import { mountWaveOptions } from './waveOptions';
+import { mountViewOptions } from './viewPrefs';
 import { registerAction } from './ui/actions';
 import { getTouchLayout, setTouchLayout, TOUCH_LAYOUTS, type TouchLayout } from './ui/style';
 import { controlsFor, esc } from './ui/glyphs';
@@ -219,6 +220,8 @@ export function createOptions(
 
   // Sound: mute and the World, Ambience and Voices sliders (src/sound/volumeUi.ts).
   mountSoundOptions(panel);
+  // View: screen shake off / low / normal, first person (src/viewPrefs.ts).
+  mountViewOptions(panel);
   // Water waves: off / low / high (src/waveOptions.ts).
   mountWaveOptions(panel);
   // Cloud save: synced / syncing / offline (src/cloudSave.ts).

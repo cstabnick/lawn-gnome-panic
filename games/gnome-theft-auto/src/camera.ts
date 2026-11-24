@@ -7,6 +7,7 @@ import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 import { groundAt, heightAt } from './terrain';
 import { deckCeilingAbove } from './highways/deck';
 import { AIM } from './gunMods';
+import { SHAKE_FACTOR, getShakeLevel } from './viewPrefs';
 
 interface View {
   /** Base distance from the look point. */
@@ -52,6 +53,9 @@ const MARCH_BACKOFF = 0.35;
 const CAM_RADIUS = 0.32;
 const MIN_CAM_DIST = 0.55;
 const CLIP_RECOVER_RATE = 10;
+/** Every shake(amount) is multiplied by this and by the Options level (viewPrefs.ts SHAKE_FACTOR), then capped at SHAKE_CAP. */
+export const SHAKE_SCALE = 0.4;
+export const SHAKE_CAP = 0.3;
 const FOV_BASE = 62;
 const FOV_SPEED_MAX = 14;
 const FOV_SPEED_GAIN = 0.4;
@@ -98,7 +102,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       mode: CameraMode,
       input: InputState,
       world: World,
-      extra?: { boost?: boolean; airborne?: boolean },
+      extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number } },
     ) {
       time += dt;
       // The showroom orbits its vehicle instead: the target, mode and world are ignored while it is set.
@@ -214,7 +218,13 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       recoil = clamp(recoil + pitch, 0, RECOIL_MAX);
     },
     shake(amount: number) {
-      shakeAmt = Math.min(0.65, shakeAmt + amount);
+      shakeAmt = Math.min(SHAKE_CAP, shakeAmt + amount * SHAKE_SCALE * SHAKE_FACTOR[getShakeLevel()]);
+    },
+    setFirstPerson(on: boolean) {
+      firstPerson = on;
+    },
+    get firstPerson(): boolean {
+      return firstPerson;
     },
     setAim(t: number, zoom: number) {
       aimT = clamp(t, 0, 1);
@@ -302,6 +312,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   let appliedFov = camera.fov;
   let recoil = 0;
   let shakeAmt = 0;
+  /** First-person view (setFirstPerson). */
+  let firstPerson = false;
   let shoulder = 0;
   let clippedDist = -1;
   /** Aim blend (0..1) and total zoom at full aim, set every frame by setAim. */

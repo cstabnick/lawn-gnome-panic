@@ -1706,6 +1706,8 @@ function frame(now: number): void {
   collideVehicles(vehicles, dt);
   stepKnock(vehicles, dt, world);
   for (const veh of vehicles) syncVehicleMesh(veh, dt);
+  // The vehicles moved again above (bumps, knocks, the body's suspension heave): keep the player's gnome in its seat.
+  if (player.vehicle) player.reseat?.();
   section('npcs');
   npcs.update(dt, world, simX, simZ, vehicles);
   section('police');

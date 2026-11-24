@@ -2,7 +2,7 @@
 // the vehicle's profile and setup (handling.ts). Traffic and the flyers (Crop Duster, Whirligig) stay arcade.
 // "Driving realism" is a CHEAT in Options (options.ts): the default is the Casual sim; Arcade brings back the original flat model.
 // Online play works: remote players see the driven vehicle's broadcast pose (see main.ts).
-import { VehicleController, qRotate, qYaw, v3, type TuningValues } from '@lawn/vehicle';
+import { VehicleController, qRotate, qYaw, v3, type TuningValues, type VehicleInput } from '@lawn/vehicle';
 import { play } from './audio';
 import { angleDiff, clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
 import {
@@ -86,7 +86,15 @@ export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight 
   vehicleConfig(spec, tune, getSetup(spec.kind), rideHeight);
 
 export function createSimDrive(v: Vehicle): SimDrive {
-  const ctrl = new VehicleController(mowerConfig(v.spec, current, v.look?.rideHeight ?? 0), { ground: terrainProbe() });
+  return createChassis(v, current, getSetup(v.spec.kind), v.look?.rideHeight ?? 0);
+}
+
+/**
+ * A sim chassis for `v` with an explicit mode, setup and ride height (createSimDrive uses the player's current mode and
+ * saved setup; npcChassis.ts uses the Casual tune and the stock setup, whatever the player picked).
+ */
+export function createChassis(v: Vehicle, tune: Tune, setup: TuningValues, rideHeight = 0): SimDrive {
+  const ctrl = new VehicleController(vehicleConfig(v.spec, tune, setup, rideHeight), { ground: terrainProbe() });
   ctrl.place(v3(v.x, groundAt(v.x, v.z, v.y), v.z), v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);
@@ -118,8 +126,40 @@ const SIM_FLOOR = 0.08;
 const TIPPED_DEG = 70;
 const RIGHT_AFTER = 1.5;
 
+/**
+ * Airtime and landing tuning for every sim chassis (the player's and NPCs'), L55. The controller runs real 9.81 gravity
+ * (its tyre loads and springs are tuned for that), so jumps off ramps hang: while no wheel touches the ground the chassis
+ * gets `airGravity` m/s^2 of extra pull. On the frame the wheels touch down after a jump, the body's upward velocity is
+ * multiplied by `landingRebound` (and keeps doing so for `landingSettle` seconds), so it does not bounce back up.
+ * E14's dirt bike and rally jumps rely on these numbers.
+ */
+export const SIM_AIR = {
+  /** Extra downward acceleration while airborne (m/s^2), on top of the controller's 9.81. */
+  airGravity: 0,
+  /** Upward body velocity kept on touchdown (0..1, 1 = unchanged). */
+  landingRebound: 1,
+  /** Seconds after touchdown during which landingRebound keeps applying. */
+  landingSettle: 0,
+};
+
 /** Step the player's sim-driven vehicle for one frame: game input in, game-space pose out. Returns true on the frame a tipped vehicle is stood back up. */
 export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: number, world: World): boolean {
+  const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
+  return stepChassis(v, sd, {
+    steer: inp.moveX,
+    throttle: Math.max(0, inp.moveY),
+    brake: Math.max(0, -inp.moveY),
+    handbrake: inp.lift > 0 ? 1 : 0,
+    source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
+  }, dt, world);
+}
+
+/**
+ * Step any sim chassis one frame from controller input (steer -1..1, throttle/brake/handbrake 0..1; brake from rest
+ * reverses): world collision, bump stop, righting, then the game pose (v.x/y/z/yaw/speed). Shared by the player
+ * (stepSimDrive) and NPC cars (npcChassis.ts). Returns true on the frame a tipped vehicle is stood back up.
+ */
+export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: number, world: World): boolean {
   const body = sd.ctrl.body;
   // Anything the game did to the vehicle since last frame (a bump pushed it, or slowed it): carry it into the body.
   const dx = v.x - sd.lastX;
@@ -130,15 +170,8 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     body.vel.x *= k; body.vel.z *= k;
   }
 
-  const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
   const x0 = body.pos.x, z0 = body.pos.z;
-  sd.ctrl.update(dt, {
-    steer: inp.moveX,
-    throttle: Math.max(0, inp.moveY),
-    brake: Math.max(0, -inp.moveY),
-    handbrake: inp.lift > 0 ? 1 : 0,
-    source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
-  });
+  sd.ctrl.update(dt, input);
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
@@ -148,7 +181,7 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);
     body.vel.x = b.vx; body.vel.z = b.vz;
     body.angVel.y *= 0.6;
-    if (b.impact > 6) play('bump');
+    if (b.impact > 6 && v.driver === 'player') play('bump');
     if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);

@@ -16,7 +16,7 @@ export type ActionId =
   | 'boost' | 'handbrake' | 'climb' | 'descend' | 'horn' | 'banger' | 'radio'
   | 'more' | 'phone' | 'emote' | 'journal' | 'map' | 'taxi' | 'party' | 'options' | 'mute'
   | 'binoculars' | 'birdJournal' | 'huntJournal' | 'fishJournal' | 'fish' | 'fishBait'
-  | 'garage' | 'lockupStore' | 'craftShop' | 'jobAction' | 'context' | 'trainer' | 'close' | 'confirm';
+  | 'garage' | 'lockupStore' | 'craftShop' | 'jobAction' | 'context' | 'trainer' | 'close' | 'confirm' | 'firstPerson';
 
 export type TouchHome = 'cluster' | 'stick' | 'drag' | 'dock' | 'more' | 'widget' | 'options' | 'sheet' | 'minimap';
 
@@ -82,6 +82,7 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'huntJournal', label: 'Hunting journal', icon: '📓', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Hunting journal`, inMore: true },
   { id: 'fishJournal', label: 'Catch journal', icon: '📘', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Catch journal`, inMore: true },
   { id: 'mute', label: 'Mute', icon: '🔇', kb: { key: 'mute' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Mute`, inMore: true },
+  { id: 'firstPerson', label: 'First person view', icon: '👁', kb: { key: 'firstPerson' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} First person`, inMore: true },
   { id: 'options', label: 'Options', icon: '⚙', kb: { key: 'options' }, pad: { any: 'start' }, touch: 'more', touchText: `${M} Options`, inMore: true },
   { id: 'trainer', label: 'Save Trainer', icon: '🛠', kb: { key: 'trainer' }, pad: { any: 'options' }, touch: 'options', touchText: 'Options › Save Trainer', listed: false },
 

@@ -1,6 +1,6 @@
-// Pure modular vehicle & Franken-Build modding model: 4 vehicles, 4 part slots, mismatch penalties & goofy synergy boosts.
-export type VehicleKind = 'scrap-bike' | 'mower-kart' | 'barrow-trike' | 'utility-tractor';
-export type PartSlot = 'engine' | 'belt' | 'oil' | 'wheels';
+// Pure modular vehicle & Franken-Build modding model: 5 vehicles, 6 mod slots (24 parts), mismatch penalties & 9 synergy boosts.
+export type VehicleKind = 'scrap-bike' | 'mower-kart' | 'barrow-trike' | 'utility-tractor' | 'hearse-buggy';
+export type PartSlot = 'engine' | 'belt' | 'oil' | 'wheels' | 'exhaust' | 'bumper';
 export type PartSize = 'small' | 'medium' | 'large';
 
 export interface PartDef {
@@ -36,6 +36,9 @@ export interface VehicleInstance {
   z: number;
   yaw: number;
   parts: Partial<Record<PartSlot, string>>;
+  hp?: number;
+  maxHp?: number;
+  fuel?: number;
 }
 
 export interface VehicleStats {
@@ -56,6 +59,7 @@ export const VEHICLE_DEFS: Record<VehicleKind, VehicleDef> = {
   'mower-kart': { kind: 'mower-kart', name: 'Push-Mower Kart', size: 'small', baseSpeed: 12, baseAccel: 16, baseHandling: 2.8, baseColor: 0xc23b22, desc: 'Low-slung lawnmower chassis with questionable brakes.' },
   'barrow-trike': { kind: 'barrow-trike', name: 'Wheelbarrow Trike', size: 'medium', baseSpeed: 11, baseAccel: 13, baseHandling: 2.4, baseColor: 0x4b6a7a, desc: 'Three-wheeled hauler built from a tin barrow tub.' },
   'utility-tractor': { kind: 'utility-tractor', name: 'Utility Tractor', size: 'large', baseSpeed: 13, baseAccel: 12, baseHandling: 2.0, baseColor: 0x9a7b3c, desc: 'Heavy groundskeeper tractor made for ramming hordes.' },
+  'hearse-buggy': { kind: 'hearse-buggy', name: 'Mossgrave Hearse-Buggy', size: 'large', baseSpeed: 14, baseAccel: 13, baseHandling: 2.2, baseColor: 0x262932, desc: 'Armored gothic hearse converted for cemetery runs.' },
 };
 
 export const PART_CATALOG: readonly PartDef[] = [
@@ -79,9 +83,22 @@ export const PART_CATALOG: readonly PartDef[] = [
   { id: 'whl-mower', slot: 'wheels', name: 'Mower Treads', size: 'small', speedMul: 1.0, accelMul: 1.1, handlingMul: 1.05, noiseMul: 1.0, ramBonus: 0.5, color: 0x2b2b2b, desc: 'Grippy turf tyres.' },
   { id: 'whl-barrow', slot: 'wheels', name: 'Pneumatic Barrow Tyres', size: 'medium', speedMul: 1.05, accelMul: 1.0, handlingMul: 1.1, noiseMul: 0.95, ramBonus: 0.8, color: 0x3b3b3b, desc: 'Cushioned tyres for rough cemetery kerbs.' },
   { id: 'whl-monster', slot: 'wheels', name: 'Monster Turf Rollers', size: 'large', speedMul: 1.15, accelMul: 0.95, handlingMul: 0.85, noiseMul: 1.3, ramBonus: 2.5, color: 0x1a1a1a, desc: 'Oversized tractor lugs that crush Hatless.' },
+  // Exhausts (optional mod slot)
+  { id: 'exh-tin-pipe', slot: 'exhaust', name: 'Tin Downspout Pipe', size: 'small', speedMul: 1.02, accelMul: 1.0, handlingMul: 1.0, noiseMul: 1.15, ramBonus: 0, color: 0x8d959b, desc: 'Rattling gutter pipe welded to the manifold.' },
+  { id: 'exh-twin-stacks', slot: 'exhaust', name: 'Chrome Twin Stacks', size: 'large', speedMul: 1.08, accelMul: 1.1, handlingMul: 0.96, noiseMul: 1.35, ramBonus: 0.4, color: 0xd9e0e6, desc: 'Towering vertical pipes that roar across Mossgrave.' },
+  { id: 'exh-flamethrower', slot: 'exhaust', name: 'Afterburner Flamethrower', size: 'large', speedMul: 1.15, accelMul: 1.25, handlingMul: 0.92, noiseMul: 1.5, ramBonus: 0.8, color: 0xd96b27, desc: 'Spits orange sparks for absurd acceleration.' },
+  { id: 'exh-silencer', slot: 'exhaust', name: 'Moss-Packed Silencer', size: 'medium', speedMul: 0.96, accelMul: 0.98, handlingMul: 1.04, noiseMul: 0.45, ramBonus: 0, color: 0x4f6145, desc: 'Muffles engine roar so Hatless stay unaware.' },
+  // Bumpers (optional mod slot)
+  { id: 'bmp-plank-guard', slot: 'bumper', name: 'Timber Plank Guard', size: 'small', speedMul: 0.99, accelMul: 1.0, handlingMul: 1.0, noiseMul: 1.0, ramBonus: 1.2, color: 0x6b4a2e, desc: 'Bolted oak planks to absorb minor collisions.' },
+  { id: 'bmp-spiked-plow', slot: 'bumper', name: 'Spiked Cemetery Plow', size: 'large', speedMul: 0.97, accelMul: 0.95, handlingMul: 0.9, noiseMul: 1.08, ramBonus: 4.0, color: 0x3b4046, desc: 'Wedge-shaped iron plow studded with fence spikes.' },
+  { id: 'bmp-cowcatcher', slot: 'bumper', name: 'Iron Cowcatcher', size: 'medium', speedMul: 1.02, accelMul: 1.0, handlingMul: 0.95, noiseMul: 1.02, ramBonus: 2.8, color: 0x565c63, desc: 'Sweeps Hatless cleanly aside at speed.' },
+  { id: 'bmp-lantern-bar', slot: 'bumper', name: 'Lantern Bullbar', size: 'small', speedMul: 1.0, accelMul: 1.02, handlingMul: 1.02, noiseMul: 0.98, ramBonus: 1.0, color: 0xe8c35a, desc: 'Bright twin-lantern rack for night driving.' },
 ];
 
+/** Required 4 slots for a vehicle to run. */
 export const ALL_SLOTS: readonly PartSlot[] = ['engine', 'belt', 'oil', 'wheels'];
+/** All 6 modular slots (4 required + 2 optional). */
+export const MOD_SLOTS: readonly PartSlot[] = ['engine', 'belt', 'oil', 'wheels', 'exhaust', 'bumper'];
 
 export function getPart(id: string | undefined): PartDef | null {
   if (!id) return null;
@@ -107,8 +124,10 @@ export function evaluateVehicle(v: VehicleInstance): VehicleStats {
   const belt = getPart(v.parts.belt);
   const oil = getPart(v.parts.oil);
   const whl = getPart(v.parts.wheels);
+  const exh = getPart(v.parts.exhaust);
+  const bmp = getPart(v.parts.bumper);
 
-  for (const p of [eng, belt, oil, whl]) {
+  for (const p of [eng, belt, oil, whl, exh, bmp]) {
     if (!p) continue;
     topSpeed *= p.speedMul;
     accel *= p.accelMul;
@@ -133,7 +152,7 @@ export function evaluateVehicle(v: VehicleInstance): VehicleStats {
     penalties.push('Compost Gum-Up (+wobble)');
   }
 
-  // Goofy Franken-Build Synergies!
+  // 9 Goofy Franken-Build Synergies!
   if (eng?.id === 'eng-v8-tractor' && def.size === 'small') {
     topSpeed *= 1.45;
     accel *= 1.35;
@@ -158,6 +177,24 @@ export function evaluateVehicle(v: VehicleInstance): VehicleStats {
     noise *= 0.4;
     synergies.push('🥷 Silent Phantom! (-60% noise)');
   }
+  if (bmp?.id === 'bmp-spiked-plow' && eng?.id === 'eng-v8-tractor') {
+    ramDamage += 4.0;
+    synergies.push('⚔️ Zombie Harvester! (+4.0 ram damage)');
+  }
+  if (v.kind === 'hearse-buggy' && belt?.id === 'belt-turbo' && oil?.id === 'oil-nitro') {
+    topSpeed *= 1.22;
+    accel *= 1.3;
+    synergies.push('⚰️ Dragster Hearse! (+22% speed, +30% accel)');
+  }
+  if (oil?.id === 'oil-compost' && eng?.id === 'eng-v8-tractor') {
+    wobble += 0.22;
+    topSpeed *= 1.15;
+    synergies.push('💥 Wobble Rocket! (+15% speed, +chaotic wobble)');
+  }
+  if (exh?.id === 'exh-silencer' && oil?.id === 'oil-clover') {
+    noise *= 0.55;
+    synergies.push('🦉 Stealth Cruiser! (-45% noise)');
+  }
 
   return {
     runnable,
@@ -173,9 +210,19 @@ export function evaluateVehicle(v: VehicleInstance): VehicleStats {
   };
 }
 
+export function repairVehicle(v: VehicleInstance): void {
+  const max = v.maxHp ?? 100;
+  v.maxHp = max;
+  v.hp = max;
+}
+
+export function refuelVehicle(v: VehicleInstance): void {
+  v.fuel = 100;
+}
+
 export interface VehicleStore {
   vehicles: VehicleInstance[];
-  stash: string[]; // spare part IDs
+  stash: string[];
 }
 
 const STORAGE_KEY = 'dayg_vehicles_v1';
@@ -184,23 +231,27 @@ export function createDefaultVehicleStore(): VehicleStore {
   return {
     vehicles: [
       {
-        id: 'veh-bike-1', kind: 'scrap-bike', x: 312, y: 0, z: 452, yaw: 0.4,
+        id: 'veh-bike-1', kind: 'scrap-bike', x: 312, y: 0, z: 452, yaw: 0.4, hp: 100, maxHp: 100, fuel: 100,
         parts: { engine: 'eng-pedal-crank', belt: 'belt-hemp', oil: 'oil-clover', wheels: 'whl-bike' },
       },
       {
-        id: 'veh-kart-1', kind: 'mower-kart', x: 342, y: 0, z: 444, yaw: -0.6,
-        parts: { engine: 'eng-mower-2t', belt: 'belt-rubber', wheels: 'whl-mower' }, // missing oil
+        id: 'veh-kart-1', kind: 'mower-kart', x: 342, y: 0, z: 444, yaw: -0.6, hp: 90, maxHp: 100, fuel: 85,
+        parts: { engine: 'eng-mower-2t', belt: 'belt-rubber', wheels: 'whl-mower' },
       },
       {
-        id: 'veh-trike-1', kind: 'barrow-trike', x: 265, y: 0, z: 390, yaw: 1.1,
-        parts: { belt: 'belt-chain', oil: 'oil-clean', wheels: 'whl-barrow' }, // missing engine
+        id: 'veh-trike-1', kind: 'barrow-trike', x: 265, y: 0, z: 390, yaw: 1.1, hp: 95, maxHp: 100, fuel: 80,
+        parts: { belt: 'belt-chain', oil: 'oil-clean', wheels: 'whl-barrow', bumper: 'bmp-plank-guard' },
       },
       {
-        id: 'veh-tractor-1', kind: 'utility-tractor', x: 380, y: 0, z: 120, yaw: -1.2,
-        parts: { engine: 'eng-v8-tractor', belt: 'belt-turbo', oil: 'oil-nitro' }, // missing wheels
+        id: 'veh-tractor-1', kind: 'utility-tractor', x: 380, y: 0, z: 120, yaw: -1.2, hp: 120, maxHp: 120, fuel: 70,
+        parts: { engine: 'eng-v8-tractor', belt: 'belt-turbo', oil: 'oil-nitro', exhaust: 'exh-twin-stacks' },
+      },
+      {
+        id: 'veh-hearse-1', kind: 'hearse-buggy', x: 295, y: 0, z: 240, yaw: 0.2, hp: 130, maxHp: 130, fuel: 65,
+        parts: { engine: 'eng-v6-blower', belt: 'belt-rubber', wheels: 'whl-barrow', bumper: 'bmp-lantern-bar' },
       },
     ],
-    stash: ['eng-v8-tractor', 'whl-monster', 'oil-nitro', 'belt-turbo'],
+    stash: ['eng-v8-tractor', 'whl-monster', 'oil-nitro', 'belt-turbo', 'exh-flamethrower', 'bmp-spiked-plow'],
   };
 }
 

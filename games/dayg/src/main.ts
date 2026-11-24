@@ -88,6 +88,7 @@ import { createVehicleSystem, type VehicleSystem } from './scene/vehiclesView';
 import { createVehiclePanel, type VehiclePanel } from './ui/vehiclePanel';
 import { createNamedSurvivorsView } from './scene/namedSurvivorsView';
 import { createCookingPanel } from './ui/cookingPanel';
+import { createWorldAtmosphere } from './scene/worldAtmosphere';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -187,6 +188,7 @@ npcs.onFallen?.((_id, name) => { hud.toast(`${name} was overwhelmed by the Hatle
 hatless.setNpcTargets?.(() => npcs.combatTargets?.() ?? []);
 hatless.onNpcScratch?.((key, strength, from) => { npcs.receiveHit?.(key, strength, from); });
 const settlementsView = createSettlementsView({ scene, map: mapData, regions: regionsFor(map), collider });
+const worldAtmosphere = createWorldAtmosphere({ scene, regions: regionsFor(map), collider });
 const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
 const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
@@ -223,8 +225,24 @@ const talkPanel = createTalkPanel(ui, { host, npcs, interact, inv, bus, getPlaye
 const skills = createSkills(bus, host);
 const quests = createQuestRunner({ host, bus, inv, getPlayer });
 const ledgerPanel = createLedgerPanel(ui, { host, quests, skills, bus });
-// The world map: the player's dot shows only while they carry a gnomeps (the GPS).
-const mapPanel = createMapPanel(ui, { regions: regionsFor(map), hasFix: () => inv.countTag('GPS') > 0, playerPos: () => ({ x: player.pos.x, z: player.pos.z }) });
+// The world map: real top-down world render + regions + markers; the player's arrow shows while carrying a gnomeps (GPS).
+const mapPanel = createMapPanel(ui, {
+  regions: regionsFor(map),
+  hasFix: () => inv.countTag('GPS') > 0,
+  playerPos: () => ({ x: player.pos.x, z: player.pos.z }),
+  playerFacing: () => rig.yaw,
+  scene,
+  renderer,
+  map: mapData,
+  getMarkers: () => {
+    const out: { x: number; z: number; label: string; color: string }[] = [];
+    if (campPanel.state.established && campPanel.state.center) {
+      out.push({ x: campPanel.state.center.x, z: campPanel.state.center.z, label: `⛺ ${campPanel.state.name}`, color: '#7bd389' });
+    }
+    for (const vp of vehicles.getPositions()) out.push({ x: vp.x, z: vp.z, label: vp.label, color: '#8fd3ff' });
+    return out;
+  },
+});
 const audioPanel = createAudioPanel(ui, audio);
 const boardPanel = createBoardPanel(ui, { host, inv, bus, getPlayer });
 createBoards({ scene, map: mapData, interact, host, panel: boardPanel, bus });
@@ -489,6 +507,7 @@ function frame(now: number): void {
   hatless.update(dt, { night: clock.night, fog: world.weather.kind === 'fog' });
   npcs.update(dt);
   settlementsView.update(dt);
+  worldAtmosphere.update(dt, clock.night);
   radios.update(dt);
   collectiblesView.update(dt);
   namedSurvivorsView.update(dt);

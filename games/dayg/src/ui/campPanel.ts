@@ -1,4 +1,4 @@
-// Player Camp, Security Defenses & NPC Hiring Panel.
+// Player Camp, Security Defenses (Mk I-III Upgrades & Repair), Crew Production & NPC Hiring Panel.
 import type { PlayerState } from '../game/types';
 import type { WorldState } from '../sim/types';
 import { LOCAL_PLAYER } from '../sim/world';
@@ -6,12 +6,16 @@ import { NAMED_SURVIVORS, loadStoryState, saveStoryState, setSurvivorStatus } fr
 import {
   DEFENSE_CATALOG,
   addCampDefense,
-  computeSecurityScore,
+  collectCampProduction,
+  dismissCampNpc,
   establishCamp,
   evaluateDemands,
   hireCampNpc,
   loadCampState,
+  reassignNpcRole,
+  repairAllDefenses,
   saveCampState,
+  upgradeDefense,
   type CampRole,
   type CampState,
 } from '../base/campSecurity';
@@ -30,12 +34,13 @@ const CSS = `
   font:14px var(--dg-font);pointer-events:auto;backdrop-filter:blur(6px);overflow-y:auto;
   padding:calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
 #dayg-camp.dc-open{display:flex}
-#dayg-camp .dc-wrap{max-width:720px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+#dayg-camp .dc-wrap{max-width:740px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 #dayg-camp .dc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--dg-border);padding-bottom:8px}
 #dayg-camp .dc-card{background:var(--dg-surface);border:1px solid var(--dg-border);border-radius:var(--dg-radius);padding:12px;display:flex;flex-direction:column;gap:8px}
 #dayg-camp .dc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
 #dayg-camp .dc-btn{min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);color:var(--dg-text);font:13px var(--dg-font);cursor:pointer;touch-action:manipulation}
-#dayg-camp .dc-btn:hover{background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
+#dayg-camp .dc-btn:hover:not(:disabled){background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
+#dayg-camp .dc-btn:disabled{opacity:.45;cursor:default}
 #dayg-camp input,#dayg-camp select{min-height:44px;padding:6px 10px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font)}
 #dayg-camp-btn{position:absolute;top:calc(72px + env(safe-area-inset-top));right:calc(130px + env(safe-area-inset-right));z-index:50;
   min-height:44px;min-width:44px;padding:0 10px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);
@@ -102,7 +107,7 @@ export function createCampPanel(ui: HTMLElement, deps: {
     const acorns = rec?.acorns ?? 0;
     const ev = evaluateDemands(state);
 
-    // Status & Establish Card
+    // Status & Production Card
     const statusCard = document.createElement('div');
     statusCard.className = 'dc-card';
     const secLine = document.createElement('div');
@@ -125,7 +130,21 @@ export function createCampPanel(ui: HTMLElement, deps: {
       deps.onToast(`⛺ Camp "${state.name}" established!`);
       render();
     });
-    row.append(nameIn, estBtn);
+    const collectBtn = document.createElement('button');
+    collectBtn.type = 'button';
+    collectBtn.className = 'dc-btn';
+    const pendAc = Math.floor(state.pendingAcorns ?? 0);
+    const pendRa = Math.floor(state.pendingRations ?? 0);
+    collectBtn.textContent = `Collect (${pendAc} ac · ${pendRa} rations)`;
+    collectBtn.disabled = pendAc === 0 && pendRa === 0;
+    collectBtn.addEventListener('click', () => {
+      const got = collectCampProduction(state);
+      if (rec) rec.acorns += got.acorns;
+      saveCampState(state);
+      deps.onToast(`Collected ${got.acorns} acorns & ${got.rations} camp rations!`);
+      render();
+    });
+    row.append(nameIn, estBtn, collectBtn);
     statusCard.append(secLine, row);
     for (const w of ev.warnings) {
       const warn = document.createElement('div');
@@ -135,12 +154,68 @@ export function createCampPanel(ui: HTMLElement, deps: {
     }
     wrap.append(statusCard);
 
+    // Built Defenses (Upgrades & Repair)
+    if (state.defenses.length > 0) {
+      const builtCard = document.createElement('div');
+      builtCard.className = 'dc-card';
+      const bHead = document.createElement('div');
+      bHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap';
+      bHead.innerHTML = `<span style="font-weight:700;color:var(--dg-accent)">Built Defenses (${state.defenses.length})</span>`;
+      const repBtn = document.createElement('button');
+      repBtn.type = 'button';
+      repBtn.className = 'dc-btn';
+      repBtn.textContent = 'Repair All';
+      repBtn.addEventListener('click', () => {
+        const n = repairAllDefenses(state);
+        saveCampState(state);
+        deps.onToast(n > 0 ? `Repaired ${n} defense(s).` : 'All defenses at full HP.');
+        render();
+      });
+      bHead.append(repBtn);
+      builtCard.append(bHead);
+
+      const bGrid = document.createElement('div');
+      bGrid.className = 'dc-grid';
+      for (const d of state.defenses) {
+        const cat = DEFENSE_CATALOG.find((x) => x.kind === d.kind);
+        const tier = d.tier ?? 1;
+        const box = document.createElement('div');
+        box.style.cssText = 'padding:8px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);display:flex;flex-direction:column;gap:6px';
+        box.innerHTML = `<div style="font-weight:700">${cat?.name ?? d.kind} <span style="color:var(--dg-accent)">Mk ${tier}</span></div>` +
+          `<div style="font-size:12px;color:var(--dg-muted)">HP: ${Math.round(d.hp)}/${d.maxHp}</div>`;
+        if (tier < 3) {
+          const upCost = Math.round((cat?.costAcorns ?? 25) * (tier === 1 ? 0.8 : 1.2));
+          const upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.className = 'dc-btn';
+          upBtn.textContent = `Upgrade Mk ${tier + 1} (${deps.isGodMode() ? 'Free' : `${upCost} ac`})`;
+          upBtn.addEventListener('click', () => {
+            if (!deps.isGodMode() && (!rec || rec.acorns < upCost)) {
+              deps.onToast(`Need ${upCost} acorns.`);
+              return;
+            }
+            const res = upgradeDefense(state, d.id);
+            if (!res.ok) return;
+            if (!deps.isGodMode() && rec) rec.acorns -= res.cost;
+            saveCampState(state);
+            deps.onSync(state);
+            deps.onToast(`Upgraded ${cat?.name ?? d.kind} to Mk ${res.tier}!`);
+            render();
+          });
+          box.append(upBtn);
+        }
+        bGrid.append(box);
+      }
+      builtCard.append(bGrid);
+      wrap.append(builtCard);
+    }
+
     // Build Security Defenses
     const defCard = document.createElement('div');
     defCard.className = 'dc-card';
     const defH = document.createElement('div');
     defH.style.cssText = 'font-weight:700;color:var(--dg-accent)';
-    defH.textContent = `Security Defenses & Turrets (${state.defenses.length} built)`;
+    defH.textContent = 'Construct New Defenses & Turrets';
     const defGrid = document.createElement('div');
     defGrid.className = 'dc-grid';
     for (const d of DEFENSE_CATALOG) {
@@ -178,7 +253,7 @@ export function createCampPanel(ui: HTMLElement, deps: {
     hireCard.className = 'dc-card';
     const hireH = document.createElement('div');
     hireH.style.cssText = 'font-weight:700;color:var(--dg-accent)';
-    hireH.textContent = `Hire Camp Survivors (${state.hired.length} hired)`;
+    hireH.textContent = `Camp Crew & Hiring (${state.hired.length} hired)`;
     const hireGrid = document.createElement('div');
     hireGrid.className = 'dc-grid';
     for (const s of NAMED_SURVIVORS) {
@@ -189,8 +264,32 @@ export function createCampPanel(ui: HTMLElement, deps: {
       if (hired) {
         const badge = document.createElement('div');
         badge.style.cssText = 'font-size:12px;font-weight:700;color:var(--dg-ok)';
-        badge.textContent = `✓ Assigned as ${hired.role} (Needs Sec ≥ ${hired.minSecurity})`;
-        card.append(badge);
+        badge.textContent = `✓ ${hired.role} · Morale ${hired.morale}% (Needs Sec ≥ ${hired.minSecurity})`;
+        const sel = document.createElement('select');
+        for (const r of ['guard', 'scavenger', 'cook', 'mechanic'] as CampRole[]) {
+          const opt = document.createElement('option');
+          opt.value = r;
+          opt.textContent = `Reassign: ${r}`;
+          opt.selected = r === hired.role;
+          sel.append(opt);
+        }
+        sel.addEventListener('change', () => {
+          reassignNpcRole(state, s.id, sel.value as CampRole);
+          saveCampState(state);
+          deps.onSync(state);
+          render();
+        });
+        const disBtn = document.createElement('button');
+        disBtn.type = 'button';
+        disBtn.className = 'dc-btn';
+        disBtn.textContent = 'Dismiss';
+        disBtn.addEventListener('click', () => {
+          dismissCampNpc(state, s.id);
+          saveCampState(state);
+          deps.onSync(state);
+          render();
+        });
+        card.append(badge, sel, disBtn);
       } else {
         const sel = document.createElement('select');
         for (const r of ['guard', 'scavenger', 'cook', 'mechanic'] as CampRole[]) {

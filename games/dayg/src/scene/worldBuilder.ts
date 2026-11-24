@@ -21,12 +21,39 @@ const LADDER_H = 1.6 * PREFAB_SCALE;
 const OPEN_TILT = (15 * Math.PI) / 180;
 
 const STONE_KINDS: ReadonlySet<BlockKind> = new Set(['headstone', 'kerb', 'angel', 'plinth', 'stone']);
+const WOOD_KINDS: ReadonlySet<BlockKind> = new Set(['gatehouse', 'roof', 'bench', 'shed', 'shelf', 'fence']);
 const KIND_COLOR: Partial<Record<BlockKind, number>> = {
   hedge: COLORS.hedge, gatehouse: COLORS.wood, roof: COLORS.wood, bin: 0x3d4a3b, beam: 0x9aa0a6, wall: 0x2b2b2b, standpipe: 0x6d7378,
   crypt: 0x6b6b6b, 'niche-wall': 0x8a8478, yew: 0x2f4d2a, pond: 0x2a4a5a, reed: 0x6f7d3a, bench: 0x7a5a36, plaque: 0xb8b2a0,
   wreath: 0x3f6b2e, heap: 0x5a4a3a, bay: 0x8a7a5a, obelisk: 0xb5b1a8, birdbath: 0xc9c4b8, spire: 0xa9a59b, chapel: 0x9b9385,
   shelf: 0x6b4f32, mower: 0xc23b22, shed: 0x5b4632, pipe: 0x4a4f54, ornament: 0xd9b44a, fence: 0x3b3327, gate: 0x2b2b2b,
 };
+
+const texCache = new Map<string, THREE.CanvasTexture | null>();
+function makeGrainTex(key: string, c1: string, c2: string, repeat = 4, streaks = false): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  if (texCache.has(key)) return texCache.get(key) ?? null;
+  const cv = document.createElement('canvas');
+  cv.width = 64; cv.height = 64;
+  const g = cv.getContext('2d');
+  if (!g) { texCache.set(key, null); return null; }
+  g.fillStyle = c1;
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = c2;
+  let s = 1337;
+  for (let i = 0; i < 180; i++) {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    const x = s % 64;
+    const y = (s >>> 8) % 64;
+    if (streaks) g.fillRect(x, y, 8, 2);
+    else g.fillRect(x, y, 3, 3);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeat, repeat);
+  texCache.set(key, tex);
+  return tex;
+}
 
 // ---------------------------------------------------------------- geometry helpers
 
@@ -116,7 +143,8 @@ function groundGeometry(pits: readonly PitDef[], rect: Rect, cell: number): THRE
 }
 
 function groundMesh(pits: readonly PitDef[], rect: Rect, cell: number, name: string): THREE.Mesh {
-  const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: COLORS.ground })), LAYER.ground);
+  const map = makeGrainTex('ground', '#ffffff', '#c8d6b8', 24, false);
+  const mat = flatLayer(own(new THREE.MeshLambertMaterial({ color: COLORS.ground, ...(map ? { map } : {}) })), LAYER.ground);
   const mesh = new THREE.Mesh(groundGeometry(pits, rect, cell), mat);
   mesh.name = name;
   mesh.receiveShadow = true;
@@ -153,7 +181,13 @@ function buildBlocks(blocks: readonly BlockDef[]): THREE.Object3D[] {
   const stone = new THREE.Color(COLORS.stone), moss = new THREE.Color(COLORS.mossStone), c = new THREE.Color();
   for (const [kind, list] of byKind) {
     const isStone = STONE_KINDS.has(kind);
-    const mat = own(new THREE.MeshLambertMaterial({ color: isStone ? 0xffffff : (KIND_COLOR[kind] ?? COLORS.stone) }));
+    const isWood = WOOD_KINDS.has(kind);
+    const tex = isStone
+      ? makeGrainTex('stone', '#ffffff', '#cfd3c8', 2, false)
+      : isWood
+        ? makeGrainTex('wood', '#ffffff', '#b89f82', 2, true)
+        : null;
+    const mat = own(new THREE.MeshLambertMaterial({ color: isStone ? 0xffffff : (KIND_COLOR[kind] ?? COLORS.stone), ...(tex ? { map: tex } : {}) }));
     const mesh = new THREE.InstancedMesh(box, mat, list.length);
     mesh.name = `blocks-${kind}`;
     list.forEach((b, i) => {

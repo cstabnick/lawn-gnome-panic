@@ -435,7 +435,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     }
   };
 
-  /** Poses the model for this frame: 6 unique seeded zombie walk archetypes, idle sway, reaching arms. */
+  /** Poses the model for this frame: 8 unique seeded zombie locomotion archetypes, idle variants, lunge, stagger, reaching arms. */
   const pose = (h: Hatless, dt: number): void => {
     h.model.rig.position.y -= h.rigDrop;
     h.model.rig.rotation.x -= h.rigTiltX;
@@ -444,12 +444,28 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
 
     h.model.update({ position: h.pos, velocity: h.vel, facing: h.facing, grounded: true, jumpsUsed: 0 }, dt);
     const moving = Math.hypot(h.vel.x, h.vel.z) > 0.05;
-    if (!moving) {
-      h.model.object.rotation.z = h.mode === 'idle' ? Math.sin(h.swayT * SWAY_SPEED) * SWAY_ANGLE : 0;
+    const t = h.swayT;
+    if (h.mode === 'stagger') {
+      h.rigTiltX = -0.35;
+      h.rigTiltZ = Math.sin(t * 14) * 0.2;
+      h.model.arms.left.rotation.x = -0.4;
+      h.model.arms.right.rotation.x = -0.4;
+    } else if (!moving) {
+      const idleKind = h.id % 3;
+      if (idleKind === 0) {
+        h.model.object.rotation.z = Math.sin(t * SWAY_SPEED) * SWAY_ANGLE;
+      } else if (idleKind === 1) {
+        h.model.object.rotation.z = 0;
+        h.rigTiltZ = Math.sin(t * 7.5) * 0.09 * Math.max(0, Math.sin(t * 1.1));
+      } else {
+        h.model.object.rotation.z = 0;
+        h.rigTiltX = 0.14 + Math.sin(t * 1.4) * 0.06;
+        h.model.arms.left.rotation.x = -0.6 + Math.sin(t * 1.4) * 0.15;
+        h.model.arms.right.rotation.x = -0.6 - Math.sin(t * 1.4) * 0.15;
+      }
     } else {
       h.model.object.rotation.z = 0;
-      const arch = h.id % 6;
-      const t = h.swayT;
+      const arch = h.id % 8;
       if (arch === 0) {
         // Shambler: heavy asymmetric drag, arms forward-down
         h.rigTiltZ = Math.sin(t * 3.5) * 0.14;
@@ -458,35 +474,50 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       } else if (arch === 1) {
         // Limper: pronounced left-leg hitch and dip every stride
         const hitch = Math.max(0, Math.sin(t * 4.2));
-        h.rigDrop = hitch * 0.12;
-        h.rigTiltZ = -hitch * 0.18;
-        if (h.model.legs) h.model.legs.left.rotation.x *= 0.35;
+        h.rigDrop = hitch * 0.14;
+        h.rigTiltZ = -hitch * 0.2;
+        if (h.model.legs) h.model.legs.left.rotation.x *= 0.3;
       } else if (arch === 2) {
-        // Hunched: deep forward torso hunch, low swinging arms
-        h.rigTiltX = 0.34;
+        // Hunched-crawler: deep forward torso hunch, low swinging arms
+        h.rigTiltX = 0.38;
         h.model.arms.left.rotation.x = -0.5 + Math.sin(t * 5) * 0.45;
         h.model.arms.right.rotation.x = -0.5 - Math.sin(t * 5) * 0.45;
       } else if (arch === 3) {
         // Twitcher: rapid erratic shoulder/torso snap
         const snap = Math.sin(t * 11) * Math.cos(t * 4.3);
-        h.rigTiltZ = snap * 0.22;
-        h.model.arms.left.rotation.z = 0.2 + snap * 0.35;
-        h.model.arms.right.rotation.z = -0.2 - snap * 0.35;
+        h.rigTiltZ = snap * 0.24;
+        h.model.arms.left.rotation.z = 0.2 + snap * 0.38;
+        h.model.arms.right.rotation.z = -0.2 - snap * 0.38;
       } else if (arch === 4) {
         // Head-loller: slow swaying tilt, stiff outstretched arms
-        h.rigTiltZ = Math.sin(t * 2.1) * 0.24;
+        h.rigTiltZ = Math.sin(t * 2.1) * 0.26;
         h.model.arms.left.rotation.x = -1.35;
         h.model.arms.right.rotation.x = -1.35;
-      } else {
+      } else if (arch === 5) {
         // Stalker: low prowl lean, tense elbows
-        h.rigTiltX = 0.22 + (h.lungeLeft > 0 ? 0.22 : 0);
+        h.rigTiltX = 0.22 + (h.lungeLeft > 0 ? 0.24 : 0);
         h.model.arms.left.rotation.x = -0.85 + Math.sin(t * 6) * 0.25;
         h.model.arms.right.rotation.x = -0.85 - Math.sin(t * 6) * 0.25;
+      } else if (arch === 6) {
+        // Berserker-flail: wild overhead arm swings & frantic side roll
+        h.rigTiltZ = Math.sin(t * 8.5) * 0.18;
+        h.model.arms.left.rotation.x = -1.8 + Math.sin(t * 9.5) * 0.7;
+        h.model.arms.right.rotation.x = -1.8 - Math.sin(t * 9.5) * 0.7;
+      } else {
+        // Stiff-reacher: rigid Frankenstein stride with locked elbows
+        h.rigTiltZ = Math.sin(t * 3.0) * 0.08;
+        h.model.arms.left.rotation.x = -1.55;
+        h.model.arms.right.rotation.x = -1.55;
+        if (h.model.legs) {
+          h.model.legs.left.rotation.x *= 0.65;
+          h.model.legs.right.rotation.x *= 0.65;
+        }
       }
-      h.model.rig.position.y += h.rigDrop;
-      h.model.rig.rotation.x += h.rigTiltX;
-      h.model.rig.rotation.z += h.rigTiltZ;
+      if (h.lungeLeft > 0) h.rigTiltX += 0.25;
     }
+    h.model.rig.position.y += h.rigDrop;
+    h.model.rig.rotation.x += h.rigTiltX;
+    h.model.rig.rotation.z += h.rigTiltZ;
     if (h.reaching) {
       h.model.arms.left.rotation.x = ARMS_UP;
       h.model.arms.right.rotation.x = ARMS_UP;

@@ -11,7 +11,7 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board, gnome-set-radio |
 | `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
-| `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto, nothing-left-to-collect, dayg |
+| `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto, nothing-left-to-collect, dayg, gnomelock |
 | `none` | gnome-creator, prefab-gallery, sample-dodge, me, admin-profiler |
 
 ## `core` Core
@@ -94,7 +94,9 @@ Parodies and one-offs. Their lore is theirs; no other game has to agree with it,
   `games/nothing-left-to-collect` (The Final
   Collectathon: a job interview at the Annex, an office of collectors by Club Gnome's square, that becomes a
   collectathon parody; ends on Shellshore, the beach planet; R-040); `games/dayg` (DayG: zombie-gnome survival in
-  Mossgrave, a Tall One cemetery at gnome height, where the Hatless walk; R-039).
+  Mossgrave, a Tall One cemetery at gnome height, where the Hatless walk; R-039); `games/gnomelock` (Gnomelock:
+  The Bramble District, a 2v2 Deadlock-parody MOBA where Amber Hearth Red Caps and Sapphire Well Blue Caps
+  battle over Ceramic Patrons, Soul Acorns, and the 5-minute Gilded Relic).
 
 ## `none` No setting
 

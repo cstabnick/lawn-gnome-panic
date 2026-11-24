@@ -1708,6 +1708,32 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Every Horn in Fescue', description: 'Win all five horn calls in Gnomomia.',
     reward: { slot: 'head', prefabId: 'five-horn-circlet', label: 'Five-Horn Circlet', exclusive: true },
   },
+  // ---- Gnomelock ----
+  {
+    id: 'gnomelock-first-win', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Patron Cracker', description: 'Win your first 2v2 match of Gnomelock.',
+    reward: { slot: 'head', prefabId: 'patron-laurel', label: 'Patron Laurel' },
+  },
+  {
+    id: 'gnomelock-orb-snatcher', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Orb Snatcher', description: 'Confirm or deny 25 Soul Acorns.', target: 25,
+    reward: { slot: 'neck', prefabId: 'acorn-bandolier', label: 'Acorn Bandolier' },
+  },
+  {
+    id: 'gnomelock-flow-state', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Flow State', description: 'Reach Flow Tier 3 through smooth dashes, slides, and wall-jumps.',
+    reward: { slot: 'back', prefabId: 'wind-cape', label: 'Bramble Runner Cape' },
+  },
+  {
+    id: 'gnomelock-comeback', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'One Last Chance', description: 'Claim the 5-minute Gilded Relic while trailing and win the match.',
+    reward: { slot: 'hand', prefabId: 'relic-bell', label: 'Gilded Relic Bell', exclusive: true },
+  },
+  {
+    id: 'gnomelock-tower-breaker', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Kiln Siege', description: 'Destroy 10 enemy towers or Patrons in Gnomelock.', target: 10,
+    reward: { slot: 'head', prefabId: 'kiln-visor', label: 'Kiln-Warden Visor' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

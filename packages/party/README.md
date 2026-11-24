@@ -132,3 +132,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | no-answer | wordle-gnome | later: a 20 s everyone-types-five-letters round needs a text input kind in PadState, and the answer is always gnome | later |
 | gsr-rail-jam | gnome-set-radio | later: 45 s shared rooftop rail-grind & tag score jam once the core rollerblade physics settle | later |
 | hoard-rush | nothing-left-to-collect | Hoard Rush: 30 s, four gnomes on one office floor while the ceiling rains office supplies and the multiplier doubles every 10 s; most collected wins (reuses collect.ts, walk.ts, office.ts) | building |
+| gnomelock-orb-rush | gnomelock | later: 40 s 4-gnome Soul Acorn last-hit & deny race; full 2v2 MOBA has too many verbs for a party slice | later |

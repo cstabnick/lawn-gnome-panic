@@ -311,6 +311,7 @@ export function showAreaClearSummary(
     onNextArea: () => void;
     onReplay: () => void;
     onAreas: () => void;
+    onFreeRoam?: () => void;
   },
 ): void {
   document.getElementById('gsr-clear-summary')?.remove();
@@ -355,6 +356,7 @@ export function showAreaClearSummary(
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
         <button id="gsr-sum-next" style="flex:1; min-height:44px; border-radius:10px; border:none; background:${rankCol}; color:#140824; font-weight:900; font-size:14px; cursor:pointer;">${summary.hasNextArea ? 'NEXT AREA ▶' : 'SIGNAL REPORT ▶'}</button>
+        <button id="gsr-clear-freeroam" style="min-height:44px; padding:0 14px; border-radius:10px; border:2px solid #ffd740; background:#241145; color:#ffd740; font-weight:800; cursor:pointer;">🛹 Free Roam &amp; Competitions</button>
         <button id="gsr-sum-replay" style="min-height:44px; padding:0 14px; border-radius:10px; border:2px solid #00e5ff; background:#142847; color:#fff; font-weight:800; cursor:pointer;">↻ Replay</button>
         <button id="gsr-sum-areas" style="min-height:44px; padding:0 14px; border-radius:10px; border:2px solid #ff4ecd; background:#2b124d; color:#fff; font-weight:800; cursor:pointer;">🗺️ Areas</button>
       </div>
@@ -364,6 +366,10 @@ export function showAreaClearSummary(
   modal.querySelector('#gsr-sum-next')?.addEventListener('click', () => {
     modal.remove();
     handlers.onNextArea();
+  });
+  modal.querySelector('#gsr-clear-freeroam')?.addEventListener('click', () => {
+    modal.remove();
+    handlers.onFreeRoam?.();
   });
   modal.querySelector('#gsr-sum-replay')?.addEventListener('click', () => {
     modal.remove();

@@ -61,19 +61,39 @@ const SKY_FRAG = /* glsl */ `
     float star = step(0.985, r) * core * (0.65 + 0.35 * sin(uTime * 2.2 + r * 60.0));
     c += vec3(1.0, 0.96, 0.9) * star * smoothstep(0.18, 0.45, y);
 
-    // Beat-reactive Aether aurora ribbons
     float az = atan(d.z, d.x);
+
+    // Pop-art halftone dot banding across lower/mid horizon
+    float dotMask = smoothstep(-0.12, 0.04, y) * (1.0 - smoothstep(0.18, 0.38, y));
+    float dots = step(0.58, sin(az * 90.0) * sin(y * 140.0));
+    vec3 dotTint = mix(uRibbonA, uRibbonB, smoothstep(-0.12, 0.38, y));
+    c = mix(c, dotTint, dots * dotMask * 0.12 * (0.5 + 0.5 * uHype));
+
+    // Beat-reactive zig-zag / waveform horizon band
+    float zig = 0.07 + 0.032 * abs(fract(az * 3.82 + uTime * 0.15) * 2.0 - 1.0) + 0.02 * uBeat * sin(az * 18.0);
+    float wq = (y - zig) / 0.018;
+    float waveBand = exp(-wq * wq);
+    vec3 waveCol = mix(uRibbonA, uRibbonB, 0.5 + 0.5 * sin(az * 4.0 + uTime));
+    c = mix(c, waveCol * 1.12, clamp(waveBand * (0.55 + 0.35 * uBeat + 0.15 * uHype), 0.0, 0.92));
+
+    // Beat-reactive Aether aurora ribbons
     float amp = 0.6 + 0.65 * uHype + 0.35 * uBeat;
     float up = smoothstep(0.05, 0.28, y);
     c += (uRibbonA * ribbon(y, az, 0.44, 0.065, 0.0) + uRibbonB * ribbon(y, az, 0.56, 0.055, 2.3)) * 0.85 * amp * up;
 
-    // Aether Sun / Broadcast Moon + concentric radio wave rings
+    // Aether Sun / Broadcast Moon + comic speed-ray sunburst + concentric radio wave rings
     vec3 sunDir = normalize(vec3(0.32, 0.22, -0.92));
     float a = 1.0 - dot(d, sunDir);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), sunDir));
+    vec3 upVec = cross(sunDir, right);
+    float sunAng = atan(dot(d, upVec), dot(d, right));
+    float rays = smoothstep(0.35, 0.9, sin(sunAng * 16.0 - uTime * 1.4));
+    float sunburst = rays * exp(-a * 4.5) * (0.2 + 0.35 * uBeat + 0.35 * uHype);
     float disc = 1.0 - smoothstep(0.0032, 0.0042, a);
     float halo = exp(-a * 32.0) * 0.85 + exp(-a * 5.0) * 0.28;
     float radioRing = sin(sqrt(max(0.0, a)) * 75.0 - uTime * 3.2) * 0.5 + 0.5;
     float ringMask = exp(-a * 12.0) * (0.25 + 0.45 * uBeat);
+    c += uSunColor * sunburst;
     c = mix(c, vec3(1.0, 0.97, 0.88), disc);
     c += uSunColor * (halo + radioRing * ringMask * 0.35);
 

@@ -8,6 +8,8 @@ const CAMERA_CUES = new Set([
   'leader-closeup',
   'sidekicks-pan',
   'boss-stage',
+  'boss-dramatic-low',
+  'boss-spiral-reveal',
   'player-hero',
   'sky-ascend',
   'dj-booth',
@@ -18,6 +20,15 @@ describe('Gnom Set Radio cutscene data', () => {
   it('opens with a 5-to-6 beat game intro establishing world, Woken, gangs, crew, and controls', () => {
     expect(GAME_INTRO_CUTSCENE.beats.length).toBeGreaterThanOrEqual(5);
     expect(GAME_INTRO_CUTSCENE.beats.length).toBeLessThanOrEqual(6);
+  });
+
+  it('gives every area rich multi-beat levelIntro (>=4), bossIntro (>=4), and bossDefeat (>=3) cutscenes', () => {
+    for (const id of AREA_ORDER_ALL) {
+      const bundle = AREA_CUTSCENES[id];
+      expect(bundle.levelIntro.beats.length, `${id} levelIntro`).toBeGreaterThanOrEqual(4);
+      expect(bundle.bossIntro.beats.length, `${id} bossIntro`).toBeGreaterThanOrEqual(4);
+      expect(bundle.bossDefeat.beats.length, `${id} bossDefeat`).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it('gives every cutscene a unique id so ?cutscene=<id> and the lore theater find the right one', () => {

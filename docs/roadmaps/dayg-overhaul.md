@@ -165,3 +165,15 @@ This roadmap groups all 23 requested DayG fixes, redesigns, and new gameplay sys
    - Implement Scrap Bicycle, Push-Mower Kart, Wheelbarrow Trike, and Utility Van/Tractor with `@lawn/vehicle`-style handling, desktop & mobile touch driving controls, and Hatless impact physics.
 2. **7.2 Modular Vehicle Parts & Visible Engine/Part Modding**
    - Add scavengeable/swappable Engines, Belts, Oils, and Wheels; render mounted parts visibly on the vehicle 3D mesh (e.g., oversized mower engine sticking out of a tiny trike); support mix-and-match penalties and goofy Franken-Build synergy boosts.
+
+---
+
+## Pass 4: Massive World, 52 New `@lawn/prefabs`, Written Environmental Lore & Interactive Landmarks (Completed)
+
+- [x] **Environmental Lore Design Doc**: Authored `docs/design/dayg/environmental-lore.md` in Mossgrave canon covering all 26 landmark buildings and 26 new environmental storytelling moments (indexed in `AGENT_INDEX.md`).
+- [x] **52 New `@lawn/prefabs`**:
+  - `packages/prefabs/src/catalog/dayg-buildings.ts`: 26 unique DayG buildings & structures (`dayg-greenhouse-ruin` through `dayg-bone-ossuary`) with solid footprints and Mossgrave examine text.
+  - `packages/prefabs/src/catalog/dayg-story-props.ts`: 26 environmental storytelling diorama prefabs (`dayg-story-hearse-cart` through `dayg-story-pigeon-coop`).
+  - Verified with `npm test -w packages/prefabs` (`2401 passed`).
+- [x] **26 Interactive Landmark Buildings in Mossgrave**: `games/dayg/src/scene/worldLandmarks.ts` places all 26 structures across the 12 slice regions with survival interactions (`shelter`, `water`, `workshop`, `apothecary`, `radio`, `ration`, `monument`), persistent discovery tracking, and world-render map markers.
+- [x] **42 Environmental Storytelling Moments**: Expanded `games/dayg/src/sim/loreNotes.ts` & upgraded `games/dayg/src/scene/vignettes.ts` + `games/dayg/src/ui/ledgerPanel.ts` with `@lawn/prefabs` dioramas, signed authors, clues, acorn discovery rewards, and Journal landmark tracking.

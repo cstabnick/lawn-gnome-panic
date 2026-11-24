@@ -92,6 +92,7 @@ import { createWorldAtmosphere } from './scene/worldAtmosphere';
 import { createCombatFx } from './ui/combatFx';
 import { createCraftPanel } from './ui/craftPanel';
 import { createWorldEvents } from './scene/worldEvents';
+import { createWorldLandmarks } from './scene/worldLandmarks';
 import { saveVehicleStore } from './vehicles/model';
 import { createTelemetry } from './live/telemetry';
 
@@ -194,7 +195,30 @@ hatless.onNpcScratch?.((key, strength, from) => { npcs.receiveHit?.(key, strengt
 const settlementsView = createSettlementsView({ scene, map: mapData, regions: regionsFor(map), collider });
 const worldAtmosphere = createWorldAtmosphere({ scene, regions: regionsFor(map), collider });
 const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
-const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
+const vignettes = createVignetteSystem({
+  scene,
+  ui,
+  regions: regionsFor(map),
+  interact,
+  collider,
+  onDiscover(note) {
+    const rec = host.world.players[LOCAL_PLAYER];
+    if (rec && note.rewardAcorns) rec.acorns += note.rewardAcorns;
+  },
+  onToast: (t) => hud.toast(t),
+});
+const worldLandmarks = createWorldLandmarks({
+  scene,
+  regions: regionsFor(map),
+  collider,
+  interact,
+  inv,
+  needs,
+  body,
+  world: host.world,
+  getPlayer,
+  onToast: (t) => hud.toast(t),
+});
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const namedSurvivorsView = createNamedSurvivorsView({ scene, ui, regions: regionsFor(map), interact, collider, world: host.world, onToast: (t) => hud.toast(t) });
 const cookingPanel = createCookingPanel(ui, { inv, needs, camp, getPlayer, bus, onToast: (t) => hud.toast(t) });
@@ -265,6 +289,7 @@ const mapPanel = createMapPanel(ui, {
     for (const vp of vehicles.getPositions()) out.push({ x: vp.x, z: vp.z, label: vp.label, color: '#8fd3ff' });
     const dropM = worldEvents.activeMarker();
     if (dropM) out.push(dropM);
+    for (const lm of worldLandmarks.getMarkers()) out.push(lm);
     return out;
   },
 });

@@ -10,6 +10,7 @@ import { knownBy, standingOf, entryOf } from '../sim/social';
 import { questTitle } from '../sim/quests';
 
 import { LORE_NOTES, getDiscoveredNotes } from '../sim/loreNotes';
+import { getVisitedLandmarks, WORLD_LANDMARKS } from '../scene/worldLandmarks';
 import { COLLECTIBLES, COLLECTIBLE_MILESTONES, loadCollectibles, turnInCollectibles, type CollectibleRarity } from '../sim/collectibles';
 import {
   BRANCH_STORIES,
@@ -283,9 +284,12 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
     const preFound = LORE_NOTES.filter((n) => n.era === 'pre-breakout' && found.has(n.id)).length;
     const postFound = LORE_NOTES.filter((n) => n.era === 'post-breakout' && found.has(n.id)).length;
 
+    const visitedLm = getVisitedLandmarks().length;
     const progBox = el('div', 'padding:10px;margin:6px 0 8px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
     progBox.append(el('div', 'font:bold 14px var(--dg-font);color:var(--dg-accent)',
       `Lore Progress: ${found.size}/${LORE_NOTES.length} (${pct}%) · Pre-Breakout ${preFound} · Post-Breakout ${postFound}`));
+    progBox.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin-top:2px',
+      `Landmarks Discovered: ${visitedLm}/${WORLD_LANDMARKS.length}`));
     const bar = el('div', 'height:8px;border-radius:4px;background:#2a3324;margin-top:6px;overflow:hidden');
     bar.append(el('div', `height:100%;width:${pct}%;background:var(--dg-accent)`));
     progBox.append(bar);
@@ -295,7 +299,13 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
       const has = found.has(note.id);
       const card = el('div', `padding:10px;margin:6px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${has ? 1 : 0.6}`);
       card.append(el('div', 'font:bold 14px var(--dg-font)', `${has ? note.title : '??? (Undiscovered)'} · ${note.era === 'pre-breakout' ? 'Pre-Breakout' : 'Post-Breakout'}`));
+      if (has) {
+        card.append(el('div', 'font:11px var(--dg-font);color:var(--dg-accent);margin-top:2px', `Signed: ${note.author} · ${regionName(note.region)}`));
+      }
       card.append(el('div', 'font:13px var(--dg-font);color:var(--dg-muted);margin-top:4px', has ? note.body : `Explore ${regionName(note.region)} to find this note.`));
+      if (has && note.clue) {
+        card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-accent);margin-top:4px', `🧭 Clue: ${note.clue}`));
+      }
       wrap.append(card);
     }
     return wrap;

@@ -91,7 +91,7 @@ export function targetRevs(speed01: number, throttle: number, gears: number): nu
   const span = 1 / gears;
   const g = Math.min(gears - 1, Math.floor(s / span));
   const within = (s - g * span) / span;
-  const low = g === 0 ? 0.08 : 0.42;
+  const low = g === 0 ? 0.08 : 0.54;
   return clamp01(low + (0.95 - low) * within + 0.12 * push * (1 - within));
 }
 
@@ -108,7 +108,7 @@ export function newEngineState(): EngineState {
 /** Revs rise in about a quarter of a second and fall more slowly (the flywheel); a gear change drops them quickly. */
 const RISE_TAU = 0.22;
 const FALL_TAU = 0.45;
-const SHIFT_TAU = 0.14;
+const SHIFT_TAU = 0.2;
 const LOAD_TAU = 0.15;
 
 /**

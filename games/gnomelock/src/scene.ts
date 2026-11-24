@@ -56,7 +56,7 @@ export class GnomelockScene {
   private creepMeshes = new Map<number, { group: THREE.Group; hpFill: THREE.Mesh; execPip: THREE.Mesh }>();
   private orbMeshes = new Map<number, THREE.Group>();
   private turretMeshes = new Map<number, THREE.Group>();
-  private zoneMeshes = new Map<number, THREE.Mesh>();
+  private zoneMeshes = new Map<number, THREE.Object3D>();
   private towerVisuals = new Map<string, TowerVisual>();
   private relicGroup: THREE.Group;
   private relicCrystal: THREE.Mesh;
@@ -624,17 +624,71 @@ export class GnomelockScene {
       activeZones.add(zn.id);
       let m = this.zoneMeshes.get(zn.id);
       if (!m) {
-        const zGeo = new THREE.CircleGeometry(zn.radius, 24);
-        zGeo.rotateX(-Math.PI / 2);
-        const col = zn.kind === 'root' ? 0x4f9a3c : zn.kind === 'sap' ? 0xff9f43 : 0xe0245e;
-        m = new THREE.Mesh(
-          zGeo,
-          flatLayer(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35 }), LAYER.decal),
-        );
+        if (zn.kind === 'blackhole') {
+          const grp = new THREE.Group();
+          const core = new THREE.Mesh(
+            new THREE.SphereGeometry(1.4, 16, 14),
+            new THREE.MeshBasicMaterial({ color: 0x090514 }),
+          );
+          core.position.y = 1.6;
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(2.6, 0.22, 8, 24),
+            new THREE.MeshBasicMaterial({ color: 0xa65cff }),
+          );
+          ring.position.y = 1.6;
+          ring.rotation.x = Math.PI / 2.4;
+          const groundRingGeo = new THREE.RingGeometry(zn.radius - 0.35, zn.radius, 32);
+          groundRingGeo.rotateX(-Math.PI / 2);
+          const groundRing = new THREE.Mesh(
+            groundRingGeo,
+            flatLayer(new THREE.MeshBasicMaterial({ color: 0x7d4bb0, transparent: true, opacity: 0.45 }), LAYER.decal),
+          );
+          groundRing.position.y = 0.04;
+          grp.add(core, ring, groundRing);
+          m = grp;
+        } else if (zn.kind === 'bomb') {
+          const grp = new THREE.Group();
+          const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(0.48, 10, 10),
+            new THREE.MeshBasicMaterial({ color: 0xff7a1a }),
+          );
+          ball.position.y = 0.55;
+          const ringGeo = new THREE.RingGeometry(zn.radius - 0.25, zn.radius, 24);
+          ringGeo.rotateX(-Math.PI / 2);
+          const ring = new THREE.Mesh(
+            ringGeo,
+            flatLayer(new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.35 }), LAYER.decal),
+          );
+          ring.position.y = 0.04;
+          grp.add(ball, ring);
+          m = grp;
+        } else {
+          const zGeo = new THREE.CircleGeometry(zn.radius, 24);
+          zGeo.rotateX(-Math.PI / 2);
+          const col =
+            zn.kind === 'root'
+              ? 0x4f9a3c
+              : zn.kind === 'sap'
+                ? 0xff9f43
+                : zn.kind === 'spore'
+                  ? 0x7cc44f
+                  : 0xe0245e;
+          m = new THREE.Mesh(
+            zGeo,
+            flatLayer(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35 }), LAYER.decal),
+          );
+        }
         this.scene.add(m);
         this.zoneMeshes.set(zn.id, m);
       }
-      m.position.set(zn.x, zn.y + 0.04, zn.z);
+      if (zn.kind === 'blackhole') {
+        m.position.set(zn.x, zn.y, zn.z);
+        m.rotation.y += dt * 4.2;
+      } else if (zn.kind === 'bomb') {
+        m.position.set(zn.x, zn.y, zn.z);
+      } else {
+        m.position.set(zn.x, zn.y + 0.04, zn.z);
+      }
     }
     for (const [id, m] of this.zoneMeshes) {
       if (!activeZones.has(id)) {

@@ -258,8 +258,9 @@ export function computeBotInput(
   // Abilities
   let abilityPressed: AbilitySlot | null = null;
   if (targetKind === 'hero' || targetKind === 'relic') {
+    const castChance = h.heroId === 'thistle' ? 0.36 : 0.14;
     for (const ab of ['X', 'Q', 'E', 'F'] as const) {
-      if (h.cooldowns[ab] <= 0 && state.rng() < 0.14 * cfg.skill) {
+      if (h.cooldowns[ab] <= 0 && state.rng() < castChance * cfg.skill) {
         abilityPressed = ab;
         break;
       }

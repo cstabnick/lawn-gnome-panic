@@ -104,7 +104,7 @@ export class GnomelockUI {
     sub.style.cssText = 'font-size:13px;color:#cbd5e1;text-align:center;';
 
     const cards = document.createElement('div');
-    cards.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;width:min(760px,100%);';
+    cards.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:min(820px,100%);';
 
     const cardEls: HTMLButtonElement[] = [];
     for (const h of HERO_LIST) {
@@ -289,6 +289,9 @@ export class GnomelockUI {
     this.minimapCtx = this.minimapCanvas.getContext('2d')!;
     mmWrap.appendChild(this.minimapCanvas);
     el.appendChild(mmWrap);
+
+    const hudVolBtn = createVolumeButton(el, volumeStore);
+    hudVolBtn.element.style.cssText = 'position:fixed;top:max(8px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));z-index:15;pointer-events:auto;';
 
     // Top-right event feed
     this.feedEl = document.createElement('div');
@@ -515,11 +518,13 @@ export class GnomelockUI {
       : `RESPAWN ${local.respawnTimer.toFixed(1)}s`;
     this.acornEl.textContent = `${Math.round(local.acorns)}g`;
     this.levelEl.textContent = `Lv.${local.level}`;
-    this.ammoEl.textContent = local.move.sliding
-      ? 'SLIDE ∞'
-      : local.reloadTimer > 0
-        ? 'RELOAD'
-        : `${local.ammo}/${local.stats.magSize}`;
+    this.ammoEl.textContent = local.infiniteAmmoTimer > 0
+      ? 'OVERDRIVE ∞'
+      : local.move.sliding
+        ? 'SLIDE ∞'
+        : local.reloadTimer > 0
+          ? 'RELOAD'
+          : `${local.ammo}/${local.stats.magSize}`;
 
     // Stamina pips
     this.staminaWrapEl.innerHTML = '';

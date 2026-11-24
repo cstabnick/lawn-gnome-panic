@@ -5,12 +5,13 @@ import { whileHidden } from '@lawn/mp/background';
 import { sfx } from './audio';
 import { createInputManager } from './input';
 import { mountMobileControls } from './mobile';
+import { playMusicStinger, startBattleMusic, startLobbyMusic } from './music';
 import { buildRosterSlots, type WorldSnapshotMsg } from './net/protocol';
 import { startOnlineSession, type OnlineSession } from './net/session';
 import { GnomelockScene } from './scene';
 import { computeBotInput } from './sim/bot';
 import type { HeroId, Team } from './sim/config';
-import { HEROES } from './sim/heroes';
+import { HERO_LIST, HEROES } from './sim/heroes';
 import { createMatchState, teamTotalAcorns, tryBuyItem, type HeroActionInput, type MatchState, stepWorld } from './sim/world';
 import { GnomelockUI } from './ui';
 
@@ -60,6 +61,7 @@ export function bootGnomelock(): void {
       matchEnded = false;
       ui.showLobby(true);
       input.setModalOpen(true);
+      startLobbyMusic();
     },
   });
 
@@ -82,7 +84,7 @@ export function bootGnomelock(): void {
     matchEnded = false;
     relicClaimedWhileTrailing = false;
     localSlot = 0;
-    const pool: HeroId[] = ['bramble', 'tansy', 'fernwick', 'potsworth'].filter((x) => x !== hero) as HeroId[];
+    const pool: HeroId[] = HERO_LIST.map((h) => h.id).filter((x) => x !== hero);
     state = createMatchState([
       { heroId: hero, name: 'You', isBot: false },
       { heroId: pool[0], name: `${HEROES[pool[0]].name} Bot`, isBot: true },
@@ -92,6 +94,29 @@ export function bootGnomelock(): void {
     input.setYaw(state.heroes[0].yaw);
     input.setModalOpen(false);
     ui.showLobby(false);
+    beginBattleMusic();
+  }
+
+  function beginBattleMusic(): void {
+    startBattleMusic({
+      lead: () => {
+        if (!state) return null;
+        const a0 = teamTotalAcorns(state, 0);
+        const a1 = teamTotalAcorns(state, 1);
+        if (Math.abs(a0 - a1) < 150) return null;
+        return a0 > a1 ? 0 : 1;
+      },
+      intensity: () => {
+        if (!state) return 0.2;
+        const h = state.heroes[localSlot];
+        if (!h) return 0.2;
+        let v = 0.22 + h.move.flowTier * 0.14;
+        if (h.move.outOfCombatTimer < 3.5) v += 0.35;
+        if (state.relic.alive) v += 0.25;
+        return Math.min(1, v);
+      },
+      combine: () => Boolean(state && (state.relic.alive || state.timeS >= 480)),
+    });
   }
 
   function startOnlineMatch(hero: HeroId, roomCode: string | null): void {
@@ -111,6 +136,7 @@ export function bootGnomelock(): void {
         }
         input.setModalOpen(false);
         ui.showLobby(false);
+        beginBattleMusic();
       },
       onRosterChanged: (players) => {
         void prefetchLooks(players);
@@ -216,7 +242,7 @@ export function bootGnomelock(): void {
 
     for (const ev of st.events) {
       if (ev.type === 'shot' && ev.slot === localSlot) {
-        sfx.shoot(st.heroes[localSlot].heroId);
+        sfx.shoot(st.heroes[localSlot].heroId, st.heroes[localSlot].infiniteAmmoTimer > 0);
         if (ev.hitKind === 'body') ui.flashHitmarker('#ffffff');
         else if (ev.hitKind === 'orb-confirm') ui.flashHitmarker('#ffd54f');
         else if (ev.hitKind === 'orb-deny') ui.flashHitmarker('#ff4d6d');
@@ -247,13 +273,20 @@ export function bootGnomelock(): void {
         } else if (ev.kind === 'dash') sfx.dash();
         else if (ev.kind === 'slide') sfx.slide();
       } else if (ev.type === 'ability' && ev.slot === localSlot) {
-        sfx.ability();
+        sfx.ability(st.heroes[localSlot].heroId, ev.ability);
       } else if (ev.type === 'heroKill') {
-        if (ev.killerSlot === localSlot) sfx.kill();
+        if (ev.killerSlot === localSlot) {
+          sfx.kill();
+          playMusicStinger(true);
+        } else if (ev.victimSlot === localSlot) {
+          playMusicStinger(false);
+        }
         const kName = ev.killerSlot >= 0 ? st.heroes[ev.killerSlot]?.name : 'Tower';
         const vName = st.heroes[ev.victimSlot]?.name ?? 'Gnome';
         ui.pushFeed(`${kName} shattered ${vName}`, '#ffd54f');
       } else if (ev.type === 'towerDown') {
+        sfx.towerDown();
+        playMusicStinger(ev.team !== localTeam);
         ui.pushFeed(`${ev.team === 0 ? 'Amber' : 'Sapphire'} T${ev.tier} Tower fell!`, '#ffa94d');
         if (ev.killerSlot === localSlot) void achievements.increment('gnomelock-tower-breaker');
       } else if (ev.type === 'relicSpawn') {
@@ -261,6 +294,7 @@ export function bootGnomelock(): void {
         ui.pushFeed('5:00 GILDED RELIC SPAWNED IN COURTYARD!', '#ffd54f');
       } else if (ev.type === 'relicClaimed') {
         sfx.relicSpawn();
+        playMusicStinger(ev.team === localTeam);
         ui.pushFeed(`${ev.team === 0 ? 'Amber' : 'Sapphire'} claimed the Gilded Relic!`, '#ffd54f');
         if (ev.team === localTeam) {
           const otherTeam: Team = localTeam === 0 ? 1 : 0;
@@ -332,6 +366,7 @@ export function bootGnomelock(): void {
     startSoloMatch(localHero);
   } else {
     input.setModalOpen(true);
+    startLobbyMusic();
   }
 
   let lastTs = performance.now();

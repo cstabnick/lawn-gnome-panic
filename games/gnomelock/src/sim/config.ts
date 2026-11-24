@@ -1,7 +1,15 @@
 // Pure simulation constants and tuning for Gnomelock (no DOM / Three.js imports).
 
 export type Team = 0 | 1; // 0 = Amber Hearth (-Z), 1 = Sapphire Well (+Z)
-export type HeroId = 'bramble' | 'tansy' | 'fernwick' | 'potsworth';
+export type HeroId =
+  | 'bramble'
+  | 'tansy'
+  | 'fernwick'
+  | 'potsworth'
+  | 'hookwort'
+  | 'buckshot'
+  | 'thistle'
+  | 'loam';
 export type AbilitySlot = 'Q' | 'E' | 'F' | 'X';
 
 export const TEAM_NAMES: Record<Team, string> = {
@@ -25,9 +33,9 @@ export const MATCH_CONFIG = {
   respawnMaxS: 22,
   /** Escalating structure damage multiplier to ensure ~10 min match finish */
   overtimeMult(t: number): number {
-    if (t >= 570) return 2.5; // 9:30+
-    if (t >= 480) return 1.85; // 8:00+
-    if (t >= 360) return 1.35; // 6:00+
+    if (t >= 570) return 2.8; // 9:30+
+    if (t >= 480) return 2.1; // 8:00+
+    if (t >= 360) return 1.4; // 6:00+
     return 1.0;
   },
 } as const;

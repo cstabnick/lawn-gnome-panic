@@ -156,8 +156,9 @@ describe('Gnomelock last-hitting, Soul Acorn Orbs, and tower progression', () =>
 });
 
 describe('Gnomelock items, prefabs, and gear sync', () => {
-  it('verifies all 12 items and 4 hero weapons reference valid @lawn/prefabs IDs', () => {
+  it('verifies all 12 items and 8 hero weapons reference valid @lawn/prefabs IDs', () => {
     expect(ITEMS.length).toBe(12);
+    expect(HERO_LIST.length).toBe(8);
     for (const it of ITEMS) {
       expect(getPrefab(it.prefabId), `Missing prefab ${it.prefabId}`).toBeDefined();
     }
@@ -167,6 +168,64 @@ describe('Gnomelock items, prefabs, and gear sync', () => {
     const stats = computeHeroStats(HEROES.bramble, ['heavy-trowel', 'clover-boots'], 3, 2, false);
     expect(stats.maxHp).toBeGreaterThan(HEROES.bramble.baseHp);
     expect(stats.maxStamina).toBe(4);
+  });
+
+  it('supports Hookwort Q hook, Buckshot X infinite ammo, Thistle F/X spam, and Loam X black hole pull', () => {
+    const state = createMatchState([
+      { heroId: 'hookwort', name: 'Hook', isBot: false },
+      { heroId: 'buckshot', name: 'Buck', isBot: false },
+      { heroId: 'thistle', name: 'This', isBot: false },
+      { heroId: 'loam', name: 'Loam', isBot: false },
+    ]);
+    const idle: HeroActionInput = {
+      move: { forward: 0, right: 0, yaw: Math.PI, jumpPressed: false, dashPressed: false, slideHeld: false },
+      pitch: 0,
+      fireHeld: false,
+      reloadPressed: false,
+      abilityPressed: null,
+    };
+
+    // 1. Hookwort Q pulls enemy Thistle (slot 2) toward Hookwort (slot 0)
+    state.heroes[0].move.pos = { x: 0, y: 0, z: -15 };
+    state.heroes[2].move.pos = { x: 0, y: 0, z: 0 };
+    stepWorld(state, [{ ...idle, abilityPressed: 'Q' }, idle, idle, idle], 1 / 30);
+    expect(state.heroes[2].move.pos.z).toBeLessThan(-10);
+
+    // 2. Buckshot X grants infinite ammo and fires without spending ammo
+    state.heroes[1].ammo = 5;
+    stepWorld(state, [idle, { ...idle, abilityPressed: 'X', fireHeld: true }, idle, idle], 1 / 30);
+    expect(state.heroes[1].infiniteAmmoTimer).toBeGreaterThan(5);
+    expect(state.heroes[1].ammo).toBe(state.heroes[1].stats.magSize);
+
+    // 3. Thistle Q -> F reduces Q cooldown, X accelerates cooldown tick
+    stepWorld(state, [idle, idle, { ...idle, abilityPressed: 'Q' }, idle], 1 / 30);
+    const qCdBeforeF = state.heroes[2].cooldowns.Q;
+    stepWorld(state, [idle, idle, { ...idle, abilityPressed: 'F' }, idle], 1 / 30);
+    expect(state.heroes[2].cooldowns.Q).toBeLessThan(qCdBeforeF - 1.5);
+
+    // 4. Loam X (slot 3, team 1) spawns a Black Hole that pulls Hookwort (slot 0, team 0) inward
+    state.heroes[3].move.pos = { x: 0, y: 0, z: 0 };
+    state.heroes[0].move.pos = { x: 0, y: 0, z: -13 }; // within 10.5m of black hole at z = -7.5 (yaw=0 -> +fwd=-Z)
+    stepWorld(
+      state,
+      [
+        idle,
+        idle,
+        idle,
+        {
+          ...idle,
+          move: { ...idle.move, yaw: 0 },
+          abilityPressed: 'X',
+        },
+      ],
+      1 / 30,
+    );
+    const distBefore = Math.abs(state.heroes[0].move.pos.z - (-7.5));
+    for (let i = 0; i < 10; i++) {
+      stepWorld(state, [idle, idle, idle, idle], 1 / 30);
+    }
+    const distAfter = Math.abs(state.heroes[0].move.pos.z - (-7.5));
+    expect(distAfter).toBeLessThan(distBefore);
   });
 
   it('preserves PlayerInfo.userId when building online roster slots (gear sync)', () => {

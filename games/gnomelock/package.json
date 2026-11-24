@@ -15,6 +15,7 @@
     "@lawn/depth": "*",
     "@lawn/gnome": "*",
     "@lawn/mp": "*",
+    "@lawn/music": "*",
     "@lawn/prefabs": "*",
     "@arcade/volume": "*",
     "three": "0.187.0"

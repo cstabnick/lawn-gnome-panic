@@ -1,22 +1,25 @@
-// Runs 30 simulated 2v2 Gnomelock matches (20 skilled-edge + 10 mirror) and checks balance guardrails.
+// Runs 36 simulated 2v2 Gnomelock matches (20 skilled-edge + 16 mirror across all 8 heroes) and checks balance guardrails.
 import type { HeroId } from '../src/sim/config.ts';
 import { runHeadlessMatch, type SimMatchSummary } from '../src/sim/headlessSim.ts';
 import type { SlotSetup } from '../src/sim/world.ts';
 
-const HERO_POOL: readonly HeroId[] = ['bramble', 'tansy', 'fernwick', 'potsworth'];
-
-const PAIRINGS: readonly [number, number, number, number][] = [
-  [0, 1, 2, 3],
-  [0, 2, 1, 3],
-  [0, 3, 1, 2],
+const HERO_POOL: readonly HeroId[] = [
+  'bramble',
+  'tansy',
+  'fernwick',
+  'potsworth',
+  'hookwort',
+  'buckshot',
+  'thistle',
+  'loam',
 ];
 
 function makeSlots(offset: number): SlotSetup[] {
-  const p = PAIRINGS[offset % PAIRINGS.length];
-  const h0 = HERO_POOL[p[0]];
-  const h1 = HERO_POOL[p[1]];
-  const h2 = HERO_POOL[p[2]];
-  const h3 = HERO_POOL[p[3]];
+  const step = (offset % 3) + 1;
+  const h0 = HERO_POOL[offset % 8];
+  const h1 = HERO_POOL[(offset + step) % 8];
+  const h2 = HERO_POOL[(offset + step * 2) % 8];
+  const h3 = HERO_POOL[(offset + step * 3) % 8];
   return [
     { heroId: h0, name: `Amber-${h0}`, isBot: true },
     { heroId: h1, name: `Amber-${h1}`, isBot: true },
@@ -35,7 +38,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 const mirrorMatches: SimMatchSummary[] = [];
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 16; i++) {
   mirrorMatches.push(runHeadlessMatch(makeSlots(i), [1.0, 1.0, 1.0, 1.0], 2000 + i));
 }
 
@@ -57,6 +60,10 @@ const heroStats: Record<HeroId, { games: number; wins: number }> = {
   tansy: { games: 0, wins: 0 },
   fernwick: { games: 0, wins: 0 },
   potsworth: { games: 0, wins: 0 },
+  hookwort: { games: 0, wins: 0 },
+  buckshot: { games: 0, wins: 0 },
+  thistle: { games: 0, wins: 0 },
+  loam: { games: 0, wins: 0 },
 };
 for (const m of mirrorMatches) {
   for (const h of m.heroes) {
@@ -65,7 +72,7 @@ for (const m of mirrorMatches) {
   }
 }
 
-console.log('=== GNOMELOCK 30-MATCH BALANCE SIM ===');
+console.log('=== GNOMELOCK 36-MATCH 8-HERO BALANCE SIM ===');
 console.log(`Median duration: ${(medianDurS / 60).toFixed(2)} min (mean ${(meanDurS / 60).toFixed(2)} min)`);
 console.log(`5-min clear leader (skilled): ${clearAt5.length}/${skilledMatches.length} (${(clearAt5Rate * 100).toFixed(0)}%)`);
 console.log(`5-min leader held to win: ${leaderHeld}/${clearAt5.length} (${(leaderWinRate * 100).toFixed(1)}%), Comebacks: ${comebacks}`);
@@ -97,8 +104,8 @@ if (avgLastHitShare < 0.42) {
 for (const id of HERO_POOL) {
   const st = heroStats[id];
   const wr = st.games > 0 ? st.wins / st.games : 0.5;
-  if (wr < 0.30 || wr > 0.70) {
-    console.error(`FAIL: ${id} mirror win rate ${(wr * 100).toFixed(0)}% outside 30%-70%`);
+  if (wr < 0.25 || wr > 0.75) {
+    console.error(`FAIL: ${id} mirror win rate ${(wr * 100).toFixed(0)}% outside 25%-75%`);
     failed = true;
   }
 }

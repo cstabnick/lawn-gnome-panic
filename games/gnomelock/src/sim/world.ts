@@ -58,6 +58,10 @@ export interface HeroEntity {
   speedBuffMult: number;
   fireRateBuffTimer: number;
   fireRateBuffMult: number;
+  dmgBuffTimer: number;
+  dmgBuffMult: number;
+  infiniteAmmoTimer: number;
+  cdrBuffTimer: number;
   stealthTimer: number;
   // Economy breakdown for balance telemetry
   incomePassive: number;
@@ -133,7 +137,7 @@ export interface AoeZoneEntity {
   id: number;
   ownerSlot: number;
   team: Team;
-  kind: 'root' | 'sap' | 'overheat';
+  kind: 'root' | 'sap' | 'overheat' | 'bomb' | 'spore' | 'blackhole';
   x: number;
   y: number;
   z: number;
@@ -143,6 +147,8 @@ export interface AoeZoneEntity {
   dps: number;
   slowMult: number;
   rootS: number;
+  pullStrength?: number;
+  explodeDmg?: number;
 }
 
 export interface RelicState {
@@ -258,6 +264,10 @@ export function createMatchState(slots: SlotSetup[], seed = 1337): MatchState {
       speedBuffMult: 1,
       fireRateBuffTimer: 0,
       fireRateBuffMult: 1,
+      dmgBuffTimer: 0,
+      dmgBuffMult: 1,
+      infiniteAmmoTimer: 0,
+      cdrBuffTimer: 0,
       stealthTimer: 0,
       incomePassive: ECONOMY.startingAcorns,
       incomeLastHit: 0,
@@ -630,7 +640,8 @@ function fireWeapon(state: MatchState, h: HeroEntity): void {
   const def = HEROES[h.heroId];
   const w = def.weapon;
   const sliding = h.move.sliding;
-  if (!sliding) {
+  const unlimited = sliding || h.infiniteAmmoTimer > 0;
+  if (!unlimited) {
     if (h.ammo <= 0) {
       if (h.reloadTimer <= 0) h.reloadTimer = w.reloadS;
       return;
@@ -733,7 +744,7 @@ function fireWeapon(state: MatchState, h: HeroEntity): void {
       }
     }
 
-    const dmg = w.damage * h.stats.weaponDmgMult;
+    const dmg = w.damage * h.stats.weaponDmgMult * (h.dmgBuffTimer > 0 ? h.dmgBuffMult : 1);
     if (hitTarget?.kind === 'orb') {
       const orb = hitTarget.orb;
       const idx = state.orbs.indexOf(orb);
@@ -998,6 +1009,247 @@ function castAbility(state: MatchState, h: HeroEntity, slot: AbilitySlot): void 
         }
       }
     }
+  } else if (h.heroId === 'hookwort') {
+    if (slot === 'Q') {
+      // Garden Hook: raycast forward to snag first enemy hero or creep and pull right in front of Hookwort
+      const cosP = Math.cos(h.pitch);
+      const dx = -sinY * cosP;
+      const dy = Math.sin(h.pitch);
+      const dz = -cosY * cosP;
+      let bestT = ab.range;
+      let pulledHero: HeroEntity | null = null;
+      let pulledCreep: CreepEntity | null = null;
+      for (const e of state.heroes) {
+        if (e.team === h.team || !e.alive) continue;
+        const hit = intersectRaySphere(ox, oy, oz, dx, dy, dz, e.move.pos.x, e.move.pos.y + 0.65, e.move.pos.z, 1.05, bestT);
+        if (hit && hit.t < bestT) {
+          bestT = hit.t;
+          pulledHero = e;
+          pulledCreep = null;
+        }
+      }
+      if (!pulledHero) {
+        for (const cr of state.creeps) {
+          if (cr.team === h.team || cr.hp <= 0) continue;
+          const hit = intersectRaySphere(ox, oy, oz, dx, dy, dz, cr.x, cr.y + 0.55, cr.z, 0.9, bestT);
+          if (hit && hit.t < bestT) {
+            bestT = hit.t;
+            pulledCreep = cr;
+          }
+        }
+      }
+      const destX = ox + fwdX * 2.2;
+      const destZ = oz + fwdZ * 2.2;
+      const destY = groundHeightAt(destX, destZ);
+      if (pulledHero) {
+        pulledHero.move.pos.x = destX;
+        pulledHero.move.pos.y = destY;
+        pulledHero.move.pos.z = destZ;
+        pulledHero.move.vel.x = 0;
+        pulledHero.move.vel.y = 0;
+        pulledHero.move.vel.z = 0;
+        pulledHero.move.rootedTimer = Math.max(pulledHero.move.rootedTimer, 0.65);
+        applyDamageToHero(state, pulledHero, powerDmg, h.slot);
+        tx = destX;
+        ty = destY + 0.8;
+        tz = destZ;
+      } else if (pulledCreep) {
+        pulledCreep.x = destX;
+        pulledCreep.y = destY;
+        pulledCreep.z = destZ;
+        pulledCreep.hp -= powerDmg;
+        if (pulledCreep.hp <= 0) handleCreepDeath(state, pulledCreep, h.slot);
+        tx = destX;
+        ty = destY + 0.6;
+        tz = destZ;
+      }
+    } else if (slot === 'E') {
+      // Mulch Uppercut
+      for (const e of state.heroes) {
+        if (e.team !== h.team && e.alive && Math.hypot(e.move.pos.x - ox, e.move.pos.z - oz) < ab.range) {
+          applyDamageToHero(state, e, powerDmg, h.slot);
+          e.move.vel.y = 10.5;
+          e.move.vel.x += fwdX * 8;
+          e.move.vel.z += fwdZ * 8;
+          e.move.grounded = false;
+        }
+      }
+      for (const cr of state.creeps) {
+        if (cr.team !== h.team && cr.hp > 0 && Math.hypot(cr.x - ox, cr.z - oz) < ab.range) {
+          cr.hp -= powerDmg;
+          if (cr.hp <= 0) handleCreepDeath(state, cr, h.slot);
+        }
+      }
+    } else if (slot === 'F') {
+      // Sticky Seed-Bomb (explodes after 1.5s)
+      state.zones.push({
+        id: state.nextEntityId++,
+        ownerSlot: h.slot,
+        team: h.team,
+        kind: 'bomb',
+        x: tx,
+        y: groundHeightAt(tx, tz),
+        z: tz,
+        radius: 5.2,
+        ttl: 1.5,
+        tickTimer: 99,
+        dps: 0,
+        slowMult: 0.75,
+        rootS: 0,
+        explodeDmg: powerDmg,
+      });
+    } else if (slot === 'X') {
+      // Hyper Sprinkler piercing beam
+      for (const e of state.heroes) {
+        if (e.team !== h.team && e.alive && Math.hypot(e.move.pos.x - ox, e.move.pos.z - oz) < ab.range) {
+          applyDamageToHero(state, e, powerDmg, h.slot);
+        }
+      }
+      for (const cr of state.creeps) {
+        if (cr.team !== h.team && cr.hp > 0 && Math.hypot(cr.x - ox, cr.z - oz) < ab.range) {
+          cr.hp -= powerDmg;
+          if (cr.hp <= 0) handleCreepDeath(state, cr, h.slot);
+        }
+      }
+    }
+  } else if (h.heroId === 'buckshot') {
+    if (slot === 'Q') {
+      h.ammo = h.stats.magSize;
+      h.reloadTimer = 0;
+      h.move.stamina = Math.min(h.move.maxStamina, h.move.stamina + 1);
+      h.fireRateBuffMult = 1.4;
+      h.fireRateBuffTimer = 4.0;
+    } else if (slot === 'E') {
+      h.dmgBuffMult = 1.3;
+      h.dmgBuffTimer = 5.0;
+    } else if (slot === 'F') {
+      h.speedBuffMult = 1.4;
+      h.speedBuffTimer = 3.5;
+      h.move.stamina = Math.min(h.move.maxStamina, h.move.stamina + 1);
+    } else if (slot === 'X') {
+      h.infiniteAmmoTimer = 6.0;
+      h.ammo = h.stats.magSize;
+      h.reloadTimer = 0;
+      h.fireRateBuffMult = 1.4;
+      h.fireRateBuffTimer = 6.0;
+      h.dmgBuffMult = 1.2;
+      h.dmgBuffTimer = 6.0;
+    }
+  } else if (h.heroId === 'thistle') {
+    if (slot === 'Q') {
+      let bestHero: HeroEntity | null = null;
+      let bestD = ab.range;
+      for (const e of state.heroes) {
+        if (e.team !== h.team && e.alive) {
+          const d = Math.hypot(e.move.pos.x - ox, e.move.pos.z - oz);
+          if (d < bestD) {
+            bestD = d;
+            bestHero = e;
+          }
+        }
+      }
+      if (bestHero) {
+        applyDamageToHero(state, bestHero, powerDmg, h.slot);
+        tx = bestHero.move.pos.x;
+        ty = bestHero.move.pos.y + 0.8;
+        tz = bestHero.move.pos.z;
+      } else {
+        for (const cr of state.creeps) {
+          if (cr.team !== h.team && cr.hp > 0 && Math.hypot(cr.x - ox, cr.z - oz) < ab.range) {
+            cr.hp -= powerDmg;
+            if (cr.hp <= 0) handleCreepDeath(state, cr, h.slot);
+            tx = cr.x;
+            ty = cr.y + 0.5;
+            tz = cr.z;
+            break;
+          }
+        }
+      }
+    } else if (slot === 'E') {
+      state.zones.push({
+        id: state.nextEntityId++,
+        ownerSlot: h.slot,
+        team: h.team,
+        kind: 'spore',
+        x: tx,
+        y: groundHeightAt(tx, tz),
+        z: tz,
+        radius: 4.5,
+        ttl: 1.2,
+        tickTimer: 0.05,
+        dps: powerDmg / 1.2,
+        slowMult: 0.7,
+        rootS: 0,
+      });
+    } else if (slot === 'F') {
+      h.move.vel.y = 8.2;
+      h.move.grounded = false;
+      h.move.stamina = Math.min(h.move.maxStamina, h.move.stamina + 1);
+      h.cooldowns.Q = Math.max(0, h.cooldowns.Q - 2.0);
+      h.cooldowns.E = Math.max(0, h.cooldowns.E - 2.0);
+    } else if (slot === 'X') {
+      h.hp = Math.min(h.maxHp, h.hp + 180 + h.stats.spiritPower * 0.5);
+      h.cdrBuffTimer = 6.0;
+    }
+  } else if (h.heroId === 'loam') {
+    if (slot === 'Q') {
+      for (const e of state.heroes) {
+        if (e.team !== h.team && e.alive && Math.hypot(e.move.pos.x - ox, e.move.pos.z - oz) < ab.range) {
+          applyDamageToHero(state, e, powerDmg, h.slot);
+          e.move.vel.y = 9.0;
+          e.move.grounded = false;
+        }
+      }
+      for (const cr of state.creeps) {
+        if (cr.team !== h.team && cr.hp > 0 && Math.hypot(cr.x - ox, cr.z - oz) < ab.range) {
+          cr.hp -= powerDmg;
+          if (cr.hp <= 0) handleCreepDeath(state, cr, h.slot);
+        }
+      }
+    } else if (slot === 'E') {
+      // Wormhole Blink
+      const bx = Math.max(-36, Math.min(36, ox + fwdX * ab.range));
+      const bz = Math.max(-120, Math.min(120, oz + fwdZ * ab.range));
+      h.move.pos.x = bx;
+      h.move.pos.z = bz;
+      h.move.pos.y = groundHeightAt(bx, bz);
+      h.fireRateBuffMult = 1.2;
+      h.fireRateBuffTimer = 2.5;
+      tx = bx;
+      ty = h.move.pos.y + 0.8;
+      tz = bz;
+    } else if (slot === 'F') {
+      // Compost Mend
+      const heal = 160 + h.stats.spiritPower * 0.6;
+      for (const ally of state.heroes) {
+        if (ally.team === h.team && ally.alive && Math.hypot(ally.move.pos.x - ox, ally.move.pos.z - oz) <= ab.range) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + heal);
+        }
+      }
+    } else if (slot === 'X') {
+      // Singularity Sinkhole (Black Hole!)
+      const bhX = ox + fwdX * 7.5;
+      const bhZ = oz + fwdZ * 7.5;
+      state.zones.push({
+        id: state.nextEntityId++,
+        ownerSlot: h.slot,
+        team: h.team,
+        kind: 'blackhole',
+        x: bhX,
+        y: groundHeightAt(bhX, bhZ),
+        z: bhZ,
+        radius: 10.5,
+        ttl: 3.2,
+        tickTimer: 0.05,
+        dps: powerDmg / 3.2,
+        slowMult: 0.25,
+        rootS: 0.2,
+        pullStrength: 13.5,
+      });
+      tx = bhX;
+      ty = groundHeightAt(bhX, bhZ) + 1.2;
+      tz = bhZ;
+    }
   }
 
   state.events.push({
@@ -1089,10 +1341,14 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
     if (h.shieldTimer <= 0) h.shield = 0;
     h.speedBuffTimer = Math.max(0, h.speedBuffTimer - dt);
     h.fireRateBuffTimer = Math.max(0, h.fireRateBuffTimer - dt);
+    h.dmgBuffTimer = Math.max(0, h.dmgBuffTimer - dt);
+    h.infiniteAmmoTimer = Math.max(0, h.infiniteAmmoTimer - dt);
+    h.cdrBuffTimer = Math.max(0, h.cdrBuffTimer - dt);
     h.stealthTimer = Math.max(0, h.stealthTimer - dt);
 
+    const cdTick = h.cdrBuffTimer > 0 ? dt * 2.2 : dt;
     for (const s of ['Q', 'E', 'F', 'X'] as const) {
-      h.cooldowns[s] = Math.max(0, h.cooldowns[s] - dt);
+      h.cooldowns[s] = Math.max(0, h.cooldowns[s] - cdTick);
     }
 
     recomputeHeroStats(state, h);
@@ -1130,7 +1386,7 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
     if (inp.abilityPressed) {
       castAbility(state, h, inp.abilityPressed);
     }
-    if (inp.fireHeld && h.fireCooldown <= 0 && (h.reloadTimer <= 0 || h.move.sliding)) {
+    if (inp.fireHeld && h.fireCooldown <= 0 && (h.reloadTimer <= 0 || h.move.sliding || h.infiniteAmmoTimer > 0)) {
       fireWeapon(state, h);
     }
   }
@@ -1313,7 +1569,51 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
     const zn = state.zones[i];
     zn.ttl -= dt;
     zn.tickTimer -= dt;
+
+    // Continuous Black Hole gravity pull
+    if (zn.pullStrength && zn.pullStrength > 0) {
+      for (const e of state.heroes) {
+        if (e.team !== zn.team && e.alive) {
+          const dx = zn.x - e.move.pos.x;
+          const dz = zn.z - e.move.pos.z;
+          const d = Math.hypot(dx, dz);
+          if (d <= zn.radius && d > 0.35) {
+            const pull = zn.pullStrength * dt;
+            e.move.pos.x += (dx / d) * Math.min(d - 0.3, pull);
+            e.move.pos.z += (dz / d) * Math.min(d - 0.3, pull);
+            e.move.vel.x = (dx / d) * 3.0;
+            e.move.vel.z = (dz / d) * 3.0;
+          }
+        }
+      }
+      for (const cr of state.creeps) {
+        if (cr.team !== zn.team && cr.hp > 0) {
+          const dx = zn.x - cr.x;
+          const dz = zn.z - cr.z;
+          const d = Math.hypot(dx, dz);
+          if (d <= zn.radius && d > 0.35) {
+            const pull = zn.pullStrength * dt;
+            cr.x += (dx / d) * Math.min(d - 0.3, pull);
+            cr.z += (dz / d) * Math.min(d - 0.3, pull);
+          }
+        }
+      }
+    }
+
     if (zn.ttl <= 0) {
+      if (zn.explodeDmg && zn.explodeDmg > 0) {
+        for (const e of state.heroes) {
+          if (e.team !== zn.team && e.alive && Math.hypot(e.move.pos.x - zn.x, e.move.pos.z - zn.z) <= zn.radius) {
+            applyDamageToHero(state, e, zn.explodeDmg, zn.ownerSlot);
+          }
+        }
+        for (const cr of state.creeps) {
+          if (cr.team !== zn.team && cr.hp > 0 && Math.hypot(cr.x - zn.x, cr.z - zn.z) <= zn.radius) {
+            cr.hp -= zn.explodeDmg;
+            if (cr.hp <= 0) handleCreepDeath(state, cr, zn.ownerSlot);
+          }
+        }
+      }
       state.zones.splice(i, 1);
       continue;
     }

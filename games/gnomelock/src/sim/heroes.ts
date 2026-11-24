@@ -201,7 +201,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     weapon: {
       prefabId: 'seed-sprayer',
       name: 'Seed Sprayer',
-      damage: 13.8,
+      damage: 12.8,
       pellets: 1,
       spreadRad: 0.022,
       fireIntervalS: 0.15,

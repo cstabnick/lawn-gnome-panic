@@ -80,6 +80,7 @@ export class GnomelockScene {
   private particles: Particle[] = [];
   private spellFx: SpellFx[] = [];
   private castTimers = new Map<number, number>();
+  private skyUniforms = { uTime: { value: 0 } };
   private currentFov = 74;
   private camPos = new THREE.Vector3(0, 6, -120);
   private camLook = new THREE.Vector3(0, 3, -100);
@@ -127,6 +128,7 @@ export class GnomelockScene {
     this.muzzleLight = new THREE.PointLight(0xffd54f, 0, 12);
     this.scene.add(this.muzzleLight);
 
+    this.buildSkybox();
     this.buildArena();
     const relic = this.buildRelicAltar();
     this.relicGroup = relic.group;
@@ -149,8 +151,78 @@ export class GnomelockScene {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
+  private buildSkybox(): void {
+    const geo = new THREE.SphereGeometry(225, 32, 20);
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      uniforms: this.skyUniforms,
+      vertexShader: `
+        varying vec3 vDir;
+        void main() {
+          vDir = normalize(position);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        varying vec3 vDir;
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+        }
+        void main() {
+          vec3 d = normalize(vDir);
+          float h = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+          vec3 zenith = vec3(0.05, 0.07, 0.16);
+          vec3 mid = vec3(0.14, 0.16, 0.29);
+          vec3 horizon = vec3(0.24, 0.20, 0.34);
+          vec3 col = mix(horizon, mid, smoothstep(0.45, 0.7, h));
+          col = mix(col, zenith, smoothstep(0.65, 0.98, h));
+
+          // Amber (-Z) vs Sapphire (+Z) directional horizon glow
+          float horizMask = exp(-abs(d.y) * 5.2);
+          float amberSide = smoothstep(0.0, 0.85, -d.z);
+          float sapphireSide = smoothstep(0.0, 0.85, d.z);
+          col += vec3(0.55, 0.20, 0.08) * horizMask * amberSide;
+          col += vec3(0.10, 0.28, 0.62) * horizMask * sapphireSide;
+
+          // Drifting twilight cloud ribbons
+          if (d.y > 0.02) {
+            float c1 = sin(d.x * 5.5 + uTime * 0.08) * cos(d.z * 4.5 - uTime * 0.05);
+            float cloudBand = smoothstep(0.04, 0.38, d.y) * (1.0 - smoothstep(0.38, 0.72, d.y));
+            col += vec3(0.14, 0.12, 0.22) * max(0.0, c1) * cloudBand * 0.65;
+          }
+
+          // Twinkling stars
+          if (d.y > 0.15) {
+            vec2 cell = floor(d.xz / max(0.18, d.y) * 28.0);
+            float r = hash(cell);
+            if (r > 0.985) {
+              float tw = 0.55 + 0.45 * sin(uTime * 2.5 + r * 80.0);
+              col += vec3(0.95, 0.92, 1.0) * tw * smoothstep(0.15, 0.5, d.y);
+            }
+          }
+
+          // Crescent moon high in the western sky
+          vec3 moonDir = normalize(vec3(-0.45, 0.62, -0.35));
+          float mDot = dot(d, moonDir);
+          float moonDisc = smoothstep(0.9965, 0.9978, mDot);
+          vec3 cutDir = normalize(moonDir + vec3(0.028, 0.022, 0.0));
+          float cutDisc = smoothstep(0.9965, 0.9978, dot(d, cutDir));
+          float crescent = max(0.0, moonDisc - cutDisc);
+          col += vec3(1.0, 0.92, 0.68) * crescent * 1.1;
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
+    });
+    const sky = new THREE.Mesh(geo, mat);
+    sky.userData.zfightOk = true;
+    this.scene.add(sky);
+  }
+
   private buildArena(): void {
-    // 1. Deformed terrain mesh matching groundHeightAt(x, z)
+    // 1. Deformed terrain mesh matching groundHeightAt(x, z) with Amber (-Z) vs Sapphire (+Z) garden themes
     const w = MAP_BOUNDS.maxX - MAP_BOUNDS.minX;
     const d = MAP_BOUNDS.maxZ - MAP_BOUNDS.minZ;
     const geo = new THREE.PlaneGeometry(w, d, 38, 122);
@@ -158,6 +230,8 @@ export class GnomelockScene {
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
     const c = new THREE.Color();
+    const cAmber = new THREE.Color();
+    const cSapphire = new THREE.Color();
 
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
@@ -165,13 +239,18 @@ export class GnomelockScene {
       const y = groundHeightAt(x, z);
       pos.setY(i, y);
 
+      const sideBlend = Math.max(0, Math.min(1, (z + 14) / 28)); // 0 = Amber (-Z), 1 = Sapphire (+Z)
       if (Math.abs(x) < 6.5) {
-        c.setHex(0x4b4a46); // Cobble lane
+        cAmber.setHex(0x6b4b3e); // Warm terracotta cobble
+        cSapphire.setHex(0x3b4a62); // Cool slate-blue cobble
       } else if (Math.abs(x) > 19 && Math.abs(z) < 46) {
-        c.setHex(0x3c6b37); // Elevated garden terrace grass
+        cAmber.setHex(0x5b6332); // Warm golden-moss terrace
+        cSapphire.setHex(0x2a5f58); // Cool teal-moss terrace
       } else {
-        c.setHex(0x2f542d); // Turf
+        cAmber.setHex(0x475229); // Autumn russet turf
+        cSapphire.setHex(0x254b42); // Moonlit pine turf
       }
+      c.copy(cAmber).lerp(cSapphire, sideBlend);
       colors[i * 3] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
@@ -260,6 +339,63 @@ export class GnomelockScene {
       );
       lamp.position.set(s.x, sy + 2.95, s.z);
       this.scene.add(post, lamp);
+    }
+
+    // 3b. Faction-themed garden props: Amber Hearth (-Z) vs Sapphire Well (+Z)
+    const amberBannerSpots: [number, number][] = [
+      [-14, -44], [14, -44], [-14, -74], [14, -74], [-22, -58], [22, -58],
+    ];
+    for (const [bx, bz] of amberBannerSpots) {
+      const by = groundHeightAt(bx, bz);
+      const ped = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.55, 0.72, 0.7, 8),
+        new THREE.MeshStandardMaterial({ color: 0x7a4a38, roughness: 0.8 }),
+      );
+      ped.position.set(bx, by + 0.35, bz);
+      const ember = new THREE.Mesh(
+        new THREE.SphereGeometry(0.42, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff6b35 }),
+      );
+      ember.position.set(bx, by + 0.95, bz);
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 3.8, 6),
+        new THREE.MeshStandardMaterial({ color: 0x4a2c18 }),
+      );
+      pole.position.set(bx + (bx < 0 ? -1.1 : 1.1), by + 1.9, bz);
+      const flag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 1.35, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0xd93636, roughness: 0.7 }),
+      );
+      flag.position.set(bx + (bx < 0 ? -0.55 : 0.55), by + 3.05, bz);
+      this.scene.add(ped, ember, pole, flag);
+    }
+
+    const sapphireBannerSpots: [number, number][] = [
+      [-14, 44], [14, 44], [-14, 74], [14, 74], [-22, 58], [22, 58],
+    ];
+    for (const [bx, bz] of sapphireBannerSpots) {
+      const by = groundHeightAt(bx, bz);
+      const ped = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.52, 0.68, 0.7, 8),
+        new THREE.MeshStandardMaterial({ color: 0x45566e, roughness: 0.8 }),
+      );
+      ped.position.set(bx, by + 0.35, bz);
+      const crystal = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.46, 0),
+        new THREE.MeshBasicMaterial({ color: 0x4fd8ff }),
+      );
+      crystal.position.set(bx, by + 1.1, bz);
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 3.8, 6),
+        new THREE.MeshStandardMaterial({ color: 0x26283a }),
+      );
+      pole.position.set(bx + (bx < 0 ? -1.1 : 1.1), by + 1.9, bz);
+      const flag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 1.35, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x2f64c9, roughness: 0.7 }),
+      );
+      flag.position.set(bx + (bx < 0 ? -0.55 : 0.55), by + 3.05, bz);
+      this.scene.add(ped, crystal, pole, flag);
     }
 
     // 4. Structures (T1-T3 + Ancient Ceramic Patron)
@@ -509,6 +645,7 @@ export class GnomelockScene {
   }
 
   sync(state: MatchState, localSlot: number, ads: boolean, dt: number): void {
+    this.skyUniforms.uTime.value = state.timeS;
     // 1. Update Heroes
     const localTeamForBars = state.heroes[localSlot]?.team ?? 0;
     for (const h of state.heroes) {

@@ -118,7 +118,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
   if (m.flowDecayTimer > 0) {
     m.flowDecayTimer -= dt;
   } else if (m.flowScore > 0) {
-    m.flowScore = Math.max(0, m.flowScore - 22 * dt);
+    m.flowScore = Math.max(0, m.flowScore - 14 * dt);
     m.flowTier = computeFlowTier(m.flowScore);
   }
 
@@ -176,7 +176,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
       }
       m.sliding = false;
       events.dashed = true;
-      addFlow(m, 18, events);
+      addFlow(m, 24, events);
     }
 
     // Active dash
@@ -202,7 +202,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
         m.vel.z = m.dashDirZ * (MOVEMENT.dashSpeed * 0.92);
         m.stamina = Math.min(m.maxStamina, m.stamina + MOVEMENT.dashJumpStaminaRefund);
         events.dashJumped = true;
-        addFlow(m, 30, events);
+        addFlow(m, 38, events);
       }
     }
 
@@ -215,7 +215,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
         m.sliding = false;
         m.vel.y = MOVEMENT.jumpVel;
         events.jumped = true;
-        addFlow(m, 10, events);
+        addFlow(m, 14, events);
       } else if (m.wallJumpCooldown <= 0) {
         const wallN = findNearbyWallNormal(m.pos, MOVEMENT.wallDetectDist, MOVEMENT.heroHeight);
         if (wallN) {
@@ -227,7 +227,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
           m.vel.x = wallN.x * MOVEMENT.wallJumpOutVel + wishX * 3.5;
           m.vel.z = wallN.z * MOVEMENT.wallJumpOutVel + wishZ * 3.5;
           events.wallJumped = true;
-          addFlow(m, 34, events);
+          addFlow(m, 42, events);
         } else if (m.doubleJumpAvailable && m.stamina >= 1) {
           m.jumpBufferTimer = 0;
           m.stamina -= 1;
@@ -241,7 +241,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
             m.vel.z = wishZ * hSpeed * 0.75 + m.vel.z * 0.25;
           }
           events.doubleJumped = true;
-          addFlow(m, 16, events);
+          addFlow(m, 20, events);
         }
       }
     }
@@ -252,7 +252,7 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
       if (!m.sliding) {
         m.sliding = true;
         events.startedSlide = true;
-        addFlow(m, 16, events);
+        addFlow(m, 22, events);
       }
     } else if (!input.slideHeld || !m.grounded || horizSpeed < MOVEMENT.slideMinSpeed * 0.55) {
       m.sliding = false;
@@ -335,13 +335,13 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
         m.vel.x = (m.vel.x / spd) * MOVEMENT.slideMaxSpeed;
         m.vel.z = (m.vel.z / spd) * MOVEMENT.slideMaxSpeed;
       }
-      addFlow(m, 14 * dt, events);
+      addFlow(m, 20 * dt, events);
     }
   }
 
-  // Passive Flow reward for maintaining high speed (> 12.2 m/s)
-  if (Math.hypot(m.vel.x, m.vel.z) > 12.2) {
-    addFlow(m, 12 * dt, events);
+  // Passive Flow reward for maintaining brisk speed (> 10.5 m/s)
+  if (Math.hypot(m.vel.x, m.vel.z) > 10.5) {
+    addFlow(m, 18 * dt, events);
   }
 
   return events;

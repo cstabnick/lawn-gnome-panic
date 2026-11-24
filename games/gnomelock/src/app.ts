@@ -7,8 +7,10 @@ import { createInputManager } from './input';
 import { mountMobileControls } from './mobile';
 import { playMusicStinger, startBattleMusic, startLobbyMusic } from './music';
 import {
+  BOT_DIFFICULTY_SKILL,
   buildRosterSlots,
   DEFAULT_BOT_HEROES,
+  type BotDifficulty,
   type MatchCustomConfig,
   type TeamMode,
   type WorldSnapshotMsg,
@@ -36,11 +38,14 @@ export function bootGnomelock(): void {
   let localHero: HeroId = (params.get('hero') as HeroId) || 'bramble';
   if (!HEROES[localHero]) localHero = 'bramble';
   const defaultMode = (params.get('mode') as TeamMode) || 'versus';
+  const defaultDiff = (params.get('difficulty') as BotDifficulty) || 'normal';
+  const initSkill = BOT_DIFFICULTY_SKILL[defaultDiff] ?? 1.0;
   let activeConfig: MatchCustomConfig = {
     mode: defaultMode === 'coop' || defaultMode === 'custom' ? defaultMode : 'versus',
+    difficulty: BOT_DIFFICULTY_SKILL[defaultDiff] ? defaultDiff : 'normal',
     localSlotPref: 0,
     botHeroes: [...DEFAULT_BOT_HEROES],
-    botSkills: [1, 1, 1, 1],
+    botSkills: [initSkill, initSkill, initSkill, initSkill],
   };
   let matchEnded = false;
   let relicClaimedWhileTrailing = false;

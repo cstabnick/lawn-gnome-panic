@@ -95,8 +95,8 @@ export const MOVEMENT = {
   staminaRegenS: 3.6,
   coyoteS: 0.11,
   jumpBufferS: 0.12,
-  flowDecayS: 3.2,
-  flowTierThresholds: [0, 35, 70, 92] as const,
+  flowDecayS: 4.8,
+  flowTierThresholds: [0, 22, 50, 78] as const,
 } as const;
 
 export const FLOW_BONUSES = [

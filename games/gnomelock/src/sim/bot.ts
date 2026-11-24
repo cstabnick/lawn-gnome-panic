@@ -76,7 +76,8 @@ export function computeBotInput(
   let hasTarget = false;
   let targetKind: 'orb' | 'creep' | 'hero' | 'tower' | 'relic' | 'none' = 'none';
 
-  if (state.orbs.length > 0 && state.rng() < 0.72 * cfg.skill) {
+  const orbChance = Math.max(0.25, Math.min(0.95, (cfg.skill - 0.35) * 0.95));
+  if (state.orbs.length > 0 && state.rng() < orbChance) {
     let bestOrb = null;
     let bestDist = def.weapon.range * 0.95;
     for (const orb of state.orbs) {
@@ -246,14 +247,15 @@ export function computeBotInput(
     right = dirX * rightX + dirZ * rightZ;
   }
 
-  // Movement tech: dash-jump when returning to lane, slide downhill
+  // Movement tech: dash-jump when returning to lane, slide downhill (scaled by difficulty)
+  const techRate = Math.max(0.2, cfg.skill);
   const dashPressed =
-    (distGoal > 24 && h.move.stamina >= 2.1 && h.move.dashTimer <= 0 && state.rng() < 0.08) ||
-    (retreating && h.move.stamina >= 1.2 && state.rng() < 0.15);
+    (distGoal > 24 && h.move.stamina >= 2.1 && h.move.dashTimer <= 0 && state.rng() < 0.08 * techRate) ||
+    (retreating && h.move.stamina >= 1.2 && state.rng() < 0.15 * techRate);
   const jumpPressed =
     (h.move.dashTimer > 0 && h.move.dashTimer < 0.16 && h.move.grounded) ||
-    (targetKind === 'hero' && h.move.grounded && state.rng() < 0.03);
-  const slideHeld = Math.hypot(h.move.vel.x, h.move.vel.z) > 10.5 && distGoal > 12;
+    (targetKind === 'hero' && h.move.grounded && state.rng() < 0.03 * techRate);
+  const slideHeld = cfg.skill >= 0.9 && Math.hypot(h.move.vel.x, h.move.vel.z) > 10.5 && distGoal > 12;
 
   // Abilities
   let abilityPressed: AbilitySlot | null = null;

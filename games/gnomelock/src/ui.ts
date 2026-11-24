@@ -2,7 +2,13 @@
 import { createVolumeButton } from '@arcade/volume';
 import { prefabIconElement } from '@lawn/prefabs';
 import { volumeStore } from './audio';
-import { DEFAULT_BOT_HEROES, type MatchCustomConfig, type TeamMode } from './net/protocol';
+import {
+  BOT_DIFFICULTY_SKILL,
+  DEFAULT_BOT_HEROES,
+  type BotDifficulty,
+  type MatchCustomConfig,
+  type TeamMode,
+} from './net/protocol';
 import { MATCH_CONFIG, TEAM_NAMES, type AbilitySlot, type HeroId, type Team } from './sim/config';
 import { HERO_LIST, HEROES } from './sim/heroes';
 import { ITEMS, type ItemCategory } from './sim/items';
@@ -29,6 +35,7 @@ export class GnomelockUI {
   private selectedHero: HeroId = 'bramble';
   private customConfig: MatchCustomConfig = {
     mode: 'versus',
+    difficulty: 'normal',
     localSlotPref: 0,
     botHeroes: [...DEFAULT_BOT_HEROES],
     botSkills: [1, 1, 1, 1],
@@ -49,6 +56,7 @@ export class GnomelockUI {
   private ammoEl!: HTMLDivElement;
   private staminaWrapEl!: HTMLDivElement;
   private flowBadgeEl!: HTMLDivElement;
+  private flowBarFillEl!: HTMLDivElement;
   private hitmarkerEl!: HTMLDivElement;
   private speedVignetteEl!: HTMLDivElement;
   private abilityEls = new Map<AbilitySlot, { el: HTMLDivElement; icon: HTMLDivElement; cd: HTMLDivElement; dim: HTMLDivElement }>();
@@ -170,6 +178,21 @@ export class GnomelockUI {
     ];
     const modeBtnEls = new Map<TeamMode, HTMLButtonElement>();
 
+    const diffRow = document.createElement('div');
+    diffRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;';
+    const diffLabel = document.createElement('div');
+    diffLabel.textContent = 'Bot Difficulty:';
+    diffLabel.style.cssText = 'font-size:12px;font-weight:800;color:#93c5fd;';
+    const diffBtns = document.createElement('div');
+    diffBtns.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    const diffDefs: { diff: BotDifficulty; label: string }[] = [
+      { diff: 'easy', label: 'Easy' },
+      { diff: 'normal', label: 'Normal' },
+      { diff: 'hard', label: 'Hard' },
+      { diff: 'nightmare', label: 'Nightmare' },
+    ];
+    const diffBtnEls = new Map<BotDifficulty, HTMLButtonElement>();
+
     const slotsGrid = document.createElement('div');
     slotsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;';
 
@@ -178,6 +201,11 @@ export class GnomelockUI {
         const active = this.customConfig.mode === m;
         b.style.background = active ? '#e67e22' : 'rgba(255,255,255,0.1)';
         b.style.borderColor = active ? '#ffd54f' : 'rgba(255,255,255,0.2)';
+      }
+      for (const [d, b] of diffBtnEls) {
+        const active = this.customConfig.difficulty === d;
+        b.style.background = active ? '#2f64c9' : 'rgba(255,255,255,0.1)';
+        b.style.borderColor = active ? '#74b9ff' : 'rgba(255,255,255,0.2)';
       }
 
       // In versus/coop presets, slot 0 is always P1 unless user switches to custom
@@ -233,9 +261,10 @@ export class GnomelockUI {
           const skillSel = document.createElement('select');
           skillSel.style.cssText = 'padding:4px 6px;border-radius:5px;background:#131826;color:#cbd5e1;border:1px solid rgba(255,255,255,0.16);font-size:11px;';
           for (const [val, lbl] of [
-            [0.82, 'Bot: Chill (0.82x)'],
-            [1.0, 'Bot: Standard (1.0x)'],
-            [1.15, 'Bot: Tryhard (1.15x)'],
+            [0.72, 'Bot: Easy (0.72x)'],
+            [1.0, 'Bot: Normal (1.0x)'],
+            [1.18, 'Bot: Hard (1.18x)'],
+            [1.32, 'Bot: Nightmare (1.32x)'],
           ] as const) {
             const opt = document.createElement('option');
             opt.value = String(val);
@@ -277,8 +306,24 @@ export class GnomelockUI {
       presetBtns.appendChild(b);
     }
 
+    for (const def of diffDefs) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = def.label;
+      b.style.cssText = 'padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;cursor:pointer;';
+      b.onclick = () => {
+        this.customConfig.difficulty = def.diff;
+        const sk = BOT_DIFFICULTY_SKILL[def.diff];
+        this.customConfig.botSkills = [sk, sk, sk, sk];
+        renderSetup();
+      };
+      diffBtnEls.set(def.diff, b);
+      diffBtns.appendChild(b);
+    }
+
     presetRow.append(presetLabel, presetBtns);
-    setupBox.append(presetRow, slotsGrid);
+    diffRow.append(diffLabel, diffBtns);
+    setupBox.append(presetRow, diffRow, slotsGrid);
     renderSetup();
 
     const actions = document.createElement('div');
@@ -369,8 +414,13 @@ export class GnomelockUI {
     center.appendChild(this.staminaWrapEl);
 
     this.flowBadgeEl = document.createElement('div');
-    this.flowBadgeEl.style.cssText = 'position:absolute;left:-42px;top:22px;width:92px;text-align:center;font-size:11px;font-weight:800;color:#74b9ff;text-shadow:0 1px 4px #000;';
-    center.appendChild(this.flowBadgeEl);
+    this.flowBadgeEl.style.cssText = 'position:absolute;left:-42px;top:20px;width:92px;text-align:center;font-size:11px;font-weight:800;color:#74b9ff;text-shadow:0 1px 4px #000;';
+    const flowBarBg = document.createElement('div');
+    flowBarBg.style.cssText = 'position:absolute;left:-28px;top:35px;width:64px;height:4px;border-radius:2px;background:rgba(255,255,255,0.16);overflow:hidden;';
+    this.flowBarFillEl = document.createElement('div');
+    this.flowBarFillEl.style.cssText = 'height:100%;width:0%;background:linear-gradient(90deg,#4fd8ff,#ffd54f);transition:width 0.08s;';
+    flowBarBg.appendChild(this.flowBarFillEl);
+    center.append(this.flowBadgeEl, flowBarBg);
     el.appendChild(center);
 
     // Bottom-left: HP, Acorns, Level, Ammo, Items
@@ -694,8 +744,9 @@ export class GnomelockUI {
       this.staminaWrapEl.appendChild(bar);
     }
 
-    // Flow State badge & speed vignette
+    // Flow State badge, meter & speed vignette
     this.flowBadgeEl.textContent = local.move.flowTier > 0 ? `FLOW T${local.move.flowTier}` : '';
+    this.flowBarFillEl.style.width = `${Math.min(100, Math.round(local.move.flowScore))}%`;
     const spd = Math.hypot(local.move.vel.x, local.move.vel.z);
     this.speedVignetteEl.style.opacity = spd > 13.0 ? '1' : '0';
 

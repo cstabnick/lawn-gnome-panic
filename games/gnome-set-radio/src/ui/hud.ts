@@ -28,6 +28,9 @@ export interface HudHandle {
   setVisible(v: boolean): void;
   setPaused(v: boolean): void;
   setNetLabel(text: string): void;
+  setCompetitionHud(
+    state: { title: string; timeLeft: number; progress: number; bronze: number; silver: number; gold: number } | null,
+  ): void;
 }
 
 function buildHudCss(): string {
@@ -74,6 +77,7 @@ function buildHudCss(): string {
 #gsr-hud .gsr-tagdot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
 #gsr-hud .gsr-tagbtn.on{border-color:#ffd740;box-shadow:0 0 12px rgba(255,215,64,0.65);transform:translateY(-2px)}
 #gsr-hud .gsr-compass{position:fixed;left:50%;top:12px;transform:translateX(-50%) skewX(-10deg);background:rgba(18,8,34,0.88);border:2px solid #00e5ff;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:900;letter-spacing:0.5px;box-shadow:0 6px 18px rgba(0,0,0,0.5);white-space:nowrap;font-family:system-ui,sans-serif;display:none}
+#gsr-hud #gsr-comp-hud{position:fixed;left:50%;top:50px;transform:translateX(-50%);background:rgba(18,8,34,0.92);border:2px solid #ffd740;border-radius:999px;padding:6px 16px;font-size:12px;font-weight:900;letter-spacing:0.4px;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.6),0 0 14px rgba(255,215,64,0.3);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;font-family:system-ui,sans-serif;display:none}
 #gsr-pause{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(10,4,22,0.82);pointer-events:auto;padding:16px;font-family:system-ui,sans-serif}
 #gsr-pause .gsr-pcard{width:min(360px,92vw);background:#180b2e;border:3px solid #00e5ff;border-radius:16px;padding:18px;color:#fff;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 60px rgba(0,0,0,0.8)}
 #gsr-pause .gsr-pbtn{min-height:44px;border-radius:10px;border:2px solid #554275;background:#241145;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
@@ -83,6 +87,7 @@ function buildHudCss(): string {
   #gsr-hud .gsr-tags{bottom:10px}
   #gsr-hud .gsr-obj{top:114px;font-size:10px;max-width:min(200px,48vw)}
   #gsr-hud .gsr-compass{top:58px;font-size:11px}
+  #gsr-hud #gsr-comp-hud{top:88px;font-size:11px;padding:5px 12px}
   #gsr-hud .gsr-bossbar{top:92px;min-width:180px}
 }
 @keyframes gsr-slam{0%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1.55)}12%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}68%{opacity:1;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}100%{opacity:0;transform:skewX(-10deg) rotate(var(--tilt)) scale(1)}}
@@ -245,6 +250,10 @@ export function createHud(
   compassEl.className = 'gsr-compass';
   hud.appendChild(compassEl);
 
+  const compHud = document.createElement('div');
+  compHud.id = 'gsr-comp-hud';
+  hud.appendChild(compHud);
+
   const banner = document.createElement('div');
   banner.style.cssText = `
     position:absolute; left:50%; bottom:126px; transform:translateX(-50%);
@@ -332,6 +341,14 @@ export function createHud(
     },
     setNetLabel(text) {
       netBtn.textContent = text;
+    },
+    setCompetitionHud(state) {
+      if (!state) {
+        compHud.style.display = 'none';
+        return;
+      }
+      compHud.style.display = 'block';
+      compHud.textContent = `🏆 ${state.title} · ${Math.max(0, state.timeLeft).toFixed(1)}s · ${state.progress} (🥉${state.bronze} / 🥈${state.silver} / 🥇${state.gold})`;
     },
     slamTrick(name, mult, onBeat = false) {
       const now = performance.now();
@@ -451,7 +468,7 @@ export function createHud(
 
       let activeHtml = '';
       if (session.levelCleared) {
-        activeHtml = '<div style="color:#69f0ae;">✅ AREA CLEARED!</div>';
+        activeHtml = '<div style="color:#69f0ae;">✨ FREE ROAM · Encore Competition Open (or ride any Transit Gate!)</div>';
       } else if (session.bossUnlocked && bossEvent && !bossEvent.completed) {
         activeHtml = `<div style="color:#ff5252;">👑 ${bossEvent.def.title} (${bossEvent.progress}/${bossEvent.def.targetCount})</div>`;
       } else {

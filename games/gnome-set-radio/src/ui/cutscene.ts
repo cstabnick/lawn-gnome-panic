@@ -235,7 +235,29 @@ export function createCutscenePlayer(
       const dj = anchors.djBoothPos;
       const cr = anchors.crewLineupPos;
 
-      switch (beat.camera) {
+      switch (beat.camera as string) {
+        case 'boss-dramatic-low': {
+          const push = Math.min(3.2, camTime * 0.85);
+          targetPos = new THREE.Vector3(
+            bp.x + Math.sin(camTime * 0.35) * 1.4,
+            bp.y + 0.9,
+            bp.z + 8.6 - push,
+          );
+          targetLook = new THREE.Vector3(bp.x, bp.y + 2.2, bp.z);
+          break;
+        }
+        case 'boss-spiral-reveal': {
+          const angle = camTime * 0.95;
+          const radius = Math.max(5.5, 11.5 - camTime * 0.65);
+          const climbY = Math.min(6.5, 1.5 + camTime * 1.25);
+          targetPos = new THREE.Vector3(
+            bp.x + Math.sin(angle) * radius,
+            bp.y + climbY,
+            bp.z + Math.cos(angle) * radius,
+          );
+          targetLook = new THREE.Vector3(bp.x, bp.y + 1.8, bp.z);
+          break;
+        }
         case 'dj-booth':
           targetPos = new THREE.Vector3(dj.x + 2.4 + Math.sin(camTime * 0.5) * 1.4, dj.y + 2.1, dj.z + 4.8);
           targetLook = new THREE.Vector3(dj.x, dj.y + 1.0, dj.z);

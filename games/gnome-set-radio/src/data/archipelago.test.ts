@@ -47,6 +47,31 @@ describe('Broadcast Archipelago connectivity & gate placement', () => {
     }
   });
 
+  it('ensures every transit link has a matching reverse link and unique id', () => {
+    const linkIds = new Set<string>();
+    for (const id of LEVEL_ORDER) {
+      const node = ARCHIPELAGO_NODES[id];
+      for (const link of node.links) {
+        expect(linkIds.has(link.id), `Duplicate link id ${link.id}`).toBe(false);
+        linkIds.add(link.id);
+        const reverse = ARCHIPELAGO_NODES[link.targetId].links.find(
+          (l) => l.targetId === id && l.transitType === link.transitType,
+        );
+        expect(reverse, `Missing reverse link for ${link.id}`).toBeDefined();
+      }
+    }
+    for (const expressId of [
+      'ck-to-ma-express',
+      'ma-to-ck-express',
+      'tm-to-vk-express',
+      'vk-to-tm-express',
+      'hc-to-bb-express',
+      'bb-to-hc-express',
+    ]) {
+      expect(linkIds.has(expressId), `Missing express link ${expressId}`).toBe(true);
+    }
+  });
+
   it('defines 27 unique Golden Vinyls (3 per area) inside level bounds', () => {
     expect(GOLDEN_VINYLS).toHaveLength(27);
     const ids = new Set<string>();

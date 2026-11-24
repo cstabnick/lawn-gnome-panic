@@ -48,6 +48,13 @@ import { createLocationToast } from './ui/locationToast';
 import { createRadioTicker } from './ui/radioTicker';
 import { mountTitleOverlay, showFinaleEncoreModal, showAreaClearSummary } from './ui/title';
 import { getArchipelagoNode } from './data/archipelago';
+import { COMPETITIONS } from './data/competitions';
+import {
+  createCompetitionRun,
+  isBetterMedal,
+  stepCompetitionRun,
+  type CompetitionRun,
+} from './game/competitions';
 import { applyRegionalLighting } from './view/atmosphere';
 import { createChaseCamera } from './view/camera';
 import { createFx } from './view/fx';
@@ -189,6 +196,8 @@ export function startApp(): void {
   let sentryHitCooldown = 0;
   let skillFlairTimer = 0;
   let trickMusicPulse = false;
+  let activeComp: CompetitionRun | null = null;
+  let scratchPadCd = 0;
 
   type TransitState =
     | { phase: 'ride'; t: number; dur: number; fadeStart: number; targetId: GsrLevelId; curve: THREE.CatmullRomCurve3 }
@@ -460,6 +469,10 @@ export function startApp(): void {
     }
     radioTicker.setStation(levelId);
     helper.resetForLevel(levelId);
+    activeComp = null;
+    hud.setCompetitionHud(null);
+    const compUnlocked = session.levelCleared || progress.completedAreas.includes(levelId);
+    nextWorld.worldBits.setCompetitionState(compUnlocked, false);
     return nextWorld;
   }
 
@@ -698,6 +711,19 @@ export function startApp(): void {
                 titleOverlay.show(progress);
                 playTrack('pirate-radio-hub', musicExplorer.getReactiveOverrides());
               },
+              onFreeRoam: () => {
+                hud.setVisible(true);
+                input.setTouchVisible(true);
+                playing = true;
+                const compDef = COMPETITIONS[currentLevelId];
+                world?.worldBits.setCompetitionState(true, false);
+                locationToast.show(
+                  '🛹 FREE ROAM UNLOCKED',
+                  compDef.title.toUpperCase(),
+                  'Visit the Encore Trophy Booth or ride any Transit Gate!',
+                  '#ffd740',
+                );
+              },
             },
           );
         };
@@ -730,6 +756,7 @@ export function startApp(): void {
     pluckHitCooldown = Math.max(0, pluckHitCooldown - dt);
     sentryHitCooldown = Math.max(0, sentryHitCooldown - dt);
     skillFlairTimer = Math.max(0, skillFlairTimer - dt);
+    scratchPadCd = Math.max(0, scratchPadCd - dt);
 
     const inp = input.poll(chaseCam.yaw);
     if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen() && transit === null) {
@@ -1228,6 +1255,97 @@ export function startApp(): void {
             break;
           }
           break;
+        }
+      }
+
+      // Turntable Scratch Launch Pads
+      if (scratchPadCd <= 0) {
+        for (const pad of world.worldBits.scratchPads) {
+          if (Math.hypot(skater.x - pad.x, skater.y - pad.y, skater.z - pad.z) < 2.4 && skater.vy <= 3.0) {
+            scratchPadCd = 0.65;
+            skater.vy = 16.5;
+            skater.grounded = false;
+            skater.airJumpsLeft = skater.maxAirJumps;
+            skater.boost = Math.min(100, skater.boost + 35);
+            skater.comboScore += 150;
+            skater.comboMult++;
+            skater.comboTimer = Math.max(skater.comboTimer, 2.6);
+            trickMusicPulse = true;
+            effects.emit({ type: 'bounce', kind: 'hydrant', x: pad.x, y: pad.y + 0.3, z: pad.z, color: '#00e5ff' });
+            hud.slamTrick('SCRATCH BOOST', skater.comboMult, beatPulse > 0.62);
+            break;
+          }
+        }
+      }
+
+      // Encore Competition Trophy Booth & Active Competition Loop
+      const compDef = COMPETITIONS[currentLevelId];
+      const compUnlocked = session.levelCleared || progress.completedAreas.includes(currentLevelId);
+      const bp = world.worldBits.boothPos;
+      if (!activeComp && Math.hypot(skater.x - bp.x, skater.y - bp.y, skater.z - bp.z) < 4.5) {
+        if (compUnlocked) {
+          promptText = `${sprayVerb} to start ${compDef.title}`;
+          if (inp.sprayEdge) {
+            sprayConsumed = true;
+            activeComp = createCompetitionRun(compDef);
+            world.worldBits.setCompetitionState(true, true, activeComp.collectedRings);
+            sfx.rankFanfare();
+            mutter.say(compDef.hostLine, 118);
+            locationToast.show(`🏆 ${compDef.title.toUpperCase()}`, `${compDef.durationS}S ENCORE`, compDef.hostLine, '#ffd740');
+          }
+        } else {
+          promptText = `🔒 Clear Boss to unlock ${compDef.title}`;
+        }
+      }
+
+      if (activeComp) {
+        const prevScoreTotal = skater.totalScore;
+        let ringHitIdx: number | undefined;
+        if (compDef.kind === 'ring-sprint' && compDef.ringPositions) {
+          for (let ri = 0; ri < compDef.ringPositions.length; ri++) {
+            if (activeComp.collectedRings.has(ri)) continue;
+            const rp = compDef.ringPositions[ri]!;
+            if (Math.hypot(skater.x - rp[0], skater.y - rp[1], skater.z - rp[2]) < 3.4) {
+              ringHitIdx = ri;
+              sfx.pickup('aerial-ring');
+              fx.burst(rp[0], rp[1], rp[2], '#ffd740', 14);
+              break;
+            }
+          }
+        }
+        const compRes = stepCompetitionRun(activeComp, dt, {
+          scoreDelta: Math.max(0, stepRes.bankedScore + (skater.totalScore - prevScoreTotal)),
+          grindAirDt: skater.grinding || !skater.grounded ? dt : 0,
+          trickCount: stepRes.trickTriggered ? 1 : 0,
+          tagCount: sprayConsumed ? 1 : 0,
+          ringIndex: ringHitIdx,
+        });
+        world.worldBits.setCompetitionState(true, !activeComp.finished, activeComp.collectedRings);
+        hud.setCompetitionHud({
+          title: compDef.title,
+          timeLeft: activeComp.timeLeft,
+          progress: Math.round(activeComp.progress),
+          bronze: compDef.bronzeTarget,
+          silver: compDef.silverTarget,
+          gold: compDef.goldTarget,
+        });
+        if (compRes.finishedNow) {
+          const medal = compRes.medal;
+          const prevMedal = progress.competitionMedals[currentLevelId];
+          if (isBetterMedal(medal, prevMedal) && medal) {
+            progress.competitionMedals[currentLevelId] = medal;
+            saveProgress(progress);
+          }
+          sfx.rankFanfare();
+          locationToast.show(
+            medal ? `🏆 ${medal.toUpperCase()} MEDAL!` : 'ENCORE COMPLETE',
+            compDef.title.toUpperCase(),
+            `Result: ${Math.round(activeComp.progress)} · Gold: ${compDef.goldTarget}`,
+            medal === 'gold' ? '#ffd740' : medal === 'silver' ? '#e0e0e0' : '#ff9100',
+          );
+          activeComp = null;
+          hud.setCompetitionHud(null);
+          world.worldBits.setCompetitionState(true, false);
         }
       }
 

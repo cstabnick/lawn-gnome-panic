@@ -25,3 +25,12 @@
 | **Epic 3** | Next-3-worlds sky vista & music-synced skybox visualizers | `tsc --noEmit` & `vite build` pass |
 | **Epic 4** | Diverse arena shapes & edge abstract office buildings across all 9 levels | `flow.test.ts` & `npm test -w games/gnome-set-radio` pass |
 | **Epic 5** | Full verification, smoke/z-fight checks, `AGENT_INDEX.md`, mergeable PR | `build`, `smoke.sh`, `zfight`, and PR opened |
+
+---
+
+## Pass 3: Guided Open World, Cartoon Backdrops, Post-Boss Competitions & Unique Bosses/Cutscenes
+
+- **Guided Open-World Interconnectivity (`archipelago.ts`, `title.ts`, `hud.ts`, `app.ts`):** Added bidirectional Express Transit Gates (`chrome-kiln ↔ mulch-alley`, `tupperware-mall ↔ velvet-keys`, `hoa-citadel ↔ bongo-basin`), a `"🛹 Free Roam & Competitions"` post-boss button in `showAreaClearSummary`, and a Guided Free-Roam objective hint.
+- **High-Energy Cartoon Backdrops (`skybox.ts`, `cartoonBackdrop.ts`):** Upgraded `SKY_FRAG` with animated comic speed-ray sunburst, halftone dot banding, and beat-reactive zig-zag horizon; added cel-shaded comic clouds with ink outlines, orbiting pop-art onomatopoeia panels, and speed-arcs.
+- **Fun World Bits & Post-Boss Competitions (`data/competitions.ts`, `game/competitions.ts`, `worldBits.ts`, `app.ts`, `hud.ts`):** Added 2 Turntable Scratch Launch Pads per district, an Encore Trophy Booth, and 9 unique replayable post-boss Encore Competitions with Bronze/Silver/Gold medals persisted in `ProgressState.competitionMedals`.
+- **Unique Boss Animations & Expanded Cutscenes (`bossAnim.ts`, `cutscene.ts`, `cutscenes.ts`):** Added per-boss 3D stage aura/animations + hit recoil for all 9 bosses, 2 dramatic boss camera cues (`boss-dramatic-low`, `boss-spiral-reveal`), and expanded all `levelIntro` (5 beats), `bossIntro` (4 beats), and `bossDefeat` (3–4 beats) cutscenes.

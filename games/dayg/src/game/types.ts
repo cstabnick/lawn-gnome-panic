@@ -168,9 +168,9 @@ export interface LedgerPanel { root: HTMLElement; open(tab?: LedgerTab): void; c
 export interface BoardPanel { root: HTMLElement; open(board: BoardId): void; close(): void; isOpen(): boolean }
 export interface BoardsInWorld { boardNear(pos: Vec3): BoardId | null }
 export interface QuestRunner { update(dt: number): void; active(): Quest[]; tracked(): Quest | null; track(id: QuestId | null): void }
-export interface RoomChoice { mode: 'solo' | 'create' | 'join' | 'reopen'; code: string | null; title: string; pace: 'brisk' | 'standard' | 'slow'; roomMode: 'full' | 'haven-peace' | 'co-op' }
+export interface RoomChoice { mode: 'solo' | 'create' | 'join' | 'reopen'; code: string | null; title: string; pace: 'brisk' | 'standard' | 'slow'; roomMode: 'full' | 'haven-peace' | 'co-op'; lootRespawn?: boolean }
 export interface RoomListItem { code: string; title: string; summary: string; updatedAt: string }
-export interface RoomPanel { root: HTMLElement; open(): void; close(): void; isOpen(): boolean; onChoose(fn: (c: RoomChoice) => void): void; onOpen(fn: () => void): void; setWorlds(list: readonly RoomListItem[]): void; setStatus(text: string): void }
+export interface RoomPanel { root: HTMLElement; open(): void; close(): void; isOpen(): boolean; onChoose(fn: (c: RoomChoice) => void): void; onOpen(fn: () => void): void; onSaveNow?(fn: () => void): void; setWorlds(list: readonly RoomListItem[]): void; setStatus(text: string): void }
 export type NetStatus = 'offline' | 'connecting' | 'host' | 'guest' | 'lost';
 export interface NetPlayer { id: number; key: PlayerKey; name: string; character: string; userId: string | null; color: number }
 export interface NetSession {

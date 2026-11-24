@@ -111,6 +111,35 @@ export function dailyForage(w: WorldState, _rng: Rng): void {
   }
 }
 
+/** Replenishes region loot stocks and resets emptied containers in unoccupied regions when `w.lootRespawn` is true. */
+export function dailyLootRespawn(w: WorldState, _rng: Rng): number {
+  if (!w.lootRespawn) return 0;
+  const interval = Math.max(1, w.lootRespawnDays ?? 3);
+  const day = Math.floor(w.tick / w.tuning.clock.ticksPerDay) + 1;
+  if (day % interval !== 0) return 0;
+
+  for (const r of w.graph.regions) {
+    const stock = w.loot[r.id];
+    const start = w.regionLootStart[r.id];
+    if (!stock || !start) continue;
+    for (const res of RESOURCES) {
+      const cap = start[res] ?? 0;
+      if (stock[res] < cap) {
+        stock[res] = Math.min(cap, stock[res] + Math.ceil(cap * 0.25));
+      }
+    }
+  }
+
+  let reset = 0;
+  for (const c of Object.values(w.containers)) {
+    if (!c.opened || c.contents.length > 0) continue;
+    if (w.bubbles.some((b) => b.region === c.region)) continue;
+    c.opened = false;
+    reset++;
+  }
+  return reset;
+}
+
 export function takeLoot(w: WorldState, r: RegionId, res: Resource, want: number, rng: Rng): number {
   const stock = w.loot[r]?.[res] ?? 0;
   if (stock <= 0 || want <= 0) return 0;

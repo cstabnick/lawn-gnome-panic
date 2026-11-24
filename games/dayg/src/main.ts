@@ -55,7 +55,8 @@ import { assembleFullMap } from './world/fullMap';
 import { createSimHost } from './net/simHost';
 import { createNetSession } from './net/session';
 import { createBubbleSync } from './net/bubbleSync';
-import { createRoomSaver } from './net/roomSave';
+import { createRoomSaver, loadRoom } from './net/roomSave';
+import { listOwnedWorlds, loadLocalWorldSnapshot, saveLocalWorldSnapshot, upsertOwnedWorld } from './net/worldStore';
 import type { Pose } from './net/protocol';
 import { createTalkPanel } from './ui/talkPanel';
 import { createLedgerPanel } from './ui/ledgerPanel';
@@ -320,6 +321,11 @@ const trainerPanel = createTrainerPanel(ui, {
     clock.setRate(scale);
     hud.toast(`Sim speed ${scale}x`);
   },
+  onToggleLootRespawn() {
+    host.world.lootRespawn = !host.world.lootRespawn;
+    hud.toast(`Loot respawn: ${host.world.lootRespawn ? 'ON' : 'OFF'}`);
+    return !!host.world.lootRespawn;
+  },
 });
 if (params.get('trainer') === '1') trainerPanel.open();
 if (zoneSpawn.region) {
@@ -479,8 +485,78 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-// Online: a room code in the URL joins that room; solo (no room) never starts a session.
-roomPanel.onChoose((c) => { if (c.mode !== 'solo') session.start(c, myGnome()).catch(() => { hud.toast('Could not reach the room'); }); });
+// Persistent owned worlds: local auto-save + cloud room save + seamless @lawn/mp join.
+let currentWorldCode = roomCode ?? `LOCAL-${seed}`;
+let currentWorldTitle = 'Mossgrave';
+async function saveOwnedWorld(): Promise<void> {
+  const code = session.code ?? currentWorldCode;
+  const meta = {
+    code,
+    title: host.world.worldMeta?.title ?? currentWorldTitle,
+    owner: host.world.worldMeta?.owner ?? myGnome().name,
+    seed: host.world.seed,
+    day: clock.day,
+    lootRespawn: !!host.world.lootRespawn,
+    updatedAt: new Date().toISOString(),
+  };
+  upsertOwnedWorld(meta);
+  await saveLocalWorldSnapshot(code, host.snapshot());
+  if (session.code) void roomSaver.saveNow('timer');
+}
+function refreshRoomList(): void {
+  roomPanel.setWorlds(listOwnedWorlds().map((w) => ({
+    code: w.code,
+    title: w.title,
+    summary: `Owner: ${w.owner} · Day ${w.day} · Loot respawn: ${w.lootRespawn ? 'On' : 'Off'}`,
+    updatedAt: w.updatedAt,
+  })));
+}
+roomPanel.onOpen(refreshRoomList);
+roomPanel.onSaveNow?.(() => { void saveOwnedWorld(); });
+session.onStatus((s) => {
+  if (s === 'host' && session.code) {
+    currentWorldCode = session.code;
+    roomPanel.setStatus(`Hosting "${currentWorldTitle}" · code: ${session.code}`);
+    void saveOwnedWorld();
+  } else if (s === 'guest' && session.code) {
+    roomPanel.setStatus(`Joined world · code: ${session.code}`);
+  } else if (s === 'connecting') {
+    roomPanel.setStatus('Connecting to world…');
+  } else if (s === 'lost') {
+    roomPanel.setStatus('Connection lost. Local save is safe.');
+  }
+});
+setInterval(() => { void saveOwnedWorld(); }, 60000);
+window.addEventListener('pagehide', () => { void saveOwnedWorld(); });
+
+roomPanel.onChoose((c) => {
+  currentWorldTitle = c.title || 'Mossgrave';
+  host.world.lootRespawn = !!c.lootRespawn;
+  host.world.worldMeta = { title: currentWorldTitle, owner: myGnome().name, lootRespawn: !!c.lootRespawn };
+  if (c.mode === 'solo') {
+    currentWorldCode = `LOCAL-${host.world.seed}`;
+    void saveOwnedWorld();
+    hud.toast(`Playing solo world "${currentWorldTitle}"`);
+    return;
+  }
+  if (c.mode === 'reopen' && c.code) {
+    currentWorldCode = c.code;
+    void (async () => {
+      const snap = (await loadLocalWorldSnapshot(c.code!)) ?? (await loadRoom(c.code!));
+      if (snap) {
+        host.load(snap);
+        bus.emit('world-loaded', { tick: snap.tick });
+      }
+      if (!c.code!.startsWith('LOCAL-')) {
+        session.start(c, myGnome()).catch(() => { hud.toast('Loaded local copy (offline)'); });
+      } else {
+        hud.toast(`Reopened "${currentWorldTitle}"`);
+      }
+    })();
+    return;
+  }
+  session.start(c, myGnome()).catch(() => { hud.toast('Could not reach the room'); });
+});
 if (roomCode) session.start({ mode: 'join', code: roomCode, title: '', pace: 'standard', roomMode: 'co-op' }, myGnome()).catch(() => { hud.toast('Could not reach the room'); });
 
 // Panels opened at start for screenshots and browser checks.

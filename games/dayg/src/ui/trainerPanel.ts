@@ -15,6 +15,7 @@ export interface TrainerDeps {
   onSetTime(hour: number): void;
   onCycleWeather(): WeatherKind;
   onSetTimeScale(scale: number): void;
+  onToggleLootRespawn?: () => boolean;
 }
 
 export interface TrainerPanel {
@@ -186,6 +187,14 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     mkBtn('Sim 5x', () => deps.onSetTimeScale(5)),
     mkBtn('Sim 20x', () => deps.onSetTimeScale(20)),
   );
+  if (deps.onToggleLootRespawn) {
+    const lootBtn = mkBtn('Loot Respawn: OFF', () => {
+      const on = deps.onToggleLootRespawn!();
+      lootBtn.textContent = `Loot Respawn: ${on ? 'ON' : 'OFF'}`;
+      lootBtn.classList.toggle('dt-on', on);
+    });
+    wRow.append(lootBtn);
+  }
 
   root.append(head, modesSec, modesRow, speedRow, tpSec, tpRow, kitSec, kitRow, zSec, zRow, wSec, tRow, wRow);
   ui.appendChild(root);

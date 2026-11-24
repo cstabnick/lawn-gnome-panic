@@ -26,6 +26,7 @@ import {
   STRUCTURES,
 } from './sim/map';
 import type { HeroEntity, MatchState, SimEvent } from './sim/world';
+import { createBombExplosionVfx, createSpellVfx, type SpellFx } from './spellVfx';
 
 interface Tracer {
   line: THREE.Line;
@@ -52,16 +53,31 @@ export class GnomelockScene {
   readonly scene: THREE.Scene;
   readonly camera: THREE.PerspectiveCamera;
 
-  private heroModels = new Map<number, { model: GnomeModel; weaponName: string; team: Team; shieldRing: THREE.Mesh }>();
-  private creepMeshes = new Map<number, { group: THREE.Group; hpFill: THREE.Mesh; execPip: THREE.Mesh }>();
+  private heroModels = new Map<
+    number,
+    {
+      model: GnomeModel;
+      weaponName: string;
+      team: Team;
+      shieldRing: THREE.Mesh;
+      hpGroup: THREE.Group;
+      hpFill: THREE.Mesh;
+      shieldFill: THREE.Mesh;
+    }
+  >();
+  private creepMeshes = new Map<number, { group: THREE.Group; hpGroup: THREE.Group; hpFill: THREE.Mesh; execPip: THREE.Mesh }>();
   private orbMeshes = new Map<number, THREE.Group>();
   private turretMeshes = new Map<number, THREE.Group>();
   private zoneMeshes = new Map<number, THREE.Object3D>();
   private towerVisuals = new Map<string, TowerVisual>();
   private relicGroup: THREE.Group;
   private relicCrystal: THREE.Mesh;
+  private relicHpGroup: THREE.Group;
+  private relicHpFill: THREE.Mesh;
   private tracers: Tracer[] = [];
   private particles: Particle[] = [];
+  private spellFx: SpellFx[] = [];
+  private castTimers = new Map<number, number>();
   private currentFov = 74;
   private camPos = new THREE.Vector3(0, 6, -120);
   private camLook = new THREE.Vector3(0, 3, -100);
@@ -113,6 +129,8 @@ export class GnomelockScene {
     const relic = this.buildRelicAltar();
     this.relicGroup = relic.group;
     this.relicCrystal = relic.crystal;
+    this.relicHpGroup = relic.hpGroup;
+    this.relicHpFill = relic.hpFill;
 
     window.addEventListener('resize', this.onResize);
     onLooksChanged(() => {
@@ -313,7 +331,7 @@ export class GnomelockScene {
     }
   }
 
-  private buildRelicAltar(): { group: THREE.Group; crystal: THREE.Mesh } {
+  private buildRelicAltar(): { group: THREE.Group; crystal: THREE.Mesh; hpGroup: THREE.Group; hpFill: THREE.Mesh } {
     const group = new THREE.Group();
     const gy = groundHeightAt(RELIC_ALTAR.x, RELIC_ALTAR.z);
     group.position.set(RELIC_ALTAR.x, gy, RELIC_ALTAR.z);
@@ -333,8 +351,25 @@ export class GnomelockScene {
     crystal.visible = false;
     group.add(crystal);
 
+    const hpGroup = new THREE.Group();
+    hpGroup.position.y = 3.9;
+    hpGroup.visible = false;
+    const hpBg = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.6, 0.26),
+      new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide }),
+    );
+    hpBg.userData.zfightOk = true;
+    const hpFill = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.48, 0.18),
+      new THREE.MeshBasicMaterial({ color: 0xffd54f, side: THREE.DoubleSide }),
+    );
+    hpFill.position.z = 0.04;
+    hpFill.userData.zfightOk = true;
+    hpGroup.add(hpBg, hpFill);
+    group.add(hpGroup);
+
     this.scene.add(group);
-    return { group, crystal };
+    return { group, crystal, hpGroup, hpFill };
   }
 
   private removeHeroModel(slot: number): void {
@@ -344,7 +379,10 @@ export class GnomelockScene {
     this.heroModels.delete(slot);
   }
 
-  private ensureHeroModel(h: HeroEntity, localSlot: number): { model: GnomeModel; shieldRing: THREE.Mesh } {
+  private ensureHeroModel(
+    h: HeroEntity,
+    localSlot: number,
+  ): { model: GnomeModel; shieldRing: THREE.Mesh; hpGroup: THREE.Group; hpFill: THREE.Mesh; shieldFill: THREE.Mesh } {
     const prev = this.lastHeroMeta.get(h.slot);
     if (
       prev &&
@@ -381,8 +419,34 @@ export class GnomelockScene {
       shieldRing.visible = false;
       model.object.add(shieldRing);
 
+      // Overhead billboarded hero HP + shield bar
+      const hpGroup = new THREE.Group();
+      hpGroup.position.y = 1.68;
+      const isEnemy = h.team !== (this.lastHeroMeta.get(localSlot)?.team ?? 0);
+      const hpBg = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.26, 0.18),
+        new THREE.MeshBasicMaterial({ color: 0x111520, side: THREE.DoubleSide }),
+      );
+      hpBg.userData.zfightOk = true;
+      const hpFill = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.18, 0.11),
+        new THREE.MeshBasicMaterial({ color: isEnemy ? 0xff4d6d : 0x2ecc71, side: THREE.DoubleSide }),
+      );
+      hpFill.position.z = 0.03;
+      hpFill.userData.zfightOk = true;
+      const shieldFill = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.18, 0.05),
+        new THREE.MeshBasicMaterial({ color: 0xffd54f, side: THREE.DoubleSide }),
+      );
+      shieldFill.position.set(0, 0.1, 0.04);
+      shieldFill.visible = false;
+      shieldFill.userData.zfightOk = true;
+      hpGroup.add(hpBg, hpFill, shieldFill);
+      hpGroup.visible = h.slot !== localSlot;
+      model.object.add(hpGroup);
+
       this.scene.add(model.object);
-      entry = { model, weaponName: weaponId, team: h.team, shieldRing };
+      entry = { model, weaponName: weaponId, team: h.team, shieldRing, hpGroup, hpFill, shieldFill };
       this.heroModels.set(h.slot, entry);
       this.lastHeroMeta.set(h.slot, { userId: h.userId, characterCode: h.characterCode, team: h.team });
     }
@@ -420,22 +484,25 @@ export class GnomelockScene {
           });
         }
       } else if (ev.type === 'ability') {
-        const pts = [new THREE.Vector3(ev.x, ev.y, ev.z), new THREE.Vector3(ev.tx, ev.ty, ev.tz)];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xa65cff }));
-        this.scene.add(line);
-        this.tracers.push({ line, ttl: 0.18 });
+        this.castTimers.set(ev.slot, 0.25);
+        this.spellFx.push(
+          createSpellVfx(this.scene, ev.heroId, ev.ability, ev.x, ev.y, ev.z, ev.tx, ev.ty, ev.tz),
+        );
+      } else if (ev.type === 'bombExplode') {
+        this.spellFx.push(createBombExplosionVfx(this.scene, ev.x, ev.y, ev.z, ev.radius));
       }
     }
   }
 
   sync(state: MatchState, localSlot: number, ads: boolean, dt: number): void {
     // 1. Update Heroes
+    const localTeamForBars = state.heroes[localSlot]?.team ?? 0;
     for (const h of state.heroes) {
       const entry = this.ensureHeroModel(h, localSlot);
-      const { model, shieldRing } = entry;
-      model.object.visible = h.alive && !(h.stealthTimer > 0 && h.team !== state.heroes[localSlot]?.team);
-      if (h.alive) {
+      const { model, shieldRing, hpGroup, hpFill, shieldFill } = entry;
+      const visible = h.alive && !(h.stealthTimer > 0 && h.team !== localTeamForBars);
+      model.object.visible = visible;
+      if (visible) {
         model.update(
           {
             position: new THREE.Vector3(h.move.pos.x, h.move.pos.y, h.move.pos.z),
@@ -446,14 +513,41 @@ export class GnomelockScene {
           },
           dt,
         );
-        // Slide tilt visual + weapon recoil kickback
+        // Slide tilt visual + weapon recoil kickback + spell cast arm animation
         model.object.rotation.x = h.move.sliding ? -0.45 : 0;
         const rec = this.recoilTimers.get(h.slot) ?? 0;
         if (rec > 0) {
           this.recoilTimers.set(h.slot, Math.max(0, rec - dt));
           model.arms.right.rotation.x = -Math.PI * 0.42 - rec * 3.2;
         }
+        const castT = this.castTimers.get(h.slot) ?? 0;
+        if (castT > 0) {
+          this.castTimers.set(h.slot, Math.max(0, castT - dt));
+          model.arms.left.rotation.x = -Math.PI * 0.75 * (castT / 0.25);
+        }
         shieldRing.visible = h.shield > 0;
+
+        // Update overhead HP bar
+        if (h.slot !== localSlot) {
+          hpGroup.visible = true;
+          hpGroup.quaternion.copy(this.camera.quaternion);
+          const frac = Math.max(0.01, Math.min(1, h.hp / h.maxHp));
+          hpFill.scale.x = frac;
+          hpFill.position.x = -(1 - frac) * 0.59;
+          (hpFill.material as THREE.MeshBasicMaterial).color.setHex(
+            h.team !== localTeamForBars ? 0xff4d6d : 0x2ecc71,
+          );
+          if (h.shield > 0) {
+            const sFrac = Math.min(1, h.shield / h.maxHp);
+            shieldFill.visible = true;
+            shieldFill.scale.x = sFrac;
+            shieldFill.position.x = -(1 - sFrac) * 0.59;
+          } else {
+            shieldFill.visible = false;
+          }
+        } else {
+          hpGroup.visible = false;
+        }
       }
     }
     this.muzzleLight.intensity = Math.max(0, this.muzzleLight.intensity - dt * 28);
@@ -476,31 +570,36 @@ export class GnomelockScene {
           new THREE.MeshStandardMaterial({ color: TEAM_COLORS[cr.team] }),
         );
         hat.position.y = 0.85 * scale;
+        const hpGroup = new THREE.Group();
+        hpGroup.position.y = 1.35 * scale;
         const hpBg = new THREE.Mesh(
           new THREE.PlaneGeometry(0.9, 0.12),
           new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide }),
         );
-        hpBg.position.y = 1.35 * scale;
+        hpBg.userData.zfightOk = true;
         const hpFill = new THREE.Mesh(
           new THREE.PlaneGeometry(0.84, 0.08),
           new THREE.MeshBasicMaterial({ color: cr.team === 0 ? 0xff5a5a : 0x4fd8ff, side: THREE.DoubleSide }),
         );
-        hpFill.position.set(0, 1.35 * scale, 0.02);
+        hpFill.position.set(0, 0, 0.03);
+        hpFill.userData.zfightOk = true;
         const execPip = new THREE.Mesh(
           new THREE.PlaneGeometry(0.14, 0.14),
           new THREE.MeshBasicMaterial({ color: 0xffd54f, side: THREE.DoubleSide }),
         );
-        execPip.position.set(0, 1.55 * scale, 0.02);
+        execPip.position.set(0, 0.2, 0.03);
         execPip.visible = false;
-        group.add(body, hat, hpBg, hpFill, execPip);
+        execPip.userData.zfightOk = true;
+        hpGroup.add(hpBg, hpFill, execPip);
+        group.add(body, hat, hpGroup);
         this.scene.add(group);
-        cEntry = { group, hpFill, execPip };
+        cEntry = { group, hpGroup, hpFill, execPip };
         this.creepMeshes.set(cr.id, cEntry);
       }
       cEntry.group.position.set(cr.x, cr.y, cr.z);
       const frac = Math.max(0.01, cr.hp / cr.maxHp);
       cEntry.hpFill.scale.x = frac;
-      cEntry.hpFill.quaternion.copy(this.camera.quaternion);
+      cEntry.hpGroup.quaternion.copy(this.camera.quaternion);
       cEntry.execPip.visible = cr.hp <= 65; // Last-hit execute indicator!
     }
     for (const [id, entry] of this.creepMeshes) {
@@ -584,9 +683,13 @@ export class GnomelockScene {
 
     // 5. Relic
     this.relicCrystal.visible = state.relic.alive;
+    this.relicHpGroup.visible = state.relic.alive;
     if (state.relic.alive) {
       this.relicCrystal.rotation.y += dt * 1.4;
       this.relicCrystal.position.y = 2.3 + Math.sin(state.timeS * 2.5) * 0.25;
+      this.relicHpGroup.quaternion.copy(this.camera.quaternion);
+      const rFrac = Math.max(0.01, state.relic.hp / state.relic.maxHp);
+      this.relicHpFill.scale.x = rFrac;
     }
 
     // 6. Turrets & Zones
@@ -697,7 +800,17 @@ export class GnomelockScene {
       }
     }
 
-    // 7. Tracers & Particles
+    // 7. Tracers, Particles & Spell VFX
+    for (let i = this.spellFx.length - 1; i >= 0; i--) {
+      const fx = this.spellFx[i];
+      fx.ttl -= dt;
+      const t = Math.min(1, Math.max(0, 1 - fx.ttl / fx.maxTtl));
+      fx.update(t, dt);
+      if (fx.ttl <= 0) {
+        this.scene.remove(fx.obj);
+        this.spellFx.splice(i, 1);
+      }
+    }
     for (let i = this.tracers.length - 1; i >= 0; i--) {
       this.tracers[i].ttl -= dt;
       if (this.tracers[i].ttl <= 0) {

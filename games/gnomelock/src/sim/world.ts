@@ -169,7 +169,8 @@ export type SimEvent =
   | { type: 'towerDown'; team: Team; tier: number; killerSlot: number; x: number; y: number; z: number }
   | { type: 'relicSpawn' }
   | { type: 'relicClaimed'; team: Team; killerSlot: number }
-  | { type: 'ability'; slot: number; team: Team; ability: AbilitySlot; x: number; y: number; z: number; tx: number; ty: number; tz: number }
+  | { type: 'ability'; slot: number; heroId: HeroId; team: Team; ability: AbilitySlot; x: number; y: number; z: number; tx: number; ty: number; tz: number }
+  | { type: 'bombExplode'; x: number; y: number; z: number; radius: number }
   | { type: 'flowTier3'; slot: number }
   | { type: 'dashJump'; slot: number }
   | { type: 'moveTech'; slot: number; kind: 'jump' | 'doubleJump' | 'wallJump' | 'dash' | 'slide' };
@@ -1255,6 +1256,7 @@ function castAbility(state: MatchState, h: HeroEntity, slot: AbilitySlot): void 
   state.events.push({
     type: 'ability',
     slot: h.slot,
+    heroId: h.heroId,
     team: h.team,
     ability: slot,
     x: ox,
@@ -1602,6 +1604,7 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
 
     if (zn.ttl <= 0) {
       if (zn.explodeDmg && zn.explodeDmg > 0) {
+        state.events.push({ type: 'bombExplode', x: zn.x, y: zn.y, z: zn.z, radius: zn.radius });
         for (const e of state.heroes) {
           if (e.team !== zn.team && e.alive && Math.hypot(e.move.pos.x - zn.x, e.move.pos.z - zn.z) <= zn.radius) {
             applyDamageToHero(state, e, zn.explodeDmg, zn.ownerSlot);

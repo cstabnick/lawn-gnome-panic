@@ -8,6 +8,7 @@ import { HERO_LIST, HEROES } from './sim/heroes';
 import { ITEMS, type ItemCategory } from './sim/items';
 import { isNearShop, MAP_BOUNDS, RELIC_ALTAR, SHOPS } from './sim/map';
 import { teamTotalAcorns, type MatchState } from './sim/world';
+import { spellIconSvg } from './spellIcons';
 
 interface FloatingText {
   el: HTMLDivElement;
@@ -50,7 +51,8 @@ export class GnomelockUI {
   private flowBadgeEl!: HTMLDivElement;
   private hitmarkerEl!: HTMLDivElement;
   private speedVignetteEl!: HTMLDivElement;
-  private abilityEls = new Map<AbilitySlot, { el: HTMLDivElement; cd: HTMLDivElement }>();
+  private abilityEls = new Map<AbilitySlot, { el: HTMLDivElement; icon: HTMLDivElement; cd: HTMLDivElement; dim: HTMLDivElement }>();
+  private lastHudHeroId: HeroId | null = null;
   private ownedItemsEl!: HTMLDivElement;
   private shopHintEl!: HTMLDivElement;
   private minimapCanvas!: HTMLCanvasElement;
@@ -122,10 +124,17 @@ export class GnomelockUI {
         background:rgba(255,255,255,0.07);border:2px solid rgba(255,255,255,0.16);
         transition:transform 0.12s,border-color 0.12s;
       `;
+      const miniIcons = (['Q', 'E', 'F', 'X'] as const)
+        .map((s) => {
+          const ic = spellIconSvg(h.id, s);
+          return `<span title="${h.abilities[s].name}" style="display:inline-flex;width:16px;height:16px;color:${ic.color}">${ic.svg}</span>`;
+        })
+        .join('');
       card.innerHTML = `
         <div style="font-weight:800;font-size:16px;color:#ffd54f">${h.name}</div>
-        <div style="font-size:11px;color:#93c5fd;margin-bottom:6px">${h.title} • ${h.role}</div>
-        <div style="font-size:11px;color:#cbd5e1;line-height:1.35">${h.weapon.name}<br/>HP ${h.baseHp} • ${h.abilities.X.name}</div>
+        <div style="font-size:11px;color:#93c5fd;margin-bottom:4px">${h.title} • ${h.role}</div>
+        <div style="font-size:11px;color:#cbd5e1;line-height:1.3;margin-bottom:6px">${h.weapon.name} • HP ${h.baseHp}</div>
+        <div style="display:flex;gap:5px;align-items:center">${miniIcons}</div>
       `;
       card.onclick = () => {
         this.selectedHero = h.id;
@@ -396,7 +405,7 @@ export class GnomelockUI {
     bl.append(hpBg, metaRow, this.ownedItemsEl, this.shopHintEl);
     el.appendChild(bl);
 
-    // Bottom-center abilities
+    // Bottom-center abilities with SVG spell icons + cooldown overlay
     const abBar = document.createElement('div');
     abBar.style.cssText = `
       position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -405,17 +414,22 @@ export class GnomelockUI {
     for (const slot of ['Q', 'E', 'F', 'X'] as const) {
       const box = document.createElement('div');
       box.style.cssText = `
-        width:48px;height:48px;border-radius:8px;position:relative;overflow:hidden;
-        background:rgba(12,16,26,0.82);border:1px solid rgba(255,255,255,0.22);
-        display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:800;
+        width:52px;height:52px;border-radius:10px;position:relative;overflow:hidden;
+        background:rgba(12,16,26,0.88);border:1.5px solid rgba(255,255,255,0.24);
+        display:flex;align-items:center;justify-content:center;font-weight:800;
       `;
-      const lbl = document.createElement('div');
-      lbl.textContent = slot;
+      const icon = document.createElement('div');
+      icon.style.cssText = 'width:28px;height:28px;display:flex;align-items:center;justify-content:center;';
+      const dim = document.createElement('div');
+      dim.style.cssText = 'position:absolute;inset:0;background:rgba(8,10,18,0.68);display:none;';
+      const keyBadge = document.createElement('div');
+      keyBadge.textContent = slot;
+      keyBadge.style.cssText = 'position:absolute;top:2px;left:4px;font-size:9px;color:#cbd5e1;font-weight:800;';
       const cd = document.createElement('div');
-      cd.style.cssText = 'font-size:10px;color:#ffd54f;';
-      box.append(lbl, cd);
+      cd.style.cssText = 'position:absolute;bottom:2px;right:4px;font-size:10px;color:#ffd54f;text-shadow:0 1px 2px #000;';
+      box.append(icon, dim, keyBadge, cd);
       abBar.appendChild(box);
-      this.abilityEls.set(slot, { el: box, cd });
+      this.abilityEls.set(slot, { el: box, icon, cd, dim });
     }
     el.appendChild(abBar);
 
@@ -685,13 +699,26 @@ export class GnomelockUI {
     const spd = Math.hypot(local.move.vel.x, local.move.vel.z);
     this.speedVignetteEl.style.opacity = spd > 13.0 ? '1' : '0';
 
-    // Abilities
+    // Abilities (refresh SVG icons when local hero changes)
+    if (this.lastHudHeroId !== local.heroId) {
+      this.lastHudHeroId = local.heroId;
+      for (const slot of ['Q', 'E', 'F', 'X'] as const) {
+        const ref = this.abilityEls.get(slot);
+        if (!ref) continue;
+        const ic = spellIconSvg(local.heroId, slot);
+        ref.icon.innerHTML = ic.svg;
+        ref.icon.style.color = ic.color;
+        ref.el.title = HEROES[local.heroId].abilities[slot].name;
+      }
+    }
     for (const slot of ['Q', 'E', 'F', 'X'] as const) {
       const ref = this.abilityEls.get(slot);
       if (!ref) continue;
       const cd = local.cooldowns[slot];
-      ref.cd.textContent = cd > 0.1 ? `${cd.toFixed(1)}s` : 'RDY';
-      ref.el.style.opacity = cd > 0.1 ? '0.6' : '1';
+      const onCd = cd > 0.1;
+      ref.cd.textContent = onCd ? `${cd.toFixed(1)}` : '';
+      ref.dim.style.display = onCd ? 'block' : 'none';
+      ref.el.style.borderColor = onCd ? 'rgba(255,255,255,0.12)' : spellIconSvg(local.heroId, slot).color;
     }
 
     // Shop hint

@@ -1,12 +1,13 @@
 // Mobile touch controls (>= 44px targets, safe-area insets, portrait & landscape).
-import type { AbilitySlot } from './sim/config';
+import type { AbilitySlot, HeroId } from './sim/config';
 import type { MobileInputState } from './input';
+import { spellIconSvg } from './spellIcons';
 
 export function mountMobileControls(
   parent: HTMLElement,
   mobile: MobileInputState,
   onShop: () => void,
-): { setVisible: (v: boolean) => void; el: HTMLElement } {
+): { setVisible: (v: boolean) => void; setHeroIcons: (heroId: HeroId) => void; el: HTMLElement } {
   const root = document.createElement('div');
   root.id = 'mobile-controls';
   root.style.cssText = `
@@ -159,6 +160,14 @@ export function mountMobileControls(
     el: root,
     setVisible(v: boolean) {
       root.style.display = v ? 'block' : 'none';
+    },
+    setHeroIcons(heroId: HeroId) {
+      abBtns.forEach((btn, idx) => {
+        const slot = abSlots[idx];
+        const ic = spellIconSvg(heroId, slot);
+        btn.style.borderColor = ic.color;
+        btn.innerHTML = `<span style="display:inline-flex;width:22px;height:22px;color:${ic.color};pointer-events:none">${ic.svg}</span>`;
+      });
     },
   };
 }

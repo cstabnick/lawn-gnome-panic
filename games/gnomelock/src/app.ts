@@ -110,6 +110,7 @@ export function bootGnomelock(): void {
     input.setYaw(state.heroes[localSlot].yaw);
     input.setModalOpen(false);
     ui.showLobby(false);
+    mobile.setHeroIcons(hero);
     beginBattleMusic();
   }
 
@@ -160,6 +161,7 @@ export function bootGnomelock(): void {
         }
         input.setModalOpen(false);
         ui.showLobby(false);
+        mobile.setHeroIcons(localHero);
         beginBattleMusic();
       },
       onRosterChanged: (players) => {

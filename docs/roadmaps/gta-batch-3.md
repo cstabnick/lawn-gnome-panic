@@ -13,8 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Wave 1 (E01, E02, E04) is running or to be started. Check the tracking table, merge any finished lead branch, then start
-the next wave.
+Planning done: all 22 briefs written and committed; plan PR open. Wave 1 (E01, E02, E04) is next or running: check the tracking table, merge finished lead branches, then start the next wave.
 
 ## Tracking
 
@@ -97,12 +96,12 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 | Epic | Source items |
 |---|---|
 | E01 | L92, plus site slots for L12, L17, L35, L37, L43, L51, L52, L56, L58, L59, L61, L74, L81, L82, L85, L40, L50 |
-| E02 | L01, L13, L14, L18, L53, L55, L57, L76, L77, L78, L91 |
+| E02 | L01, L13, L14, L18, L53, L55, L57, L76, L77, L78, L91, L93 |
 | E03 | L03, L07, L08, L09, L10, L16, L23, L24, L41, L49, L79, L80, L88 |
 | E04 | L04, L83, L84 (writing: docs, direction, characters, 70-quest outline), L86 (first pass), L58 (who lives where), L67 + L68 (design) |
 | E05 | L36, L75 |
 | E06 | L02, L05, L06, L11, L19, L20, L71 |
-| E07 | L26, L27, L34, L48, L65, L70, L87, L89 |
+| E07 | L26, L27, L34, L48, L65, L70, L87, L89, L94 |
 | E08 | L15, L25, L29, L32, L33, L90 |
 | E09 | L31, L46, L47, L63, L64, L73 |
 | E10 | L21, L22, L58 (build homes and workplaces) |
@@ -213,6 +212,8 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 - L90 add repair option to pay and glaze
 - L91 make civilian cars ocassionaly have a mod or two.
 - L92 take out 3 of the blocks in the main square and make a contiguous park. then make one mega 2x1 with a tunnel underneath somewhere else.
+- L93 (added later) also, fix the npc driving. its pretty shite. they turn like its arcade mode still but we have been liking the casual mode a lot. but they should be able ot drive on all ideally.
+- L94 (added later) i am unable to click the optisno on the tab menu, add a phone/tab menu redeisgn where we introduce a gnomlet that is a tablet with apps that give the different optiosn serviced by the phone and tab menu today. this will be more real gta like and is a good way of solving the problem. also include one fun app that is just gnomey bird.
 
 ## Standing decisions (leads do not ask about these)
 
@@ -230,6 +231,18 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
   against the package API instead, and notes it.
 - Every new place and person goes through lore (`npm run lore -- find`), prefabs (`@lawn/prefabs`), achievements
   (`packages/achievements`), mobile controls and the online pattern (`docs/roadmaps/gta-online-sync.md`).
+- Cross-epic findings from the briefs (binding):
+  - E01 raises the online position bound (`POS_BOUND` in `net.ts`, 950 today) to cover the new land, and reserves the
+    off-map interior coordinate block (x >= 5000) that E05 uses; E05 exempts interiors from `clampToWorld`.
+  - E01 also reserves sites for the car, boat and aircraft dealerships (E08) and treats the L92 tunnel roof as a
+    walkable rooftop for E05. E01 adds `AIRFIELDS[]`; E13 converts consumers that need the second runway.
+  - E05's `defineInterior` and the quest `interior:` gate are fixed contracts for E10, E11, E15, E17, E18; E05 states
+    whether a large underground cell (mole tunnels) is supported.
+  - E08 owns the property-purchase + loan contract (`registerProperty` / `buyProperty`) used by E10 and E16.
+  - Save keys (`saveIO.ts`, `cloudSave.ts` MERGES, `saveIO.test.ts`) are additive; merge order follows the waves.
+  - Gnomlet (L94, E07) becomes the home for app-like menus; epics before it add phone apps through the existing phone
+    registry, E07 migrates them. Shared packages: `@lawn/golf` (E15), `@lawn/jam` + `@lawn/trickboard` (E19); cooking
+    shares pure logic only (Cooking Gnoma is Phaser, GTA is three.js).
 - Options added by this batch (weather, quest-marker height, bird sounds, bird pop-up sound, first-person) live in the
   existing Options panel; E07 owns the panel layout, the other epics add their own rows through whatever registry the
   panel has (or E07 adds one).

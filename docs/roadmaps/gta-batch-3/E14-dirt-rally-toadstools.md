@@ -1,0 +1,62 @@
+# E14 Dirt, rally and toadstools
+Wave: 5 · Depends on: E01 (site registry: dirt track, rally route, toadstool forest), E02 (airtime, landing, collision, NPC chassis) · Kind: Content
+Source items: L17, L56, L81 (verbatim below)
+
+- L17 add a toadstool forest somewhere
+- L56 add a dirt race track that is rather bumpy with big banked turns. add some new dirt-bike liek vehicle. may require map extension.
+- L81 add a rally race track that goes up and down mountain through toadstool stuff and also has some water crossing parts (but also special water that cannot fully wtaerlog car).
+
+## Goal
+A toadstool forest on the north mountain, a bumpy banked dirt circuit, a new dirt-bike vehicle, and a point-to-point rally route that climbs and descends the mountain through the toadstools with shallow ford crossings that slow but never flood a car. All three are playable (free roam, a race quest or two), mobile-ready, and reuse the Speedway machinery.
+
+## Scope (what is in, what is explicitly out)
+In: the three places and their dressing, the dirt-bike vehicle (full registration), a `TrackDef`-parametrised race track module so the Speedway and the dirt track share code, the rally route as a timed checkpoint run with AI rivals, a "ford" water type, achievements, minimal quests (one dirt-track race series entry, one rally). Out: land and site footprints (E01 reserves them; if the registry is late, this epic uses the placeholder coordinates below), story placement (E20-E22 may call these quests), weather (E06), economy/shop for the bike (E08; here it is found/earned, with a spawn at the track), pit/crowd redesign.
+
+## Code pointers (confirmed)
+Paths under `games/gnome-theft-auto/src/` unless noted.
+- **Speedway data module** `raceTrack/track.ts`: pure data `TRACK` (`control` points with `lift` and `bank`, `jumps`, `width: 14`, `shoulder`, `fade`, `barrierOffset`, `reserve`, `gates: 12`), `trackSamples()`, `sampleAt(s)`, `trackFrame`, `locate`, `onTrackRoad`, `onTrack`, `gates()`, `GateTracker`, `applyTrackRelief(g, N, H, S)` (raises terrain; called from `terrain.ts` ~227 under `opts.landforms`), `gridSlot`, `PIT_LANE`, `BARRIER_GAPS`. Everything is a module singleton (`TRACK` const). Importers to parametrise: `terrain.ts`, `surfaces.ts` (~104 `onTrackRoad` => asphalt feel), `hud.ts`, `glazeBay.ts`, `quests/objectivesRace.ts`, `questSim/solvers/race.ts`, `raceTrack/{index,autopilot,crowd,lapTimer,raceAi,trackDressing,trackMesh}.ts`, `cutscene/scenes/speedway.ts`.
+- **Track runtime** `raceTrack/index.ts` `createRaceTrack(scene, world, ui, deps)` (hot lap `HOT_LAP_SECONDS`, grid, lap timer); meshes `trackMesh.ts` `buildTrackSurface`, dressing `trackDressing.ts` `buildTrackDressing(scene, boxes)`; AI `raceAi.ts` (`spawnRival`, `driveRival`, `Rival`, `RivalCtx`); timing `lapTimer.ts`; crowd `crowd.ts`; autopilot for demos `autopilot.ts` (`?autopilot`).
+- **Races as quests** `quests/races.ts` (`RACE_QUESTS`, `RACE_IDS`, `RACE_INTROS`, `RACE_PODIUMS`; giver `speedway`), objective `kind: 'race'` in `quests/types.ts` (~167) run by `quests/objectivesRace.ts` `raceRun`; point-to-point alternative: objective `kind: 'checkpoints'` (`quests/types.ts` ~176, `CheckpointDef`, `seconds`, `vehicle`, `requireVehicle`, `maxDamage`) run by `quests/objectivesCity.ts`. Sim: `questSim/solvers/race.ts`, `checkpoints.ts`.
+- **Surfaces** `surfaces.ts`: `SurfaceKind` already has `'dirt'` (speedMult 0.97, lateralGrip 0.82, bumpAmp 0.02), `'mud'`, `'gravel'`; painted terrain via `terrainPaint.ts` `paintedSurfaceAt`. Bumpy comes from `bumpAmp` plus the terrain relief; banked corners from `bank` in the control points and `roadLiftAt`.
+- **Water and waterlog**: `waterlog.ts` `stepWaterlog` (soak rates `WATERLOG.soakShallow 0.18/s` to `soakDeep 0.7/s`, `splashMult`, flood at 1 stalls), depth thresholds `WATERLOG.minDepth 0.12`, `WATER.stallDepth 0.9` (`config.ts` ~814); sinking `swim.ts`; water bodies/courses `water.ts` (`COURSES`, `across()`), `WATER.courses` (config ~786). A ford = a shallow river section: add a per-course (or per-region marker) `ford: true` flag in `waterAt()`'s result so `stepWaterlog` caps soak at `WATERLOG.fordCap` (e.g. 0.3, below `sputterAt` 0.35 so the engine never sputters or stalls) and water-surface visuals stay (splash, `fx.waterJet`, `wake.ts`). Cap depth on the ford bed (`bedAt`) to under 0.5 m so `swim.ts` never sinks the car; add a stepping-stone or gravel bed surface kind.
+- **Mountain**: `data/landscape.json` macro landform `mountain/fells` at (300, -900), r 260, h 70 (`landforms/macro.ts` ~138 builds it); this sits on the current north edge (`worldHalf` 900), which is why L56 "may require map extension": E01 extends the world; the final footprint comes from E01's registry. Placeholder if absent: dirt track east of the mountain foot, rally route from the Frostbite Fells foot up the south face and down the west shoulder.
+- **Toadstools**: prefabs exist (`giant-spotted-toadstool` in `packages/prefabs/src/catalog/aether-board.ts`, `mushroom-lamp` scattered in `biomes.ts` ~1050 `scatter(F, 'mushroom-lamp', 'forest', ...)`, the Unmowed's ring clearing toadstools in `biomes.ts` ~602). Lore: `npm run lore -- find toadstool` finds only apocrypha (Velvet Toadstools band) and the Unmowed entry: write a setting row in `docs/lore/settings.md` and a ruling in `docs/lore/rulings.md` (what grows them, who keeps the forest; coordinate with E04/E22) and run `npm run lore`.
+- **New vehicle registration checklist** (all places `push-bike` appears, confirmed by grep): `types.ts` `VehicleKind`; `config.ts` `VEHICLES` (~262 as the model: maxSpeed, accel, turnRate, radius, seat, mass); `handling.ts` per-kind profile (~66); `driveGrips.ts` (~88 grips for the handlebar pose, uses `driveGrips.test.ts`); `sound/engines.ts` (~95), `sound/watchVehicles.ts`; `audio.ts`; `glazeStore.ts` / `net.ts` kind lists (~16/~21: online sync), `fleet.ts` (variants), `errands.ts`, `jobs/gen.ts`, `brands.ts`, `world.ts`/`biomes.ts` (parked spawns), `vibeNpcs.ts`. Prefab: add `dirt-mower-bike` (knobby tyres, long suspension, number plate) to `packages/prefabs/src/catalog/lawn-prix.ts` (home of `push-mower-bike`) or a new `gta-dirt.ts`; follow `docs/roadmaps/prefab-library/_common.md`; `npm test -w packages/prefabs`. Pay 'n' Glaze mounts: `glazeMounts.ts` owns ride-on and push-bike variants, so add the bike there or exclude it from glaze with a test update (`glazeMounts.test.ts`, `vehicles.glaze.test.ts`).
+
+## Plan (shape, not issues)
+1. **Parametrise the track** (first, because the rest depends on it): `TrackDef` type (what `TRACK` holds), `createTrack(def)` returning samples/gates/locate/onRoad, a registry `TRACKS` keyed by id; `TRACK` stays as the Speedway def so existing imports and tests keep compiling; thread a `track` argument through `createRaceTrack`, `raceRun` (objective gets optional `trackId`, default speedway), `raceAi`, `lapTimer`, `trackMesh`, `trackDressing`; `terrain.ts` applies relief for every registered track; `surfaces.ts` asks `trackSurfaceAt(x, z)` (asphalt for the Speedway, dirt for the dirt track). Keep `track.test.ts`, `trackMesh.test.ts` and `raceAi.test.ts` green and run them per def.
+2. **Dirt circuit**: `dirtTrack.ts` def (closed, about 1.2-1.6 km, width 11, many `bank` 1.5-3.5 m corners and `lift` rolls; add a high-frequency "whoops" bump function to `roadLiftAt` for the dirt def), painted `dirt`/`mud` edges, hay-bale and tyre barriers (`trackDressing`), grid, a small pit shack; race quest(s) in a new `quests/dirtRaces.ts` (2 races: bikes, then anything-goes) with rivals using E02's NPC chassis.
+3. **Dirt bike**: vehicle kind + prefab + handling profile (light, high turn rate, long travel, wheelie on boost optional, uses E02's airtime constants); rider pose via `driveGrips.ts` handlebar grips, mount style `'hop'`.
+4. **Toadstool forest**: scatter/instancing of 3-4 toadstool prefab variants (cap sizes 2-12 m) with a canopy glow at night (use `flatLayer` for ground rings, `@lawn/depth`, `docs/rendering.md`), colliders as E02 round boxes, spore particles under the existing ambient particle budget (E06 reduces them), a small clearing landmark. Instance via the existing `scatter` helper in `biomes.ts`/`flora/` rather than thousands of meshes.
+5. **Rally route**: point-to-point polyline up and down the mountain (3-4 km, 2 ford crossings, 1 jump, hairpins on banked dirt), `rallyRoute.ts` data + gate list, objective `checkpoints` with a total time and 2-3 AI rivals (reuse `raceAi` with a non-looping def); start/finish pavilion and a sign at the foot. Reward rank by time; no fail state except abandon.
+6. **Ford water + waterlog**: as above; plus a sim solver for the rally in `questSim` and a `waterlog.test.ts` case: a car crossing a ford never exceeds `fordCap` or stalls, while crossing the loch edge still floods.
+7. **Quests and achievements**: dirt-track series (2 quests), the rally (1 quest, optional bronze/silver/gold times as achievements), toadstool-forest discovery (`probe`).
+
+## Contracts this epic provides for later epics
+- `TrackDef`/`TRACKS` registry and the point-to-point route type: E11/E12/E18 can add races (beach run, snow slalom) as defs.
+- `ford` water flag and `WATERLOG.fordCap`.
+- The `dirt-mower-bike` vehicle and toadstool prefabs; the toadstool forest as a landmark for E21 (act III visits).
+- Race quest ids for the story epics to reference.
+
+## Contracts this epic consumes from earlier epics
+- E01: site registry entries for `dirt-track`, `rally-route`, `toadstool-forest` (footprints, the extended north map, mountain reshaping, new level documents under `data/levels/`); how a site adds relief (like `applyTrackRelief`) and markers.
+- E02: collision (round boxes for stems, unstick), airtime/landing constants so jumps are tuned once, `createNpcChassis` for rivals, first-person (no work needed).
+- E03: quest-sim stall watchdog and `ensureRideNear` for race starts.
+
+## Online / mobile / achievements / prefabs / lore notes
+- Online: add the new kind to the `net.ts` kind list so other players see the bike; race results are local (as for the Speedway); check `vehicleSync.test.ts`. Rivals are local NPCs.
+- Mobile: bike controls are the standard driving touch pad; checkpoint HUD and countdown must fit 390x844 with safe areas; the route-progress strip is 44 px high max.
+- Achievements: `gta-dirt-rookie`, `gta-dirt-champion`, `gta-rally-finish`, `gta-rally-gold`, `gta-toadstool-trail`, each with a cosmetic `reward` (mushroom hat for `head`, spore cloak for `back`, reusing `giant-spotted-toadstool` art), added to `packages/achievements/src/catalog.ts`; `npm test -w packages/achievements`.
+- Prefabs: dirt bike, 3-4 toadstool variants, hay bale/tyre barrier (check the catalog first: `npm run dev -w games/prefab-gallery`), ford sign, start pavilion. Lore: settings row, ruling, character names for the track/rally marshal (E04 supplies cast).
+
+## Risks and open questions (with the decision taken)
+- Singleton refactor risk (about 15 importers): do it behind the unchanged `TRACK` export first, in its own commit with existing tests green, before adding the dirt def.
+- Rally on a steep mountain: terrain slope and the `isBlocked` camera rule (E02) can fight; cap route grade at about 0.25 and carve a road ribbon into the relief (like `applyTrackRelief`) so cars never climb raw slope; verify with `terrainDrive.test.ts` style climb test.
+- Waterlog "cannot fully waterlog": decision is a hard cap below the sputter threshold in fords only; deep water elsewhere is unchanged.
+- Instancing cost of the forest: use instanced meshes and a cull radius (`cull.ts`); budget checked with `perfOverlay.ts`.
+- If E01 delivers no map extension in time, place the dirt track beside the mountain foot inside the current 900 limit and note it.
+
+## Done when
+- `npm run build -w games/gnome-theft-auto`, `npm test -w games/gnome-theft-auto`, `npm run quest-sim:suites -w games/gnome-theft-auto` (race and checkpoint solvers finish the new quests), `npm test -w packages/prefabs`, `npm test -w packages/achievements`, `npm run lore` pass.
+- With the dev server: `bash tools/smoke.sh <url> <markers>` and `npm run zfight -- <url>` clean (track surface, hay bales, toadstool rings).
+- Demo (`npm run demo -- <demo.json> --gif`, upload via the media MCP): a dirt-bike lap with a banked turn, a rally run through the toadstools with a ford crossing, at 390x844 as well.

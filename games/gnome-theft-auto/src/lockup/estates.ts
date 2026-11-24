@@ -79,7 +79,7 @@ export function buildEstates(scene: THREE.Scene): EstateBuildings {
   const A = H.apron;
   const floor = new THREE.PlaneGeometry(A.maxX - A.minX, A.maxZ - A.minZ, 8, 12)
     .rotateX(-Math.PI / 2)
-    .translate((A.minX + A.maxX) / 2, 0.1, (A.minZ + A.maxZ) / 2)
+    .translate((A.minX + A.maxX) / 2, 0.02, (A.minZ + A.maxZ) / 2) // flush with the airfield apron (biomes.ts, y 0.02)
     .rotateY(H.yaw)
     .translate(H.x, 0, H.z);
   const floorMesh = new THREE.Mesh(

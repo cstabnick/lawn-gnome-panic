@@ -96,9 +96,16 @@ export interface EventDirector {
   clear(): void;
   /** Random spawns on/off (forced triggers still work). */
   setEnabled(on: boolean): void;
+  /** Random spawns allowed by the online side (the lead). Separate from setEnabled; forced triggers still work. */
+  setSpawnGate(on: boolean): void;
+  /** Running and lingering events, for the online sync (x/z = the anchor). */
+  netList(): { key: number; defId: string; x: number; z: number; status: EventStatus; kit: RunKit }[];
+  /** Called when an event's kit wants to pay the player; true = someone else paid it (the reward is not given here). */
+  setRewardHook(fn: ((key: number, acorns: number, reason: string) => boolean) | null): void;
 }
 
 interface Running {
+  key: number;
   def: EventDef;
   kit: RunKit;
   script: EventScript;
@@ -114,6 +121,9 @@ export function createEventDirector(deps: DirectorDeps, defs: readonly EventDef[
   let clock = 0;
   let nextSpawn: number = DIRECTOR.firstDelay;
   let enabled = true;
+  let spawnGate = true;
+  let keySeq = 0;
+  let rewardHook: ((key: number, acorns: number, reason: string) => boolean) | null = null;
   let lastPlayer: Player | null = null;
 
   function ctxFor(p: Player, frame: DirectorFrame): SpawnContext {
@@ -129,7 +139,8 @@ export function createEventDirector(deps: DirectorDeps, defs: readonly EventDef[
     // A scene that is not about the road is built on the verge, well clear of the lanes (the kit also keeps each gnome
     // and prop off the road); a road scene (chase, stop, crash) stays on its road node.
     const anchor = def.roadScene ? at : { ...offRoad(deps.world.roads, at.x, at.z, 4), yaw: at.yaw };
-    const kit = createKit(deps, player, anchor, rand, !!def.roadScene);
+    const key = ++keySeq;
+    const kit = createKit({ ...deps, onReward: (n, r) => rewardHook?.(key, n, r) ?? false }, player, anchor, rand, !!def.roadScene);
     let script: EventScript;
     try {
       script = def.start(kit, anchor);
@@ -138,7 +149,7 @@ export function createEventDirector(deps: DirectorDeps, defs: readonly EventDef[
       kit.dispose();
       return;
     }
-    running.push({ def, kit, script, anchor, status: 'running', lingerT: 0, calledOut: false });
+    running.push({ key, def, kit, script, anchor, status: 'running', lingerT: 0, calledOut: false });
     readyAt.set(def.id, clock + def.cooldown);
   }
 
@@ -183,7 +194,7 @@ export function createEventDirector(deps: DirectorDeps, defs: readonly EventDef[
           }
         }
       }
-      if (!enabled || frame.cutscene || clock < nextSpawn) return;
+      if (!enabled || !spawnGate || frame.cutscene || clock < nextSpawn) return;
       nextSpawn = clock + DIRECTOR.gapMin + rand() * (DIRECTOR.gapMax - DIRECTOR.gapMin);
       if (liveCount() >= DIRECTOR.maxActive) return;
       const ctx = ctxFor(player, frame);
@@ -242,6 +253,19 @@ export function createEventDirector(deps: DirectorDeps, defs: readonly EventDef[
 
     setEnabled(on) {
       enabled = on;
+    },
+
+    setSpawnGate(on) {
+      spawnGate = on;
+    },
+
+    netList() {
+      // Every entry here is running or lingering (a finished one leaves the list when its leftovers are removed).
+      return running.map((r) => ({ key: r.key, defId: r.def.id, x: r.anchor.x, z: r.anchor.z, status: r.status, kit: r.kit }));
+    },
+
+    setRewardHook(fn) {
+      rewardHook = fn;
     },
   };
 }

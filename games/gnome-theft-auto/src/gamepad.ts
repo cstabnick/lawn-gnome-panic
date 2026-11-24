@@ -1,14 +1,18 @@
 // Gamepad (standard layout: Xbox, PlayStation, Switch Pro, Steam Deck, the 2026 Steam Controller via WebHID, most phones' Bluetooth pads) folded into the same
 // InputState the keyboard and touch use. Polled once per read(); no events needed except the connect toast.
 //
-//   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, LT aim, X reload, Y enter / steal, LB tap next gun, hold weapon wheel
-//   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, RB squirt, Y exit, right stick camera
-//   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, Y exit, right stick camera
-//   Anywhere              Start opens Options; in it D-pad up / down, A pick, B or Start close; D-pad left calls the Turfton Taxi; Back / View opens the phone, D-pad down emote menu
+//   On foot / parachute   left stick move, right stick look, A jump, RT or RB fire, LT aim, X reload, Y enter / steal, LB tap next gun, hold weapon wheel,
+//                         D-pad up context (dock), D-pad down emotes, D-pad left taxi
+//   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, B banger, LB boost, RB squirt, L3 horn, Y exit,
+//                         D-pad right radio, D-pad up context, right stick camera
+//   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, B banger, Y exit, D-pad right radio, D-pad up context
+//   Anywhere              View / Back opens the More menu (gta:more), Start opens Options; in it D-pad up / down, A pick, B or Start close
 import { firstPad } from '@lawn/gamepad';
 import type { CameraMode } from './types';
 
 export interface PadState {
+  /** The pad's id (navigator.Gamepad.id), so the UI can show the right glyph family. */
+  id: string;
   moveX: number;
   moveY: number;
   lift: number;
@@ -21,13 +25,19 @@ export interface PadState {
   radio: boolean;
   /** Held: LT aims down sights on foot (and while parachuting). */
   aim: boolean;
+  /** Held: LB boosts while driving. */
+  boost: boolean;
+  /** Edge: B sounds the banger (driving and flying). */
+  banger: boolean;
+  /** Edge: L3 honks the horn (driving). */
+  horn: boolean;
   camYaw: number;
   camPitch: number;
   /** True when the pad did anything this frame (a stick, trigger or button), so the game can tell it is the active device. */
   active: boolean;
 }
 
-const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+const BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
 const STICK_DEADZONE = 0.18;
 const TRIGGER_DEADZONE = 0.06;
 /** Right-stick look speed at full deflection, radians per second. */
@@ -66,19 +76,22 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
       const val = (i: number): number => p.buttons[i]?.value ?? 0;
       const startEdge = edge(BTN.START);
       if (blocked) return null;
-      if (edge(BTN.LEFT)) window.dispatchEvent(new Event('gta:taxi'));
-      if (edge(BTN.BACK)) window.dispatchEvent(new Event('gta:phone'));
-      if (edge(BTN.DOWN)) window.dispatchEvent(new Event('gta:emote'));
-      // D-pad up: the Wingwright's Slipway (craft/craftShop.ts; it opens only in a stopped boat or aircraft).
-      if (edge(BTN.UP)) window.dispatchEvent(new Event('gta:craft-shop'));
+      // Anywhere: View opens the More menu (ui/moreMenu.ts). D-pad up is the context action (the top dock button).
+      if (edge(BTN.BACK)) window.dispatchEvent(new Event('gta:more'));
+      if (edge(BTN.UP)) window.dispatchEvent(new Event('gta:context'));
+      // On foot only: D-pad down opens the emote menu, D-pad left calls the taxi.
+      if (mode === 'foot' && edge(BTN.DOWN)) window.dispatchEvent(new Event('gta:emote-menu'));
+      if (mode === 'foot' && edge(BTN.LEFT)) window.dispatchEvent(new Event('gta:taxi'));
 
       const [lx, ly] = stick(p.axes[0] ?? 0, p.axes[1] ?? 0);
       const [rx, ry] = stick(p.axes[2] ?? 0, p.axes[3] ?? 0);
       const rt = trigger(val(BTN.RT));
       const lt = trigger(val(BTN.LT));
       const out: PadState = {
+        id: p.id,
         moveX: lx, moveY: -ly, lift: 0, jump: false, fire: false,
         enterExit: edge(BTN.Y), switchGun: false, reload: edge(BTN.X), radio: false, aim: false,
+        boost: false, banger: false, horn: false,
         camYaw: -rx * LOOK_YAW * dt, camPitch: ry * LOOK_PITCH * dt, active: false,
       };
 
@@ -89,10 +102,14 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
         out.lift = down[BTN.A] ? 1 : 0; // handbrake
         out.fire = !!down[BTN.RB];
         out.radio = edge(BTN.RIGHT);
+        out.boost = !!down[BTN.LB];
+        out.banger = edge(BTN.B);
+        out.horn = edge(BTN.L3);
       } else if (mode === 'fly') {
         out.lift = rt - lt;
         out.fire = !!down[BTN.RB];
         out.radio = edge(BTN.RIGHT);
+        out.banger = edge(BTN.B);
       } else {
         out.jump = edge(BTN.A);
         out.fire = rt > 0.3 || !!down[BTN.RB];
@@ -102,7 +119,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
 
       if (startEdge) window.dispatchEvent(new Event('gta:options'));
       out.active = out.moveX !== 0 || out.moveY !== 0 || out.lift !== 0 || out.jump || out.fire || out.enterExit || out.reload
-        || out.switchGun || out.radio || out.aim || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
+        || out.switchGun || out.radio || out.aim || out.boost || out.banger || out.horn || out.camYaw !== 0 || out.camPitch !== 0 || startEdge;
       return out;
     },
   };

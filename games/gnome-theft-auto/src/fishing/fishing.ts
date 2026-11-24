@@ -95,6 +95,8 @@ export interface Fishing {
   /** Debug trainer: every rod and plenty of bait. */
   grantAll(): void;
   stats(): { phase: FishPhase; species: number; cards: number; derby: boolean; tip: [number, number, number]; bob: [number, number] };
+  /** Online (online/actSync.ts): the rod and line as other players should see them, or null while the rod is away. */
+  wire(): { rod: string; phase: FishPhase; charge: number; bobber: { x: number; y: number; z: number } | null } | null;
 }
 
 const LANDED_LINES = ['Measured, carded and let go.', 'A quick measure, a card, and back it goes.', 'Carded and slipped back in.'];
@@ -165,7 +167,7 @@ export function createFishing(deps: FishingDeps): Fishing {
     },
     onBought(name) {
       deps.play('shutter');
-      deps.hud.toast(`Bought: ${name}. Press X (pad B, or the fishing button) by the water to fish.`, 4500);
+      deps.hud.toast(`Bought: ${name}. Use {fish} by the water to fish.`, 4500);
     },
     startDerby() {
       if (derby) return false;
@@ -437,6 +439,10 @@ export function createFishing(deps: FishingDeps): Fishing {
       phase: s.phase, species: store.speciesCaught(), cards: store.data().cards.length, derby: derby !== null,
       tip: [tip.x, tip.y, tip.z], bob: [s.bobX, s.bobZ],
     }),
+    wire: () => active ? {
+      rod: env.rod.id, phase: s.phase, charge: s.charge,
+      bobber: (s.phase === 'wait' || s.phase === 'bite' || s.phase === 'reel') ? { x: s.bobX, y: s.bobY, z: s.bobZ } : null,
+    } : null,
   };
 
   for (const fish of FISH_SPECIES) {

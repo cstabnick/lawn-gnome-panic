@@ -296,7 +296,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
     parts: [
       { s: 'box', d: [0.88, 0.18, 1.48], at: [0, 0.34, 0.05], c: 'iron-dark' },                  // chassis frame
       { s: 'box', d: [0.72, 0.34, 0.58], at: [0, 0.54, 0.58], c: 'tint' },                       // front hood
-      { s: 'box', d: [0.74, 0.07, 0.6], at: [0, 0.68, 0.58], c: 'trim' },                        // hood trim stripe
+      { s: 'box', d: [0.78, 0.07, 0.66], at: [0, 0.70, 0.58], c: 'trim' },                        // hood trim stripe (proud of the hood on every side, top 2.5 cm over it)
       { s: 'box', d: [0.46, 0.14, 0.42], at: [0, 0.49, 0.05], c: 'black' },                      // driver seat (top 0.56)
       { s: 'box', d: [0.46, 0.32, 0.08], at: [0, 0.72, -0.14], c: 'black' },                     // seat back
       { s: 'cyl', d: [0.025, 0.025, 0.3], rot: [22, 0, 0], at: [0, 0.76, 0.32], c: 'steel', seg: 6 }, // steering column
@@ -750,6 +750,100 @@ export const GTA_STORY: readonly PrefabDef[] = [
       { s: 'box', d: [0.052, 0.008, 0.006], rot: [0, 0, 45], at: [0, 0.042, 0.186], c: 'steel' }, // crossed blade 1
       { s: 'box', d: [0.052, 0.008, 0.006], rot: [0, 0, -45], at: [0, 0.042, 0.186], c: 'steel' }, // crossed blade 2
       { s: 'box', d: [0.016, 0.022, 0.01], at: [0, 0.042, 0.19], c: 'emerald', glow: true },      // Stopping Stone core
+    ],
+  },
+  // ---- City contract rewards (achievements in packages/achievements/src/catalog.ts) ----------------------------------
+  {
+    id: 'glow-band-hatband', name: 'Glow-Band Hatband', category: 'armor', uses: ['wear-head'],
+    tags: ['glow', 'band', 'hatband', 'neon', 'moth', 'nina', 'head', 'reward'], emoji: [],
+    about: 'Gnome Theft Auto: the Glow-Band Hatband. A purple elastic band round the head with a green neon tube across the front that lights in the dark.',
+    examine: [
+      'A purple elastic band round the head with a short green neon tube across the front, the kind Nina sells off the tray.',
+      'Saying: a glow-band lights the way to the gig, and a glow-band that does not light is a rumour about a gig.',
+      'Tip: switch it off by day. Nina says the battery is only for night shows, and the moth agrees with her.',
+      'Joke: the neon tube hums the chorus of Don\'t Mow My Baby Down whenever a moth lands on it.',
+      'Scratched into the band, in tiny letters, is the word ENCORE, and nobody has yet had the nerve to ask for one.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.165, 0.018], at: [0, 0.018, 0], rot: [90, 0, 0], c: 'purple', seg: 12 },              // elastic band (min.y = 0)
+      { s: 'box', d: [0.1, 0.02, 0.02], at: [0, 0.04, 0.158], c: 'glaze-green', glow: true },                 // neon tube
+      { s: 'box', d: [0.03, 0.03, 0.03], at: [0.158, 0.035, 0], c: 'glaze-green', glow: true },              // side lamp
+      { s: 'box', d: [0.03, 0.03, 0.03], at: [-0.158, 0.035, 0], c: 'glaze-green', glow: true },             // side lamp
+    ],
+  },
+  {
+    id: 'tattler-press-fedora', name: 'Tattler Press Fedora', category: 'armor', uses: ['wear-head'],
+    tags: ['press', 'fedora', 'tattler', 'newspaper', 'hat', 'head', 'reporter', 'reward'], emoji: [],
+    tint: 0x50565c,
+    about: 'Gnome Theft Auto: the Tattler Press Fedora. A grey felt fedora with a silver band and a white TATTLER press card tucked in the band. The crown and brim take a tint.',
+    examine: [
+      'A grey felt fedora with a silver band and a white card tucked into it that reads TATTLER in small black capitals.',
+      'Saying: the Tattler prints it first, the Tattler prints it wrong, and the Tattler prints it again on Sunday.',
+      'Tip: tilt the brim down when you photograph a penthouse. Nobody looks up at a gnome who looks like the paper.',
+      'Joke: the press card has the editor\'s photograph on it, which is a picture of a hedge. Nobody has complained yet.',
+      'The band is lined with the first headline ever printed by the Tattler, folded very small and never to be read again.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.15], at: [0, 0.12, 0], scale: [1, 0.8, 1], c: 'tint', seg: 10 },                    // crown
+      { s: 'cyl', d: [0.2, 0.2, 0.02], at: [0, 0.02, -0.05], scale: [1, 1, 1.25], c: 'tint', seg: 12 },    // brim
+      { s: 'cyl', d: [0.16, 0.16, 0.03], at: [0, 0.05, 0], c: 'silver', seg: 12 },                          // silver band
+      { s: 'box', d: [0.05, 0.035, 0.006], at: [0.09, 0.05, 0.158], c: 'white' },                           // press card
+    ],
+  },
+  {
+    id: 'local-404-strike-scarf', name: 'Local 404 Strike Scarf', category: 'armor', uses: ['wear-neck'],
+    tags: ['scarf', 'strike', 'union', 'local', 'red', 'brass', 'neck', 'reward'], emoji: [],
+    about: 'Gnome Theft Auto: the Local 404 Strike Scarf. A red knitted collar with a brass stripe and a long tail hanging down the front. Plain colours.',
+    examine: [
+      'A red knitted collar with a brass stripe running round it and a long tail that hangs down the front of the coat.',
+      'Saying: the strike is not over until the scarf is folded and put back in the locker, and the locker has been locked.',
+      'Tip: knot it loose. A tight scarf is a sign the boss has been talking, and nobody in Local 404 talks to the boss.',
+      'Joke: the tail has been mended so many times that it is now mostly the mending, which Local 404 considers a principle.',
+      'Stitched inside the collar, in brass thread, are the words FUND IS SAFE, and the thread has not been checked since the strike began.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.2, 0.03], at: [0, 0.03, -0.04], rot: [90, 0, 0], c: 'red', seg: 12 },               // collar (min.y = 0)
+      { s: 'ring', d: [0.205, 0.012], at: [0, 0.06, -0.04], rot: [90, 0, 0], c: 'brass', seg: 12 },          // brass stripe
+      { s: 'box', d: [0.07, 0.2, 0.012], at: [0.03, 0.1, 0.17], c: 'red' },                                  // hanging tail
+      { s: 'box', d: [0.07, 0.03, 0.014], at: [0.03, 0.07, 0.172], c: 'brass' },                             // tail stripe
+    ],
+  },
+  {
+    id: 'conductor-ticket-cap', name: 'Conductor Ticket Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['cap', 'conductor', 'ticket', 'punch', 'kerb', 'exchange', 'head', 'reward'], emoji: [],
+    tint: 0x2c8c8a,
+    about: 'Gnome Theft Auto: the Conductor Ticket Cap. A teal flat cap with a short peak, a black band round the crown, a brass badge and a red ticket punch on the front. The crown and peak take a tint.',
+    examine: [
+      'A teal flat cap with a short peak and a black band round the crown, with a brass badge on the front and a red ticket punch clipped beside it.',
+      'Saying: every ticket has one hole in it for each stop, and the conductor punches the last hole last.',
+      'Tip: keep the punch on the left. Dot Pennywort will check, and she is always right about which side is left.',
+      'Joke: the punch has never once made a hole in anything except the conductor, who is punched every time the bell goes.',
+      'On the inside of the peak is a list of every fare ever taken at the Kerbside Exchange, none of them paid in full.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.16], at: [0, 0.1, 0], scale: [1, 0.6, 1], c: 'tint', seg: 10 },                    // crown
+      { s: 'box', d: [0.26, 0.015, 0.1], at: [0, 0.03, 0.11], c: 'tint' },                                 // short peak
+      { s: 'ring', d: [0.165, 0.02], at: [0, 0.04, 0], rot: [90, 0, 0], c: 'black', seg: 12 },            // crown band
+      { s: 'box', d: [0.06, 0.035, 0.006], at: [0, 0.1, 0.158], c: 'brass' },                              // brass badge
+      { s: 'cyl', d: [0.01, 0.01, 0.006], at: [0.03, 0.1, 0.163], rot: [90, 0, 0], c: 'red', seg: 6 },      // ticket punch
+    ],
+  },
+  {
+    id: 'newcomers-card-lanyard', name: "Newcomers' Card Lanyard", category: 'armor', uses: ['wear-neck'],
+    tags: ['lanyard', 'card', 'newcomer', 'ticket', 'punch', 'mabel', 'neck', 'reward'], emoji: [],
+    about: "Gnome Theft Auto: the Newcomers' Card Lanyard. A yellow cord round the collar with a cream punch-card hanging from it, every hole punched. Plain colours.",
+    examine: [
+      'A yellow cord round the collar with a cream punch-card hanging from it, every hole on it punched through.',
+      'Saying: the first stamp gets you a smile at the bus stop, the last one gets you a nod from Mabel, which is rarer.',
+      'Tip: wear it outside the coat. Hosts give a newcomer with a full card the good seat, or at least a seat.',
+      'Joke: the card has one more space than there are stamps, and Mabel says that one is for later, dear.',
+      "On the back, in Mabel Kerbstone's handwriting: WELCOME TO TURFTON. MIND THE NO LOITERING STENCIL.",
+    ],
+    parts: [
+      { s: 'ring', d: [0.19, 0.012], at: [0, 0.03, -0.03], rot: [90, 0, 0], c: 'yellow', seg: 12 },        // cord (min.y = 0)
+      { s: 'box', d: [0.008, 0.08, 0.008], at: [0, 0.07, 0.17], c: 'yellow' },                              // drop to the card
+      { s: 'box', d: [0.09, 0.06, 0.006], at: [0, 0.13, 0.172], c: 'white' },                               // the card
+      { s: 'box', d: [0.07, 0.008, 0.007], at: [0, 0.14, 0.175], c: 'black' },                              // row of punched holes
     ],
   },
 ];

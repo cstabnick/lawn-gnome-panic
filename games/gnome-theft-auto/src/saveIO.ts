@@ -1,6 +1,9 @@
 // Pure save-bundle export/import/reset for dev testing in Options -> Experimental.
 // GTA_SAVE_KEYS is every progress key: the same list is the cloud save (cloudSave.ts). Each holds JSON text.
 // Settings stay out on purpose (per device): volumes, mute, radio station and text, text speed, map players, driving mode.
+// Also out: gta-perks-v1 (perks.ts: trainer grants/revokes and the "already announced" list; earned perks come from the
+// quest save, gta-quests-v1, which is in), gta-trainer-backup-v1 and cloud bookkeeping (cloudSave.ts), sessionStorage
+// (party code, quest sim runs) and dev-tool keys (gta-questsim-cheats).
 export const GTA_SAVE_KEYS = [
   'gta-quests-v1', // quests.ts
   'gta-economy-v1', // economy.ts: Acorns, Kiln-Debt
@@ -21,6 +24,10 @@ export const GTA_SAVE_KEYS = [
   'gta-trainer-v1', // trainer/mark.ts: set once the Save Trainer changed this save
   'gta-sky-v1', // skyTraffic/progress.ts: sky-banner ads read, banner spotted / torn, aircraft downed
   'gta-fishing-v1', // fishing/fishSave.ts: rods, bait, fishing journal, catch cards
+  'gta-jobs-v1', // jobs/career.ts: sim-job levels, XP, counters, tubing bests
+  'gta-outskirts-v1', // outskirts/save.ts: Pebblewick (visited, counters, souvenirs, wishing well, the night knock)
+  'gta-mowing-v1', // flora/rewards.ts: plants mowed (total, Lawn Service cuts, per kind)
+  'gta-odd-rides-v1', // oddRides.ts: odd rides driven (Sunday Driver)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

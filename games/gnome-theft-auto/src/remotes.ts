@@ -4,17 +4,24 @@ import * as THREE from 'three';
 import { createGnomeModel, resolveLook, type GnomeModel } from '@lawn/gnome';
 import { decodeLoadout, defaultLoadout } from '@lawn/glaze';
 import { buildPrefab } from '@lawn/prefabs';
+import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
 import { Interp } from '@lawn/mp/interp';
 import type { PlayerInfo } from '@lawn/mp/protocol';
+import { createAnimator, type Animator } from './anim/animator';
+import { createRideAnimator, type RideAnimator, type RideInfo } from './anim/rideAuto';
+import { settleOnWaves } from './boatWaves';
+import { createFishPose, type FishPose } from './fishing/fishPose';
+import { RODS, rodById } from './fishing/tackle';
 import { clearHands, poseHands } from './driverHands';
 import { poseHandsUp, randomTownLook } from './gnomes';
 import { decodeGunWire } from './gunMods';
 import { clearGunArms, placeInHand, poseGunArms } from './gunHold';
 import { buildModdedGun } from './gunRig';
 import { VEHICLE_CODES, type RemotePose } from './net';
+import { ACT, type RemoteActivity } from './online/protocol';
 import type { StationId } from './radio/content';
 import { GUNS } from './config';
-import { passengerCount } from './seats';
+import { isClosed, passengerCount } from './seats';
 import { aboveGround } from './terrain';
 import type { Vehicle } from './types';
 import { createVehicle, removeVehicle, seatWorld, setVehicleLook, syncVehicleMesh } from './vehicles';
@@ -46,7 +53,36 @@ interface Puppet {
   gunPosed: boolean;
   /** Aim pitch shown on the gun pose, eased toward the latest pose's pitch (radians). */
   pitch: number;
+  /** The latest activity (emote, rod, binoculars) sent for this player, or null. */
+  act: RemoteActivity | null;
+  /** Plays the activity's arm animations (anim rows by id). */
+  anim: Animator;
+  /** Plays the player's own @lawn/emotes ('lawn:' ids), created on first use. */
+  lawn: EmotePlayer | null;
+  /** The emoteSeq last started (-1 before any). */
+  seq: number;
+  /** The fishing pose, created on first use. */
+  fish: FishPose | null;
+  /** The rod id last set on `fish` ('?' before any: never a real id). */
+  rodId: string;
+  /** True while the fishing pose and rod are on the gnome. */
+  rodOn: boolean;
+  /** The fishing phase last seen, and seconds in it on this client's own clock. */
+  phase: string;
+  phaseT: number;
+  /** The bobber in the water and the line to the rod tip, created on first use and added to the scene. */
+  bobber: THREE.Mesh | null;
+  line: THREE.Line | null;
+  /** The seat/driver ride pose (anim/rideAuto.ts) and whether it is on. */
+  ride: RideAnimator;
+  riding: boolean;
+  /** The info the ride pose reads, filled each frame (one object per puppet). */
+  rideInfo: Omit<RideInfo, 'rideT'>;
 }
+
+/** The emote prefix for a @lawn/emotes id (see anim/playerEmote.ts). */
+const LAWN_EMOTE = 'lawn:';
+const tipOut = new THREE.Vector3();
 
 /** How fast a remote player's shown aim pitch catches up with the wire (per second; ~60 ms to close most of a step). */
 const PITCH_EASE = 16;
@@ -95,6 +131,10 @@ export interface Remotes {
   stationOf(id: number): StationId | null;
   /** Get a remote player's display name. */
   nameOf(id: number): string | null;
+  /** What a remote player is doing with their hands (emote, rod, binoculars; online/actSync.ts), null = nothing. */
+  setActivity(id: number, a: RemoteActivity | null): void;
+  /** The activity last set for a remote player (tests and the two-client check), or null. */
+  activityOf(id: number): RemoteActivity | null;
   /** Nearest remote vehicle with an active radio within maxDist. */
   nearestRadioVehicle(
     x: number,
@@ -141,6 +181,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
   const looks = new Map<number, string | null>();
   /** The gun each remote player holds (an encodeGunWire code, or null for the stock pistol), by player id. */
   const guns = new Map<number, string | null>();
+  /** What each remote player is doing with their hands (emote, rod, binoculars), by player id. */
+  const acts = new Map<number, RemoteActivity>();
   const seat = new THREE.Vector3();
   const state = {
     position: new THREE.Vector3(), velocity: new THREE.Vector3(), facing: 0,
@@ -152,6 +194,115 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     p.label.material.map?.dispose();
     p.label.material.dispose();
     if (p.vehicle) removeVehicle(scene, p.vehicle);
+    p.fish?.clear(p.model);
+    if (p.bobber) {
+      scene.remove(p.bobber);
+      p.bobber.geometry.dispose();
+      (p.bobber.material as THREE.Material).dispose();
+      p.bobber = null;
+    }
+    if (p.line) {
+      scene.remove(p.line);
+      p.line.geometry.dispose();
+      (p.line.material as THREE.Material).dispose();
+      p.line = null;
+    }
+  }
+
+  /** Hide the fishing bobber and line (they are built on first use, so either may be missing). */
+  function hideBobber(p: Puppet): void {
+    if (p.bobber) p.bobber.visible = false;
+    if (p.line) p.line.visible = false;
+  }
+
+  /** The rod comes off: the arms go back and the bobber and line go. */
+  function clearRod(p: Puppet): void {
+    if (p.rodOn) p.fish?.clear(p.model);
+    p.rodOn = false;
+    hideBobber(p);
+  }
+
+  /** Stop any emote and the rod pose at once (in a vehicle, under a chute, or as a rider). */
+  function cancelAct(p: Puppet): void {
+    if (p.anim.active) p.anim.cancel(p.model);
+    if (p.lawn?.current) { p.lawn.stop(); p.lawn.update(1, false); }
+    clearRod(p);
+  }
+
+  /** Show the bobber at `bob` (world space) with the line from the rod tip to it; hide both when there is none. */
+  function showBobber(p: Puppet, bob: { x: number; y: number; z: number } | null): void {
+    if (!bob || !p.fish) { hideBobber(p); return; }
+    if (!p.bobber) {
+      p.bobber = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      scene.add(p.bobber);
+    }
+    if (!p.line) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(6, 3));
+      p.line = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x222222 }));
+      scene.add(p.line);
+    }
+    p.bobber.position.set(bob.x, bob.y, bob.z);
+    p.bobber.visible = true;
+    const tip = p.fish.tip(p.model, tipOut);
+    const pos = p.line.geometry.getAttribute('position') as THREE.BufferAttribute;
+    pos.setXYZ(0, tip.x, tip.y, tip.z);
+    pos.setXYZ(1, bob.x, bob.y, bob.z);
+    pos.needsUpdate = true;
+    p.line.geometry.computeBoundingSphere();
+    p.line.visible = true;
+  }
+
+  /** Emote, fishing rod and binoculars for a player on foot, on the ground and not hurt (`a` null: none). */
+  function actPose(p: Puppet, a: RemoteActivity | null, dt: number): void {
+    const pose = p.pose!;
+    if (a?.emote && a.emoteSeq !== p.seq) {
+      p.seq = a.emoteSeq;
+      if (a.emote.startsWith(LAWN_EMOTE)) {
+        p.anim.cancel(p.model);
+        p.lawn ??= createEmotePlayer(p.model);
+        p.lawn.play(a.emote.slice(LAWN_EMOTE.length));
+      } else {
+        p.lawn?.stop();
+        p.anim.play(a.emote);
+      }
+    } else if (!a?.emote && (p.anim.active || p.lawn?.current)) {
+      p.anim.stop();
+      p.lawn?.stop();
+    }
+    p.anim.apply(p.model, dt);
+    p.lawn?.update(dt, pose.moving);
+
+    if (a?.mode === ACT.rod) {
+      if (!p.fish) { p.fish = createFishPose(); p.rodId = '?'; }
+      if (a.rod !== p.rodId) { p.rodId = a.rod; p.fish.setRod(rodById(a.rod) ?? RODS[0]); }
+      if (a.phase !== p.phase) { p.phase = a.phase; p.phaseT = 0; }
+      p.phaseT += dt;
+      p.fish.apply(p.model, a.phase, p.phaseT, a.charge, dt);
+      p.rodOn = true;
+      showBobber(p, a.bobber);
+    } else if (p.rodOn) {
+      clearRod(p);
+    }
+
+    if (a?.mode === ACT.scope) {
+      p.model.arms.left.rotation.x = -2.3;
+      p.model.arms.right.rotation.x = -2.3;
+      p.model.arms.left.rotation.z = -0.35;
+      p.model.arms.right.rotation.z = 0.35;
+    }
+  }
+
+  /** Fill the ride info of a seated puppet (the same fields player.ts gives the local rider). */
+  function fillRide(info: Omit<RideInfo, 'rideT'>, v: Vehicle, seat: number, seed: number): void {
+    info.kind = v.kind;
+    info.flies = v.spec.flies;
+    info.fixedWing = !!v.spec.fixedWing;
+    info.boat = !!v.spec.boat;
+    info.closed = isClosed(v.spec);
+    info.seat = seat;
+    info.speedFrac = Math.min(1, Math.abs(v.speed) / Math.max(1, v.spec.maxSpeed));
+    info.seed = seed;
   }
 
   /** The mower a player rides in: mine when I am driving it, else the puppet of the remote driver. */
@@ -226,7 +377,15 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       const v = p.vehicle;
       v.x = x; v.y = y; v.z = z; v.yaw = yaw;
       v.speed = pose.moving ? moved : 0;
-      // syncVehicleMesh places the mesh, tilts a flyer and spins its wheels and rotor, as for the local vehicle.
+      // An aircraft pitches and rolls as its pilot's does (eased, so a step in the wire does not snap).
+      if (v.air) {
+        const k = 1 - Math.exp(-10 * dt);
+        v.air.pitch += ((pose.tilt?.pitch ?? 0) - v.air.pitch) * k;
+        v.air.roll += ((pose.tilt?.roll ?? 0) - v.air.roll) * k;
+      }
+      // A remote boat rides the local waves (boatWaves.ts); syncVehicleMesh places the mesh, tilts a flyer and spins its
+      // wheels and rotor, as for the local vehicle.
+      if (v.spec.boat) settleOnWaves(v, dt);
       syncVehicleMesh(v, dt);
       seatWorld(v, seat);
       state.position.copy(seat);
@@ -255,13 +414,29 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       p.model.arms.left.rotation.z = 1.3;
       p.model.arms.right.rotation.z = -1.3;
     }
+    // Activities (online/actSync.ts) only on foot, on the ground and not hurt; an emote or the rod takes the hands, so no gun.
+    const free = onFoot && !pose.chute && !pose.hurt && y <= 2;
+    const a = free ? p.act : null;
+    const handsBusy = !!a && (!!a.emote || a.mode === ACT.rod);
     // Guns: the same pose as the local player (gunHold.ts): at the ready on foot, raised along their aim pitch while aiming.
     p.pitch = easePitch(p.pitch, pose.aiming ? pose.pitch : 0, dt);
-    const gunPose = onFoot && !pose.chute && !pose.hurt && y <= 2 && !!p.held;
+    const gunPose = free && !!p.held && !handsBusy;
+    if (p.held) p.held.visible = !handsBusy;
     if (gunPose) { poseGunArms(p.model, p.heldPrefab, { aiming: pose.aiming, pitch: p.pitch }, p.held); p.gunPosed = true; }
     else if (p.gunPosed) { clearGunArms(p.model, p.held); p.gunPosed = false; }
+    if (free) actPose(p, a, dt);
+    else cancelAct(p);
     // Driving: the hands follow the wheel. Runs last so it wins over the arm poses above.
     if (p.vehicle) poseHands(p.model, p.vehicle, 0, dt);
+    // The seat pose of the driver (their personality, on top of the hands); off when they get out.
+    if (p.vehicle) {
+      fillRide(p.rideInfo, p.vehicle, 0, p.id);
+      p.ride.update(p.model, p.rideInfo, dt);
+      p.riding = true;
+    } else if (p.riding) {
+      p.ride.cancel(p.model);
+      p.riding = false;
+    }
   }
 
   /** A passenger: sits in their seat of the host's mower. With no such mower on this client, they stand where they are. */
@@ -277,6 +452,8 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     p.vehCode = -1;
     const host = hostVehicle(ride.host);
     if (p.canopy) p.canopy.visible = false;
+    // No emote or rod in a seat.
+    cancelAct(p);
     if (host) {
       seatWorld(host, seat, ride.seat);
       p.x = seat.x; p.y = seat.y; p.z = seat.z;
@@ -294,6 +471,15 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     p.model.arms.left.rotation.z = 0;
     p.model.arms.right.rotation.z = 0;
     if (pose.hurt && !host) poseHandsUp(p.model, p.t);
+    // The seat pose, from the seat the rider has in the host's mower (none without that mower here: stand).
+    if (host) {
+      fillRide(p.rideInfo, host, ride.seat, p.id);
+      p.ride.update(p.model, p.rideInfo, dt);
+      p.riding = true;
+    } else if (p.riding) {
+      p.ride.cancel(p.model);
+      p.riding = false;
+    }
   }
 
   return {
@@ -310,6 +496,10 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
         interp: new Interp({ angles: [3], pos: [0, 1, 2], snapDist: 25 }),
         s: [0, 0, 0, 0],
         pose: null, vehicle: null, vehCode: -1, x: 0, y: 0, z: 0, t: 0, canopy: null, station: null, held: null, heldPrefab: null, gunPosed: false, pitch: 0,
+        act: acts.get(info.id) ?? null, anim: createAnimator(), lawn: null, seq: -1,
+        fish: null, rodId: '?', rodOn: false, phase: '', phaseT: 0, bobber: null, line: null,
+        ride: createRideAnimator(), riding: false,
+        rideInfo: { kind: '', flies: false, fixedWing: false, boat: false, closed: false, seat: 0, speedFrac: 0, seed: 0 },
       };
       holdGun(p, guns.get(info.id));
       puppets.set(info.id, p);
@@ -317,6 +507,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     leave(id) {
       looks.delete(id);
       guns.delete(id);
+      acts.delete(id);
       const p = puppets.get(id);
       if (!p) return;
       drop(p);
@@ -333,6 +524,7 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
       puppets.clear();
       looks.clear();
       guns.clear();
+      acts.clear();
     },
     update(dt) {
       // Drivers first, so a rider sits in a mower that has already moved this frame.
@@ -406,6 +598,14 @@ export function createRemotes(scene: THREE.Scene, deps: RemotesDeps): Remotes {
     },
     nameOf(id) {
       return puppets.get(id)?.name ?? null;
+    },
+    setActivity(id, a) {
+      if (a) acts.set(id, a); else acts.delete(id);
+      const p = puppets.get(id);
+      if (p) p.act = a;
+    },
+    activityOf(id) {
+      return acts.get(id) ?? null;
     },
     nearestRadioVehicle(x, y, z, maxDist) {
       let best: { x: number; y: number; z: number; station: StationId; dist: number } | null = null;

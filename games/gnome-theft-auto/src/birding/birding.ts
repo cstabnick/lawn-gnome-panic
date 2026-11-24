@@ -12,7 +12,7 @@ import { button, grid, heading, note, status } from '../trainer/ui';
 import type { Blip, Box, Hud, Player, Sfx, World } from '../types';
 import { createBirdStore, type BirdStore } from './birdSave';
 import { createBirdView, type BirdView } from './birdView';
-import { circleFlock, createFlock, sendFlock, stepFlock } from './flock';
+import { circleFlock, createFlock, flushFlock, sendFlock, stepFlock } from './flock';
 import { createHide, type HideWorld } from './hide';
 import { createJournalUi, type JournalUi } from './journalUi';
 import { createPerchIndex, type PerchIndex } from './perches';
@@ -23,7 +23,7 @@ import { registerBirdSounds } from './sounds';
 import { flockSize, pickSpecies, speciesWeight, windAt, wildName } from './spawner';
 import {
   BIRDING, BIRD_ACHIEVEMENTS, BIRD_SFX, HIDE, NEW_SPECIES_ACORNS, OPTICS, birdSoundId,
-  type BirdSpecies, type Flock, type FlockEnv, type FlockFrame, type PerchSpot, type RegionId, type Threat,
+  type BirdSpecies, type Flock, type FlockEnv, type FlockFrame, type FlockMode, type PerchSpot, type RegionId, type Threat,
   type TimeLabel, type Wind,
 } from './types';
 
@@ -68,6 +68,14 @@ export interface BirdingFrame {
   paused: boolean;
 }
 
+/** Online sync (online/birdSync.ts): who may spawn flocks here, and where a mirrored flock was flushed. */
+export interface BirdNet {
+  /** False: another player leads this patch; do not spawn new flocks. */
+  spawning(): boolean;
+  /** A mirrored flock flushed here (my shot or noise): tell its owner. */
+  flushed(fl: Flock, fromX: number, fromZ: number): void;
+}
+
 export interface Birding {
   readonly boxes: readonly Box[];
   readonly blips: readonly Blip[];
@@ -95,6 +103,20 @@ export interface Birding {
   /** Region the player is in (for the debug trainer and tests). */
   region(): RegionId;
   stats(): { flocks: number; birds: number };
+  /** Online sync: the network hooks (null offline). */
+  setNet(n: BirdNet | null): void;
+  /** Every flock here, local and mirrored. */
+  flockList(): readonly Flock[];
+  /** True for a flock mirrored from another player (not spawned or owned here). */
+  isMirror(fl: Flock): boolean;
+  /** A mirrored flock of species `speciesId` at (x, y, z). Null for an unknown species. */
+  addMirrorFlock(speciesId: string, size: number, x: number, y: number, z: number, mode: FlockMode): Flock | null;
+  /** Drop a flock (local or mirrored) from the world. */
+  removeFlock(fl: Flock): void;
+  /** A mirror becomes an ordinary local flock. */
+  adoptMirror(fl: Flock): void;
+  /** A flock flushes away from (fromX, fromZ), with the flush sound. */
+  flush(fl: Flock, fromX: number, fromZ: number): void;
 }
 
 const TAU = Math.PI * 2;
@@ -152,6 +174,9 @@ export function createBirding(deps: BirdingDeps): Birding {
   const scope: Scope = createScope(deps.camera);
 
   const flocks: Flock[] = [];
+  // Flocks mirrored from another player (online): not spawned, not despawned by distance here.
+  const mirrors = new Set<Flock>();
+  let net: BirdNet | null = null;
   let flockSeq = 0;
   let birdSeq = 0;
   const nextBirdId = (): number => ++birdSeq;
@@ -184,6 +209,14 @@ export function createBirding(deps: BirdingDeps): Birding {
     fl.callT = s.callEvery[0] + rnd() * (s.callEvery[1] - s.callEvery[0]);
     flocks.push(fl);
     return fl;
+  }
+
+  // Scare a flock from (fromX, fromZ); the flush sound plays when it is near the player.
+  function flushAt(fl: Flock, fromX: number, fromZ: number): void {
+    flushFlock(fl, fromX, fromZ, env);
+    if (Math.hypot(fl.x - px, fl.z - pz) < FLUSH_SOUND_RANGE) {
+      playAt(BIRD_SFX.flush, fl, { param: Math.min(1, fl.members.length / 10) });
+    }
   }
 
   function skyFlock(s: BirdSpecies, size: number, x: number, z: number): void {
@@ -470,7 +503,7 @@ export function createBirding(deps: BirdingDeps): Birding {
       spawnT -= f.dt;
       if (spawnT <= 0) {
         spawnT = BIRDING.spawnEvery;
-        trySpawn(f);
+        if (!net || net.spawning()) trySpawn(f);
       }
 
       frameNo++;
@@ -485,7 +518,7 @@ export function createBirding(deps: BirdingDeps): Birding {
         const fl = flocks[i];
         const s = fl.species;
         const d = Math.hypot(fl.x - px, fl.z - pz);
-        if (d > BIRDING.despawnRadius) {
+        if (d > BIRDING.despawnRadius && !mirrors.has(fl)) {
           flocks[i] = flocks[flocks.length - 1];
           flocks.pop();
           continue;
@@ -499,6 +532,7 @@ export function createBirding(deps: BirdingDeps): Birding {
           if (flushed && d < FLUSH_SOUND_RANGE) {
             playAt(BIRD_SFX.flush, fl, { param: Math.min(1, fl.members.length / 10) });
           }
+          if (flushed && mirrors.has(fl)) net?.flushed(fl, px, pz);
         }
 
         fl.callT -= f.dt;
@@ -571,5 +605,31 @@ export function createBirding(deps: BirdingDeps): Birding {
     region: () => regionAt(px, pz),
 
     stats: () => ({ flocks: flocks.length, birds: totalBirds() }),
+
+    setNet(n) {
+      net = n;
+    },
+    flockList: () => flocks,
+    isMirror: (fl) => mirrors.has(fl),
+
+    addMirrorFlock(speciesId, size, x, y, z, mode) {
+      const s = birdById(speciesId);
+      if (!s) return null;
+      const fl = addFlock(s, size, x, y, z, mode);
+      mirrors.add(fl);
+      return fl;
+    },
+
+    removeFlock(fl) {
+      const i = flocks.indexOf(fl);
+      if (i >= 0) flocks.splice(i, 1);
+      mirrors.delete(fl);
+    },
+
+    adoptMirror(fl) {
+      mirrors.delete(fl);
+    },
+
+    flush: (fl, fromX, fromZ) => flushAt(fl, fromX, fromZ),
   };
 }

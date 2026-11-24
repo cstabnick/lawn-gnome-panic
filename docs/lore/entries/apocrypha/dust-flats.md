@@ -26,6 +26,9 @@ Long before the Spade Guard arrived, Turfton gnomes treated the Dust Flats as a 
 
 - The alkali pan north-east of the airfield is the Lost & Found Speedway, a 1.2 km circuit built from the Great Spill's
   heap (`raceTrack/track.ts`). Reached by a dirt road north from the east-outer highway.
+- Pebblewick, the adobe town at the far east of the Flats (x 580..730, z 10..200), where Route East runs out towards the
+  fence (`outskirts/town.ts`). The Old Chrome Combine, half buried in the eastern dunes, is real: it hums at three in the
+  morning (the pilots' story is true).
 
 ## Look and motifs
 

@@ -1,5 +1,6 @@
-// Options: a small gear button (and O, or Start on a pad) opens a panel. Right now it holds one section, CHEATS, with "Driving
-// realism": the physics family every ground vehicle uses. It is a fun extra, not a primary control: nothing in the HUD shouts about it.
+// Options: no floating button. It opens from the More menu (☰ › Options), O, or Start on a pad. The panel holds the
+// Touch layout picker, a controls list for the device in use, Driving realism (the physics family every ground vehicle
+// uses: a fun extra, not a primary control), the radio, dialogue, map, sound, cloud and the Save Trainer.
 import { firstPad } from '@lawn/gamepad';
 import { TUNES, getTune, type Tune } from './simdrive';
 import type { TimeMode } from './atmosphere';
@@ -9,8 +10,19 @@ import { KEYS } from './keys';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { mountSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
+import { mountWaveOptions } from './waveOptions';
+import { registerAction } from './ui/actions';
+import { getTouchLayout, setTouchLayout, TOUCH_LAYOUTS, type TouchLayout } from './ui/style';
+import { controlsFor, esc } from './ui/glyphs';
+import { currentGlyphSet, onInputSourceChange } from './ui/inputSource';
 
-/** Builds the gear and its settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
+const LAYOUT_TEXT: Record<TouchLayout, { label: string; desc: string }> = {
+  standard: { label: 'Standard', desc: 'Every button' },
+  minimal: { label: 'Minimal', desc: 'Fewer buttons, no pinned shortcuts' },
+  'left-handed': { label: 'Left-handed', desc: 'Stick on the right, buttons on the left' },
+};
+
+/** Builds the settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
 export function createOptions(
   ui: HTMLElement,
   onPickMode: (t: Tune) => void,
@@ -20,7 +32,6 @@ export function createOptions(
   style.textContent = `
     #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
     #gta-options button{font:inherit;color:#fff;touch-action:manipulation;}
-    #gta-options .gta-opt-gear{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.5);font-size:22px;line-height:1;padding:0;pointer-events:auto;}
     #gta-options .gta-opt-panel{display:none;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:rgba(20,20,20,.88);width:min(86vw,330px);max-height:calc(100dvh - env(safe-area-inset-top) - 260px);overflow-y:auto;touch-action:pan-y;pointer-events:auto;box-sizing:border-box;}
     #gta-options .gta-opt-head{display:flex;align-items:center;justify-content:space-between;font-size:16px;}
     #gta-options .gta-opt-close{width:44px;height:44px;margin:-8px -8px -8px 0;border:0;background:none;font-size:20px;}
@@ -29,28 +40,67 @@ export function createOptions(
     #gta-options .gta-opt-list{display:grid;grid-template-columns:1fr;gap:6px;}
     #gta-options .gta-opt-mode{min-height:48px;padding:6px 12px;text-align:left;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);}
     #gta-options .gta-opt-mode small{display:block;font-weight:400;font-size:12px;opacity:.8;margin-top:1px;}
+    #gta-options .gta-opt-controls{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:12px;}
     @media (max-height:520px){#gta-options .gta-opt-panel{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 64px);width:min(72vw,480px);max-height:calc(100dvh - env(safe-area-inset-top) - 16px);}#gta-options .gta-opt-list{grid-template-columns:1fr 1fr;}}
   `;
   document.head.appendChild(style);
 
   const root = document.createElement('div');
   root.id = 'gta-options';
-  const gear = document.createElement('button');
-  gear.type = 'button';
-  gear.className = 'gta-opt-gear';
-  gear.setAttribute('aria-label', 'Options');
-  gear.textContent = '⚙';
   const panel = document.createElement('div');
   panel.className = 'gta-opt-panel';
-  // The settings menu. Controls holds the Steam Controller button (it only shows when one is in use).
+  // Controls holds the Steam Controller button (it only shows when one is in use).
   panel.innerHTML = '<div class="gta-opt-head"><span>Options</span><button type="button" class="gta-opt-close" aria-label="Close options">✕</button></div>'
-    + '<h3>Controls</h3><div class="gta-opt-extras"></div>'
-    + '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>';
+    + '<h3>Controls</h3><div class="gta-opt-extras"></div>';
   const extras = panel.querySelector<HTMLElement>('.gta-opt-extras') as HTMLElement;
-  root.append(gear, panel);
+  root.append(panel);
   ui.appendChild(root);
 
   const buttons = new Map<string, HTMLButtonElement>();
+
+  // Touch layout: standard / minimal / left-handed (ui/style.ts). Lit by its own paint, not by mark().
+  const layoutHead = document.createElement('div');
+  layoutHead.className = 'gta-opt-note';
+  layoutHead.style.fontWeight = '700';
+  layoutHead.textContent = 'Touch layout';
+  const layoutList = document.createElement('div');
+  layoutList.className = 'gta-opt-list';
+  const layoutBtns = new Map<TouchLayout, HTMLButtonElement>();
+  for (const id of TOUCH_LAYOUTS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'gta-opt-mode';
+    b.innerHTML = `${LAYOUT_TEXT[id].label}<small>${LAYOUT_TEXT[id].desc}</small>`;
+    b.addEventListener('click', () => { setTouchLayout(id); paintLayout(); });
+    layoutBtns.set(id, b);
+    buttons.set(`layout-${id}`, b);
+    layoutList.appendChild(b);
+  }
+  const paintLayout = (): void => {
+    const cur = getTouchLayout();
+    layoutBtns.forEach((b, id) => { b.style.borderColor = id === cur ? '#ffd23f' : 'rgba(255,255,255,.3)'; });
+  };
+  window.addEventListener('gta:touch-layout', paintLayout);
+  paintLayout();
+
+  // Your controls: the actions for the device in use (keyboard keys, pad glyphs, or the touch words).
+  const ctlHead = document.createElement('div');
+  ctlHead.className = 'gta-opt-note';
+  ctlHead.style.fontWeight = '700';
+  const ctlList = document.createElement('div');
+  ctlList.className = 'gta-opt-controls';
+  const paintControls = (): void => {
+    const set = currentGlyphSet();
+    const device = set === 'touch' ? 'touch' : set === 'keyboard' ? 'keyboard' : 'gamepad';
+    ctlHead.textContent = `Your controls (${device})`;
+    ctlList.innerHTML = controlsFor(set, 'all')
+      .map((r) => `<span>${esc(r.label)}</span><span>${r.html}</span>`)
+      .join('');
+  };
+
+  panel.append(layoutHead, layoutList, ctlHead, ctlList);
+  panel.insertAdjacentHTML('beforeend', '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>');
+
   const addGroup = (title: string, group: Tune['group']): void => {
     const h = document.createElement('div');
     h.className = 'gta-opt-note';
@@ -71,10 +121,6 @@ export function createOptions(
   };
   addGroup('Driving realism', 'realism');
   addGroup('Silly handling', 'silly');
-  const hint = document.createElement('div');
-  hint.className = 'gta-opt-note';
-  hint.textContent = 'Handbrake: Space, A on a pad, or the Handbrake button on touch.';
-  panel.appendChild(hint);
   // Radio: the station and DJ text that floats over the screen. Off keeps the music and hides the words.
   const radioHead = document.createElement('div');
   radioHead.className = 'gta-opt-note';
@@ -171,8 +217,10 @@ export function createOptions(
     panel.append(timeHead, timeList);
   }
 
-  // Sound: World and Ambience volume sliders (src/sound/volumeUi.ts).
+  // Sound: mute and the World, Ambience and Voices sliders (src/sound/volumeUi.ts).
   mountSoundOptions(panel);
+  // Water waves: off / low / high (src/waveOptions.ts).
+  mountWaveOptions(panel);
   // Cloud save: synced / syncing / offline (src/cloudSave.ts).
   mountCloudStatus(panel);
 
@@ -184,7 +232,8 @@ export function createOptions(
   const trainerBtn = document.createElement('button');
   trainerBtn.type = 'button';
   trainerBtn.className = 'gta-opt-mode';
-  trainerBtn.innerHTML = 'Save Trainer<small>Export, import or reset your save; edit the character, spawn things, play cutscenes. F9 or ` too.</small>';
+  trainerBtn.innerHTML = 'Save Trainer<small>Export, import or reset your save; edit the character, spawn things, play cutscenes.'
+    + (currentGlyphSet() === 'keyboard' ? ' F9 or ` too.' : '') + '</small>';
   trainerBtn.addEventListener('click', () => {
     setOpen(false);
     window.dispatchEvent(new CustomEvent('gta:trainer'));
@@ -193,7 +242,11 @@ export function createOptions(
   trList.append(trainerBtn);
   panel.append(trHeading, trList);
 
-  const mark = (): void => buttons.forEach((b, id) => { b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)'; });
+  // The tune buttons get the gold border of the picked tune; the touch layout buttons paint themselves (paintLayout).
+  const mark = (): void => buttons.forEach((b, id) => {
+    if (id.startsWith('layout-')) return;
+    b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)';
+  });
 
   // Gamepad: while open the panel owns the pad (input.ts reads body[data-options]); D-pad or stick picks, A selects, B / Start close.
   const ids = [...buttons.keys()];
@@ -228,6 +281,8 @@ export function createOptions(
     document.body.dataset.options = open ? 'open' : '';
     if (open) {
       if (document.pointerLockElement) document.exitPointerLock();
+      paintLayout();
+      paintControls();
       focus = Math.max(0, ids.indexOf(getTune().id));
       showFocus();
       // Buttons already held when it opened (the Start press itself) must not count as new presses.
@@ -238,10 +293,12 @@ export function createOptions(
   }
   const toggle = (): void => setOpen(!isOpen);
   window.addEventListener('gta:options', toggle);
+  registerAction('options', { run: toggle });
+  // The controls list follows the device while the panel is open (a pad plugged in, a key pressed).
+  onInputSourceChange(() => { if (isOpen) paintControls(); });
   // Keep touches and clicks on the panel from starting the stick, camera drag or pointer lock underneath, and let it scroll.
   root.addEventListener('pointerdown', (e) => e.stopPropagation());
   panel.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-  gear.addEventListener('click', toggle);
   panel.querySelector('.gta-opt-close')?.addEventListener('click', () => setOpen(false));
   window.addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;

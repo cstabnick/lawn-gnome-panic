@@ -23,8 +23,8 @@ export const KEYS = {
   enterExit: 'KeyE',
   /** Tap: next gun. Hold: the weapon wheel (weaponWheel.ts). */
   switchGun: 'KeyQ',
-  /** Hold for the weapon wheel too (same as holding Q). */
-  weaponWheel: 'Tab',
+  /** Open and close the More menu (ui/moreMenu.ts): phone, emotes, journal, map, party, journals, options... Tab used to duplicate holding Q. */
+  more: 'Tab',
   /** Open the Ammu-Gnation Pocket Kit: fit gun mods anywhere on foot (gunModKit.ts). */
   modKit: 'KeyK',
   reload: 'KeyR',
@@ -62,6 +62,8 @@ export const KEYS = {
   close: 'Escape',
   /** Go on (the intro tour). */
   confirm: 'Enter',
+  /** Sim jobs (jobs/hud.ts): the job action (accept a call, drop cargo, next fare). */
+  jobAction: 'KeyI',
 } as const;
 
 export type KeyAction = keyof typeof KEYS;

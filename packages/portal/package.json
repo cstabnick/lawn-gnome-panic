@@ -1,0 +1,17 @@
+{
+  "name": "@lawn/portal",
+  "private": true,
+  "type": "module",
+  "description": "Crossover portals: walk through a door in one game and appear inside a building another game runs (the shared instance), with a return stack and a gear ledger.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

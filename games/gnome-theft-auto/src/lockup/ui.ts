@@ -4,6 +4,7 @@
 // LB / RB switch garage tab.
 import { firstPad } from '@lawn/gamepad';
 import { KEYS, isTyping } from '../keys';
+import { fillHint } from '../ui/glyphs';
 import type { LockupStore, StorageKind, StoredVehicle } from './types';
 
 export type LockupUiMode = 'phone' | 'site';
@@ -282,11 +283,11 @@ export function createLockupUi(ui: HTMLElement, deps: LockupUiDeps): LockupUi {
       const left = deps.cooldownLeft();
       sub.textContent = `Sling-Lift: ${deps.fee(kind)} Acorns a drop` + (left > 0 ? ` · ready in ${Math.ceil(left)} s` : '');
     } else if (kind === 'air') {
-      sub.textContent = 'Taxi an aircraft in and press T to store it.';
+      sub.textContent = fillHint('Taxi an aircraft in and press {lockupStore} to store it.');
     } else if (kind === 'water') {
-      sub.textContent = 'Bring a boat into the slip and press T to store it.';
+      sub.textContent = fillHint('Bring a boat into the slip and press {lockupStore} to store it.');
     } else {
-      sub.textContent = 'Drive a vehicle in and press T to store it.';
+      sub.textContent = fillHint('Drive a vehicle in and press {lockupStore} to store it.');
     }
     titles.appendChild(sub);
     head.appendChild(titles);

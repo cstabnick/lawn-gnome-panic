@@ -424,6 +424,15 @@ export function syncCullSet(key: string, objects: Iterable<THREE.Object3D>, cls:
 /** Cell size of buildStaticCells, m. */
 export const STATIC_CELL = 96;
 
+let plantFilter: ((p: StaticPrefabPlacement) => boolean) | null = null;
+/**
+ * Mowable plants (flora/harvest.ts): while a filter is set, buildStaticCells offers it every placement first, and a
+ * placement it takes (returns true) is left out of the merged batch: flora draws it instanced and mows it.
+ */
+export function setStaticPlantFilter(f: ((p: StaticPrefabPlacement) => boolean) | null): void {
+  plantFilter = f;
+}
+
 /**
  * buildStaticPrefabs, split into one merged batch per STATIC_CELL square (by placement origin), each registered with
  * the culler as `cls` (default 'cell') and owned by it. Returns a group with the given name holding the cell batches.
@@ -438,6 +447,7 @@ export function buildStaticCells(
   root.userData.cullCells = true;
   const cells = new Map<string, StaticPrefabPlacement[]>();
   for (const p of placements) {
+    if (plantFilter && plantFilter(p)) continue;
     const k = `${Math.floor(p.x / cell)},${Math.floor(p.z / cell)}`;
     let list = cells.get(k);
     if (!list) cells.set(k, (list = []));

@@ -498,3 +498,37 @@ ActorSample, ScriptActor and the gesture step shape are unchanged apart from the
 ## Out of scope
 timeline.ts, director.ts, pacing.ts, scenes/, every src/anim file.
 ~~~~
+
+## Round 3: character
+
+Asked for: "keep fleshing out the animations with character in different bits". Written by the planner directly (the
+rows, pickers and wiring were smaller to write than to specify). 74 more rows, 181 in all.
+
+| File | Rows | What |
+|---|---|---|
+| `src/anim/styles.ts` | 19 | walk/run overlays per archetype (`walk-swagger`, `-shuffle`, `-tiptoe`, `-sulk`, `-jaunty`, `-nervous`, `-proud`, `-sleepy`, `-pompous`, `run-flail`, `run-pump`, `run-sneak`) and standing styles (`idle-*`), category `style` |
+| `src/anim/moods.ts` | 5 | mood layers `mood-happy/angry/scared/bored/tipsy`, category `style` |
+| `src/anim/bits.ts` | 18 | town life: wait for the bus, read a map, check a watch, window-shop, haggle, argue, gossip, count acorns, tie a shoe, hiccups, sweat (Dust Flats), shiver (Fells), dust a hat, pat pockets, snack, sip, feed birds, sit on a bench; category `bit` |
+| `src/anim/reactsC.ts` | 12 | reactions to the new sights: flyover look-up, banner-plane wave, bird spotted, fish caught / bad luck, tuft combing, skyway gawk, answer the phone, duck a low plane, race fan, horn startle, snapshot |
+| `src/anim/social.ts` | 12 | pair rows (`pair` names the partner's row; `PAIR_GAP` 0.9 m apart, facing): handshake, high five, fist bump, hug, dance duo, row, natter, laugh, cheers, bow, whisper/listen |
+| `src/anim/drive.ts` | 8 | driving personalities on top of the grips (left arm and body only): one hand, white knuckles, road rage, elbow out, sing-along, lean back, honk-pound, drowsy |
+
+New row fields: `onMove` (plays over the walk cycle; limb x is added to the walk swing, see `applyPose(..., additive)`)
+and `pair`. Lookups: `pairOf(id)`; menu tabs add Style, Bits and Together (`ANIM_TABS`).
+
+Pickers (pure, tested in `src/anim/round3.test.ts`):
+- `rideAuto.ts`: `passengerAnim` (heli/plane/boat/golf cart/hang on at speed; doze or seasick after `LONG_RIDE_S`),
+  `driverAnim` (rowed dinghy, per-vehicle personality, white knuckles flat out), `createRideAnimator()`.
+- `persona.ts`: `personaFor(trait)`, `walkStyleFor`, `idleFor(persona, biome)` (Fells shiver, Dust Flats sweat, park
+  birds, loch view, sleepy at night via `setAnimWorld({ night })`), `pairFor`, `yawToward`.
+- `playerIdle.ts`: `createIdleFidget()`: after `IDLE_DELAY` s standing still, a fidget by place and time.
+
+Wiring: `player.ts` updateRiding (seat poses, driver personality, road rage on the horn; reset on every get-off),
+`traffic.ts` (NPC drivers' personality, near ones only), `npcs.ts` (archetype walk styles and idles, pairs between
+idle gnomes, soft knocks get up dazed (`get-up` then dizzy / dust-off / fist) instead of always fleeing, horn startle,
+look up at flyovers), `ambientGnomes.ts` (a bit of character every 20-45 s out of the player's way), `app.ts` (horn to
+the rider, night for the pickers, the player's idle fidget, get-up after a tumble via `emote.playQuiet`).
+Cutscenes take every new id as a `gesture` already (the Gesture union includes AnimId).
+
+Not done: remote players' seats (remotes.ts belongs to online-sync: `createRideAnimator().update(model, info, dt)`
+after `poseHands` is all it needs); pair animations between two players online.

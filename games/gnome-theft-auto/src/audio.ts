@@ -484,6 +484,8 @@ export interface EngineOpts {
   waterlog?: number;
   /** Vehicle.waterlogStalled: a flooded engine will not run, it coughs while cranking. */
   stalled?: boolean;
+  /** A boat's prop clear of the water (airtime off a wave crest), 0..1: the outboard races. */
+  propOut?: number;
 }
 
 /**
@@ -507,6 +509,7 @@ export function setEngine(on: boolean, speed01: number, flying: boolean, plane =
   playerCond.hp = opts.hp;
   playerCond.waterlog = opts.waterlog;
   playerCond.stalled = opts.stalled;
+  playerCond.propOut = opts.propOut;
   const cond = conditionMix(p, playerCond);
   const throttle = on ? (opts.throttle ?? 0) : 0;
   stepEngine(engineState, on && !opts.stalled ? targetRevs(speed01, throttle, p.gears) : 0, throttle, dt);

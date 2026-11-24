@@ -5,9 +5,9 @@ kind: place
 tier: game
 setting: the-yard
 status: canon
-games: [club-gnome, gnome-blackjack]
+games: [club-gnome, gnome-blackjack, gnome-theft-auto]
 aliases: [Gnomcino, the casino]
-sources: [games/club-gnome/src/maps.ts, docs/lore/rulings.md]
+sources: [games/club-gnome/src/maps.ts, docs/lore/rulings.md#r-155]
 related: [club-gnome, blackjack-pub, clary-tillbox, fennel-brassbell, oakcount]
 ---
 
@@ -24,3 +24,5 @@ blackjack table in it is a pub table of bantering gnomes (R-011).
 - Club Gnome: the Cashier, [Clary Tillbox](clary-tillbox.md), behind the cage: acorns from the [Oakcount](oakcount.md)
   buy chips, and chips never buy acorns back. The Prize Counter, [Fennel Brassbell](fennel-brassbell.md): cosmetics for
   chips, and six "Coming soon" placards for prizes still in the workshop.
+- Gnome Theft Auto: the velvet rope on the Greenhouse Strip in Turfton (Big Lou's door) opens into this same hall; gnomes
+  from Turfton and from the town square play at the same tables (R-155).

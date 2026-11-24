@@ -19,7 +19,8 @@ export function placeNodes(nodes: readonly RoadNode[], places: readonly Place[] 
     let best = -1;
     let bestD = Infinity;
     for (const n of nodes) {
-      if (n.links.length === 0) continue;
+      // Places are on the ground: never a skyway deck node (highways/roads.ts).
+      if (n.links.length === 0 || n.deck !== undefined) continue;
       const d = Math.hypot(n.x - p.x, n.z - p.z);
       if (d < bestD) { bestD = d; best = n.id; }
     }

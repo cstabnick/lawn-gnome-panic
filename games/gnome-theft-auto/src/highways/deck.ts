@@ -11,6 +11,16 @@ import type { Pushed } from '../collide';
 import { heightAt } from '../terrain';
 import { SKYWAY, SKYWAYS, type SkywayDef } from './skyways';
 
+/** A stretch of one rail that is open: a crack, or where another deck joins (a junction). */
+export interface RailGap {
+  /** Centre-line distances of the gap's ends. */
+  from: number;
+  to: number;
+  /** +1 = the right rail (right of travel), -1 = the left. */
+  side: 1 | -1;
+  kind: 'crack' | 'junction';
+}
+
 interface Leg {
   ax: number; az: number; bx: number; bz: number;
   /** Unit direction a -> b and length. */
@@ -24,19 +34,29 @@ interface Leg {
 interface Profile { def: SkywayDef; legs: Leg[]; length: number; minX: number; maxX: number; minZ: number; maxZ: number }
 
 let profiles: Profile[] | null = null;
+let gaps: Map<string, RailGap[]> | null = null;
 
-function buildProfile(def: SkywayDef): Profile {
+function buildProfile(def: SkywayDef, built: readonly Profile[]): Profile {
   const legs: Leg[] = [];
   let start = 0;
   const pad = def.width / 2 + SKYWAY.columnSize + 2;
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  // A junction point's deck top is its parent's top at the nearest centre-line point.
+  const topOf = (pt: SkywayDef['points'][number]): number => {
+    if (pt.on) {
+      const parent = built.find((q) => q.def.id === pt.on);
+      const c = parent ? contactOf(parent, pt.x, pt.z, 1e6) : null;
+      if (c) return c.surfaceY;
+    }
+    return heightAt(pt.x, pt.z) + pt.h;
+  };
   for (let k = 0; k + 1 < def.points.length; k++) {
     const a = def.points[k];
     const b = def.points[k + 1];
     const len = Math.hypot(b.x - a.x, b.z - a.z) || 1e-9;
     legs.push({
       ax: a.x, az: a.z, bx: b.x, bz: b.z, dx: (b.x - a.x) / len, dz: (b.z - a.z) / len, len,
-      ya: heightAt(a.x, a.z) + a.h, yb: heightAt(b.x, b.z) + b.h, start,
+      ya: topOf(a), yb: topOf(b), start,
     });
     start += len;
   }
@@ -48,13 +68,19 @@ function buildProfile(def: SkywayDef): Profile {
 }
 
 function all(): Profile[] {
-  if (!profiles) profiles = SKYWAYS.map(buildProfile);
+  if (!profiles) {
+    const built: Profile[] = [];
+    for (const def of SKYWAYS) built.push(buildProfile(def, built));
+    profiles = built;
+    gaps = null;
+  }
   return profiles;
 }
 
 /** Forget the built profiles (deck heights follow the land at their control points). terrain.ts calls this. */
 export function resetDecks(): void {
   profiles = null;
+  gaps = null;
 }
 
 /** Every skyway definition. */
@@ -254,6 +280,10 @@ export function pushOutOfDecks(x: number, z: number, r: number, baseY: number): 
     if (level && c.dist > half) continue;
     if (level) {
       if (c.dist <= half - r) continue;
+      // An open rail here (a crack), or another deck carries on level past this edge (a junction): no wall.
+      const side: 1 | -1 = c.across >= 0 ? 1 : -1;
+      if (inGap(p.def.id, c.along, side, r)) continue;
+      if (levelDeckBeyond(p, c.cx + ux * (half + r + 0.2), c.cz + uz * (half + r + 0.2), c.surfaceY)) continue;
       px = c.cx + ux * (half - r);
       pz = c.cz + uz * (half - r);
       nx = -ux; nz = -uz;
@@ -268,4 +298,69 @@ export function pushOutOfDecks(x: number, z: number, r: number, baseY: number): 
     }
   }
   return hit ? { x: px, z: pz, hit, nx, nz } : { x, z, hit: false, nx: 0, nz: 0 };
+}
+
+/** True when (x, z) is inside the footprint of a deck other than `self` whose top there is level with `y`. */
+function levelDeckBeyond(self: Profile, x: number, z: number, y: number): boolean {
+  for (const q of all()) {
+    if (q === self) continue;
+    const c = contactOf(q, x, z, q.def.width / 2 + 0.4);
+    if (c && Math.abs(c.surfaceY - y) < SKYWAY.step) return true;
+  }
+  return false;
+}
+
+/** True when `along` (give or take `r`) falls in an open stretch of the `side` rail of skyway `id`. */
+function inGap(id: string, along: number, side: 1 | -1, r: number): boolean {
+  for (const g of railGaps(id)) {
+    if (g.side === side && along >= g.from - r * 0.25 && along <= g.to + r * 0.25) return true;
+  }
+  return false;
+}
+
+/**
+ * Every open stretch of a skyway's rails, in order: its cracks (skyways.ts) and the junctions where another deck
+ * branches off it (that deck's `on` points; the gap is the branch's width plus its rails, on the side it leaves to).
+ */
+export function railGaps(id: string): readonly RailGap[] {
+  all();
+  if (!gaps) {
+    gaps = new Map();
+    for (const p of all()) {
+      const list: RailGap[] = [];
+      for (const c of p.def.cracks ?? []) {
+        list.push({ from: c.along - c.length / 2, to: c.along + c.length / 2, side: c.side, kind: 'crack' });
+      }
+      for (const q of all()) {
+        const pts = q.def.points;
+        // A branch: its first point is on this deck; the next point says which side it leaves to.
+        for (const [k, k2] of [[0, 1], [pts.length - 1, pts.length - 2]] as const) {
+          if (pts[k].on !== p.def.id) continue;
+          const at = contactOf(p, pts[k].x, pts[k].z, 1e6);
+          const toward = contactOf(p, pts[k2].x, pts[k2].z, 1e6);
+          if (!at || !toward) continue;
+          const half = q.def.width / 2 + 0.4;
+          list.push({ from: at.along - half, to: at.along + half, side: toward.across >= 0 ? 1 : -1, kind: 'junction' });
+        }
+      }
+      list.sort((a, b) => a.from - b.from);
+      gaps.set(p.def.id, list);
+    }
+  }
+  return gaps.get(id) ?? [];
+}
+
+/**
+ * How far from its start a branch deck's own drawing begins (its first `on` parent's top half width, so the two decks'
+ * tops never overlap and z-fight), or 0 for a deck that does not start on another one. Same for its end.
+ */
+export function branchTrim(id: string): { start: number; end: number } {
+  const p = all().find((q) => q.def.id === id);
+  if (!p) return { start: 0, end: 0 };
+  const parentHalf = (on: string | undefined): number => {
+    const parent = on ? SKYWAYS.find((d) => d.id === on) : undefined;
+    return parent ? parent.width / 2 + 0.4 : 0;
+  };
+  const pts = p.def.points;
+  return { start: parentHalf(pts[0].on), end: parentHalf(pts[pts.length - 1].on) };
 }

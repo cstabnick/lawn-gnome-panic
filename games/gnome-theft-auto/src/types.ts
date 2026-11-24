@@ -41,7 +41,9 @@ export type VehicleKind =
   // Air and sea (craft/, docs/roadmaps/gta-air-and-sea.md): spec.air set, craft/flight.ts stepAir flies them.
   | 'hedge-hopper'
   | 'sycamore-copter'
-  | 'dandelion-drifter';
+  | 'dandelion-drifter'
+  // Tubing (tubing/, docs/roadmaps/gta-sim-jobs-and-tubing.md): an inflatable tube towed behind a boat, or paddled.
+  | 'tow-tube';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -69,7 +71,12 @@ export interface VendingSpot {
   box: Box;
 }
 
-export interface RoadNode { id: number; x: number; z: number; links: number[] }
+export interface RoadNode {
+  id: number; x: number; z: number; links: number[];
+  /** Set on a node on an elevated deck: that skyway's id (highways/roads.ts). Unset = a ground node. Its height is
+   *  nodeY(n) (deck top or land); use nearestRoadNode / roadY there rather than a 2D search and heightAt. */
+  deck?: string;
+}
 export interface RoadGraph {
   nodes: RoadNode[];
   /** Traffic drives this far to the right of a road's centre line. */
@@ -276,6 +283,10 @@ export interface BoatState {
   slip: number;
   /** True while the water under the hull is shallower than WATER.boat.beachDepth (or there is none). */
   beached: boolean;
+  /** Waves (craft/hull.ts): seconds the hull has been clear of the water (0 or absent = afloat). */
+  air?: number;
+  /** Waves: downward speed (m/s) of the landing this step after airtime, else 0. Effects read it (splash, slam, shake). */
+  slam?: number;
 }
 
 /** Per-frame driving controls. throttle -1..1 (back..forward), steer -1..1 (+1 = right), lift -1..1 (flyers: down..up). */
@@ -376,9 +387,10 @@ export interface Player {
   /** Walk relative to camYaw, jump, collide with world.boxes and bounds, animate the model. */
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
   /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
-  updateRiding(dt: number, lean?: number): void;
-  /** Draws the gnome for one frame of a mount sequence (see mount.ts). The vehicle is not set until the gnome is seated. */
-  drawMount(pose: MountPose, dt: number): void;
+  updateRiding(dt: number, lean?: number, horn?: boolean): void;
+  /** Draws the gnome for one frame of a mount sequence (see mount.ts). The vehicle is not set until the gnome is seated. `v` and
+   *  `seat`: the vehicle being got into or out of, so a seated gnome holds its wheel and lets go of it smoothly (driverHands.ts). */
+  drawMount(pose: MountPose, dt: number, v?: Vehicle, seat?: number): void;
   enter(v: Vehicle, seat?: number): void;
   /** Leave the vehicle; stand at its left side. */
   exit(): void;
@@ -626,11 +638,17 @@ export interface Blip {
    * stage, airfield) are drawn the same way, each with its own icon. Absent: the plain gold pin other systems use.
    */
   kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
-    | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse';
+    | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
+    | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */
-export interface HudRoute { points: { x: number; z: number }[]; color: string }
+export interface HudRoute {
+  /** level: what the stretch from this point to the next is: 'deck' = up on a skyway, 'under' = on the ground beneath a
+   *  deck (an underpass); unset = ordinary ground (route.ts roadRoute). */
+  points: { x: number; z: number; level?: 'deck' | 'under' }[];
+  color: string;
+}
 
 export interface HudState {
   /** 0..4 watch level. */

@@ -21,6 +21,8 @@ import { buildWaterworks } from './waterworks';
 import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
 import { buildGardenBlocks, planGardenBlock, type GardenPlacement } from './landscaping';
+import { isParkBlock } from './parks/blocks';
+import { buildTowers, type TowerSpec } from './towers';
 import { buildScenery } from './scenery';
 import { buildSettlements } from './settlements';
 import { stageKeepOut } from './stageClear';
@@ -796,10 +798,6 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   }
 
   // ---- Blocks: towers downtown, garden-object buildings elsewhere, and the park --------------------------------------
-  const towerGeos: THREE.BufferGeometry[][] = [[], [], [], []];
-  const roofGeos: THREE.BufferGeometry[] = [];
-  const detailGeos: THREE.BufferGeometry[] = [];
-  const lightGeos: THREE.BufferGeometry[] = [];
 
   /** The park: fountain, picnic tables and bushes (the old layout shifted to the park block). */
   const buildPark = (): void => {
@@ -836,29 +834,20 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   const gardenBlocked = (r: Rect): boolean =>
     boxes.some((b) => overlap(r, b, GAP)) || nearHighway(r, HW_MARGIN) || stageRects.some((b) => overlap(r, b, GAP))
     || laterProps.some((b) => overlap(r, b, GAP));
-  /** One tower body (stepped or not), its roof slab and maybe a water tank or an antenna with a red light. */
-  const addTower = (tx: number, tz: number, w: number, d: number, h: number): void => {
+  /** Downtown towers as placed (src/towers/ styles and builds them after the block loop). */
+  const towerSpecs: TowerSpec[] = [];
+  /**
+   * One tower: its collider now, its look later (buildTowers). The three rnd() rolls are kept, in this order, so every
+   * later random draw (gardens) stays as it was; they now seed the tower's style.
+   */
+  const addTower = (tx: number, tz: number, w: number, d: number, h: number, block: { x: number; z: number; slot: number; count: number; capped: boolean }): void => {
     const pal = Math.floor(rnd() * 4);
     const stepped = rnd() < 0.35;
-    const bodyH = stepped ? h * 0.7 : h;
-    towerGeos[pal].push(scaleUvs(new THREE.BoxGeometry(w, bodyH, d).translate(tx, bodyH / 2, tz), w, bodyH, d));
-    let top = bodyH;
-    let roofW = w, roofD = d;
-    if (stepped) {
-      const uw = w * 0.6, ud = d * 0.6, uh = h - bodyH;
-      towerGeos[pal].push(scaleUvs(new THREE.BoxGeometry(uw, uh, ud).translate(tx, bodyH + uh / 2, tz), uw, uh, ud));
-      top = h;
-      roofW = uw;
-      roofD = ud;
-    }
-    roofGeos.push(new THREE.BoxGeometry(roofW + 1.2, 1, roofD + 1.2).translate(tx, top + 0.5, tz));
-    const r = rnd();
-    if (r < 0.35) {
-      detailGeos.push(new THREE.CylinderGeometry(1.4, 1.4, 3, 10).translate(tx + roofW * 0.25, top + 2.5, tz - roofD * 0.25));
-    } else if (r < 0.7) {
-      detailGeos.push(new THREE.CylinderGeometry(0.12, 0.12, 6, 6).translate(tx, top + 4, tz));
-      lightGeos.push(new THREE.SphereGeometry(0.35, 8, 6).translate(tx, top + 7.2, tz));
-    }
+    const roofRoll = rnd();
+    towerSpecs.push({
+      x: tx, z: tz, w, d, h, blockX: block.x, blockZ: block.z, slot: block.slot, count: block.count,
+      pal, stepped, roofRoll, capped: block.capped,
+    });
     boxes.push({ minX: tx - w / 2, maxX: tx + w / 2, minZ: tz - d / 2, maxZ: tz + d / 2, h });
   };
   /** 1 or 2 towers in a downtown block: one centred, or two side by side in the block's two halves. */
@@ -883,7 +872,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       for (const c of introPath) {
         if (Math.abs(c[0] - tx) < tw / 2 + 4 && Math.abs(c[2] - cz) < td / 2 + 4) th = Math.min(th, c[1] - 6);
       }
-      if (!onStage() && th >= BUILDINGS.towerMinHeight * 0.5) addTower(tx, cz, tw, td, th);
+      if (!onStage() && th >= BUILDINGS.towerMinHeight * 0.5) addTower(tx, cz, tw, td, th, { x: cx, z: cz, slot: k, count: n, capped: th < h });
     }
   };
 
@@ -942,21 +931,15 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
         continue;
       }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
+      // Park blocks (parks/blocks.ts) are laid out later by src/parks/; the garden is still planned (and thrown away) so
+      // every later block draws the same random numbers as before.
+      if (isParkBlock(cx, cz)) { planGardenBlock(block, rnd, () => true); continue; }
       // Ordinary blocks are gardens (landscaping.ts), not 1-3 random giant garden objects.
       gardenPlans.push(...planGardenBlock(block, rnd, gardenBlocked));
     }
   }
   buildGardenBlocks(scene, boxes, gardenPlans);
-  const tex = [
-    windowTexture(rnd, '#a8553a', '#ffe7a3', '#3b2d2a', '#7a3b2a'), // warm brick
-    windowTexture(rnd, '#3f7fb5', '#dff6ff', '#1d3f5e', '#2b5a80'), // glass blue
-    windowTexture(rnd, '#9aa0a6', '#fff8dc', '#4a4f55', '#7b8086'), // concrete grey
-    windowTexture(rnd, '#d9c08b', '#fff3c4', '#6e5a3c', '#b89f6a'), // sandstone
-  ];
-  tex.forEach((t, pal) => addMerged(scene, towerGeos[pal], new THREE.MeshStandardMaterial({ map: t })));
-  addMerged(scene, roofGeos, new THREE.MeshStandardMaterial({ color: 0x6e6e74 }));
-  addMerged(scene, detailGeos, new THREE.MeshStandardMaterial({ color: 0x9aa0a6 }));
-  addMerged(scene, lightGeos, new THREE.MeshStandardMaterial({ color: 0xd93636, emissive: 0x551010 }));
+  buildTowers(scene, towerSpecs);
 
   // Street lamps: every 25 units along the outer edge of each sidewalk, one instanced mesh per lamp part.
   const lampTemplate = buildPrefab('mushroom-lamp', { scale: 1.4, lights: false });

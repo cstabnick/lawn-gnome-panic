@@ -1,14 +1,17 @@
-// Quest Journal: 44px top-right button + J key overlay showing Active, Available, Locked and Completed quests,
+// Quest Journal: J key overlay (and the More menu's 'journal' action) showing Active, Available, Locked and Completed quests,
 // with Abandon and Restart Step recovery controls, and the perk (perks.ts) each side quest unlocks. Available quests pin their giver as the map waypoint. Appended to #ui,
 // never mutating #ui itself.
+import { placeName } from '../city/places';
+import { KEYS } from '../keys';
 import { perkActive, perkForQuest } from '../perks';
+import { registerAction } from '../ui/actions';
+import { fillHint } from '../ui/glyphs';
 import type { Hud } from '../types';
 import { isQuestAvailable, type Quests } from './quests';
 import type { QuestDef } from './types';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
 
 const CSS = `
-#gta-journal-btn{position:fixed;right:calc(env(safe-area-inset-right) + 158px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
 #gta-journal{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 16px);background:rgba(8,10,14,.76);font-family:system-ui,sans-serif;color:#fff;pointer-events:auto;}
 #gta-journal.open{display:flex;}
 #gta-journal .j-card{width:min(94vw,520px);max-height:84dvh;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:rgba(20,22,28,.96);border:2px solid rgba(255,210,63,.65);box-shadow:0 12px 36px rgba(0,0,0,.6);box-sizing:border-box;}
@@ -45,13 +48,6 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
   style.textContent = CSS;
   document.head.appendChild(style);
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.id = 'gta-journal-btn';
-  btn.setAttribute('aria-label', 'Quest Journal (J)');
-  btn.title = 'Quest Journal (J)';
-  btn.textContent = '📜';
-
   const overlay = document.createElement('div');
   overlay.id = 'gta-journal';
   overlay.innerHTML = `
@@ -69,7 +65,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       <div class="j-body"></div>
     </div>
   `;
-  ui.append(btn, overlay);
+  ui.append(overlay);
 
   const body = overlay.querySelector('.j-body') as HTMLElement;
   const closeBtn = overlay.querySelector('.j-close') as HTMLButtonElement;
@@ -118,9 +114,9 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       box.className = 'j-item';
       box.innerHTML = `
         <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
-        <div class="j-item-sub">From: ${g?.name ?? q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
+        <div class="j-item-sub">From: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
         ${perkHtml(q, false)}
-        ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${stripTags(l)}</div>`).join('')}
+        ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${fillHint(stripTags(l))}</div>`).join('')}
       `;
       const actions = document.createElement('div');
       actions.className = 'j-actions';
@@ -165,7 +161,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         const pinnedHere = snap.pinned === q.giver;
         b.innerHTML = `
           <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
-          <div class="j-item-sub">Giver: ${g?.name ?? q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
+          <div class="j-item-sub">Giver: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
           ${perkHtml(q, false)}
         `;
         b.addEventListener('click', () => {
@@ -234,10 +230,8 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     setOpen(!open);
   }
 
-  btn.addEventListener('pointerdown', (e) => e.stopPropagation());
   overlay.addEventListener('pointerdown', (e) => e.stopPropagation());
   body.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-  btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
   closeBtn.addEventListener('click', () => close());
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   for (const tb of tabBtns) {
@@ -247,9 +241,10 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     });
   }
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyJ' && !e.repeat) toggle();
-    else if (e.code === 'Escape' && open) close();
+    if (e.code === KEYS.journal && !e.repeat) toggle();
+    else if (e.code === KEYS.close && open) close();
   });
+  registerAction('journal', { run: toggle });
 
   return { isOpen: () => open, toggle, close };
 }

@@ -164,7 +164,46 @@ export type ObjectiveDef =
    * A race at the Speedway: go to the grid, get into the race vehicle waiting in the last slot, wait for the lights, and
    * finish `laps` laps in position `mustPlace` or better. Losing puts everyone back on the grid for another go.
    */
-  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number };
+  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number }
+  // ---- The Turfton city contracts (quests/cityQuests.ts): runner in objectivesCity.ts ----
+  /**
+   * A run through checkpoints in order: a courier round, the Skyway job, a fly-by of Thorne Tower. The clock (`seconds`)
+   * starts when checkpoint 0 is passed; running out puts the run back to checkpoint 0 (never a fail). `vehicle` spawns
+   * the job's ride when the objective starts; `requireVehicle` makes checkpoints count only while driving that kind;
+   * `maxDamage` (0..1 of the ride's hp lost) restarts the run when the spawned ride is too damaged.
+   */
+  | {
+      kind: 'checkpoints';
+      text: string;
+      points: CheckpointDef[];
+      seconds?: number;
+      vehicle?: { kind: VehicleKind; at: [number, number, number] };
+      requireVehicle?: VehicleKind;
+      maxDamage?: number;
+      heatOnStart?: number;
+      hint: string;
+    }
+  /**
+   * Do something an activity counts (the Turfton Newcomers' tutorials, quests/newcomerQuests.ts): done when probe
+   * `probe` (city/probes.ts) has risen by `count` (default 1) since the step started, or with `absolute` when it reads
+   * at least `count`. `at` puts a map blip (and the route) on the place to do it.
+   */
+  | { kind: 'probe'; text: string; probe: string; count?: number; absolute?: boolean; at?: [number, number]; hint: string };
+
+/** One gate of a 'checkpoints' objective. */
+export interface CheckpointDef {
+  /** World x, z of the gate's centre. */
+  at: [number, number];
+  /** Horizontal radius, m. */
+  radius: number;
+  /**
+   * Metres above the ground at `at` where the gate hangs (a Skyway deck, a rooftop). Absent = on the ground. When set,
+   * the player (or their vehicle) must also be within `radius` of that height.
+   */
+  height?: number;
+  /** Shown in the tracker and the toast, e.g. "Skyway deck over Ring Road North-East". */
+  label: string;
+}
 
 /** A rival driver in a 'race' objective. */
 export interface RaceRival {

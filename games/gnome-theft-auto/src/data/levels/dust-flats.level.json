@@ -204,6 +204,48 @@
         ]
       ],
       "width": 8
+    },
+    {
+      "id": "street/pebblewick-main",
+      "kind": "road",
+      "points": [
+        [
+          250,
+          20
+        ],
+        [
+          255,
+          45
+        ],
+        [
+          255,
+          125
+        ],
+        [
+          255,
+          190
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "street/pebblewick-cross",
+      "kind": "road",
+      "points": [
+        [
+          200,
+          125
+        ],
+        [
+          255,
+          125
+        ],
+        [
+          312,
+          125
+        ]
+      ],
+      "width": 10
     }
   ],
   "props": [
@@ -724,6 +766,102 @@
           "yaw": 0
         }
       }
+    },
+    {
+      "id": "reserve/pebblewick",
+      "kind": "reserve",
+      "x": 255,
+      "z": 105,
+      "data": {
+        "hw": 75,
+        "hd": 95
+      }
+    },
+    {
+      "id": "giver/pebblewick-plots",
+      "kind": "giver",
+      "x": 212,
+      "z": 146,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": -3,
+          "yaw": 3.141592653589793
+        }
+      }
+    },
+    {
+      "id": "giver/pebblewick-tower",
+      "kind": "giver",
+      "x": 312,
+      "z": 170,
+      "data": {
+        "exit": {
+          "dx": -3,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "walk/pebblewick-1",
+      "kind": "walk",
+      "x": 249,
+      "z": 70
+    },
+    {
+      "id": "walk/pebblewick-2",
+      "kind": "walk",
+      "x": 261,
+      "z": 72
+    },
+    {
+      "id": "walk/pebblewick-3",
+      "kind": "walk",
+      "x": 249,
+      "z": 108
+    },
+    {
+      "id": "walk/pebblewick-4",
+      "kind": "walk",
+      "x": 261,
+      "z": 108
+    },
+    {
+      "id": "walk/pebblewick-5",
+      "kind": "walk",
+      "x": 249,
+      "z": 150
+    },
+    {
+      "id": "walk/pebblewick-6",
+      "kind": "walk",
+      "x": 261,
+      "z": 175
+    },
+    {
+      "id": "walk/pebblewick-7",
+      "kind": "walk",
+      "x": 230,
+      "z": 124
+    },
+    {
+      "id": "walk/pebblewick-8",
+      "kind": "walk",
+      "x": 290,
+      "z": 124
+    },
+    {
+      "id": "walk/pebblewick-9",
+      "kind": "walk",
+      "x": 281,
+      "z": 100
+    },
+    {
+      "id": "walk/pebblewick-10",
+      "kind": "walk",
+      "x": 289,
+      "z": 175
     }
   ],
   "data": {
@@ -844,6 +982,17 @@
           ],
           "r": 16,
           "h": 7
+        },
+        {
+          "id": "calm/pebblewick",
+          "kind": "calm",
+          "points": [
+            [
+              255,
+              105
+            ]
+          ],
+          "r": 100
         }
       ]
     }

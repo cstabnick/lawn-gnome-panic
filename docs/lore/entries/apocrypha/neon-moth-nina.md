@@ -24,6 +24,11 @@ Her mortal enemy is a furry, dinner-plate-sized luna moth named Barnaby Jr. that
 
 "Buy a glow-band from Nina and she'll tell you which alley the Watch isn't checking tonight."
 
+## In the games
+
+- Client of `city-glow-band-express`, the Glow-Band Express job, which Dot hands out at the Kerbside Exchange.
+- Her stoop is on the Greenhouse Strip at (51, -41). She is part of the recurring city cast (R-151).
+
 ## Loose threads
 
 Who taught Nina to read the Morse code hidden in Pay 'n' Glaze's buzzing neon tube.

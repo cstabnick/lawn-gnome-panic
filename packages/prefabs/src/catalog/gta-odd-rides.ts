@@ -90,13 +90,16 @@ export const GTA_ODD_RIDES: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'cyl', d: [0.28, 0.28, 0.9], rot: [0, 0, 90], at: [0, 0.28, 0.42], c: 'steel', seg: 12, group: 'wheel-2', name: 'drum' },
-      { s: 'cyl', d: [0.05, 0.05, 0.04], rot: [0, 0, 90], at: [-0.47, 0.28, 0.42], c: 'iron-dark', seg: 10, group: 'wheel-2' },
-      { s: 'cyl', d: [0.05, 0.05, 0.04], rot: [0, 0, 90], at: [0.47, 0.28, 0.42], c: 'iron-dark', seg: 10, group: 'wheel-2' },
+      // Drum hubs start inside the drum (its ends are at x +-0.45), so no hub face is flush with the drum's end cap.
+      { s: 'cyl', d: [0.05, 0.05, 0.04], rot: [0, 0, 90], at: [-0.46, 0.28, 0.42], c: 'iron-dark', seg: 10, group: 'wheel-2' },
+      { s: 'cyl', d: [0.05, 0.05, 0.04], rot: [0, 0, 90], at: [0.46, 0.28, 0.42], c: 'iron-dark', seg: 10, group: 'wheel-2' },
       { s: 'cyl', d: [0.12, 0.12, 0.08], rot: [0, 0, 90], at: [-0.32, 0.12, -0.4], c: TYRE, seg: 10, group: 'wheel-0' },
-      { s: 'cyl', d: [0.04, 0.04, 0.1], rot: [0, 0, 90], at: [-0.32, 0.12, -0.4], c: 'steel', seg: 8, group: 'wheel-0' },
+      // Axle caps stand 4 cm proud of the tyre faces (x +-0.36) instead of 1 cm, so they do not share a plane with them.
+      { s: 'cyl', d: [0.04, 0.04, 0.16], rot: [0, 0, 90], at: [-0.32, 0.12, -0.4], c: 'steel', seg: 8, group: 'wheel-0' },
       { s: 'cyl', d: [0.12, 0.12, 0.08], rot: [0, 0, 90], at: [0.32, 0.12, -0.4], c: TYRE, seg: 10, group: 'wheel-1' },
-      { s: 'cyl', d: [0.04, 0.04, 0.1], rot: [0, 0, 90], at: [0.32, 0.12, -0.4], c: 'steel', seg: 8, group: 'wheel-1' },
-      { s: 'box', d: [0.72, 0.04, 0.08], at: [0, 0.2, -0.4], c: 'iron-dark', name: 'frame' },
+      { s: 'cyl', d: [0.04, 0.04, 0.16], rot: [0, 0, 90], at: [0.32, 0.12, -0.4], c: 'steel', seg: 8, group: 'wheel-1' },
+      // The frame ends inside the rear tyres (x +-0.34): its ends used to sit in the same plane as the tyre faces.
+      { s: 'box', d: [0.68, 0.04, 0.08], at: [0, 0.2, -0.4], c: 'iron-dark', name: 'frame' },
       { s: 'box', d: [0.5, 0.3, 0.28], at: [0, 0.37, 0], c: 'tint', name: 'engine' },
       { s: 'cyl', d: [0.075, 0.075, 0.04], at: [0, 0.66, 0], c: 'brass', seg: 10, name: 'band' },
       { s: 'cyl', d: [0.06, 0.07, 0.4], at: [0, 0.72, 0], c: 'black', seg: 8, name: 'chimney' },

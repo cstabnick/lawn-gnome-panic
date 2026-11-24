@@ -33,11 +33,36 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-hose-revolt', after: 'ch3-kiln-resin-ice', why: 'Heavy HOA heat side job once the player has the tundra run.' },
   { questId: 'sq-hoa-audit', after: 'ch3-tundra-drift-run', why: 'Spans all five biomes: only once the Fells and Dust Flats are open.' },
   { questId: 'sq-porcelain-support', after: 'ch4-sandpit-drop', why: 'Clara\'s follow-up, late game, gentle driving between battles.' },
+  // The Kerbside Exchange city contracts (cityQuests.ts, R-150): each also needs its prereq (Kerbside Rounds first).
+  { questId: 'city-kerbside-rounds', after: 'ch1-mowers-keepers', why: "The player knows Side-Valve and the Watch; Dot puts them on the Exchange's books." },
+  { questId: 'city-impound-run', after: 'ch1-tax-break-in', why: "Pip's Zero-Turn is towed after the Glaze & Tax break-in; fetch it back and fix it." },
+  { questId: 'city-glow-band-express', after: 'ch1-founders-boot', why: 'After the Amphitheater tribunal, the Velvet Toadstools book the same stage.' },
+  { questId: 'city-penthouse-exclusive', after: 'ch2-vespers-offer', why: 'Vesper made his offer; the Tattler wants dirt on him.' },
+  { questId: 'city-skyway-robbery', after: 'ch3-salvage-raid', why: 'The HOA raided Side-Valve; Local 404 hits back via the Skyway.' },
+  // The Newcomers' Card tutorials (newcomerQuests.ts): one hobby or system each, met along the story.
+  { questId: 'nc-good-neighbour', after: 'prologue-fresh-kiln', why: 'Street events happen from the first minute.' },
+  { questId: 'nc-strike-a-pose', after: 'prologue-fresh-kiln', why: 'Emotes need nothing but the gnome.' },
+  { questId: 'nc-wheel-and-kit', after: 'first-contract', why: 'The first contract hands out guns; the wheel and the Pocket Kit come next.' },
+  { questId: 'nc-lockup', after: 'ch1-mowers-keepers', why: 'The player has just met Tansy and her bay.' },
+  { questId: 'nc-party', after: 'ch1-mowers-keepers', why: 'Optional and online only; offered early, skippable.' },
+  { questId: 'nc-mind-the-verges', after: 'ch1-two-coat-tail', why: 'After the tail to Patio Heights, where the golf cart lives.' },
+  { questId: 'nc-bent-pin', after: 'ch1-tax-break-in', why: 'A calm hobby after the first heist; the canal is just south of town.' },
+  { questId: 'nc-skyway', after: 'ch1-founders-boot', why: 'End of chapter 1: the player can drive well enough for the deck.' },
+  { questId: 'nc-odd-jobs', after: 'ch1-founders-boot', why: 'Chapter 2 costs Acorns; the sim jobs earn them.' },
+  { questId: 'nc-take-off', after: 'ch2-dew-run', why: 'Chapter 2 opens the Dust Flats and the airfield.' },
+  { questId: 'nc-sky-spotting', after: 'ch2-dew-run', why: 'Once the player has looked up from the road.' },
+  { questId: 'nc-tuft-and-tally', after: 'ch2-sprinkler-gauntlet', why: 'Out in the wilds by now; the lodge is in Mossy Wood.' },
+  { questId: 'nc-last-stop-pebblewick', after: 'ch2-sprinkler-gauntlet', why: 'Pebblewick is past the Dust Flats, open since the dew run.' },
+  { questId: 'nc-reedwatch', after: 'ch2-vespers-offer', why: "Loch Moss is near; a quiet one after Vesper's offer." },
+  { questId: 'nc-hangar-and-boathouse', after: 'ch2-unmowed-tablet', why: 'The player can afford a big shed by the end of chapter 2.' },
   // The Fizz Cup at the Lost & Found Speedway (races.ts): each race also needs the one before it (its prereq).
   { questId: 'race-rookie-mowdown', after: 'ch2-dew-run', why: 'Chapter 2 opens the Dust Flats roads; a ride-on race for newcomers.' },
   { questId: 'race-lowrider-derby', after: 'ch2-unmowed-tablet', why: 'End of chapter 2: the Carburettors notice the player.' },
   { questId: 'race-snail-endurance', after: 'ch3-tundra-drift-run', why: 'After the chapter 3 drift run; Shelldon is back in town.' },
   { questId: 'race-fizz-cup-final', after: 'ch4-runway-flares', why: 'Chapter 4 is set at the airfield next door to the Speedway.' },
+  // Pebblewick's side quests (outskirtsQuests.ts): the dry water line, then the humming combine.
+  { questId: 'sq-weeping-line', after: 'ch3-kiln-resin-ice', why: 'Pebblewick plots need water; the dry line is found once the player has the tundra kiln run.' },
+  { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', why: 'The dunes hum at three once the spade truce has opened the eastern sand.' },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -76,6 +101,11 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'strangers-porch': '#ff8fc8',
   'loch-driftwood': '#c9f25a',
   speedway: '#f4f4f4',
+  'strangers-shelldon': '#9fd8a0',
+  'kerb-exchange': '#ffb347',
+  'newcomers-club': '#f2c200',
+  'pebblewick-plots': '#e0a050',
+  'pebblewick-tower': '#9fd0ff',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

@@ -7,6 +7,8 @@ import type { GnomeLook } from '@lawn/gnome';
 import type { BriefingCaller, BriefingLine } from '../briefing/briefing';
 import { BASE_SPEAKER_LOOK, CAST } from '../cutscene/cast';
 import { voiceFor } from '../voice/voices';
+import { CITY_CALLER_NAMES, CITY_COMMS } from './commsCity';
+import { NEWCOMER_CALLER_NAMES, NEWCOMER_COMMS } from './commsNewcomers';
 
 export interface CommsLine {
   /** A CAST key (cutscene/cast.ts) or another speaker key from CALLER_NAMES. */
@@ -42,6 +44,8 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   bramble: 'Bramble',
   shelldon: 'Shelldon',
   wally: 'Wind-Sock Wally',
+  ...CITY_CALLER_NAMES,
+  ...NEWCOMER_CALLER_NAMES,
 };
 
 /** Portrait look, name and voice for a speaker key. Unknown keys get the base look and a derived voice. */
@@ -244,7 +248,7 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
     0: call(['bracken', 'Vesper\'s gallery, Patio Heights. The Stone sits under a sprinkler. Lift it dry.']),
   },
   'sq-hose-revolt': {
-    0: call(['brenda', 'Four hoses, subject! North Turfton first. Kink with conviction!']),
+    0: call(['brenda', 'Four hoses, subject! The Ring Blocks main first. Kink with conviction!']),
     3: call(['brenda', 'The club, subject! Vesper\'s eighteenth hole shall be a lake!']),
   },
   'sq-hoa-audit': {
@@ -257,6 +261,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
     0: call(['driftwood', 'Three sightings. Go slow. She spooks.']),
     1: call(['driftwood', 'Buoys now. Drop them while the patrol boat looks the other way.']),
   },
+  ...CITY_COMMS,
+  ...NEWCOMER_COMMS,
 };
 
 /** The call for objective `step` of a quest, if it has one. */

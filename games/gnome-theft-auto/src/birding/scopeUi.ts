@@ -1,6 +1,10 @@
 // Birding: the DOM for the scope and HUD: the HUD row (binoculars, journal, life-list pill, hint), the binocular
 // overlay (vignette, lens rings, reticle, zoom and target labels, touch buttons), call arrows at the screen edge and
 // the shutter flash. One container (#gta-birding-ui) appended to the shared #ui. Styled inline, like huntHud.ts.
+// The binoculars button lives in the dock; the field journal is a More menu action.
+import { registerAction } from '../ui/actions';
+import { dockButton } from '../ui/dock';
+import { fillHint } from '../ui/glyphs';
 
 export interface ScopeUiHandlers {
   /** The binocular button went down / up (pointer events). */
@@ -141,14 +145,12 @@ export function createScopeUi(ui: HTMLElement, handlers: ScopeUiHandlers): Scope
     handlers.onScopeUp();
   });
   scopeBtn.addEventListener('pointercancel', () => handlers.onScopeUp());
+  dockButton(scopeBtn, 'binoculars');
 
-  const journalBtn = makeButton('📗', 'Field journal', 'width:44px;height:44px;padding:0;', () => {
-    // The press itself is handled on click, below.
-  });
-  journalBtn.addEventListener('click', () => handlers.onJournal());
+  registerAction('birdJournal', { run: () => handlers.onJournal() });
 
   const pill = makeDiv(`padding:6px 12px;border-radius:999px;background:${PANEL};border:1px solid ${EDGE};white-space:nowrap;`);
-  rowButtons.append(scopeBtn, journalBtn, pill);
+  rowButtons.append(pill);
 
   const hintEl = makeDiv('max-width:240px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.55);font-weight:400;font-size:12px;display:none;');
   row.append(rowButtons, hintEl);
@@ -249,8 +251,10 @@ export function createScopeUi(ui: HTMLElement, handlers: ScopeUiHandlers): Scope
   );
   overlay.appendChild(touchRow);
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  // Filled with the current glyphs each time the scope opens (setViewing).
+  let helpEl: HTMLDivElement | null = null;
   if (!coarse) {
-    overlay.appendChild(makeDiv([
+    helpEl = makeDiv([
       'position:absolute',
       'left:50%',
       'bottom:calc(env(safe-area-inset-bottom) + 92px)',
@@ -262,7 +266,8 @@ export function createScopeUi(ui: HTMLElement, handlers: ScopeUiHandlers): Scope
       'font-size:12px',
       'white-space:nowrap',
       'pointer-events:none',
-    ].join(';') + ';', 'Mouse: look · Wheel: zoom · Click: snap · V: lower'));
+    ].join(';') + ';');
+    overlay.appendChild(helpEl);
   }
   root.appendChild(overlay);
 
@@ -307,6 +312,8 @@ export function createScopeUi(ui: HTMLElement, handlers: ScopeUiHandlers): Scope
     if (root.style.display !== rootDisp) root.style.display = rootDisp;
     const rowDisp = hudVisible && !viewing ? 'flex' : 'none';
     if (row.style.display !== rowDisp) row.style.display = rowDisp;
+    const scopeDisp = hudVisible && !viewing ? '' : 'none';
+    if (scopeBtn.style.display !== scopeDisp) scopeBtn.style.display = scopeDisp;
     const ovDisp = viewing ? 'block' : 'none';
     if (overlay.style.display !== ovDisp) overlay.style.display = ovDisp;
   }
@@ -335,6 +342,7 @@ export function createScopeUi(ui: HTMLElement, handlers: ScopeUiHandlers): Scope
     },
 
     setViewing(v: boolean): void {
+      if (v && !viewing && helpEl) helpEl.textContent = fillHint('{look} look · wheel zoom · {fire} snap · {binoculars} lower');
       viewing = v;
       applyLayout();
     },

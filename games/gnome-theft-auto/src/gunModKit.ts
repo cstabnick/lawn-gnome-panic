@@ -1,9 +1,10 @@
 // The Ammu-Gnation Pocket Kit: the gun-mod sheet (gunShop.ts) opened anywhere in the world, on foot. The camera swings in on the
 // gnome's hand and the held gun wears the draft live (weapons.previewLoadout). Owned mods refit for free; new ones are bought at the
-// shop price plus a Pigeon-Drop delivery fee. Opened with K, or the 🔧 in the weapon wheel. Not while wanted (heat >= 1).
+// shop price plus a Pigeon-Drop delivery fee. Opened with K, from ☰ More, or the 🔧 in the weapon wheel. Not while wanted (heat >= 1).
 import type { ShowroomTarget } from './camera';
 import type { Economy } from './economy';
 import { createGunShop, type GunFit, type GunShop } from './gunShop';
+import { registerAction } from './ui/actions';
 import { moddedGun } from './gunMods';
 import { playGunShot } from './gunSounds';
 import { KEYS, isTyping } from './keys';
@@ -89,13 +90,18 @@ export function createGunModKit(deps: GunModKitDeps): GunModKit {
     return sheet?.isOpen() ?? false;
   }
 
+  const toggle = (): void => {
+    if (isOpen()) close();
+    else open();
+  };
+
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (e) => {
       if (e.code !== KEYS.modKit || e.repeat || isTyping(e)) return;
-      if (isOpen()) close();
-      else open();
+      toggle();
     });
   }
+  registerAction('modKit', { run: toggle });
 
   return { open, close, isOpen };
 }

@@ -5,6 +5,9 @@ vi.mock('../audio', () => ({ play: vi.fn(), setEngine: vi.fn(), setSkid: vi.fn()
 import { TESSIE } from '../config';
 import { GIVERS, QUESTS, questById } from './defs';
 import { SIDE_QUESTS } from './sideQuests';
+import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
+import { CITY_QUESTS } from './cityQuests';
+import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
@@ -20,22 +23,33 @@ function memoryStorage() {
 }
 
 describe('side unlock table', () => {
-  it('lists every side quest, the Tessie quest and the Speedway races exactly once', () => {
+  it('lists every side quest, the city contracts, the Tessie quest, the Speedway races and the Pebblewick quests exactly once', () => {
     const ids = SIDE_UNLOCKS.map((u) => u.questId);
-    for (const id of [...SIDE_QUESTS.map((q) => q.id), TESSIE.questId, ...RACE_QUESTS.map((q) => q.id)]) {
+    for (const id of [
+      ...SIDE_QUESTS.map((q) => q.id),
+      ...CITY_QUESTS.map((q) => q.id),
+      TESSIE.questId,
+      ...RACE_QUESTS.map((q) => q.id),
+      ...OUTSKIRTS_QUESTS.map((q) => q.id),
+      ...NEWCOMER_QUESTS.map((q) => q.id),
+    ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + 1 + RACE_QUESTS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {
+    // The Newcomers' Card tutorials (nc-*) are short teaching jobs: counted on their own, at most 2 per beat too.
     const counts = new Map<string, number>();
+    const tutorials = new Map<string, number>();
     for (const u of SIDE_UNLOCKS) {
       const after = QUESTS.find((q) => q.id === u.after);
       expect(after?.chapter, u.after).toBeDefined();
-      counts.set(u.after, (counts.get(u.after) ?? 0) + 1);
+      const m = u.questId.startsWith('nc-') ? tutorials : counts;
+      m.set(u.after, (m.get(u.after) ?? 0) + 1);
     }
     for (const n of counts.values()) expect(n).toBeLessThanOrEqual(2);
+    for (const n of tutorials.values()) expect(n).toBeLessThanOrEqual(2);
     expect(counts.size).toBeGreaterThanOrEqual(8);
   });
 

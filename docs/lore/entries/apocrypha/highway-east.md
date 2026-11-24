@@ -18,6 +18,10 @@ The winding eastern highway (`[180, 0]` to `[570, 30]`) connecting downtown Turf
 
 Leaving the manicured grass of Turfton at `x: 180`, Route East bends through drifting sandbanks past amber Black Dew fuel stations and Kiln-Shield billboards. Spurs branch north to Fort Sandpit's gate (`374, 34`) and northeast toward the Desert Airfield apron.
 
+## In the games
+
+East-outer runs on past the Fort Sandpit spur to Pebblewick's junction at (650, 20), the last stop before the Lost & Found Speedway. The road beyond the junction is the loose thread below.
+
 ## What gnomes say
 
 "Watch the turn at `x: 300`—everyone takes it too hot and ends up eating cactus."

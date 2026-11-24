@@ -5,6 +5,7 @@ import type { GnomeLook } from '@lawn/gnome';
 import type { VoiceSpec } from '@lawn/mutter';
 import { speech, unlockSpeech } from '../voice/speech';
 import { portraitElement } from './portrait';
+import { fillHint } from '../ui/glyphs';
 
 /** Who is talking: display name, look (for the portrait), voice, and a stable key (portrait cache). */
 export interface BriefingCaller {
@@ -219,7 +220,7 @@ export function createBriefing(ui: HTMLElement): Briefing {
     index = i;
     const line = lines[i];
     const caller = line.caller;
-    text = line.text;
+    text = fillHint(line.text);
     shown = 0;
     acc = 0;
     tagEl.textContent = tagFor();

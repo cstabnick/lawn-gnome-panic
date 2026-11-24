@@ -21,6 +21,7 @@ import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
 import { applyTrackRelief } from './raceTrack/track';
+import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
 import { SKYWAY } from './highways/skyways';
 
@@ -327,7 +328,8 @@ export function waterAt(x: number, z: number): WaterHit | null {
   const surface = waterLevelAt(x, z);
   if (surface === null) return null;
   const depth = surface - (waterBedAt(x, z) ?? surface);
-  return depth > 0 ? { surface, depth } : null;
+  // Waves (waves.ts) move the surface; depth stays the still depth so a shore never flickers dry. 0 until app ticks it.
+  return depth > 0 ? { surface: surface + waveSurfaceOffset(x, z), depth } : null;
 }
 
 /** The ground under the water and under bridge decks (the river bed, the loch floor); heightAt everywhere else. */

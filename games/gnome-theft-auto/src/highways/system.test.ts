@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gapCleared, runComplete } from './system';
+import { dropReward, gapCleared, runComplete } from './system';
 
 describe('skyway achievement helpers', () => {
   it('a run counts as end to end within 12 m of the full length', () => {
@@ -20,5 +20,10 @@ describe('skyway achievement helpers', () => {
     expect(gapCleared(10, 10, 10, 34.9)).toBe(false);
     expect(gapCleared(10, 10, 10, 35)).toBe(true);
     expect(gapCleared(10, 10, 10, 20)).toBe(false);
+  });
+
+  it('a drop pays 20 Acorns plus 5 per metre, capped at 80', () => {
+    expect(dropReward(3)).toBe(35);
+    expect(dropReward(20)).toBe(80);
   });
 });

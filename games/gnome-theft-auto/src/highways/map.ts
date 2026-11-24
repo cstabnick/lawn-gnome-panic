@@ -1,6 +1,7 @@
 // Skyways on the minimap and the big map: a raised road with a dark shadow and a light outline, so it reads apart from the
 // ground roads underneath. Drawn onto the pre-rendered map canvas (hud.ts), so this runs once per map build, not per frame.
-import { deckSamples, skywayDefs } from './deck';
+import { branchTrim, deckSamples, skywayDefs } from './deck';
+import { kindOf } from './skyways';
 
 const SHADOW = 'rgba(0,0,0,0.35)';
 const OUTLINE = '#f4f4f4';
@@ -15,7 +16,16 @@ export function drawSkywaysOnMap(g: CanvasRenderingContext2D, X: (x: number) => 
   g.lineCap = 'butt';
   g.lineJoin = 'round';
   for (const def of skywayDefs()) {
-    const s = deckSamples(def.id, 8);
+    // Construction-site ramps and platforms are not on the map.
+    if (kindOf(def) === 'site') continue;
+    const all = deckSamples(def.id, 8);
+    // A branch starts where it leaves its parent's edge, so it does not paint over the parent's outline.
+    let from = 0;
+    if (def.points[0].on) {
+      const i = all.findIndex((p) => p.along >= branchTrim(def.id).start);
+      from = i < 0 ? all.length : i;
+    }
+    const s = all.slice(from);
     if (s.length < 2) continue;
     const trace = (): void => {
       g.beginPath();

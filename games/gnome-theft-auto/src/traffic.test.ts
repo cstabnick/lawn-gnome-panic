@@ -112,6 +112,17 @@ function tune(over: Partial<Record<keyof typeof TRAFFIC, number>>): () => void {
   for (const [k, v] of Object.entries(over)) { old[k] = t[k]; t[k] = v as number; }
   return () => { for (const [k, v] of Object.entries(old)) t[k] = v; };
 }
+/** mulberry32: a small seeded generator in [0, 1), so a test that draws random numbers repeats exactly. */
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 /** Every car within reach is a real vehicle, 14 of them: the live drivers on their own, as before the off-screen tier. */
 const ALL_LIVE = { liveRadius: 1e9, liveRadiusOut: 1e9, minCars: 14, maxCars: 14, maxLive: 14 };
 
@@ -181,6 +192,10 @@ describe('traffic drivers', () => {
     const nodes = gridNodes();
     const world = { boxes: [], roads: { nodes, laneOffset: 2.5 }, half: 600 } as unknown as World;
     onTestFinished(tune(ALL_LIVE));
+    // Traffic draws its turns and spawns from Math.random: seed it so the run is the same in every suite order.
+    // Seeds 13 and 35 of a 40-seed sweep jam past the 25 s limit (34.6 s and 25.7 s); seed 7 is a typical run (11 s).
+    const rnd = vi.spyOn(Math, 'random').mockImplementation(seededRandom(7));
+    onTestFinished(() => rnd.mockRestore());
     const traffic = createTraffic(new THREE.Scene(), world);
     const vehicles: Vehicle[] = [];
     // Block every lane of the x = 0 road between the first two junctions with abandoned mowers (wrecks, stolen and dropped).

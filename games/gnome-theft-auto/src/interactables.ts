@@ -61,6 +61,36 @@ const SPOTS: readonly Spot[] = [
   { kind: 'cake', x: GNOMA_TRUCK.x, z: GNOMA_TRUCK.z, cost: CAKE_COST, prompt: 'Buy Acorn-Flour Cake (25 Acorns — Full Glaze)' },
 ];
 
+/**
+ * Spots added by other modules (parks/life.ts: benches, wishing fountains). `prompt` is shown within INTERACT_RANGE;
+ * `run` does the thing (it gets the interactables' own deps). Checked after the built-in spots.
+ */
+export interface ExtraSpot {
+  x: number;
+  z: number;
+  prompt: string;
+  run(player: Player, deps: { hud: Hud; economy: Economy; fx: Fx; play: (sfx: Sfx) => void }): boolean;
+}
+const EXTRA: ExtraSpot[] = [];
+export function addInteractSpot(s: ExtraSpot): void {
+  EXTRA.push(s);
+}
+function nearestExtra(player: Player): ExtraSpot | null {
+  if (player.vehicle || player.airborne) return null;
+  let best: ExtraSpot | null = null;
+  let bestD2 = INTERACT_RANGE * INTERACT_RANGE;
+  for (const s of EXTRA) {
+    const dx = player.x - s.x;
+    const dz = player.z - s.z;
+    const d2 = dx * dx + dz * dz;
+    if (d2 <= bestD2) {
+      bestD2 = d2;
+      best = s;
+    }
+  }
+  return best;
+}
+
 function nearestSpot(player: Player): Spot | null {
   if (player.vehicle || player.airborne) return null;
   let best: Spot | null = null;
@@ -88,12 +118,15 @@ export function createInteractables(
   let quipIndex = 0;
 
   function prompt(player: Player): string | null {
-    return nearestSpot(player)?.prompt ?? null;
+    return nearestSpot(player)?.prompt ?? nearestExtra(player)?.prompt ?? null;
   }
 
   function interact(player: Player): boolean {
     const spot = nearestSpot(player);
-    if (!spot) return false;
+    if (!spot) {
+      const extra = nearestExtra(player);
+      return extra ? extra.run(player, { hud, economy, fx, play }) : false;
+    }
 
     if (spot.kind === 'cola') {
       if (!economy.spend(COLA_COST, 'Acorn-Cola')) {

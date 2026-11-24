@@ -11,6 +11,8 @@ import { heightAt } from './terrain';
 import { createAnimator, type Animator } from './anim/animator';
 import { pickFor } from './anim/index';
 import { WORK_IDS, type AnimId } from './anim/types';
+import { PERSONAS, idleFor, type Persona } from './anim/persona';
+import { biomeAt } from './config';
 import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 
 export interface AmbientGnomeDef {
@@ -330,7 +332,8 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
   return lines;
 }
 
-function makeBubbleSprite(name: string, text: string): THREE.Sprite {
+/** A speech bubble sprite (name over the line). Callers set its scale (about 3.4 x 1.18), position and visibility. Also used by outskirts/npcs.ts. */
+export function makeBubbleSprite(name: string, text: string): THREE.Sprite {
   if (typeof document === 'undefined') {
     return new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true }));
   }
@@ -381,7 +384,8 @@ function makeBubbleSprite(name: string, text: string): THREE.Sprite {
   return sprite;
 }
 
-export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px: number, pz: number): void } {
+/** `defs`: the gnomes to make (default the 26 of AMBIENT_GNOMES; parks/life.ts passes its park townsgnomes). */
+export function createAmbientGnomes(scene: THREE.Scene, defs: readonly AmbientGnomeDef[] = AMBIENT_GNOMES): { update(dt: number, px: number, pz: number): void } {
   const entries: {
     def: AmbientGnomeDef;
     model: GnomeModel;
@@ -401,10 +405,15 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
     animator: Animator;
     /** Pose level of detail (animStride.ts). */
     clock: AnimClock;
+    /** Character (anim/persona.ts), and seconds until the next little bit of business (a yawn, a map, the weather). */
+    persona: Persona;
+    bitT: number;
+    /** Works, sits or sleeps: keeps its idle (no wave, no bits). */
+    keepsIdle: boolean;
   }[] = [];
 
-  for (let i = 0; i < AMBIENT_GNOMES.length; i++) {
-    const def = AMBIENT_GNOMES[i];
+  for (let i = 0; i < defs.length; i++) {
+    const def = defs[i];
     const look: GnomeLook = { ...BASE_LOOK, ...def.look };
     const model = makeGnome(scene, look);
     model.update(gnomeState(def.x, heightAt(def.x, def.z), def.z, def.yaw, 0), 1);
@@ -424,6 +433,8 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
       def, model, bubble, vis: 0, yaw: def.yaw, phase,
       voice, popped: false, spoken: false, lastSpoke: -Infinity, idle, animator,
       clock: newAnimClock(i),
+      persona: pickFor(def.id, PERSONAS), bitT: 15 + ((i * 7.3) % 30),
+      keepsIdle: idle === 'sit-ground' || idle === 'sleep' || (WORK_IDS as readonly AnimId[]).includes(idle),
     });
   }
 
@@ -446,14 +457,23 @@ export function createAmbientGnomes(scene: THREE.Scene): { update(dt: number, px
             e.lastSpoke = elapsed;
           }
           // The bubble pops for the player: wave, unless the gnome is sitting, sleeping or working. Then back to idle.
-          const keepsIdle = e.idle === 'sit-ground' || e.idle === 'sleep' || (WORK_IDS as readonly AnimId[]).includes(e.idle);
-          if (px < 1e5 && !keepsIdle) {
+          if (px < 1e5 && !e.keepsIdle) {
             const idle = e.idle;
             e.animator.play('wave', { loop: false, onEnd: () => e.animator.play(idle, { loop: true }) });
           }
         }
         e.popped = shown;
         if (e.vis < 0.03) e.spoken = false;
+
+        // Now and then, out of the player's way, a bit of character by place and time (anim/persona.ts), then the idle.
+        e.bitT -= dt;
+        if (e.bitT <= 0) {
+          e.bitT = 20 + Math.random() * 25;
+          if (!shown && !e.keepsIdle && d < 120) {
+            const idle = e.idle;
+            e.animator.play(idleFor(e.persona, biomeAt(e.def.x, e.def.z)), { loop: false, onEnd: () => e.animator.play(idle, { loop: true }) });
+          }
+        }
 
         const targetYaw = want > 0.5 ? Math.atan2(px - e.def.x, pz - e.def.z) : e.def.yaw;
         e.yaw += angleDiff(targetYaw, e.yaw) * Math.min(1, 5 * dt);

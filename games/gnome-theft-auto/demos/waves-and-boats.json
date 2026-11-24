@@ -1,0 +1,12 @@
+{
+  "title": "Waves: a gravy boat rides a blustery Loch Moss swell, heaving, pitching and bouncing off crests",
+  "url": "http://localhost:5449/",
+  "setup": { "mount": "gravy-boat", "mountat": "-640,-640,2.4", "offline": true, "no-intro": true, "debug": true, "sea": "blustery" },
+  "warmup": 3,
+  "duration": 5,
+  "steps": [
+    { "t": 0.3, "hold": "forward", "for": 4 }
+  ],
+  "size": [640, 400],
+  "fps": 20
+}

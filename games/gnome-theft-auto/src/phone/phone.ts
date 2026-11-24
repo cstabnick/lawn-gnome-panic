@@ -1,9 +1,9 @@
-// The in-game phone. A 44 px button, the P key and the pad's Back/View button (gamepad.ts
-// fires 'gta:phone') open a small menu of apps; other modules add apps with addApp.
+// The in-game phone. It has no button of its own: the P key and the More menu (ui/actions.ts 'phone') open a small
+// menu of apps; other modules add apps with addApp.
 
 import { firstPad } from '@lawn/gamepad';
-import { prefabIconElement } from '@lawn/prefabs';
 import { KEYS, isTyping } from '../keys';
+import { registerAction } from '../ui/actions';
 
 export interface PhoneApp {
   id: string;
@@ -32,9 +32,6 @@ export interface Phone {
 const BUTTON_TOP = 'calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px)';
 
 const CSS = `
-#gta-phone-btn{position:fixed;right:calc(env(safe-area-inset-right) + 262px);top:${BUTTON_TOP};z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
-#gta-phone-btn.on{border-color:#7cf0ff;box-shadow:0 0 0 2px rgba(124,240,255,.55);}
-body.gta-in-scene #gta-phone-btn{display:none!important}
 #gta-phone{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(${BUTTON_TOP} + 52px);z-index:36;width:min(300px,calc(100vw - 24px));max-height:70vh;overflow-y:auto;box-sizing:border-box;display:none;flex-direction:column;gap:8px;padding:12px;background:#14181c;border:2px solid rgba(255,255,255,.25);border-radius:18px;color:#fff;font-family:system-ui,sans-serif;pointer-events:auto;touch-action:pan-y;}
 #gta-phone .gta-phone-head{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:16px;padding:0 2px;}
 #gta-phone .gta-phone-x{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-size:18px;line-height:1;padding:0;cursor:pointer;touch-action:manipulation;}
@@ -57,15 +54,6 @@ export function createPhone(ui: HTMLElement, deps: PhoneDeps): Phone {
   const style = document.createElement('style');
   style.textContent = CSS;
   ui.appendChild(style);
-
-  const btn = document.createElement('button');
-  btn.id = 'gta-phone-btn';
-  btn.setAttribute('aria-label', 'Phone (P)');
-  btn.title = 'Phone (P)';
-  btn.appendChild(prefabIconElement('tin-can-phone', '📱', 24));
-  btn.addEventListener('pointerdown', (e) => e.stopPropagation());
-  btn.addEventListener('click', () => toggle());
-  ui.appendChild(btn);
 
   const panel = document.createElement('div');
   panel.id = 'gta-phone';
@@ -171,7 +159,6 @@ export function createPhone(ui: HTMLElement, deps: PhoneDeps): Phone {
     render();
     isOpen = true;
     panel.style.display = 'flex';
-    btn.classList.add('on');
     document.body.dataset.options = 'open';
     if (document.pointerLockElement) document.exitPointerLock();
     focus = 0;
@@ -187,7 +174,6 @@ export function createPhone(ui: HTMLElement, deps: PhoneDeps): Phone {
     pollRaf = 0;
     isOpen = false;
     panel.style.display = 'none';
-    btn.classList.remove('on');
     document.body.dataset.options = '';
   }
 
@@ -207,6 +193,7 @@ export function createPhone(ui: HTMLElement, deps: PhoneDeps): Phone {
     }
   });
   window.addEventListener('gta:phone', toggle);
+  registerAction('phone', { run: toggle });
 
   return {
     addApp(app: PhoneApp): void {

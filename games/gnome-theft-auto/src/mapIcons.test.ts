@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { installFakeDom } from './testing/fakeDom';
-import { isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
+import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { placeBlips } from './mapPois';
 import type { Blip } from './types';
 
@@ -10,14 +10,15 @@ const KINDS = Object.keys(PLACE_STYLE) as PlaceKind[];
 
 describe('map place styles', () => {
   it('has a name and a colour for every place kind, all distinct', () => {
-    expect(KINDS).toHaveLength(14);
+    // Other features add places: at least the 20 this file was written with.
+    expect(KINDS.length).toBeGreaterThanOrEqual(20);
     expect(new Set(KINDS.map((k) => PLACE_STYLE[k].color)).size).toBe(KINDS.length);
     expect(new Set(KINDS.map((k) => PLACE_STYLE[k].name)).size).toBe(KINDS.length);
     for (const k of KINDS) expect(PLACE_STYLE[k].name.length).toBeGreaterThan(0);
   });
 
   it('pins only the services to the rim', () => {
-    expect([...RIM_PLACES].sort()).toEqual(['glaze', 'hospital', 'salvage', 'shop']);
+    expect([...RIM_PLACES].sort()).toEqual(['exchange', 'glaze', 'hospital', 'salvage', 'shop']);
   });
 
   it('recognises every place kind and no quest or player kind', () => {
@@ -31,16 +32,32 @@ describe('map place styles', () => {
 });
 
 describe('placeBlips', () => {
-  it('returns the ten fixed places, distinct kinds and labels', () => {
+  it('returns the fixed places: distinct labels, and each kind once unless it repeats by design', () => {
     const blips = placeBlips();
-    expect(blips).toHaveLength(10);
-    expect(new Set(blips.map((b) => b.kind)).size).toBe(10);
-    expect(new Set(blips.map((b) => b.label)).size).toBe(10);
+    // 10 original places + 4 services/bent pin + 4 road ramps + the Unfinished Span + East Beltway + 2 work sites
+    // + the Kerbside Exchange + 6 parks + 4 city edges.
+    // At least these 32; other features add more (one line each in mapPois.ts).
+    expect(blips.length).toBeGreaterThanOrEqual(32);
+    expect(new Set(blips.map((b) => b.label)).size).toBe(blips.length);
+    const repeats = new Set<string>(['onramp', 'works', 'skyway', 'park', 'edge']);
+    const counts = new Map<string, number>();
+    for (const b of blips) counts.set(b.kind as string, (counts.get(b.kind as string) ?? 0) + 1);
+    for (const [kind, n] of counts) if (!repeats.has(kind)) expect(n).toBe(1);
+    expect(counts.get('onramp')).toBe(5);
+    expect(counts.get('works')).toBe(2);
+    expect(counts.get('skyway')).toBe(2);
+    expect(counts.get('park')).toBe(6);
+    expect(counts.get('edge')).toBe(4);
     for (const b of blips) {
       expect(isPlace(b)).toBe(true);
       expect(b.color).toBe(PLACE_STYLE[b.kind as PlaceKind].color);
       expect(Number.isFinite(b.x) && Number.isFinite(b.z)).toBe(true);
     }
+  });
+
+  it('draws every place kind without throwing', () => {
+    const g = document.createElement('canvas').getContext('2d')!;
+    for (const k of KINDS) expect(() => drawPlaceIcon(g, 10, 10, 8, k)).not.toThrow();
   });
 });
 

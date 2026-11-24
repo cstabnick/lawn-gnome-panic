@@ -8,6 +8,8 @@ import { createGlazeShop, type GlazeShop } from './glazeShop';
 import { type GlazeBay, glazeBayNear } from './glazeBay';
 import { GLAZE_KINDS } from './glazeStore';
 import { getSetup, resetSetup, setSetup } from './simdrive';
+import { registerAction } from './ui/actions';
+import { dockButton } from './ui/dock';
 import type { Loadout } from '@lawn/glaze';
 import type { Hud, Player, Sfx, Vehicle, VehicleKind, Watch } from './types';
 
@@ -48,21 +50,9 @@ const CSS = `
 #gta-garage{position:fixed;inset:0;pointer-events:none;z-index:35;font-family:system-ui,-apple-system,sans-serif;color:#f4f6f8;}
 #gta-garage button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;}
 #gta-garage .gta-tune-fab{
-  position:fixed;display:none;align-items:center;justify-content:center;gap:6px;
-  min-width:44px;min-height:44px;padding:10px 18px;border-radius:999px;
+  display:none;align-items:center;justify-content:center;gap:6px;
   border:2px solid rgba(255,210,63,0.9);background:rgba(22,26,30,0.88);
-  color:#ffd23f;font-size:15px;font-weight:800;letter-spacing:0.02em;
-  box-shadow:0 4px 14px rgba(0,0,0,0.5);pointer-events:auto;
-  left:calc(50% + (env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)) / 2);
-  transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 56px);
-}
-#gta-garage .gta-tune-fab:active{transform:translateX(-50%) scale(0.97);}
-@media (max-width:600px) and (min-height:501px){
-  #gta-garage .gta-tune-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 324px);}
-}
-@media (max-height:500px){
-  #gta-garage .gta-tune-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 52px);}
+  color:#ffd23f;font-weight:800;letter-spacing:0.02em;pointer-events:auto;
 }
 #gta-garage .gta-garage-backdrop{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -160,11 +150,13 @@ export function createGarages(
   fab.type = 'button';
   fab.className = 'gta-tune-fab';
   fab.textContent = '🔧 Handling';
+  fab.style.display = 'none';
 
   const glazeFab = document.createElement('button');
   glazeFab.type = 'button';
   glazeFab.className = 'gta-tune-fab gta-glaze-fab';
   glazeFab.textContent = "🎨 Pay 'n' Glaze";
+  glazeFab.style.display = 'none';
 
   const backdrop = document.createElement('div');
   backdrop.className = 'gta-garage-backdrop';
@@ -176,8 +168,11 @@ export function createGarages(
   modal.setAttribute('aria-label', 'Side-Valve Salvage Tuning Garage');
 
   backdrop.appendChild(modal);
-  root.append(fab, glazeFab, backdrop);
+  root.append(backdrop);
   ui.appendChild(root);
+  // The two shop buttons live in the dock (one place, one style, a key / pad badge).
+  dockButton(fab, 'garage');
+  dockButton(glazeFab, 'garage');
 
   // Prevent touches/clicks on garage controls from triggering camera look, stick, or pointer lock.
   fab.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -426,6 +421,10 @@ export function createGarages(
 
   fab.addEventListener('click', () => openTuningModal());
   glazeFab.addEventListener('click', () => openGlaze());
+  registerAction('garage', {
+    run: () => (fab.style.display !== 'none' ? fab.click() : glazeFab.click()),
+    available: () => fab.style.display !== 'none' || glazeFab.style.display !== 'none',
+  });
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) closeTuningModal();
   });

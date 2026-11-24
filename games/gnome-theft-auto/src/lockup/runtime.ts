@@ -9,6 +9,9 @@ import type { Sfx, Vehicle, VehicleKind } from '../types';
 import { AIRFIELD, MOWER_TINTS, VEHICLES } from '../config';
 import { fleetEntry } from '../fleet';
 import { removeVehicle, syncVehicleMesh } from '../vehicles';
+import { shareVehicle } from '../online/shared';
+import { registerAction } from '../ui/actions';
+import { dockButton } from '../ui/dock';
 import { KEYS, isTyping } from '../keys';
 import { ESTATES, LOCKUP } from './config';
 import { createDeedStore } from './deeds';
@@ -82,6 +85,8 @@ export interface Lockup {
   callDelivery(uid: string, free?: boolean): string | null;
   /** The world instance of uid this session, or null. */
   instanceOf(uid: string): Vehicle | null;
+  /** Online (online/slingSync.ts): the Sling-Lift flight in the air now, or null. */
+  slingWire(): { state: SlingState; kind: VehicleKind; tint: number } | null;
 }
 
 interface Flight {
@@ -94,23 +99,9 @@ interface Flight {
 
 const FAB_CSS = `
 .gta-lockup-fab{
-  position:fixed;display:none;align-items:center;justify-content:center;gap:6px;
-  min-width:44px;min-height:44px;padding:10px 18px;border-radius:999px;
+  display:none;align-items:center;justify-content:center;gap:6px;
   border:2px solid rgba(255,210,63,0.9);background:rgba(22,26,30,0.88);
-  color:#ffd23f;font-size:15px;font-weight:800;letter-spacing:0.02em;
-  box-shadow:0 4px 14px rgba(0,0,0,0.5);pointer-events:auto;
-  font-family:system-ui,-apple-system,sans-serif;touch-action:manipulation;cursor:pointer;
-  left:calc(50% + (env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)) / 2);
-  transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom,0px) + 112px);
-  z-index:35;
-}
-.gta-lockup-fab:active{transform:translateX(-50%) scale(0.97);}
-@media (max-width:600px) and (min-height:501px){
-  .gta-lockup-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 380px);}
-}
-@media (max-height:500px){
-  .gta-lockup-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 108px);}
+  color:#ffd23f;font-weight:800;letter-spacing:0.02em;pointer-events:auto;
 }
 `;
 
@@ -278,6 +269,7 @@ export function createLockup(deps: LockupDeps): Lockup {
     v.y = spot.y;
     syncVehicleMesh(v, 0);
     deps.vehicles.push(v);
+    shareVehicle(v); // online: everyone sees it out (online/parkSync.ts)
     register(uid, v);
     deps.hud.toast(`${rec.name} is out of ${placeName(kind)}.`);
     deps.play('door');
@@ -423,7 +415,11 @@ export function createLockup(deps: LockupDeps): Lockup {
   fab.style.display = 'none';
   fab.addEventListener('pointerdown', (e) => e.stopPropagation());
   fab.addEventListener('click', () => tryStore());
-  deps.ui.appendChild(fab);
+  dockButton(fab, 'lockupStore');
+  registerAction('lockupStore', {
+    run: () => tryStore(),
+    available: () => fab.style.display !== 'none',
+  });
 
   function refreshFab(): void {
     const p = deps.player();
@@ -472,6 +468,7 @@ export function createLockup(deps: LockupDeps): Lockup {
           f.load.yaw = d.yaw;
           syncVehicleMesh(f.load, 0);
           deps.vehicles.push(f.load);
+          shareVehicle(f.load); // online: the delivery stays for everyone once it is down (online/parkSync.ts)
           cooldown = LOCKUP.delivery.cooldownS;
           deps.hud.toast(`Sling-Lift: your ${f.load.spec.name} is down.`);
           deps.play('door');
@@ -582,6 +579,8 @@ export function createLockup(deps: LockupDeps): Lockup {
     callDelivery,
 
     instanceOf: (uid: string): Vehicle | null => instances.get(uid) ?? null,
+
+    slingWire: () => (flight ? { state: flight.state, kind: flight.load.kind, tint: flight.load.tint } : null),
   };
 }
 

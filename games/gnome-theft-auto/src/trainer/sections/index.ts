@@ -7,6 +7,7 @@ import { registerGarageSection } from './garage';
 import { registerWorldSection } from './world';
 import { registerCutsceneSection } from './cutscenes';
 import { registerAnimationSection } from './animations';
+import { registerQuestSimSection } from '../../questSim/trainer';
 
 let done = false;
 
@@ -20,4 +21,5 @@ export function registerBuiltInSections(): void {
   registerWorldSection(); // order 50
   registerCutsceneSection(); // order 60
   registerAnimationSection(); // order 70
+  registerQuestSimSection(); // order 75 (questSim/trainer.ts)
 }

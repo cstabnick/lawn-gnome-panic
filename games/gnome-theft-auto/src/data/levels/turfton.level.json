@@ -241,6 +241,45 @@
           "yaw": -1.5707963267948966
         }
       }
+    },
+    {
+      "id": "giver/strangers-shelldon",
+      "kind": "giver",
+      "x": -77,
+      "z": 70,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/newcomers-club",
+      "kind": "giver",
+      "x": -13,
+      "z": 28,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/kerb-exchange",
+      "kind": "giver",
+      "x": -9,
+      "z": 45,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
     }
   ],
   "data": {

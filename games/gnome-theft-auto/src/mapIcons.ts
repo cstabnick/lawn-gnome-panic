@@ -3,7 +3,8 @@
 import type { Blip } from './types';
 
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
-  | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse';
+  | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
+  | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -21,10 +22,20 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   skyway: { name: 'Skyway', color: '#8a8f9c' },
   hangar: { name: 'Hangar Two (your aircraft)', color: '#2b5f8a' },
   boathouse: { name: 'Mossbank Boathouse (your boats)', color: '#2a8f8a' },
+  lockup: { name: 'Side-Valve Lock-Up', color: '#c4661f' },
+  lodge: { name: 'Tuft & Tally Lodge', color: '#7a9a3a' },
+  hide: { name: 'Reedwatch Hide', color: '#5a9a8a' },
+  tackle: { name: 'The Bent Pin', color: '#3f8fb0' },
+  onramp: { name: 'Skyway ramp', color: '#6f7684' },
+  works: { name: 'Local 404 work site', color: '#e0a100' },
+  exchange: { name: 'Kerbside Exchange (jobs)', color: '#ffb347' },
+  town: { name: 'Pebblewick (town)', color: '#b8743a' },
+  park: { name: 'Park', color: '#3f9a4a' },
+  edge: { name: 'City edge', color: '#6b4a2e' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
-export const RIM_PLACES: ReadonlySet<PlaceKind> = new Set<PlaceKind>(['shop', 'glaze', 'hospital', 'salvage']);
+export const RIM_PLACES: ReadonlySet<PlaceKind> = new Set<PlaceKind>(['shop', 'glaze', 'hospital', 'salvage', 'exchange']);
 
 const PLACE_SET: ReadonlySet<string> = new Set<string>(Object.keys(PLACE_STYLE));
 const OUTLINE = '#0c0f13';
@@ -262,6 +273,103 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       glyphRect(g, x, y, s, -0.8, -0.1, 0.25, 0.6);
       glyphRect(g, x, y, s, 0.55, -0.1, 0.25, 0.6);
       glyphRect(g, x, y, s, -1, 0.65, 2, 0.25);
+      break;
+    }
+    case 'lockup': {
+      // A garage door: a white box with three coloured slats.
+      glyphRect(g, x, y, s, -0.9, -0.8, 1.8, 1.6);
+      g.fillStyle = color;
+      for (const v of [-0.45, -0.05, 0.35]) glyphRect(g, x, y, s, -0.9, v, 1.8, 0.2);
+      break;
+    }
+    case 'lodge': {
+      // A tuft or antler: a stem that forks into two tines.
+      g.beginPath();
+      g.moveTo(x, y + 1 * s);
+      g.lineTo(x, y + 0.1 * s);
+      g.lineTo(x - 0.8 * s, y - 0.9 * s);
+      g.moveTo(x, y + 0.1 * s);
+      g.lineTo(x + 0.8 * s, y - 0.9 * s);
+      g.stroke();
+      break;
+    }
+    case 'hide': {
+      // Binoculars: two lenses on a bridge.
+      g.beginPath();
+      g.arc(x - 0.5 * s, y + 0.3 * s, 0.5 * s, 0, TAU);
+      g.arc(x + 0.5 * s, y + 0.3 * s, 0.5 * s, 0, TAU);
+      g.fill();
+      glyphRect(g, x, y, s, -0.2, -0.45, 0.4, 0.4);
+      break;
+    }
+    case 'tackle': {
+      // A fish hook: a shank, a J curve at the bottom and a barb at the top.
+      g.beginPath();
+      g.moveTo(x + 0.3 * s, y - 1 * s);
+      g.lineTo(x + 0.3 * s, y + 0.4 * s);
+      g.arc(x - 0.1 * s, y + 0.4 * s, 0.4 * s, 0, Math.PI);
+      g.moveTo(x + 0.3 * s, y - 0.9 * s);
+      g.lineTo(x - 0.4 * s, y - 0.6 * s);
+      g.stroke();
+      break;
+    }
+    case 'onramp': {
+      // An up-arrow standing on a slope.
+      glyphPoly(g, x, y, s, [[0, -1], [0.55, -0.3], [0.15, -0.3], [0.15, 0.5], [-0.15, 0.5], [-0.15, -0.3], [-0.55, -0.3]]);
+      g.beginPath();
+      g.moveTo(x - 1 * s, y + 0.9 * s);
+      g.lineTo(x + 1 * s, y + 0.5 * s);
+      g.stroke();
+      break;
+    }
+    case 'works': {
+      // A traffic cone: a white triangle with a coloured band and a base.
+      glyphPoly(g, x, y, s, [[0, -0.9], [0.45, 0.7], [-0.45, 0.7]]);
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, -0.3, -0.1, 0.6, 0.25);
+      g.fillStyle = WHITE;
+      glyphRect(g, x, y, s, -0.6, 0.7, 1.2, 0.2);
+      break;
+    }
+    case 'exchange': {
+      // A ticket: a white stub with a notch cut from each end and a tear line.
+      glyphRect(g, x, y, s, -1, -0.6, 2, 1.2);
+      g.fillStyle = color;
+      for (const u of [-1, 1]) {
+        g.beginPath();
+        g.arc(x + u * s, y, 0.25 * s, 0, TAU);
+        g.fill();
+      }
+      glyphRect(g, x, y, s, 0.35, -0.6, 0.1, 1.2);
+      break;
+    }
+    case 'town': {
+      // A water tower: a tank on two legs.
+      glyphRect(g, x, y, s, -0.75, -0.95, 1.5, 0.85);
+      glyphRect(g, x, y, s, -0.6, -0.1, 0.22, 1.05);
+      glyphRect(g, x, y, s, 0.38, -0.1, 0.22, 1.05);
+      glyphRect(g, x, y, s, -0.6, 0.35, 1.2, 0.15);
+      break;
+    }
+    case 'park': {
+      // A small round tree: a dark green canopy disc on a short brown trunk.
+      g.fillStyle = '#1d4d24';
+      g.beginPath();
+      g.arc(x, y - 0.25 * s, 0.6 * s, 0, TAU);
+      g.fill();
+      g.fillStyle = '#7a4e2a';
+      glyphRect(g, x, y, s, -0.12, 0.3, 0.24, 0.7);
+      break;
+    }
+    case 'edge': {
+      // Rough ground: two short diagonal hatch lines.
+      g.lineWidth = lw * 0.9;
+      for (const u of [-0.35, 0.35]) {
+        g.beginPath();
+        g.moveTo(x + (u - 0.35) * s, y + 0.8 * s);
+        g.lineTo(x + (u + 0.35) * s, y - 0.8 * s);
+        g.stroke();
+      }
       break;
     }
   }

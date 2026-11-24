@@ -47,6 +47,7 @@ function clearVehicleSpawn(
     let best = world.roads.nodes[0];
     let bestD = Infinity;
     for (const n of world.roads.nodes) {
+      if (n.deck !== undefined) continue;
       const d = Math.hypot(n.x - x, n.z - z);
       if (d < bestD) {
         bestD = d;
@@ -88,7 +89,8 @@ function expandRoadWaypoints(raw: [number, number][], deps: QuestDeps): [number,
     let best = -1;
     let bestD = Infinity;
     for (const n of nodes) {
-      if (n.links.length === 0) continue;
+      // Quest waypoints are on the ground: never snap to a skyway deck node above them.
+      if (n.links.length === 0 || n.deck !== undefined) continue;
       const d = Math.hypot(n.x - x, n.z - z);
       if (d < bestD) { bestD = d; best = n.id; }
     }

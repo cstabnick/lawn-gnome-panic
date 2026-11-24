@@ -28,10 +28,14 @@ export interface KitDeps {
   fx: Fx;
   economy?: Economy;
   play?: (s: Sfx) => void;
+  /** Called before a reward is paid out; return true when someone else pays it instead (the online lead's guest). */
+  onReward?(acorns: number, reason: string): boolean;
 }
 
 /** The kit plus what the director needs to run and clean it. */
 export interface RunKit extends EventKit {
+  /** Everything the event owns right now: its living gnomes, every car, every prop (for online mirrors). */
+  pieces(): { actors: Npc[]; cars: Vehicle[]; props: THREE.Object3D[] };
   /** Advance time and move every actor and car (call before the script's update). */
   step(dt: number, player: Player): void;
   /** The event is over: its gnomes become ordinary pedestrians, its cars stop being steered (they stay until dispose). */
@@ -291,6 +295,8 @@ export function createKit(
       o = new THREE.Group(); // an unknown id must never break the game: an empty marker
     }
     ({ x, z } = place(x, z));
+    o.userData.prefab = id;
+    o.userData.scale = scale;
     o.position.set(x, heightAt(x, z), z);
     o.rotation.y = yaw;
     deps.scene.add(o);
@@ -333,6 +339,7 @@ export function createKit(
     reward(acorns, reason) {
       const n = Math.round(acorns * perkRewardScale());
       if (n <= 0) return;
+      if (deps.onReward?.(n, reason)) return;
       deps.economy?.earn(n, reason);
       deps.hud.toast(`${reason} +${n} Acorns`, 3500);
       deps.play?.('steal');
@@ -381,6 +388,13 @@ export function createKit(
       cars.length = 0;
       for (const o of props) deps.scene.remove(o);
       props.length = 0;
+    },
+    pieces() {
+      return {
+        actors: actors.filter((a) => alive(a)).map((a) => a.npc),
+        cars: cars.map((c) => c.v),
+        props: [...props],
+      };
     },
     nearest() {
       let best = dist(anchor.x, anchor.z);

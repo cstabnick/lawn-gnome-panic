@@ -41,13 +41,24 @@ export function registerSteerVariant(baseId: string, v: SteerVariant): string {
     ? [v.wheelAt[0] - old[0], v.wheelAt[1] - old[1], v.wheelAt[2] - old[2]]
     : [v.wheelAt[0], v.wheelAt[1], v.wheelAt[2]];
   const drop = new Set(v.dropParts);
-  const parts: Part[] = base.parts
-    .filter((_, i) => !drop.has(i))
-    .map((p): Part => {
-      if (p.group !== pivotName) return p;
-      const [x, y, z] = p.at ?? [0, 0, 0];
-      return { ...p, at: [x + delta[0], y + delta[1], z + delta[2]] };
-    });
+  // Plain parts that become (or move with) the control: by (wheelAt - from) when the base has no such pivot, else with the pivot.
+  const joins = new Set(v.groupParts ?? []);
+  const moves = new Set(v.moveParts ?? []);
+  const from = v.from ?? v.wheelAt;
+  const shift: Vec3 = old ? delta : [v.wheelAt[0] - from[0], v.wheelAt[1] - from[1], v.wheelAt[2] - from[2]];
+  const moved = (p: Part, d: Vec3): Part => {
+    const [x, y, z] = p.at ?? [0, 0, 0];
+    return { ...p, at: [x + d[0], y + d[1], z + d[2]] };
+  };
+  const parts: Part[] = [];
+  base.parts.forEach((p, i) => {
+    if (drop.has(i)) return;
+    if (joins.has(i)) parts.push({ ...moved(p, shift), group: pivotName });
+    else if (moves.has(i)) parts.push(moved(p, shift));
+    else if (p.group === pivotName) parts.push(moved(p, delta));
+    else parts.push(p);
+  });
+  for (const p of v.addParts ?? []) parts.push({ ...p, group: pivotName });
   if (v.columnBase) {
     const [bx, by, bz] = v.columnBase;
     const [tx, ty, tz] = v.wheelAt;

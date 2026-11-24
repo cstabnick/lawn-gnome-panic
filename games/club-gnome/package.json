@@ -21,6 +21,7 @@
     "@lawn/music": "*",
     "@lawn/oakcount": "*",
     "@lawn/platform": "*",
+    "@lawn/portal": "*",
     "@lawn/prefabs": "*",
     "three": "0.187.0"
   },

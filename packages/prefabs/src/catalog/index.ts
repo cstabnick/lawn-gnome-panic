@@ -64,6 +64,7 @@ import { NOTHING_LEFT_TO_COLLECT } from './nothing-left-to-collect';
 import { GTA_BOATS } from './gta-boats';
 import { GTA_WATERWORKS } from './gta-waterworks';
 import { GTA_LANDSCAPING } from './gta-landscaping';
+import { GTA_TOWERS } from './gta-towers';
 import { GTA_HOUSES } from './gta-houses';
 import { GTA_REGION_MOTIFS } from './gta-region-motifs';
 import { GTA_WATER_HINTS } from './gta-water-hints';
@@ -91,6 +92,7 @@ import { GTA_GUN_MODS_A } from './gta-gun-mods-a';
 import { GTA_GUN_MODS_B } from './gta-gun-mods-b';
 import { GTA_GUN_STORE } from './gta-gun-store';
 import { GTA_ODD_RIDES } from './gta-odd-rides';
+import { GTA_MOWING } from './gta-mowing';
 import { GTA_FLEET } from './gta-fleet';
 import { GTA_GLAZE_GRILLE } from './gta-glaze-grille';
 import { GTA_GLAZE_BUMPER } from './gta-glaze-bumper';
@@ -108,10 +110,23 @@ import { GTA_FISH_B } from './gta-fish-b';
 import { GTA_FISH_C } from './gta-fish-c';
 import { GTA_FISH_TACKLE } from './gta-fish-tackle';
 import { GTA_FISH_GEAR } from './gta-fish-gear';
+import { GTA_JOBS } from './gta-jobs';
+import { GTA_JOBS_GEAR } from './gta-jobs-gear';
+import { GTA_PEBBLEWICK } from './gta-pebblewick';
+import { GTA_PEBBLEWICK_B } from './gta-pebblewick-b';
+import { GTA_PEBBLEWICK_GEAR } from './gta-pebblewick-gear';
 import { GTA_LOCKUP } from './gta-lockup';
+import { GTA_STREET_KIT } from './gta-street-kit';
+import { GTA_STREET_KIT_B } from './gta-street-kit-b';
+import { GTA_PARK_KIT } from './gta-park-kit';
+import { GTA_PARK_KIT_B } from './gta-park-kit-b';
+import { GTA_FRINGE_KIT } from './gta-fringe-kit';
+import { GTA_FRINGE_KIT_B } from './gta-fringe-kit-b';
+import { GTA_FRINGE_YARD } from './gta-fringe-yard';
 import { GTA_HANGAR_BOATHOUSE } from './gta-hangar-boathouse';
 import { GTA_AIRCRAFT } from './gta-aircraft';
 import { GTA_SKY_TRAFFIC } from './gta-sky-traffic';
+import { GTA_SKYWAY_WORKS } from './gta-skyway-works';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -119,17 +134,21 @@ export const CATALOG: readonly PrefabDef[] = [
   ...(SAMPLE_3D_SCENERY), ...(SAMPLE_3D_WEAPONS), ...(GNAFT), ...(LAWN_PRIX), ...(GNOME_GOLF_PROPS), ...(AETHER_BOARD), ...(GIANT_PUP), ...(TRIBUTE_SCHEDULE), ...(GNOMEOKEMON_WORLD), ...(PARAGNORMAL), ...(GNOME_COMPANY), ...(GNOMYLPICS), ...(GNOME_BOWLING_LANE), ...(GNOME_BLACKJACK), ...(GNOMES_OF_GNOMOMIA), ...(GNOME_FRONT_BATTLE), ...(GNOME_PARTY), ...(PEAK_CLIMB), ...(GNOME_THEFT_AUTO), ...(GTA_WORLD), ...(GTA_CRACKED), ...GTA_FACES, ...(GTA_WORLD_GREEN), ...(GTA_BRANDS), ...(GTA_STORY), ...(GTA_GUNS_AIR), ...KITCHEN, ...GNOME_JAM, ...GNOMEOKEMON_LAB, ...SNIGMS, ...GNOME_SET_RADIO, ...CLUB_GNOME_SHOP, ...CLUB_GNOME_SHOPS, ...GTA_STORY_PROPS, ...GTA_RACE_TRACK, ...GTA_RACE_GEAR,
   ...COSMETICS_HEAD_A, ...COSMETICS_HEAD_B, ...COSMETICS_NECK, ...COSMETICS_BACK,
   ...NOTHING_LEFT_TO_COLLECT,
-  ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_LANDSCAPING, ...GTA_HOUSES, ...GTA_REGION_MOTIFS, ...GTA_WATER_HINTS,
+  ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_LANDSCAPING, ...GTA_TOWERS, ...GTA_HOUSES, ...GTA_REGION_MOTIFS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
   ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
-  ...GTA_ODD_RIDES,
+  ...GTA_ODD_RIDES, ...GTA_MOWING,
   ...GTA_FLEET,
   ...GTA_AIRCRAFT,
   ...GTA_SKY_TRAFFIC,
+  ...GTA_SKYWAY_WORKS,
   ...GTA_HUNT_QUARRY_A, ...GTA_HUNT_QUARRY_B, ...GTA_HUNT_GEAR, ...GTA_LOCKUP, ...GTA_HANGAR_BOATHOUSE,
   ...GTA_BIRDS, ...GTA_BIRDING_GEAR,
-  ...GTA_FISH_A, ...GTA_FISH_B, ...GTA_FISH_C, ...GTA_FISH_TACKLE, ...GTA_FISH_GEAR,
+  ...GTA_FISH_A, ...GTA_FISH_B, ...GTA_FISH_C, ...GTA_FISH_TACKLE, ...GTA_FISH_GEAR, ...GTA_JOBS, ...GTA_JOBS_GEAR,
+  ...GTA_PEBBLEWICK, ...GTA_PEBBLEWICK_B, ...GTA_PEBBLEWICK_GEAR,
+  ...GTA_STREET_KIT, ...GTA_STREET_KIT_B, ...GTA_PARK_KIT, ...GTA_PARK_KIT_B,
+  ...GTA_FRINGE_KIT, ...GTA_FRINGE_KIT_B, ...GTA_FRINGE_YARD,
 ];

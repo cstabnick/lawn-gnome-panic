@@ -13,8 +13,10 @@ export const TURFTON_STAGES: readonly Stage[] = [
     facing: Math.PI / 2,
     time: 'day',
     built: 'dressed',
-    givers: ['pip-spawn'],
-    usedBy: ['prologue-fresh-kiln', 'intro-tour'],
+    givers: ['pip-spawn', 'newcomers-club'],
+    // The Newcomers' Card (quests/newcomerQuests.ts): Mabel hands out the stamps here, between fares.
+    usedBy: ['prologue-fresh-kiln', 'intro-tour',
+      'nc-good-neighbour', 'nc-strike-a-pose', 'nc-wheel-and-kit', 'nc-lockup', 'nc-mind-the-verges', 'nc-bent-pin', 'nc-skyway', 'nc-odd-jobs', 'nc-take-off', 'nc-sky-spotting', 'nc-tuft-and-tally', 'nc-last-stop-pebblewick', 'nc-reedwatch', 'nc-hangar-and-boathouse', 'nc-party'],
     look: 'A kerbside snail-coach stop on the west pavement of the x = 0 road: a bench, a timetable signpost, a flowerpot and a Clay-Mart billboard over the shelter, the Gnoma truck down the road.',
     sounds: 'Snail-coach air brakes, Ride-Ons idling at the lights, a pigeon, Pip talking too fast.',
     marks: [
@@ -155,7 +157,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     time: 'day',
     built: 'new',
     givers: ['city-hall'],
-    usedBy: ['ch1-two-coat-tail', 'ch5-even-cut', 'sq-hoa-audit'],
+    usedBy: ['ch1-two-coat-tail', 'ch5-even-cut', 'sq-hoa-audit', 'city-kerbside-rounds'],
     look: 'A new stone City Hall built on the north-east block, a stone plaque over the steps, two capture flagpoles, flowerpots and a lectern on a forecourt of fresh paving; ribbon bunting along the front.',
     sounds: 'A press scrum murmuring, a ribbon-scissor snip, flags flapping, a Ride-On bell.',
     marks: [
@@ -206,7 +208,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     time: 'night',
     built: 'dressed',
     givers: ['strangers'],
-    usedBy: ['sq-grid-truthers', 'sq-hoa-audit', 'sq-mulch-pyramid', 'sq-snail-rigging', 'prologue-fresh-kiln', 'ch1-two-coat-tail', 'ch3-salvage-raid', 'ch5-even-cut'],
+    usedBy: ['sq-grid-truthers', 'sq-hoa-audit', 'sq-mulch-pyramid', 'sq-snail-rigging', 'prologue-fresh-kiln', 'ch1-two-coat-tail', 'ch3-salvage-raid', 'ch5-even-cut', 'city-kerbside-rounds'],
     look: 'A corner grocer in old brick with a neon window of Bodega & Sons on the east face, a folding survey table on the pavement, a crate with a sleeping cat, push-bikes chained by the wall and a mulch-spreader at the kerb.',
     sounds: 'The neon buzz of the window sign, a broom on the step, a cat purring, a sales pitch for Miracle Mulch.',
     marks: [
@@ -256,6 +258,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     facing: Math.PI,
     time: 'dawn',
     built: 'new',
+    givers: ['strangers-shelldon'],
     usedBy: ['sq-snail-rigging'],
     look: 'A grass strip behind the z = 60 road, with two green dumpsters, a lettuce bed, a wicker basket, a stack of crates and a retired snail-coach he lives in, the Bodega block to the south.',
     sounds: 'Snails sliding over lettuce, a dumpster lid knocking, the drip of a hose, traffic on the road.',

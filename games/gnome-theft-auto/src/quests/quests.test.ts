@@ -195,8 +195,8 @@ describe('quest step transitions', () => {
 });
 
 describe('story campaign registry', () => {
-  it('registers all 17 story quests, 11 side quests, the Tessie quest and the 4 Speedway races with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(33);
+  it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
+    expect(QUESTS.length).toBe(55); // + the 15 Newcomers' Card tutorials
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -317,18 +317,16 @@ describe('story campaign registry', () => {
 
   it('no quest giver, vehicle spawn, drop-off, or visit spot is trapped inside a building', () => {
     const noop = () => undefined;
-    const fakeCtx = {
+    const known: Record<string, unknown> = {
       fillStyle: '', strokeStyle: '', lineWidth: 1, font: '', textAlign: '', textBaseline: '', globalAlpha: 1,
-      fillRect: noop, strokeRect: noop, clearRect: noop, beginPath: noop, closePath: noop,
-      arc: noop, moveTo: noop, lineTo: noop, quadraticCurveTo: noop, bezierCurveTo: noop,
-      fill: noop, stroke: noop, fillText: noop, strokeText: noop, drawImage: noop,
-      save: noop, restore: noop, translate: noop, rotate: noop, scale: noop,
       createLinearGradient: () => ({ addColorStop: noop }),
       createRadialGradient: () => ({ addColorStop: noop }),
+      createPattern: () => ({}),
       measureText: () => ({ width: 0 }),
       getImageData: (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
-      putImageData: noop,
     };
+    // Any other 2D-context call (rect, clip, setLineDash, ...: the towers' atlases use many) is a no-op.
+    const fakeCtx = new Proxy(known, { get: (t, k: string) => (k in t ? t[k] : noop), set: (t, k: string, v) => { t[k] = v; return true; } });
     const fakeCanvas = { width: 64, height: 64, getContext: () => fakeCtx, toDataURL: () => '' };
     const hadDoc = 'document' in globalThis;
     const prevDoc = (globalThis as { document?: unknown }).document;

@@ -168,3 +168,5 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Fully Kitted** (`gta-fully-kitted`) | gnome-theft-auto | Fill every mod slot on one gun. | Gun Case (`ammu-gun-case`) | Gear: back |  |
 | **Shiny Bits** (`gta-gilded`) | gnome-theft-auto | Spend 2,000 Acorns at Ammu-Gnation. (2000) | Gilded Pistol (`ammu-gilded-pistol`) | Gear: hand | RARE |
 | **Long Look** (`gta-long-look`) | gnome-theft-auto | Crack a gnome 60 m away through a scope. | Spotter's Cap (`ammu-spotter-cap`) | Gear: head | RARE |
+| **Through the Velvet Rope** (`gta-gnomecino-visit`) | gnome-theft-auto | Walk into The Gnomecino from Turfton. | Velvet Rope Pass (`velvet-rope-pass`) | Gear: neck |  |
+| **House Money** (`gta-gnomecino-winnings`) | gnome-theft-auto | Walk out of The Gnomecino with more chips than you took in. | House Money Roll (`house-money-roll`) | Gear: hand |  |

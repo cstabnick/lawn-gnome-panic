@@ -14,6 +14,8 @@
 // t = now), applyBundle() writes it back to the keys. Save modules call notifySaveChanged() (saveHook.ts) after a write.
 import { createCloudSlot, defaultDeps, type CloudDeps, type CloudSlot, type CloudStatus } from '@lawn/cloudsave';
 import { mergeBirdSaves } from './birding/birdSave';
+import { mergeOutskirtsSaves } from './outskirts/save';
+import { mergeMowSave } from './flora/rewards';
 import { mergeQuestSaves, parseSavesJson } from './quests/questSave';
 import { GTA_SAVE_KEYS, type GtaSaveKey } from './saveIO';
 import { setSaveChangedListener } from './saveHook';
@@ -108,11 +110,15 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-trainer-v1': null, // trainer/mark.ts: the newer mark wins; a device without one keeps the other's
   'gta-sky-v1': unionArrays, // skyTraffic/progress.ts: ads read and flags only grow
   'gta-fishing-v1': null, // fishing/fishSave.ts: one current state (rods, bait, cards); the newer side wins
+  'gta-jobs-v1': null, // jobs/career.ts: one career state (XP, counters); the newer side wins
+  'gta-mowing-v1': mergeMowSave, // flora/rewards.ts: counts only grow; per-field maximum
+  'gta-outskirts-v1': mergeOutskirtsSaves, // outskirts/save.ts: Pebblewick progress only grows; a union
+  'gta-odd-rides-v1': unionArrays, // oddRides.ts: the odd rides driven only grow
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory
  *  copy in a save module must not drop what another device added mid-session). */
-const GROWS = new Set<GtaSaveKey>(['gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1']);
+const GROWS = new Set<GtaSaveKey>(['gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1', 'gta-outskirts-v1', 'gta-mowing-v1', 'gta-odd-rides-v1']);
 
 function newer(a: BundleEntry, b: BundleEntry): BundleEntry {
   if (a.t !== b.t) return a.t > b.t ? a : b;

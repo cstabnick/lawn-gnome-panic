@@ -1,8 +1,11 @@
 // Fishing HUD (DOM, appended to #ui): the fishing toggle when you can fish, and while fishing a big hold button, the
 // charge and tension bars, the bait chip, a stop button and a hint line. 44 px+ targets. Writes the DOM only where a
-// value changed. Styled inline (no stylesheet of its own).
+// value changed. Styled inline (no stylesheet of its own). The fishing toggle is a dock button; the catch journal is a
+// More menu action.
 import { prefabIconElement } from '@lawn/prefabs';
-import { KEYS, keyLabel } from '../keys';
+import { registerAction } from '../ui/actions';
+import { dockButton } from '../ui/dock';
+import { fillHint } from '../ui/glyphs';
 import type { FishInput } from './fishInput';
 import type { FishPhase } from './types';
 
@@ -82,9 +85,6 @@ function makeDiv(css: string): HTMLDivElement {
 }
 
 export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () => void): FishHud {
-  const toggleKey = keyLabel(KEYS.fish);
-  const jumpKey = keyLabel(KEYS.jump);
-  const baitKey = keyLabel(KEYS.fishBait);
 
   // Phones: the game's own touch buttons (Guns, Reload, Aim, Fire, Jump) fill the bottom right. Fire and Jump do nothing
   // while the rod is out, so the hold button sits right over Fire and the stop button over Jump; the bars go to the left
@@ -106,23 +106,10 @@ export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () =
   box.addEventListener('mousedown', swallow);
   box.addEventListener('touchstart', swallow, { passive: true });
 
-  // Idle: the fishing toggle and the journal under it.
-  const toggleBtn = makeButton(
-    '🎣',
-    'Start fishing',
-    'right:calc(env(safe-area-inset-right) + 12px);top:45%;width:56px;height:56px;min-width:56px;min-height:56px;border-radius:50%;font-size:26px;',
-  );
-  const toggleKeyTag = makeDiv(
-    'position:absolute;right:-4px;bottom:-4px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:#2b1b0e;border:1px solid #7a9a3a;font:700 11px/16px system-ui,sans-serif;text-align:center;',
-  );
-  toggleKeyTag.textContent = toggleKey;
-  toggleBtn.appendChild(toggleKeyTag);
-
-  const journalBtn = makeButton(
-    '📓',
-    'Fishing journal',
-    'right:calc(env(safe-area-inset-right) + 18px);top:calc(45% + 68px);width:44px;height:44px;min-width:44px;min-height:44px;border-radius:10px;font-size:20px;',
-  );
+  // Idle: the fishing toggle, a dock button (on screen only while you can fish).
+  const toggleBtn = makeButton('🎣', 'Start fishing', 'border-radius:50%;font-size:26px;');
+  dockButton(toggleBtn, 'fish');
+  registerAction('fishJournal', { run: onJournal });
 
   // Fishing: the big hold button, a stop button and the bait chip stacked above it on the right.
   const holdBtn = makeButton(
@@ -196,8 +183,10 @@ export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () =
   const helpLine = makeDiv(
     'position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 70px);width:max-content;max-width:min(360px,92vw);display:none;text-align:center;font:500 11px/1.3 system-ui,sans-serif;color:#d9cfb4;text-shadow:0 1px 2px #000;pointer-events:none;',
   );
-  helpLine.textContent =
-    `Hold ${jumpKey} / click / A to cast & reel · ${baitKey} / LB bait · ${toggleKey} / B put away`;
+  const fillHelp = (): void => {
+    helpLine.textContent = fillHint('Hold {jump} to cast & reel · {fishBait} bait · {fish} put away');
+  };
+  fillHelp();
 
   // Derby and hint lines, centred near the top (derby above the hint).
   const topCol = makeDiv(
@@ -212,8 +201,6 @@ export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () =
   topCol.appendChild(derbyLine);
   topCol.appendChild(hintLine);
 
-  box.appendChild(toggleBtn);
-  box.appendChild(journalBtn);
   box.appendChild(holdBtn);
   box.appendChild(stopBtn);
   box.appendChild(baitBtn);
@@ -257,12 +244,9 @@ export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () =
     e.preventDefault();
     input.hudBait();
   });
-  journalBtn.addEventListener('click', () => onJournal());
-
   // Cache of the last values written (sentinels force the first write).
   const c = {
     toggleOn: null as boolean | null,
-    journalOn: null as boolean | null,
     fishing: null as boolean | null,
     label: null as string | null,
     pulse: null as boolean | null,
@@ -287,14 +271,9 @@ export function createFishHud(ui: HTMLElement, input: FishInput, onJournal: () =
       c.toggleOn = toggleOn;
       toggleBtn.style.display = toggleOn ? 'flex' : 'none';
     }
-    const journalOn = toggleOn || s.fishing;
-    if (journalOn !== c.journalOn) {
-      c.journalOn = journalOn;
-      journalBtn.style.display = journalOn ? 'flex' : 'none';
-    }
-
     if (s.fishing !== c.fishing) {
       c.fishing = s.fishing;
+      if (s.fishing) fillHelp();
       const d = s.fishing ? 'flex' : 'none';
       holdBtn.style.display = d;
       stopBtn.style.display = d;

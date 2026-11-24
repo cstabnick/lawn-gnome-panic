@@ -3,7 +3,9 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { WATER } from './config';
-import { BODIES, COURSES, bodyLevel, bodyRadius, courseProfile, shorePoint, waterOn, type StillWater, type WaterCourse } from './water';
+import { BODIES, COURSES, bodyLevel, bodyRadius, canalLocks, courseProfile, shorePoint, waterOn, type StillWater, type WaterCourse } from './water';
+import { registerCalmSpots, waveAmplitudeScale, waveTime } from './waves';
+import { applyWaveShader, createWaveUniforms, updateWaveUniforms } from './waveShader';
 
 export interface WaterMeshes {
   /** Animate the flow and ripples; hide what is far from (focusX, focusZ). */
@@ -23,6 +25,12 @@ const FOAM_LAYER = LAYER.decal;
 const FAN_SEGMENTS = 96;
 const SHORE_CHECK = 0.97;
 const FOAM_LIFT = 0.01;
+/** Grid spacing of a loch or sea surface, metres (the waves need ~1.7 m of ripple resolved; the swell is 22 m). */
+const GRID_STEP = 2.5;
+/** Canal locks: the water stays calm within this radius (waves.ts registerCalmSpots). */
+const LOCK_CALM_R = 12;
+/** Margin added to the bounding sphere of a displaced water mesh, so frustum culling never clips a crest. */
+const WAVE_BOUND_MARGIN = 1.5;
 
 /** Mulberry32: a small seeded PRNG, so every load draws the same water. */
 function mulberry32(seed: number): () => number {
@@ -149,25 +157,51 @@ function courseFoam(c: WaterCourse, acc: Acc, surface: number[], x: number[], z:
   }
 }
 
-function bodyFan(w: StillWater, level: number): Acc {
+/**
+ * A loch or sea surface as a regular grid (GRID_STEP m) over its box, grown like the old fan. Nodes outside the grown
+ * superellipse are pulled onto its rim (the superellipse radius is homogeneous, so that lands exactly on r = grow); a
+ * quad is kept while one of its corners is inside. Both triangles of a quad face up.
+ */
+function bodyGrid(w: StillWater, level: number): Acc {
   const acc: Acc = { pos: [], uv: [], idx: [] };
   const grow = 1 + 2 / Math.min(w.a, w.b);
-  const rim: Vtx[] = [];
-  for (let k = 0; k < FAN_SEGMENTS; k++) {
-    const p = shorePoint(w, (k / FAN_SEGMENTS) * Math.PI * 2);
-    const x = w.cx + (p.x - w.cx) * grow, z = w.cz + (p.z - w.cz) * grow;
-    rim.push([x, level, z, x / 8, z / 8]);
+  const hx = w.a * grow, hz = w.b * grow;
+  const nx = Math.max(1, Math.ceil((2 * hx) / GRID_STEP)), nz = Math.max(1, Math.ceil((2 * hz) / GRID_STEP));
+  const dx = (2 * hx) / nx, dz = (2 * hz) / nz;
+  const x0 = w.cx - hx, z0 = w.cz - hz;
+  const stride = nz + 1;
+  const nodeX = new Float64Array((nx + 1) * stride), nodeZ = new Float64Array((nx + 1) * stride);
+  const nodeR = new Float64Array((nx + 1) * stride);
+  for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= nz; j++) {
+      let x = x0 + i * dx, z = z0 + j * dz;
+      const r = bodyRadius(w, x, z);
+      if (r > grow) {
+        x = w.cx + ((x - w.cx) * grow) / r;
+        z = w.cz + ((z - w.cz) * grow) / r;
+      }
+      const n = i * stride + j;
+      nodeX[n] = x;
+      nodeZ[n] = z;
+      nodeR[n] = r;
+    }
   }
-  acc.pos.push(w.cx, level, w.cz);
-  acc.uv.push(w.cx / 8, w.cz / 8);
-  for (const v of rim) {
-    acc.pos.push(v[0], v[1], v[2]);
-    acc.uv.push(v[3], v[4]);
-  }
-  // Centre is vertex 0; rim vertices are 1..N. Wound (centre, next, this) so the fan faces up.
-  for (let k = 0; k < FAN_SEGMENTS; k++) {
-    const a = 1 + k, b = 1 + ((k + 1) % FAN_SEGMENTS);
-    acc.idx.push(0, b, a);
+  const vertexOf = new Int32Array((nx + 1) * stride).fill(-1);
+  const vert = (n: number): number => {
+    if (vertexOf[n] < 0) {
+      vertexOf[n] = acc.pos.length / 3;
+      acc.pos.push(nodeX[n], level, nodeZ[n]);
+      acc.uv.push(nodeX[n] / 8, nodeZ[n] / 8);
+    }
+    return vertexOf[n];
+  };
+  for (let i = 0; i < nx; i++) {
+    for (let j = 0; j < nz; j++) {
+      const a = i * stride + j, b = (i + 1) * stride + j, c = i * stride + j + 1, d = (i + 1) * stride + j + 1;
+      if (nodeR[a] > grow && nodeR[b] > grow && nodeR[c] > grow && nodeR[d] > grow) continue;
+      const va = vert(a), vb = vert(b), vc = vert(c), vd = vert(d);
+      acc.idx.push(va, vc, vb, vb, vc, vd);
+    }
   }
   return acc;
 }
@@ -190,6 +224,9 @@ function bodyFoam(w: StillWater, level: number): Acc {
 export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   if (!waterOn()) return { update() { /* no water */ } };
 
+  // Canal locks are calm water (no waves over the gates).
+  registerCalmSpots(canalLocks().map((l) => ({ x: l.x, z: l.z, r: LOCK_CALM_R })));
+
   const group = new THREE.Group();
   group.name = 'water';
   scene.add(group);
@@ -197,6 +234,7 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   const riverTex = flowTexture();
   const bodyTex = riverTex.clone();
   bodyTex.needsUpdate = true;
+  const waveU = createWaveUniforms();
 
   const waterMats = new Map<number, THREE.MeshStandardMaterial>();
   const waterMat = (layer: number, map: THREE.Texture): THREE.MeshStandardMaterial => {
@@ -206,14 +244,24 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
       m = flatLayer(new THREE.MeshStandardMaterial({
         color: 0xffffff, map, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.88,
       }), layer);
+      applyWaveShader(m, waveU);
       waterMats.set(key, m);
     }
     return m;
   };
   const foamMat = flatLayer(new THREE.MeshBasicMaterial({ color: WATER.foam, transparent: true, opacity: 0.45 }), FOAM_LAYER);
 
-  const add = (name: string, geometry: THREE.BufferGeometry, material: THREE.Material): void => {
+  /** `waves`: a surface the wave field displaces (gets the aWaveScale attribute and a grown bounding sphere). */
+  const add = (name: string, geometry: THREE.BufferGeometry, material: THREE.Material, waves: boolean): void => {
     geometry.computeVertexNormals();
+    if (waves) {
+      const pos = geometry.getAttribute('position');
+      const scale = new Float32Array(pos.count);
+      for (let i = 0; i < pos.count; i++) scale[i] = waveAmplitudeScale(pos.getX(i), pos.getZ(i));
+      geometry.setAttribute('aWaveScale', new THREE.BufferAttribute(scale, 1));
+      geometry.computeBoundingSphere();
+      geometry.boundingSphere!.radius += WAVE_BOUND_MARGIN;
+    }
     const mesh = new THREE.Mesh(geometry, material);
     mesh.name = name;
     mesh.receiveShadow = true;
@@ -228,25 +276,26 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
     const water: Acc = { pos: [], uv: [], idx: [] };
     courseWater(c, water, p.surface, p.x, p.z, p.s);
     const layer = COURSE_LAYER[c.id] ?? LAYER.area;
-    add(`water:${c.id}`, geometryOf(water), waterMat(layer, riverTex));
+    add(`water:${c.id}`, geometryOf(water), waterMat(layer, riverTex), true);
 
     const foam: Acc = { pos: [], uv: [], idx: [] };
     courseFoam(c, foam, p.surface, p.x, p.z);
-    add(`water-foam:${c.id}`, geometryOf(foam), foamMat);
+    add(`water-foam:${c.id}`, geometryOf(foam), foamMat, false);
   }
 
   // Lochs and the Puddle Sea.
   for (const b of BODIES) {
     const level = bodyLevel(b.id);
     if (level === null) continue;
-    add(`water:${b.id}`, geometryOf(bodyFan(b, level)), waterMat(BODY_LAYER, bodyTex));
-    add(`water-foam:${b.id}`, geometryOf(bodyFoam(b, level)), foamMat);
+    add(`water:${b.id}`, geometryOf(bodyGrid(b, level)), waterMat(BODY_LAYER, bodyTex), true);
+    add(`water-foam:${b.id}`, geometryOf(bodyFoam(b, level)), foamMat, false);
   }
 
   return {
     update(dt: number) {
       riverTex.offset.y -= (WATER.flowSpeed / 6) * dt;
       bodyTex.offset.x += 0.01 * dt;
+      updateWaveUniforms(waveU, waveTime());
     },
   };
 }

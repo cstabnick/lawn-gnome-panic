@@ -14,6 +14,11 @@ related: [tessie, turfton-fm]
 
 A tabloid paper sold from every stall in Turfton, with a front page that prints whatever sells best and a masthead nobody has seen.
 
+## In the games
+
+Hedda Galley edits the Tattler (R-151). Her Penthouse Exclusive job (`city-penthouse-exclusive`) is pinned to the
+Kerbside Exchange's board.
+
 ## What gnomes say
 
 "The Tattler will pay Acorns for a photo of anything. It will print the photo whether or not it is anything."

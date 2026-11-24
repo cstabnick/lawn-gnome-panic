@@ -196,7 +196,7 @@ export function poseActor(a: StageActor, s: ActorSample, dt: number, clock: numb
       if (gun) clearGunArms(a.model, gun);
       const t = s.gestureT;
       const tt = lib.loop ? t % lib.duration : Math.min(t, lib.duration * 0.9999);
-      applyPose(a.model, lib.parts, lib.pose(tt), Math.min(1, t / BLEND));
+      applyPose(a.model, lib.parts, lib.pose(tt), Math.min(1, t / BLEND), lib.onMove === true);
     }
   } else if (s.talking) {
     if (gun) poseGunArms(a.model, a.heldId, { aiming: false, pitch: 0 }, gun);

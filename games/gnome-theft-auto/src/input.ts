@@ -1,6 +1,8 @@
 // Keyboard, mouse (pointer lock, right-drag, right-button aim) and touch (stick, camera drag, on-screen buttons, Aim toggle) folded into one InputState per frame.
 import { createGamepad } from './gamepad';
 import { KEYS, MOVE_KEYS } from './keys';
+import { notePad } from './ui/inputSource';
+import { ensureButtonStyle, getTouchLayout } from './ui/style';
 import type { CameraMode, Input, InputState } from './types';
 
 const MOUSE_SENS = 0.0025;
@@ -9,6 +11,19 @@ const STICK_MAX = 50;
 const LEFT_ZONE = 0.45;
 
 const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
+
+/** Cluster placement: portrait keeps the corner stack, phone landscape (short screens) lays the two rows side by side. */
+function ensureTouchStyle(): void {
+  if (document.getElementById('gta-touch-style')) return;
+  const s = document.createElement('style');
+  s.id = 'gta-touch-style';
+  s.textContent = `
+#gta-touch .gta-cluster{position:fixed;right:calc(env(safe-area-inset-right) + max(24px, 9vw));bottom:calc(env(safe-area-inset-bottom) + max(24px, 7vh));display:flex;flex-direction:column;align-items:flex-end;}
+@media (max-height:500px){#gta-touch .gta-cluster{flex-direction:row;align-items:flex-end;bottom:calc(env(safe-area-inset-bottom) + max(16px,4vh));} #gta-touch .gta-cluster > div{flex-direction:row;}}
+body[data-touch-layout="left-handed"] #gta-touch .gta-cluster{left:calc(env(safe-area-inset-left) + max(24px,9vw));right:auto;align-items:flex-start;}
+body[data-touch-layout="minimal"] #gta-touch .gta-btn{transform:scale(.9);}`;
+  document.head.appendChild(s);
+}
 
 /** `handbrake` says whether the driving model uses one (the Arcade mode does not); it is asked again on `refresh()`. */
 export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { handbrake?: () => boolean; hop?: () => boolean; canLock?: () => boolean } = {}): Input {
@@ -90,9 +105,21 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   base.appendChild(knob);
   root.appendChild(base);
 
+  ensureButtonStyle();
+  ensureTouchStyle();
   const cluster = document.createElement('div');
-  cluster.style.cssText = 'position:fixed;right:calc(env(safe-area-inset-right) + max(24px, 9vw));bottom:calc(env(safe-area-inset-bottom) + max(24px, 7vh));display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;';
+  cluster.className = 'gta-cluster';
+  cluster.style.cssText = 'gap:10px;pointer-events:none;';
   root.appendChild(cluster);
+  // Left-handed flips the stick zone (see pointerdown); the layout is re-read when Options changes it.
+  let leftHanded = getTouchLayout() === 'left-handed';
+  let minimal = getTouchLayout() === 'minimal';
+  window.addEventListener('gta:touch-layout', () => {
+    const layout = getTouchLayout();
+    leftHanded = layout === 'left-handed';
+    minimal = layout === 'minimal';
+    if (shownMode) showButtons(shownMode);
+  });
 
   const fireIds = new Set<number>();
   const upIds = new Set<number>();
@@ -103,7 +130,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = text;
-    b.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);background:rgba(20,20,20,0.5);color:#fff;font:700 15px system-ui,sans-serif;padding:0;touch-action:none;pointer-events:auto;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;display:none;`;
+    b.className = 'gta-btn' + (size >= 84 ? ' gta-btn--xl' : size >= 56 ? (size >= 58 ? ' gta-btn--lg' : ' gta-btn--md') : '');
+    b.style.cssText = 'touch-action:none;display:none;';
     b.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -126,7 +154,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   };
 
   const enterBtn = button('Enter', 64, () => { s.enterExit = true; }, () => {});
-  const jumpBtn = button('Jump', 72,
+  const jumpBtn = button('Jump', 64,
     (id) => {
       if (shownMode === 'fly') upIds.add(id);
       else if (shownMode === 'drive') {
@@ -153,8 +181,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   const aimBtn = button('Aim', 64, () => { aimToggle = !aimToggle; paintAim(); }, () => {});
   function paintAim(): void {
     aimBtn.setAttribute('aria-pressed', String(aimToggle));
-    aimBtn.style.borderColor = aimToggle ? '#ff7a1a' : 'rgba(255,255,255,0.7)';
-    aimBtn.style.background = aimToggle ? 'rgba(255,122,26,0.35)' : 'rgba(20,20,20,0.5)';
+    aimBtn.classList.toggle('on', aimToggle);
   }
   paintAim();
   const fireBtn = button('Fire', 84, (id) => { fireIds.add(id); }, (id) => { fireIds.delete(id); });
@@ -191,6 +218,13 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     boostIds.clear();
     aimToggle = false;
     paintAim();
+    document.body.dataset.mode = mode;
+    showButtons(mode);
+    window.dispatchEvent(new Event('gta:mode'));
+  }
+
+  /** Which buttons the cluster shows for a mode. The minimal layout drops Reload on foot (guns reload when empty). */
+  function showButtons(mode: CameraMode): void {
     const hasHandbrake = !!opts.handbrake?.();
     const hasHop = mode === 'drive' && !!opts.hop?.();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? (hasHandbrake ? 'Handbrake' : 'Hop') : 'Jump';
@@ -202,7 +236,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     swapBtn.style.display = mode === 'foot' || mode === 'chute' ? '' : 'none';
     radioBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
     bangerBtn.style.display = mode === 'drive' || mode === 'fly' ? '' : 'none';
-    reloadBtn.style.display = mode === 'foot' || mode === 'drive' || mode === 'chute' ? '' : 'none';
+    reloadBtn.style.display = (mode === 'foot' && !minimal) || mode === 'drive' || mode === 'chute' ? '' : 'none';
     aimBtn.style.display = mode === 'foot' ? '' : 'none';
     fireBtn.style.display = '';
   }
@@ -226,7 +260,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   window.addEventListener('pointerdown', (e) => {
     if (e.pointerType !== 'touch') return;
     showTouch();
-    if (e.clientX < window.innerWidth * LEFT_ZONE) {
+    const inStickZone = leftHanded ? e.clientX > window.innerWidth * (1 - LEFT_ZONE) : e.clientX < window.innerWidth * LEFT_ZONE;
+    if (inStickZone) {
       if (stick) return;
       stick = { id: e.pointerId, cx: e.clientX, cy: e.clientY };
       base.style.left = `${e.clientX}px`;
@@ -281,10 +316,13 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastRead) / 1000);
       lastRead = now;
-      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open' || document.body.dataset.emotes === 'open');
+      const p = pad.read(shownMode ?? 'foot', dt, document.body.dataset.options === 'open' || document.body.dataset.emotes === 'open' || document.body.dataset.more === 'open');
+      if (p?.active) notePad(p.id);
       const big = (a: number, b: number): number => (Math.abs(b) > Math.abs(a) ? b : a);
-      const kbX = (has(...MOVE_KEYS.right) ? 1 : 0) - (has(...MOVE_KEYS.left) ? 1 : 0);
-      const kbY = (has(...MOVE_KEYS.forward) ? 1 : 0) - (has(...MOVE_KEYS.back) ? 1 : 0);
+      // While the More menu is open the arrows / WASD move its focus, not the player.
+      const menu = document.body.dataset.more === 'open';
+      const kbX = menu ? 0 : (has(...MOVE_KEYS.right) ? 1 : 0) - (has(...MOVE_KEYS.left) ? 1 : 0);
+      const kbY = menu ? 0 : (has(...MOVE_KEYS.forward) ? 1 : 0) - (has(...MOVE_KEYS.back) ? 1 : 0);
       const kbLift = (has(KEYS.jump) ? 1 : 0) - (has(...MOVE_KEYS.boost, ...MOVE_KEYS.descend) ? 1 : 0);
       const out: InputState = {
         moveX: big(clamp(kbX + stickX), p?.moveX ?? 0),
@@ -296,9 +334,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
         switchGun: s.switchGun || !!p?.switchGun,
         reload: s.reload || !!p?.reload,
         radio: s.radio || !!p?.radio,
-        banger: s.banger,
-        boost: shownMode === 'drive' && (has(...MOVE_KEYS.boost) || boostIds.size > 0),
-        horn: s.horn,
+        banger: s.banger || !!p?.banger,
+        boost: shownMode === 'drive' && (has(...MOVE_KEYS.boost) || boostIds.size > 0 || !!p?.boost),
+        horn: s.horn || !!p?.horn,
         aim: mouseAim || aimToggle || !!p?.aim,
         camYaw: s.camYaw + (p?.camYaw ?? 0),
         camPitch: s.camPitch + (p?.camPitch ?? 0),

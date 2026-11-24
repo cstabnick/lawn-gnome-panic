@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { installFakeDom } from '../testing/fakeDom';
 import { aboveGround, groundAt, heightAt, terrainProbe } from '../terrain';
-import { deckCeilingAbove, deckContactsAt, deckSamples, deckSurfaceBelow, pushOutOfDecks, skywayDefs } from './deck';
-import { ROAD_KEEP, roadDistance, skywayBents, skywayColliders } from './colliders';
+import { deckCeilingAbove, deckContactsAt, deckSamples, deckSurfaceBelow, pushOutOfDecks, railGaps, skywayDefs } from './deck';
+import { PAVEMENT_KEEP, ROAD_KEEP, followedStreet, roadDistance, skywayBents, skywayColliders } from './colliders';
 import { SKYWAY } from './skyways';
 
 const v3 = (x: number, y: number, z: number) => ({ x, y, z });
@@ -19,8 +19,8 @@ describe('skyway decks', () => {
     for (const def of skywayDefs()) {
       const s = deckSamples(def.id);
       expect(s.length).toBeGreaterThan(5);
-      expect(Math.abs(s[0].y - s[0].land)).toBeLessThan(0.05);
-      if (!def.openEnd) expect(Math.abs(s[s.length - 1].y - s[s.length - 1].land)).toBeLessThan(0.05);
+      if (!def.points[0].on) expect(Math.abs(s[0].y - s[0].land)).toBeLessThan(0.05);
+      if (!def.openEnd && !def.points[def.points.length - 1].on) expect(Math.abs(s[s.length - 1].y - s[s.length - 1].land)).toBeLessThan(0.05);
     }
   });
 
@@ -77,10 +77,46 @@ describe('skyway decks', () => {
     expect(Math.hypot(beside.x - solid.x, beside.z - solid.z)).toBeCloseTo(half + 1.2, 3);
   });
 
+  it('a junction has no rail: a car crosses from the Skyway onto the beltway; the rails hold elsewhere', () => {
+    const y = groundAt(255, -60);
+    // On the Skyway at the junction, pressed toward the north rail where the beltway leaves: not pushed back.
+    expect(pushOutOfDecks(255, -64.8, 1.2, y).hit).toBe(false);
+    expect(groundAt(255, -70, y + 0.3)).toBeCloseTo(y, 1);
+    // 40 m further west the same spot has its rail.
+    expect(pushOutOfDecks(215, -64.8, 1.2, groundAt(215, -60)).hit).toBe(true);
+    expect(railGaps('turfton-skyway').filter((g) => g.kind === 'junction').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('a crack opens the rail: nothing holds a body there, and the drop lands on clear ground', () => {
+    for (const def of skywayDefs()) {
+      for (const c of def.cracks ?? []) {
+        const s = deckSamples(def.id, 1).reduce((a, b) => (Math.abs(b.along - c.along) < Math.abs(a.along - c.along) ? b : a));
+        expect(s.solid).toBe(false);
+        const half = def.width / 2;
+        const x = s.x + c.side * s.dirZ * (half - 0.8), z = s.z - c.side * s.dirX * (half - 0.8);
+        expect(pushOutOfDecks(x, z, 1.2, s.y).hit).toBe(false);
+        // Landing: 3 m past the edge, clear of roads and columns.
+        const lx = s.x + c.side * s.dirZ * (half + 3), lz = s.z - c.side * s.dirX * (half + 3);
+        expect(roadDistance(lx, lz)).toBeGreaterThan(6);
+        for (const b of skywayBents()) for (const col of b.columns) expect(Math.hypot(col.x - lx, col.z - lz)).toBeGreaterThan(c.length / 2 + 1.5);
+      }
+    }
+  });
+
   it('no column stands on a road, and every viaduct has bents', () => {
     const bents = skywayBents();
     expect(bents.filter((b) => b.skyway === 'turfton-skyway').length).toBeGreaterThan(6);
-    for (const b of bents) for (const c of b.columns) expect(roadDistance(c.x, c.z)).toBeGreaterThanOrEqual(ROAD_KEEP);
+    for (const b of bents) {
+      // Above a city street the columns stand on its pavements; every other road keeps ROAD_KEEP.
+      const street = followedStreet(b);
+      for (const c of b.columns) {
+        expect(roadDistance(c.x, c.z, street)).toBeGreaterThanOrEqual(ROAD_KEEP);
+        if (street) expect(Math.abs((street.axis === 'z' ? c.z : c.x) - street.line)).toBeGreaterThanOrEqual(PAVEMENT_KEEP);
+      }
+    }
+    // Every road deck's viaduct has bents (the city stretch too).
+    for (const id of ['beltway-north', 'beltway-south']) expect(bents.filter((b) => b.skyway === id).length).toBeGreaterThan(2);
+    expect(bents.filter((b) => b.skyway === 'turfton-skyway' && Math.abs(b.x) < 180).length).toBeGreaterThanOrEqual(5);
   });
 
   it('the world leaves room for the skyways (nothing inside an embankment or poking into a viaduct)', async () => {
@@ -105,7 +141,8 @@ describe('skyway decks', () => {
     // The ground in front of each ramp foot is open (no hedge or wall across the way on or off).
     for (const def of skywayDefs()) {
       const s = deckSamples(def.id);
-      const feet = def.openEnd ? [{ p: s[0], sign: -1 }] : [{ p: s[0], sign: -1 }, { p: s[s.length - 1], sign: 1 }];
+      const feet = [{ p: s[0], sign: -1, on: def.points[0].on }, { p: s[s.length - 1], sign: 1, on: def.openEnd ? 'open' : def.points[def.points.length - 1].on }]
+        .filter((f) => !f.on);
       for (const { p, sign } of feet) {
         for (let d = 1; d <= 12; d += 1) {
           for (let a = -def.width / 2 + 1; a <= def.width / 2 - 1; a += 1) {
@@ -120,6 +157,97 @@ describe('skyway decks', () => {
         }
       }
     }
+    // Under each crack the drop is clear: nothing in world.boxes stands in the landing strip.
+    for (const def of skywayDefs()) {
+      for (const c of def.cracks ?? []) {
+        for (let a = c.along - c.length / 2; a <= c.along + c.length / 2; a += 1) {
+          const s = deckSamples(def.id, 1).reduce((p, q) => (Math.abs(q.along - a) < Math.abs(p.along - a) ? q : p));
+          for (let out = 1; out <= 8; out += 1) {
+            const x = s.x + c.side * s.dirZ * (def.width / 2 + out), z = s.z - c.side * s.dirX * (def.width / 2 + out);
+            for (const b of world.boxes) {
+              if (x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ && b.h > heightAt(x, z) + 0.3) bad.push();
+            }
+          }
+        }
+      }
+    }
+    // Under each crack the drop is clear: nothing in world.boxes stands in the landing strip.
+    for (const def of skywayDefs()) {
+      for (const c of def.cracks ?? []) {
+        for (let a = c.along - c.length / 2; a <= c.along + c.length / 2; a += 1) {
+          const s = deckSamples(def.id, 1).reduce((p, q) => (Math.abs(q.along - a) < Math.abs(p.along - a) ? q : p));
+          for (let out = 1; out <= 8; out += 1) {
+            const x = s.x + c.side * s.dirZ * (def.width / 2 + out), z = s.z - c.side * s.dirX * (def.width / 2 + out);
+            for (const b of world.boxes) {
+              if (x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ && b.h > heightAt(x, z) + 0.3) {
+                bad.push(`${def.id} crack landing blocked @(${x.toFixed(0)},${z.toFixed(0)})`);
+              }
+            }
+          }
+        }
+      }
+    }
     expect([...new Set(bad)]).toEqual([]);
   }, 60000);
+});
+
+describe('deck surfaces are continuous', () => {
+  it('no step a wheel cannot climb anywhere on a deck (corners and junctions included)', () => {
+    const bad: string[] = [];
+    for (const def of skywayDefs()) {
+      for (const s of deckSamples(def.id, 1)) {
+        for (let a = -def.width / 2; a <= def.width / 2; a += 0.5) {
+          const x = s.x + s.dirZ * a, z = s.z - s.dirX * a;
+          const here = deckSurfaceBelow(x, z, Infinity);
+          if (here === null) continue;
+          for (const [dx, dz] of [[0.5, 0], [0, 0.5]]) {
+            const there = deckSurfaceBelow(x + dx, z + dz, here + SKYWAY.step);
+            const top = deckSurfaceBelow(x + dx, z + dz, Infinity);
+            // A neighbour on the deck must be reachable within a step (a car would otherwise fall through to the land).
+            if (top !== null && Math.abs(top - here) < 2 && (there === null || Math.abs(there - here) > 0.45)) {
+              bad.push(`${def.id} @(${x.toFixed(1)},${z.toFixed(1)}) ${here.toFixed(2)} -> ${top.toFixed(2)}`);
+            }
+          }
+        }
+      }
+    }
+    expect(bad.slice(0, 10)).toEqual([]);
+  });
+});
+
+describe('skyway embankment walls keep off the driving surface', () => {
+  // Wall boxes = every skyway collider that is not a bent column (columns come from skywayBents, as skywayColliders adds them).
+  function wallBoxes() {
+    const half = SKYWAY.columnSize / 2;
+    const cols = new Set<string>();
+    for (const b of skywayBents()) {
+      for (const c of b.columns) cols.add(`${c.x - half},${c.x + half},${c.z - half},${c.z + half}`);
+    }
+    return skywayColliders().filter((b) => !cols.has(`${b.minX},${b.maxX},${b.minZ},${b.maxZ}`));
+  }
+
+  it('no embankment wall stands on a skyway\'s own driving surface', () => {
+    const bad: string[] = [];
+    for (const box of wallBoxes()) {
+      const cx = (box.minX + box.maxX) / 2, cz = (box.minZ + box.maxZ) / 2;
+      for (const def of skywayDefs()) {
+        for (const s of deckSamples(def.id, 1)) {
+          if (!s.solid) continue;
+          if (Math.abs(s.y - (box.h - SKYWAY.railHeight)) > 1) continue;
+          const d = Math.hypot(cx - s.x, cz - s.z);
+          if (d < def.width / 2 - 0.05) bad.push(`${def.id} wall centre (${cx.toFixed(1)},${cz.toFixed(1)}) ${d.toFixed(2)} from (${s.x.toFixed(1)},${s.z.toFixed(1)})`);
+        }
+      }
+    }
+    expect([...new Set(bad)].slice(0, 10)).toEqual([]);
+  });
+
+  it('no wall box contains the corner landing of the Turfton Skyway west on-ramp', () => {
+    for (const box of wallBoxes()) {
+      for (const [x, z] of [[-211, -60], [-216, -60]]) {
+        const inside = box.minX <= x && x <= box.maxX && box.minZ <= z && z <= box.maxZ;
+        expect(inside, `box ${box.minX}..${box.maxX}, ${box.minZ}..${box.maxZ} holds (${x},${z})`).toBe(false);
+      }
+    }
+  });
 });

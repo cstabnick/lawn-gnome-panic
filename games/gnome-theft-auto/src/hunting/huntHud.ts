@@ -1,6 +1,7 @@
-// Tuft hunting: the small hunt HUD (DOM): game-bag count, a 44 px journal button, and one hint line (fresh tracks,
-// a quarry down and how long it stays down, a wary animal). Shown only while it has something to say.
+// Tuft hunting: the small hunt HUD (DOM): game-bag count and one hint line (fresh tracks, a quarry down and how long
+// it stays down, a wary animal). Shown only while it has something to say. The journal is a More menu action.
 // Styled inline (no stylesheet of its own) so it stays independent of the lodge sheet.
+import { registerAction } from '../ui/actions';
 
 export interface HuntHudState {
   /** Show the panel at all (licensed, or something in the bag, or a hint to show). */
@@ -44,31 +45,10 @@ export function createHuntHud(ui: HTMLElement, onJournal: () => void): HuntHud {
   const pill = document.createElement('div');
   pill.style.cssText = `padding:6px 12px;border-radius:999px;background:${PANEL};border:1px solid #7a9a3a;white-space:nowrap;`;
 
-  const journalBtn = document.createElement('button');
-  journalBtn.type = 'button';
-  journalBtn.setAttribute('aria-label', 'Hunting journal');
-  journalBtn.textContent = '📓';
-  journalBtn.style.cssText = [
-    'width:44px',
-    'height:44px',
-    'min-width:44px',
-    'min-height:44px',
-    'padding:0',
-    'border-radius:10px',
-    'border:1px solid #7a9a3a',
-    `background:${PANEL}`,
-    'color:#f3e9d2',
-    'font-size:20px',
-    'line-height:1',
-    'cursor:pointer',
-    'pointer-events:auto',
-    'touch-action:manipulation',
-  ].join(';') + ';';
-  // The button sits over the game: its presses must not also reach the shooting and interact handlers.
-  journalBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-  journalBtn.addEventListener('click', () => onJournal());
+  // The hunting journal is a More menu action (not a button on the HUD).
+  registerAction('huntJournal', { run: onJournal });
 
-  row.append(pill, journalBtn);
+  row.append(pill);
 
   const hintEl = document.createElement('div');
   hintEl.style.cssText = 'max-width:240px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.55);font-weight:400;font-size:12px;';

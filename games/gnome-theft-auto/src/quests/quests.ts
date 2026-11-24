@@ -16,6 +16,7 @@ import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDr
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { raceRun } from './objectivesRace';
+import { checkpointsRun, probeRun } from './objectivesCity';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
 import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
@@ -347,6 +348,10 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     tessieRideRun(obj, deps, changed, say)) as unknown as Maker,
   race: ((obj: Extract<ObjectiveDef, { kind: 'race' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     raceRun(obj, deps, changed, say)) as unknown as Maker,
+  checkpoints: ((obj: Extract<ObjectiveDef, { kind: 'checkpoints' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    checkpointsRun(obj, deps, changed, say)) as unknown as Maker,
+  probe: ((obj: Extract<ObjectiveDef, { kind: 'probe' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    probeRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
 export { mergeQuestSaves };
@@ -736,7 +741,7 @@ export function createQuests(
         for (const g of Object.values(giversMap)) {
           if (Math.hypot(g.x - x, g.z - z) <= GIVER_RANGE) {
             const cur = quest(activeId);
-            deps.hud.toast(`Finish or abandon "${cur?.title ?? activeId}" in the Quest Journal (J) first!`, 4000);
+            deps.hud.toast(`Finish or abandon "${cur?.title ?? activeId}" in the Quest Journal ({journal}) first!`, 4000);
             return true;
           }
         }

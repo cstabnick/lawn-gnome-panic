@@ -54,6 +54,15 @@ counters and seven townsfolk strolling about (`npcData.ts`). They are computer g
 sees them in the same place without any network traffic. Tap one to hear a line, or a shopkeeper to open their shop.
 Lore: `docs/lore/entries/the-yard/` (acorn-row, oakcount, chicory-waymark, the shopkeepers).
 
+## Visitors from other games (crossover portals)
+
+Gnome Theft Auto's Gnomecino door opens this game framed over the visiting game, with `?portal=gnomecino&visit=...`.
+With that query the page starts inside The Gnomecino (not the saved map), uses the visitor's name and gnome look from
+the origin page, and says "Walk out the door to go back". Its exit door (to the town square) sends the player back to
+the visiting game instead. Chips, acorns, Oakcount items and achievements won in the room are reported through
+`@lawn/portal` (`src/portalVisit.ts`), so the origin game records them once. A normal load (no `portal` query) is
+unchanged. Debug: `?debug` exposes `window.__club` for tests (`tools/portal-e2e.mjs`).
+
 ## Music
 
 Each place has its own generated music (`@lawn/music`, `packages/music/src/themes/clubGnome.ts`; no assets). Walking

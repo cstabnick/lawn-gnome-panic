@@ -8,7 +8,7 @@ import type { Pt, SkyBehaviourDef, SkyBehaviourId, SkyWaypoint } from './types';
 export const DROP_ZONES: readonly Pt[] = [{ x: -60, z: 330 }, { x: 120, z: 430 }, { x: -200, z: 260 }];
 
 /** Where the air ambulance stops to collect a patient. */
-export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 200, z: 320 }, { x: -150, z: -300 }];
+export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 200, z: 320 }, { x: -150, z: -295 }];
 
 export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
   {

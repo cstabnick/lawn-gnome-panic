@@ -8,15 +8,24 @@ import { HEAT, MAX_HEAT, WATCH } from './config';
 import { clearGunArms, muzzleWorld, placeInHand, poseGunArms } from './gunHold';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
 import { isPlayerHidden } from './critters';
-import { heightAt } from './terrain';
+import { groundAt, heightAt } from './terrain';
+import { nodeY } from './highways/roads';
 import { runOverHit } from './runOver';
 import { clearHandsUp, gnomeState, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
-import type { Fx, Npc, Vehicle, VehicleKind, Watch, WatchContext, World } from './types';
+import type { Fx, Npc, RoadNode, Vehicle, VehicleKind, Watch, WatchContext, World } from './types';
 
 /** Body radius for collisions with boxes and the world edge. */
 const BODY_R = 0.4;
+
+/** Road nodes within [minD, maxD] of (x, z) that sit at height y (within 3 m): the level a pursuit or roadblock uses. */
+export function levelNodes(nodes: RoadNode[], x: number, z: number, y: number, minD: number, maxD: number): RoadNode[] {
+  return nodes.filter((n) => {
+    const d = Math.hypot(n.x - x, n.z - z);
+    return d >= minD && d <= maxD && Math.abs(nodeY(n) - y) < 3;
+  });
+}
 /** Chasers stop this far (horizontal) from their target. */
 const STOP_DISTANCE = 4;
 /** Only shoot while the target is below this height. */
@@ -118,7 +127,7 @@ export function createWatch(
     const unit: Unit = {
       npc, role, hits: 0, post, leaving: false, sprayT: SPRAY_INTERVAL, held, aimed: false,
       state: {
-        position: new THREE.Vector3(npc.x, 0, npc.z),
+        position: new THREE.Vector3(npc.x, heightAt(npc.x, npc.z), npc.z),
         velocity: new THREE.Vector3(),
         facing: npc.yaw,
         grounded: true,
@@ -180,7 +189,7 @@ export function createWatch(
   function nudge(u: Unit, ux: number, uz: number, step: number, world: World): void {
     const n = u.npc;
     const wx = n.x + ux * step, wz = n.z + uz * step;
-    const p = pushOutOfBoxes(wx, wz, BODY_R, world.boxes, heightAt(wx, wz));
+    const p = pushOutOfBoxes(wx, wz, BODY_R, world.boxes, groundAt(wx, wz, u.state.position.y));
     const c = clampToWorld(p.x, p.z, world.half, BODY_R);
     n.x = c.x;
     n.z = c.z;
@@ -195,7 +204,7 @@ export function createWatch(
   function animate(u: Unit, dt: number, speed: number): void {
     const n = u.npc;
     const s = u.state;
-    s.position.set(n.x, heightAt(n.x, n.z), n.z);
+    s.position.set(n.x, groundAt(n.x, n.z, s.position.y), n.z);
     s.velocity.set(Math.sin(n.yaw) * speed, 0, Math.cos(n.yaw) * speed);
     s.facing = n.yaw;
     n.model.update(s, dt);
@@ -227,7 +236,7 @@ export function createWatch(
         u.rag = null;
         resetPose(model);
         n.yaw = Math.atan2(tx - n.x, tz - n.z);
-        model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
+        model.object.position.set(n.x, groundAt(n.x, n.z, u.state.position.y), n.z);
         n.state = 'walk';
       }
       return 0;
@@ -362,17 +371,16 @@ export function createWatch(
     return 0;
   }
 
-  function spawnPursuit(kind: Pursuit['kind'], world: World, px: number, pz: number): void {
-    const nodes = world.roads.nodes.filter((n) => {
-      const d = Math.hypot(n.x - px, n.z - pz);
-      return d >= 32 && d <= 75;
-    });
+  function spawnPursuit(kind: Pursuit['kind'], world: World, px: number, pz: number, py: number): void {
+    let nodes = levelNodes(world.roads.nodes, px, pz, py, 32, 75);
+    if (nodes.length === 0) nodes = world.roads.nodes.filter((n) => n.deck === undefined && Math.hypot(n.x - px, n.z - pz) >= 32 && Math.hypot(n.x - px, n.z - pz) <= 75);
     const node = nodes.length > 0 ? nodes[Math.floor(Math.random() * nodes.length)] : null;
     const x = node ? node.x : px + 36;
     const z = node ? node.z : pz + 36;
     const yaw = Math.atan2(px - x, pz - z);
     const tint = kind === 'hoa-van' ? WATCH.hoaHat : WATCH.hat;
     const v = createVehicle(scene, kind, x, z, yaw, tint);
+    v.y = node ? nodeY(node) : groundAt(x, z, py);
     v.driver = 'police';
     const look = kind === 'hoa-van'
       ? randomTownLook({ hat: WATCH.hoaHat, shirt: WATCH.hoaCoat })
@@ -479,9 +487,10 @@ export function createWatch(
     }
 
     const countOf = (k: Pursuit['kind']): number => pursuits.filter((p) => p.kind === k).length;
-    if (countOf('ride-on') < wantRideOn) spawnPursuit('ride-on', world, ctx.playerX, ctx.playerZ);
-    if (countOf('zero-turn') < wantZeroTurn) spawnPursuit('zero-turn', world, ctx.playerX, ctx.playerZ);
-    if (countOf('hoa-van') < wantHoaVan) spawnPursuit('hoa-van', world, ctx.playerX, ctx.playerZ);
+    const spawnY = ctx.playerVehicle ? ctx.playerVehicle.y : ctx.playerY;
+    if (countOf('ride-on') < wantRideOn) spawnPursuit('ride-on', world, ctx.playerX, ctx.playerZ, spawnY);
+    if (countOf('zero-turn') < wantZeroTurn) spawnPursuit('zero-turn', world, ctx.playerX, ctx.playerZ, spawnY);
+    if (countOf('hoa-van') < wantHoaVan) spawnPursuit('hoa-van', world, ctx.playerX, ctx.playerZ, spawnY);
 
     // Despawn surplus pursuit vehicles when heat cools down.
     for (let i = pursuits.length - 1; i >= 0; i--) {
@@ -517,12 +526,12 @@ export function createWatch(
         roadblock = null;
       }
     } else if (level >= 3 && roadblockCooldown <= 0 && world.roads.nodes.length > 0) {
-      const cands = world.roads.nodes.filter((n) => {
-        const d = Math.hypot(n.x - tx, n.z - tz);
-        return d >= 45 && d <= 75;
-      });
+      // Same level as the target, and never on a ramp foot or junction (a node whose links change deck).
+      const ty = ctx.playerVehicle ? ctx.playerVehicle.y : ctx.playerY;
+      const cands = levelNodes(world.roads.nodes, tx, tz, ty, 45, 75).filter((n) => n.links.every((l) => world.roads.nodes[l]?.deck === n.deck));
       if (cands.length > 0) {
         const node = cands[Math.floor(Math.random() * cands.length)];
+        const ny = nodeY(node);
         const yawBase = Math.atan2(tx - node.x, tz - node.z) + Math.PI / 2;
         const rbVehs: Vehicle[] = [];
         const rbCones: THREE.Mesh[] = [];
@@ -532,6 +541,7 @@ export function createWatch(
           const vx = node.x + Math.cos(yawBase) * side;
           const vz = node.z - Math.sin(yawBase) * side;
           const rv = createVehicle(scene, level >= 4 ? 'hoa-van' : 'ride-on', vx, vz, yawBase + side * 0.15, level >= 4 ? WATCH.hoaHat : WATCH.hat);
+          rv.y = groundAt(vx, vz, ny + 0.6);
           rv.driver = 'none';
           vehicles.push(rv);
           rbVehs.push(rv);
@@ -539,7 +549,7 @@ export function createWatch(
         for (let k = -1; k <= 1; k++) {
           const cone = new THREE.Mesh(coneGeo, coneMat);
           const cx = node.x + k * 2.2, cz = node.z + 2.5;
-          cone.position.set(cx, heightAt(cx, cz) + 0.35, cz);
+          cone.position.set(cx, groundAt(cx, cz, ny + 0.6) + 0.35, cz);
           scene.add(cone);
           rbCones.push(cone);
         }
@@ -708,7 +718,7 @@ export function createWatch(
       for (const u of units.values()) {
         const d = Math.hypot(u.npc.x - x, u.npc.z - z);
         // Height above this officer's own ground.
-        const h = y - heightAt(u.npc.x, u.npc.z);
+        const h = y - u.state.position.y;
         if (h < 0 || h > 1.2) continue;
         if (d < bestD) {
           bestD = d;
@@ -721,7 +731,7 @@ export function createWatch(
       const u = units.get(o.id);
       if (!u) return false;
       u.hits++;
-      const g = heightAt(o.x, o.z);
+      const g = groundAt(o.x, o.z, u.state.position.y);
       fx.spark(o.x, g + 1, o.z);
       if (u.hits < WATCH.crackHits) return false;
       fx.crack(o.x, g + 0.8, o.z, o.look.shirt);
@@ -733,7 +743,7 @@ export function createWatch(
         o.z = u.post.z;
         o.state = 'walk';
         u.hits = 0;
-        const g = heightAt(o.x, o.z);
+        const g = groundAt(o.x, o.z, u.state.position.y);
         u.state.position.set(o.x, g, o.z);
         o.model.object.position.set(o.x, g, o.z);
       }

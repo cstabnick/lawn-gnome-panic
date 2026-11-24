@@ -433,6 +433,27 @@ export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
     { who: 'BULLETIN', text: 'Big Lou has lifted the Gnomecino\'s hat embargo after a crate of microfiber towels was recovered from Red Cap hooligans and a VIP bowler arrived spotless!' },
     { who: 'BULLETIN', text: 'High-rollers are cheering outside the Gnomecino tonight — Big Lou inspected the VIP\'s bowler hat with a magnifying glass and waved the whole table inside.' },
   ],
+  // The Kerbside Exchange city contracts (quests/cityQuests.ts).
+  'city-kerbside-rounds': [
+    { who: 'BULLETIN', text: 'Dot Pennywort\'s Kerbside Exchange has a new name on its books. The board by the Central Bus Stop says the newcomer delivers, and delivers on time.' },
+    { who: 'BULLETIN', text: 'Today\'s Tattler reached Bodega & Sons, the Greenhouse Strip and the City Hall steps before lunch. Councilwoman Vance asks everyone to bring a chair on Thursday.' },
+  ],
+  'city-impound-run': [
+    { who: 'BULLETIN', text: 'The HOA impound in the Clay-Mart returns yard is one Zero-Turn short this afternoon. The clerks say the paperwork is in order. The Zero-Turn is not.' },
+    { who: 'BULLETIN', text: 'Pay \'n\' Glaze reports a rush job: one Zero-Turn, one fresh coat, one HOA tag gone for good. Pip Potsworth denies everything, loudly.' },
+  ],
+  'city-glow-band-express': [
+    { who: 'BULLETIN', text: 'The Velvet Toadstools played the Amphitheater to a crowd of glowing hats tonight. Neon-Moth Nina says every band arrived with seconds to spare.' },
+    { who: 'BULLETIN', text: 'A push-bike courier was clocked crossing Turfton from the Greenhouse Strip to Park & Arts in record time. The Hat Watch would like a word, eventually.' },
+  ],
+  'city-penthouse-exclusive': [
+    { who: 'BULLETIN', text: 'The Turfton Tattler\'s front page: VESPER\'S PENTHOUSE HAS NO GRASS. Thorne Lawn & Order calls the photo "unflattering to the drapes".' },
+    { who: 'BULLETIN', text: 'Watch officers report a Sycamore Copter circling Thorne Tower at roof height this evening. The Tattler declines to name its photographer.' },
+  ],
+  'city-skyway-robbery': [
+    { who: 'BULLETIN', text: 'An HOA van was found parked outside the Local 404 Union Hall in Clay-Mart Industrial with its cargo missing. Big Wrench Grout says the Skyway is paid for.' },
+    { who: 'BULLETIN', text: 'Local 404 calls the Turfton Skyway "the only road the HOA won\'t drive". Somebody drove it very fast today, eastbound, ahead of a van.' },
+  ],
   'gta-tessie-rumour': [
     { who: 'BULLETIN', text: 'BREAKING: something big in Loch Moss. A ferry passenger saw a hump the size of a Watering-Can Steamer roll under the surface at dusk, then say "oh, that\'s not right" and sit down.' },
     { who: 'BULLETIN', text: 'Driftwood has been seen on the loch shore telling anyone who will listen "I told you so". Nobody has yet asked him what he told them.' },

@@ -7,6 +7,8 @@ import type { World } from '../types';
 import { skywayColliders } from './colliders';
 import { deckContactsAt } from './deck';
 import { buildSkywayMeshes } from './mesh';
+import { addSkywayRoads } from './roads';
+import { buildSkywaySites } from './sites';
 import { SKYWAY } from './skyways';
 
 /** True when a ground spot at (x, z) is inside, under the low part of, or right beside a skyway (keep spawns off it). */
@@ -23,6 +25,8 @@ export function blockedBySkyway(x: number, z: number, margin = 3): boolean {
 
 export function installSkyways(scene: THREE.Scene, world: World): void {
   world.boxes.push(...skywayColliders());
+  // The road skyways join the road graph (deck nodes), before traffic, police and the GPS read it.
+  addSkywayRoads(world.roads);
   for (let i = world.parked.length - 1; i >= 0; i--) {
     const p = world.parked[i];
     if (blockedBySkyway(p.x, p.z)) world.parked.splice(i, 1);
@@ -32,4 +36,8 @@ export function installSkyways(scene: THREE.Scene, world: World): void {
     if (blockedBySkyway(p.x, p.z, 1.5)) world.walkPoints.splice(i, 1);
   }
   scene.add(buildSkywayMeshes());
+  // Local 404's work sites: prefab dressing and its colliders.
+  const sites = buildSkywaySites();
+  world.boxes.push(...sites.boxes);
+  scene.add(sites.group);
 }

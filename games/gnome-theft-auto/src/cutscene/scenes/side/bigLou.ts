@@ -91,7 +91,7 @@ export const BIG_LOU_VIP: SceneScript = {
     { id: 'you', player: true, at: [-86, -44], yaw: Math.PI / 2 },
   ],
   vehicles: [
-    { id: 'vip', kind: 'zero-turn', at: [-90, -56], yaw: Math.PI / 2, loadout: { paint: 0xf2f2f2, finish: 'pearl', tyre: 'whitewall', lamp: 'square', beam: 'xenon' } },
+    { id: 'vip', kind: 'zero-turn', at: [-93, -54], yaw: Math.PI / 2, loadout: { paint: 0xf2f2f2, finish: 'pearl', tyre: 'whitewall', lamp: 'square', beam: 'xenon' } },
   ],
   props: [
     { id: 'crate', prefab: 'crate', at: [-93, -48], yaw: 0.2, size: 1.2 },

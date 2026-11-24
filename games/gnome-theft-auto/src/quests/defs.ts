@@ -6,6 +6,9 @@ import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
 import { CHAPTER_5_QUESTS } from './chapter5';
 import { SIDE_QUESTS } from './sideQuests';
+import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
+import { CITY_QUESTS } from './cityQuests';
+import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { TESSIE_QUEST } from './tessieQuest';
 import type { GiverDef, QuestDef } from './types';
@@ -117,6 +120,33 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'unmowed-hollow',
     letter: '!',
   },
+  // Shelldon gives the Snail-Racing Rigging from his own alley (R-150), not from the Bodega pavement.
+  'strangers-shelldon': {
+    id: 'strangers-shelldon',
+    name: 'Shelldon (Dumpster Alley)',
+    label: 'Talk to Shelldon',
+    ...placed('strangers-shelldon'),
+    room: 'street',
+    letter: '!',
+  },
+  // The Kerbside Exchange (cityQuests.ts, R-150): Dot Pennywort's job board by the Central Bus Stop.
+  'kerb-exchange': {
+    id: 'kerb-exchange',
+    name: 'Kerbside Exchange (Dot Pennywort)',
+    label: 'Read the Kerbside Exchange board',
+    ...placed('kerb-exchange'),
+    room: 'street',
+    letter: 'E',
+  },
+  // The Newcomers' Card (newcomerQuests.ts): Mabel Kerbstone's tutorial stamps, at the Central Bus Stop.
+  'newcomers-club': {
+    id: 'newcomers-club',
+    name: "Newcomers' Card (Mabel Kerbstone)",
+    label: "Ask Mabel about the Newcomers' Card",
+    ...placed('newcomers-club'),
+    room: 'street',
+    letter: 'N',
+  },
   // The Tessie side quest (Epic 7): waits here only once the quest has unlocked (tessieUnlock.ts).
   'loch-driftwood': {
     id: 'loch-driftwood',
@@ -135,6 +165,23 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: 'R',
   },
+  // Pebblewick's side quests (outskirtsQuests.ts): the plots and the water tower.
+  'pebblewick-plots': {
+    id: 'pebblewick-plots',
+    name: 'Purslane Furrow (Pebblewick)',
+    label: 'Talk to Purslane Furrow',
+    ...placed('pebblewick-plots'),
+    room: 'street',
+    letter: '!',
+  },
+  'pebblewick-tower': {
+    id: 'pebblewick-tower',
+    name: 'Mallow Bucket (Pebblewick)',
+    label: 'Talk to Mallow Bucket',
+    ...placed('pebblewick-tower'),
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -144,6 +191,9 @@ export const QUESTS: readonly QuestDef[] = [
   ...CHAPTER_4_QUESTS,
   ...CHAPTER_5_QUESTS,
   ...SIDE_QUESTS,
+  ...OUTSKIRTS_QUESTS,
+  ...CITY_QUESTS,
+  ...NEWCOMER_QUESTS,
   TESSIE_QUEST,
   ...RACE_QUESTS,
 ];

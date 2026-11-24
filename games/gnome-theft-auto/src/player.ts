@@ -8,9 +8,12 @@ import { aboveGround, groundAt, heightAt, waterAt } from './terrain';
 import { swimState } from './swim';
 import { AIM } from './gunMods';
 import { exitPoint, seatWorld } from './vehicles';
-import { clearHands, poseHands } from './driverHands';
+import { clearHands, poseHands, releaseHands, settleHands } from './driverHands';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import type { MountPose } from './mount';
+import { isClosed } from './seats';
+import { createRideAnimator } from './anim/rideAuto';
+import { seaRoughness } from './waves';
 import type { InputState, Player, Vehicle, World } from './types';
 
 /** Yaw easing rates, radians per second. */
@@ -57,7 +60,10 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
   const ragCentre = { x: 0, y: 0, z: 0 };
 
   /** Undo any riding tilt: the model stands straight again (its yaw is set every frame by model.update). */
-  const upright = (): void => { model.object.quaternion.identity(); };
+  /** Seated poses by vehicle and seat, and the driver's personality (anim/rideAuto.ts); reset whenever the gnome gets off. */
+  const rideAnim = createRideAnimator();
+  const rideInfo = { kind: '', flies: false, fixedWing: false, boat: false, closed: false, seat: 0, speedFrac: 0, seed: 0, sea: 0 };
+  const upright = (): void => { model.object.quaternion.identity(); rideAnim.cancel(model); };
 
   /** Drop any tumble in progress (the gnome is standing again, or has been moved by something else). */
   const clearRag = (): void => {
@@ -342,7 +348,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       if ((input.fire || aiming) && !p.swimming) model.arms.right.rotation.x = -Math.PI / 2;
     },
 
-    updateRiding(dt: number, lean = 0) {
+    updateRiding(dt: number, lean = 0, horn = false) {
       const v = p.vehicle;
       if (!v) return;
       p.x = v.x;
@@ -359,9 +365,24 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       state.sitting = true;
       model.update(state, dt);
       // Ground vehicles: the rider rides the chassis (its roll and pitch over bumps and in corners) and leans on top of it, about the seat.
-      if (!v.spec.flies) model.object.quaternion.copy(v.object.quaternion).multiply(leanQ.setFromAxisAngle(AXIS_Z, lean));
+      // Aircraft too: a pilot sitting upright in a banked plane poked out of the cockpit and could not reach the yoke (driverHands.ts).
+      model.object.quaternion.copy(v.object.quaternion);
+      if (!v.spec.flies) model.object.quaternion.multiply(leanQ.setFromAxisAngle(AXIS_Z, lean));
       // Hands on the steering grips (after the model's own arm update and the chassis tilt).
       poseHands(model, v, p.seat, dt);
+      // The seat's pose (passengers) or the driver's personality, on top of the hands.
+      rideInfo.kind = v.kind;
+      rideInfo.flies = v.spec.flies;
+      rideInfo.fixedWing = !!v.spec.fixedWing;
+      rideInfo.boat = !!v.spec.boat;
+      rideInfo.closed = isClosed(v.spec);
+      rideInfo.seat = p.seat;
+      rideInfo.speedFrac = Math.min(1, Math.abs(v.speed) / Math.max(1, v.spec.maxSpeed));
+      rideInfo.seed = v.id;
+      rideInfo.sea = v.spec.boat ? seaRoughness(v.x, v.z) : 0;
+      rideAnim.update(model, rideInfo, dt, horn);
+      // A personality leans or sways the body under the hands: keep the steering hand(s) on the wheel.
+      settleHands(model, v, p.seat);
     },
 
     enter(v: Vehicle, seat = 0) {
@@ -372,9 +393,8 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
     },
 
     /** Draws the gnome during a mount sequence (mount.ts): on foot beside the vehicle, climbing, or still seated. */
-    drawMount(pose: MountPose, dt: number) {
+    drawMount(pose: MountPose, dt: number, v?: Vehicle, seat = 0) {
       upright();
-      clearHands(model);
       p.x = pose.x;
       p.y = pose.y;
       p.z = pose.z;
@@ -395,6 +415,12 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
         model.arms.left.rotation.set(arm, 0, 0);
         model.arms.right.rotation.set(arm, 0, 0);
       }
+      // Seated (settling in, or waiting for the door on the way out): ride the chassis and hold the wheel, so the sequence hands
+      // over to updateRiding with the hands already on it. Otherwise let go of it smoothly (getting out).
+      if (v && pose.seated) {
+        model.object.quaternion.copy(v.object.quaternion);
+        poseHands(model, v, seat, dt);
+      } else releaseHands(model, dt);
     },
 
     exit() {

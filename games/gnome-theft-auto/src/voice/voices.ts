@@ -31,6 +31,10 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   bramble: { hz: 100, style: 'syllables', speed: 0.75, formant: 0.9 },
   shelldon: { hz: 110, breath: 0.3, speed: 1.2, range: 0.6, formant: 1.2 },
   wally: { hz: 96, wave: 'square', speed: 1.2, q: 7, formant: 1.2 },
+  dot: { hz: 128, wave: 'square', speed: 1.3, q: 6, formant: 1.17 },
+  hedda: { hz: 124, wave: 'square', style: 'syllables', speed: 1.1, formant: 0.93 },
+  nina: { hz: 136, wave: 'triangle', speed: 1.5, glide: 0.25, wobble: 0.15, formant: 1.25 },
+  grout: { hz: 74, wave: 'sine', style: 'words', speed: 0.6, sub: 1, formant: 0.8 },
 
   // ---- speakers without a cast preset ----
   narrator: { hz: 130, wave: 'triangle', speed: 0.8, range: 0.6, glide: -0.3, bright: 2200, formant: 0.95 },

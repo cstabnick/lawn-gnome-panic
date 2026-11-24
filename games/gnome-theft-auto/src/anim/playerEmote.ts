@@ -25,6 +25,11 @@ export interface PlayerEmote {
   readonly active: boolean;
   /** Start an emote by id: any library row, or LAWN_PREFIX + a @lawn/emotes id. False for an unknown id. */
   play(id: string): boolean;
+  /**
+   * Play without counting it as the player's own emote (no onPlay): idle fidgets, getting up after a tumble. `then`
+   * plays once this one has finished.
+   */
+  playQuiet(id: string, then?: string): boolean;
   /** Blend out. */
   stop(): void;
   /** Every frame, after model.update() and the gun pose. */
@@ -42,6 +47,8 @@ export function createPlayerEmote(onPlay?: (id: string) => void): PlayerEmote {
   let lawn: EmotePlayer | null = null;
   let lawnModel: GnomeModel | null = null;
   let pending: string | null = null;
+  let quiet = false;
+  let then: string | null = null;
   const lawnActive = (): boolean => lawn?.current != null;
 
   return {
@@ -51,10 +58,20 @@ export function createPlayerEmote(onPlay?: (id: string) => void): PlayerEmote {
       const known = id.startsWith(LAWN_PREFIX) ? !!getEmote(id.slice(LAWN_PREFIX.length)) : !!animById(id);
       if (!known) return false;
       pending = id;
+      quiet = false;
+      then = null;
+      return true;
+    },
+    playQuiet(id, next) {
+      if (!animById(id)) return false;
+      pending = id;
+      quiet = true;
+      then = next && animById(next) ? next : null;
       return true;
     },
     stop() {
       pending = null;
+      then = null;
       animator.stop();
       lawn?.stop();
     },
@@ -66,6 +83,7 @@ export function createPlayerEmote(onPlay?: (id: string) => void): PlayerEmote {
       }
       if (gate.blocked) {
         pending = null;
+        then = null;
         if (animator.active) animator.cancel(model);
         if (lawnActive()) {
           lawn.stop();
@@ -82,9 +100,11 @@ export function createPlayerEmote(onPlay?: (id: string) => void): PlayerEmote {
             lawn.stop();
             lawn.update(1, false);
           }
-          animator.play(pending);
+          const after = then;
+          then = null;
+          animator.play(pending, after ? { onEnd: () => { pending = after; quiet = true; } } : undefined);
         }
-        onPlay?.(pending);
+        if (!quiet) onPlay?.(pending);
         pending = null;
       }
       const def = animator.current;

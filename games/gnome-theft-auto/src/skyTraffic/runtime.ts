@@ -49,6 +49,27 @@ export interface SkyTraffic {
   clear(): void;
   /** Off: nothing new spawns (forced spawns still work) and the flying ones are cleared. */
   setEnabled(on: boolean): void;
+  /** Online sync: false stops this client spawning new aircraft (the flying ones keep flying). Clears nothing. */
+  setSpawning(on: boolean): void;
+  /** Online sync: every NPC aircraft right now, for publishing. */
+  netList(): SkyNetRec[];
+  /** Online sync: take over a plane another client owned (the record is new, here). False for an unknown id or one already flying. */
+  adopt(id: string, x: number, y: number, z: number, yaw: number, speed: number): boolean;
+  /** Online sync: tear the banner of the aircraft with this key loose. */
+  tearBanner(key: number): void;
+  /** Online sync: send the aircraft with this key on its way out (another player's copy of the same flight wins). */
+  dismiss(key: number): void;
+}
+
+/** One NPC aircraft as the online sync sees it. banner: 0 none, 1 towing, 2 torn. */
+export interface SkyNetRec {
+  key: number;
+  id: string;
+  v: Vehicle;
+  body: SkyBody;
+  state: 'flying' | 'leaving' | 'downed' | 'wreck';
+  adId: string | null;
+  banner: 0 | 1 | 2;
 }
 
 /** Where a new aircraft appears. next = the route index it flies to first. */
@@ -62,6 +83,8 @@ export interface SkySpawn {
 
 // Scratch vector for banner.centre (one per module, never allocated per frame).
 const scratch = new THREE.Vector3();
+
+let keySeq = 0;
 
 export function pickSpawn(
   route: readonly SkyWaypoint[],
@@ -128,6 +151,7 @@ export function skyFloor(x: number, z: number, y: number, boxes: readonly Box[])
 
 /** One NPC aircraft. */
 interface Rec {
+  key: number;
   def: SkyBehaviourDef;
   v: Vehicle;
   body: SkyBody;
@@ -175,6 +199,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
   };
 
   let enabled = true;
+  let spawning = true;
   let pendingId: string | null = null;
   if (typeof location !== 'undefined') {
     try {
@@ -218,6 +243,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     const follow = newFollow(route, body, s.next);
     deps.vehicles.push(v);
     const rec: Rec = {
+      key: ++keySeq,
       def,
       v,
       body,
@@ -274,7 +300,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
       activeIds.add(r.def.id);
       if (!r.forced && r.state === 'flying' && r.def.when && !r.def.when(ctx)) leave(r);
     }
-    if (!enabled) return;
+    if (!enabled || !spawning) return;
     const def = pickBehaviour(SKY_BEHAVIOURS, ctx, activeIds, cooldownUntil, records.length);
     if (def) spawn(def, false);
   }
@@ -634,5 +660,51 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     if (!on) clear();
   }
 
-  return { update, hitTest, spawn: spawnById, list, clear, setEnabled };
+  function setSpawning(on: boolean): void {
+    spawning = on;
+  }
+
+  function netList(): SkyNetRec[] {
+    return records.map((rec): SkyNetRec => ({
+      key: rec.key,
+      id: rec.def.id,
+      v: rec.v,
+      body: rec.body,
+      state: rec.state,
+      adId: rec.ad?.id ?? null,
+      banner: rec.banner ? 1 : rec.def.banner ? 2 : 0,
+    }));
+  }
+
+  function adopt(id: string, x: number, y: number, z: number, yaw: number, speed: number): boolean {
+    const def = skyBehaviour(id);
+    if (!def) return false;
+    if (records.some((r) => r.def.id === def.id)) return false;
+    refreshCtx();
+    spawn(def, true);
+    const rec = records[records.length - 1];
+    rec.body.x = x;
+    rec.body.y = y;
+    rec.body.z = z;
+    rec.body.yaw = yaw;
+    rec.body.speed = speed;
+    rec.v.x = x;
+    rec.v.y = y;
+    rec.v.z = z;
+    rec.v.yaw = yaw;
+    rec.v.speed = speed;
+    return true;
+  }
+
+  function tearBanner(key: number): void {
+    const rec = records.find((r) => r.key === key);
+    if (rec) tear(rec);
+  }
+
+  function dismiss(key: number): void {
+    const rec = records.find((r) => r.key === key);
+    if (rec && rec.state === 'flying') leave(rec);
+  }
+
+  return { update, hitTest, spawn: spawnById, list, clear, setEnabled, setSpawning, netList, adopt, tearBanner, dismiss };
 }

@@ -14,15 +14,16 @@ import { GLAZE_KINDS, isCraftKind } from './glazeStore';
 import { initAir } from './craft/flight';
 import { stepAircraft } from './craft/aircraft';
 import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
-import { registerGlazeMounts } from './glazeMounts';
+import { poseControl, registerDriveControls } from './driveGrips';
 import { clearWaterlog, waterlogSpeedMult } from './waterlog';
 import { stripLooseParts } from './debris';
 import {
-  attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, setWheelPose, type GlazeRig, type Loadout,
+  attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, resolveBodyPrefab, setWheelPose, type GlazeRig, type Loadout,
 } from '@lawn/glaze';
 import type { DriveControls, Vehicle, VehicleKind, World } from './types';
 
-registerGlazeMounts();
+// The Pay 'n' Glaze mounts and every vehicle's driving control (driveGrips.ts): body variants must exist before the first build.
+registerDriveControls();
 
 let nextId = 1;
 
@@ -61,12 +62,24 @@ export const CRASH_SCALE = 45;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
+/** A named pivot group (a prefab pivot is a Group; a plain part that shares the name, like the teacup's 'handle' ring, is a Mesh and must not turn). */
+function pivotNamed(body: THREE.Object3D, name: string): THREE.Object3D | undefined {
+  const o = body.getObjectByName(name);
+  return o && !(o as THREE.Mesh).isMesh ? o : undefined;
+}
+
 function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number): Pivots {
+  const handle = pivotNamed(body, 'handle');
+  const steer = pivotNamed(body, 'steer');
+  // driverHands.ts reads the pivot the driver's control turns on from here (picked up again after every rebuild).
+  body.userData.controlPivot = steer ?? handle;
+  // A damage stage may have bent the control (a morph): poseControl turns it on top of that rest pose.
+  for (const o of [steer, handle]) if (o && !o.userData.restQ) o.userData.restQ = o.quaternion.clone();
   return {
     wheels: ['wheel-0', 'wheel-1', 'wheel-2', 'wheel-3'].map((n) => body.getObjectByName(n)),
     blade: body.getObjectByName('blade'),
-    handle: body.getObjectByName('handle'),
-    steer: body.getObjectByName('steer'),
+    handle,
+    steer,
     reel: body.getObjectByName('reel'),
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
@@ -175,7 +188,7 @@ export function repaintVehicle(v: Vehicle, tint: number): void {
   const oldBody = v.object.children[0] as THREE.Group | undefined;
   const old = pivotsById.get(v.id);
   if (oldBody) v.object.remove(oldBody);
-  const body = buildPrefab(v.spec.prefab, { scale: v.spec.scale, tint });
+  const body = buildPrefab(resolveBodyPrefab(v.spec.prefab), { scale: v.spec.scale, tint });
   if (v.damage > 0 && body.userData.damage !== undefined) {
     setPrefabDamage(body, v.damage);
     stripLooseParts(body);
@@ -259,9 +272,11 @@ export function createVehicle(scene: THREE.Scene, kind: VehicleKind, x: number, 
     body = buildGlazeBody(spec.prefab, { scale: spec.scale });
   } else {
     colour = tint ?? MOWER_TINTS[0];
+    // resolveBodyPrefab: the body variant with the driver's control (driveGrips.ts), when the kind has one.
+    const id = resolveBodyPrefab(spec.prefab);
     body = TINTED_KINDS.includes(spec.kind)
-      ? buildPrefab(spec.prefab, { scale: spec.scale, tint: colour })
-      : buildPrefab(spec.prefab, { scale: spec.scale });
+      ? buildPrefab(id, { scale: spec.scale, tint: colour })
+      : buildPrefab(id, { scale: spec.scale });
   }
   body.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
@@ -490,6 +505,8 @@ const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
 /** Frame number from beginVehicleFrame (0 until app.ts calls it: then every sync steps, as in tests). */
 let meshFrame = 0;
 const syncedAt = new WeakMap<Vehicle, number>();
+/** An online driver's yaw at their last timed sync (to read their steering off their turn rate). */
+const remoteYaw = new WeakMap<Vehicle, number>();
 /** Called once at the top of each game frame: the first timed syncVehicleMesh of a vehicle in it steps wheels and springs. */
 export function beginVehicleFrame(): void {
   meshFrame++;
@@ -539,6 +556,17 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     syncedAt.set(v, meshFrame);
   }
 
+  // An online driver's steering is not sent: read it off their turn rate (yaw -= steer * turnRate * dt), so their wheel turns and
+  // their gnome's hands turn with it.
+  if (v.driver === 'remote' && dt > 0) {
+    const last = remoteYaw.get(v);
+    remoteYaw.set(v, v.yaw);
+    if (last !== undefined) {
+      const dYaw = Math.atan2(Math.sin(v.yaw - last), Math.cos(v.yaw - last));
+      const want = Math.abs(v.speed) > 0.3 ? clamp(-dYaw / (spec.turnRate * dt), -1, 1) : 0;
+      v.steerVis += (want - v.steerVis) * Math.min(1, 8 * dt);
+    }
+  }
   // A plane's wheels only turn on the ground.
   if (v.air ? !v.air.airborne : (!spec.fixedWing || aboveGround(v.x, v.y, v.z) < 0.05)) v.wheelSpin += (v.speed * dt) / WHEEL_RADIUS;
   v.rig?.update(dt);
@@ -579,8 +607,9 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
       w.rotation.x = v.wheelSpin;
     }
   });
-  if (p.handle) p.handle.rotation.y = steer;
-  if (p.steer) p.steer.rotation.y = steer;
+  // The driver's control (wheel, bars, yoke...) turns about its own axis by its own lock (driveGrips.ts); the hands follow it.
+  if (p.handle) poseControl(p.handle, v.kind, v.steerVis);
+  if (p.steer) poseControl(p.steer, v.kind, v.steerVis);
   if (p.blade) p.blade.rotation.y = v.wheelSpin;
   if (p.reel) {
     if (v.kind === 'mulch-spreader') p.reel.rotation.y += dt * (Math.abs(v.speed) > 0.5 ? 8 : 1.5);

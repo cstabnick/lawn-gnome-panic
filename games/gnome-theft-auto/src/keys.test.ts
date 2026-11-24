@@ -27,6 +27,12 @@ describe('the key table', () => {
     expect(KEYS.map).not.toBe(KEYS.mute);
   });
 
+  it('gives Tab to the More menu only (it used to duplicate holding Q for the weapon wheel)', () => {
+    expect(KEYS.more).toBe('Tab');
+    expect(Object.entries(KEYS).filter(([, c]) => c === 'Tab').map(([a]) => a)).toEqual(['more']);
+    expect('weaponWheel' in KEYS).toBe(false);
+  });
+
   it('matches the taxi key in config', () => {
     expect(KEYS.taxi).toBe(TAXI.key);
   });

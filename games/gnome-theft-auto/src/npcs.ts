@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import { angleDiff, clampToWorld, pushOutOfBoxes } from './collide';
-import { PEDESTRIANS } from './config';
+import { PEDESTRIANS, biomeAt } from './config';
 import { biomeLookFor, clearHandsUp, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { aboveGround, heightAt } from './terrain';
@@ -11,7 +11,8 @@ import { runOverHit } from './runOver';
 import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 import { createAnimator, type Animator } from './anim/animator';
-import type { AnimId } from './anim/types';
+import { PAIR_GAP } from './anim/types';
+import { idleFor, pairFor, personaFor, walkStyleFor, yawToward, type Persona } from './anim/persona';
 import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
@@ -47,14 +48,15 @@ const RAGDOLL_MAX = 7;
 
 type NpcTrait = 'normal' | 'grumpy' | 'spectator';
 
-/** Idle loops a pedestrian may pick while it stands about, by temperament (anim row ids). */
-const IDLE_NORMAL: readonly AnimId[] = ['look-around', 'stretch', 'yawn', 'scratch-head', 'tap-foot', 'hands-on-hips', 'think'];
-const IDLE_GRUMPY: readonly AnimId[] = ['cross-arms', 'tap-foot', 'hands-on-hips', 'look-around'];
-const IDLE_SPECTATOR: readonly AnimId[] = ['look-around', 'clap', 'point', 'think', 'hands-on-hips'];
-const IDLE_BY_TRAIT: Record<NpcTrait, readonly AnimId[]> = { normal: IDLE_NORMAL, grumpy: IDLE_GRUMPY, spectator: IDLE_SPECTATOR };
+// What a pedestrian does when it stops, how it walks and who it pairs up with: anim/persona.ts (by archetype, place, time).
 /** Chance a pedestrian that arrives at a spot (and is not crowded) plays an idle loop, and its idle length then. */
 const IDLE_ANIM_CHANCE = 0.7;
 const IDLE_ANIM_MIN = 2.5;
+/** A knock slower than this (m/s) leaves a gnome dazed rather than running. */
+const SOFT_KNOCK = 9;
+/** A flying vehicle closer than this (m, sideways) and higher than FLYOVER_UP over a standing gnome makes it look up. */
+const FLYOVER_R = 30;
+const FLYOVER_UP = 5;
 
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
@@ -82,12 +84,18 @@ interface Aux {
   recycleT: number;
   /** Pose level of detail (animStride.ts): far gnomes are posed every few frames. */
   animClock: AnimClock;
+  /** Character (anim/persona.ts): sets the walk style, the idles and the pairs. */
+  persona: Persona;
+  /** How hard the last knock was (m/s): soft knocks get up dazed instead of running. */
+  knock: number;
+  /** Seconds until this gnome may look up at a flyover again. */
+  lookT: number;
 }
 
 function freshAux(x: number, z: number): Aux {
   const r = Math.random();
   const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, anim: createAnimator(), panic: false, recycleT: 0, animClock: newAnimClock(Math.floor(Math.random() * 4)) };
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, anim: createAnimator(), panic: false, recycleT: 0, animClock: newAnimClock(Math.floor(Math.random() * 4)), persona: personaFor(trait), knock: 0, lookT: 0 };
 }
 
 function rnd<T>(a: readonly T[]): T {
@@ -249,9 +257,41 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     a.panic = Math.random() < 0.5 && a.anim.play('panic', { loop: true });
   }
 
+  /** The walk overlay for this gnome's character (or the plain walk). */
+  function startWalkStyle(a: Aux): void {
+    const style = walkStyleFor(a.persona);
+    if (style) a.anim.play(style, { offset: Math.random() });
+    else a.anim.stop();
+  }
+
+  /** An idle gnome within reach that is free to pair up with n, or null. */
+  function pairPartner(n: Npc): Npc | null {
+    for (const o of npcs.list) {
+      if (o === n || o.state !== 'idle' || o.quest || o.calm) continue;
+      const ao = getAux(o);
+      if (ao.anim.current?.pair || ao.idle < 1.5) continue;
+      if (Math.hypot(o.x - n.x, o.z - n.z) < PAIR_GAP + 1.3) return o;
+    }
+    return null;
+  }
+
+  /** n and o face each other and do a pair animation for a few seconds. */
+  function startPair(n: Npc, a: Aux, o: Npc): void {
+    const ao = getAux(o);
+    const [mine, theirs] = pairFor(a.persona, ao.persona);
+    n.yaw = yawToward(n.x, n.z, o.x, o.z);
+    o.yaw = yawToward(o.x, o.z, n.x, n.z);
+    n.state = 'idle';
+    a.idle = 3 + Math.random() * 2;
+    ao.idle = a.idle;
+    a.anim.play(mine, { loop: true });
+    ao.anim.play(theirs, { loop: true });
+  }
+
   function knockNpc(n: Npc, a: Aux, vx: number, vy: number, vz: number, spin: number, fromX: number, fromZ: number): boolean {
     a.upFromX = fromX;
     a.upFromZ = fromZ;
+    a.knock = Math.max(n.state === 'ragdoll' ? a.knock : 0, Math.hypot(vx, vy, vz));
     if (n.state === 'ragdoll' && a.rag) {
       impulse(a.rag, vx, vy, vz, spin);
       return false;
@@ -282,8 +322,17 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       resetPose(n.model);
       n.yaw = Math.atan2(n.x - a.upFromX, n.z - a.upFromZ);
       n.model.object.position.set(n.x, heightAt(n.x, n.z), n.z);
-      startFlee(n, a, a.upFromX, a.upFromZ);
       resetStuck(n, a);
+      // A soft knock (a nudge, a slow bump), a calm gnome, or now and then anyone: get up dazed and stay put. Else run.
+      if (n.calm || a.knock < SOFT_KNOCK || Math.random() < 0.3) {
+        n.state = 'idle';
+        a.idle = 4;
+        const after = rnd(['dizzy', 'dust-off', 'shake-fist', 'hurt-arm', 'dust-hat'] as const);
+        a.anim.play('get-up', { onEnd: () => { if (n.state === 'idle') a.anim.play(after, { loop: false }); } });
+      } else {
+        startFlee(n, a, a.upFromX, a.upFromZ);
+      }
+      a.knock = 0;
     }
   }
 
@@ -398,7 +447,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         n.state = 'walk';
         a.turn = 0;
         a.panic = false;
-        a.anim.stop();
+        startWalkStyle(a);
         clearHandsUp(n.model);
         pickTarget(n, world, npcs.list);
         resetStuck(n, a);
@@ -417,9 +466,14 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (Math.hypot(dx, dz) < ARRIVE_DIST) {
         n.state = 'idle';
         a.idle = crowded ? 0.35 : IDLE_MIN + Math.random() * (IDLE_MAX - IDLE_MIN);
-        if (!crowded && Math.random() < IDLE_ANIM_CHANCE) {
-          a.anim.play(rnd(IDLE_BY_TRAIT[a.trait]), { offset: Math.random() });
+        const partner = !n.quest && Math.random() < 0.6 ? pairPartner(n) : null;
+        if (partner) {
+          startPair(n, a, partner);
+        } else if (!crowded && Math.random() < IDLE_ANIM_CHANCE) {
+          a.anim.play(idleFor(a.persona, biomeAt(n.x, n.z)), { offset: Math.random() });
           a.idle = Math.max(a.idle, IDLE_ANIM_MIN);
+        } else {
+          a.anim.stop();
         }
       } else {
         moveAlong(n, world, dt, Math.atan2(dx, dz), PEDESTRIANS.walkSpeed);
@@ -432,13 +486,26 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         }
       }
     } else {
-      // idle
-      if (crowded && a.idle > 0.35) a.idle = 0.35;
+      // idle (a pair keeps its spot however close the partner stands)
+      if (crowded && a.idle > 0.35 && !a.anim.current?.pair) a.idle = 0.35;
       a.idle -= dt;
+      // A helicopter or plane overhead: look up (and sometimes wave at a plane). Checked about once a second.
+      a.lookT -= dt;
+      if (a.lookT <= 0 && !a.anim.current?.pair) {
+        a.lookT = 1 + Math.random();
+        for (const v of vehicles) {
+          if (!v.spec.flies || Math.hypot(v.x - n.x, v.z - n.z) > FLYOVER_R || v.y - heightAt(n.x, n.z) < FLYOVER_UP) continue;
+          n.yaw = yawToward(n.x, n.z, v.x, v.z);
+          a.anim.play(v.spec.fixedWing && Math.random() < 0.5 ? 'wave-banner-plane' : 'look-up-flyover', { loop: false });
+          a.idle = Math.max(a.idle, 3);
+          a.lookT = 20;
+          break;
+        }
+      }
       if (a.idle <= 0) {
         pickTarget(n, world, npcs.list);
         n.state = 'walk';
-        a.anim.stop();
+        startWalkStyle(a);
         resetStuck(n, a);
       }
     }
@@ -581,6 +648,9 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           if (!yelled) yelled = `${n.name}: "${rnd(GRUMPY_LINES)}"`;
         } else if (d < 8) {
           startFlee(n, a, x, z);
+        } else if (n.state !== 'flee') {
+          n.yaw = Math.atan2(x - n.x, z - n.z);
+          a.anim.play(a.persona === 'nervous' ? 'jump-back' : 'startle-horn');
         }
       }
       return yelled;

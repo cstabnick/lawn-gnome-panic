@@ -86,7 +86,14 @@ try {
   });
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto(url, { waitUntil: 'networkidle0' });
+  // 'load', not 'networkidle0': games that keep fetching (GTA) never go idle and time out.
+  await page.goto(url, { waitUntil: 'load', timeout: 90000 });
+  if (/[?&]debug\b/.test(url)) {
+    // Games that expose window.__gta (debug mode) are ready once it exists; give the world time to build.
+    await page.waitForFunction(() => !!window.__gta, { timeout: 90000 });
+  } else {
+    await new Promise((r) => setTimeout(r, 5000));
+  }
   await new Promise((r) => setTimeout(r, waitMs));
   result = await page.evaluate(
     (src, minPx, includeSameLook) => {

@@ -17,8 +17,10 @@ import { EAST_STAGES } from './stages/east';
 import type { CastMember, Stage, VehicleMark } from './stages/kit';
 import { TURFTON_STAGES } from './stages/turfton';
 import { TURFTON_B_STAGES } from './stages/turftonB';
+import { TURFTON_C_STAGES } from './stages/turftonC';
 import { WILDS_STAGES } from './stages/wilds';
 import { SPEEDWAY_STAGES } from './stages/speedway';
+import { PEBBLEWICK_STAGES } from './stages/pebblewick';
 import type { CutsceneRoom } from './types';
 
 export * from './stages/kit';
@@ -218,11 +220,31 @@ export const CAST: readonly CastMember[] = [
     vehicle: { kind: 'zero-turn', parkedAt: 'cam-zero-turn', note: 'Chameleon-finish Zero-Turn with a fin spoiler, bought with the reward money.',
       glaze: { paint: 0xf4f4f8, finish: 'chameleon', spoiler: 'fin', rim: 'turbine', underglow: 0xffffff } },
   },
+  {
+    id: 'dot', name: 'Dorrit "Dot" Pennywort', preset: 'dot', home: 'kerb-exchange', haunts: ['bus-stop'],
+    routine: 'Opens the Exchange with the first snail-coach, punches a ticket for every job, eats lunch on the bus-stop bench, closes when the board is empty, which it never is.',
+    vehicle: null,
+  },
+  {
+    id: 'hedda', name: 'Hedda Galley', preset: 'hedda', home: 'kerb-exchange', haunts: ['city-hall-steps'],
+    routine: 'Reads every job slip on the Exchange board before the first coffee, then walks the Hall steps with a pencil behind one ear.',
+    vehicle: null,
+  },
+  {
+    id: 'grout', name: 'Union Boss "Big Wrench" Grout', preset: 'grout', home: 'clay-mart-lot', haunts: [],
+    routine: 'Holds the morning shift meeting in the Clay-Mart returns yard, then sits on the loading dock with a thermos until the van is loaded.',
+    vehicle: null,
+  },
+  {
+    id: 'mabel', name: 'Mabel Kerbstone', home: 'bus-stop', haunts: [],
+    routine: 'Drives the one Turfton Taxi; every fare ends at the Central Bus Stop.',
+    vehicle: null,
+  },
 ];
 
 // ---- The stages ----------------------------------------------------------------------------------------------------
 
-export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES];
+export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES];
 
 export function stageById(id: string): Stage | undefined {
   return STAGES.find((s) => s.id === id);

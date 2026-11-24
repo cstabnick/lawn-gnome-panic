@@ -14,10 +14,11 @@ import { MOWER_TINTS, PLACES, TRAFFIC, VEHICLES, biomeAt } from './config';
 import { districtAt } from './districts';
 import { errandReason, freshErrand, nextLeg, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
-import { clearHands, poseHands } from './driverHands';
+import { clearHands, poseHands, settleHands } from './driverHands';
 import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 import { createVehicle, exitPoint, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
 import { heightAt } from './terrain';
+import { nearestRoadNode, roadY } from './highways/roads';
 import {
   createGhost, hiddenFromAll, lanePose, laneT, pickSpot, placeGhost, simGraph, stepGhosts, targetPopulation,
   type Ghost, type Spot, type Viewer,
@@ -25,6 +26,8 @@ import {
 import { createTrafficImpostors, type ImpostorPose } from './trafficImpostors';
 import type { RoadNode, Traffic, TrafficView, Vehicle, VehicleKind, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
+import { createRideAnimator, type RideAnimator } from './anim/rideAuto';
+import { isClosed } from './seats';
 
 /** Where a driver is on the road graph and what it is up to. */
 interface Driver {
@@ -63,6 +66,8 @@ const MAX_VEHICLES = 40;
 const CLEANUP_DISTANCE = 60;
 /** Nothing further than this can block or cross within the look-ahead (TRAFFIC.stopDistance 5 m, plus YIELD_SECONDS 1.6 s of two cars closing at 30 m/s each). */
 const FAR_SKIP = 110;
+/** Cars (and the player on foot) more than this far apart in height are on different levels: a deck car ignores the street under it. */
+const LEVEL_GAP = 2.5;
 const ARRIVE_DISTANCE = 4;
 const BRAKE_SIDE = 2.5;
 /** A driver this close to the end of its last segment brakes to a stop and starts its visit. */
@@ -135,6 +140,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   const drivers = new Map<number, Driver>();
   /** Per NPC rider: the clock that paces its pose by distance from the player (animStride.ts). */
   const riderClocks = new Map<number, AnimClock>();
+  /** Each NPC driver's personality (anim/rideAuto.ts), posed only near the player (stride 1). */
+  const riderStyles = new Map<number, RideAnimator>();
+  const rideInfo = { kind: '', flies: false, fixedWing: false, boat: false, closed: false, seat: 0, speedFrac: 0, seed: 0 };
   /** The viewer's position this frame (set by update), for pacing rider poses. */
   let focusX = 0;
   let focusZ = 0;
@@ -180,13 +188,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
    * link that points most the way the vehicle faces, so a re-route does not turn it round.
    */
   function driverFromHere(v: Vehicle): Driver | null {
-    let best: RoadNode | undefined;
-    let bestD = Infinity;
-    for (const n of world.roads.nodes) {
-      if (n.links.length === 0) continue;
-      const dist = Math.hypot(n.x - v.x, n.z - v.z);
-      if (dist < bestD) { bestD = dist; best = n; }
-    }
+    const best = nearestRoadNode(world.roads.nodes, v.x, v.z, v.y);
     if (!best) return null;
     const fx = Math.sin(v.yaw);
     const fz = Math.cos(v.yaw);
@@ -215,7 +217,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   }
 
   /** The nearest thing ahead in the lane that a driver must brake for, or null. `passing` ignores stopped vehicles. */
-  function blockerAhead(v: Vehicle, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, passing: boolean): Blocker | null {
+  function blockerAhead(v: Vehicle, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, playerY: number, passing: boolean): Blocker | null {
     const sinY = Math.sin(v.yaw);
     const cosY = Math.cos(v.yaw);
     let best: Blocker | null = null;
@@ -238,10 +240,11 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       best = { still, side, creep: passing && still };
     };
     // A player in a vehicle is that vehicle (below); on foot they are a gnome standing in the road.
-    if (onFoot) consider(playerX, playerZ, 0.4, 0, true);
+    if (onFoot && Math.abs(playerY - v.y) <= LEVEL_GAP) consider(playerX, playerZ, 0.4, 0, true);
     for (const o of vehicles) {
       if (o === v) continue;
       if (Math.abs(o.x - v.x) > FAR_SKIP || Math.abs(o.z - v.z) > FAR_SKIP) continue;
+      if (Math.abs(o.y - v.y) > LEVEL_GAP) continue;
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
       consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
@@ -251,6 +254,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     for (const o of vehicles) {
       if (o === v || Math.abs(o.speed) < STILL_SPEED) continue;
       if (Math.abs(o.x - v.x) > FAR_SKIP || Math.abs(o.z - v.z) > FAR_SKIP) continue;
+      if (Math.abs(o.y - v.y) > LEVEL_GAP) continue;
       const ox = Math.sin(o.yaw);
       const oz = Math.cos(o.yaw);
       if (Math.abs(ox * sinY + oz * cosY) > CROSS_COS) continue; // same way or head-on: the lane checks handle those
@@ -273,7 +277,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   }
 
   /** Drive one NPC vehicle one frame. */
-  function drive(v: Vehicle, d: Driver, dt: number, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number): { recycle: boolean } {
+  function drive(v: Vehicle, d: Driver, dt: number, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, playerY: number): { recycle: boolean } {
     const fromNode = nodeOf(d.from);
     const toNode = nodeOf(d.to);
     if (!fromNode || !toNode) return { recycle: true };
@@ -362,7 +366,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     // ---- What is ahead -----------------------------------------------------------------------------------------------
     const passing = d.passT > 0;
     if (passing) d.passT -= dt;
-    const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, passing);
+    const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, playerY, passing);
     if (blocker) {
       d.blockedT += dt;
       // Stopped behind a blocker past patience: pull out toward the road center to pass.
@@ -451,6 +455,22 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         seat.position.set(s[0], s[1], s[2]);
         v.rider.update(seat, step);
         poseHands(v.rider, v, 0, step);
+        if (step <= dt + 1e-6) {
+          let style = riderStyles.get(v.id);
+          if (!style) { style = createRideAnimator(); riderStyles.set(v.id, style); }
+          rideInfo.kind = v.kind;
+          rideInfo.flies = v.spec.flies;
+          rideInfo.fixedWing = !!v.spec.fixedWing;
+          rideInfo.boat = !!v.spec.boat;
+          rideInfo.closed = isClosed(v.spec);
+          rideInfo.speedFrac = Math.min(1, Math.abs(v.speed) / Math.max(1, v.spec.maxSpeed));
+          rideInfo.seed = v.id;
+          style.update(v.rider, rideInfo, step, false, true);
+          settleHands(v.rider, v, 0);
+        } else {
+          const style = riderStyles.get(v.id);
+          if (style?.animator.active) style.cancel(v.rider);
+        }
       }
     }
     return { recycle: false };
@@ -530,7 +550,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     v.driver = 'npc';
     v.x = g.x;
     v.z = g.z;
-    v.y = heightAt(g.x, g.z);
+    const a = nodeOf(g.from), b = nodeOf(g.to);
+    v.y = a && b ? roadY(a, b, g.x, g.z) : heightAt(g.x, g.z);
     v.yaw = g.yaw;
     v.speed = g.speed;
     v.vy = 0;
@@ -690,7 +711,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     impostorPoses.length = 0;
     for (const g of ghosts) {
       if (g.live || Math.hypot(g.rx - view.x, g.rz - view.z) > TRAFFIC.hideDistance + 40) continue;
-      impostorPoses.push({ kind: g.kind, tint: g.tint, x: g.rx, y: heightAt(g.rx, g.rz), z: g.rz, yaw: g.ryaw });
+      const a = nodeOf(g.from), b = nodeOf(g.to);
+      impostorPoses.push({ kind: g.kind, tint: g.tint, x: g.rx, y: a && b ? roadY(a, b, g.rx, g.rz) : heightAt(g.rx, g.rz), z: g.rz, yaw: g.ryaw });
     }
     impostors.update(impostorPoses);
     avoid = [];
@@ -709,6 +731,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       for (const v of vehicles) if (v.driver === 'npc' && !v.questOwned) npcIds.add(v.id);
       for (const id of drivers.keys()) if (!npcIds.has(id)) drivers.delete(id);
       for (const id of riderClocks.keys()) if (!npcIds.has(id)) riderClocks.delete(id);
+      for (const id of riderStyles.keys()) if (!npcIds.has(id)) riderStyles.delete(id);
 
       // A live cutscene just started (behind its fade-in): move every car out of its clear zones.
       if (purge) {
@@ -768,7 +791,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
           d = fresh;
           drivers.set(v.id, d);
         }
-        if (drive(v, d, dt, vehicles, onFoot, playerX, playerZ).recycle) recycle.push(v);
+        // No player height in update's args: the on-foot player is taken at the car's own height (behaviour unchanged).
+        if (drive(v, d, dt, vehicles, onFoot, playerX, playerZ, v.y).recycle) recycle.push(v);
       }
 
       // Wedged for good: start over somewhere hidden, but only while nobody can see it go (a road vehicle that is not a

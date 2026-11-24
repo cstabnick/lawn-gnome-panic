@@ -379,3 +379,31 @@ from HEAD): seven HOA Foreclosure Signs from `easterEggs.ts` HOA_SIGN_SPOTS (sig
 sign-13, sign-14, sign-15 by centre point), the vibe-NPC set pieces from `vibeNpcs.ts` (e.g. the lawn chair and windsock
 at (565, -110), and groups at (-260, -10), (40, -330), (0, 260), (123, -133), (428, -102)), and two acorn collectibles at
 (270, 20) and (374, 48). Left for whoever owns those files.
+
+### "Some vehicles at spawn are spawning on sidewalks"
+
+Cause: the road fix above (`clearOfRoads`) only knew asphalt. surfaces.ts has no pavement kind (a sidewalk reads as the
+biome's grass), so a kerb spot pushed off the asphalt landed on the sidewalk strip (world.ts: SIDEWALK_WIDTH 2.5 m from the
+road edge, both sides of every grid street). The raw kerb spots (KERB = 3.8 m from the centre line) also hang into the
+driving lane: lanes run at +-2.5 m and a mower is 2.0-2.2 m wide, so on a 10 m street no kerb parking strip clears the
+lanes for anything wider than about 1.35 m.
+
+Fix: `src/parking.ts` is the one rule for a stationary vehicle: its whole footprint (prefab bounding rectangle at its yaw:
+corners, edge midpoints, centre) must be off every sidewalk, outside every driving lane (closer than LANE_OFFSET + 1.1 m to a
+city street or highway centre line), off any other asphalt (runway, race track; aircraft excepted), and clear of buildings
+and water. `nearestLegalSpot` tries the pose itself, then the parking strip alongside the nearest road with the yaw on the
+road tangent (used only when the vehicle is narrow enough to clear the lanes), then rings of open ground at the road-aligned
+yaw. Wired into: the parked fleet at load (app.ts: planParked first, so the footprint is the dealt variant's, then
+`parkLegally`), `fleet.spawn` (the trainer's spawn at the crosshair; boats excepted), and the Sling-Lift drop probe
+(`circleClearOfStreets` added to app.ts's lockup `blocked`). Moved spots stay within a few metres (6 m at most on today's
+map) and none are lost.
+
+Regression tests (src/parkedRoads.test.ts, real built world, street geometry restated from config.ts): parked fleet as dealt
+(fails on the raw kerb spots and on the old asphalt-only nudge), airfield planes + Whirligig pad + craft spawns, fleet.spawn
+aimed at a sidewalk / lane / centre line / crossing / highway, Sling-Lift drop spots, and moving traffic lanes plus the taxi
+drop-off (off the sidewalks). Headless check of the running game: 25 stationary land vehicles at load, none touching a
+sidewalk or lane.
+
+Not changed, reported: the traffic connector from node 69 (-215, -10) to the crossing at (-180, 0) cuts across the end of
+the z = 0 street's south sidewalk (road-network shape, not a spawn). Story/quest/cutscene/event vehicles (quests/,
+cutscene/sceneVehicles.ts, events/kit.ts, worldEvents.ts) are placed by their scripts and were not audited.

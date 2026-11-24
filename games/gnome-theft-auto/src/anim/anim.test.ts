@@ -11,11 +11,18 @@ import { REACT_B_ANIMS } from './reactsB';
 import { ROLE_ANIMS } from './roles';
 import { HUNT_ANIMS } from './hunt';
 import { RIDE_ANIMS } from './ride';
-import { ANIMS, animById, listAnims, pickFor, upperBodyOnly } from './index';
+import { STYLE_ANIMS } from './styles';
+import { MOOD_ANIMS } from './moods';
+import { BIT_ANIMS } from './bits';
+import { REACT_C_ANIMS } from './reactsC';
+import { SOCIAL_ANIMS } from './social';
+import { DRIVE_ANIMS } from './drive';
+import { ANIMS, ANIM_TABS, animById, listAnims, pairOf, pickFor, upperBodyOnly } from './index';
 import { createAnimator, BLEND } from './animator';
 import { createPlayerEmote } from './playerEmote';
 import {
   DANCE_IDS, EMOTE_B_IDS, EMOTE_IDS, HUNT_IDS, IDLE_IDS, REACT_B_IDS, REACT_IDS, RIDE_IDS, ROLE_IDS, WORK_IDS,
+  STYLE_IDS, MOOD_IDS, BIT_IDS, REACT_C_IDS, SOCIAL_IDS, DRIVE_IDS, JOB_IDS, PAIR_GAP,
   type AnimDef, type AnimPart,
 } from './types';
 
@@ -78,12 +85,49 @@ checkRows('reactB', REACT_B_ANIMS, REACT_B_IDS, 'react');
 checkRows('role', ROLE_ANIMS, ROLE_IDS, 'role');
 checkRows('hunt', HUNT_ANIMS, HUNT_IDS, 'hunt');
 checkRows('ride', RIDE_ANIMS, RIDE_IDS, 'ride');
+checkRows('style', STYLE_ANIMS, STYLE_IDS, 'style');
+checkRows('mood', MOOD_ANIMS, MOOD_IDS, 'style');
+checkRows('bit', BIT_ANIMS, BIT_IDS, 'bit');
+checkRows('reactC', REACT_C_ANIMS, REACT_C_IDS, 'react');
+checkRows('social', SOCIAL_ANIMS, SOCIAL_IDS, 'social');
+checkRows('drive', DRIVE_ANIMS, DRIVE_IDS, 'drive');
+
+describe('round 3 rules', () => {
+  it('walk/run styles and moods ride the walk cycle: onMove, loop, no legs', () => {
+    const moving = [...STYLE_ANIMS.filter((a) => /^(walk|run)-/.test(a.id)), ...MOOD_ANIMS];
+    expect(moving.length).toBe(17);
+    for (const a of moving) {
+      expect(a.onMove, a.id).toBe(true);
+      expect(a.loop, a.id).toBe(true);
+      expect(a.parts.includes('legL') || a.parts.includes('legR'), a.id).toBe(false);
+      expect(upperBodyOnly(a)).toBe(true);
+    }
+  });
+  it('drive rows move only the left arm and the body, and stay out of the menu', () => {
+    for (const a of DRIVE_ANIMS) {
+      for (const p of a.parts) expect(['armL', 'body'], a.id).toContain(p);
+      expect(a.emote).toBe(false);
+    }
+  });
+  it('every pair row names a partner that names it back', () => {
+    expect(PAIR_GAP).toBeGreaterThan(0.5);
+    for (const a of SOCIAL_ANIMS) {
+      const b = pairOf(a.id);
+      expect(b, a.id).toBeTruthy();
+      expect(b!.pair, `${b!.id} -> ${a.id}`).toBe(a.id);
+    }
+  });
+  it('every menu tab has rows', () => {
+    for (const tab of ANIM_TABS) expect(listAnims({ category: tab.category, emote: true }).length, tab.title).toBeGreaterThan(0);
+  });
+});
 
 describe('the table', () => {
   it('has every id exactly once', () => {
     const all = [
       ...EMOTE_IDS, ...DANCE_IDS, ...IDLE_IDS, ...REACT_IDS, ...WORK_IDS,
       ...EMOTE_B_IDS, ...REACT_B_IDS, ...ROLE_IDS, ...HUNT_IDS, ...RIDE_IDS,
+      ...STYLE_IDS, ...MOOD_IDS, ...BIT_IDS, ...REACT_C_IDS, ...SOCIAL_IDS, ...DRIVE_IDS, ...JOB_IDS,
     ];
     expect(new Set(all).size).toBe(all.length);
     expect(ANIMS.map((a) => a.id).sort()).toEqual([...all].sort());

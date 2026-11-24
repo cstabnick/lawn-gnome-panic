@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Mabel]
-sources: [games/gnome-theft-auto/src/taxi.ts, games/gnome-theft-auto/src/config.ts]
-related: [turfton-taxi, turfton-bus-stop, snail-coach]
+sources: [docs/lore/rulings.md, games/gnome-theft-auto/src/taxi.ts, games/gnome-theft-auto/src/config.ts]
+related: [turfton-taxi, turfton-bus-stop, snail-coach, newcomers-card, kerbside-exchange]
 ---
 
 The driver of the Turfton Taxi. She calls everyone "dear", and she has never once been short of change.
@@ -30,6 +30,15 @@ Mabel is the voice of the Turfton Taxi (`TAXI.driver` in `config.ts`). Her lines
 - "Short? This one's on the meter." when the gnome cannot pay the fare.
 
 She will not wait for a gnome with the Hat Watch after them or one in the middle of a job; she says so and drives off.
+
+## In the city cast
+
+Part of the recurring city cast (R-151). She drops every fare at the Central Bus Stop, next to the Kerbside Exchange,
+where Dot Pennywort's board is.
+
+Between fares she keeps the Newcomers' Card (R-156): giver `newcomers-club` by the Central Bus Stop in
+`games/gnome-theft-auto/src/quests/newcomerQuests.ts`. She also dispatches Kerbstone Cabs, the taxi job of the sim jobs
+(`games/gnome-theft-auto/src/jobs/defs.ts`).
 
 ## Loose threads
 

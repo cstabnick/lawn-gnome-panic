@@ -3,6 +3,8 @@
 // HUD's journal button (atCounter false: buying and selling are greyed out).
 import { prefabIconElement } from '@lawn/prefabs';
 import { KEYS } from '../keys';
+import { ensureGlyphStyle, fillHintHtml } from '../ui/glyphs';
+import { currentGlyphSet } from '../ui/inputSource';
 import type { Sfx } from '../types';
 import type { FishStore } from './fishSave';
 import { BAITS, DEFAULT_BAIT, RODS } from './tackle';
@@ -77,6 +79,7 @@ const CSS = `
 #gta-fish-shop .gf-rarity{font-size:12px;color:#f2d88a;}
 #gta-fish-shop .gf-waters{font-size:12px;opacity:0.85;}
 #gta-fish-shop .gf-sil{filter:brightness(0) opacity(0.45);}
+#gta-fish-shop .gf-foot{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#f4ecd0;opacity:0.7;text-align:center;overflow:hidden;text-overflow:ellipsis;}
 `;
 
 function injectStyle(): void {
@@ -111,6 +114,7 @@ function button(label: string, cls: string, enabled: boolean, onClick: () => voi
 
 export function createShopUi(ui: HTMLElement, deps: ShopUiDeps): ShopUi {
   injectStyle();
+  ensureGlyphStyle();
   let opened = false;
   let tab: ShopTab = 'shop';
   let atCounter = false;
@@ -147,7 +151,8 @@ export function createShopUi(ui: HTMLElement, deps: ShopUiDeps): ShopUi {
   }
 
   const body = el('div', 'gf-body');
-  root.append(head, tabsEl, body);
+  const foot = el('div', 'gf-foot');
+  root.append(head, tabsEl, body, foot);
   ui.appendChild(root);
 
   // The sheet is modal for input: pointer and touch must not reach the game behind it.
@@ -315,6 +320,11 @@ export function createShopUi(ui: HTMLElement, deps: ShopUiDeps): ShopUi {
     if (e.code === KEYS.close && opened) close();
   }
 
+  function refreshFoot(): void {
+    foot.style.display = currentGlyphSet() === 'touch' ? 'none' : '';
+    foot.innerHTML = fillHintHtml('{close} Close');
+  }
+
   function open(t: ShopTab, at: boolean): void {
     tab = t;
     atCounter = at;
@@ -325,6 +335,7 @@ export function createShopUi(ui: HTMLElement, deps: ShopUiDeps): ShopUi {
     }
     root.style.display = '';
     if (document.pointerLockElement) document.exitPointerLock();
+    refreshFoot();
     render();
   }
 

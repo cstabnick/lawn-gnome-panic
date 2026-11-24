@@ -5,6 +5,13 @@
 // (prefab units) to a defineMounts entry below to give one model its own slider limits.
 // Grip reach: a seated gnome's shoulder is at seat + (+-0.27, 0.62, 0) in root space; both grips must sit within 0.45 of it.
 import { defineMounts, registerSteerVariant } from '@lawn/glaze';
+import type { Vec3 } from '@lawn/prefabs';
+
+/** Steering grips (left +x, right -x), prefab-local at steer 0. driveGrips.ts reads them too, so the hands and the markers agree. */
+export const PUSH_BIKE_GRIPS: readonly [Vec3, Vec3] = [[0.25, 0.625, -0.25], [-0.25, 0.625, -0.25]];
+export const RIDE_ON_GRIPS: readonly [Vec3, Vec3] = [[0.2, 0.56, -0.147], [-0.2, 0.56, -0.147]];
+/** The lap bars run from z -0.28 to 0.08: the grips sit on their rear halves, 0.3 from a seated shoulder, so full lock stays in reach. */
+export const ZERO_TURN_GRIPS: readonly [Vec3, Vec3] = [[0.32, 0.6, -0.2], [-0.32, 0.6, -0.2]];
 
 let registered = false;
 
@@ -32,7 +39,7 @@ export function registerGlazeMounts(): void {
     lamps: [[0.234, 0.2, 0.384], [-0.234, 0.2, 0.384]],
     steer: {
       pivot: 'handle',
-      grips: [[0.25, 0.625, -0.25], [-0.25, 0.625, -0.25]],
+      grips: PUSH_BIKE_GRIPS,
     },
     panels: [
       { id: 'left', at: [0.454, 0.2, 0], size: [0.5, 0.14], rot: [0, 90, 0] },
@@ -65,7 +72,7 @@ export function registerGlazeMounts(): void {
     lamps: [[0.312, 0.52, 1.2], [-0.312, 0.52, 1.2]],
     steer: {
       pivot: 'steer',
-      grips: [[0.2, 0.56, -0.147], [-0.2, 0.56, -0.147]],
+      grips: RIDE_ON_GRIPS,
     },
     panels: [
       { id: 'left', at: [0.604, 0.35, 0], size: [1.6, 0.2], rot: [0, 90, 0] },
@@ -75,7 +82,7 @@ export function registerGlazeMounts(): void {
     ],
   });
 
-  // Zero-turn racer: two lap bars. The grips are their middles: the front ends (z 0.08) sit 0.63 from a seated shoulder, out of reach.
+  // Zero-turn racer: two lap bars. The grips are on their rear halves: the front ends (z 0.08) sit 0.63 from a seated shoulder, out of reach.
   defineMounts('zero-turn-mower', {
     width: 0.9,
     length: 1.95,
@@ -92,7 +99,7 @@ export function registerGlazeMounts(): void {
     lamps: [[0.234, 0.44, 0.95], [-0.234, 0.44, 0.95]],
     steer: {
       pivot: 'steer',
-      grips: [[0.32, 0.6, -0.1], [-0.32, 0.6, -0.1]],
+      grips: ZERO_TURN_GRIPS,
     },
     panels: [
       { id: 'left', at: [0.454, 0.42, 0.15], size: [1.5, 0.16], rot: [0, 90, 0] },

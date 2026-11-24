@@ -45,6 +45,11 @@ export const CAST: Record<string, CastPreset> = {
   bramble: { look: { hat: 0x8b5a2b, shirt: 0x4a6b3b, beard: 0xc4b8a4 }, hz: 100, scale: 1.46 },
   shelldon: { look: { hat: 0x7a8a78, shirt: 0x3f4740, beard: null, glasses: true }, hz: 110, scale: 1.4 },
   wally: { look: { hat: 0x6b4a2e, shirt: 0xc2a878, beard: 0xd9d9d9, glasses: true }, hz: 96, scale: 1.42 },
+  dot: { look: { hat: 0x2a4d7a, shirt: 0x7a2a2a, pants: 0x2b2b33, beard: null, glasses: true, hair: { color: 0xbdbdbd, style: 'pigtails' } }, hz: 128, held: 'ticket-stub', scale: 1.4 },
+  hedda: { look: { hat: 0x1c1c1c, shirt: 0xe9e4d4, pants: 0x2b2b2b, beard: null, glasses: true, hair: { color: 0x2a1a12, style: 'pigtails' } }, hz: 124, scale: 1.42 },
+  nina: { look: { hat: 0x7a3cff, shirt: 0x1c1c2a, beard: null, hair: { color: 0x39ff88, style: 'pigtails' } }, hz: 136, scale: 1.38 },
+  grout: { look: { hat: 0x3d4a5c, shirt: 0x5b6b3a, pants: 0x2f3a4a, beard: 0x4a3a2a }, hz: 74, scale: 1.58 },
+  mabel: { look: { hat: 0xf2c200, shirt: 0x222222, beard: null, glasses: true, hair: { color: 0xc0c0c0, style: 'pigtails' } }, hz: 140, scale: 1.4 },
 };
 
 /** The preset whose key appears in a speaker label ("Pip Potsworth" -> pip), or undefined. */

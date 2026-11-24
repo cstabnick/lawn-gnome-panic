@@ -4,7 +4,7 @@
 import { GOLDEN_ACORN_SPOTS, STOPPING_SHARD_SPOTS, loadCollected } from './easterEggs';
 import type { Economy } from './economy';
 import { districtAt } from './districts';
-import { PRICE_PERKS, activePerks, perkActive, perkDef, priceScaleFor, takeNewPerks } from './perks';
+import { PRICE_PERKS, activePerks, earnScaleFor, perkActive, perkDef, priceScaleFor, takeNewPerks } from './perks';
 import type { Blip, Hud, Player, Sfx, Watch } from './types';
 
 export interface PerkEffectDeps {
@@ -28,6 +28,7 @@ const PLAY_BEFORE_CHECK_S = 6;
 const CHECK_EVERY_S = 2;
 const PENSION_EVERY_S = 180;
 const PENSION_ACORNS = 15;
+const UNION_ACORNS = 20;
 const JOURNAL_UNLOCK_COUNT = 6;
 const BLIP_EVERY_S = 2;
 
@@ -61,7 +62,9 @@ export function createPerkEffects(deps: PerkEffectDeps): PerkEffects {
 
   const origEarn = economy.earn.bind(economy);
   economy.earn = (amount: number, reason?: string): void => {
-    const boosted = reason === 'Speed Trap Daredevil' && perkActive('rookie-plate') ? Math.round(amount * 1.25) : amount;
+    const rookie = reason === 'Speed Trap Daredevil' && perkActive('rookie-plate') ? 1.25 : 1;
+    const scale = rookie * earnScaleFor(reason, activePerks());
+    const boosted = scale !== 1 ? Math.round(amount * scale) : amount;
     origEarn(boosted, reason);
   };
 
@@ -86,6 +89,7 @@ export function createPerkEffects(deps: PerkEffectDeps): PerkEffects {
   let playT = 0;
   let checkT = 0;
   let pensionT = 0;
+  let unionT = 0;
   let journalUnlocked = false;
 
   let blipT = Infinity;
@@ -137,6 +141,20 @@ export function createPerkEffects(deps: PerkEffectDeps): PerkEffects {
       player.health > 0 && player.health < 0.6
     ) {
       player.health = Math.min(0.6, player.health + 0.005 * dt);
+    }
+    // glow-band: in Downtown and the Greenhouse Strip, heat under 2 hats cools faster.
+    if (perkActive('glow-band') && watch.heat > 0 && watch.heat < 2) {
+      const d = districtAt(px, pz);
+      if (d === 'downtown' || d === 'greenhouse') watch.heat = Math.max(0, watch.heat - 0.03 * dt);
+    }
+    // union-card: +20 Acorns every 3 minutes of play (Local 404's strike fund).
+    if (perkActive('union-card')) {
+      unionT += dt;
+      if (unionT >= PENSION_EVERY_S) {
+        unionT -= PENSION_EVERY_S;
+        origEarn(UNION_ACORNS, 'Local 404 Card');
+        hud.toast(`Local 404 Card: +${UNION_ACORNS} Acorns`, 3000);
+      }
     }
     // rebel-pension: +15 Acorns every 3 minutes of play.
     if (perkActive('rebel-pension')) {

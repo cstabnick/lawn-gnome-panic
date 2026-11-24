@@ -61,6 +61,58 @@ export const RIDE_IDS = [
   'golf-cart-passenger', 'hold-on', 'seasick', 'wave-from-seat', 'sleep-seated',
 ] as const;
 
+// ---- Round 3: character ----
+/**
+ * Personality walk/run overlays and standing styles per townsgnome archetype (category 'style'; rows in styles.ts).
+ * walk-* and run-* rows are `onMove`: they ride on top of the walk cycle (arms and body only).
+ */
+export const STYLE_IDS = [
+  'walk-swagger', 'walk-shuffle', 'walk-tiptoe', 'walk-sulk', 'walk-jaunty', 'walk-nervous', 'walk-proud', 'walk-sleepy',
+  'walk-pompous', 'run-flail', 'run-pump', 'run-sneak',
+  'idle-swagger', 'idle-nervous', 'idle-proud', 'idle-sleepy', 'idle-pompous', 'idle-sulk', 'idle-jaunty',
+] as const;
+/** Mood layers: arms-and-body overlays that work standing or walking (category 'style', `onMove`; rows in moods.ts). */
+export const MOOD_IDS = ['mood-happy', 'mood-angry', 'mood-scared', 'mood-bored', 'mood-tipsy'] as const;
+/** Situational bits of town life (category 'bit'; rows in bits.ts). */
+export const BIT_IDS = [
+  'wait-bus', 'read-map', 'check-watch', 'window-shop', 'haggle', 'argue', 'gossip', 'count-acorns', 'tie-shoe',
+  'hiccups', 'sweat-heat', 'shiver-fells', 'dust-hat', 'pat-pockets', 'eat-snack', 'sip-drink', 'feed-birds', 'sit-bench',
+] as const;
+/** Reactions to the world's new sights: flyovers, birds, fish, hunts, the skyway view, phones (category 'react'; reactsC.ts). */
+export const REACT_C_IDS = [
+  'look-up-flyover', 'wave-banner-plane', 'spot-bird', 'fish-triumph', 'fish-sulk', 'tuft-comb', 'gawk-view',
+  'answer-phone', 'duck-low-plane', 'cheer-race', 'startle-horn', 'photo-snap',
+] as const;
+/**
+ * Pair animations: each row is one side, played by two gnomes standing PAIR_GAP apart facing each other; `pair` names
+ * the row the other gnome plays (category 'social'; rows in social.ts).
+ */
+export const SOCIAL_IDS = [
+  'handshake', 'high-five', 'fist-bump', 'hug-pair', 'dance-pair', 'pair-argue', 'pair-gossip', 'pair-laugh',
+  'toast-cups', 'pair-bow', 'secret-whisper', 'secret-listen',
+] as const;
+/**
+ * Driving personalities: overlays on a driver whose hands are on the grips (driverHands.ts). They move only the LEFT
+ * arm (off the wheel) and/or the body, so the right hand keeps steering (category 'drive'; rows in drive.ts).
+ */
+export const DRIVE_IDS = [
+  'drive-casual', 'drive-white-knuckle', 'drive-road-rage', 'drive-elbow-out', 'drive-sing-along', 'drive-lean-cool',
+  'drive-honk-pound', 'drive-sleepy',
+] as const;
+
+/** Metres between two gnomes doing a pair animation (feet to feet), facing each other. */
+export const PAIR_GAP = 0.9;
+
+export type StyleAnimId = (typeof STYLE_IDS)[number];
+export type MoodAnimId = (typeof MOOD_IDS)[number];
+export type BitAnimId = (typeof BIT_IDS)[number];
+export type ReactCAnimId = (typeof REACT_C_IDS)[number];
+export type SocialAnimId = (typeof SOCIAL_IDS)[number];
+export type DriveAnimId = (typeof DRIVE_IDS)[number];
+/** Sim jobs and tubing (rows in jobs.ts; docs/roadmaps/gta-sim-jobs-and-tubing.md): hailing a cab, carrying a parcel
+ *  (category 'bit'), riding a tow tube and cheering on one (category 'ride'). */
+export const JOB_IDS = ['hail-cab', 'carry-parcel', 'tube-ride', 'tube-cheer'] as const;
+export type JobAnimId = (typeof JOB_IDS)[number];
 export type EmoteAnimId = (typeof EMOTE_IDS)[number];
 export type EmoteBAnimId = (typeof EMOTE_B_IDS)[number];
 export type ReactBAnimId = (typeof REACT_B_IDS)[number];
@@ -72,9 +124,11 @@ export type IdleAnimId = (typeof IDLE_IDS)[number];
 export type ReactAnimId = (typeof REACT_IDS)[number];
 export type WorkAnimId = (typeof WORK_IDS)[number];
 export type AnimId = EmoteAnimId | DanceAnimId | IdleAnimId | ReactAnimId | WorkAnimId
-  | EmoteBAnimId | ReactBAnimId | RoleAnimId | HuntAnimId | RideAnimId;
+  | EmoteBAnimId | ReactBAnimId | RoleAnimId | HuntAnimId | RideAnimId
+  | StyleAnimId | MoodAnimId | BitAnimId | ReactCAnimId | SocialAnimId | DriveAnimId | JobAnimId;
 
-export type AnimCategory = 'emote' | 'dance' | 'idle' | 'react' | 'work' | 'role' | 'hunt' | 'ride';
+export type AnimCategory =
+  'emote' | 'dance' | 'idle' | 'react' | 'work' | 'role' | 'hunt' | 'ride' | 'style' | 'bit' | 'social' | 'drive';
 export type AnimPart = 'armL' | 'armR' | 'legL' | 'legR' | 'body';
 export type Vec3 = [number, number, number];
 
@@ -102,6 +156,10 @@ export interface AnimDef<Id extends AnimId = AnimId> {
   emote: boolean;
   /** A @lawn/prefabs id held in the right hand while it plays (buildGear('hand', prop)), e.g. 'fishing-rod'. */
   prop?: string;
+  /** Rides on top of the walk cycle: keeps playing while the gnome walks (styles, moods). Arms and body only. */
+  onMove?: boolean;
+  /** Pair rows: the row the partner plays, standing PAIR_GAP in front, facing this gnome. */
+  pair?: AnimId;
   /**
    * The pose at t seconds, 0 <= t < duration. Returns exactly the parts listed in `parts` (plus `lift` when used).
    * Pure: no Math.random, no state. A loop should end where it starts (use sin/cos of 2*PI*t/duration times a whole

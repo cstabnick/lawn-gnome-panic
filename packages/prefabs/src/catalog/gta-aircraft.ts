@@ -123,7 +123,7 @@ export const GTA_AIRCRAFT: readonly PrefabDef[] = [
       { s: 'box', d: [0.6, 0.2, 0.5], at: [0.35, 0.5, 0.2], c: 'leather', mirror: true },                    // bench seats (top 0.6)
       { s: 'cyl', d: [0.04, 0.04, 0.3], at: [0, 2.1, 0], c: 'iron', seg: 6 },                                // mast (top 2.25)
       { s: 'box', d: [1.7, 0.04, 0.5], at: [0.85, 2.25, 0], c: 'cloth', group: 'rotor', mirror: true, name: 'blade' }, // samara blades
-      { s: 'box', d: [1.5, 0.16, 0.04], at: [0.85, 2.25, 0], c: 'bark', group: 'rotor', mirror: true },      // blade vein, a rib standing 6 cm clear of the blade faces, ends 10 cm in from the tips
+      { s: 'box', d: [1.5, 0.012, 0.22], at: [0.85, 2.286, 0], c: 'bark', group: 'rotor', mirror: true },    // blade vein, a thin flat strip 1 cm above the blade face, ends 10 cm in from the tips
       { s: 'ball', d: [0.07], at: [0, 2.25, 0], c: 'iron-dark', seg: 6, group: 'rotor' },                    // rotor hub
       { s: 'box', d: [0.12, 0.12, 2.2], at: [0, 1.2, -2.3], c: 'tint', name: 'boom' },                       // tail boom (z -1.2 to -3.4)
       { s: 'box', d: [0.04, 0.5, 0.4], at: [0, 1.45, -3.1], c: 'tint' },                                     // tail fin

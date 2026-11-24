@@ -1,10 +1,12 @@
 // Club Gnome: a shared town of gnomes. Walk around (tap or click the ground), chat, and step into buildings to play
 // the arcade's games. Online by default: the page joins the one public town room at once (or ?room=CODE).
 // This file only wires the modules together; each module owns one job (see README.md).
-import { claimDailyAcorns, grantWelcome, loadOakcount } from '@lawn/oakcount';
+import { claimDailyAcorns, grantWelcome, loadOakcount, winChips } from '@lawn/oakcount';
 import { GNORMAN_LOOK, getMyGnome, loadMyGnome, onLooksChanged, prefetchLooks, resolveLook, type GnomeLook } from '@lawn/gnome';
 import { whileHidden } from '@lawn/mp/background';
 import { checkName } from '@lawn/mp/textFilter';
+import { joinPortalVisit, type PortalVisit } from '@lawn/portal';
+import { visitorName, watchVisitLedger } from './portalVisit';
 import {
   EMOTES, GAME_LINKS, MAP_NAMES, ME, STORAGE, isMapId,
   type AvatarPose, type CounterDef, type MapId, type NetStatus, type PanelId, type Peer, type PortalDef, type SeatDef, type SpotDef,
@@ -34,6 +36,11 @@ import { initAchievements, onAcornPicked, onAnimSent, onChatSent, onCrowd, onEmo
 await finishSignInIfReturning();
 await loadMyGnome();
 await loadOakcount();
+/** Set when this page was opened by a crossover portal into The Gnomecino (null on a normal load). */
+const visit: PortalVisit | null = (() => {
+  const v = joinPortalVisit();
+  return v && v.info.portal === 'gnomecino' ? v : null;
+})();
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -49,6 +56,10 @@ function store(kind: 'local' | 'session'): Storage | null {
 }
 
 function startingName(): string {
+  if (visit) {
+    const fromVisit = visitorName(visit);
+    if (fromVisit) return fromVisit;
+  }
   const gnome = getMyGnome()?.name;
   if (gnome && gnome !== 'Gnome') {
     const c = checkName(gnome);
@@ -64,6 +75,10 @@ function startingName(): string {
 const myName = startingName();
 let myCharacter = getMyGnome()?.code ?? 'gnorman';
 let myLook: GnomeLook = getMyGnome()?.look ?? GNORMAN_LOOK;
+if (visit?.info.look && !getMyGnome()) {
+  myCharacter = visit.info.look;
+  myLook = resolveLook({ id: ME, character: visit.info.look }) ?? GNORMAN_LOOK;
+}
 
 // ---------------------------------------------------------------- modules
 
@@ -82,7 +97,8 @@ const music = createMusic();
 
 let mapId: MapId = 'town';
 const savedMap = store('session')?.getItem(STORAGE.map);
-if (isMapId(savedMap)) mapId = savedMap;
+if (visit) mapId = 'gnomecino';
+else if (isMapId(savedMap)) mapId = savedMap;
 let map = MAPS[mapId];
 const walker = newWalker(map.spawn.x, map.spawn.z);
 /** What the walk is for: use this portal, spot, seat or counter on arrival. */
@@ -146,6 +162,10 @@ const hud = createHud(ui, {
     overlay.open(GAME_LINKS.creator, `Back to ${MAP_NAMES[mapId]}`);
   },
   onTravel(to) {
+    if (visit) {
+      hud.system('You are visiting from Turfton: walk out the door to go back.');
+      return;
+    }
     if (to !== mapId) enterMap(to, MAPS[to].spawn.x, MAPS[to].spawn.z);
   },
 });
@@ -268,7 +288,7 @@ function enterMap(to: MapId, x: number, z: number): void {
   const from = mapId;
   mapId = to;
   map = MAPS[to];
-  store('session')?.setItem(STORAGE.map, to);
+  if (!visit) store('session')?.setItem(STORAGE.map, to);
   world.load(map);
   const at = nearestWalkable(map, x, z);
   walker.x = at.x;
@@ -346,6 +366,14 @@ function useCounter(c: CounterDef): void {
 }
 
 function usePortal(p: PortalDef): void {
+  if (visit && p.to !== 'gnomecino') {
+    // A visitor's exit door sends them back to the game that opened the portal.
+    intent = null;
+    walker.target = null;
+    walker.moving = false;
+    visit.exit('door');
+    return;
+  }
   enterMap(p.to, p.spawnX, p.spawnZ);
 }
 
@@ -567,6 +595,8 @@ function updateAction(): void {
 }
 
 let last = performance.now();
+let visitReadySent = false;
+let visitPresenceTimer = 0;
 function frame(now: number): void {
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - last) / 1000);
@@ -580,6 +610,19 @@ function frame(now: number): void {
   pickups.update(dt, walker.x, walker.z);
   avatars.update(dt);
   world.render();
+  if (visit) {
+    if (!visitReadySent) {
+      visitReadySent = true;
+      visit.ready();
+    }
+    if (mapId === 'gnomecino') {
+      visitPresenceTimer += dt;
+      if (visitPresenceTimer >= 1) {
+        visitPresenceTimer = 0;
+        visit.presence(othersHere() + 1);
+      }
+    }
+  }
 }
 
 whileHidden((dt) => step(dt));
@@ -589,14 +632,39 @@ whileHidden((dt) => step(dt));
 avatars.upsert(ME, myLook, myName, 0xffffff);
 enterMap(mapId, map.spawn.x, map.spawn.z);
 refreshAccount();
-hud.system(`Welcome to Club Gnome, ${myName}! Tap the ground to walk, step into a door to go in.`);
+if (visit) {
+  hud.system(`Welcome to The Gnomecino, ${myName}! Walk out the door to go back to Turfton.`);
+} else {
+  hud.system(`Welcome to Club Gnome, ${myName}! Tap the ground to walk, step into a door to go in.`);
+}
 const room = /[?&#]room=([A-Za-z0-9]{4,8})/.exec(location.search + location.hash)?.[1]?.toUpperCase() ?? null;
 const offline = location.search.includes('offline') || location.hash.includes('offline');
 net.start(myName, myCharacter, room, offline);
-showGuestPrompt(ui);
+if (!visit) showGuestPrompt(ui);
 const gift = grantWelcome();
 if (gift > 0) hud.system(`Welcome gift: ${gift} acorns 🌰 in your Oakcount. Spend them on Acorn Row!`);
 const daily = claimDailyAcorns();
 if (daily > 0) hud.system(`Daily visit: +${daily} acorns 🌰`);
+// After the gifts above: they are this town's own, not gains from the visit, so they are not reported.
+if (visit) watchVisitLedger(visit);
 initGuide(panelCtx, (el) => hud.addTopControl(el));
 requestAnimationFrame(frame);
+
+if (new URLSearchParams(location.search).has('debug')) {
+  (window as unknown as Record<string, unknown>).__club = {
+    mapId: () => mapId,
+    peersOn: (m: MapId) => {
+      let n = 0;
+      for (const x of peerMap.values()) if (x === m) n++;
+      return n;
+    },
+    myId: () => net.myId,
+    enterMap: (to: MapId) => enterMap(to, MAPS[to].spawn.x, MAPS[to].spawn.z),
+    visit,
+    exitPortal: () => {
+      const p = map.portals.find((q) => q.to !== mapId);
+      if (p) usePortal(p);
+    },
+    winChips: (n: number) => winChips(n),
+  };
+}

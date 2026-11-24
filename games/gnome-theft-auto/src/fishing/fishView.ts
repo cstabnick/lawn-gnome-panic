@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { critterMesh } from '../critters';
+import { waveSurfaceOffset } from '../waves';
 import type { FishingState, FishPhase } from './types';
 
 export interface FishView {
@@ -129,7 +130,9 @@ export function createFishView(scene: THREE.Scene): FishView {
 
         // Bobber (dip and bite pull it under; wait bobs it a little).
         const bite = ph === 'bite';
-        const by = s.bobY - 0.06 * s.dip - (bite ? 0.08 : 0) + (ph === 'wait' ? 0.02 * Math.sin(time * 3) : 0);
+        // On the water the float rides the waves (s.bobY is the still surface; see sim.ts).
+        const waveLift = isFloating(ph) ? waveSurfaceOffset(s.bobX, s.bobZ) : 0;
+        const by = s.bobY + waveLift - 0.06 * s.dip - (bite ? 0.08 : 0) + (ph === 'wait' ? 0.02 * Math.sin(time * 3) : 0);
         const bz = s.bobZ + s.wobble;
         const bobVisible = ph !== 'idle' && ph !== 'charge';
         bobber.visible = bobVisible;
@@ -156,7 +159,7 @@ export function createFishView(scene: THREE.Scene): FishView {
         if (floating) {
           const k = (time % RIPPLE_PERIOD) / RIPPLE_PERIOD;
           const boost = bite || s.dip > 0.2 ? 1.5 : 1;
-          ripple.position.set(s.bobX, s.surface + 0.01, s.bobZ);
+          ripple.position.set(s.bobX, s.surface + waveLift + 0.01, s.bobZ);
           ripple.scale.setScalar((1 + 1.2 * k) * boost);
           rippleMat.opacity = 0.6 * (1 - k);
         }

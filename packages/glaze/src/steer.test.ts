@@ -69,6 +69,30 @@ describe('steering variants', () => {
     expect(() => registerSteerVariant('no-such-prefab', { dropParts: [], wheelAt: [0, 0, 0] })).toThrow();
   });
 
+  it('groupParts / moveParts / addParts make a turning control out of plain parts (a prefab with no steer pivot)', () => {
+    // The golf cart's wheel (part 7) and column (part 6) are plain parts: the wheel joins a new 'steer' pivot, both come back 0.08.
+    const golf = getPrefab('golf-cart') as PrefabDef;
+    const at: [number, number, number] = [0.32, 1.07, 0.04];
+    const gid = registerSteerVariant('golf-cart', {
+      dropParts: [], groupParts: [7], moveParts: [6], from: [0.32, 1.1, 0.12], wheelAt: at,
+      addParts: [{ s: 'box', d: [0.3, 0.02, 0.02], at, c: 'black' }],
+    });
+    const v = getPrefab(gid) as PrefabDef;
+    expect(v.pivots?.steer).toEqual(at);
+    expect(v.parts).toHaveLength(golf.parts.length + 1);
+    expect(v.parts[7].group).toBe('steer');
+    expect(v.parts[7].at![1]).toBeCloseTo(golf.parts[7].at![1] - 0.03, 6);
+    expect(v.parts[7].at![2]).toBeCloseTo(golf.parts[7].at![2] - 0.08, 6);
+    expect(v.parts[6].group).toBeUndefined();
+    expect(v.parts[6].at![2]).toBeCloseTo(golf.parts[6].at![2] - 0.08, 6);
+    expect(v.parts.at(-1)?.group).toBe('steer');
+    // Built: the ring and the added bar live in the pivot group and turn with it.
+    const body = buildPrefab(gid);
+    const pivot = body.getObjectByName('steer')!;
+    expect(pivot.children).toHaveLength(2);
+    expect(getPrefab('golf-cart')?.pivots?.steer).toBeUndefined();
+  });
+
   describe('applySteer', () => {
     const stockMounts = mounts({ pivot: 'steer', grips: [[0.2, 0.62, 0.02], [-0.2, 0.62, 0.02]] });
 

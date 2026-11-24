@@ -18,7 +18,8 @@ export function pickAnchor(
   };
   for (const [lo, hi] of [[min, max], [min * 0.4, max * 1.8]] as const) {
     if (kind === 'road') {
-      const nodes = world.roads.nodes.filter((n) => inRing(n.x, n.z, lo, hi) && n.links.length > 0);
+      // Ground nodes only: a node on a skyway deck (n.deck set) would put the event on the land under the deck.
+      const nodes = world.roads.nodes.filter((n) => n.deck === undefined && inRing(n.x, n.z, lo, hi) && n.links.length > 0);
       if (nodes.length === 0) continue;
       const n = nodes[Math.floor(rand() * nodes.length) % nodes.length];
       const linkId = n.links[Math.floor(rand() * n.links.length) % n.links.length];

@@ -4,6 +4,7 @@
 import type * as THREE from 'three';
 import { MOWER_TINTS, VEHICLES } from './config';
 import { createVehicle } from './vehicles';
+import { nearestLegalSpot, type ParkingGround } from './parking';
 import type { ParkedSpot, Vehicle, VehicleKind } from './types';
 
 export type Rng = () => number;
@@ -125,6 +126,23 @@ function spotBad(x: number, z: number, c: SpotChecks): boolean {
  * Parked land vehicles never stand on a road: a spot on (or hanging into) the road moves to the nearest clear spot off it
  * (rings out to 15 m, kept 6 m from the other spots), or is dropped when there is none. Boats keep their moorings.
  */
+/**
+ * Every parked land vehicle in a legal place (parking.ts): its whole footprint off sidewalks, driving lanes, buildings and
+ * water. A spot that is not moves to the nearest legal pose within maxDist (a parking-strip slot alongside first, then open
+ * ground), at least 6 m from the other spots, or is dropped when there is none. Boats keep their moorings.
+ */
+export function parkLegally<T extends ParkedSpot>(spots: readonly T[], g: ParkingGround, maxDist = 40): T[] {
+  const out: T[] = [];
+  for (const s of spots) {
+    if (VEHICLES[s.kind]?.boat) { out.push(s); continue; }
+    // 6 m from every spot already placed (a later spot that lands too close moves on as well).
+    const taken = (x: number, z: number): boolean => out.some((q) => Math.hypot(q.x - x, q.z - z) < 6);
+    const pose = nearestLegalSpot(s.kind, s.x, s.z, s.yaw, g, maxDist, taken);
+    if (pose) out.push({ ...s, x: pose.x, z: pose.z, yaw: pose.yaw });
+  }
+  return out;
+}
+
 export function clearOfRoads(spots: readonly ParkedSpot[], c: SpotChecks): ParkedSpot[] {
   const out: ParkedSpot[] = [];
   for (const s of spots) {

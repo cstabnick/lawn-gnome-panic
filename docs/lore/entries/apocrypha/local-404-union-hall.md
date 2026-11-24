@@ -22,6 +22,12 @@ Folding tables sag under cold Acorn-Cola cans, highway pothole maps, and strike 
 
 Framed behind the podium: *"WE FIX THE MOWERS. WE HAUL THE DEW. DON'T TEST US."*
 
+## In the games
+
+- Location: behind Clay-Mart on the z = 180 road (R-152). Clay-Mart Industrial's Union Hall is where Local 404 meets.
+- The story of The Skyway Job (R-152): the HOA took the strike-fund ledger from this hall after the Pour's strike. The
+  player takes the Skyway, gets ahead of the HOA van at the east off-ramp, and brings the ledger home here.
+
 ## Loose threads
 
 What's written in Big Wrench Grout's locked strike-fund ledger.

@@ -7,9 +7,14 @@ import { hullSpecOf, stepHull } from './craft/hull';
 import { applyHullTune } from './craft/tuning';
 import { getCraftTune } from './craft/craftTuneStore';
 import type { WaterSampler } from './craft/model';
+import { waveDrift, waveTime } from './waves';
 import type { BoatState, DriveControls, Vehicle, World } from './types';
 
-const SAMPLER: WaterSampler = { water: (x, z) => waterAt(x, z), bed: bedAt };
+const SAMPLER: WaterSampler = {
+  water: (x, z) => waterAt(x, z),
+  bed: bedAt,
+  drift: (x, z, out) => waveDrift(x, z, waveTime(), out),
+};
 
 /** True for a boat (spec.boat). */
 export function isBoat(v: Vehicle): boolean {

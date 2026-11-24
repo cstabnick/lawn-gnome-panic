@@ -632,6 +632,32 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Exact Change', description: 'Shake the cans out of a vending machine with a vehicle.',
     reward: { slot: 'hand', prefabId: 'gta-can-cola', label: 'Acorn-Cola Can' },
   },
+  // Turfton city contracts (Kerbside Exchange board; quests in games/gnome-theft-auto/src/quests/cityQuests.ts).
+  {
+    id: 'gta-glow-runner', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Glow-Band Express', description: "Run Neon-Moth Nina's glow-bands across Turfton before the Velvet Toadstools go on.",
+    reward: { slot: 'head', prefabId: 'glow-band-hatband', label: 'Glow-Band Hatband' },
+  },
+  {
+    id: 'gta-front-page', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Front Page', description: "Photograph Vesper's penthouse from a Sycamore Copter for the Turfton Tattler.",
+    reward: { slot: 'head', prefabId: 'tattler-press-fedora', label: 'Tattler Press Fedora' },
+  },
+  {
+    id: 'gta-skyway-robbery', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Skyway Job', description: "Beat the HOA ledger van along the Turfton Skyway and bring Local 404's strike fund home.",
+    reward: { slot: 'neck', prefabId: 'local-404-strike-scarf', label: 'Local 404 Strike Scarf', exclusive: true },
+  },
+  {
+    id: 'gta-kerbside-fixture', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Kerbside Fixture', description: 'Finish every job Dot Pennywort pins to the Kerbside Exchange.',
+    reward: { slot: 'head', prefabId: 'conductor-ticket-cap', label: 'Conductor Ticket Cap' },
+  },
+  {
+    id: 'gta-newcomer-card', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "Newcomers' Card", description: "Get every stamp on Mabel Kerbstone's Newcomers' Card.",
+    reward: { slot: 'neck', prefabId: 'newcomers-card-lanyard', label: "Newcomers' Card Lanyard" },
+  },
   // The Lost & Found Speedway (games/gnome-theft-auto/src/raceTrack, races in src/quests/races.ts).
   {
     id: 'gta-speedway-lap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
@@ -756,6 +782,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'gta-bits-everywhere', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Some Assembly Required',
     description: 'Knock 25 parts off mowers.', target: 25,
     reward: { slot: 'back', prefabId: 'spare-tyre-pack', label: 'Spare Tyre Pack' } },
+  { id: 'gta-short-back-and-sides', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Short Back and Sides',
+    description: 'Mow 100 bushes, beds and patches of long grass with a vehicle.', target: 100,
+    reward: { slot: 'head', prefabId: 'clippings-crown', label: 'Clippings Crown' } },
+  { id: 'gta-head-groundskeeper', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Head Groundskeeper',
+    description: 'Mow 1,000 plants. They grow back; you keep going.', target: 1000,
+    reward: { slot: 'back', prefabId: 'grass-catcher-pack', label: 'Grass-Catcher Pack', exclusive: true } },
   { id: 'gta-lockup-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Five-Mower Gnome',
     description: 'Fill all five slots of the Side-Valve Lock-Up.',
     reward: { slot: 'neck', prefabId: 'lockup-key-lanyard', label: 'Lock-Up Key Lanyard' } },
@@ -919,6 +951,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'head', prefabId: 'span-hard-hat', label: 'Span Hard Hat' },
   },
   {
+    id: 'gta-hard-hat-area', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hard Hat Area',
+    description: 'Drop off a Skyway crack or jump a Local 404 work ramp.',
+    reward: { slot: 'neck', prefabId: 'hazard-tape-scarf', label: 'Hazard Tape Scarf' },
+  },
+  {
     id: 'gta-three-ways-up', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Three Ways Up', description: 'Fly the Hedge-Hopper, the Sycamore Copter and the Dandelion Drifter.', target: 3,
     reward: { slot: 'neck', prefabId: 'windsock-scarf', label: 'Windsock Scarf' },
@@ -978,6 +1016,104 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     id: 'gta-derby-day', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Derby Day', description: 'Win the Bent Pin Derby.',
     reward: { slot: 'head', prefabId: 'derby-boater', label: 'Derby Boater' },
+  },
+  // ---- Gnome Theft Auto: Pebblewick (the town past Route East) ----
+  {
+    id: 'gta-pop-32', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Pop. 32', description: 'Arrive in Pebblewick, out past the end of Route East.',
+    reward: { slot: 'head', prefabId: 'pebblewick-sunhat', label: 'Pebblewick Sun Hat' },
+  },
+  {
+    id: 'gta-pebblewick-regular', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Regular', description: 'Buy something at all three Pebblewick counters.',
+    target: 3,
+    reward: { slot: 'hand', prefabId: 'dry-spoon-ladle', label: 'Dry Spoon Ladle' },
+  },
+  {
+    id: 'gta-weeping-line', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Weeping Line', description: "Mend Purslane Furrow's Weeping Line.",
+    reward: { slot: 'back', prefabId: 'drip-line-coil', label: 'Weeping Line Coil' },
+  },
+  {
+    id: 'gta-hum-at-three', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Hum at Three', description: 'Find out what hums in the dunes east of Pebblewick.',
+    reward: { slot: 'neck', prefabId: 'chrome-hubcap-pendant', label: 'Chrome Hubcap Pendant' },
+  },
+  {
+    id: 'gta-three-am-knock', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Three A.M. Knock', description: 'Knock on the Old Chrome Combine at night.',
+    reward: { slot: 'hand', prefabId: 'chrome-tuning-fork', label: 'Chrome Tuning Fork', exclusive: true },
+  },
+  {
+    id: 'gta-gnomecino-visit', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Velvet Rope', description: 'Walk into The Gnomecino from Turfton.',
+    reward: { slot: 'neck', prefabId: 'velvet-rope-pass', label: 'Velvet Rope Pass' },
+  },
+  {
+    id: 'gta-gnomecino-winnings', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'House Money', description: 'Walk out of The Gnomecino with more chips than you took in.',
+    reward: { slot: 'hand', prefabId: 'house-money-roll', label: 'House Money Roll' },
+  },
+  // ---- Gnome Theft Auto: sim jobs and tubing (docs/roadmaps/gta-sim-jobs-and-tubing.md) ----
+  {
+    id: 'gta-job-cabbie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fares, Please', description: 'Drive 10 fares for Kerbstone Cabs.', target: 10,
+    reward: { slot: 'head', prefabId: 'checker-visor', label: 'Checker Visor' },
+  },
+  {
+    id: 'gta-job-five-star', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Five-Star Cabbie', description: 'Get five stars from a taxi fare.',
+    reward: { slot: 'neck', prefabId: 'meter-medal', label: 'Meter Medal' },
+  },
+  {
+    id: 'gta-job-courier', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Signed For', description: 'Deliver 15 parcels for Pigeon-Drop Couriers.', target: 15,
+    reward: { slot: 'back', prefabId: 'pigeon-drop-satchel', label: 'Pigeon-Drop Satchel' },
+  },
+  {
+    id: 'gta-job-not-a-scratch', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Not a Scratch', description: 'Deliver a fragile parcel without a single dent.',
+    reward: { slot: 'hand', prefabId: 'bubble-wrap-roll', label: 'Bubble-Wrap Roll' },
+  },
+  {
+    id: 'gta-job-pilot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Cleared to Land', description: "Fly 5 jobs for Wally's Charters.", target: 5,
+    reward: { slot: 'head', prefabId: 'charter-pilot-cap', label: 'Charter Pilot Cap' },
+  },
+  {
+    id: 'gta-job-butter', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Butter Landing', description: 'Land passengers with a landing score of 95 or better.',
+    reward: { slot: 'neck', prefabId: 'flight-scarf', label: 'Flight Scarf', exclusive: true },
+  },
+  {
+    id: 'gta-job-ferry', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'All Aboard', description: 'Run the whole Loch Moss Steamer loop.',
+    reward: { slot: 'head', prefabId: 'ferryman-cap', label: "Ferryman's Cap" },
+  },
+  {
+    id: 'gta-job-real-fare', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Real Gnome, Real Fare', description: 'Drive another online player as your taxi fare.',
+    reward: { slot: 'back', prefabId: 'dispatch-radio', label: 'Dispatch Radio' },
+  },
+  {
+    id: 'gta-job-career', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Working Gnome', description: 'Reach level 5 in any job.',
+    reward: { slot: 'hand', prefabId: 'night-shift-lantern', label: 'Night-Shift Lantern', exclusive: true },
+  },
+  {
+    id: 'gta-tube-rider', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hold On Tight', description: 'Spend 60 seconds towed on a tube.', target: 60,
+    reward: { slot: 'head', prefabId: 'tube-goggles', label: 'Tube Goggles' },
+  },
+  {
+    id: 'gta-tow-captain', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tow Captain', description: 'Tow three riders at once.',
+    reward: { slot: 'neck', prefabId: 'tow-whistle', label: 'Tow Whistle' },
+  },
+  {
+    id: 'gta-buoy-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Buoy Run', description: 'Finish the Loch Moss buoy run.',
+    reward: { slot: 'hand', prefabId: 'buoy-pennant', label: 'Buoy Pennant', exclusive: true },
   },
   // ---- Cooking Gnoma ----
   {
@@ -1473,7 +1609,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     id: 'dayg-word-gets-around', game: 'dayg', gameTitle: 'DayG',
     title: 'Word Gets Around', description: 'Finish 5 quests.', target: 5,
-    reward: { slot: 'hand', prefabId: 'hazel-staff', label: 'Hazel Staff' },
+    reward: { slot: 'hand', prefabId: 'willow-switch', label: 'Willow Switch' },
   },
   {
     id: 'dayg-wanted', game: 'dayg', gameTitle: 'DayG',
@@ -1488,7 +1624,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   {
     id: 'dayg-bell-ringer', game: 'dayg', gameTitle: 'DayG',
     title: 'Bell Ringer', description: 'Ring the chapel bell and live through the night.',
-    reward: { slot: 'hand', prefabId: 'porcelain-lantern', label: 'Porcelain Lantern' },
+    reward: { slot: 'hand', prefabId: 'flint-striker', label: 'Flint and Striker' },
   },
   {
     id: 'dayg-green-thumb', game: 'dayg', gameTitle: 'DayG',

@@ -8,9 +8,26 @@ vi.mock('./audio', () => ({
 }));
 import { TAXI } from './config';
 import type { Box } from './types';
-import { dropSpot, driveToward, pickApproach, segmentClear, taxiFare } from './taxi';
+import { deckApproach, dropSpot, driveToward, pickApproach, segmentClear, taxiFare } from './taxi';
+import { groundAt, heightAt } from './terrain';
 
 const box = (minX: number, maxX: number, minZ: number, maxZ: number, h: number): Box => ({ minX, maxX, minZ, maxZ, h });
+
+describe('deckApproach', () => {
+  it('comes along the deck when the player stands on it, and not when they are under it', () => {
+    const d = groundAt(0, -60);
+    const onDeck = deckApproach(0, -60, d);
+    expect(onDeck).not.toBeNull();
+    if (!onDeck) return;
+    // The start is on the Skyway's centre line (z near -60) 25..35 m from the player.
+    expect(Math.abs(onDeck.z + 60)).toBeLessThan(6);
+    const gap = Math.hypot(onDeck.x, onDeck.z + 60);
+    expect(gap).toBeGreaterThanOrEqual(25);
+    expect(gap).toBeLessThanOrEqual(35);
+    // The street under the deck is not the deck.
+    expect(deckApproach(0, -60, heightAt(0, -60))).toBeNull();
+  });
+});
 
 describe('taxiFare', () => {
   it('is the base fare at the stop and grows with distance, capped', () => {

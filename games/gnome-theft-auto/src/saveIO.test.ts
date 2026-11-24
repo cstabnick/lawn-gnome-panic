@@ -33,6 +33,10 @@ describe('saveIO', () => {
       'gta-trainer-v1': JSON.stringify({ modified: true, first: '2026-01-01T00:00:00.000Z', last: '2026-01-01T00:00:00.000Z', count: 1, what: ['x'] }),
       'gta-sky-v1': JSON.stringify(['acorn-cola-1', '#spotted']),
       'gta-fishing-v1': JSON.stringify({ v: 1, rods: ['twig'], rod: 'twig', baits: { 'cheese-rind': 4 }, bait: 'cheese-rind', journal: { 'fish-gudgeon': { caught: 2, best: 14, first: '2026-11-23' } }, cards: [{ id: 'fish-gudgeon', size: 14 }], caught: 2, sold: 1, earned: 4, derbyBest: 0 }),
+      'gta-jobs-v1': JSON.stringify({ v: 1, jobs: { taxi: { xp: 120, done: 3, failed: 0, earned: 90, bestTip: 9, fiveStars: 1, licensed: true } }, parcels: 0, tubeSeconds: 12 }),
+      'gta-outskirts-v1': JSON.stringify({ v: 1, visited: true, shops: ['diner'], souvenirs: ['postcard'], wished: 3, wellJackpot: false, knocked: false }),
+      'gta-mowing-v1': JSON.stringify({ v: 1, total: 12, lawn: 3, byKind: { 'wheat-patch': 12 } }),
+      'gta-odd-rides-v1': JSON.stringify(['pot-rod']),
       'unrelated-key': 'keep-me',
     });
 
@@ -52,6 +56,22 @@ describe('saveIO', () => {
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.keys.sort()).toEqual([...GTA_SAVE_KEYS].sort());
     expect(exportSaveBundle(store).data).toEqual(bundle.data);
+  });
+
+  it('every GTA save key survives export, reset and import on its own', () => {
+    const initial: Record<string, string> = {};
+    for (const k of GTA_SAVE_KEYS) initial[k] = '{"x":1}';
+    const store = fakeStorage(initial);
+
+    const bundle = exportSaveBundle(store);
+    for (const k of GTA_SAVE_KEYS) expect(bundle.data[k]).toEqual({ x: 1 });
+
+    resetSaveBundle(store);
+    for (const k of GTA_SAVE_KEYS) expect(store.getItem(k)).toBeNull();
+
+    const res = importSaveBundle(JSON.stringify(bundle), store);
+    expect(res.ok).toBe(true);
+    for (const k of GTA_SAVE_KEYS) expect(store.getItem(k)).toBe('{"x":1}');
   });
 
   it('rejects invalid JSON and wrong format without mutating storage', () => {

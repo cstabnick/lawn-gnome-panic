@@ -116,4 +116,17 @@ describe('fleet runtime in water', () => {
     expect(finite(v)).toBe(true);
     setPartsHooks(null);
   });
+
+  it('clearSpawned removes only the vehicles spawn() made, keeping the one passed as `keep`', () => {
+    const { vehicles, fleet } = setup();
+    const first = fleet.spawn('golf-cart', -100, 100, 0);
+    const second = fleet.spawn('golf-cart', -110, 100, 0);
+    expect(first && second).toBeTruthy();
+    expect(vehicles).toHaveLength(2);
+    expect(fleet.clearSpawned(first)).toBe(1);
+    expect(vehicles).toHaveLength(1);
+    expect(vehicles[0]).toBe(first);
+    expect(second && vehicles.includes(second)).toBe(false);
+    setPartsHooks(null);
+  });
 });

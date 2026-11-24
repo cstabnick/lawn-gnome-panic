@@ -1,10 +1,12 @@
-// The weapon wheel: hold Q or Tab (gamepad: hold LB) for a ring of every gun, point at one and let go to equip it; a quick tap still
+// The weapon wheel: hold Q (gamepad: hold LB) for a ring of every gun, point at one and let go to equip it; a quick tap still
 // cycles to the next gun. On touch the Guns button opens it and a tap on a gun equips it. The 🔧 in the middle opens the Pocket Kit.
 import { firstPad } from '@lawn/gamepad';
 import { prefabIconElement } from '@lawn/prefabs';
 import { GUNS, GUN_ORDER } from './config';
 import { moddedGun } from './gunMods';
 import { KEYS, isTyping } from './keys';
+import { currentGlyphSet } from './ui/inputSource';
+import { fillHint } from './ui/glyphs';
 import type { GunKind, Hud, Sfx, Weapons } from './types';
 
 /** Hold the key or LB this long (ms) before the wheel shows; a shorter press is a tap (next gun). */
@@ -72,6 +74,8 @@ const CSS = `
 #gta-wheel .gw-kit{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);width:48px;height:48px;margin:0;padding:0;
   box-sizing:border-box;border-radius:50%;border:2px solid #fff;background:#2f6b2f;color:#fff;font-size:22px;line-height:44px;
   pointer-events:auto;touch-action:none;cursor:pointer}
+#gta-wheel .gw-foot{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:#fff;font:600 13px/1.3 system-ui,sans-serif;
+  pointer-events:none}
 `;
 
 type Mode = 'key' | 'pad' | 'tap';
@@ -130,7 +134,10 @@ export function createWeaponWheel(deps: WeaponWheelDeps): WeaponWheel {
     iconsBuilt = true;
     buttons.forEach((b, i) => b.prepend(prefabIconElement(GUNS[GUN_ORDER[i]].prefab, '🔫', 34)));
   }
-  root.appendChild(ring);
+  // Footer hint naming the keys; hidden on touch (the Guns button and taps need no keys).
+  const foot = document.createElement('div');
+  foot.className = 'gw-foot';
+  root.append(ring, foot);
   deps.ui.appendChild(root);
 
   let open = false;
@@ -173,6 +180,9 @@ export function createWeaponWheel(deps: WeaponWheelDeps): WeaponWheel {
     shown = true;
     layout();
     render();
+    const touch = currentGlyphSet() === 'touch';
+    foot.style.display = touch ? 'none' : '';
+    if (!touch) foot.textContent = fillHint('Release {switchGun} to equip · {modKit} Pocket Kit');
     root.style.display = 'flex';
   }
 
@@ -248,9 +258,9 @@ export function createWeaponWheel(deps: WeaponWheelDeps): WeaponWheel {
       close();
       return;
     }
-    if (e.code !== KEYS.switchGun && e.code !== KEYS.weaponWheel) return;
+    // Q only: Tab used to open the wheel too, and is now the More menu (ui/moreMenu.ts; keys.ts KEYS.more).
+    if (e.code !== KEYS.switchGun) return;
     if (e.repeat || isTyping(e)) return;
-    if (e.code === KEYS.weaponWheel) e.preventDefault();
     if (open) {
       if (mode === 'tap') close();
       return;

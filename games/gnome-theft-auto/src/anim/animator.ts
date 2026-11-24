@@ -44,27 +44,28 @@ const ZERO: readonly [number, number, number] = [0, 0, 0];
 
 function limb(model: GnomeModel, part: AnimPart): THREE.Object3D | undefined {
   switch (part) {
-    case 'armL': return model.arms.left;
-    case 'armR': return model.arms.right;
+    case 'armL': return model.arms?.left;
+    case 'armR': return model.arms?.right;
     case 'legL': return model.legs?.left;
     case 'legR': return model.legs?.right;
-    case 'body': return model.rig;
+    case 'body': return model.rig ?? undefined;
   }
 }
 
 /**
  * Pose `model` with `pose` at weight w for the listed parts. Limbs blend rotation.x from what update() gave them
- * and y/z from 0; the body blends from upright. lift adds to the rig height. Exported for tests and the cutscene.
+ * and y/z from 0; the body blends from upright. lift adds to the rig height. `additive` (onMove rows): limb x is
+ * ADDED to what update() gave (the walk swing stays). Exported for tests and the cutscene.
  */
-export function applyPose(model: GnomeModel, parts: readonly AnimPart[], pose: AnimPose, w: number): void {
+export function applyPose(model: GnomeModel, parts: readonly AnimPart[], pose: AnimPose, w: number, additive = false): void {
   for (const part of parts) {
     const o = limb(model, part);
     if (!o) continue;
     const r = pose[part] ?? ZERO;
     if (part === 'body') o.rotation.set(r[0] * w, r[1] * w, r[2] * w);
-    else o.rotation.set(lerp(o.rotation.x, r[0], w), r[1] * w, r[2] * w);
+    else o.rotation.set(additive ? o.rotation.x + r[0] * w : lerp(o.rotation.x, r[0], w), r[1] * w, r[2] * w);
   }
-  if (pose.lift) model.rig.position.y += pose.lift * w;
+  if (pose.lift && model.rig) model.rig.position.y += pose.lift * w;
 }
 
 /** Put the listed parts back to rest (arms and legs hang, body upright). update() restores rotation.x next frame. */
@@ -107,7 +108,7 @@ export function createAnimator(): Animator {
       }
     }
     const obj = props.get(id) ?? null;
-    if (obj) model.arms.right.add(obj);
+    if (obj && model.arms) model.arms.right.add(obj);
     prop = obj;
     propId = id;
   };
@@ -148,7 +149,7 @@ export function createAnimator(): Animator {
       if (!loop && t >= def.duration) stopping = true;
       w = stopping ? Math.max(0, w - dt / BLEND) : Math.min(1, w + dt / BLEND);
       const tt = loop ? t % def.duration : Math.min(t, def.duration * 0.9999);
-      applyPose(model, def.parts, def.pose(tt), w);
+      applyPose(model, def.parts, def.pose(tt), w, def.onMove === true);
       holdProp(model, w > 0.3 ? def.prop : undefined);
       if (stopping && w <= 0) {
         resetParts(model, def.parts);

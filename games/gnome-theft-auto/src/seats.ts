@@ -51,6 +51,11 @@ export class SeatBook {
   riders(): number[] {
     return [...this.seats.keys()];
   }
+
+  /** Who sits where: player id and seat (jobs/: a real player fare, NPC passengers keep clear of these seats). */
+  entries(): { id: number; seat: number }[] {
+    return [...this.seats].map(([id, seat]) => ({ id, seat }));
+  }
 }
 
 /** Closed vehicle: has doors and openTop === false. */

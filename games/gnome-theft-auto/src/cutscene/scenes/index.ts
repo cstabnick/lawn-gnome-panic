@@ -5,6 +5,7 @@ import { STREET_PICKUP } from './streetPickup';
 import { PULL_UP } from './pullUp';
 import { BACK_ROOM } from './backRoom';
 import { SIDE_SCENES } from './side';
+import { CITY_SCENES } from './city';
 import { CH1_SCENES } from './story/ch1';
 import { CH1B_SCENES } from './story/ch1b';
 import { CH1C_SCENES } from './story/ch1c';
@@ -25,6 +26,8 @@ export const SCENES: Record<string, SceneScript> = {
   'back-room': BACK_ROOM,
   // Side quests (side/index.ts).
   ...SIDE_SCENES,
+  // The Kerbside Exchange city contracts (city/index.ts).
+  ...CITY_SCENES,
   // The main story (docs/roadmaps/gta-story-cutscenes.md).
   ...CH1_SCENES,
   ...CH1B_SCENES,

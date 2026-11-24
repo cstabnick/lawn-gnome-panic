@@ -1,13 +1,15 @@
-// The emote menu: a 😀 button (touch and mouse), G on the keyboard, D-pad down on a gamepad. Tabs per category, one tile
-// per animation; picking a tile plays it on the player's gnome.
+// The emote menu: ☰ More › Emotes, G on the keyboard, D-pad down on a gamepad (on foot). Tabs per category, one tile
+// per animation; picking a tile plays it on the player's gnome. It listens for 'gta:emote-menu' to open or close; the
+// 'gta:emote' event (with an anim id as detail) plays an emote and does not touch the menu.
 import { firstPad } from '@lawn/gamepad';
 import { KEYS, isTyping } from '../keys';
+import { registerAction } from '../ui/actions';
 import { ANIM_TABS, listAnims } from './index';
 
 export interface EmoteMenuDeps {
   /** The shared #ui element: append your own container to it, never restyle #ui. */
   ui: HTMLElement;
-  /** May the menu open (and the button show) now: on foot, alive, standing, no cutscene, shop or other menu open. */
+  /** May the menu open now: on foot, alive, standing, no cutscene, shop or other menu open. */
   canOpen(): boolean;
   /** Play the picked animation on the player (a library id, or a "Mine" tile's id as given). */
   play(id: string): void;
@@ -30,7 +32,7 @@ export interface EmoteMenu {
   close(): void;
   toggle(): void;
   isOpen(): boolean;
-  /** Every frame: shows or hides the button, closes the menu when canOpen() turns false, polls the gamepad while open. */
+  /** Every frame: closes the menu when canOpen() turns false, polls the gamepad while open. */
   update(dt: number): void;
 }
 
@@ -51,7 +53,7 @@ function ensureStyle(): void {
   if (document.getElementById(STYLE_ID)) return;
   const s = document.createElement('style');
   s.id = STYLE_ID;
-  s.textContent = 'body.gta-in-scene .gta-emote-btn, body.gta-in-scene .gta-emote-panel { display:none !important; }';
+  s.textContent = 'body.gta-in-scene .gta-emote-panel { display:none !important; }';
   document.head.appendChild(s);
 }
 
@@ -105,21 +107,6 @@ export function createEmoteMenu(deps: EmoteMenuDeps): EmoteMenu {
   const root = el('div', 'position:absolute;inset:0;pointer-events:none;');
   root.addEventListener('pointerdown', (e) => e.stopPropagation());
 
-  const btn = el('button',
-    'position:absolute;right:calc(12px + env(safe-area-inset-right));top:calc(40% + env(safe-area-inset-top));'
-    + 'width:56px;height:56px;border-radius:50%;box-sizing:border-box;padding:0;margin:0;'
-    + 'border:2px solid rgba(255,255,255,0.7);background:rgba(20,20,20,0.5);color:#fff;'
-    + 'font-size:26px;line-height:1;display:none;touch-action:none;pointer-events:auto;user-select:none;'
-    + '-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:pointer;',
-    '😀');
-  btn.type = 'button';
-  btn.className = 'gta-emote-btn';
-  btn.setAttribute('aria-label', 'Emote menu');
-  btn.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    toggle();
-  });
-
   const panel = el('div',
     'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);'
     + 'max-height:min(80vh,560px);overflow-y:auto;box-sizing:border-box;padding:10px;'
@@ -138,7 +125,7 @@ export function createEmoteMenu(deps: EmoteMenuDeps): EmoteMenu {
   const body = el('div', 'min-height:120px;');
   head.append(tabRow, closeBtn);
   panel.append(head, body);
-  root.append(btn, panel);
+  root.append(panel);
   deps.ui.appendChild(root);
 
   function tabTitle(i: number): string {
@@ -280,7 +267,8 @@ export function createEmoteMenu(deps: EmoteMenuDeps): EmoteMenu {
     }
   });
 
-  window.addEventListener('gta:emote', () => toggle());
+  window.addEventListener('gta:emote-menu', () => toggle());
+  registerAction('emote', { run: () => toggle() });
 
   return {
     open,
@@ -289,7 +277,6 @@ export function createEmoteMenu(deps: EmoteMenuDeps): EmoteMenu {
     isOpen: () => on,
     update(dt: number): void {
       const can = deps.canOpen();
-      btn.style.display = can ? 'block' : 'none';
       if (on && !can) {
         close();
         return;

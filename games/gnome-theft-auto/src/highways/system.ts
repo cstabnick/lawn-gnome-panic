@@ -2,11 +2,14 @@
 import type { Pushed } from '../collide';
 import { groundAt } from '../terrain';
 import type { Player, Vehicle } from '../types';
-import { deckContactsAt, pushOutOfDecks, skywayLength } from './deck';
+import { deckContactsAt, pushOutOfDecks, railGaps, skywayLength } from './deck';
+import { kindOf } from './skyways';
 
 export interface HighwaysDeps {
   toast(text: string, ms?: number): void;
   unlock(id: string): void;
+  /** Pay the player Acorns for a stunt (a drop off a crack or a site ramp jump). */
+  reward?(acorns: number, why: string): void;
 }
 
 export interface Highways {
@@ -28,6 +31,8 @@ const LIP_WINDOW = 1.5;
 const GAP_MIN = 25;
 /** Foot walking radius against the decks. */
 const FOOT_R = 0.4;
+/** Metres a landing must sit below the deck the rider left for a drop stunt. */
+const DROP_MIN = 3;
 
 /** True when a run that reached `min`..`max` along a skyway of `length` metres counts as end to end. */
 export function runComplete(min: number, max: number, length: number): boolean {
@@ -39,12 +44,21 @@ export function gapCleared(launchX: number, launchZ: number, landX: number, land
   return Math.hypot(landX - launchX, landZ - launchZ) >= GAP_MIN;
 }
 
+/** Acorns for a drop of `dropMetres`: 20 plus 5 per whole metre, capped at 80. */
+export function dropReward(dropMetres: number): number {
+  return Math.min(80, 20 + 5 * Math.floor(dropMetres));
+}
+
 interface Run { min: number; max: number; off: number; done: boolean }
 interface Gap {
   /** Seconds since the car was last at the lip; -1 when not armed. */
   armT: number;
   launch: { x: number; z: number } | null;
 }
+/** The deck the rider was last on (lastDeck). */
+interface Perch { id: string; kind: ReturnType<typeof kindOf>; along: number; surfaceY: number }
+/** An armed drop: the deck top it left and the stunt's name if the landing pays. */
+interface Drop { launchY: number; label: string }
 
 /** Apply a wall push to a ground vehicle (sim body or arcade), the same way stunts.ts does for ramp sides. */
 function pushVehicle(v: Vehicle, s: Pushed): void {
@@ -75,10 +89,45 @@ export function createHighways(deps: HighwaysDeps): Highways {
   const seen = new Set<string>();
   let run: Run | null = null;
   let gap: Gap = { armT: -1, launch: null };
+  let perch: Perch | null = null;
+  let drop: Drop | null = null;
+  let hardHat = false;
 
   const resetDriving = (): void => {
     run = null;
     gap = { armT: -1, launch: null };
+  };
+
+  /** Drop-off stunts: remember the deck, arm a drop when the rider leaves it, pay when it lands well below. */
+  const trackDrop = (x: number, z: number, baseY: number, airborne: boolean): void => {
+    const contacts = deckContactsAt(x, z);
+    const deck = contacts.find((c) => Math.abs(baseY - c.surfaceY) < 1) ?? null;
+    if (deck) perch = { id: deck.skyway.id, kind: kindOf(deck.skyway), along: deck.along, surfaceY: deck.surfaceY };
+    if (drop) {
+      if (airborne) return;
+      const metres = drop.launchY - baseY;
+      if (metres >= DROP_MIN) {
+        const acorns = dropReward(metres);
+        deps.toast(`${drop.label}! +${acorns} Acorns`);
+        deps.reward?.(acorns, drop.label);
+        if (!hardHat) { hardHat = true; deps.unlock('gta-hard-hat-area'); }
+      }
+      drop = null;
+      return;
+    }
+    if (!airborne) {
+      if (!deck) perch = null;
+      return;
+    }
+    const p = perch;
+    if (!p || p.id === SPAN) return;
+    // A deck top within DROP_MIN metres under the rider (or level with it) is a landing, not a drop.
+    if (contacts.some((c) => c.surfaceY <= baseY + 1 && c.surfaceY >= baseY - DROP_MIN)) return;
+    const crack = p.kind === 'road'
+      && railGaps(p.id).some((g) => g.kind === 'crack' && p.along >= g.from - 2 && p.along <= g.to + 2);
+    const label = crack ? 'Crack drop' : p.kind === 'site' ? 'Site jump' : null;
+    if (label) drop = { launchY: p.surfaceY, label };
+    perch = null;
   };
 
   return {
@@ -88,9 +137,10 @@ export function createHighways(deps: HighwaysDeps): Highways {
         resetDriving();
         const s = pushOutOfDecks(player.x, player.z, FOOT_R, player.y);
         if (s.hit) { player.x = s.x; player.z = s.z; }
+        trackDrop(player.x, player.z, player.y, !player.grounded);
         return;
       }
-      if (v.spec.flies || v.spec.boat) { resetDriving(); return; }
+      if (v.spec.flies || v.spec.boat) { resetDriving(); perch = null; drop = null; return; }
 
       const baseY = v.sim ? v.sim.py : v.y;
       const s = pushOutOfDecks(v.x, v.z, v.spec.radius, baseY);
@@ -140,6 +190,7 @@ export function createHighways(deps: HighwaysDeps): Highways {
         if (!onSpan && airborne) gap.launch = { x: v.x, z: v.z };
         else if (gap.armT > LIP_WINDOW) gap = { armT: -1, launch: null };
       }
+      trackDrop(v.x, v.z, baseY, airborne);
     },
   };
 }

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { WATER } from './config';
 import { waterAt } from './terrain';
+import { waveSurfaceOffset } from './waves';
 import type { Vehicle } from './types';
 
 export interface Wakes {
@@ -29,6 +30,8 @@ interface Quad {
   /** Unit vector of the drift (world XZ). */
   dx: number;
   dz: number;
+  /** The still water level under it (surface minus the wave when it was laid). */
+  baseY: number;
 }
 
 export function createWakes(scene: THREE.Scene): Wakes {
@@ -43,7 +46,7 @@ export function createWakes(scene: THREE.Scene): Wakes {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.visible = false;
     scene.add(mesh);
-    quads.push({ mesh, mat, active: false, age: 0, side: 1, dx: 0, dz: 0 });
+    quads.push({ mesh, mat, active: false, age: 0, side: 1, dx: 0, dz: 0, baseY: 0 });
   }
 
   /** Time since each boat last spawned a pair of quads. */
@@ -73,6 +76,7 @@ export function createWakes(scene: THREE.Scene): Wakes {
       surface + 0.02,
       v.z - fz * r * 0.8 + rz * side * r * 0.3,
     );
+    q.baseY = surface - waveSurfaceOffset(q.mesh.position.x, q.mesh.position.z);
     q.mesh.rotation.y = v.yaw;
     q.mesh.visible = true;
   }
@@ -104,6 +108,8 @@ export function createWakes(scene: THREE.Scene): Wakes {
         const t = q.age / LIFE;
         q.mesh.position.x += q.dx * DRIFT * dt;
         q.mesh.position.z += q.dz * DRIFT * dt;
+        // Ride the waves (waves.ts): the still level it was laid on plus the wave here now; no allocation.
+        q.mesh.position.y = q.baseY + waveSurfaceOffset(q.mesh.position.x, q.mesh.position.z) + 0.04;
         const size = SIZE_FROM + (SIZE_TO - SIZE_FROM) * t;
         q.mesh.scale.set(size, 1, size);
         q.mat.opacity = OPACITY * (1 - t);

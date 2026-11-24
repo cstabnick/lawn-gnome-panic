@@ -32,6 +32,9 @@ nobody in Turfton gives away anything big.
 - Fizz Cup: **Rookie Plate** (speed-trap payouts up), **Carburettor Contacts** (cheaper taxis), **Shelldon's Odds**
   (event rewards up), **Fizz Sponsor** (free Dandelion Fizz).
 
+- **Weeping Line Discount** (Purslane Furrow, The Weeping Line): a small cut off the Pebblewick shops.
+- **Ratchet's Thanks** (Mallow Bucket, The Hum at Three; Burnet Ratchet's shed): a free tow.
+
 ## Loose threads
 
 - Whether Brenda's pension is paid out of the HOA's own hose-pipe tax.

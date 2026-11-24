@@ -1,4 +1,8 @@
 // The Party button and its panel (DOM only, no game state). It shows the view it is given and calls the actions.
+// The button shows only while the player is in a party or the badge has something to say; the More menu
+// ('party' in ui/actions.ts) always opens the panel.
+
+import { registerAction } from '../ui/actions';
 
 export interface PartyPanelView {
   /** My party code, or null when not in a party. */
@@ -104,6 +108,15 @@ export function createPartyPanel(ui: HTMLElement, actions: PartyPanelActions): P
   const badge = el('span', 'gta-party-badge');
   badge.style.display = 'none';
   btn.appendChild(badge);
+
+  let inParty = false;
+  let badgeN = 0;
+  /** Shows the button only while it has something to say. Writes the style only when it changes. */
+  function syncBtn(): void {
+    const show = inParty || badgeN > 0 ? '' : 'none';
+    if (btn.style.display !== show) btn.style.display = show;
+  }
+  btn.style.display = 'none';
 
   const panel = el('div', 'gta-party-panel');
   panel.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -262,9 +275,12 @@ export function createPartyPanel(ui: HTMLElement, actions: PartyPanelActions): P
   }
 
   btn.addEventListener('click', () => toggle());
+  registerAction('party', { run: () => toggle() });
 
   return {
     render(v: PartyPanelView): void {
+      inParty = v.code !== null;
+      syncBtn();
       const key = JSON.stringify(v);
       if (key === lastKey) return;
       lastKey = key;
@@ -273,6 +289,8 @@ export function createPartyPanel(ui: HTMLElement, actions: PartyPanelActions): P
     setBadge(n: number): void {
       badge.textContent = String(n);
       badge.style.display = n > 0 ? '' : 'none';
+      badgeN = n;
+      syncBtn();
     },
     get isOpen(): boolean {
       return open;

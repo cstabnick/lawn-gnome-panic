@@ -740,3 +740,80 @@ as one gnome in two places.
 **Ruling:** Turfton fishing is catch-and-release. A Turfton rod ends in a nibble-clip, a bent pin with no point: a fish bites the bait and holds on, the gnome reels it in, measures it, writes a catch card and slips it back into the water, none the worse. A line that strains too far does not snap the fish free with a hook in it; the clip simply pops off. The Bent Pin, a bait and tackle shack on the south bank of the Southern Drainage Canal by Old Brick wharf, is kept by Wenna Gudgeon, who sells rods and bait and buys catch cards for the Turfton catch register (and runs the Bent Pin Derby). Fish are sized for gnomes like every animal (R-049): a trout is about half a gnome long. Three fish are more than fish: Old Mossjaw in the Loch Moss deeps (Tessie's old neighbour), the Gilded Koi at the canal's lock pool (it says it escaped from Baroness Brenda's ornamental pond), and Driftwood's Shark in the far Puddle Sea, which proves Driftwood right about sharks while being very gentle and mostly interested in cheese. Bait is dough, cheese rind, acorn crumb, sock-fluff flies and lures: no worms or live bait.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** the user asked for fishing; a pointless clip and a catch card keep R-021's no-harm rule and R-050's nothing-gets-soaked tone while still giving a catch, a record and something to sell.
+
+## R-147
+
+**Question:** Turfton has six district signs in the game (`src/districts.ts`) but no lore for them. What are Turfton's districts, and what is the rest of the grid?
+**Ruling:** Turfton has six districts, with the names and borders of `src/districts.ts`: **Downtown Turfton** (the civic core around the x = 0 and z = 0 roads: City Hall, Thorne Tower, the Mulch Club, the Glaze Clinic, the Central Bus Stop and the Kerbside Exchange), the **Greenhouse Strip** (glasshouse nightlife east of Downtown: the Gnomecino, Neon-Moth Nina's stoop), **Patio Heights** (the HOA's gated flagstone terrace in the north-east corner), the **Old Brick Quarter** (the oldest streets, south-west of Downtown: Bodega & Sons, Side-Valve Salvage, Shelldon's alley), **Turfton Park & Arts** (west of Downtown: the Amphitheater, galleries, busking pitches and the back alleys the Red Caps use) and **Clay-Mart Industrial** (the south-west corner: the Clay-Mart warehouse, its returns yard, the Clay-Mart Kilnworks and the Local 404 Union Hall). Every block outside them is the **Ring Blocks**: ordinary pot-street housing with no district sign, including the block Pay 'n' Glaze stands on. The Southern Drainage Canal, the Skyway, the Ring Road and everything past the city edge are outside Turfton's grid. Each district has its own entry: `downtown-turfton`, `greenhouse-strip`, `patio-heights`, `old-brick-quarter`, `turfton-park-and-arts`, `clay-mart-industrial`, `ring-blocks`; `turfton-gazetteer` indexes them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the district signs already exist in the game; the lore takes their names and borders as given so the code and the lore cannot disagree, and the city quests need named neighbourhoods to send the player to.
+
+## R-148
+
+**Question:** What is Turfton's history, in order?
+**Ruling:** Five eras before now, oldest first. **The Flat Patch:** a suspiciously level square of clover where the first earthenware gnomes stacked cast-off pots to sleep out of the dew; the Old Brick Quarter's lanes are its footpaths. **Grid Night:** one night the chalk-and-gravel grid appeared, perfectly straight, 60 paces to a block; nobody saw who laid it, and Turfton answered by inventing parallel parking and the property deed by morning. **The Pot Rush:** gnomes claimed blocks, stacked pots into towers and sold the tops; Clay-Mart opened its Kilnworks and began billing every newcomer for their firing (the Kiln-Debt), and the first Homeowners' Association was founded to keep the new towers looking alike. **The Great Sprinkler Scare:** the municipal sprinklers misfired across Downtown; the Spade Guard withdrew to Fort Sandpit and Don Compost stopped speaking. **The Pour:** Local 404 poured the Skyway over the east side, then struck over pay before the far end was done, leaving the Unfinished Span; the Hat Watch unionised, the Gnomecino opened and Thorne Lawn & Order began buying corner pots. **Now** is the story of Gnome Theft Auto. Who laid the grid stays a loose thread. The entry is `turfton-timeline`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the history was scattered over `docs/design/gnome-theft-auto/world-lore.md`, `turfton.md` and `turfton-skyway.md`; this puts it in one order that agrees with all three.
+
+## R-149
+
+**Question:** Who runs Turfton: what are its civic institutions?
+**Ruling:** Five. **The Council:** Mayor Barnaby "Two-Coat" Mulch and a five-seat Zoning Board meet in City Hall; the board votes four to one for whatever the HOA files, the one being Councilwoman Juniper Vance. City Hall sets the Hat Watch budget, parade permits and street-sweeping, and nothing else (entry `turfton-council`). **The HOA:** in Gnome Theft Auto the HOA is the Patio Heights Homeowners' Association, whose board Vesper Thorne chairs through Thorne Lawn & Order LLC; it passes covenants, not laws, and its fines end in foreclosure at the Glaze & Tax Office. It is not the unseen HOA of Gnome Company's sermons (`hoa`); the two only share a name (entry `patio-heights-hoa`). **The Hat Watch:** City Hall's watch, run from the Watch House on the x = 0 road north of City Hall (entry `watch-house`), unionised since the Pour. **The Kiln:** Turfton has no kiln of its own for firing new gnomes; the Clay-Mart Kilnworks in Clay-Mart Industrial fires and glazes newcomers for the Snail-Coach line and bills them, which is why Clay-Mart holds every Kiln-Debt (entry `clay-mart-kilnworks`). **Transport:** the Snail-Coach line ends at the Central Bus Stop; Mabel Kerbstone drives the one Turfton Taxi; Local 404 keeps the roads, the Ring Road and the Skyway; Snail-Mail Express and Pigeon-Drop carry the post (entry `turfton-transit`).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the quests and the story already lean on all five; the lore had only scattered mentions, one of which (`hoa`) belongs to another game.
+
+## R-150
+
+**Question:** Turfton's side jobs are scattered over a dozen givers. Is there one place in the city where a gnome finds work?
+**Ruling:** Yes: the **Kerbside Exchange**, a cork notice-board and a folding desk on the x = 0 road pavement just south of the Central Bus Stop, run by **Dorrit "Dot" Pennywort**, a retired Snail-Coach conductor who still punches a ticket for every job she hands out and takes no cut ("the city pays me in gossip"). Every open side contract in and around Turfton is pinned to her board, whoever offers it; the player reads the board from the phone (the Kerbside Exchange app), and Dot's own clients (Neon-Moth Nina, Hedda Galley, Big Wrench Grout, Pip) hand out their jobs at her desk. The Exchange does not replace the other givers: Big Lou, Shelldon, Clara, Granny Gnertrude and the rest still give their own jobs where they live. Shelldon now gives the Snail-Racing Rigging from his own alley rather than from the Bodega pavement. Entries: `kerbside-exchange`, `dot-pennywort`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for the city to feel like the hub; a board at the bus stop every newcomer steps off at (and the taxi always returns to) makes it one without moving any finished quest.
+
+## R-151
+
+**Question:** Who runs the Turfton Tattler, and who else is part of Turfton's recurring city cast?
+**Ruling:** The Tattler is edited by **Hedda Galley**, who has never printed a correction and never been photographed; the masthead still shows nobody (entry `hedda-galley`). The recurring city cast, each with their own voice and walk: Dot Pennywort (the Exchange), Hedda Galley (the Tattler), Neon-Moth Nina (Greenhouse Strip), Union Boss "Big Wrench" Grout (Local 404, Clay-Mart Industrial), John Bodega (Old Brick Quarter), Pip Potsworth and Tansy Clayfoot (Side-Valve Salvage), Councilwoman Juniper Vance (City Hall), Big Lou (the Gnomecino), Shelldon (his alley), Mossley (the survey table) and Mabel Kerbstone (the taxi). They know each other, mention each other's jobs, and turn up in each other's scenes.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** a hub needs regulars; most of them already exist, and the Tattler's editor was the one gap the new jobs needed filled.
+
+## R-152
+
+**Question:** Local 404's strike fund ledger (a loose thread of `local-404-union-hall`): where is it, and how does the Skyway come into it?
+**Ruling:** The HOA seized the ledger from the Union Hall after the Pour's strike and moves it between the Glaze & Tax Office and Fort Sandpit's vault in an HOA van, always by the ground road, because the HOA will not drive on a road Local 404 built. In "The Skyway Job" the player takes the Skyway, gets ahead of the van at the east off-ramp and brings the ledger home to the Union Hall, which stands behind Clay-Mart on the z = 180 road. What is written in the ledger stays a loose thread: Grout reads it in private.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the city's heist job needs a reason to use the Skyway; the HOA's snobbery about a union road gives one and keeps the ledger's contents open.
+
+## R-153
+
+**Question:** Gnome Theft Auto restyles downtown Turfton's towers one by one. Which towers have names, who owns them, and do they change the Pot Towers?
+**Ruling:** Fourteen named towers are Pot Towers, each with an owner in Turfton's lore: **Thorne Tower** - Thorne Lawn & Order (`thorne-tower`); **Kiln-Shield Plaza** - Kiln-Shield Insurance (`kiln-shield-plaza`); **The Snail-Mail Sorting Tower** - Snail-Mail Express (`snail-mail-sorting-tower`); **The Tattler Building** - the Turfton Tattler (`tattler-building`); **The Acorn-Cola Drum** - Acorn-Cola (`acorn-cola-drum`); **Razor-Back Tower** - Razor-Back (`razor-back-tower`); **Husky-Blade Tower** - Husky-Blade (`husky-blade-tower`); **The Stink-Gro Step Garden** - Stink-Gro (`stink-gro-step-garden`); **Buck-Iron Tower** - Buck-Iron (`buck-iron-tower`); **Pigeon-Drop Depot** - Pigeon-Drop Couriers (`pigeon-drop-depot`); **Turfton FM Twin Masts** - Turfton FM (`turfton-fm-twin-masts`); **The Pure-Loam Glasshouse** - the Pure-Loam Co-op (`pure-loam-glasshouse`); **The Leaning Fizz** - Dandelion Fizz (`leaning-fizz`); **First Kiln Bank** - the bank that keeps Turfton's Kiln-Debt ledgers, which Clay-Mart sells (`first-kiln-bank`). Every other downtown tower stays a nameless Pot Tower. The First Kiln Bank is new: it keeps the Kiln-Debt ledgers that Clay-Mart sells. The Kiln-Shield Plaza is the Kiln-Shield billboards' tower of `turfton-towers`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for towers that are each styled individually; names and owners tie each look to a company already in Turfton's lore.
+
+## R-154
+
+**Question:** Gnome Theft Auto adds a minor town on the outskirts. Where is it, what is it, and what is the Old Combine the Dust Flats tales mention?
+**Ruling:** Pebblewick stands at the far east of the Dust Flats where Route East runs out towards the fence; about 30 gnomes; farms on the Weeping Line; the Old Chrome Combine is real and hums at three in the morning; the HOA takes an interest; Turfton is still the only city, Pebblewick has a reeve, not a mayor; the Pebblewick Hopper is the only bus.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for a minor town on the outskirts with things to do.
+
+## R-155
+
+**Question:** Turfton's Gnomecino and Club Gnome's Gnomecino: two casinos or one?
+**Ruling:** One building with two front doors: Big Lou's velvet rope in Turfton and the town square door in the Yard. Whoever walks in, from either, is in the same hall. Chips stay chips: winnings never turn into Turfton acorns (the Oakcount rule: chips never buy acorns back).
+**Applies to:** club-gnome, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the crossover portal (docs/design/crossover-portals.md) puts a GTA player inside Club Gnome's Gnomecino; one building keeps both lores true.
+
+## R-156
+
+**Question:** New players meet a dozen hobbies and systems (hunting, birding, fishing, the Lock-Up, aircraft, the Skyway, sim jobs, Pebblewick...). Who shows them round?
+**Ruling:** Mabel Kerbstone keeps a **Newcomers' Card** at the Central Bus Stop, because every newcomer steps off at her stop: a punch-card with one stamp per hobby club or trade, each stamped by its host. Dot Pennywort (street events, a good turn), Neon-Moth Nina (emotes and a handshake), Pip Potsworth (the weapon wheel and the Pocket Kit), Tansy Clayfoot (the Side-Valve Lock-Up and the Sling-Lift; later Hangar Two and the Mossbank Boathouse), Councilwoman Juniper Vance (mowing the verges, the Country Club's cart), Wenna Gudgeon (fishing at the Bent Pin), Big Wrench Grout (the Skyway and the Unfinished Span), Mabel herself (Kerbstone Cabs and the other odd jobs; the trip to Pebblewick), Wind-Sock Wally (flying and the Wingwright's Slipway), Hedda Galley (spotting the banner plane), Hazel Mattock (the Tuft & Tally Lodge), Dunnock Pell (the Reedwatch Hide). A party stamp exists for gnomes who play with friends and is not needed. A full card is Turfton's welcome (achievement gta-newcomer-card). Mabel also dispatches Kerbstone Cabs, the taxi job of the sim jobs. Entry: `newcomers-card`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for tutorial jobs that feel part of the city rather than a checklist; Mabel's loose thread (what she does between fares) gives them a keeper.
+
+## R-157
+
+**Question:** Can a Turfton gnome hold a job, and who pays them?
+**Ruling:** Yes, by the shift. Kerbstone Cabs (Mabel Kerbstone), Pigeon-Drop's ground crew (Sorting-Office Sid), Wally's Charters (Wind-Sock Wally) and the Loch Moss Steamer Co. (Purser Tolly) hire any gnome, pay in Acorns per job and keep a ledger of levels. The Kerbside Exchange's contracts stay separate one-off jobs. A gnome can ride as another gnome's cab fare (online); the company covers the fare. Tubing on Loch Moss is for fun, not a job: tubes are rented at the Mossbank rack.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
+**Why:** the user asked for convincing sim jobs (taxi, courier, pilot, boat driver) and tubing that work online.

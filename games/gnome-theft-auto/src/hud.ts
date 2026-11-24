@@ -5,10 +5,14 @@ import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
-import { isTyping, keyLabel, KEYS } from './keys';
+import { isTyping, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 import { drawSkywaysOnMap } from './highways/map';
+import { drawRoute } from './highways/routeDraw';
+import { registerAction } from './ui/actions';
+import { controlsFor, esc, fillHint, glyphHtml, glyphText } from './ui/glyphs';
+import { currentGlyphSet, onInputSourceChange } from './ui/inputSource';
 
 const CSS = `
 #gta-hud{position:fixed;inset:0;pointer-events:none;font-family:system-ui,sans-serif;font-weight:700;color:#fff;
@@ -98,6 +102,8 @@ const CSS = `
 #gta-hud .gta-banner-text{display:inline-block;font-size:clamp(28px,7vw,64px);line-height:1.1;font-weight:800;
   text-shadow:0 2px 6px rgba(0,0,0,.9);animation:gta-scale-in .3s ease-out both;}
 #gta-hud .gta-banner-text.out{animation:gta-fade-out .4s ease-in both;}
+#gta-hud .gta-vhint{font-size:12px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;
+  max-width:min(92vw,640px);}
 #gta-hud .gta-online{position:absolute;right:calc(var(--sar) + var(--m));top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 124px);font-size:12px;}
 @keyframes gta-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 @keyframes gta-blink{0%,100%{opacity:1;}50%{opacity:.35;}}
@@ -118,7 +124,7 @@ const CSS = `
 /* Short screens (a phone in landscape): smaller panel, prompt down low between the stick and the buttons. */
 @media (max-height:500px){
   #gta-hud .gta-tl{transform:scale(.78);transform-origin:top left;}
-  #gta-hud .gta-bottom{bottom:calc(var(--sab) + 10px);left:200px;right:240px;padding:0;}
+  #gta-hud .gta-bottom{bottom:calc(var(--sab) + 104px);left:22%;right:22%;padding:0;}
   #gta-hud .gta-bottom .gta-pill{font-size:12px;padding:4px 10px;}
   #gta-hud .gta-help{display:none;}
   #gta-hud .gta-toasts{top:calc(var(--sat) + 8px);max-width:40vw;}
@@ -268,10 +274,6 @@ const MAP_RANGE = 150;            // the minimap shows this far from the player,
 const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
 const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
-const HELP_DESKTOP =
-  'WASD move · mouse look · click fire · hold right mouse aim · R reload · Q swap gun · E enter/exit · Space jump / climb · ' +
-  `Shift descend · bail out of a plane in the air with E · ${keyLabel(KEYS.radio)} radio · ${keyLabel(KEYS.map)} map · ` +
-  `${keyLabel(KEYS.mute)} mute · ${keyLabel(KEYS.journal)} journal · ${keyLabel(KEYS.options)} options`;
 const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 /** Big-map name positions where the average of the border would land on a corner (world coordinates). */
@@ -454,27 +456,6 @@ function drawMarker(g: CanvasRenderingContext2D, x: number, y: number, r: number
     g.fillText('T', x, cy);
     g.textBaseline = 'alphabetic';
   }
-}
-
-/**
- * The dashed route to the waypoint, in screen points: a dark underlay, then the route colour on top, both dashes crawling
- * along the line. `small` is the minimap's weight; the big map is heavier.
- */
-function strokeRoute(g: CanvasRenderingContext2D, pts: [number, number][], color: string, t: number, small: boolean): void {
-  g.lineJoin = 'round';
-  g.lineCap = 'round';
-  g.setLineDash(small ? [4, 3] : [6, 4]);
-  g.lineDashOffset = -t * 8;
-  g.beginPath();
-  pts.forEach(([x, y], i) => (i === 0 ? g.moveTo(x, y) : g.lineTo(x, y)));
-  g.strokeStyle = 'rgba(0,0,0,.55)';
-  g.lineWidth = small ? 3.2 : 4;
-  g.stroke();
-  g.strokeStyle = color;
-  g.lineWidth = small ? 1.8 : 2.4;
-  g.stroke();
-  g.setLineDash([]);
-  g.lineDashOffset = 0;
 }
 
 interface LegendRow { text: string; blip?: Blip; place?: PlaceKind; route?: string; dot?: string }
@@ -820,8 +801,17 @@ export function createHud(ui: HTMLElement): Hud {
   buffEl.style.display = 'none';
   const questEl = el('div', 'gta-quest');
   tl.append(hoaEl, flightEl, acornsEl, debtEl, crackedEl, substatsEl, buffEl, questEl);
-  const fine = matchMedia('(pointer: fine)').matches;
-  const help = el('div', 'gta-help', fine ? HELP_DESKTOP : HELP_TOUCH);
+  // The help line is the first eight foot controls, each with its device's glyph (touch: the touch words).
+  const help = el('div', 'gta-help');
+  const helpSet = currentGlyphSet();
+  if (helpSet === 'touch') {
+    help.textContent = HELP_TOUCH;
+  } else {
+    help.innerHTML = controlsFor(helpSet, 'foot')
+      .slice(0, 8)
+      .map((r) => `${r.html} ${esc(r.label)}`)
+      .join(' · ');
+  }
   tl.append(help);
   setTimeout(() => help.remove(), 8000);
 
@@ -845,10 +835,22 @@ export function createHud(ui: HTMLElement): Hud {
   const boostWrap = el('div', 'gta-boost-wrap');
   const boostFill = el('div', 'gta-boost-fill');
   boostWrap.append(boostFill);
+  // The prompt is a glyph (the interact key on this device; empty on touch) then the text.
   const promptEl = el('div', 'gta-pill');
+  const promptGlyph = el('span');
+  const promptText = el('span');
+  promptEl.append(promptGlyph, promptText);
+  const paintPromptGlyph = () => {
+    const g = glyphHtml('interact');
+    promptGlyph.innerHTML = g ? `${g} ` : '';
+  };
+  paintPromptGlyph();
+  // Shown the first time the player enters a vehicle or aircraft (keyboard / pad only), then hidden after a few seconds.
+  const vhintEl = el('div', 'gta-pill gta-vhint');
+  vhintEl.style.display = 'none';
   vehicleEl.style.display = 'none';
   promptEl.style.display = 'none';
-  bottom.append(vehicleEl, boostWrap, promptEl);
+  bottom.append(vehicleEl, boostWrap, promptEl, vhintEl);
 
   const online = el('div', 'gta-online');
   online.style.display = 'none';
@@ -856,7 +858,16 @@ export function createHud(ui: HTMLElement): Hud {
   // Big map: click or tap the minimap, or press the map key (M), to see the whole world; click, tap, M or Esc closes it.
   const big = el('div', 'gta-big');
   const bigCanvas = el('canvas');
-  const bigHint = el('div', 'gta-bighint', `Click, tap, ${keyLabel(KEYS.map)} or Esc to close`);
+  const bigHint = el('div', 'gta-bighint');
+  const paintBigHint = () => {
+    bigHint.textContent = `Click, tap, ${glyphText('map')} or ${glyphText('close')} to close`;
+  };
+  paintBigHint();
+  // The glyphs change when the player switches device (keyboard, pad, touch).
+  onInputSourceChange(() => {
+    paintPromptGlyph();
+    paintBigHint();
+  });
   // The legend covers much of a phone-sized map, so it is a toggle: on by default on wide screens, off on phones.
   let legendOn = window.innerWidth >= 600;
   const legendBtn = el('button', 'gta-legendbtn', 'Legend');
@@ -929,13 +940,7 @@ export function createHud(ui: HTMLElement): Hud {
       const ks = size / MAP_VIEW;
       const half = size / 2;
       if (s.route && s.route.points.length >= 2) {
-        strokeRoute(
-          g,
-          s.route.points.map((p): [number, number] => [half - (p.x - px0) * ks, half - (p.z - pz0) * ks]),
-          s.route.color,
-          t,
-          true,
-        );
+        drawRoute(g, s.route.points, (x, z) => [half - (x - px0) * ks, half - (z - pz0) * ks], s.route.color, t, true);
       }
       // Places first, so quest objectives draw on top of them.
       for (const b of s.blips) {
@@ -1019,6 +1024,7 @@ export function createHud(ui: HTMLElement): Hud {
     big.classList.toggle('open', open);
     if (open && document.pointerLockElement) document.exitPointerLock();
   }
+  registerAction('map', { run: () => setBig(!bigOpen) });
   mapCanvas.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(true); });
   big.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(false); });
   window.addEventListener('keydown', (e) => {
@@ -1051,7 +1057,7 @@ export function createHud(ui: HTMLElement): Hud {
     const X = (x: number) => (W / 2 - x) * k; // mirrored, as on the minimap
     const Y = (z: number) => (W / 2 - z) * k;
     if (s.route && s.route.points.length >= 2) {
-      strokeRoute(g, s.route.points.map((p): [number, number] => [X(p.x), Y(p.z)]), s.route.color, t, false);
+      drawRoute(g, s.route.points, (x, z) => [X(x), Y(z)], s.route.color, t, false);
     }
     // Badges and markers first; their names are laid out after (mapIcons.ts layoutMapLabels): the active quest's, then
     // the other quests' nearest first, then the places', each kept inside the map and skipped where another name sits.
@@ -1167,6 +1173,28 @@ export function createHud(ui: HTMLElement): Hud {
     timeLabel?: string; boost?: number | null; buff?: string | null; stunts?: string;
   } = {};
 
+  // The vehicle hint: the controls of a car or aircraft, shown for 6 s when the player enters one (keyboard / pad only),
+  // at most twice per mode per session.
+  let lastMode: 'foot' | 'drive' | 'fly' = 'foot';
+  const vhintShows: Record<'drive' | 'fly', number> = { drive: 0, fly: 0 };
+  const VHINT_IDS = new Set<string>([
+    'move', 'fire', 'boost', 'handbrake', 'horn', 'banger', 'radio', 'climb', 'descend', 'interact',
+  ]);
+  let vhintTimer = 0;
+  function showVehicleHint(mode: 'drive' | 'fly') {
+    const device = currentGlyphSet();
+    if (device === 'touch' || vhintShows[mode] >= 2) return;
+    const items = controlsFor(device, mode).filter((r) => VHINT_IDS.has(r.id) && r.html !== '');
+    if (items.length === 0) return;
+    vhintShows[mode]++;
+    vhintEl.innerHTML = items.map((r) => `${r.html} ${esc(r.label)}`).join(' · ');
+    vhintEl.style.display = '';
+    clearTimeout(vhintTimer);
+    vhintTimer = window.setTimeout(() => {
+      vhintEl.style.display = 'none';
+    }, 6000);
+  }
+
   return {
     setWorld(world: World) {
       bgCanvas = buildBackground(world);
@@ -1230,10 +1258,16 @@ export function createHud(ui: HTMLElement): Hud {
         vehicleEl.style.display = s.vehicle === null ? 'none' : '';
         vehicleEl.textContent = s.vehicle ?? '';
       }
+      // Entering a car or aircraft (only changes call into this; nothing runs on other frames).
+      const mode: 'foot' | 'drive' | 'fly' = s.altitude !== null ? 'fly' : s.vehicle !== null ? 'drive' : 'foot';
+      if (mode !== lastMode) {
+        lastMode = mode;
+        if (mode !== 'foot') showVehicleHint(mode);
+      }
       if (s.prompt !== last.prompt) {
         last.prompt = s.prompt;
         promptEl.style.display = s.prompt === null ? 'none' : '';
-        promptEl.textContent = s.prompt === null ? '' : (fine ? 'E: ' : '') + s.prompt;
+        promptText.textContent = s.prompt ?? '';
       }
       if (s.online !== last.online) {
         last.online = s.online;
@@ -1291,7 +1325,7 @@ export function createHud(ui: HTMLElement): Hud {
 
     toast(text: string, ms = 2600) {
       const t = el('div', 'gta-pill gta-toast');
-      t.append(...richNodes(text));
+      t.append(...richNodes(fillHint(text)));
       toasts.append(t);
       while (toasts.children.length > 4) toasts.firstElementChild?.remove();
       setTimeout(() => t.classList.add('out'), Math.max(0, ms - 400));
@@ -1308,7 +1342,7 @@ export function createHud(ui: HTMLElement): Hud {
       questEl.append(t);
       for (const line of o.lines) {
         const row = el('div', 'gta-qline');
-        row.append(...richNodes(line));
+        row.append(...richNodes(fillHint(line)));
         questEl.append(row);
       }
     },

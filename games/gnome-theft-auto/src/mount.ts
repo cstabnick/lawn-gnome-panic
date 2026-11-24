@@ -285,7 +285,9 @@ export function stepMount(seq: MountSeq, dt: number): MountFrame {
   }
 
   const dtSafe = dt > 0 ? dt : 1;
-  const yaw = seq.mode === 'exit' ? v.yaw : Math.atan2(v.x - seq.pos.x, v.z - seq.pos.z);
+  // Seated (settling in) the gnome faces the nose like the riding pose it hands over to; facing the vehicle's centre from an
+  // off-centre seat (the golf cart's, the copter's) turned it sideways to the wheel and snapped it round when the ride began.
+  const yaw = seq.mode === 'exit' || seated ? v.yaw : Math.atan2(v.x - seq.pos.x, v.z - seq.pos.z);
   const pose: MountPose = {
     x: seq.pos.x, y: seq.pos.y, z: seq.pos.z, yaw,
     vx: (seq.pos.x - prev.x) / dtSafe, vy: 0, vz: (seq.pos.z - prev.z) / dtSafe,

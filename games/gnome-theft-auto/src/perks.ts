@@ -28,7 +28,32 @@ export type PerkId =
   | 'rookie-plate'
   | 'carb-contacts'
   | 'shelldon-odds'
-  | 'fizz-sponsor';
+  | 'fizz-sponsor'
+  // The Kerbside Exchange city contracts (quests/cityQuests.ts).
+  | 'conductor-punch'
+  | 'impound-key'
+  | 'glow-band'
+  | 'press-pass'
+  | 'union-card'
+  // Pebblewick's side quests (quests/outskirtsQuests.ts).
+  | 'weeping-line'
+  | 'combine-hum'
+  // The Newcomers' Card tutorials (quests/newcomerQuests.ts).
+  | 'neighbour-badge'
+  | 'showoff'
+  | 'scrap-eye'
+  | 'sling-regular'
+  | 'verge-volunteer'
+  | 'bent-pin-regular'
+  | 'skyway-regular'
+  | 'staff-discount'
+  | 'slipway-regular'
+  | 'pigeon-tip'
+  | 'lodge-regular'
+  | 'hopper-pass'
+  | 'hide-regular'
+  | 'estate-agent'
+  | 'party-favour';
 
 export interface PerkDef {
   id: PerkId;
@@ -57,6 +82,28 @@ export const PERKS: readonly PerkDef[] = [
   { id: 'carb-contacts', questId: 'race-lowrider-derby', name: 'Carburettor Contacts', text: 'Turfton Taxi fares cost 20% less.' },
   { id: 'shelldon-odds', questId: 'race-snail-endurance', name: "Shelldon's Odds", text: 'World and street event rewards +10%.' },
   { id: 'fizz-sponsor', questId: 'race-fizz-cup-final', name: 'Fizz Sponsor', text: 'Dandelion Fizz is free.' },
+  { id: 'conductor-punch', questId: 'city-kerbside-rounds', name: "Conductor's Punch Card", text: 'Turfton Taxi fares cost 10% less.' },
+  { id: 'impound-key', questId: 'city-impound-run', name: 'Impound Key', text: 'Sling-Lift calls cost 25% less.' },
+  { id: 'glow-band', questId: 'city-glow-band-express', name: "Nina's Glow-Band", text: 'In Downtown and the Greenhouse Strip, Watch heat under 2 hats cools faster.' },
+  { id: 'press-pass', questId: 'city-penthouse-exclusive', name: 'Tattler Press Pass', text: 'World and street event rewards +10%.' },
+  { id: 'union-card', questId: 'city-skyway-robbery', name: 'Local 404 Card', text: '+20 Acorns every 3 minutes from the strike fund.' },
+  { id: 'weeping-line', questId: 'sq-weeping-line', name: 'Weeping Line Discount', text: "Pebblewick's counters charge 20% less." },
+  { id: 'combine-hum', questId: 'sq-hum-at-three', name: "Ratchet's Thanks", text: "Ratchet's Mower & Dew repairs for free." },
+  { id: 'neighbour-badge', questId: 'nc-good-neighbour', name: "Neighbour's Badge", text: 'Street and world event rewards +5%.' },
+  { id: 'showoff', questId: 'nc-strike-a-pose', name: 'Show-Off', text: 'Near Miss bonuses +20%.' },
+  { id: 'scrap-eye', questId: 'nc-wheel-and-kit', name: "Pip's Scrap Eye", text: 'Scrap sold at the Lock-Up pays 20% more.' },
+  { id: 'sling-regular', questId: 'nc-lockup', name: 'Lock-Up Regular', text: 'Sling-Lift calls cost 15% less.' },
+  { id: 'verge-volunteer', questId: 'nc-mind-the-verges', name: 'Verge Volunteer', text: 'Lawn Service pay +25%.' },
+  { id: 'bent-pin-regular', questId: 'nc-bent-pin', name: 'Bent Pin Regular', text: 'Catch cards sell for 15% more.' },
+  { id: 'skyway-regular', questId: 'nc-skyway', name: 'Skyway Regular', text: 'Speed-trap daredevil payouts +10%.' },
+  { id: 'staff-discount', questId: 'nc-odd-jobs', name: "Mabel's Staff Discount", text: 'Turfton Taxi fares cost 15% less.' },
+  { id: 'slipway-regular', questId: 'nc-take-off', name: "Wally's Word", text: "The Wingwright's Slipway costs 10% less." },
+  { id: 'pigeon-tip', questId: 'nc-sky-spotting', name: "Hedda's Tip-Off", text: 'Pigeon-Drop parcels pay 25% more.' },
+  { id: 'lodge-regular', questId: 'nc-tuft-and-tally', name: 'Lodge Regular', text: 'The Tuft & Tally Lodge pays 15% more.' },
+  { id: 'hopper-pass', questId: 'nc-last-stop-pebblewick', name: 'Hopper Season Ticket', text: 'The Pebblewick Hopper is half fare.' },
+  { id: 'hide-regular', questId: 'nc-reedwatch', name: 'Reedwatch Regular', text: 'New birds and bird photos pay 20% more.' },
+  { id: 'estate-agent', questId: 'nc-hangar-and-boathouse', name: "Tansy's Word", text: 'Hangar Two and the Mossbank Boathouse cost 10% less.' },
+  { id: 'party-favour', questId: 'nc-party', name: 'Party Favour', text: 'Acorn-Flour Cake costs 10% less.' },
 ];
 
 const BY_ID = new Map<string, PerkDef>(PERKS.map((p) => [p.id, p]));
@@ -231,7 +278,37 @@ export const PRICE_PERKS: readonly { perk: PerkId; reasons: readonly string[]; s
   { perk: 'fizz-sponsor', reasons: ['Dandelion Fizz'], scale: 0 },
   { perk: 'mulch-rebate', reasons: ["Pay 'n' Glaze"], scale: 0.85 },
   { perk: 'carb-contacts', reasons: ['Turfton Taxi'], scale: 0.8 },
+  { perk: 'conductor-punch', reasons: ['Turfton Taxi'], scale: 0.9 },
+  { perk: 'impound-key', reasons: ['Sling-Lift'], scale: 0.75 },
+  { perk: 'weeping-line', reasons: ['Pebblewick'], scale: 0.8 },
+  { perk: 'combine-hum', reasons: ['Ratchet Repairs'], scale: 0 },
+  { perk: 'sling-regular', reasons: ['Sling-Lift'], scale: 0.85 },
+  { perk: 'staff-discount', reasons: ['Turfton Taxi'], scale: 0.85 },
+  { perk: 'slipway-regular', reasons: ["Wingwright's Slipway"], scale: 0.9 },
+  { perk: 'hopper-pass', reasons: ['Pebblewick Hopper'], scale: 0.5 },
+  { perk: 'estate-agent', reasons: ['Hangar Two', 'Mossbank Boathouse'], scale: 0.9 },
+  { perk: 'party-favour', reasons: ['Acorn-Flour Cake'], scale: 0.9 },
 ];
+
+/** Earnings multipliers by earn reason (perkEffects.ts wraps economy.earn). Matching scales multiply. */
+export const EARN_PERKS: readonly { perk: PerkId; reasons: readonly string[]; scale: number }[] = [
+  { perk: 'showoff', reasons: ['Near Miss'], scale: 1.2 },
+  { perk: 'scrap-eye', reasons: ['Scrap'], scale: 1.2 },
+  { perk: 'verge-volunteer', reasons: ['Lawn Service'], scale: 1.25 },
+  { perk: 'bent-pin-regular', reasons: ['The Bent Pin'], scale: 1.15 },
+  { perk: 'skyway-regular', reasons: ['Speed Trap Daredevil'], scale: 1.1 },
+  { perk: 'pigeon-tip', reasons: ['Pigeon-Drop parcel'], scale: 1.25 },
+  { perk: 'lodge-regular', reasons: ['Tuft & Tally Lodge'], scale: 1.15 },
+  { perk: 'hide-regular', reasons: ['Bird photo', 'New bird'], scale: 1.2 },
+];
+
+/** Earnings multiplier for an earn reason given the active perks (pure). */
+export function earnScaleFor(reason: string | undefined, active: ReadonlySet<PerkId>): number {
+  if (!reason) return 1;
+  let s = 1;
+  for (const p of EARN_PERKS) if (active.has(p.perk) && p.reasons.includes(reason)) s *= p.scale;
+  return s;
+}
 
 /** Price multiplier for a spend reason given the active perks (pure). The lowest matching scale wins. */
 export function priceScaleFor(reason: string | undefined, active: ReadonlySet<PerkId>): number {
@@ -243,5 +320,5 @@ export function priceScaleFor(reason: string | undefined, active: ReadonlySet<Pe
 
 /** Multiplier on world-event and street-event Acorn rewards. */
 export function perkRewardScale(): number {
-  return perkActive('shelldon-odds') ? 1.1 : 1;
+  return (perkActive('shelldon-odds') ? 1.1 : 1) * (perkActive('press-pass') ? 1.1 : 1) * (perkActive('neighbour-badge') ? 1.05 : 1);
 }

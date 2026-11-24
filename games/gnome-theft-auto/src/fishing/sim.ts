@@ -1,6 +1,7 @@
 // Fishing: the pure line simulation (cast, wait, bite, hook, reel with tension, land or lose). Plain data, no THREE, no
 // DOM. Every phase change resets s.t to 0; stepFishing adds dt to s.t first. No allocation in stepFishing.
 import { FIGHT, FISH, type FishEvent, type FishSpecies, type FishingState, type SimEnv, type SimInput } from './types';
+import { waveSurfaceOffset } from '../waves';
 
 export function createFishingState(): FishingState {
   return {
@@ -49,7 +50,8 @@ export function stepFishing(s: FishingState, inp: SimInput, env: SimEnv, dt: num
           s.fromZ = env.origin.z;
           s.toX = tx;
           s.toZ = tz;
-          s.surface = w;
+          // env.water is the wave-raised surface; keep the still level here (fishView adds the wave back to the bobber).
+          s.surface = w - waveSurfaceOffset(tx, tz);
           s.bobX = s.fromX;
           s.bobY = s.fromY;
           s.bobZ = s.fromZ;

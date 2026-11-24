@@ -411,6 +411,12 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       ceiling: 180, sinkRate: 1.6, bankMax: 0.05, pitchMax: 0.04, safeTouchdown: 3, touchdownDamage: 0.05, reverseFrac: 0.5,
     },
   },
+  // Tubing (tubing/runtime.ts): towed on a rope behind a boat (tubing steps it), or paddled slowly when let go.
+  'tow-tube': {
+    kind: 'tow-tube', mountStyle: 'hop', name: 'Tow Tube', prefab: 'tow-tube', scale: 1,
+    maxSpeed: 2.5, accel: 1.2, turnRate: 1.6, radius: 0.9, seat: [0, 0.32, 0], flies: false, mass: 0.6,
+    boat: true, draft: 0.05,
+  },
 };
 
 /**

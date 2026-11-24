@@ -24,6 +24,11 @@ When Vesper's lawyers threatened to replace union haulers with automated drones,
 
 "If Local 404 goes on strike, Turfton stalls in forty-eight hours flat."
 
+## In the games
+
+- Client of `city-skyway-robbery`, The Skyway Job (R-152): the HOA's strike-fund ledger. Grout wants it brought home to the Union Hall.
+- Part of the recurring city cast (R-151). He hands out his jobs at Dot's desk on the Kerbside Exchange (R-150).
+
 ## Loose threads
 
 Whether Grout really puts Black Dew in his Acorn-Cola, or if that's just a rumor he spreads to keep City Hall nervous.

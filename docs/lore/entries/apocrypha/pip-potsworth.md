@@ -24,6 +24,11 @@ Pip fled Fescue after bolting salvaged pram wheels onto a monastery wheelbarrowâ
 
 "If Pip offers you a 'legitimate import-export gig,' check whether the crate is humming before you lift it."
 
+## In the games
+
+- Client of `city-impound-run`, the Impound Run: his Zero-Turn was impounded by the HOA and resprayed at Pay 'n' Glaze.
+- Part of the recurring city cast (R-151); his jobs are pinned to the Kerbside Exchange's board.
+
 ## Loose threads
 
 Whether Pip ever plans to write back to his cousin Wendel Potsworth, and why he still keeps a tiny, unlabelled vial of Fescue soil taped inside his toolbox.

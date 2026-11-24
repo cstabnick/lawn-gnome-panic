@@ -298,4 +298,43 @@ export const CASINO: PrefabDef[] = [
       { s: 'box', d: [0.06, 0.04, 0.015], at: [0, 0.04, 0.18], c: 'trim' },
     ],
   },
+  {
+    id: 'velvet-rope-pass', name: 'Velvet Rope Pass', category: 'armor', uses: ['wear-neck'],
+    tags: ['velvet', 'rope', 'pass', 'ticket', 'visitor', 'neck', 'reward', 'gnomecino', 'crossover', 'brass', 'lanyard', 'turfton'],
+    emoji: [],
+    about: 'A thick red velvet cord worn round the neck with a brass door ticket hung at the front. Clear of the head and face (gear clearance).',
+    examine: [
+      'A thick red velvet cord with a brass door ticket hung at the front, the kind that clips onto a stanchion at a casino door.',
+      'Gnome saying: the rope is not there to keep you out. It is there to remind you that someone decided you could come in.',
+      'Tip: show the ticket to the bouncer and do not mention your hat. He has opinions about hats and you will lose that argument.',
+      'Joke: the velvet is the only thing in Turfton that has never been wet, and the bouncer would like to keep it that way.',
+      'The ticket is stamped with a door number nobody in the Yard can read, which is why it always opens the right door.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.21, 0.012], at: [0, 0.012, -0.05], rot: [90, 0, 0], c: 'red', seg: 12 },   // velvet cord (min.y = 0)
+      { s: 'ball', d: [0.008], at: [0, 0.03, 0.175], c: 'brass', seg: 6 },                           // ticket link
+      { s: 'box', d: [0.07, 0.09, 0.008], at: [0, 0.065, 0.18], c: 'brass' },                       // brass ticket
+      { s: 'box', d: [0.045, 0.05, 0.01], at: [0, 0.065, 0.186], c: 'white' },                      // stamped face
+    ],
+  },
+  {
+    id: 'house-money-roll', name: 'House Money Roll', category: 'trinket', uses: ['hold'],
+    tags: ['money', 'roll', 'bills', 'cash', 'chips', 'house', 'casino', 'hand', 'hold', 'reward', 'gnomecino', 'winnings', 'wad'],
+    emoji: [],
+    about: 'A fat roll of green notes bound with two red bands and a white label. Held by the grip at the middle of the roll.',
+    examine: [
+      'A fat roll of green notes bound with two red bands, each note folded once and pressed flat by a thumb that has counted it twice.',
+      'Gnome saying: a roll in the hand is worth two in the Gnomecino, and both are worth less than the drink you buy with them.',
+      'Tip: hold it by the middle, where the bands are. It looks thicker from the bar, which is the whole point of a roll.',
+      'Joke: the house never counts its winnings in front of you, so the roll is the only proof you were ever up.',
+      'The top note has a tiny pencil sum on the back. Nobody has added it up, and nobody is brave enough to ask whose handwriting it is.',
+    ],
+    grip: [0, 0.055, 0],
+    parts: [
+      { s: 'cyl', d: [0.035, 0.035, 0.11], at: [0, 0.055, 0], c: 'emerald', seg: 10 },   // the notes (0 to 0.11)
+      { s: 'ring', d: [0.037, 0.007], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'red', seg: 10 },  // lower band
+      { s: 'ring', d: [0.037, 0.007], at: [0, 0.08, 0], rot: [90, 0, 0], c: 'red', seg: 10 },  // upper band
+      { s: 'box', d: [0.06, 0.03, 0.004], at: [0, 0.055, 0.036], c: 'white' },                  // white label
+    ],
+  },
 ];

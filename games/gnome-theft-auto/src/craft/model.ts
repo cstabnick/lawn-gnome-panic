@@ -106,6 +106,8 @@ export interface HullSpec {
 export interface WaterSampler {
   water(x: number, z: number): { surface: number; depth: number } | null;
   bed(x: number, z: number): number;
+  /** Wave drift at (x, z) into out: the downwind direction x the local wave height (m). Absent = no wave push (waves.ts waveDrift at waveTime() in the game). */
+  drift?(x: number, z: number, out: { x: number; z: number }): void;
 }
 
 /** The stats a boat or aircraft can be tuned in (tuning.ts). */

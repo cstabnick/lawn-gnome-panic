@@ -65,7 +65,7 @@ function registerBuiltIns(): void {
   // Critters.
   for (const kind of Object.keys(CRITTER_SPECS) as CritterKind[]) {
     registerTrainerSpawnable('Critters', kind, kindLabel(kind), (at, ctx) => {
-      ctx.critters.spawn(kind, at.x, at.z, { yaw: at.yaw });
+      ctx.critters.spawn(kind, at.x, at.z, { yaw: at.yaw, group: 'trainer-spawn' });
       return `${kindLabel(kind)} spawned at the crosshair`;
     });
   }
@@ -128,7 +128,10 @@ export function registerSpawnSection(): void {
     order: 30,
     build(el, ctx) {
       const st = status();
-      el.append(st.el, note('Spawns where the camera looks (the crosshair), or 7 m ahead. Spawned things are not saved.'));
+      el.append(
+        st.el,
+        note('Spawns where the camera looks (the crosshair), or 7 m ahead. Spawned things are not saved; Clear spawned removes them.'),
+      );
 
       // Read at build time, so plug-ins registered later show up.
       for (const { group, items } of listTrainerSpawnables()) {
@@ -151,6 +154,14 @@ export function registerSpawnSection(): void {
         button('Clear street events', () => {
           clearStreetEvents();
           st.set('Street events cleared.');
+        }),
+      );
+      el.append(
+        button('Clear spawned', () => {
+          const vehicles = ctx.fleet.clearSpawned(ctx.player.vehicle);
+          const critters = ctx.critters.inGroup('trainer-spawn');
+          for (const c of critters) ctx.critters.remove(c);
+          st.set(`Cleared ${vehicles} vehicles and ${critters.length} critters.`);
         }),
       );
 

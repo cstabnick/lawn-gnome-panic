@@ -1,10 +1,13 @@
-// The Turfton Taxi: the player calls it (44px button, Y key, gamepad D-pad left), it drives up, the gnome climbs in
+// The Turfton Taxi: the player calls it (More menu, Y key, gamepad D-pad left), it drives up, the gnome climbs in
 // (mount.ts, run by app.ts), and Mabel Kerbstone takes them back to the Central Bus Stop (world.spawn): a short drive
 // off, a fade, and a roll up to the kerb. Numbers in config.ts TAXI.
 import type * as THREE from 'three';
 import { TAXI } from './config';
 import type { Economy } from './economy';
-import { heightAt, waterAt } from './terrain';
+import { registerAction } from './ui/actions';
+import { groundAt, heightAt, waterAt } from './terrain';
+import { deckContactsAt, deckSamples } from './highways/deck';
+import { kindOf } from './highways/skyways';
 import { createVehicle, removeVehicle } from './vehicles';
 import type { Blip, Box, Hud, Sfx, Vehicle, World } from './types';
 
@@ -25,7 +28,8 @@ export interface TaxiDeps {
   /** Why the taxi cannot be called right now (shown as a toast), or null when it can. app.ts decides (heat, a quest, ...). */
   blocked(): string | null;
   /** The player's ground position. */
-  player(): { x: number; z: number };
+  /** Where the player stands; y is their height (a skyway deck or the land). */
+  player(): { x: number; z: number; y?: number };
   /** A ride ended at the Bus Stop (app.ts counts it for the achievement). */
   onDropOff(): void;
 }
@@ -177,9 +181,31 @@ export function dropSpot(boxes: readonly Box[], spawn: { x: number; z: number })
   return make(dirs[0][0], dirs[0][1]);
 }
 
+/**
+ * When the player stands on a road-kind skyway deck (their height y matches the deck top within 1.5), the taxi comes
+ * along that deck: it starts 30 m back along the centre line (facing the player) and stops TAXI.stopDist short of
+ * the player. Null when the player is not on a deck.
+ */
+export function deckApproach(px: number, pz: number, py: number): { x: number; z: number; yaw: number; stopX: number; stopZ: number } | null {
+  for (const c of deckContactsAt(px, pz)) {
+    if (kindOf(c.skyway) !== 'road' || Math.abs(c.surfaceY - py) >= 1.5) continue;
+    const samples = deckSamples(c.skyway.id, 2);
+    if (samples.length === 0) continue;
+    const want = c.along - 30 >= 0 ? c.along - 30 : c.along + 30;
+    let start = samples[0];
+    for (const s of samples) if (Math.abs(s.along - want) < Math.abs(start.along - want)) start = s;
+    const dist = Math.hypot(px - start.x, pz - start.z);
+    if (dist < 1e-6) continue;
+    const ux = (px - start.x) / dist;
+    const uz = (pz - start.z) / dist;
+    const stopX = px - ux * TAXI.stopDist;
+    const stopZ = pz - uz * TAXI.stopDist;
+    return { x: start.x, z: start.z, yaw: Math.atan2(stopX - start.x, stopZ - start.z), stopX, stopZ };
+  }
+  return null;
+}
+
 const CSS = `
-#gta-taxi-btn{position:fixed;right:calc(env(safe-area-inset-right) + 210px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(20,20,20,.55);color:#fff;font-size:20px;line-height:1;padding:0;cursor:pointer;pointer-events:auto;touch-action:manipulation;}
-#gta-taxi-btn.on{border-color:#f2c230;box-shadow:0 0 0 2px rgba(242,194,48,.55);}
 #gta-taxi-fade{position:fixed;inset:0;z-index:40;background:#000;pointer-events:none;opacity:0;display:none;align-items:center;justify-content:center;font-family:system-ui,sans-serif;}
 #gta-taxi-fade .cap{color:#f2c230;font-weight:800;font-size:18px;text-align:center;padding:12px;}
 `;
@@ -201,23 +227,13 @@ export function createTaxi(deps: TaxiDeps): Taxi {
   let rideDone = false;
   let fare = 0;
 
-  // ---- UI (guarded so the module can be imported in node) ----
-  let btn: HTMLButtonElement | null = null;
+  // ---- UI (guarded so the module can be imported in node). No button: the taxi is called from the More menu (ui/actions.ts 'taxi'), Y, or the pad. ----
   let fadeEl: HTMLDivElement | null = null;
   let captionEl: HTMLDivElement | null = null;
   if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     const style = document.createElement('style');
     style.textContent = CSS;
     deps.ui.appendChild(style);
-
-    btn = document.createElement('button');
-    btn.id = 'gta-taxi-btn';
-    btn.setAttribute('aria-label', 'Turfton Taxi (Y)');
-    btn.title = 'Turfton Taxi (Y)';
-    btn.textContent = '🚕';
-    btn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    btn.addEventListener('click', () => toggle());
-    deps.ui.appendChild(btn);
 
     fadeEl = document.createElement('div');
     fadeEl.id = 'gta-taxi-fade';
@@ -233,10 +249,7 @@ export function createTaxi(deps: TaxiDeps): Taxi {
       toggle();
     });
     window.addEventListener('gta:taxi', () => toggle());
-  }
-
-  function syncButton(): void {
-    btn?.classList.toggle('on', v !== null);
+    registerAction('taxi', { run: () => toggle() });
   }
 
   function setFade(opacity: number): void {
@@ -269,7 +282,7 @@ export function createTaxi(deps: TaxiDeps): Taxi {
     v.speed = speed;
     v.x += Math.sin(v.yaw) * speed * dt;
     v.z += Math.cos(v.yaw) * speed * dt;
-    v.y = heightAt(v.x, v.z);
+    v.y = groundAt(v.x, v.z, v.y);
   }
 
   function toggle(): void {
@@ -298,10 +311,10 @@ export function createTaxi(deps: TaxiDeps): Taxi {
       return;
     }
 
-    const pick = pickApproach(world.boxes, p.x, p.z);
+    const pick = (p.y !== undefined && deckApproach(p.x, p.z, p.y)) || pickApproach(world.boxes, p.x, p.z);
     v = createVehicle(deps.scene, 'taxi', pick.x, pick.z, pick.yaw);
     v.questOwned = true;
-    v.y = heightAt(pick.x, pick.z);
+    v.y = groundAt(pick.x, pick.z, p.y ?? heightAt(pick.x, pick.z));
     vehicles.push(v);
     stop = { x: pick.stopX, z: pick.stopZ };
     fare = price;
@@ -309,7 +322,6 @@ export function createTaxi(deps: TaxiDeps): Taxi {
     phase = 'approach';
     deps.play('whistle');
     deps.hud.toast(`${driver}: "Turfton Taxi, on my way! Bus Stop fare: ${price} Acorns."`, 4500);
-    syncButton();
   }
 
   function stepRide(dt: number): TaxiEvent {
@@ -332,7 +344,7 @@ export function createTaxi(deps: TaxiDeps): Taxi {
       v.x = spot.from.x;
       v.z = spot.from.z;
       v.yaw = spot.from.yaw;
-      v.y = heightAt(v.x, v.z);
+      v.y = groundAt(v.x, v.z, v.y);
       v.speed = 0;
       dropStop = spot.stop;
       blackAt = t;
@@ -352,7 +364,7 @@ export function createTaxi(deps: TaxiDeps): Taxi {
     if (rem < 0.4 || el > TAXI.arriveS + 1.5) {
       v.x = dropStop.x;
       v.z = dropStop.z;
-      v.y = heightAt(v.x, v.z);
+      v.y = groundAt(v.x, v.z, v.y);
       v.speed = 0;
       setFade(0);
       rideDone = true;
@@ -383,7 +395,6 @@ export function createTaxi(deps: TaxiDeps): Taxi {
     },
     riding: () => phase === 'ride' && !rideDone,
     update(dt: number): TaxiEvent {
-      syncButton();
       if (!v || phase === 'idle') return null;
 
       if (phase === 'approach' || phase === 'waiting') {
@@ -399,11 +410,11 @@ export function createTaxi(deps: TaxiDeps): Taxi {
         timer += dt;
         const d0 = Math.hypot(stop.x - v.x, stop.z - v.z);
         const rem = driveToward(v, stop.x, stop.z, Math.min(TAXI.approachSpeed, d0 * 2 + 2), dt);
-        v.y = heightAt(v.x, v.z);
+        v.y = groundAt(v.x, v.z, v.y);
         if (rem < 0.6 || timer > TAXI.approachTimeout) {
           v.x = stop.x;
           v.z = stop.z;
-          v.y = heightAt(v.x, v.z);
+          v.y = groundAt(v.x, v.z, v.y);
           v.speed = 0;
           phase = 'waiting';
           timer = 0;
@@ -430,7 +441,6 @@ export function createTaxi(deps: TaxiDeps): Taxi {
         if (timer >= TAXI.leaveSeconds) {
           removeTaxi();
           phase = 'idle';
-          syncButton();
         }
       }
       return null;
@@ -454,7 +464,6 @@ export function createTaxi(deps: TaxiDeps): Taxi {
       blackAt = null;
       rideDone = false;
       setFade(0);
-      syncButton();
     },
   };
 }

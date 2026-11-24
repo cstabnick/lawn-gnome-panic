@@ -24,6 +24,8 @@ export interface SceneryPlan {
   boxes: Box[];
 }
 
+/** Road ids with this prefix are town streets: no roadside walls or signature props along them. */
+const STREET_PREFIX = 'street/';
 /** Keep-out grown round the city square. */
 const CITY_GROW = 40;
 /** The world's playable square half size: nothing is planted beyond it. */
@@ -256,6 +258,8 @@ export function planScenery(existing: readonly Box[], stageKeep: readonly Box[] 
 
   // 1. Roadsides: every highway, both sides, walked end to end with the theme's piece (themes blend near borders).
   HIGHWAYS.forEach((h: Highway, hi: number) => {
+    // Town streets ('street/...', e.g. Pebblewick's: src/outskirts/) are lined by their town, not by country walls.
+    if (h.id.startsWith(STREET_PREFIX)) return;
     for (let k = 0; k + 1 < h.points.length; k++) {
       const [ax, az] = h.points[k], [bx, bz] = h.points[k + 1];
       const L = Math.hypot(bx - ax, bz - az);
@@ -289,6 +293,7 @@ export function planScenery(existing: readonly Box[], stageKeep: readonly Box[] 
 
   // 2. Signature props: one from the theme, 15-20 m off the road on a random side, every 90-150 m along it.
   HIGHWAYS.forEach((h: Highway, hi: number) => {
+    if (h.id.startsWith(STREET_PREFIX)) return;
     const rnd = mulberry32(9100 + hi);
     let s = SIGNATURE_STEP.min * rnd();
     for (;;) {

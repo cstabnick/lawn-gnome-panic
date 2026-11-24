@@ -14,7 +14,7 @@ import { createLodge } from './lodge';
 import { createLodgeUi } from './lodgeUi';
 import {
   canComb, combQuarry, createQuarry, quarryContains, shootQuarry, stepQuarry,
-  type Quarry, type QuarryEnv,
+  type Quarry, type QuarryEnv, type QuarryFrame,
 } from './quarry';
 import { createQuarryView } from './quarryView';
 import { registerHuntSounds } from './sounds';
@@ -57,6 +57,18 @@ export interface HuntFrame {
   paused: boolean;
 }
 
+/** Online routing for quarry (src/online/huntSync.ts). Absent offline: every quarry is local. */
+export interface HuntNet {
+  /** False: another player owns q; it is mirrored here, not stepped. */
+  owns(q: Quarry): boolean;
+  /** The player the owner steps q against (the nearest one); null = the local player. */
+  focus(q: Quarry): { x: number; z: number; noise: number } | null;
+  /** I shot (downed or bounced) a quarry another player owns. */
+  shot(q: Quarry, fromX: number, fromZ: number, dist: number): void;
+  /** I combed a quarry another player owns. */
+  combed(q: Quarry): void;
+}
+
 export interface Hunting {
   readonly boxes: readonly Box[];
   readonly blips: readonly Blip[];
@@ -72,6 +84,12 @@ export interface Hunting {
   update(f: HuntFrame): void;
   /** Debug trainer: spawn one quarry of `id` at (x, z) (nudged to open land in its region). Null for an unknown id. */
   spawn(id: string, x: number, z: number): Quarry | null;
+  /** Online: route quarry another player owns through `n` (null = all local). */
+  setNet(n: HuntNet | null): void;
+  /** A guest shot a quarry I own: apply it here (same fx and sound as a local hit, no achievements). */
+  remoteShot(q: Quarry, fromX: number, fromZ: number, dist: number): void;
+  /** A guest combed a quarry I own: knock the comb state in here. */
+  remoteComb(q: Quarry, fromX: number, fromZ: number): void;
 }
 
 const COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
@@ -118,6 +136,7 @@ export function createHunting(deps: HuntDeps): Hunting {
   const trackView = createTrackView(deps.scene);
   const list: Quarry[] = [];
   let nextId = 1;
+  let nextDebugId = 100000;
   let seed = 7654321;
   const rnd = (): number => {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
@@ -160,7 +179,8 @@ export function createHunting(deps: HuntDeps): Hunting {
     if (!s) return null;
     const p = spawnSpot(s, x, z, deps.world);
     if (!p) return null;
-    const q = createQuarry(nextId++, s, p.x, p.z, envFor(s), leash);
+    // Debug spawns use their own ids (100000+) so they never clash with the seeded plan on other clients.
+    const q = createQuarry(nextDebugId++, s, p.x, p.z, envFor(s), leash);
     q.yaw = rnd() * Math.PI * 2;
     q.callT = s.callEvery[0] + rnd() * (s.callEvery[1] - s.callEvery[0]);
     list.push(q);
@@ -186,6 +206,16 @@ export function createHunting(deps: HuntDeps): Hunting {
   let bounceToastT = 0;
   let toldNoLicense = false;
   const flying = new Set<Quarry>();
+  let net: HuntNet | null = null;
+  /** Reused frame for a quarry stepped against another player (online); no allocation per quarry. */
+  const focusFrame: QuarryFrame = { dt: 0, playerX: 0, playerZ: 0, noise: 0, night: 0, shot: false };
+
+  /** The smash, thump and call of a quarry going down (a local hit or a guest's shot). */
+  function downFx(q: Quarry): void {
+    deps.fx.smash?.(q.x, q.y + q.species.height * 0.5, q.z, q.species.puff);
+    deps.play('bump');
+    playAt(q.species.call, q, { param: 1 });
+  }
 
   function combable(player: Player): Quarry | null {
     if (player.vehicle || player.airborne) return null;
@@ -214,6 +244,7 @@ export function createHunting(deps: HuntDeps): Hunting {
     const res = store.recordComb(s, keepsake, q.lastShotDist);
     if (!res.added) return;
     combQuarry(q, px, pz);
+    if (net && !net.owns(q)) net.combed(q);
     deps.fx.smash?.(q.x, q.y + s.height * 0.5, q.z, s.tuft.color);
     playAt('hunt-comb', q);
     deps.hud.toast(keepsake ? `Combed: ${s.tuft.name}, and a ${s.keepsake.name}!` : `Combed: ${s.tuft.name}.`, 3500);
@@ -258,6 +289,7 @@ export function createHunting(deps: HuntDeps): Hunting {
         const dist = Math.hypot(q.x - px, q.z - pz);
         const r = shootQuarry(q, px, pz, dist);
         if (r === 'miss') continue;
+        if (net && !net.owns(q)) net.shot(q, px, pz, dist);
         if (r === 'bounced') {
           playAt('hunt-bounce', q);
           deps.fx.spark(x, y, z);
@@ -267,9 +299,7 @@ export function createHunting(deps: HuntDeps): Hunting {
           }
           return true;
         }
-        deps.fx.smash?.(q.x, q.y + q.species.height * 0.5, q.z, q.species.puff);
-        deps.play('bump');
-        playAt(q.species.call, q, { param: 1 });
+        downFx(q);
         if (dist >= HUNT.longShot) deps.unlock(HUNT_ACHIEVEMENTS.longShot);
         return true;
       }
@@ -292,6 +322,16 @@ export function createHunting(deps: HuntDeps): Hunting {
     isOpen: () => lodgeUi.isOpen(),
     close: () => lodgeUi.close(),
     spawn: (id, x, z) => spawn(id, x, z),
+    setNet(n) { net = n; },
+    remoteShot(q, fromX, fromZ, dist) {
+      const r = shootQuarry(q, fromX, fromZ, dist);
+      if (r === 'downed') downFx(q);
+      else if (r === 'bounced') {
+        playAt('hunt-bounce', q);
+        deps.fx.spark(q.x, q.y + q.species.height * 0.5, q.z);
+      }
+    },
+    remoteComb(q, fromX, fromZ) { combQuarry(q, fromX, fromZ); },
     update(f) {
       px = f.playerX;
       pz = f.playerZ;
@@ -307,7 +347,25 @@ export function createHunting(deps: HuntDeps): Hunting {
         : f.footSpeed < 0.5 ? 0.15 : f.footSpeed < 4 ? 0.45 : 1;
       const frame = { dt: f.dt, playerX: f.playerX, playerZ: f.playerZ, noise, night: f.night, shot };
       for (const q of list) {
-        stepQuarry(q, frame, envFor(q.species));
+        // Online: a quarry another player owns is mirrored, not stepped; one I own is stepped against its nearest gnome.
+        let owned = true;
+        let stepF: QuarryFrame = frame;
+        if (net) {
+          if (!net.owns(q)) owned = false;
+          else {
+            const fo = net.focus(q);
+            if (fo) {
+              focusFrame.dt = f.dt;
+              focusFrame.playerX = fo.x;
+              focusFrame.playerZ = fo.z;
+              focusFrame.noise = fo.noise;
+              focusFrame.night = f.night;
+              focusFrame.shot = false;
+              stepF = focusFrame;
+            }
+          }
+        }
+        if (owned) stepQuarry(q, stepF, envFor(q.species));
         leavePrints(tracks, q);
         // Calls: a tracking cue by ear.
         q.callT -= f.dt;

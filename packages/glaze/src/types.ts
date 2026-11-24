@@ -3,7 +3,7 @@
 // Conventions (same as the prefab library): prefab-local coordinates are in the prefab's own units BEFORE any root scale; the front is +z;
 // +x is the vehicle's LEFT (three.js), so a "left" thing sits at +x and a "right" thing at -x; rotations in a data table are DEGREES.
 import type * as THREE from 'three';
-import type { Vec3 } from '@lawn/prefabs';
+import type { Part, Vec3 } from '@lawn/prefabs';
 import type {
   BEAM_IDS, BUMPER_IDS, CANOPY_IDS, DECAL_IDS, EXHAUST_IDS, EXTRA_IDS, FINISH_IDS, GRILLE_IDS, HORN_IDS, LAMP_IDS, MIRROR_IDS,
   ORNAMENT_IDS, RIM_IDS, SEAT_IDS, SPOILER_IDS, STEER_IDS, TYRE_IDS,
@@ -160,6 +160,17 @@ export interface SteerVariant {
   wheelAt: Vec3;
   /** Foot of a new column that runs from here up to the wheel, prefab-local. Omit for no column. */
   columnBase?: Vec3;
+  /**
+   * Indices into the base def's `parts` that join the pivot's group, so a wheel modelled as a plain part (no pivot) turns with the steering.
+   * When the base has no pivot of that name they move by (wheelAt - from).
+   */
+  groupParts?: readonly number[];
+  /** Indices into the base def's `parts` that move with the control by the same offset but stay fixed (a column). */
+  moveParts?: readonly number[];
+  /** Where the control was in the base def, for a pivot the base does not have (groupParts and moveParts move by wheelAt - from). Default wheelAt: they stay put. */
+  from?: Vec3;
+  /** New parts added to the pivot's group (a stick, a yoke, a helm), `at` absolute prefab-local like every grouped part. */
+  addParts?: readonly Part[];
 }
 
 export interface GlazeBodyOptions {

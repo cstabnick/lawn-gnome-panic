@@ -81,8 +81,8 @@ export const GNOME_THEFT_AUTO: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'box', d: [0.9, 0.16, 1.6], at: [0, 0.42, 0.15], c: 'tint' },                              // deck
-      { s: 'box', d: [0.95, 0.2, 0.9], at: [0, 0.24, 0.1], c: DECK_GREY },                              // mowing deck
-      { s: 'box', d: [0.5, 0.16, 0.5], at: [0, 0.42, -0.3], c: 'black' },                              // seat cushion
+      { s: 'box', d: [0.95, 0.2, 0.9], at: [0, 0.22, 0.1], c: DECK_GREY },                              // mowing deck (top 0.32, 2 cm under the deck, so no shared face)
+      { s: 'box', d: [0.5, 0.16, 0.5], at: [0, 0.44, -0.3], c: 'black' },                              // seat cushion (top 0.52, 2 cm proud of the deck top, so no shared face)
       { s: 'box', d: [0.5, 0.6, 0.1], at: [0, 0.8, -0.6], c: 'black' },                                // backrest
       { s: 'box', d: [0.5, 0.3, 0.3], at: [0, 0.55, -0.85], c: 'iron-dark' },                          // engine block
       { s: 'cyl', d: [0.02, 0.02, 0.36], rot: [90, 0, 0], at: [-0.32, 0.6, -0.1], c: 'iron', seg: 6, group: 'steer', mirror: true }, // lap bars

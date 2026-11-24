@@ -1,4 +1,4 @@
-// The gnome animation table: every row from the five category files, looked up by id. Play one with animator.ts.
+// The gnome animation table: every row from the category files, looked up by id. Play one with animator.ts.
 // The debug trainer and the emote menu list from here (listAnims), so a new row shows up everywhere by itself.
 import { DANCE_ANIMS } from './dances';
 import { EMOTE_ANIMS } from './emotes';
@@ -10,19 +10,28 @@ import { REACT_B_ANIMS } from './reactsB';
 import { RIDE_ANIMS } from './ride';
 import { ROLE_ANIMS } from './roles';
 import { WORK_ANIMS } from './work';
+import { BIT_ANIMS } from './bits';
+import { DRIVE_ANIMS } from './drive';
+import { MOOD_ANIMS } from './moods';
+import { REACT_C_ANIMS } from './reactsC';
+import { SOCIAL_ANIMS } from './social';
+import { STYLE_ANIMS } from './styles';
+import { JOB_ANIMS } from './jobs';
 import type { AnimCategory, AnimDef, AnimId } from './types';
 
 export * from './types';
 
-/** Every animation, in menu order: emotes, dances, idles, jobs, work, hunting, riding, reactions. */
+/** Every animation, in menu order: emotes, dances, idles, styles, bits, together, jobs, work, hunting, riding, driving, reactions. */
 export const ANIMS: readonly AnimDef[] = [
-  ...EMOTE_ANIMS, ...EMOTE_B_ANIMS, ...DANCE_ANIMS, ...IDLE_ANIMS, ...ROLE_ANIMS, ...WORK_ANIMS, ...HUNT_ANIMS,
-  ...RIDE_ANIMS, ...REACT_ANIMS, ...REACT_B_ANIMS,
+  ...EMOTE_ANIMS, ...EMOTE_B_ANIMS, ...DANCE_ANIMS, ...IDLE_ANIMS, ...STYLE_ANIMS, ...MOOD_ANIMS, ...BIT_ANIMS,
+  ...SOCIAL_ANIMS, ...ROLE_ANIMS, ...WORK_ANIMS, ...HUNT_ANIMS, ...RIDE_ANIMS, ...DRIVE_ANIMS, ...REACT_ANIMS,
+  ...REACT_B_ANIMS, ...REACT_C_ANIMS, ...JOB_ANIMS,
 ];
 
 /** Menu tabs: category and title, in order. */
 export const ANIM_TABS: readonly { category: AnimCategory; title: string }[] = [
   { category: 'emote', title: 'Emotes' }, { category: 'dance', title: 'Dances' }, { category: 'idle', title: 'Poses' },
+  { category: 'style', title: 'Style' }, { category: 'bit', title: 'Bits' }, { category: 'social', title: 'Together' },
   { category: 'role', title: 'Jobs' }, { category: 'work', title: 'Work' }, { category: 'hunt', title: 'Hunt' },
   { category: 'ride', title: 'Ride' }, { category: 'react', title: 'Reactions' },
 ];
@@ -40,9 +49,16 @@ export function listAnims(filter: { category?: AnimCategory; emote?: boolean } =
     && (filter.emote === undefined || a.emote === filter.emote));
 }
 
-/** True when the row moves only the arms, so it may keep playing while the gnome walks. */
+/** True when the row may keep playing while the gnome walks: it moves only the arms, or it is an `onMove` overlay. */
 export function upperBodyOnly(def: AnimDef): boolean {
+  if (def.onMove) return true;
   return def.parts.every((p) => p === 'armL' || p === 'armR') && !def.pose(0).lift;
+}
+
+/** The row a partner plays opposite `id` (pair rows), or undefined. */
+export function pairOf(id: string): AnimDef | undefined {
+  const p = byId.get(id)?.pair;
+  return p ? byId.get(p) : undefined;
 }
 
 /** A stable pick from `ids` for a key (a gnome's id or name), so the same gnome always gets the same idle. */

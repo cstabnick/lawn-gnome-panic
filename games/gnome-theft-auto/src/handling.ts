@@ -31,7 +31,7 @@ export const TUNES: Tune[] = [
   { id: 'hybrid', name: 'Open World', blurb: 'Action-game balance: some slide, some help.', base: 'hybrid', group: 'realism' },
   { id: 'simcade', name: 'Simcade', blurb: 'Real weight transfer, light assists. Easy to spin.', base: 'simcade', group: 'realism' },
   {
-    id: 'drift', name: 'Drift Mower', blurb: 'Loose rear, keeps the slide going. Hold Space.', base: 'hybrid', group: 'silly',
+    id: 'drift', name: 'Drift Mower', blurb: 'Loose rear, keeps the slide going. Hold the handbrake.', base: 'hybrid', group: 'silly',
     over: {
       tires: { latPacejkaRear: { D: 1.0 } },
       drivetrain: { handbrakeTorqueRearNm: 7000, limitedSlipRear: 0.9 },

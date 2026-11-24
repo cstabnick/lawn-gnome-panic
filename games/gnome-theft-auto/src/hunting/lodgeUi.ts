@@ -3,6 +3,8 @@
 // buying and selling are greyed out).
 import { prefabIconElement } from '@lawn/prefabs';
 import type { Sfx } from '../types';
+import { ensureGlyphStyle, fillHintHtml } from '../ui/glyphs';
+import { currentGlyphSet } from '../ui/inputSource';
 import { itemInfo, type HuntStore } from './huntSave';
 import { HUNT, LODGE, SPECIES } from './species';
 
@@ -68,6 +70,7 @@ const CSS = `
 #gta-hunt-lodge .gh-blurb{margin:4px 0;font-style:italic;}
 #gta-hunt-lodge .gh-meta{font-size:12px;color:#e8c98a;}
 #gta-hunt-lodge .gh-hint{font-size:13px;margin-top:4px;opacity:0.85;}
+#gta-hunt-lodge .gh-foot{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:#f3e9d2;opacity:0.7;text-align:center;overflow:hidden;text-overflow:ellipsis;}
 `;
 
 function injectStyle(): void {
@@ -92,6 +95,7 @@ function regionName(id: string): string {
 
 export function createLodgeUi(ui: HTMLElement, deps: LodgeUiDeps): LodgeUi {
   injectStyle();
+  ensureGlyphStyle();
   let opened = false;
   let tab: LodgeTab = 'lodge';
   let atLodge = false;
@@ -128,7 +132,8 @@ export function createLodgeUi(ui: HTMLElement, deps: LodgeUiDeps): LodgeUi {
   }
 
   const body = el('div', 'gh-body');
-  root.append(head, tabsEl, body);
+  const foot = el('div', 'gh-foot');
+  root.append(head, tabsEl, body, foot);
   ui.appendChild(root);
 
   // The sheet is modal for input: pointer and touch must not reach the game behind it.
@@ -229,6 +234,11 @@ export function createLodgeUi(ui: HTMLElement, deps: LodgeUiDeps): LodgeUi {
     if (e.code === 'Escape' && opened) close();
   }
 
+  function refreshFoot(): void {
+    foot.style.display = currentGlyphSet() === 'touch' ? 'none' : '';
+    foot.innerHTML = fillHintHtml('{close} Close');
+  }
+
   function open(t: LodgeTab, at: boolean): void {
     tab = t;
     atLodge = at;
@@ -239,6 +249,7 @@ export function createLodgeUi(ui: HTMLElement, deps: LodgeUiDeps): LodgeUi {
     }
     root.style.display = '';
     if (document.pointerLockElement) document.exitPointerLock();
+    refreshFoot();
     render();
   }
 

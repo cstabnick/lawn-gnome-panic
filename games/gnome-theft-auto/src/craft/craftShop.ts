@@ -6,6 +6,10 @@ import { glazePanelsFor } from '../glazePanels';
 import { isCraftKind, ownedLoadout, saveOwnedLoadout } from '../glazeStore';
 import { isTyping, KEYS } from '../keys';
 import { aboveGround } from '../terrain';
+import { registerAction } from '../ui/actions';
+import { dockButton } from '../ui/dock';
+import { ensureGlyphStyle, fillHintHtml } from '../ui/glyphs';
+import { currentGlyphSet } from '../ui/inputSource';
 import type { Hud, Sfx, Vehicle, VehicleKind } from '../types';
 import type { CraftStat } from './model';
 import { CRAFT_PAINT_PRICE, CRAFT_PANEL_IDS, getTuneDraft, registerCraftPanels, setTuneDraft } from './craftPanels';
@@ -45,7 +49,6 @@ const CRAFT_STYLE_ID = 'gta-craft-shop-style';
 /** The Glaze widget styles are scoped under #gta-glaze; the same rules under #gta-craft-shop style the Slipway's own tree. */
 const CRAFT_CSS = `
 #gta-craft-shop .gta-craft-fab{
-  position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 72px);transform:translateX(-50%);
   min-width:44px;min-height:44px;padding:8px 16px;border-radius:12px;border:2px solid #ffd23f;background:#181c20;
   color:#ffd23f;font:800 14px system-ui,-apple-system,sans-serif;pointer-events:auto;cursor:pointer;touch-action:manipulation;
 }
@@ -62,9 +65,11 @@ const CRAFT_CSS = `
 #gta-craft-shop .craft-pip{font-size:16px;color:#ffd23f;margin-right:2px;}
 #gta-craft-shop .craft-pip.owned{color:#7be08a;}
 #gta-craft-shop .craft-tune-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#gta-craft-shop .craft-foot{padding:6px 14px 10px;font-size:12px;text-align:center;opacity:0.7;overflow:hidden;text-overflow:ellipsis;}
 `;
 
 function injectStyles(): void {
+  ensureGlyphStyle();
   if (!document.getElementById(GLAZE_STYLE_ID)) {
     const style = document.createElement('style');
     style.id = GLAZE_STYLE_ID;
@@ -142,9 +147,13 @@ export function createCraftShop(ui: HTMLElement, hud: Hud, deps: CraftShopDeps):
   btnRow.append(closeBtn, buyBtn);
   foot.append(priceEl, btnRow);
 
-  sheet.append(head, tabsEl, bodyEl, foot);
-  root.append(fab, sheet);
+  const hintEl = document.createElement('div');
+  hintEl.className = 'craft-foot';
+
+  sheet.append(head, tabsEl, bodyEl, foot, hintEl);
+  root.append(sheet);
   ui.appendChild(root);
+  dockButton(fab, 'craftShop');
 
   // The shop is modal for input: pointer and touch must not reach the game behind it.
   sheet.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -237,6 +246,8 @@ export function createCraftShop(ui: HTMLElement, hud: Hud, deps: CraftShopDeps):
     });
     fab.style.display = 'none';
     sheet.style.display = '';
+    hintEl.style.display = currentGlyphSet() === 'touch' ? 'none' : '';
+    hintEl.innerHTML = fillHintHtml('{close} Close');
     showTab(st, 0);
     refreshPrice();
   }
@@ -284,6 +295,10 @@ export function createCraftShop(ui: HTMLElement, hud: Hud, deps: CraftShopDeps):
   }
 
   fab.addEventListener('click', () => toggle());
+  registerAction('craftShop', {
+    run: () => toggle(),
+    available: () => fab.style.display !== 'none',
+  });
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (isTyping(e)) return;

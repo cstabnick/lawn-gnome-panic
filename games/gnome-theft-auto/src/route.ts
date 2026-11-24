@@ -1,21 +1,48 @@
 // The HUD's route to a waypoint along the road graph (world.roads). Pure: plain data in, a polyline out.
-import type { RoadGraph, RoadNode } from './types';
+import type { HudRoute, RoadGraph, RoadNode } from './types';
+import { isDeckNode, nearestRoadNode } from './highways/roads';
+import { deckContactsAt } from './highways/deck';
+import { heightAt } from './terrain';
 
-export interface Pt { x: number; z: number }
+/** A point; y (optional) is the height the route starts at, so a car on a skyway deck starts on the deck. */
+export interface Pt { x: number; z: number; y?: number }
+
+/** One route point. `level` is what the stretch from this point to the next is (unset = ordinary ground). */
+export type RoutePt = HudRoute['points'][number];
+type Level = RoutePt['level'];
 
 /** Below this straight-line distance the route is just the straight line. */
 export const ROUTE_DIRECT = 60;
 
+/** Ground stretches are sampled every STEP metres to find the underpasses. */
+const STEP = 4;
+/** A deck this far above the land at a point makes that point an underpass ('under'). */
+const UNDER_GAP = 2.5;
+
 const dist = (a: Pt, b: Pt): number => Math.hypot(a.x - b.x, a.z - b.z);
 
-function nearest(nodes: RoadNode[], p: Pt): RoadNode {
-  let best = nodes[0];
-  let bestD = Infinity;
-  for (const n of nodes) {
-    const d = dist(n, p);
-    if (d < bestD) { bestD = d; best = n; }
+/** True when a skyway deck passes this far above the land at (x, z): the route runs beneath it. */
+function isUnder(x: number, z: number): boolean {
+  const contacts = deckContactsAt(x, z);
+  if (contacts.length === 0) return false;
+  const land = heightAt(x, z);
+  return contacts.some((c) => c.surfaceY > land + UNDER_GAP);
+}
+
+/**
+ * Appends a ground stretch a -> b. Its first point (a) is always appended; a step point is added wherever the
+ * level changes, so every stretch has one level.
+ */
+function groundStretch(a: Pt, b: Pt, out: RoutePt[]): void {
+  const n = Math.max(1, Math.ceil(dist(a, b) / STEP));
+  let prev: Level;
+  for (let k = 0; k < n; k++) {
+    const x = a.x + ((b.x - a.x) * k) / n;
+    const z = a.z + ((b.z - a.z) * k) / n;
+    const level: Level = isUnder(x, z) ? 'under' : undefined;
+    if (k === 0 || level !== prev) out.push(level ? { x, z, level } : { x, z });
+    prev = level;
   }
-  return best;
 }
 
 /** A* over the road links. Returns the node path start..goal, or null when they are not connected. */
@@ -67,13 +94,15 @@ function astar(byId: Map<number, RoadNode>, start: RoadNode, goal: RoadNode): Ro
  * A route from `from` to `to` along the roads: [from, ...road nodes, to]. Falls back to the straight line [from, to]
  * when the graph is empty, the two points are close (ROUTE_DIRECT units), or no road path joins them.
  */
-export function roadRoute(graph: RoadGraph, from: Pt, to: Pt): Pt[] {
-  const direct: Pt[] = [{ x: from.x, z: from.z }, { x: to.x, z: to.z }];
+export function roadRoute(graph: RoadGraph, from: Pt, to: Pt): RoutePt[] {
+  const direct: RoutePt[] = [{ x: from.x, z: from.z }, { x: to.x, z: to.z }];
   const nodes = graph.nodes;
   if (nodes.length === 0 || dist(from, to) < ROUTE_DIRECT) return direct;
 
-  const a = nearest(nodes, from);
-  const b = nearest(nodes, to);
+  // The start may be up on a deck (from.y), the goal is on the ground.
+  const a = nearestRoadNode(nodes, from.x, from.z, from.y);
+  const b = nearestRoadNode(nodes, to.x, to.z);
+  if (!a || !b) return direct;
   // Walking to the road and back off it costs more than going straight: no road helps.
   if (dist(from, a) + dist(b, to) > dist(from, to)) return direct;
 
@@ -89,9 +118,22 @@ export function roadRoute(graph: RoadGraph, from: Pt, to: Pt): Pt[] {
     if (dist(to, prev) < dist(last, prev)) path = path.slice(0, -1);
   }
 
-  return [
-    { x: from.x, z: from.z },
-    ...path.map((n) => ({ x: n.x, z: n.z })),
-    { x: to.x, z: to.z },
+  // The leg from a raised start is on the deck; any other stretch between two deck nodes is on the deck; the rest
+  // is ground, walked for underpasses.
+  const elevated = from.y !== undefined && from.y > heightAt(from.x, from.z) + UNDER_GAP;
+  const seq: { p: Pt; deck: boolean }[] = [
+    { p: from, deck: elevated },
+    ...path.map((n) => ({ p: n, deck: isDeckNode(n) })),
+    { p: to, deck: false },
   ];
+  const out: RoutePt[] = [];
+  for (let i = 0; i < seq.length - 1; i++) {
+    const { p } = seq[i];
+    const { p: q, deck: qDeck } = seq[i + 1];
+    const onDeck = i === 0 ? elevated : seq[i].deck && qDeck;
+    if (onDeck) out.push({ x: p.x, z: p.z, level: 'deck' });
+    else groundStretch(p, q, out);
+  }
+  out.push({ x: to.x, z: to.z });
+  return out;
 }

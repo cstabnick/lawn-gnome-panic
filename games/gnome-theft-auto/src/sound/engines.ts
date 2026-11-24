@@ -47,6 +47,8 @@ const EXTRA_DEFAULTS: Omit<EngineSound, keyof EngineProfile | 'id' | 'wave'> = {
 const TABLE: Record<string, EngineSoundDef> = {
   // No engine: pedal power and a turtle.
   'push-bike': { silent: true, gain: 0 },
+  // Tubing (tubing/): towed or paddled, no engine.
+  'tow-tube': { silent: true, gain: 0 },
   tessie: { silent: true, gain: 0 },
 
   // Mowers.
@@ -163,6 +165,8 @@ export interface EngineCondition {
   waterlog?: number;
   /** Vehicle.waterlogStalled: flooded, will not run. */
   stalled?: boolean;
+  /** A boat's prop clear of the water (waves.ts airtime), 0..1: the engine races. */
+  propOut?: number;
 }
 
 /** What the condition does to the sound. */
@@ -188,6 +192,8 @@ export function conditionMix(p: EngineSound, c: EngineCondition = {}): Condition
   const rough = clamp01(p.rough + (electric ? 0.1 : 0.35) * d + 0.3 * w);
   const pitch = 1 - 0.08 * w - 0.05 * d;
   if (c.stalled) return { misfire: Math.max(4, misfire), rough: clamp01(rough + 0.4), level: 0.35, pitch: pitch * 0.6 };
+  const po = clamp01(c.propOut ?? 0);
+  if (po > 0) return { misfire, rough, level: 1 - 0.25 * po, pitch: pitch * (1 + 0.18 * po) };
   return { misfire, rough, level: 1, pitch };
 }
 

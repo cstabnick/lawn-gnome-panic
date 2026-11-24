@@ -40,3 +40,28 @@ tab is visible (feature report `87 03 09 00`, repeated every second; lizard mode
 implementation (vice7770/surfing-game, `src/game/steam/`), which was also untested on hardware when written, and
 are covered here by unit tests and a mocked WebHID device only. If a button or axis is off, fix `BUTTON_BITS` and
 `decodeSteamReport` in `src/steam.ts`.
+
+## Glyphs
+
+`glyphs.ts` draws the button icons for a pad. Pure functions, no DOM access:
+
+- `padFamily(pad.id)` returns `'xbox' | 'playstation' | 'switch' | 'steam' | 'generic'` from the `Gamepad.id`
+  (vendor ids 045e, 054c, 057e and 28de are matched too). Unknown pads are `'generic'`, which uses Xbox letters.
+- `glyphLabel(family, button)` is the short text: Xbox and generic use A/B/X/Y, LB/RB, LT/RT, View/Menu (generic:
+  Back/Start); Steam is Xbox with a Steam home; PlayStation uses ✕ ○ □ △, L1/R1, L2/R2, Create/Options, PS; Switch uses
+  B/A/Y/X by position, L/R, ZL/ZR, −/+, Home.
+- `glyphName(family, button)` is the spoken name ("Cross button", "Left bumper", "L2 trigger") for `aria-label` and
+  `title`.
+- `glyphColor(family, button)` is the face-button fill (Xbox and generic: green, red, blue, yellow; PlayStation: its
+  four shape colours), or `null` for everything drawn in white on dark.
+- `glyphSvg(family, button, size = 22)` is an inline SVG string with `role="img"` and an `aria-label`. It has no
+  ids and no external references, so it is safe to set as `innerHTML`.
+
+```ts
+import { glyphSvg, padFamily } from '@lawn/gamepad';
+
+el.innerHTML = glyphSvg(padFamily(pad.id), 'south');
+```
+
+All SVGs are self-drawn (letters, the ✕ ○ □ △ shapes, rounded bumpers and triggers, a plus d-pad). No brand logos.
+Switch labels follow the button's position, not its printed letter: the standard mapping's south button is Switch B.

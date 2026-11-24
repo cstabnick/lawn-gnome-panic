@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { PALETTE, ISLAND_TOPS } from '../config';
-import { GRADIENT, toonMat, addOutline, toonify } from './toon';
+import { GRADIENT, SUN_DIR, toonMat, groundToonMat, addOutline, toonify } from './toon';
 import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
 import type { Hazard, Island, Kicker, Pipe, Rail, World } from '../world';
 
@@ -57,11 +57,15 @@ const yAt = (isl: Island, x: number, z: number): number => (WORLD ? runY(WORLD, 
 class Builder {
   private p: V3[] = [];
   private c: V3[] = [];
+  private e: number[] = [];
+  private hasEdge = false;
   private tris: number[] = [];
 
-  vert(p: V3, c: V3): number {
+  vert(p: V3, c: V3, edge?: number): number {
     this.p.push(p);
     this.c.push(c);
+    if (edge !== undefined) this.hasEdge = true;
+    this.e.push(edge ?? 0);
     return this.p.length - 1;
   }
 
@@ -87,6 +91,7 @@ class Builder {
     let g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    if (this.hasEdge) g.setAttribute('aEdge', new THREE.BufferAttribute(new Float32Array(this.e), 1));
     g.setIndex(this.tris);
     if (flat) g = g.toNonIndexed();
     g.computeVertexNormals();
@@ -119,18 +124,21 @@ function buildTop(isl: Island, snow: boolean): THREE.Mesh {
   const base = ISLAND_TOPS[isl.color % ISLAND_TOPS.length];
   const up: V3 = [0, 1, 0];
   const n = Math.max(8, Math.ceil((2 * ra) / STEP));
-  const grid: { x: number; y: number; z: number; k: number }[][] = [];
+  const grid: { x: number; y: number; z: number; k: number; edge: number }[][] = [];
   for (let i = 0; i <= n; i++) {
     const al = -ra * 0.999 + (i / n) * ra * 1.998;
     const half = isl.r * 0.998 * Math.sqrt(Math.max(0, 1 - (al / ra) ** 2));
-    const row: { x: number; y: number; z: number; k: number }[] = [];
+    const row: { x: number; y: number; z: number; k: number; edge: number }[] = [];
     for (let j = 0; j <= COLS; j++) {
       const sd = -half + (j / COLS) * 2 * half;
       const x = isl.cx + isl.dx * al + isl.dz * sd;
       const z = isl.cz + isl.dz * al - isl.dx * sd;
-      const edge = half > 0 ? Math.abs(sd) / half : 1;
-      const k = (1 + (rnd() * 2 - 1) * 0.06) * (edge > 0.92 ? 0.75 : 1);
-      row.push({ x, y: yAt(isl, x, z), z, k });
+      const k = 1 + (rnd() * 2 - 1) * 0.04;
+      const radEdge = Math.min(1, Math.hypot(al / isl.stretch, sd) / isl.r);
+      const sideEdge = Math.min(1, Math.abs(sd) / isl.r);
+      const joined = (isl.joinEnd && al > 0) || (isl.joinStart && al < 0);
+      const edge = joined ? Math.max(sideEdge, radEdge * 0.85) : radEdge;
+      row.push({ x, y: yAt(isl, x, z), z, k, edge });
     }
     grid.push(row);
   }
@@ -143,7 +151,7 @@ function buildTop(isl: Island, snow: boolean): THREE.Mesh {
           (i > 0 && Math.abs(p.y - grid[i - 1][j].y) > 2) || (i < n && Math.abs(grid[i + 1][j].y - p.y) > 2);
         col = steep ? rgb(SNOW_ROCK, p.k) : snowCol(p.k);
       }
-      return b.vert([p.x, p.y, p.z], col);
+      return b.vert([p.x, p.y, p.z], col, p.edge);
     }),
   );
   for (let i = 0; i < n; i++) {
@@ -156,7 +164,9 @@ function buildTop(isl: Island, snow: boolean): THREE.Mesh {
       b.tri(bb, d, c, up);
     }
   }
-  return new THREE.Mesh(b.build(false), toonMat(0xffffff, { vertexColors: true }));
+  const mesh = new THREE.Mesh(b.build(false), groundToonMat(snow));
+  addOutline(mesh, 0.22);
+  return mesh;
 }
 
 /** Jagged crystal underside, a rim band, and crystal shards stuck in the cone. */
@@ -208,6 +218,7 @@ function buildUnderside(isl: Island, snow: boolean): THREE.Group {
   }
   const coneMesh = new THREE.Mesh(cone.build(true), toonMat(0xffffff, { vertexColors: true }));
   addOutline(coneMesh, 0.35);
+  coneMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(coneMesh.geometry, 24), new THREE.LineBasicMaterial({ color: PALETTE.ink })));
   g.add(coneMesh);
 
   // Rim band: a 1.2 m open ring under the rim edge, darkened island colour.
@@ -230,7 +241,7 @@ function buildUnderside(isl: Island, snow: boolean): THREE.Group {
     band.tri(top[j1], bot[j], bot[j1], want);
   }
   const bandMesh = new THREE.Mesh(band.build(false), toonMat(0xffffff, { vertexColors: true }));
-  addOutline(bandMesh, 0.15);
+  addOutline(bandMesh, 0.22);
   g.add(bandMesh);
 
   // Crystal shards stuck into the cone.
@@ -412,6 +423,17 @@ function buildPipe(pp: Pipe, index: number): THREE.Group {
     }
   }
   g.add(new THREE.Mesh(b.build(false), toonMat(0xffffff, { vertexColors: true, side: THREE.DoubleSide })));
+
+  // Floor-to-wall seam ink creases.
+  const seamMat = new THREE.LineBasicMaterial({ color: PALETTE.ink });
+  for (const s of [-1, 1]) {
+    const seamPts = rows.map((row) => {
+      const [x, z] = pipeXZ(pp, row.u, s * pp.flatHalf);
+      const y = (pipeY(pp, x, z) ?? pipeSurf(pp, row.u, s * pp.flatHalf)) + 0.03;
+      return new THREE.Vector3(x, y, z);
+    });
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(seamPts), seamMat));
+  }
 
   // Outer shell: the back of each wall down to 3 m under the floor, and a flat bottom. Dark purple, inked.
   const sh = new Builder();
@@ -662,6 +684,7 @@ function buildRail(w: World, rail: Rail): THREE.Group {
         addOutline(strut, 0.025);
         const mount = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), postMat);
         mount.position.copy(anchor);
+        addOutline(mount, 0.03);
         grp.add(strut, mount);
       }
     }
@@ -783,9 +806,9 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   const skyCol = snow ? 0xcfe6ff : 0xff9ad5;
   scene.background = new THREE.Color(skyCol);
   scene.fog = snow ? new THREE.Fog(skyCol, 140, 1100) : new THREE.Fog(skyCol, 160, 1300);
-  add(new THREE.HemisphereLight(0xfff5ff, snow ? 0x6b93d6 : 0x6b35d6, 0.7));
-  const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
-  sun.position.set(0.65, 0.85, 0.4);
+  add(new THREE.HemisphereLight(0xfff5ff, snow ? 0x4b6fb8 : 0x4a2299, 0.42));
+  const sun = new THREE.DirectionalLight(0xfff1d6, 1.75);
+  sun.position.copy(SUN_DIR);
   add(sun);
 
   const sky = new THREE.Mesh(
@@ -881,6 +904,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
         const r = d.s * (0.5 + rnd() * 0.4);
         const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), toonMat(0xfff0fb));
         m.position.set((rnd() * 2 - 1) * d.s * 0.8, (rnd() * 2 - 1) * d.s * 0.2, (rnd() * 2 - 1) * d.s * 0.6);
+        addOutline(m, 0.09);
         obj.add(m);
       }
     }

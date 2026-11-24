@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { GRADIENT, outlineMat, toonMat, toonify } from './toon';
+import { GRADIENT, SUN_DIR, groundToonMat, outlineMat, toonMat, toonify } from './toon';
 
 describe('toon shading helpers', () => {
   it('uses a crisp 3-band nearest-filtered gradient texture', () => {
@@ -58,5 +58,32 @@ describe('toon shading helpers', () => {
     expect(mat.emissiveIntensity).toBe(0.25);
     expect(mat.vertexColors).toBe(false);
     expect(crystal.children.some((c) => c.name === 'outline')).toBe(true);
+  });
+
+  it('provides a unit-length raking SUN_DIR and sRGB-aware outlineMat', () => {
+    expect(SUN_DIR.length()).toBeCloseTo(1, 5);
+    const mat = outlineMat(0.05);
+    expect(mat.fragmentShader).toContain('#include <colorspace_fragment>');
+  });
+
+  it('caches groundToonMat by snow mode with cel-shading uniforms, fog, and edge attribute', () => {
+    const aetherMat = groundToonMat(false);
+    const snowMat = groundToonMat(true);
+    expect(aetherMat).toBeInstanceOf(THREE.ShaderMaterial);
+    expect(snowMat).toBeInstanceOf(THREE.ShaderMaterial);
+    expect(aetherMat).not.toBe(snowMat);
+    expect(groundToonMat(false)).toBe(aetherMat);
+    expect(groundToonMat(true)).toBe(snowMat);
+
+    for (const mat of [aetherMat, snowMat]) {
+      expect(mat.fog).toBe(true);
+      expect(mat.uniforms.sunDir).toBeDefined();
+      expect(mat.uniforms.inkColor).toBeDefined();
+      expect(mat.uniforms.shadowTint).toBeDefined();
+      expect(mat.uniforms.contourStep).toBeDefined();
+      expect(mat.vertexShader).toContain('attribute float aEdge');
+      expect(mat.fragmentShader).toContain('#include <fog_fragment>');
+      expect(mat.fragmentShader).toContain('#include <colorspace_fragment>');
+    }
   });
 });

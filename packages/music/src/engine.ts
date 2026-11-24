@@ -44,6 +44,7 @@ let loading: Promise<Tone | null> | null = null;
 let disposables: { dispose(): unknown }[] = [];
 let generation = 0;
 let playing = false;
+let activeSong: { build: SongBuilder; opts?: PlayOptions } | null = null;
 let outVolume: ToneNS.Volume | null = null;
 let volumeGain = 1;
 const readMuted = (): boolean => { try { return localStorage.getItem(muteKey) === '1'; } catch { return false; } };
@@ -145,6 +146,14 @@ function loadTone(): Promise<Tone | null> {
 }
 
 let rawCtx: IAudioContext | null = null;
+let ctxErrored = false;
+let usedFallback = false;
+
+/** Chooses StdAudioContext options: normal mode uses playback latency and caps >48 kHz; fallback uses device defaults. */
+export function selectContextOptions(nativeRate: number, fallback: boolean): { latencyHint?: 'playback'; sampleRate?: number } {
+  if (fallback) return {};
+  return nativeRate > 48000 ? { sampleRate: 48000, latencyHint: 'playback' } : { latencyHint: 'playback' };
+}
 
 /**
  * The engine owns the AudioContext (created synchronously, before Tone has loaded) so the
@@ -157,22 +166,50 @@ let rawCtx: IAudioContext | null = null;
  * from a context forced to a rate other than the hardware's, so they keep the native rate.
  * "playback" latency: music doesn't need low latency, notes are scheduled ahead.
  */
-function getRawContext(): IAudioContext | null {
-  if (rawCtx) return rawCtx;
+function getRawContext(fallback = false): IAudioContext | null {
+  if (rawCtx && rawCtx.state !== 'closed' && !ctxErrored) return rawCtx;
+  if (rawCtx) rawCtx = null;
   if (typeof window === 'undefined') return null;
   try {
-    let c: IAudioContext = new StdAudioContext({ latencyHint: 'playback' });
-    if (c.sampleRate > 48000) {
-      void c.close().catch(() => {});
-      c = new StdAudioContext({ sampleRate: 48000, latencyHint: 'playback' });
+    let c: IAudioContext = fallback
+      ? new StdAudioContext()
+      : new StdAudioContext(selectContextOptions(48000, false));
+    if (!fallback && c.sampleRate > 48000) {
+      const prev = c;
+      try {
+        c = new StdAudioContext(selectContextOptions(c.sampleRate, false));
+        void prev.close().catch(() => {});
+      } catch {
+        c = prev;
+      }
     }
     // iOS moves the context to "suspended"/"interrupted" on a call, lock or app switch: re-arm.
     c.addEventListener('statechange', () => { if (c.state !== 'running') armUnlock(); });
+    (c as unknown as EventTarget).addEventListener?.('error', () => { ctxErrored = true; armUnlock(); });
+    ctxErrored = false;
     rawCtx = c;
   } catch {
     rawCtx = null;
   }
   return rawCtx;
+}
+
+/** Recreates the AudioContext with device defaults if the primary context errored or refused to resume. */
+function recoverContext(): void {
+  if (usedFallback) return;
+  usedFallback = true;
+  ctxErrored = false;
+  if (rawCtx) {
+    void rawCtx.close().catch(() => {});
+    rawCtx = null;
+  }
+  const fresh = getRawContext(true);
+  if (!fresh) return;
+  void fresh.resume().catch(() => {});
+  if (tone) {
+    try { tone.setContext(new tone.Context(fresh as unknown as AudioContext), false); } catch { /* ignore */ }
+    if (playing && activeSong) playSong(activeSong.build, activeSong.opts);
+  }
 }
 
 /**
@@ -248,15 +285,42 @@ function disarmUnlock(): void {
   unlockBound = false; // so a later suspend (phone backgrounded) can arm the unlock again
 }
 
+function ensureTransportStarted(): void {
+  if (playing && tone && disposables.length > 0 && tone.getTransport().state !== 'started') {
+    try { tone.getTransport().start('+0.05'); } catch { /* ignore */ }
+  }
+}
+
 function unlock(): void {
+  if (tone && tone.getContext().state !== 'running') {
+    void tone.start().catch(() => {});
+  }
   const c = rawCtx;
-  if (!c) return;
+  if (!c || ctxErrored || c.state === 'closed') {
+    recoverContext();
+    return;
+  }
   preferPlaybackSession();
-  if (c.state === 'running') { disarmUnlock(); return; }
+  if (c.state === 'running') {
+    disarmUnlock();
+    ensureTransportStarted();
+    return;
+  }
   // resume() must be called inside the gesture itself (not after an await), so call it directly.
   // It also covers iOS's "interrupted" state.
-  void c.resume().then(() => { if (c.state === 'running') disarmUnlock(); }).catch(() => {});
-  kick(c);
+  void c.resume()
+    .then(() => {
+      if (c.state === 'running') {
+        disarmUnlock();
+        ensureTransportStarted();
+      } else if (!usedFallback) {
+        recoverContext();
+      }
+    })
+    .catch(() => {
+      if (!usedFallback) recoverContext();
+    });
+  if (!ctxErrored && (c.state as string) !== 'closed') kick(c);
 }
 
 /** Resumes the AudioContext now if allowed, and on the first tap / click / key otherwise. */
@@ -356,6 +420,7 @@ export function setSongSpatial(opts: SongSpatial | null): void {
 export function playSong(build: SongBuilder, opts?: PlayOptions): void {
   const gen = ++generation;
   playing = true;
+  activeSong = { build, opts };
   try { armUnlock(); } catch { /* ignore */ } // now, so a tap while Tone loads still unlocks
   void loadTone().then((T) => {
     if (!T || gen !== generation) return;
@@ -394,6 +459,7 @@ export function resumeSong(): void {
 export function stopSong(): void {
   generation++;
   playing = false;
+  activeSong = null;
   try { if (tone) teardown(tone); } catch { /* ignore */ }
 }
 

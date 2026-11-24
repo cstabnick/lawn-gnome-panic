@@ -7,15 +7,15 @@ import { flatLayer, LAYER } from '@lawn/depth';
 import {
   createGnomeModel,
   getMyGnome,
-  GNORMAN_LOOK,
   onLooksChanged,
   resolveLook,
   type GnomeLook,
   type GnomeModel,
 } from '@lawn/gnome';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { attachHeroGear, HERO_LOOKS, HERO_SCALES } from './heroModels';
 import { VfxSystem } from './particles';
-import { TEAM_COLORS, type Team } from './sim/config';
+import { TEAM_COLORS, type HeroId, type Team } from './sim/config';
 import { HEROES } from './sim/heroes';
 import {
   FOUNTAINS,
@@ -66,6 +66,7 @@ export class GnomelockScene {
       hpGroup: THREE.Group;
       hpFill: THREE.Mesh;
       shieldFill: THREE.Mesh;
+      gearUpdate?: (dt: number, t: number) => void;
     }
   >();
   private creepMeshes = new Map<number, { group: THREE.Group; hpGroup: THREE.Group; hpFill: THREE.Mesh; execPip: THREE.Mesh }>();
@@ -88,9 +89,14 @@ export class GnomelockScene {
   private currentFov = 74;
   private camPos = new THREE.Vector3(0, 6, -120);
   private camLook = new THREE.Vector3(0, 3, -100);
-  private lastHeroMeta = new Map<number, { userId?: string; characterCode?: string; team: Team }>();
+  private lastHeroMeta = new Map<number, { userId?: string; characterCode?: string; team: Team; heroId: HeroId }>();
   private recoilTimers = new Map<number, number>();
   private muzzleLight: THREE.PointLight;
+  private skyMesh!: THREE.Mesh;
+  private aetherFloaters: { group: THREE.Object3D; baseY: number; speed: number; phase: number; spinY: number }[] = [];
+  private aetherRings: THREE.Mesh[] = [];
+  private aimRecoil = 0;
+  private lastLocalSlot = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -103,7 +109,7 @@ export class GnomelockScene {
     this.scene.background = new THREE.Color(0x1b2236);
     this.scene.fog = new THREE.Fog(0x1b2236, 75, 195);
 
-    this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.15, 260);
+    this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.15, 340);
 
     // Lighting: twilight garden + warm Amber Hearth & cool Sapphire Well accents
     const hemi = new THREE.HemisphereLight(0xaec6ff, 0x3b4d2b, 1.05);
@@ -134,6 +140,7 @@ export class GnomelockScene {
 
     this.vfx = new VfxSystem(this.scene);
     this.buildSkybox();
+    this.buildAether();
     this.buildArena();
     const relic = this.buildRelicAltar();
     this.relicGroup = relic.group;
@@ -157,10 +164,11 @@ export class GnomelockScene {
   };
 
   private buildSkybox(): void {
-    const geo = new THREE.SphereGeometry(225, 32, 20);
+    const geo = new THREE.SphereGeometry(240, 40, 24);
     const mat = new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
+      fog: false,
       uniforms: this.skyUniforms,
       vertexShader: `
         varying vec3 vDir;
@@ -191,6 +199,18 @@ export class GnomelockScene {
           col += vec3(0.55, 0.20, 0.08) * horizMask * amberSide;
           col += vec3(0.10, 0.28, 0.62) * horizMask * sapphireSide;
 
+          // Diagonal aether nebula band across the zenith
+          float nebula = exp(-abs(d.x * 0.7 + d.z * 0.4 - 0.15) * 3.8) * smoothstep(0.1, 0.7, d.y);
+          col += vec3(0.18, 0.10, 0.28) * nebula * 0.85;
+
+          // Shimmering aether aurora ribbons
+          if (d.y > 0.06) {
+            float wave = sin(d.x * 6.5 + uTime * 0.35 + sin(d.z * 4.0) * 1.4);
+            float auroraBand = smoothstep(0.08, 0.35, d.y) * (1.0 - smoothstep(0.38, 0.76, d.y));
+            vec3 aurCol = mix(vec3(0.65, 0.25, 0.45), vec3(0.14, 0.58, 0.72), smoothstep(-0.5, 0.5, d.z));
+            col += aurCol * pow(max(0.0, wave), 2.0) * auroraBand * 0.42;
+          }
+
           // Drifting twilight cloud ribbons
           if (d.y > 0.02) {
             float c1 = sin(d.x * 5.5 + uTime * 0.08) * cos(d.z * 4.5 - uTime * 0.05);
@@ -198,19 +218,25 @@ export class GnomelockScene {
             col += vec3(0.14, 0.12, 0.22) * max(0.0, c1) * cloudBand * 0.65;
           }
 
-          // Twinkling stars
-          if (d.y > 0.15) {
-            vec2 cell = floor(d.xz / max(0.18, d.y) * 28.0);
+          // Crisp pinpoint twinkling stars
+          if (d.y > 0.14) {
+            vec2 uv = d.xz / max(0.22, d.y) * 24.0;
+            vec2 cell = floor(uv);
+            vec2 f = fract(uv) - 0.5;
             float r = hash(cell);
-            if (r > 0.985) {
-              float tw = 0.55 + 0.45 * sin(uTime * 2.5 + r * 80.0);
-              col += vec3(0.95, 0.92, 1.0) * tw * smoothstep(0.15, 0.5, d.y);
+            if (r > 0.92) {
+              vec2 jOff = vec2(hash(cell + 13.7) - 0.5, hash(cell + 29.3) - 0.5) * 0.55;
+              float star = smoothstep(0.16, 0.02, length(f - jOff));
+              float tw = 0.55 + 0.45 * sin(uTime * 2.8 + r * 80.0);
+              col += vec3(0.95, 0.92, 1.0) * star * tw * smoothstep(0.14, 0.45, d.y);
             }
           }
 
-          // Crescent moon high in the western sky
+          // Crescent moon high in the western sky + soft halo
           vec3 moonDir = normalize(vec3(-0.45, 0.62, -0.35));
           float mDot = dot(d, moonDir);
+          float moonHalo = exp(-acos(clamp(mDot, -1.0, 1.0)) * 18.0);
+          col += vec3(0.32, 0.28, 0.22) * moonHalo;
           float moonDisc = smoothstep(0.9965, 0.9978, mDot);
           vec3 cutDir = normalize(moonDir + vec3(0.028, 0.022, 0.0));
           float cutDisc = smoothstep(0.9965, 0.9978, dot(d, cutDir));
@@ -222,8 +248,84 @@ export class GnomelockScene {
       `,
     });
     const sky = new THREE.Mesh(geo, mat);
+    sky.frustumCulled = false;
+    sky.renderOrder = -1000;
     sky.userData.zfightOk = true;
+    this.skyMesh = sky;
     this.scene.add(sky);
+  }
+
+  private buildAether(): void {
+    const stoneMat = new THREE.MeshStandardMaterial({ color: 0x3b4254, roughness: 0.9 });
+    const mossMat = new THREE.MeshStandardMaterial({ color: 0x3b6344, roughness: 0.85 });
+
+    // 8 floating stylized garden islands / monoliths ringing the distant sky
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2 + 0.25;
+      const rad = 76 + (i % 3) * 18;
+      const x = Math.cos(ang) * rad;
+      const z = Math.sin(ang) * rad;
+      const baseY = 26 + (i % 4) * 8;
+      const isAmber = z < 0;
+      const crystalCol = isAmber ? 0xff7a3d : 0x4fd8ff;
+
+      const grp = new THREE.Group();
+      grp.position.set(x, baseY, z);
+
+      const rock = new THREE.Mesh(new THREE.ConeGeometry(4.2, 6.2, 6), stoneMat);
+      rock.rotation.x = Math.PI;
+      rock.position.y = -3.2;
+      rock.userData.zfightOk = true;
+
+      const turf = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 4.3, 0.7, 6), mossMat);
+      turf.position.y = 0.25;
+      turf.userData.zfightOk = true;
+
+      const spire = new THREE.Mesh(
+        new THREE.OctahedronGeometry(1.15, 0),
+        new THREE.MeshBasicMaterial({ color: crystalCol }),
+      );
+      spire.scale.set(0.8, 1.8, 0.8);
+      spire.position.y = 2.6;
+      spire.userData.zfightOk = true;
+
+      grp.add(rock, turf, spire);
+      this.scene.add(grp);
+      this.aetherFloaters.push({ group: grp, baseY, speed: 0.6 + (i % 3) * 0.2, phase: i * 0.9, spinY: 0.08 * (i % 2 === 0 ? 1 : -1) });
+    }
+
+    // 2 huge translucent astral rings tilted high in the zenith
+    const ringSpecs = [
+      { r: 62, tube: 0.35, y: 58, col: 0x74b9ff, rx: 0.42, rz: 0.28 },
+      { r: 88, tube: 0.28, y: 72, col: 0xffb347, rx: -0.35, rz: -0.4 },
+    ];
+    for (const rs of ringSpecs) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(rs.r, rs.tube, 8, 64),
+        new THREE.MeshBasicMaterial({ color: rs.col, transparent: true, opacity: 0.22 }),
+      );
+      ring.position.set(0, rs.y, 0);
+      ring.rotation.set(rs.rx, 0, rs.rz);
+      ring.userData.zfightOk = true;
+      this.scene.add(ring);
+      this.aetherRings.push(ring);
+    }
+
+    // 18 high-altitude aether lantern wisps drifting around the perimeter
+    const wispGeo = new THREE.OctahedronGeometry(0.65, 0);
+    for (let i = 0; i < 18; i++) {
+      const ang = (i / 18) * Math.PI * 2;
+      const rad = 46 + (i % 4) * 8;
+      const x = Math.cos(ang) * rad;
+      const z = Math.sin(ang) * rad;
+      const baseY = 18 + (i % 5) * 5;
+      const col = z < 0 ? 0xffd166 : 0x5cc8ff;
+      const wisp = new THREE.Mesh(wispGeo, new THREE.MeshBasicMaterial({ color: col }));
+      wisp.position.set(x, baseY, z);
+      wisp.userData.zfightOk = true;
+      this.scene.add(wisp);
+      this.aetherFloaters.push({ group: wisp, baseY, speed: 1.1 + (i % 3) * 0.3, phase: i * 1.3, spinY: 1.2 });
+    }
   }
 
   private buildArena(): void {
@@ -617,11 +719,21 @@ export class GnomelockScene {
   private ensureHeroModel(
     h: HeroEntity,
     localSlot: number,
-  ): { model: GnomeModel; shieldRing: THREE.Mesh; hpGroup: THREE.Group; hpFill: THREE.Mesh; shieldFill: THREE.Mesh } {
+  ): {
+    model: GnomeModel;
+    shieldRing: THREE.Mesh;
+    hpGroup: THREE.Group;
+    hpFill: THREE.Mesh;
+    shieldFill: THREE.Mesh;
+    gearUpdate?: (dt: number, t: number) => void;
+  } {
     const prev = this.lastHeroMeta.get(h.slot);
     if (
       prev &&
-      (prev.userId !== h.userId || prev.characterCode !== h.characterCode || prev.team !== h.team)
+      (prev.userId !== h.userId ||
+        prev.characterCode !== h.characterCode ||
+        prev.team !== h.team ||
+        prev.heroId !== h.heroId)
     ) {
       this.removeHeroModel(h.slot);
     }
@@ -635,10 +747,12 @@ export class GnomelockScene {
         baseLook = resolveLook({ id: h.slot, character: h.characterCode, userId: h.userId });
       }
       const look: GnomeLook = {
-        ...(baseLook ?? GNORMAN_LOOK),
+        ...(baseLook ?? HERO_LOOKS[h.heroId]),
         hat: TEAM_COLORS[h.team],
       };
-      const model = createGnomeModel(look, { overrideEquipment: ['hand'] });
+      const model = createGnomeModel(look, { overrideEquipment: ['hand', 'back'] });
+      model.rig.scale.set(...HERO_SCALES[h.heroId]);
+      const { update: gearUpdate } = attachHeroGear(model, h.heroId);
       const weaponId = HEROES[h.heroId].weapon.prefabId;
       const held = buildHeld(weaponId);
       held.rotation.x = Math.PI / 2;
@@ -681,9 +795,9 @@ export class GnomelockScene {
       model.object.add(hpGroup);
 
       this.scene.add(model.object);
-      entry = { model, weaponName: weaponId, team: h.team, shieldRing, hpGroup, hpFill, shieldFill };
+      entry = { model, weaponName: weaponId, team: h.team, shieldRing, hpGroup, hpFill, shieldFill, gearUpdate };
       this.heroModels.set(h.slot, entry);
-      this.lastHeroMeta.set(h.slot, { userId: h.userId, characterCode: h.characterCode, team: h.team });
+      this.lastHeroMeta.set(h.slot, { userId: h.userId, characterCode: h.characterCode, team: h.team, heroId: h.heroId });
     }
     return entry;
   }
@@ -692,11 +806,23 @@ export class GnomelockScene {
     for (const ev of events) {
       if (ev.type === 'shot') {
         this.recoilTimers.set(ev.slot, 0.11);
-        this.muzzleLight.position.set(ev.ox, ev.oy + 0.15, ev.oz);
-        this.muzzleLight.intensity = 3.2;
-        const heroId = state?.heroes[ev.slot]?.heroId ?? 'fernwick';
-        this.vfx.spawnProjectile(heroId, ev.team, ev.ox, ev.oy, ev.oz, ev.tx, ev.ty, ev.tz, ev.hitKind);
-        if (ev.slot === 0) this.shakeMag = Math.max(this.shakeMag, 0.045);
+        const h = state?.heroes[ev.slot];
+        const yaw = h?.yaw ?? 0;
+        const rightX = Math.cos(yaw);
+        const rightZ = -Math.sin(yaw);
+        const mx = ev.ox + rightX * 0.34;
+        const my = ev.oy - 0.06;
+        const mz = ev.oz + rightZ * 0.34;
+        this.muzzleLight.position.set(mx, my + 0.15, mz);
+        this.muzzleLight.intensity = 3.6;
+        const heroId = h?.heroId ?? 'fernwick';
+        this.vfx.spawnProjectile(heroId, ev.team, mx, my, mz, ev.tx, ev.ty, ev.tz, ev.hitKind);
+        if (ev.slot === this.lastLocalSlot) {
+          this.shakeMag = Math.max(this.shakeMag, 0.048);
+          this.aimRecoil = Math.min(0.055, this.aimRecoil + 0.022);
+        }
+      } else if (ev.type === 'lastHit') {
+        this.vfx.burst(ev.x, ev.y + 0.5, ev.z, 0xffd54f, 12, { speed: 7.5, up: 4.5, scale: 0.9, ttl: 0.45 });
       } else if (ev.type === 'orbConfirm' || ev.type === 'orbDeny') {
         const col = ev.type === 'orbConfirm' ? 0xffd54f : 0xff4d6d;
         this.vfx.burst(ev.x, ev.y, ev.z, col, 12, { speed: 8, up: 4.5 });
@@ -734,12 +860,21 @@ export class GnomelockScene {
   }
 
   sync(state: MatchState, localSlot: number, ads: boolean, dt: number): void {
+    this.lastLocalSlot = localSlot;
     this.skyUniforms.uTime.value = state.timeS;
+    for (const fl of this.aetherFloaters) {
+      fl.group.position.y = fl.baseY + Math.sin(state.timeS * fl.speed + fl.phase) * 1.4;
+      fl.group.rotation.y += fl.spinY * dt;
+    }
+    for (const ring of this.aetherRings) {
+      ring.rotation.z += dt * 0.045;
+    }
     // 1. Update Heroes
     const localTeamForBars = state.heroes[localSlot]?.team ?? 0;
     for (const h of state.heroes) {
       const entry = this.ensureHeroModel(h, localSlot);
-      const { model, shieldRing, hpGroup, hpFill, shieldFill } = entry;
+      const { model, shieldRing, hpGroup, hpFill, shieldFill, gearUpdate } = entry;
+      if (model.object.visible) gearUpdate?.(dt, state.timeS);
       const visible = h.alive && !(h.stealthTimer > 0 && h.team !== localTeamForBars);
       model.object.visible = visible;
       if (visible) {
@@ -1163,10 +1298,17 @@ export class GnomelockScene {
       const fwdZ = -cosY;
       const rightX = cosY;
       const rightZ = -sinY;
+      const cosP = Math.cos(local.pitch);
+      const sinP = Math.sin(local.pitch);
+      const dirX = fwdX * cosP;
+      const dirY = sinP;
+      const dirZ = fwdZ * cosP;
+
+      this.aimRecoil = Math.max(0, this.aimRecoil - dt * 0.32);
 
       const backDist = ads ? 2.4 : 4.2;
       const sideOff = ads ? 0.65 : 0.85;
-      const shoulderY = local.move.pos.y + (local.move.sliding ? 1.35 : 1.85) - Math.sin(local.pitch) * 1.6;
+      const shoulderY = local.move.pos.y + (local.move.sliding ? 1.35 : 1.85) - sinP * 1.6;
 
       let cx = local.move.pos.x - fwdX * backDist + rightX * sideOff;
       let cz = local.move.pos.z - fwdZ * backDist + rightZ * sideOff;
@@ -1174,11 +1316,11 @@ export class GnomelockScene {
       cz = Math.max(MAP_BOUNDS.minZ + 0.6, Math.min(MAP_BOUNDS.maxZ - 0.6, cz));
       const cy = Math.max(groundHeightAt(cx, cz) + 0.6, shoulderY);
 
-      this.camPos.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, 22 * dt));
-      const lx = local.move.pos.x + fwdX * 14 + rightX * 0.25;
-      const ly = local.move.pos.y + 1.1 + Math.sin(local.pitch) * 12;
-      const lz = local.move.pos.z + fwdZ * 14 + rightZ * 0.25;
-      this.camLook.lerp(new THREE.Vector3(lx, ly, lz), Math.min(1, 26 * dt));
+      this.camPos.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, 26 * dt));
+      const lx = local.move.pos.x + dirX * 30;
+      const ly = local.move.pos.y + 0.95 + dirY * 30 + this.aimRecoil * 14;
+      const lz = local.move.pos.z + dirZ * 30;
+      this.camLook.set(lx, ly, lz);
 
       this.camera.position.copy(this.camPos);
       if (this.shakeMag > 0.002) {
@@ -1189,6 +1331,7 @@ export class GnomelockScene {
       this.camera.lookAt(this.camLook);
     }
 
+    this.skyMesh.position.copy(this.camera.position);
     this.renderer.render(this.scene, this.camera);
   }
 

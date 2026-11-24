@@ -86,14 +86,26 @@ export class VfxSystem {
   }
 
   muzzleFlash(x: number, y: number, z: number, color: number): void {
-    const m = new THREE.Mesh(
+    const core = new THREE.Mesh(
       this.unitOcta,
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 }),
     );
-    m.position.set(x, y, z);
-    m.rotation.set(Math.random() * 3, Math.random() * 3, 0);
-    this.scene.add(m);
-    this.puffs.push({ mesh: m, vy: 0.4, ttl: 0.08, maxTtl: 0.08, maxScale: 1.65 });
+    core.position.set(x, y, z);
+    core.scale.set(0.8, 0.8, 1.4);
+    this.scene.add(core);
+    this.puffs.push({ mesh: core, vy: 0.2, ttl: 0.065, maxTtl: 0.065, maxScale: 1.3 });
+
+    for (const rotZ of [0, Math.PI / 2]) {
+      const m = new THREE.Mesh(
+        this.unitOcta,
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }),
+      );
+      m.position.set(x, y, z);
+      m.rotation.set(0, 0, rotZ);
+      m.scale.set(1.6, 0.4, 0.5);
+      this.scene.add(m);
+      this.puffs.push({ mesh: m, vy: 0.3, ttl: 0.075, maxTtl: 0.075, maxScale: 1.75 });
+    }
   }
 
   burst(
@@ -178,13 +190,27 @@ export class VfxSystem {
 
     this.muzzleFlash(ox + dir.x * 0.5, oy + dir.y * 0.5, oz + dir.z * 0.5, teamColor);
 
-    const makeProj = (endX: number, endY: number, endZ: number, speed: number, buildMesh: () => THREE.Object3D, hk: typeof hitKind) => {
-      const mesh = buildMesh();
-      mesh.position.set(ox, oy, oz);
-      mesh.lookAt(endX, endY, endZ);
-      this.scene.add(mesh);
+    const makeProj = (endX: number, endY: number, endZ: number, speed: number, buildMesh: () => THREE.Object3D, hk: typeof hitKind, tailColor = teamColor) => {
+      const root = new THREE.Group();
+      root.add(buildMesh());
+      const tail = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.032, 0.012, 1.35, 5),
+        new THREE.MeshBasicMaterial({ color: tailColor, transparent: true, opacity: 0.85 }),
+      );
+      tail.rotation.x = Math.PI / 2;
+      tail.position.z = -0.72;
+      const core = new THREE.Mesh(
+        this.unitSphere,
+        new THREE.MeshBasicMaterial({ color: 0xffffff }),
+      );
+      core.scale.set(0.32, 0.32, 0.5);
+      root.add(tail, core);
+
+      root.position.set(ox, oy, oz);
+      root.lookAt(endX, endY, endZ);
+      this.scene.add(root);
       this.projectiles.push({
-        mesh,
+        mesh: root,
         ox,
         oy,
         oz,
@@ -192,7 +218,7 @@ export class VfxSystem {
         ty: endY,
         tz: endZ,
         t: 0,
-        dur: Math.max(0.035, Math.min(0.45, dist / speed)),
+        dur: Math.max(0.035, Math.min(0.42, dist / speed)),
         hitKind: hk,
         teamColor,
       });
@@ -291,6 +317,15 @@ export class VfxSystem {
       p.t += dt / p.dur;
       if (p.t >= 1) {
         this.scene.remove(p.mesh);
+        if (p.hitKind !== 'none') {
+          const ring = new THREE.Mesh(
+            this.unitOcta,
+            new THREE.MeshBasicMaterial({ color: p.hitKind === 'orb-confirm' ? 0xffd54f : p.hitKind === 'orb-deny' ? 0xff4d6d : 0xffffff, transparent: true, opacity: 0.8 }),
+          );
+          ring.position.set(p.tx, p.ty, p.tz);
+          this.scene.add(ring);
+          this.puffs.push({ mesh: ring, vy: 0.2, ttl: 0.12, maxTtl: 0.12, maxScale: 2.2 });
+        }
         if (p.hitKind === 'orb-confirm') {
           this.burst(p.tx, p.ty, p.tz, 0xffd54f, 10, { speed: 7, up: 4 });
         } else if (p.hitKind === 'orb-deny') {

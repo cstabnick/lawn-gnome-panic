@@ -184,6 +184,7 @@ export type SimEvent =
   | { type: 'damage'; targetKind: 'hero' | 'creep' | 'structure' | 'relic'; targetSlot?: number; x: number; y: number; z: number; amount: number; sourceSlot: number }
   | { type: 'orbConfirm'; slot: number; team: Team; acorns: number; x: number; y: number; z: number }
   | { type: 'orbDeny'; slot: number; team: Team; acorns: number; x: number; y: number; z: number }
+  | { type: 'lastHit'; slot: number; acorns: number; kind: 'creep' | 'neutral'; x: number; y: number; z: number }
   | { type: 'heroKill'; killerSlot: number; victimSlot: number; x: number; y: number; z: number }
   | { type: 'towerDown'; team: Team; tier: number; killerSlot: number; x: number; y: number; z: number }
   | { type: 'relicSpawn' }
@@ -580,6 +581,7 @@ function handleNeutralDeath(state: MatchState, n: NeutralEntity, killerSlot: num
     const orbVal = Math.round(n.bounty * 0.3);
     awardAcorns(killer, instant, 'lastHit');
     killer.hp = Math.min(killer.maxHp, killer.hp + 35);
+    state.events.push({ type: 'lastHit', slot: killerSlot, acorns: instant, kind: 'neutral', x: n.x, y: n.y + 1.0, z: n.z });
     state.orbs.push({
       id: state.nextEntityId++,
       team: killer.team,
@@ -604,6 +606,7 @@ function handleCreepDeath(state: MatchState, creep: CreepEntity, killerSlot: num
     const instant = Math.round(creep.bounty * ECONOMY.creepLastHitShare);
     const orbVal = Math.round(creep.bounty * ECONOMY.creepOrbShare);
     awardAcorns(killer, instant, 'lastHit');
+    state.events.push({ type: 'lastHit', slot: killerSlot, acorns: instant, kind: 'creep', x: creep.x, y: creep.y + 0.9, z: creep.z });
     // Spawn Soul Acorn Orb!
     state.orbs.push({
       id: state.nextEntityId++,

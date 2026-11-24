@@ -283,16 +283,21 @@ export function bootGnomelock(): void {
     for (const ev of st.events) {
       if (ev.type === 'shot' && ev.slot === localSlot) {
         sfx.shoot(st.heroes[localSlot].heroId, st.heroes[localSlot].infiniteAmmoTimer > 0);
+        ui.triggerCrosshairBloom();
         if (ev.hitKind === 'body') ui.flashHitmarker('#ffffff');
-        else if (ev.hitKind === 'orb-confirm') ui.flashHitmarker('#ffd54f');
-        else if (ev.hitKind === 'orb-deny') ui.flashHitmarker('#ff4d6d');
+        else if (ev.hitKind === 'orb-confirm') ui.flashHitmarker('#ffd54f', true);
+        else if (ev.hitKind === 'orb-deny') ui.flashHitmarker('#ff4d6d', true);
+      } else if (ev.type === 'lastHit' && ev.slot === localSlot) {
+        sfx.lastHit();
+        ui.flashHitmarker('#ffd54f', true);
+        ui.spawnPopup(`LAST HIT +${ev.acorns}g`, ev.x, ev.y + 0.55, ev.z, '#ffd54f', { big: true });
       } else if (ev.type === 'orbConfirm' && ev.slot === localSlot) {
         sfx.orbConfirm();
-        ui.spawnPopup(`+${ev.acorns} SECURED!`, ev.x, ev.y, ev.z, '#ffd54f');
+        ui.spawnPopup(`+${ev.acorns} SECURED!`, ev.x, ev.y, ev.z, '#ffd54f', { big: true });
         void achievements.increment('gnomelock-orb-snatcher');
       } else if (ev.type === 'orbDeny' && ev.slot === localSlot) {
         sfx.orbDeny();
-        ui.spawnPopup(`+${ev.acorns} DENIED!`, ev.x, ev.y, ev.z, '#ff4d6d');
+        ui.spawnPopup(`+${ev.acorns} DENIED!`, ev.x, ev.y, ev.z, '#ff4d6d', { big: true });
         void achievements.increment('gnomelock-orb-snatcher');
       } else if (ev.type === 'damage' && ev.sourceSlot === localSlot) {
         if (ev.targetKind === 'hero') sfx.hitBody();
@@ -318,6 +323,7 @@ export function bootGnomelock(): void {
         if (ev.killerSlot === localSlot) {
           sfx.kill();
           playMusicStinger(true);
+          ui.spawnPopup('SHATTERED!', ev.x, ev.y + 1.1, ev.z, '#ffd54f', { big: true });
         } else if (ev.victimSlot === localSlot) {
           playMusicStinger(false);
         }
@@ -417,6 +423,7 @@ export function bootGnomelock(): void {
     stepSim(dt);
     if (state) {
       scene.sync(state, localSlot, input.isAds(), dt);
+      ui.setAds(input.isAds());
       ui.update(state, localSlot, (x, y, z) => scene.projectToScreen(x, y, z), dt);
     }
     requestAnimationFrame(frame);

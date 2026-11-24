@@ -22,6 +22,8 @@ interface FloatingText {
   y: number;
   z: number;
   ttl: number;
+  maxTtl: number;
+  big: boolean;
 }
 
 export class GnomelockUI {
@@ -50,14 +52,21 @@ export class GnomelockUI {
   private scoreSapphireEl!: HTMLDivElement;
   private relicBannerEl!: HTMLDivElement;
   private hpFillEl!: HTMLDivElement;
+  private hpTrailEl!: HTMLDivElement;
+  private shieldFillEl!: HTMLDivElement;
   private hpTextEl!: HTMLDivElement;
+  private hpTrailPct = 100;
   private acornEl!: HTMLDivElement;
   private levelEl!: HTMLDivElement;
   private ammoEl!: HTMLDivElement;
+  private reticleAmmoEl!: HTMLDivElement;
   private staminaWrapEl!: HTMLDivElement;
   private flowBadgeEl!: HTMLDivElement;
   private flowBarFillEl!: HTMLDivElement;
   private hitmarkerEl!: HTMLDivElement;
+  private crosshairTicks: HTMLDivElement[] = [];
+  private crosshairBloom = 0;
+  private isAdsState = false;
   private speedVignetteEl!: HTMLDivElement;
   private abilityEls = new Map<AbilitySlot, { el: HTMLDivElement; icon: HTMLDivElement; cd: HTMLDivElement; dim: HTMLDivElement }>();
   private lastHudHeroId: HeroId | null = null;
@@ -400,67 +409,113 @@ export class GnomelockUI {
     `;
     el.appendChild(this.relicBannerEl);
 
-    // Center reticle + hitmarker + stamina + flow badge
+    // Center reticle + dynamic ticks + X hitmarker + stamina + reticle ammo + flow badge
     const center = document.createElement('div');
     center.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;';
-    center.innerHTML = `<div style="width:8px;height:8px;border:2px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 0 4px #000"></div>`;
+    const dot = document.createElement('div');
+    dot.style.cssText = 'width:4px;height:4px;background:rgba(255,255,255,0.95);border-radius:50%;box-shadow:0 0 4px #000;';
+    center.appendChild(dot);
 
+    // 4 dynamic crosshair ticks (top, right, bottom, left)
+    this.crosshairTicks = [];
+    for (let i = 0; i < 4; i++) {
+      const tick = document.createElement('div');
+      const isVert = i === 0 || i === 2;
+      tick.style.cssText = `
+        position:absolute;left:50%;top:50%;
+        width:${isVert ? 2 : 7}px;height:${isVert ? 7 : 2}px;
+        background:rgba(255,255,255,0.9);box-shadow:0 0 3px rgba(0,0,0,0.85);
+        border-radius:1px;transition:transform 0.04s linear;
+      `;
+      center.appendChild(tick);
+      this.crosshairTicks.push(tick);
+    }
+
+    // Crisp X hitmarker (4 diagonal ticks)
     this.hitmarkerEl = document.createElement('div');
-    this.hitmarkerEl.style.cssText = 'position:absolute;left:-10px;top:-10px;width:28px;height:28px;border:2px solid #fff;border-radius:50%;opacity:0;transform:scale(0.8);transition:opacity 0.08s;';
+    this.hitmarkerEl.style.cssText = 'position:absolute;left:50%;top:50%;width:24px;height:24px;transform:translate(-50%,-50%) scale(0.9);opacity:0;transition:opacity 0.08s,transform 0.08s;';
+    for (const ang of [45, 135, 225, 315]) {
+      const bar = document.createElement('div');
+      bar.style.cssText = `
+        position:absolute;left:50%;top:50%;width:8px;height:2px;background:currentColor;
+        transform-origin:left center;transform:rotate(${ang}deg) translateX(5px);
+        box-shadow:0 0 3px rgba(0,0,0,0.8);
+      `;
+      this.hitmarkerEl.appendChild(bar);
+    }
+    this.hitmarkerEl.style.color = '#fff';
     center.appendChild(this.hitmarkerEl);
 
     this.staminaWrapEl = document.createElement('div');
-    this.staminaWrapEl.style.cssText = 'position:absolute;left:22px;top:-14px;display:flex;flex-direction:column;gap:3px;';
+    this.staminaWrapEl.style.cssText = 'position:absolute;left:22px;top:-16px;display:flex;flex-direction:column;gap:3px;';
     center.appendChild(this.staminaWrapEl);
 
+    this.reticleAmmoEl = document.createElement('div');
+    this.reticleAmmoEl.style.cssText = 'position:absolute;left:22px;top:12px;font-size:10px;font-weight:800;color:#93c5fd;text-shadow:0 1px 3px #000;white-space:nowrap;';
+    center.appendChild(this.reticleAmmoEl);
+
     this.flowBadgeEl = document.createElement('div');
-    this.flowBadgeEl.style.cssText = 'position:absolute;left:-42px;top:20px;width:92px;text-align:center;font-size:11px;font-weight:800;color:#74b9ff;text-shadow:0 1px 4px #000;';
+    this.flowBadgeEl.style.cssText = 'position:absolute;left:-44px;top:24px;width:92px;text-align:center;font-size:11px;font-weight:800;color:#74b9ff;text-shadow:0 1px 4px #000;';
     const flowBarBg = document.createElement('div');
-    flowBarBg.style.cssText = 'position:absolute;left:-28px;top:35px;width:64px;height:4px;border-radius:2px;background:rgba(255,255,255,0.16);overflow:hidden;';
+    flowBarBg.style.cssText = 'position:absolute;left:-30px;top:39px;width:64px;height:4px;border-radius:2px;background:rgba(255,255,255,0.16);overflow:hidden;';
     this.flowBarFillEl = document.createElement('div');
     this.flowBarFillEl.style.cssText = 'height:100%;width:0%;background:linear-gradient(90deg,#4fd8ff,#ffd54f);transition:width 0.08s;';
     flowBarBg.appendChild(this.flowBarFillEl);
     center.append(this.flowBadgeEl, flowBarBg);
     el.appendChild(center);
 
-    // Bottom-left: HP, Acorns, Level, Ammo, Items
+    // Bottom-left: compact Owned Items + Shop Hint
     const bl = document.createElement('div');
     bl.style.cssText = `
       position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));
-      width:min(240px,46vw);padding:10px;border-radius:10px;
-      background:rgba(12,16,26,0.78);border:1px solid rgba(255,255,255,0.14);
+      max-width:min(210px,34vw);padding:8px 10px;border-radius:10px;
+      background:rgba(12,16,26,0.72);border:1px solid rgba(255,255,255,0.12);
     `;
-    const hpBg = document.createElement('div');
-    hpBg.style.cssText = 'height:14px;background:rgba(0,0,0,0.5);border-radius:6px;overflow:hidden;position:relative;';
-    this.hpFillEl = document.createElement('div');
-    this.hpFillEl.style.cssText = 'height:100%;width:100%;background:linear-gradient(90deg,#2ecc71,#27ae60);transition:width 0.08s;';
-    this.hpTextEl = document.createElement('div');
-    this.hpTextEl.style.cssText = 'position:absolute;inset:0;font-size:10px;font-weight:800;text-align:center;line-height:14px;';
-    hpBg.append(this.hpFillEl, this.hpTextEl);
-
-    const metaRow = document.createElement('div');
-    metaRow.style.cssText = 'display:flex;justify-content:space-between;margin-top:6px;font-size:12px;font-weight:700;';
-    this.acornEl = document.createElement('div');
-    this.acornEl.style.color = '#ffd54f';
-    this.levelEl = document.createElement('div');
-    this.ammoEl = document.createElement('div');
-    this.ammoEl.style.color = '#93c5fd';
-    metaRow.append(this.acornEl, this.levelEl, this.ammoEl);
-
     this.ownedItemsEl = document.createElement('div');
-    this.ownedItemsEl.style.cssText = 'display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;';
-
+    this.ownedItemsEl.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;';
     this.shopHintEl = document.createElement('div');
     this.shopHintEl.style.cssText = 'margin-top:4px;font-size:10px;color:#ffd54f;font-weight:700;';
-    bl.append(hpBg, metaRow, this.ownedItemsEl, this.shopHintEl);
+    bl.append(this.ownedItemsEl, this.shopHintEl);
     el.appendChild(bl);
 
-    // Bottom-center abilities with SVG spell icons + cooldown overlay
-    const abBar = document.createElement('div');
-    abBar.style.cssText = `
+    // Unified Bottom-Center Combat Cluster: Meta Strip + Wide Health/Shield Bar + 4 Abilities
+    const centerCluster = document.createElement('div');
+    centerCluster.style.cssText = `
       position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);
-      display:flex;gap:8px;
+      width:min(360px,92vw);display:flex;flex-direction:column;gap:7px;align-items:center;
     `;
+
+    const metaRow = document.createElement('div');
+    metaRow.style.cssText = 'width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 4px;font-size:12px;font-weight:800;text-shadow:0 1px 3px #000;';
+    const leftMeta = document.createElement('div');
+    leftMeta.style.cssText = 'display:flex;gap:10px;align-items:center;';
+    this.levelEl = document.createElement('div');
+    this.levelEl.style.color = '#e2e8f0';
+    this.acornEl = document.createElement('div');
+    this.acornEl.style.color = '#ffd54f';
+    leftMeta.append(this.levelEl, this.acornEl);
+
+    this.ammoEl = document.createElement('div');
+    this.ammoEl.style.cssText = 'color:#93c5fd;font-size:13px;font-weight:900;';
+    metaRow.append(leftMeta, this.ammoEl);
+
+    const hpBg = document.createElement('div');
+    hpBg.style.cssText = `
+      width:100%;height:20px;background:rgba(10,14,22,0.86);border-radius:8px;overflow:hidden;position:relative;
+      border:1.5px solid rgba(255,255,255,0.22);box-shadow:0 2px 10px rgba(0,0,0,0.55);
+    `;
+    this.hpTrailEl = document.createElement('div');
+    this.hpTrailEl.style.cssText = 'position:absolute;left:0;top:0;height:100%;width:100%;background:rgba(255,90,95,0.75);';
+    this.hpFillEl = document.createElement('div');
+    this.hpFillEl.style.cssText = 'position:absolute;left:0;top:0;height:100%;width:100%;background:linear-gradient(90deg,#2ecc71,#27ae60);transition:width 0.06s;';
+    this.shieldFillEl = document.createElement('div');
+    this.shieldFillEl.style.cssText = 'position:absolute;left:0;bottom:0;height:4px;width:0%;background:#ffd54f;transition:width 0.06s;';
+    this.hpTextEl = document.createElement('div');
+    this.hpTextEl.style.cssText = 'position:absolute;inset:0;font-size:12px;font-weight:900;color:#fff;text-align:center;line-height:18px;text-shadow:0 1px 3px #000;';
+    hpBg.append(this.hpTrailEl, this.hpFillEl, this.shieldFillEl, this.hpTextEl);
+
+    const abBar = document.createElement('div');
+    abBar.style.cssText = 'display:flex;gap:8px;justify-content:center;';
     for (const slot of ['Q', 'E', 'F', 'X'] as const) {
       const box = document.createElement('div');
       box.style.cssText = `
@@ -481,7 +536,8 @@ export class GnomelockUI {
       abBar.appendChild(box);
       this.abilityEls.set(slot, { el: box, icon, cd, dim });
     }
-    el.appendChild(abBar);
+    centerCluster.append(metaRow, hpBg, abBar);
+    el.appendChild(centerCluster);
 
     // Bottom-right minimap
     const mmWrap = document.createElement('div');
@@ -658,12 +714,22 @@ export class GnomelockUI {
     this.endEl.appendChild(btn);
   }
 
-  flashHitmarker(color: string): void {
-    this.hitmarkerEl.style.borderColor = color;
+  setAds(ads: boolean): void {
+    this.isAdsState = ads;
+  }
+
+  triggerCrosshairBloom(): void {
+    this.crosshairBloom = Math.min(10, this.crosshairBloom + 5.5);
+  }
+
+  flashHitmarker(color: string, big = false): void {
+    this.hitmarkerEl.style.color = color;
     this.hitmarkerEl.style.opacity = '1';
+    this.hitmarkerEl.style.transform = `translate(-50%,-50%) scale(${big ? 1.35 : 1.05})`;
     window.setTimeout(() => {
       this.hitmarkerEl.style.opacity = '0';
-    }, 95);
+      this.hitmarkerEl.style.transform = 'translate(-50%,-50%) scale(0.85)';
+    }, big ? 140 : 95);
   }
 
   pushFeed(text: string, color = '#fff'): void {
@@ -677,12 +743,16 @@ export class GnomelockUI {
     window.setTimeout(() => row.remove(), 4000);
   }
 
-  spawnPopup(text: string, x: number, y: number, z: number, color: string): void {
+  spawnPopup(text: string, x: number, y: number, z: number, color: string, opts?: { big?: boolean }): void {
+    const big = Boolean(opts?.big);
+    const maxTtl = big ? 1.15 : 0.9;
     const el = document.createElement('div');
     el.textContent = text;
-    el.style.cssText = `position:fixed;font-size:13px;font-weight:900;color:${color};text-shadow:0 1px 4px #000;pointer-events:none;transform:translate(-50%,-50%);`;
+    el.style.cssText = big
+      ? `position:fixed;font-size:16px;font-weight:900;color:${color};text-shadow:0 2px 6px rgba(0,0,0,0.95),0 0 10px ${color};pointer-events:none;transform:translate(-50%,-50%) scale(1.35);white-space:nowrap;`
+      : `position:fixed;font-size:13px;font-weight:900;color:${color};text-shadow:0 1px 4px #000;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;`;
     this.hudEl.appendChild(el);
-    this.floating.push({ el, x, y, z, ttl: 0.9 });
+    this.floating.push({ el, x, y, z, ttl: maxTtl, maxTtl, big });
   }
 
   update(
@@ -718,19 +788,34 @@ export class GnomelockUI {
 
     // Local stats
     const hpPct = Math.max(0, Math.min(100, (local.hp / local.maxHp) * 100));
+    this.hpTrailPct = hpPct > this.hpTrailPct ? hpPct : this.hpTrailPct + (hpPct - this.hpTrailPct) * Math.min(1, 5 * dt);
     this.hpFillEl.style.width = `${hpPct}%`;
+    this.hpTrailEl.style.width = `${this.hpTrailPct}%`;
+    this.shieldFillEl.style.width = `${Math.min(100, (local.shield / local.maxHp) * 100)}%`;
     this.hpTextEl.textContent = local.alive
       ? `${Math.round(local.hp)}/${local.maxHp}${local.shield > 0 ? ` +${Math.round(local.shield)}` : ''}`
       : `RESPAWN ${local.respawnTimer.toFixed(1)}s`;
     this.acornEl.textContent = `${Math.round(local.acorns)}g`;
     this.levelEl.textContent = `Lv.${local.level}`;
-    this.ammoEl.textContent = local.infiniteAmmoTimer > 0
+    const ammoTxt = local.infiniteAmmoTimer > 0
       ? 'OVERDRIVE ∞'
       : local.move.sliding
         ? 'SLIDE ∞'
         : local.reloadTimer > 0
           ? 'RELOAD'
           : `${local.ammo}/${local.stats.magSize}`;
+    this.ammoEl.textContent = ammoTxt;
+    this.reticleAmmoEl.textContent = ammoTxt;
+
+    // Dynamic crosshair bloom & ADS tightening
+    this.crosshairBloom = Math.max(0, this.crosshairBloom - dt * 28);
+    const gap = (this.isAdsState ? 5 : 9) + this.crosshairBloom;
+    if (this.crosshairTicks.length === 4) {
+      this.crosshairTicks[0].style.transform = `translate(-50%, calc(-100% - ${gap}px))`;
+      this.crosshairTicks[1].style.transform = `translate(${gap}px, -50%)`;
+      this.crosshairTicks[2].style.transform = `translate(-50%, ${gap}px)`;
+      this.crosshairTicks[3].style.transform = `translate(calc(-100% - ${gap}px), -50%)`;
+    }
 
     // Stamina pips
     this.staminaWrapEl.innerHTML = '';
@@ -800,6 +885,11 @@ export class GnomelockUI {
       f.el.style.left = `${p.sx}px`;
       f.el.style.top = `${p.sy}px`;
       f.el.style.opacity = `${Math.min(1, f.ttl * 2)}`;
+      if (f.big) {
+        const age = f.maxTtl - f.ttl;
+        const sc = age < 0.15 ? 1.35 - (age / 0.15) * 0.35 : 1.0;
+        f.el.style.transform = `translate(-50%,-50%) scale(${sc.toFixed(2)})`;
+      }
     }
 
     this.drawMinimap(state, localSlot);

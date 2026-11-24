@@ -131,8 +131,10 @@ export const sfx = {
     noiseBurst(0.03, 1800, 0.06, 'highpass');
   },
   lastHit(): void {
-    tone(660, 880, 0.08, 'sine', 0.16, 0);
-    tone(990, 1320, 0.1, 'triangle', 0.12, 0.04);
+    noiseBurst(0.04, 2200, 0.14, 'bandpass');
+    tone(784, 1046, 0.09, 'sine', 0.22, 0);
+    tone(1175, 1568, 0.12, 'triangle', 0.18, 0.035);
+    tone(1568, 2093, 0.14, 'sine', 0.12, 0.07);
   },
   orbConfirm(): void {
     tone(740, 1108, 0.1, 'sine', 0.22, 0);

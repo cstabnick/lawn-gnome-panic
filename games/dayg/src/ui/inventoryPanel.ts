@@ -51,6 +51,12 @@ const CSS = `
   font:14px var(--dg-font);cursor:pointer;touch-action:manipulation}
 #${DOM.inv} .iv-btn:hover:not(:disabled){background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
 #${DOM.inv} .iv-btn:disabled{opacity:.45;cursor:default}
+#${DOM.inv} .iv-pack-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px}
+#${DOM.inv} .iv-tab{min-height:44px;min-width:44px;padding:6px 10px;border-radius:8px;border:1px solid var(--dg-border);
+  background:var(--dg-surface-2);color:var(--dg-muted);font:600 12px var(--dg-font);cursor:pointer;touch-action:manipulation}
+#${DOM.inv} .iv-tab:hover{background:var(--dg-surface-hover);color:var(--dg-text);border-color:var(--dg-border-strong)}
+#${DOM.inv} .iv-tab.iv-tab-on{background:var(--dg-accent-dim);border-color:var(--dg-accent);color:var(--dg-accent)}
+#${DOM.inv} .iv-stats{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--dg-muted)}
 #${DOM.inv} .iv-info{border-top:1px solid var(--dg-border);background:var(--dg-surface);padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;min-height:74px;box-sizing:border-box}
 #${DOM.inv} .iv-info-text{flex:1 1 220px;min-width:0}
 #${DOM.inv} .iv-info-actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -65,6 +71,46 @@ const CSS = `
 }`;
 
 type Loot = { title: string; items: ItemStack[]; onTake: (index: number) => void };
+type PackFilter = 'all' | 'food' | 'tools' | 'materials' | 'gear';
+
+const PACK_FILTERS: readonly { id: PackFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'food', label: 'Food' },
+  { id: 'tools', label: 'Tools' },
+  { id: 'materials', label: 'Materials' },
+  { id: 'gear', label: 'Gear' },
+];
+
+function categoryOf(def: ReturnType<typeof getItem>): Exclude<PackFilter, 'all'> {
+  if (def.wear !== undefined || def.tags.includes('WEAR')) return 'gear';
+  if (def.resource === 'food' || def.resource === 'water' || def.resource === 'medicine') return 'food';
+  if (def.resource === 'tools') return 'tools';
+  return 'materials';
+}
+
+const CAT_ORDER: Record<Exclude<PackFilter, 'all'>, number> = { gear: 0, tools: 1, food: 2, materials: 3 };
+
+function itemStatList(stack: ItemStack): string[] {
+  const def = getItem(stack.def);
+  const p = def.props ?? {};
+  const stats: string[] = [
+    `${fmt(def.weight * stack.count)} kg`,
+    `${fmt(def.bulk * stack.count)} L`,
+    `${Math.round(stack.condition * 100)}% cond`,
+  ];
+  if (stack.liquid) stats.push(`${fmt(stack.liquid.litres)} L ${stack.liquid.kind}`);
+  if (p.damage !== undefined) stats.push(`⚔ ${p.damage} dmg`);
+  if (p.reach !== undefined) stats.push(`Reach ${p.reach}m`);
+  if (p.food !== undefined) stats.push(`+${p.food} food`);
+  if (p.water !== undefined) stats.push(`+${p.water} water`);
+  if (p.burnHours !== undefined) stats.push(`${p.burnHours}h burn`);
+  if (p.warmth !== undefined) stats.push(`+${p.warmth} warmth`);
+  if (p.armour !== undefined) stats.push(`${Math.round(p.armour * 100)}% armour`);
+  if (p.light !== undefined) stats.push(`${p.light}m light`);
+  if (p.capacity !== undefined) stats.push(`+${p.capacity}L cap`);
+  if (p.liquidCap !== undefined) stats.push(`${p.liquidCap}L vessel`);
+  return stats;
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -190,6 +236,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
   let open = false;
   let selKey: string | null = null;
   let loot: Loot | null = null;
+  let packFilter: PackFilter = 'all';
   let drag: { key: string; from: StackRef | null; lootIdx: number | null; x: number; y: number; active: boolean; ghost: HTMLElement | null } | null = null;
   let suppressClick = false;
 
@@ -220,12 +267,86 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
     equipWrap.append(grid);
   }
 
+  function sortPack(): void {
+    inv.state.pack.sort((a, b) => {
+      const da = getItem(a.def);
+      const db = getItem(b.def);
+      const ca = CAT_ORDER[categoryOf(da)];
+      const cb = CAT_ORDER[categoryOf(db)];
+      if (ca !== cb) return ca - cb;
+      return da.name.localeCompare(db.name);
+    });
+    selKey = null;
+    deps.onSound?.('stack');
+    render();
+  }
+
+  function quickTransfer(key: string): boolean {
+    if (key.startsWith('loot:') && loot) {
+      const idx = Number(key.split(':')[1]);
+      if (!loot.items[idx]) return false;
+      loot.onTake(idx);
+      deps.onSound?.('drop');
+      selKey = null;
+      render();
+      return true;
+    }
+    if (key.startsWith('pack:')) {
+      const ref = keyRef(key);
+      const stack = inv.get(ref);
+      if (!stack) return false;
+      const def = getItem(stack.def);
+      let moved = false;
+      if (def.wear) {
+        moved = inv.move(ref, { where: 'worn', slot: def.wear });
+      } else {
+        const targetHand: 0 | 1 = inv.get({ where: 'hand', index: 0 }) === null ? 0 : inv.get({ where: 'hand', index: 1 }) === null ? 1 : 0;
+        moved = inv.move(ref, { where: 'hand', index: targetHand });
+      }
+      if (moved) {
+        deps.onSound?.('drop');
+        selKey = null;
+        render();
+      }
+      return moved;
+    }
+    if (key.startsWith('hand:') || key.startsWith('worn:')) {
+      const ref = keyRef(key);
+      if (!inv.get(ref)) return false;
+      const moved = inv.move(ref, { where: 'pack', index: inv.state.pack.length });
+      if (moved) {
+        deps.onSound?.('drop');
+        selKey = null;
+        render();
+      }
+      return moved;
+    }
+    return false;
+  }
+
   function renderPack(): void {
     packCol.replaceChildren();
     const count = inv.state.pack.length;
     packCol.append(el('div', 'iv-h', `Backpack · ${count} ${count === 1 ? 'item' : 'items'}`));
+    const bar = el('div', 'iv-pack-bar');
+    for (const f of PACK_FILTERS) {
+      const btn = el('button', `iv-tab${packFilter === f.id ? ' iv-tab-on' : ''}`, f.label);
+      btn.type = 'button';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        packFilter = f.id;
+        renderPack();
+      });
+      bar.append(btn);
+    }
+    const sortBtn = textButton('Sort', () => sortPack(), count < 2);
+    sortBtn.style.marginLeft = 'auto';
+    bar.append(sortBtn);
+    packCol.append(bar);
+
     const grid = el('div', 'iv-grid');
     inv.state.pack.forEach((stack, index) => {
+      if (packFilter !== 'all' && categoryOf(getItem(stack.def)) !== packFilter) return;
       grid.append(stackCell(stack, `pack:${index}`, '', selKey === `pack:${index}`));
     });
     grid.append(stackCell(null, `pack:${count}`, 'Drop here', false));
@@ -264,6 +385,15 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
     }
   }
 
+  function renderStats(stack: ItemStack): void {
+    const statsRow = el('div', 'iv-stats');
+    for (const s of itemStatList(stack)) {
+      const pill = el('span', 'dg-pill', s);
+      statsRow.append(pill);
+    }
+    infoText.append(statsRow);
+  }
+
   function renderInfo(): void {
     infoText.replaceChildren();
     infoActions.replaceChildren();
@@ -273,8 +403,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       const extra = sel.stack.count > 1 ? ` ×${sel.stack.count}` : '';
       infoText.append(el('div', 'iv-name', `${def.name}${extra}`));
       (infoText.lastElementChild as HTMLElement).style.cssText = 'font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-      infoText.append(el('div', '', `${fmt(def.weight * sel.stack.count)} kg · ${fmt(def.bulk * sel.stack.count)} L · ${Math.round(sel.stack.condition * 100)}% condition`));
-      (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:12px;color:var(--dg-muted)';
+      renderStats(sel.stack);
       const ref = sel.ref;
       for (const action of use.actionsFor(ref)) {
         infoActions.append(textButton(action.label, () => run(action)));
@@ -286,8 +415,9 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       const stack = loot.items[index];
       if (stack) {
         const def = getItem(stack.def);
-        infoText.append(el('div', '', `${def.name}${stack.count > 1 ? ` ×${stack.count}` : ''} · drag to pack or tap Take`));
+        infoText.append(el('div', '', `${def.name}${stack.count > 1 ? ` ×${stack.count}` : ''} · drag or Shift/double-click to take`));
         (infoText.lastElementChild as HTMLElement).style.cssText = 'font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+        renderStats(stack);
         infoActions.append(textButton('Take', () => {
           loot?.onTake(index);
           selKey = null;
@@ -296,7 +426,7 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
         return;
       }
     }
-    infoText.append(el('div', '', 'Drag items between Loot, Pack, Hands & Worn slots — or tap an item for actions.'));
+    infoText.append(el('div', '', 'Drag, Shift+Click, or double-click to transfer items between Loot, Pack, Hands & Worn.'));
     (infoText.lastElementChild as HTMLElement).style.cssText = 'font-size:13px;color:var(--dg-muted)';
   }
 
@@ -417,9 +547,18 @@ export function createInventoryPanel(ui: HTMLElement, deps: { inv: InventorySyst
       return;
     }
     if (suppressClick) { suppressClick = false; return; }
+    if (e.shiftKey && quickTransfer(d.key)) return;
     if (d.key === selKey) selKey = null;
     else selKey = d.key;
     render();
+  });
+
+  root.addEventListener('dblclick', (e) => {
+    if (!open) return;
+    const cell = (e.target as HTMLElement).closest<HTMLElement>('[data-key]');
+    if (!cell || !cell.dataset.key) return;
+    e.stopPropagation();
+    quickTransfer(cell.dataset.key);
   });
 
   closeBtn.addEventListener('click', (e) => { e.stopPropagation(); setOpen(false); });

@@ -43,6 +43,12 @@ export const DAYG_THEME_CSS = `
 #dayg-board ::-webkit-scrollbar-thumb,#dayg-room ::-webkit-scrollbar-thumb,#dayg-trainer ::-webkit-scrollbar-thumb{
   background:var(--dg-border);border-radius:3px;
 }
+.dg-pill{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;
+  font-size:11px;line-height:1.3;background:rgba(14,18,13,0.78);border:1px solid var(--dg-border);color:var(--dg-text);
+  white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+.dg-pill-accent{border-color:var(--dg-accent);color:var(--dg-accent);background:var(--dg-accent-dim);}
 `;
 
 export function installDaygTheme(): void {

@@ -86,6 +86,8 @@ import { createCampView } from './scene/campView';
 import { createCampPanel } from './ui/campPanel';
 import { createVehicleSystem, type VehicleSystem } from './scene/vehiclesView';
 import { createVehiclePanel, type VehiclePanel } from './ui/vehiclePanel';
+import { createNamedSurvivorsView } from './scene/namedSurvivorsView';
+import { createCookingPanel } from './ui/cookingPanel';
 import { createTelemetry } from './live/telemetry';
 
 await loadMyGnome();
@@ -188,6 +190,8 @@ const settlementsView = createSettlementsView({ scene, map: mapData, regions: re
 const radios = createRadioSystem({ scene, map: mapData, interact, collider, getPlayer, onToast: (t) => hud.toast(t) });
 const vignettes = createVignetteSystem({ scene, ui, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
 const collectiblesView = createCollectiblesView({ scene, regions: regionsFor(map), interact, collider, onToast: (t) => hud.toast(t) });
+const namedSurvivorsView = createNamedSurvivorsView({ scene, ui, regions: regionsFor(map), interact, collider, world: host.world, onToast: (t) => hud.toast(t) });
+const cookingPanel = createCookingPanel(ui, { inv, needs, camp, getPlayer, bus, onToast: (t) => hud.toast(t) });
 const campView = createCampView({ scene, hatless, onToast: (t) => hud.toast(t) });
 let vehiclePanel!: VehiclePanel;
 const vehicles: VehicleSystem = createVehicleSystem({
@@ -396,7 +400,8 @@ function frame(now: number): void {
   if (openNow !== wasOpen) { audio.ui(openNow ? 'open' : 'close'); wasOpen = openNow; }
   const anyPanelOpen = panel.isOpen() || chestUi.isOpen() || talkPanel.isOpen() || boardPanel.isOpen()
     || ledgerPanel.isOpen() || mapPanel.isOpen() || audioPanel.isOpen() || roomPanel.isOpen()
-    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || vehiclePanel.isOpen() || !player.alive;
+    || dBuildPanel.isOpen() || trainerPanel.isOpen() || vignettes.isOpen() || campPanel.isOpen() || vehiclePanel.isOpen()
+    || namedSurvivorsView.isOpen() || cookingPanel.isOpen() || !player.alive;
   if (!anyPanelOpen !== lastLockAllowed) {
     lastLockAllowed = !anyPanelOpen;
     input.setPointerLockAllowed(lastLockAllowed);
@@ -415,11 +420,18 @@ function frame(now: number): void {
     inp.sprint = false; inp.climb = false; inp.attack = false; inp.action = false;
   }
 
-  if (trainerPanel.state.godMode) {
+  if (trainerPanel.state.godMode || (trainerPanel.state as { infiniteStamina?: boolean }).infiniteStamina) {
     player.stamina = STAMINA.max;
+  }
+  if (trainerPanel.state.godMode) {
     needs.state.warmth = 100; needs.state.water = 100; needs.state.food = 100; needs.state.calm = 100;
     body.state.infection = null;
     body.state.cracks = { head: 0, chest: 0, armL: 0, armR: 0, legL: 0, legR: 0 };
+  }
+  if (trainerPanel.isOpen()) {
+    (trainerPanel as { updateInfo?: (t: string) => void }).updateInfo?.(
+      `Pos: (${player.pos.x.toFixed(1)}, ${player.pos.y.toFixed(1)}, ${player.pos.z.toFixed(1)}) · Region: ${regionName() ?? 'none'}`,
+    );
   }
 
   if (build.active()) inp.attack = false;
@@ -479,6 +491,7 @@ function frame(now: number): void {
   settlementsView.update(dt);
   radios.update(dt);
   collectiblesView.update(dt);
+  namedSurvivorsView.update(dt);
   campView.update(dt);
   camp.update(dt, hours, world.weather);
   base.update(dt, hours);
@@ -530,7 +543,9 @@ function frame(now: number): void {
     acorns: host.world.players[LOCAL_PLAYER]?.acorns ?? 0,
     quest: tracked ? questTitle(host.world, tracked) : null,
     net: session.status === 'offline' ? null : session.status,
-  });
+    facing: rig.yaw,
+    hands: [inv.state.hands[0]?.def ?? null, inv.state.hands[1]?.def ?? null],
+  } as Parameters<typeof hud.update>[0]);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

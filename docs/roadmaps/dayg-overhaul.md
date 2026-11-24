@@ -15,8 +15,17 @@ This roadmap groups all 23 requested DayG fixes, redesigns, and new gameplay sys
 | **3** | Persistent Owned Worlds & Loot Respawn | Toggleable loot respawning (default OFF), persistent player-owned worlds (local + `@lawn/cloudsave`), seamless `@lawn/mp` join-by-code | Done |
 | **4** | Living World: Settlements, Combat, Radios & Lore | Constructed survivor settlements with defenses, world biome diversity, zombies attacking/interacting with survivors, camp & portable radios with music/talk, environmental storytelling vignettes | Done |
 | **5** | Branching Survivor Stories, Journal, Cooking & Collectibles | Persistent survivors with mutually exclusive branching arcs, relationship & status journal, cooking system, unique collectibles & turn-in unlocks | Done |
-| **6** | Player Camps, NPC Hiring & Turret/Security Base Building | Turrets, alarms, watchtowers & reinforced gates; establishing a player camp, hiring NPCs with roles & security demands | Done |
-| **7** | Vehicles & Modular Franken-Build Modding | 4 distinct vehicles (bicycle, mower kart, trike, utility van/tractor) + modular swappable parts (engines, belts, oils, wheels) with visible mounted 3D parts and mix-and-match effects | Done |
+| **6** | Player Camps, NPC Hiring & Turret/Security Base Building | Turrets, alarms, watchtowers & reinforced gates; establishing a player camp, hiring NPCs with roles & security demands | Pass 2 In Progress |
+| **7** | Vehicles & Modular Franken-Build Modding | 4 distinct vehicles (bicycle, mower kart, trike, utility van/tractor) + modular swappable parts (engines, belts, oils, wheels) with visible mounted 3D parts and mix-and-match effects | Pass 2 In Progress |
+| **8** | Visual World Overhaul, Top-Down World-Render Map & 8 Zombie Animations | Procedural CanvasTextures, per-region biome dressing (trees, arches, boardwalks, lamps), real top-down world-render map, 8 unique zombie locomotion/idle/lunge/stagger/crumble animations | Planned |
+
+---
+
+## Pass 2 Deep-Dive Progress
+- **Wave 1 Complete**:
+  - Epics 1–2: Weapon-aware melee animations (thrust/cleave/punch) + impact particle bursts, backpack category filter tabs + sort + Shift/double-click quick-transfer + zoom/reset 3D preview + compass strip & quick-hand HUD bar + trainer live pos/stamina/time-slider.
+  - Epics 3–4: World JSON export/import & delete + configurable loot respawn interval, constructed guardhouses/bunkers/biome landmarks, full NPC patrol/engage/flee/recover AI with floating HP bars, 5-station radio with tuning static & Now Playing pill, 16 lore vignettes with multi-prop dioramas.
+  - Epic 5: 3-stage branching stories (`0..3`) + 8 3D named survivors with interactive dialogue modal, dedicated Campfire Cooking UI with 10 meals & Heat/Timing bar minigame, 16 collectibles + Curio Display Rack at Lychgate Waystation, upgraded Journal.
 
 ---
 

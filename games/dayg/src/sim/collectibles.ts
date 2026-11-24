@@ -1,9 +1,12 @@
 // Unique Mossgrave collectibles & turn-in milestone unlocks.
 import type { RegionId } from '../sim/types';
 
+export type CollectibleRarity = 'Common' | 'Uncommon' | 'Rare' | 'Relic';
+
 export interface CollectibleDef {
   id: string;
   name: string;
+  rarity: CollectibleRarity;
   region: RegionId;
   offset: [number, number];
   prefab: string;
@@ -11,18 +14,22 @@ export interface CollectibleDef {
 }
 
 export const COLLECTIBLES: readonly CollectibleDef[] = [
-  { id: 'col-brass-key', name: 'Sexton’s Brass Key', region: 'gate-roof', offset: [12, 6], prefab: 'brass-key', blurb: 'Opens nothing now, but gleams like pre-breakout gold.' },
-  { id: 'col-porcelain-owl', name: 'Porcelain Owl', region: 'forecourt', offset: [16, -12], prefab: 'flower-pot', blurb: 'A prized mantel ornament from the Gatehouse.' },
-  { id: 'col-tin-horn', name: 'Verge Scout Horn', region: 'verge-path', offset: [-12, 4], prefab: 'horn', blurb: 'Used to signal shifts across the iron railings.' },
-  { id: 'col-copper-gear', name: 'Clockwork Escapement', region: 'bin-corner', offset: [6, 6], prefab: 'scrap-gear', blurb: 'Precision brass gear from the cemetery sundial.' },
-  { id: 'col-silver-trowel', name: 'Guildmaster Trowel', region: 'masons-corner', offset: [-8, -6], prefab: 'old-trowel', blurb: 'Engraved with the Masons’ compass mark.' },
-  { id: 'col-painted-mug', name: 'Taproom Tankard', region: 'the-tap', offset: [-6, -6], prefab: 'stout-tankard', blurb: 'Stamped "Best Cider in Fescue, 1994".' },
-  { id: 'col-glass-lantern', name: 'Amber Storm Lantern', region: 'ivy-rows', offset: [-10, -8], prefab: 'lantern', blurb: 'Its amber glass still warms the fog.' },
-  { id: 'col-ivory-dice', name: 'Gnomecino Pair', region: 'leaning-rows', offset: [10, -6], prefab: 'gold-coins', blurb: 'Lucky loaded dice carried by a traveling tinker.' },
-  { id: 'col-sunken-compass', name: 'Sunken Brass Compass', region: 'the-sinks', offset: [-8, 10], prefab: 'gnomeps', blurb: 'Always points toward the Lychgate.' },
-  { id: 'col-angel-feather', name: 'Carved Stone Feather', region: 'angel-square', offset: [10, 10], prefab: 'stone-chunk', blurb: 'Chipped from the great monument in the square.' },
-  { id: 'col-child-pinwheel', name: 'Tin Pinwheel', region: 'child-graves', offset: [6, -6], prefab: 'button', blurb: 'Spins softly whenever a storm rolls in.' },
-  { id: 'col-yew-crown', name: 'Woven Yew Circlet', region: 'yew-edge', offset: [-6, 8], prefab: 'wool-scarf', blurb: 'Braided evergreen twigs that never wilt.' },
+  { id: 'col-brass-key', name: 'Sexton’s Brass Key', rarity: 'Common', region: 'gate-roof', offset: [12, 6], prefab: 'brass-key', blurb: 'Opens nothing now, but gleams like pre-breakout gold.' },
+  { id: 'col-porcelain-owl', name: 'Porcelain Owl', rarity: 'Uncommon', region: 'forecourt', offset: [16, -12], prefab: 'flower-pot', blurb: 'A prized mantel ornament from the Gatehouse.' },
+  { id: 'col-tin-horn', name: 'Verge Scout Horn', rarity: 'Common', region: 'verge-path', offset: [-12, 4], prefab: 'horn', blurb: 'Used to signal shifts across the iron railings.' },
+  { id: 'col-copper-gear', name: 'Clockwork Escapement', rarity: 'Uncommon', region: 'bin-corner', offset: [6, 6], prefab: 'scrap-gear', blurb: 'Precision brass gear from the cemetery sundial.' },
+  { id: 'col-silver-trowel', name: 'Guildmaster Trowel', rarity: 'Rare', region: 'masons-corner', offset: [-8, -6], prefab: 'old-trowel', blurb: 'Engraved with the Masons’ compass mark.' },
+  { id: 'col-painted-mug', name: 'Taproom Tankard', rarity: 'Common', region: 'the-tap', offset: [-6, -6], prefab: 'stout-tankard', blurb: 'Stamped "Best Cider in Fescue, 1994".' },
+  { id: 'col-glass-lantern', name: 'Amber Storm Lantern', rarity: 'Rare', region: 'ivy-rows', offset: [-10, -8], prefab: 'lantern', blurb: 'Its amber glass still warms the fog.' },
+  { id: 'col-ivory-dice', name: 'Gnomecino Pair', rarity: 'Uncommon', region: 'leaning-rows', offset: [10, -6], prefab: 'gold-coins', blurb: 'Lucky loaded dice carried by a traveling tinker.' },
+  { id: 'col-sunken-compass', name: 'Sunken Brass Compass', rarity: 'Rare', region: 'the-sinks', offset: [-8, 10], prefab: 'gnomeps', blurb: 'Always points toward the Lychgate.' },
+  { id: 'col-angel-feather', name: 'Carved Stone Feather', rarity: 'Relic', region: 'angel-square', offset: [10, 10], prefab: 'stone-chunk', blurb: 'Chipped from the great monument in the square.' },
+  { id: 'col-child-pinwheel', name: 'Tin Pinwheel', rarity: 'Common', region: 'child-graves', offset: [6, -6], prefab: 'button', blurb: 'Spins softly whenever a storm rolls in.' },
+  { id: 'col-yew-crown', name: 'Woven Yew Circlet', rarity: 'Uncommon', region: 'yew-edge', offset: [-6, 8], prefab: 'wool-scarf', blurb: 'Braided evergreen twigs that never wilt.' },
+  { id: 'col-chapel-bell', name: 'Bronze Chapel Bell', rarity: 'Relic', region: 'the-spire', offset: [8, -8], prefab: 'bell', blurb: 'Cast for the Bell Chapel; rings clear even in heavy fog.' },
+  { id: 'col-pond-locket', name: 'Lily-Pond Locket', rarity: 'Rare', region: 'lily-pond', offset: [-7, 5], prefab: 'gold-coins', blurb: 'Holds a tiny painted portrait of two pre-breakout gnomes.' },
+  { id: 'col-shed-caliper', name: 'Master Tinker Caliper', rarity: 'Uncommon', region: 'shed-floor', offset: [9, 7], prefab: 'hand-fork', blurb: 'Brass vernier gauge used by the Yard groundskeeper.' },
+  { id: 'col-compost-chalice', name: 'Gilded Peat Chalice', rarity: 'Relic', region: 'warm-bays', offset: [-9, -5], prefab: 'glaze-pot', blurb: 'Recovered intact from the deepest compost bay.' },
 ];
 
 export interface CollectibleMilestone {
@@ -36,6 +43,7 @@ export const COLLECTIBLE_MILESTONES: readonly CollectibleMilestone[] = [
   { count: 6, title: 'Hearth Curio (+50 Acorns)', acorns: 50 },
   { count: 9, title: 'Master Scavenger (+75 Acorns)', acorns: 75 },
   { count: 12, title: 'Crown of Mossgrave (+150 Acorns)', acorns: 150 },
+  { count: 16, title: 'Grand Curator of Mossgrave (+250 Acorns)', acorns: 250 },
 ];
 
 export interface CollectibleSave {

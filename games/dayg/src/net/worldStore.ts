@@ -9,6 +9,7 @@ export interface OwnedWorldMeta {
   seed: number;
   day: number;
   lootRespawn: boolean;
+  lootRespawnInterval?: '1d' | '3d' | '5d' | '7d';
   updatedAt: string;
 }
 
@@ -66,6 +67,56 @@ export async function loadLocalWorldSnapshot(code: string): Promise<Snapshot | n
     if (!b64) return null;
     const bytes = fromBase64(b64);
     return await unpackSnapshot(bytes);
+  } catch {
+    return null;
+  }
+}
+
+export function exportWorldJson(code: string): string | null {
+  const meta = readIndex().find((w) => w.code === code) ?? null;
+  let snapshotB64: string | null = null;
+  try {
+    snapshotB64 = localStorage.getItem(`${SNAP_PREFIX}${code}`);
+  } catch {
+    snapshotB64 = null;
+  }
+  if (!meta && !snapshotB64) return null;
+  return JSON.stringify({ version: 1, meta, snapshotB64 }, null, 2);
+}
+
+export function importWorldJson(json: string): OwnedWorldMeta | null {
+  try {
+    const parsed = JSON.parse(json) as {
+      version?: number;
+      meta?: Partial<OwnedWorldMeta> | null;
+      snapshotB64?: string | null;
+    };
+    if (!parsed || typeof parsed !== 'object' || !parsed.meta) {
+      return null;
+    }
+    const raw = parsed.meta;
+    if (typeof raw.code !== 'string') return null;
+    const code = raw.code.trim().toUpperCase().slice(0, 16);
+    if (!code) return null;
+    const meta: OwnedWorldMeta = {
+      code,
+      title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim().slice(0, 60) : 'Imported World',
+      owner: typeof raw.owner === 'string' && raw.owner.trim() ? raw.owner.trim() : 'Survivor',
+      seed: typeof raw.seed === 'number' && Number.isFinite(raw.seed) ? raw.seed : 1,
+      day: typeof raw.day === 'number' && Number.isFinite(raw.day) ? raw.day : 1,
+      lootRespawn: Boolean(raw.lootRespawn),
+      ...(raw.lootRespawnInterval ? { lootRespawnInterval: raw.lootRespawnInterval } : {}),
+      updatedAt: typeof raw.updatedAt === 'string' && raw.updatedAt ? raw.updatedAt : new Date().toISOString(),
+    };
+    upsertOwnedWorld(meta);
+    if (typeof parsed.snapshotB64 === 'string' && parsed.snapshotB64.length > 0) {
+      try {
+        localStorage.setItem(`${SNAP_PREFIX}${code}`, parsed.snapshotB64);
+      } catch {
+        // Ignore storage quota errors.
+      }
+    }
+    return meta;
   } catch {
     return null;
   }

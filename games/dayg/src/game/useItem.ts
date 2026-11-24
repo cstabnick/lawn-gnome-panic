@@ -1,7 +1,7 @@
 // Item use: what the pack can do with a stack (eat, drink, hold, wear, stow, drop) and the timed recipes.
 import { FIRE } from '../config';
 import { getItem, hasTag, type Tag } from '../items/defs';
-import { RECIPES } from '../items/recipes';
+import { RECIPES, CAMPFIRE_MEALS, type CampfireMeal } from '../items/recipes';
 import { BODY_PARTS, type BodyPart, type CrackLevel } from './types';
 import type { WeatherState } from '../sim/types';
 import type { Bus } from './bus';
@@ -25,6 +25,49 @@ const TREAT_MESSAGES: Partial<Record<RecipeId, { ok: string; fail: string }>> = 
 const TAG_WHY: Partial<Record<Tag, string>> = { MOSS: 'No moss to treat' };
 
 function fmtLitres(n: number): string { return String(Number(n.toFixed(2))); }
+
+export type CookQuality = 'perfect' | 'good' | 'charred';
+
+const QUALITY_MUL: Record<CookQuality, number> = { perfect: 1.35, good: 1, charred: 0.5 };
+
+export function cookCampfireMeal(
+  deps: { inv: InventorySystem; needs: NeedsSystem; camp: CampSystem; getPlayer: () => PlayerState; bus: Bus },
+  meal: CampfireMeal,
+  quality: CookQuality = 'good',
+): { ok: boolean; why?: string; foodGain: number; warmGain: number; calmGain: number } {
+  const { inv, needs, camp, getPlayer, bus } = deps;
+  if (meal.needsFire && !camp.nearFire(getPlayer().pos)) {
+    return { ok: false, why: 'Needs a lit campfire nearby', foodGain: 0, warmGain: 0, calmGain: 0 };
+  }
+  for (const input of meal.inputs) {
+    if (inv.countTag(input.tag) < input.count) {
+      return { ok: false, why: `Needs ${input.count}× ${input.tag}`, foodGain: 0, warmGain: 0, calmGain: 0 };
+    }
+  }
+  if (meal.water > 0 && inv.cleanWater() < meal.water) {
+    return { ok: false, why: `Needs ${fmtLitres(meal.water)} L clean water`, foodGain: 0, warmGain: 0, calmGain: 0 };
+  }
+  for (const input of meal.inputs) {
+    if (!inv.consumeTag(input.tag, input.count)) {
+      return { ok: false, why: `Missing ${input.tag}`, foodGain: 0, warmGain: 0, calmGain: 0 };
+    }
+  }
+  if (meal.water > 0 && inv.useWater(meal.water) < meal.water - 1e-6) {
+    return { ok: false, why: 'Not enough clean water', foodGain: 0, warmGain: 0, calmGain: 0 };
+  }
+
+  const mul = QUALITY_MUL[quality];
+  const foodGain = Math.round(meal.food * mul);
+  const warmGain = Math.round(meal.warmth * mul);
+  const calmGain = Math.round(meal.calm * mul);
+  needs.state.food = Math.min(100, needs.state.food + foodGain);
+  needs.state.warmth = Math.min(100, needs.state.warmth + warmGain);
+  needs.state.calm = Math.min(100, needs.state.calm + calmGain);
+  bus.emit('ate', { def: 'bread-loaf' });
+  const tag = quality === 'perfect' ? 'Perfect!' : quality === 'charred' ? 'Charred' : 'Good';
+  bus.emit('hint', { text: `${tag} ${meal.name} (+${foodGain} food, +${warmGain} warmth, +${calmGain} calm)` });
+  return { ok: true, foodGain, warmGain, calmGain };
+}
 
 export function createUseApi(deps: UseDeps): UseApi {
   const { inv, needs, body, camp, bus } = deps;
@@ -146,14 +189,16 @@ export function createUseApi(deps: UseDeps): UseApi {
       case 'mushroom-skewer':
       case 'hearth-stew':
       case 'spiced-cider': {
-        const foodGain = r.id === 'hearth-stew' ? 50 : r.id === 'mushroom-skewer' ? 35 : 28;
-        const warmGain = r.id === 'spiced-cider' ? 32 : 20;
-        const calmGain = r.id === 'spiced-cider' ? 18 : 10;
+        const meal = CAMPFIRE_MEALS.find((m) => m.id === r.id);
+        if (!meal) return false;
+        const foodGain = meal.food;
+        const warmGain = meal.warmth;
+        const calmGain = meal.calm;
         needs.state.food = Math.min(100, needs.state.food + foodGain);
         needs.state.warmth = Math.min(100, needs.state.warmth + warmGain);
         needs.state.calm = Math.min(100, needs.state.calm + calmGain);
         bus.emit('ate', { def: 'bread-loaf' });
-        bus.emit('hint', { text: `Cooked ${r.name.replace('Cook: ', '')} (+${foodGain} food, +${warmGain} warmth)` });
+        bus.emit('hint', { text: `Cooked ${meal.name} (+${foodGain} food, +${warmGain} warmth)` });
         return true;
       }
     }

@@ -47,6 +47,16 @@ export const RADIO_STATIONS: readonly RadioStation[] = [
       '📻 ♪ Soft chime resonates through static ♪',
     ],
   },
+  {
+    id: 5,
+    name: '104.3 FM — Fescue Folk & Tales',
+    tagline: 'Warm acoustic arpeggios & survivor stories',
+    broadcasts: [
+      '📻 "Back before the damp, we used to string paper lanterns from the yew boughs to the tap."',
+      '📻 ♪ Playing: "Acorn Waltz by the Standpipe" ♪',
+      '📻 "Old Barnaby says a good coat of linseed keeps the moss off till spring. Here’s to spring."',
+    ],
+  },
 ];
 
 export interface RadioAudio {
@@ -95,14 +105,43 @@ export function createRadioAudio(): RadioAudio {
     osc.stop(ctx.currentTime + dur + 0.03);
   }
 
+  function playStaticSweep(): void {
+    const g = ensureGain();
+    if (!g) return;
+    const { ctx, out } = g;
+    const dur = 0.16;
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * 0.45;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(750, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(2800, ctx.currentTime + dur);
+    filter.Q.value = 1.6;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(out);
+    src.start();
+    src.stop(ctx.currentTime + dur + 0.02);
+  }
+
   const MELODY_2 = [261.6, 329.6, 392.0, 329.6, 293.7, 349.2, 440.0, 392.0];
   const BASS_3 = [110, 110, 146.8, 130.8, 110, 164.8, 146.8, 98];
+  const FOLK_5 = [196.0, 246.94, 293.66, 392.0, 293.66, 246.94, 220.0, 293.66, 349.23, 440.0];
 
   return {
     cycleStation() {
       stationIdx = (stationIdx + 1) % RADIO_STATIONS.length;
       noteTimer = 0;
       broadcastTimer = 3;
+      playStaticSweep();
       return RADIO_STATIONS[stationIdx];
     },
     current: () => RADIO_STATIONS[stationIdx],
@@ -130,9 +169,12 @@ export function createRadioAudio(): RadioAudio {
         } else if (stationIdx === 3) {
           noteTimer = 0.32;
           playTone(BASS_3[step % BASS_3.length], 0.25, 'sawtooth', 0.22);
-        } else {
+        } else if (stationIdx === 4) {
           noteTimer = 2.2;
           playTone(523.25 * (step % 3 === 0 ? 1.5 : 1), 0.9, 'sine', 0.18);
+        } else {
+          noteTimer = 0.42;
+          playTone(FOLK_5[step % FOLK_5.length], 0.38, 'triangle', 0.3);
         }
       }
 

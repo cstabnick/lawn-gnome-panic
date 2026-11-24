@@ -10,8 +10,19 @@ import { knownBy, standingOf, entryOf } from '../sim/social';
 import { questTitle } from '../sim/quests';
 
 import { LORE_NOTES, getDiscoveredNotes } from '../sim/loreNotes';
-import { COLLECTIBLES, COLLECTIBLE_MILESTONES, loadCollectibles, turnInCollectibles } from '../sim/collectibles';
-import { BRANCH_STORIES, NAMED_SURVIVORS, acceptStory, completeStory, loadStoryState, outcomeSummary, saveStoryState } from '../sim/survivorStories';
+import { COLLECTIBLES, COLLECTIBLE_MILESTONES, loadCollectibles, turnInCollectibles, type CollectibleRarity } from '../sim/collectibles';
+import {
+  BRANCH_STORIES,
+  NAMED_SURVIVORS,
+  acceptStory,
+  advanceStory,
+  completeStory,
+  dispositionTier,
+  getStoryStage,
+  loadStoryState,
+  outcomeSummary,
+  saveStoryState,
+} from '../sim/survivorStories';
 import { LOCAL_PLAYER } from '../sim/world';
 
 const LEDGER_ROWS = 50;
@@ -156,12 +167,14 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
     wrap.append(el('div', 'font:bold 14px var(--dg-font);margin:6px 0 4px;color:var(--dg-accent)', 'Persistent Survivors'));
     for (const s of NAMED_SURVIVORS) {
       const rec = stories.survivors[s.id];
+      const tier = dispositionTier(rec.disposition);
+      const tierCol = tier === 'Confidant' ? '#e8c35a' : tier === 'Ally' ? 'var(--dg-ok)' : tier === 'Rival' ? 'var(--dg-danger)' : tier === 'Wary' ? '#e09f5a' : 'var(--dg-muted)';
       const card = el('div', 'padding:8px 10px;margin:4px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
       const statusCol = rec.status === 'shattered' ? 'var(--dg-danger)' : rec.status === 'recruited' ? 'var(--dg-accent)' : 'var(--dg-ok)';
       card.append(el('div', 'font:bold 14px var(--dg-font)', `${s.name} · ${s.role}`));
       card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin:2px 0', s.blurb));
       const meta = el('div', 'font:12px var(--dg-font)');
-      meta.innerHTML = `<span style="color:${statusCol};font-weight:700;text-transform:uppercase">${rec.status}</span> · Disposition: ${rec.disposition} · Last known: ${regionName(rec.lastRegion)}`;
+      meta.innerHTML = `<span style="color:${statusCol};font-weight:700;text-transform:uppercase">${rec.status}</span> · <span style="color:${tierCol};font-weight:700">${tier}</span> (${rec.disposition}) · Last known: ${regionName(rec.lastRegion)}`;
       card.append(meta);
       wrap.append(card);
     }
@@ -197,47 +210,87 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
     const st = loadStoryState();
     const outcomes = outcomeSummary(st);
     const outBox = el('div', 'padding:10px;margin:6px 0 10px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
-    outBox.append(el('div', 'font:bold 13px var(--dg-font);color:var(--dg-accent);margin-bottom:4px', `World Outcomes (${outcomes.length}/4 pairs resolved)`));
-    if (outcomes.length === 0) outBox.append(el('div', 'font:12px var(--dg-font);opacity:0.75', 'Choices you complete here lock out rival paths and shape Mossgrave.'));
+    outBox.append(el('div', 'font:bold 13px var(--dg-font);color:var(--dg-accent);margin-bottom:4px', `World Outcomes (${outcomes.length}/4 rival pairs resolved)`));
+    if (outcomes.length === 0) outBox.append(el('div', 'font:12px var(--dg-font);opacity:0.75', 'Each pair is mutually exclusive. Advancing a story through Stage 3/3 locks out its rival.'));
     for (const o of outcomes) outBox.append(el('div', 'font:12px var(--dg-font);margin:2px 0', `• ${o}`));
     wrap.append(outBox);
 
-    for (const def of BRANCH_STORIES) {
-      const status = st.stories[def.id];
-      const surv = NAMED_SURVIVORS.find((x) => x.id === def.survivorId);
-      const card = el('div', `padding:10px;margin:6px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${status === 'locked' ? 0.55 : 1}`);
-      card.append(el('div', 'font:bold 15px var(--dg-font)', `${def.title} (${surv?.name ?? def.survivorId})`));
-      card.append(el('div', 'font:13px var(--dg-font);color:var(--dg-muted);margin:4px 0', def.summary));
-      const row = el('div', 'display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap');
-      if (status === 'locked') {
-        row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-danger)', 'LOCKED OUT BY RIVAL CHOICE'));
-      } else if (status === 'completed') {
-        row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-ok)', `COMPLETED (+${def.rewardAcorns} acorns)`));
-      } else {
-        if (status === 'available') {
-          row.append(button('Accept Story', () => { acceptStory(st, def.id); saveStoryState(st); render(); }));
-        }
-        row.append(button(`Complete (+${def.rewardAcorns} acorns)`, () => {
-          const res = completeStory(st, def.id);
-          if (res.ok) {
-            saveStoryState(st);
-            const rec = w.players[LOCAL_PLAYER];
-            if (rec) rec.acorns += res.rewardAcorns;
-            bus.emit('hint', { text: `${def.title} complete! +${res.rewardAcorns} acorns` });
-            render();
-          }
-        }));
-      }
-      card.append(row);
-      wrap.append(card);
+    const pairs: [typeof BRANCH_STORIES[number], typeof BRANCH_STORIES[number]][] = [];
+    for (let i = 0; i < BRANCH_STORIES.length; i += 2) {
+      if (BRANCH_STORIES[i + 1]) pairs.push([BRANCH_STORIES[i], BRANCH_STORIES[i + 1]]);
     }
+
+    pairs.forEach(([left, right], pairIdx) => {
+      wrap.append(el('div', 'font:bold 12px var(--dg-font);color:var(--dg-accent);margin:10px 0 4px', `Rival Pair ${pairIdx + 1}`));
+      const grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:6px');
+      for (const def of [left, right]) {
+        const status = st.stories[def.id];
+        const stage = getStoryStage(st, def.id);
+        const surv = NAMED_SURVIVORS.find((x) => x.id === def.survivorId);
+        const card = el('div', `padding:10px;border-radius:8px;background:var(--dg-surface-2);border:1px solid ${status === 'completed' ? 'var(--dg-ok)' : status === 'locked' ? 'var(--dg-danger)' : 'var(--dg-border)'};opacity:${status === 'locked' ? 0.58 : 1}`);
+        card.append(el('div', 'font:bold 15px var(--dg-font)', `${def.title} (${surv?.name ?? def.survivorId})`));
+        card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-accent);margin-top:2px', `Stage ${stage}/3 · ${status.toUpperCase()}`));
+        card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin:4px 0', def.summary));
+        if (status === 'active' && stage > 0) {
+          card.append(el('div', 'font:12px var(--dg-font);padding:6px;border-radius:6px;background:rgba(232,195,90,0.08);margin:4px 0',
+            `Stage ${stage}: ${def.stages[stage - 1]}`));
+        }
+        const row = el('div', 'display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap');
+        if (status === 'locked') {
+          row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-danger)', 'LOCKED OUT'));
+        } else if (status === 'completed') {
+          row.append(el('span', 'font:bold 12px var(--dg-font);color:var(--dg-ok)', `COMPLETED (+${def.rewardAcorns} acorns)`));
+        } else {
+          if (status === 'available') {
+            row.append(button('Accept (Stage 1/3)', () => { acceptStory(st, def.id); saveStoryState(st); render(); }));
+          } else {
+            row.append(button(stage < 3 ? `Advance (${stage}/3 → ${stage + 1}/3)` : `Finish Stage 3 (+${def.rewardAcorns})`, () => {
+              const res = advanceStory(st, def.id);
+              if (res.ok) {
+                saveStoryState(st);
+                if (res.completed) {
+                  const rec = w.players[LOCAL_PLAYER];
+                  if (rec) rec.acorns += res.rewardAcorns;
+                  bus.emit('hint', { text: `${def.title} complete! +${res.rewardAcorns} acorns` });
+                }
+                render();
+              }
+            }));
+          }
+          row.append(button(`Complete Now (+${def.rewardAcorns})`, () => {
+            const res = completeStory(st, def.id);
+            if (res.ok) {
+              saveStoryState(st);
+              const rec = w.players[LOCAL_PLAYER];
+              if (rec) rec.acorns += res.rewardAcorns;
+              bus.emit('hint', { text: `${def.title} complete! +${res.rewardAcorns} acorns` });
+              render();
+            }
+          }));
+        }
+        card.append(row);
+        grid.append(card);
+      }
+      wrap.append(grid);
+    });
     return wrap;
   }
 
   function loreBody(): HTMLElement {
     const wrap = el('div');
     const found = new Set(getDiscoveredNotes());
-    wrap.append(el('div', 'font:bold 14px var(--dg-font);margin:6px 0 8px;color:var(--dg-accent)', `Discovered Notes (${found.size}/${LORE_NOTES.length})`));
+    const pct = LORE_NOTES.length > 0 ? Math.round((found.size / LORE_NOTES.length) * 100) : 0;
+    const preFound = LORE_NOTES.filter((n) => n.era === 'pre-breakout' && found.has(n.id)).length;
+    const postFound = LORE_NOTES.filter((n) => n.era === 'post-breakout' && found.has(n.id)).length;
+
+    const progBox = el('div', 'padding:10px;margin:6px 0 8px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
+    progBox.append(el('div', 'font:bold 14px var(--dg-font);color:var(--dg-accent)',
+      `Lore Progress: ${found.size}/${LORE_NOTES.length} (${pct}%) · Pre-Breakout ${preFound} · Post-Breakout ${postFound}`));
+    const bar = el('div', 'height:8px;border-radius:4px;background:#2a3324;margin-top:6px;overflow:hidden');
+    bar.append(el('div', `height:100%;width:${pct}%;background:var(--dg-accent)`));
+    progBox.append(bar);
+    wrap.append(progBox);
+
     for (const note of LORE_NOTES) {
       const has = found.has(note.id);
       const card = el('div', `padding:10px;margin:6px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${has ? 1 : 0.6}`);
@@ -246,6 +299,15 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
       wrap.append(card);
     }
     return wrap;
+  }
+
+  function rarityColor(r: CollectibleRarity): string {
+    switch (r) {
+      case 'Common': return '#9eb098';
+      case 'Uncommon': return '#6ec077';
+      case 'Rare': return '#64a8e8';
+      case 'Relic': return '#e8c35a';
+    }
   }
 
   function collectiblesBody(w: WorldState): HTMLElement {
@@ -262,19 +324,29 @@ export function createLedgerPanel(ui: HTMLElement, deps: { host: SimHost; quests
         bus.emit('hint', { text: `Turned in collectibles: +${res.acorns} acorns (${res.unlocked.join(', ')})` });
         render();
       } else {
-        bus.emit('hint', { text: 'Find more collectibles to reach the next milestone (3 / 6 / 9 / 12).' });
+        bus.emit('hint', { text: 'Find more collectibles to reach the next milestone (3 / 6 / 9 / 12 / 16).' });
       }
     }));
     wrap.append(head);
 
-    const ms = el('div', 'font:12px var(--dg-font);color:var(--dg-muted);margin-bottom:8px',
-      COLLECTIBLE_MILESTONES.map((m) => `${save.claimedMilestones.includes(m.count) ? '✓' : '○'} ${m.count}: ${m.title}`).join('  ·  '));
-    wrap.append(ms);
+    const perkBox = el('div', 'padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
+    perkBox.append(el('div', 'font:bold 12px var(--dg-font);color:var(--dg-accent);margin-bottom:4px', 'Curio Rack Perk Checklist'));
+    for (const m of COLLECTIBLE_MILESTONES) {
+      const claimed = save.claimedMilestones.includes(m.count);
+      const ready = found.size >= m.count && !claimed;
+      const line = el('div', `font:12px var(--dg-font);color:${claimed ? 'var(--dg-ok)' : ready ? 'var(--dg-accent)' : 'var(--dg-muted)'}`,
+        `${claimed ? '[CLAIMED]' : ready ? '[READY]' : '[ ]'} ${m.count}/${COLLECTIBLES.length}: ${m.title}`);
+      perkBox.append(line);
+    }
+    wrap.append(perkBox);
 
     for (const c of COLLECTIBLES) {
       const has = found.has(c.id);
       const card = el('div', `padding:8px 10px;margin:4px 0;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border);opacity:${has ? 1 : 0.65}`);
-      card.append(el('div', 'font:bold 14px var(--dg-font)', `${has ? '★ ' : '☆ '}${c.name}`));
+      const titleRow = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px');
+      titleRow.append(el('span', 'font:bold 14px var(--dg-font)', `${has ? '★ ' : '☆ '}${c.name}`));
+      titleRow.append(el('span', `font:bold 11px var(--dg-font);color:${rarityColor(c.rarity)}`, c.rarity.toUpperCase()));
+      card.append(titleRow);
       card.append(el('div', 'font:12px var(--dg-font);color:var(--dg-muted)', has ? c.blurb : `Rumoured near ${regionName(c.region)}`));
       wrap.append(card);
     }

@@ -5,6 +5,7 @@ export interface TrainerState {
   godMode: boolean;
   flyMode: boolean;
   flySpeed: number;
+  infiniteStamina?: boolean;
 }
 
 export interface TrainerDeps {
@@ -17,6 +18,7 @@ export interface TrainerDeps {
   onSetTimeScale(scale: number): void;
   onToggleLootRespawn?: () => boolean;
   onGiveVehicleParts?: () => void;
+  onUnlockAllLore?: () => void;
 }
 
 export interface TrainerPanel {
@@ -26,6 +28,7 @@ export interface TrainerPanel {
   open(): void;
   close(): void;
   isOpen(): boolean;
+  updateInfo?(text: string): void;
 }
 
 const CSS = `
@@ -44,6 +47,10 @@ const CSS = `
 #dayg-trainer .dt-btn:hover{background:var(--dg-surface-hover);border-color:var(--dg-border-strong)}
 #dayg-trainer .dt-btn.dt-on{background:#4f6b3a;border-color:var(--dg-accent);color:#fff;font-weight:600}
 #dayg-trainer select{min-height:44px;flex:1 1 160px;padding:6px 8px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface-2);color:var(--dg-text);font:13px var(--dg-font)}
+#dayg-trainer .dt-info{display:none;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,0.24);border:1px solid var(--dg-border);font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dg-muted)}
+#dayg-trainer .dt-range-row{display:flex;align-items:center;gap:8px}
+#dayg-trainer .dt-range-lbl{font-size:12px;color:var(--dg-text);min-width:74px;font-variant-numeric:tabular-nums}
+#dayg-trainer input[type=range]{flex:1;min-height:44px;accent-color:var(--dg-accent);cursor:pointer;touch-action:manipulation}
 #dayg-trainer-btn{position:fixed;top:calc(120px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:40;
   min-width:44px;min-height:44px;padding:0 6px;border-radius:8px;border:1px solid var(--dg-border);background:var(--dg-surface);
   color:var(--dg-accent);font:700 13px var(--dg-font);cursor:pointer;touch-action:manipulation;pointer-events:auto}`;
@@ -56,7 +63,7 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     document.head.appendChild(st);
   }
 
-  const state: TrainerState = { godMode: false, flyMode: false, flySpeed: 18 };
+  const state: TrainerState = { godMode: false, flyMode: false, flySpeed: 18, infiniteStamina: false };
   const root = document.createElement('div');
   root.id = 'dayg-trainer';
   root.setAttribute('role', 'dialog');
@@ -90,6 +97,9 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
   closeBtn.style.flex = '0 0 44px';
   head.append(title, closeBtn);
 
+  const infoEl = document.createElement('div');
+  infoEl.className = 'dt-info';
+
   // Modes
   const modesSec = document.createElement('div');
   modesSec.className = 'dt-sec';
@@ -106,7 +116,12 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     flyBtn.textContent = `Fly / Noclip: ${state.flyMode ? 'ON' : 'OFF'}`;
     flyBtn.classList.toggle('dt-on', state.flyMode);
   });
-  modesRow.append(godBtn, flyBtn);
+  const stamBtn = mkBtn('Inf. Stamina: OFF', () => {
+    state.infiniteStamina = !state.infiniteStamina;
+    stamBtn.textContent = `Inf. Stamina: ${state.infiniteStamina ? 'ON' : 'OFF'}`;
+    stamBtn.classList.toggle('dt-on', Boolean(state.infiniteStamina));
+  });
+  modesRow.append(godBtn, flyBtn, stamBtn);
 
   const speedRow = document.createElement('div');
   speedRow.className = 'dt-row';
@@ -179,6 +194,28 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     mkBtn('Dusk', () => deps.onSetTime(19.5)),
     mkBtn('Night', () => deps.onSetTime(23)),
   );
+  const timeRangeRow = document.createElement('div');
+  timeRangeRow.className = 'dt-range-row';
+  const timeLbl = document.createElement('div');
+  timeLbl.className = 'dt-range-lbl';
+  timeLbl.textContent = 'Time: 12:00';
+  const timeSlider = document.createElement('input');
+  timeSlider.type = 'range';
+  timeSlider.min = '0';
+  timeSlider.max = '23.5';
+  timeSlider.step = '0.5';
+  timeSlider.value = '12';
+  timeSlider.setAttribute('aria-label', 'Time of day');
+  timeSlider.addEventListener('input', (e) => {
+    e.stopPropagation();
+    const val = Number(timeSlider.value);
+    const hh = String(Math.floor(val)).padStart(2, '0');
+    const mm = val % 1 === 0 ? '00' : '30';
+    timeLbl.textContent = `Time: ${hh}:${mm}`;
+    deps.onSetTime(val);
+  });
+  timeRangeRow.append(timeLbl, timeSlider);
+
   const wRow = document.createElement('div');
   wRow.className = 'dt-row';
   const weatherBtn = mkBtn('Cycle Weather', () => {
@@ -199,8 +236,11 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
     });
     wRow.append(lootBtn);
   }
+  if (deps.onUnlockAllLore) {
+    wRow.append(mkBtn('Unlock All Lore', () => deps.onUnlockAllLore!()));
+  }
 
-  root.append(head, modesSec, modesRow, speedRow, tpSec, tpRow, kitSec, kitRow, zSec, zRow, wSec, tRow, wRow);
+  root.append(head, infoEl, modesSec, modesRow, speedRow, tpSec, tpRow, kitSec, kitRow, zSec, zRow, wSec, tRow, timeRangeRow, wRow);
   ui.appendChild(root);
 
   let openFlag = false;
@@ -208,5 +248,16 @@ export function createTrainerPanel(ui: HTMLElement, deps: TrainerDeps): TrainerP
   function close(): void { openFlag = false; root.classList.remove('dt-open'); }
   function toggle(): void { if (openFlag) close(); else open(); }
 
-  return { root, state, toggle, open, close, isOpen: () => openFlag };
+  return {
+    root,
+    state,
+    toggle,
+    open,
+    close,
+    isOpen: () => openFlag,
+    updateInfo(text: string) {
+      infoEl.textContent = text;
+      infoEl.style.display = text ? 'block' : 'none';
+    },
+  };
 }

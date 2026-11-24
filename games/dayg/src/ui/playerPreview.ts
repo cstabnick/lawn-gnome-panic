@@ -19,6 +19,7 @@ export function createPlayerPreview(container: HTMLElement): PlayerPreview {
   let camera: THREE.PerspectiveCamera | null = null;
   let model: ReturnType<typeof makeGnome> | null = null;
   let yaw = 0.35;
+  let zoomed = false;
   let dragging = false;
   let lastX = 0;
   let lastT = 0;
@@ -32,9 +33,63 @@ export function createPlayerPreview(container: HTMLElement): PlayerPreview {
   let headObj: THREE.Object3D | null = null;
   let latestGear: { held: ItemId | null; back: ItemId | null; head: ItemId | null } = { held: null, back: null, head: null };
 
+  const controls = document.createElement('div');
+  controls.style.cssText = 'position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2';
+  const mkCtrlBtn = (label: string, title: string, onClick: () => void): HTMLButtonElement => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.style.cssText = 'min-width:44px;min-height:44px;padding:0 8px;border-radius:8px;border:1px solid var(--dg-border);' +
+      'background:rgba(14,18,13,0.78);color:var(--dg-text);font:600 13px var(--dg-font);cursor:pointer;touch-action:manipulation';
+    b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    b.addEventListener('mousedown', (e) => e.stopPropagation());
+    b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+    return b;
+  };
+
+  function applyCameraZoom(): void {
+    if (!camera) return;
+    if (zoomed) {
+      camera.position.set(0, 1.05, 2.15);
+      camera.lookAt(0, 0.92, 0);
+    } else {
+      camera.position.set(0, 1.15, 3.35);
+      camera.lookAt(0, 0.85, 0);
+    }
+  }
+
+  const resetBtn = mkCtrlBtn('↺', 'Reset rotation', () => { yaw = 0.35; });
+  const zoomBtn = mkCtrlBtn('1×', 'Toggle zoom', () => {
+    zoomed = !zoomed;
+    zoomBtn.textContent = zoomed ? '1.5×' : '1×';
+    zoomBtn.style.borderColor = zoomed ? 'var(--dg-accent)' : 'var(--dg-border)';
+    zoomBtn.style.color = zoomed ? 'var(--dg-accent)' : 'var(--dg-text)';
+    applyCameraZoom();
+  });
+  controls.append(resetBtn, zoomBtn);
+  container.appendChild(controls);
+
+  const pillsBar = document.createElement('div');
+  pillsBar.style.cssText = 'position:absolute;bottom:22px;left:6px;right:6px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;pointer-events:none;z-index:2';
+  container.appendChild(pillsBar);
+
+  function updatePills(gear: { held: ItemId | null; back: ItemId | null; head: ItemId | null }): void {
+    pillsBar.replaceChildren();
+    const slots: [string, ItemId | null][] = [['Hand', gear.held], ['Back', gear.back], ['Head', gear.head]];
+    for (const [label, id] of slots) {
+      const pill = document.createElement('span');
+      pill.className = `dg-pill${id ? ' dg-pill-accent' : ''}`;
+      pill.textContent = `${label}: ${id ? getItem(id).name : '—'}`;
+      pillsBar.appendChild(pill);
+    }
+  }
+  updatePills(latestGear);
+
   const hint = document.createElement('div');
   hint.textContent = 'Drag to rotate';
-  hint.style.cssText = 'position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:11px;color:var(--dg-muted);pointer-events:none';
+  hint.style.cssText = 'position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:11px;color:var(--dg-muted);pointer-events:none';
   container.appendChild(hint);
 
   function init(): void {
@@ -50,8 +105,7 @@ export function createPlayerPreview(container: HTMLElement): PlayerPreview {
 
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(34, w / h, 0.1, 20);
-      camera.position.set(0, 1.15, 3.35);
-      camera.lookAt(0, 0.85, 0);
+      applyCameraZoom();
 
       const hemi = new THREE.HemisphereLight(0xdce8d5, 0x2c3528, 1.15);
       const key = new THREE.DirectionalLight(0xffe7b8, 1.6);
@@ -149,6 +203,7 @@ export function createPlayerPreview(container: HTMLElement): PlayerPreview {
   return {
     sync(gear) {
       latestGear = gear;
+      updatePills(gear);
       applyGear(gear);
     },
     setActive(on) {

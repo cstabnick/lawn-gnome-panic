@@ -10,12 +10,13 @@ import {
 } from './handling';
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
 import { groundAt, terrainFlat, terrainProbe } from './terrain';
-import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
+import { CRASH_MIN, CRASH_SCALE, damageVehicle, knockParts } from './vehicles';
+import { DEBRIS } from './debris';
 import { notifySaveChanged } from './saveHook';
 
 export { TUNES, type Tune } from './handling';
 
-const params = new URLSearchParams(location.search);
+const params = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 
 // ---- Driving mode (realism), saved per browser ---------------------------------------------------------------------------
 // A new key: the old `gta-sim-tune` (from the ?drive=sim proof of concept) may hold a mode picked while trying it out.
@@ -79,6 +80,9 @@ export interface SimDrive {
   lastX: number; lastZ: number; lastSpeed: number;
   /** Seconds spent tipped past TIPPED_DEG; the chassis is stood back up after RIGHT_AFTER. */
   tippedT: number;
+  /** Seconds with no wheel on the ground (SIM_AIR), and seconds of landing settle left. */
+  airT?: number;
+  settleT?: number;
 }
 
 /** The chassis config for one vehicle model in the current mode, with its saved setup and the loadout's ride height (-1..1). */
@@ -135,12 +139,32 @@ const RIGHT_AFTER = 1.5;
  */
 export const SIM_AIR = {
   /** Extra downward acceleration while airborne (m/s^2), on top of the controller's 9.81. */
-  airGravity: 0,
+  airGravity: 9,
   /** Upward body velocity kept on touchdown (0..1, 1 = unchanged). */
-  landingRebound: 1,
+  landingRebound: 0.25,
   /** Seconds after touchdown during which landingRebound keeps applying. */
-  landingSettle: 0,
+  landingSettle: 0.35,
 };
+
+/** Extra pull while airborne, and the short settle after a jump lands (SIM_AIR). */
+function applyAir(sd: SimDrive, dt: number): void {
+  const body = sd.ctrl.body;
+  const wheels = sd.ctrl.telemetry.groundedWheels;
+  if (wheels === 0) {
+    body.vel.y -= SIM_AIR.airGravity * dt;
+    sd.airT = (sd.airT ?? 0) + dt;
+    return;
+  }
+  if ((sd.airT ?? 0) >= 0.15) sd.settleT = SIM_AIR.landingSettle;
+  sd.airT = 0;
+  if ((sd.settleT ?? 0) > 0) {
+    sd.settleT = Math.max(0, (sd.settleT ?? 0) - dt);
+    if (body.vel.y > 0) body.vel.y *= SIM_AIR.landingRebound;
+    const k = (1 + SIM_AIR.landingRebound) / 2;
+    body.angVel.x *= k;
+    body.angVel.z *= k;
+  }
+}
 
 /** Step the player's sim-driven vehicle for one frame: game input in, game-space pose out. Returns true on the frame a tipped vehicle is stood back up. */
 export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: number, world: World): boolean {
@@ -172,6 +196,7 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
 
   const x0 = body.pos.x, z0 = body.pos.z;
   sd.ctrl.update(dt, input);
+  applyAir(sd, dt);
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
@@ -183,6 +208,7 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
     body.angVel.y *= 0.6;
     if (b.impact > 6 && v.driver === 'player') play('bump');
     if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
+    knockParts(v, -sw.nx, -sw.nz, b.impact);
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);
   if (kept.hit) { body.pos.x = kept.x; body.pos.z = kept.z; body.vel.x *= 0.5; body.vel.z *= 0.5; }
@@ -199,6 +225,10 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
   sd.tippedT = tilt > TIPPED_DEG ? sd.tippedT + dt : 0;
   let righted = false;
   if (sd.tippedT > RIGHT_AFTER) {
+    // A roll-over knocks parts off the side the body is tipped toward (its up vector, projected on the ground).
+    const upDir = qRotate(body.quat, v3(0, 1, 0));
+    const ul = Math.hypot(upDir.x, upDir.z);
+    if (ul > 1e-3) for (let i = 0; i < 2; i++) knockParts(v, upDir.x / ul, upDir.z / ul, 2 * DEBRIS.knockMin);
     sd.ctrl.place(v3(body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z), qYaw(body.quat), 0);
     sd.tippedT = 0;
     righted = true;

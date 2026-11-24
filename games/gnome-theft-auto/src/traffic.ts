@@ -7,8 +7,8 @@
 // not moving pulls out around it, a wedged driver reverses and re-routes, and one wedged for good is moved somewhere new.
 // A car only ever appears, or is moved, where no viewer can see it (trafficSim.ts pickSpot), and a moved car is a new car:
 // it comes back repaired.
-import type * as THREE from 'three';
-import { createGnomeModel } from '@lawn/gnome';
+import * as THREE from 'three';
+import { createGnomeModel, type GnomeLook } from '@lawn/gnome';
 import { angleDiff } from './collide';
 import { MOWER_TINTS, PLACES, TRAFFIC, VEHICLES, biomeAt } from './config';
 import { districtAt } from './districts';
@@ -16,7 +16,9 @@ import { errandReason, freshErrand, nextLeg, placeNodes, type Errand, type Erran
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { clearHands, poseHands, settleHands } from './driverHands';
 import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
-import { createVehicle, exitPoint, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
+import { createVehicle, exitPoint, removeVehicle, repairVehicle, seatWorld, setVehicleLook, syncVehicleMesh } from './vehicles';
+import { assignNpcChassis, npcChassisOf, stepNpcCar } from './npcChassis';
+import { rollCivilianMods } from './civilianMods';
 import { heightAt } from './terrain';
 import { nearestRoadNode, roadY } from './highways/roads';
 import {
@@ -63,6 +65,9 @@ const MAX_MOVES_PER_FRAME = 4;
 /** Off-screen cars turned into real vehicles per frame at most (building a vehicle and its driver is the costly part). */
 const MAX_MATERIALIZE_PER_FRAME = 2;
 const MAX_VEHICLES = 40;
+/** A driver's head sits this many metres above the seat per metre of vehicle scale (clamped), and bullets hit within DRIVER_HIT_RADIUS. */
+const DRIVER_HEAD_HEIGHT_PER_SCALE = 0.75;
+const DRIVER_HIT_RADIUS = 0.45;
 const CLEANUP_DISTANCE = 60;
 /** Nothing further than this can block or cross within the look-ahead (TRAFFIC.stopDistance 5 m, plus YIELD_SECONDS 1.6 s of two cars closing at 30 m/s each). */
 const FAR_SKIP = 110;
@@ -89,8 +94,12 @@ const REVERSE_SPEED = 3;
 /** Edging round a stopped car while pulling out (m/s). */
 const CREEP_SPEED = 2.5;
 const CROSS_COS = 0.82;
+/** Braking behind a blocker on the sim chassis: throttle = -speed * this (so it stops without rolling back). */
+const STOP_GAIN = 1.5;
 /** Corner speed is the vehicle's turn rate times this radius, never above cruise. */
 const CORNER_RADIUS = 4.5;
+/** Sim-chassis cars: extra braking look-ahead per m/s of speed (seconds). */
+const CHASSIS_BRAKE_LOOK = 0.6;
 /** The viewer moved farther than this in one frame: a teleport (respawn, taxi, cutscene), refill traffic round the new spot. */
 const TELEPORT = 120;
 /** Seconds between population recounts (road length near the player changes slowly). */
@@ -146,6 +155,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   /** The viewer's position this frame (set by update), for pacing rider poses. */
   let focusX = 0;
   let focusZ = 0;
+  /** The vehicles list handed to update (for driverAt). */
+  let liveVehicles: Vehicle[] = [];
   const nodeIndex = new Map<number, RoadNode>();
   for (const n of world.roads.nodes) nodeIndex.set(n.id, n);
   const errandWorld: ErrandWorld = { nodes: world.roads.nodes, placeNode: placeNodes(world.roads.nodes) };
@@ -232,7 +243,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       if (passing && still && Math.abs(side) >= (v.spec.radius + radius) * 0.8) return;
       const sideLimit = parkedKerb ? v.spec.radius + radius * 0.45 : Math.min(BRAKE_SIDE, v.spec.radius + radius * 0.65);
       if (Math.abs(side) >= sideLimit) return;
-      const gapAhead = TRAFFIC.stopDistance + v.spec.radius;
+      // A car on the sim chassis brakes like a real one (not instantly): it looks further ahead the faster it goes.
+      const gapAhead = TRAFFIC.stopDistance + v.spec.radius + (npcChassisOf(v) ? Math.max(0, v.speed) * CHASSIS_BRAKE_LOOK : 0);
       if (fwd >= gapAhead) return;
       // Something moving away from us at least as fast as we go is not in our way.
       if (!still && along >= v.speed - 0.3 && fwd > v.spec.radius + radius + 1.5) return;
@@ -401,7 +413,12 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     if (passing) target = Math.min(target, 0.4 * v.spec.maxSpeed);
 
     let throttle = clamp((target - v.speed) * 0.8, -1, 1);
-    if (blocker) throttle = blocker.creep ? clamp((CREEP_SPEED - v.speed) * 0.8, -1, 1) : v.speed > 0 ? -1 : 0;
+    if (blocker) {
+      // On the sim chassis a full brake near a standstill rolls the car backwards, which un-blocks it and it drives on again
+      // (a chatter that never trips the wedge logic): brake in proportion to speed there, so it stops dead instead.
+      const stop = npcChassisOf(v) ? clamp(-v.speed * STOP_GAIN, -1, 0) : v.speed > 0 ? -1 : 0;
+      throttle = blocker.creep ? clamp((CREEP_SPEED - v.speed) * 0.8, -1, 1) : stop;
+    }
 
     // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
     // Waiting briefly behind a blocker is fine, but if blocked too long (> 4.5s) let wedgedT advance so we reverse/re-route.
@@ -444,7 +461,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
 
   /** Step the vehicle with the controls and tick its rider. */
   function finish(v: Vehicle, c: { throttle: number; steer: number; lift: number }, dt: number): { recycle: boolean } {
-    stepVehicle(v, c, dt, world);
+    stepNpcCar(v, c, dt, world);
     syncVehicleMesh(v, dt);
     if (v.rider) {
       let clock = riderClocks.get(v.id);
@@ -542,6 +559,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       v.object.add(m.object);
       v.rider = m;
       v.riderLook = look;
+      const mods = rollCivilianMods(g.id, g.kind);
+      if (mods && v.look) setVehicleLook(v, { ...v.look, ...mods });
       vehicleOf.set(g.id, v);
       ghostOf.set(v.id, g);
     } else {
@@ -718,12 +737,33 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     avoid = [];
   }
 
+  /** Takes the NPC driver out of v: the rider model goes, the car leaves the population. A crack leaves the car rolling; an eject stops it dead. */
+  function detachDriver(v: Vehicle, cracked: boolean): { x: number; z: number; look: GnomeLook; reason: string | null } | null {
+    if (v.driver !== 'npc' || !v.rider || !v.riderLook) return null;
+    const look = v.riderLook;
+    const reason = errandReason(drivers.get(v.id)?.errand);
+    const at = cracked ? seatWorld(v, new THREE.Vector3(), 0) : exitPoint(v);
+    clearHands(v.rider);
+    v.object.remove(v.rider.object);
+    v.rider = null;
+    v.riderLook = null;
+    v.driver = 'none';
+    if (!cracked) v.speed = 0;
+    drivers.delete(v.id);
+    // The car is the player's business now: it leaves the population (a new car takes its place out of sight).
+    const g = ghostOf.get(v.id);
+    if (g) dropGhost(g, false);
+    return { x: at.x, z: at.z, look, reason };
+  }
+
   return {
     update(dtIn: number, vehicles: Vehicle[], _world: World, playerX: number, playerZ: number, view?: TrafficView) {
       // A negative step (a stale first frame) would brake cars up to silly speeds: never step backwards.
       const dt = Math.max(0, dtIn);
       focusX = playerX;
       focusZ = playerZ;
+      liveVehicles = vehicles;
+      assignNpcChassis(vehicles, playerX, playerZ);
       const viewers: Viewer[] = [view ?? { x: playerX, z: playerZ, dirX: 0, dirZ: 0 }];
 
       // Forget drivers of vehicles that no longer have an NPC driver.
@@ -841,20 +881,23 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     },
 
     ejectDriver(v: Vehicle) {
-      if (v.driver !== 'npc' || !v.rider || !v.riderLook) return null;
-      const look = v.riderLook;
-      const reason = errandReason(drivers.get(v.id)?.errand);
-      clearHands(v.rider);
-      v.object.remove(v.rider.object);
-      v.rider = null;
-      v.riderLook = null;
-      v.driver = 'none';
-      v.speed = 0;
-      drivers.delete(v.id);
-      // The car is the player's business now: it leaves the population (a new car takes its place out of sight).
-      const g = ghostOf.get(v.id);
-      if (g) dropGhost(g, false);
-      return { ...exitPoint(v), look, reason };
+      return detachDriver(v, false);
+    },
+
+    crackDriver(v: Vehicle) {
+      return detachDriver(v, true);
+    },
+
+    driverAt(x: number, y: number, z: number): Vehicle | null {
+      const p = new THREE.Vector3();
+      for (const v of liveVehicles) {
+        if (v.driver !== 'npc' || !v.rider || v.exploded || !drivers.has(v.id)) continue;
+        seatWorld(v, p, 0);
+        const h = Math.min(1.6, Math.max(0.6, DRIVER_HEAD_HEIGHT_PER_SCALE * v.spec.scale));
+        const r = DRIVER_HIT_RADIUS * Math.max(1, v.spec.scale / 1.5);
+        if (Math.hypot(p.x - x, p.y + h - y, p.z - z) < r) return v;
+      }
+      return null;
     },
 
     spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[] {

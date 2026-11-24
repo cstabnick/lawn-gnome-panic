@@ -99,6 +99,13 @@ export function createFleetRuntime(deps: FleetDeps): FleetRuntime {
       const n = debris.burst(v);
       if (n > 0 && near(v)) void deps.achievements.increment(FLEET_ACHIEVEMENTS.bits, n);
     },
+    knock(v, nx, nz, impact) {
+      const n = debris.knock(v, nx, nz, impact);
+      if (n > 0) {
+        deps.fx.spark(v.x, v.y + 0.6, v.z);
+        if (near(v)) void deps.achievements.increment(FLEET_ACHIEVEMENTS.bits, n);
+      }
+    },
   });
 
   // The badge: a small pill under the top of the screen while the player's ride is waterlogged. Display only (no input).

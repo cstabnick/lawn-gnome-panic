@@ -6,7 +6,8 @@ import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { RaceRival } from '../quests/types';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { Vehicle, VehicleKind, World } from '../types';
-import { createVehicle, removeVehicle, repairVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
+import { createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
+import { stepNpcCar } from '../npcChassis';
 import { TRACK, gridSlot, locate, sampleAt, trackFrame, trackLength } from './track';
 
 export interface Rival {
@@ -272,7 +273,7 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   if (v.speed < target - 0.5) throttle = 1;
   else if (v.speed > target + 1) throttle = -0.6;
 
-  stepVehicle(v, { throttle, steer, lift: 0 }, dt, world);
+  stepNpcCar(v, { throttle, steer, lift: 0 }, dt, world);
   syncVehicleMesh(v, dt);
 
   // Stuck: moved less than 0.5 m in 2.5 s.

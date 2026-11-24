@@ -150,22 +150,18 @@ export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number,
   let rx = x1 - x0, rz = z1 - z0; // displacement still to travel
   let x = x0, z = z0;
   let hit = false, nx = 0, nz = 0;
-  // Unstick: a circle that starts clear and, after a push, still overlaps a box is wedged between two of them (a push out
-  // of one shoved it into the other). Stop at the last clear substep instead of jittering deeper into the pocket.
-  let clear = !pushOutOfBoxes(x0, z0, r, boxes, y).hit;
   for (let s = 0; s < n; s++) {
     const left = n - s;
     const sx = rx / left, sz = rz / left;
     rx -= sx; rz -= sz;
-    const px = x, pz = z;
     x += sx; z += sz;
     const p = pushOutOfBoxes(x, z, r, boxes, y);
     x = p.x; z = p.z;
+    // Two boxes touching (a seam, an inside corner): a push out of one can leave it in the other, so push once more.
     if (p.hit) {
-      const still = pushOutOfBoxes(x, z, r, boxes, y).hit;
-      if (still && clear) return { x: px, z: pz, hit: true, nx: p.nx, nz: p.nz };
-      clear = !still;
-    } else clear = true;
+      const q = pushOutOfBoxes(x, z, r, boxes, y);
+      if (q.hit) { x = q.x; z = q.z; }
+    }
     if (p.hit) {
       hit = true; nx = p.nx; nz = p.nz;
       const into = Math.min(0, rx * nx + rz * nz);

@@ -2,13 +2,16 @@
 // Floats four points on waterAt, steers with a rudder, slips sideways, and treats the shore as a wall.
 // The hull maths lives in craft/hull.ts (stepHull, a pure function); this file wires it to the world.
 import { bedAt, waterAt } from './terrain';
-import { pushOutOfBoxes, clampToWorld } from './collide';
+import { sweepCircleBoxes, wallBounce, clampToWorld } from './collide';
 import { hullSpecOf, stepHull } from './craft/hull';
 import { applyHullTune } from './craft/tuning';
 import { getCraftTune } from './craft/craftTuneStore';
 import type { WaterSampler } from './craft/model';
 import { waveDrift, waveTime } from './waves';
 import type { BoatState, DriveControls, Vehicle, World } from './types';
+
+/** A hull is narrower than its bounding circle: the share of spec.radius used against walls and boxes. */
+export const BOAT_HIT_RADIUS_FRAC = 0.85;
 
 const SAMPLER: WaterSampler = {
   water: (x, z) => waterAt(x, z),
@@ -37,14 +40,20 @@ export function stepBoat(v: Vehicle, c: DriveControls, dt: number, world: World)
   const b = (v.boat ??= initBoat(v));
   const base = hullSpecOf(v.spec);
   const spec = v.driver === 'player' ? applyHullTune(base, getCraftTune(v.kind)) : base;
+  const x0 = v.x, z0 = v.z;
   stepHull(v, b, spec, c, SAMPLER, dt);
 
-  // Collide with tall boxes (bridge decks are not boxes, so boats pass under) and the world edge.
-  const pushed = pushOutOfBoxes(v.x, v.z, v.spec.radius, world.boxes, v.y);
-  const clamped = clampToWorld(pushed.x, pushed.z, world.half, v.spec.radius);
+  // Slide along tall boxes (bridge decks are not boxes, so boats pass under): the speed along the wall is kept, the part
+  // into it is lost, so a graze at a shallow angle costs little. The world edge still takes 40% off.
+  const swept = sweepCircleBoxes(x0, z0, v.x, v.z, BOAT_HIT_RADIUS_FRAC * v.spec.radius, world.boxes, v.y);
+  if (swept.hit) {
+    const bounce = wallBounce(Math.sin(v.yaw) * v.speed, Math.cos(v.yaw) * v.speed, swept.nx, swept.nz, 0.1, 0.25);
+    v.speed = Math.sign(v.speed) * Math.hypot(bounce.vx, bounce.vz);
+  }
+  const clamped = clampToWorld(swept.x, swept.z, world.half, v.spec.radius);
   v.x = clamped.x;
   v.z = clamped.z;
-  if (pushed.hit || clamped.hit) v.speed *= 0.35;
+  if (clamped.hit) v.speed *= 0.6;
 }
 
 /** Step every boat nobody drives (driver 'none'), so parked boats bob and drift to a stop. app.ts calls it each frame. */

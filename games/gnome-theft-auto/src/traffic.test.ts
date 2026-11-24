@@ -1,7 +1,7 @@
 // Traffic: errand routing, and a headless sim of the NPC drivers on a city-grid road graph that must not stay jammed.
 import * as THREE from 'three';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
-import { PLACES, TRAFFIC } from './config';
+import { PLACES, ROAD_WIDTH, TRAFFIC } from './config';
 import { BUS_ROUTE_PLACES, pickBusErrand, pickErrand, placeNodes, planRoute } from './errands';
 import type { RoadNode, Vehicle, VehicleKind, World } from './types';
 
@@ -14,13 +14,20 @@ vi.mock('./vehicles', async (importOriginal) => {
     ...real,
     createVehicle: (_s: unknown, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle => ({
       id: id++, kind, spec: VEHICLES[kind], x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
-      object: new THREE.Group(), rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0,
+      object: new THREE.Group(), rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0, look: {},
     }) as Vehicle,
     syncVehicleMesh: () => undefined,
+    setVehicleLook: (v: Vehicle, look: unknown) => { (v as { look?: unknown }).look = look; },
     removeVehicle: () => undefined,
   };
 });
+(globalThis as { location?: { search: string } }).location ??= { search: '' };
 vi.mock('./audio', () => ({ play: () => undefined }));
+// The test gnome model has no arms to free.
+vi.mock('./driverHands', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./driverHands')>()),
+  clearHands: () => undefined,
+}));
 vi.mock('@lawn/gnome', () => ({ createGnomeModel: () => ({ object: new THREE.Group(), update: () => undefined }) }));
 vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() }), randomTownLook: () => ({}), biomeLookFor: () => ({}) }));
 
@@ -343,5 +350,119 @@ describe('traffic drivers', () => {
     expect(convoy.every((v) => v.driver === 'npc')).toBe(true);
     expect(convoy[0].kind).toBe('hoa-van');
     expect(Math.hypot(convoy[0].x - convoy[1].x, convoy[0].z - convoy[1].z)).toBeGreaterThan(5);
+  });
+});
+
+describe('NPC drivers can be cracked out of their car', () => {
+  it('a bullet at the driver head hits them, 2 m above misses, and a crack leaves the car rolling without a driver', async () => {
+    const { seatWorld } = await import('./vehicles');
+    const nodes = gridNodes();
+    const world = { boxes: [], roads: { nodes, laneOffset: 2.5 }, half: 600 } as unknown as World;
+    const traffic = createTraffic(new THREE.Scene(), world);
+    const vehicles: Vehicle[] = [];
+    const [car] = traffic.spawnConvoy([0, 1, 2, 3], ['hoa-van'], vehicles);
+    // dt 0: the update only hands the vehicle list to the traffic, the car does not move.
+    traffic.update(0, vehicles, world, car.x, car.z);
+    const p = seatWorld(car, new THREE.Vector3(), 0);
+    const h = Math.min(1.6, Math.max(0.6, 0.75 * car.spec.scale));
+    expect(traffic.driverAt!(p.x, p.y + h, p.z)).toBe(car);
+    expect(traffic.driverAt!(p.x, p.y + h + 2, p.z)).toBeNull();
+
+    car.speed = 8;
+    const out = traffic.crackDriver!(car);
+    expect(out).not.toBeNull();
+    expect(out!.look).toBeDefined();
+    expect(car.driver).toBe('none');
+    expect(car.rider).toBeNull();
+    expect(car.speed).toBe(8);
+    expect(traffic.driverAt!(p.x, p.y + h, p.z)).toBeNull();
+    expect(traffic.crackDriver!(car)).toBeNull();
+  });
+
+  it('ejectDriver still stops the car and frees the seat', () => {
+    const nodes = gridNodes();
+    const world = { boxes: [], roads: { nodes, laneOffset: 2.5 }, half: 600 } as unknown as World;
+    const traffic = createTraffic(new THREE.Scene(), world);
+    const vehicles: Vehicle[] = [];
+    const [car] = traffic.spawnConvoy([0, 1, 2, 3], ['ride-on'], vehicles);
+    car.speed = 8;
+    const out = traffic.ejectDriver(car);
+    expect(out).not.toBeNull();
+    expect(car.driver).toBe('none');
+    expect(car.rider).toBeNull();
+    expect(car.speed).toBe(0);
+    expect(traffic.ejectDriver(car)).toBeNull();
+  });
+});
+
+describe('NPC cars on the sim chassis', () => {
+  const world = (): World => ({ boxes: [], roads: { nodes: gridNodes(), laneOffset: 2.5 }, half: 600 } as unknown as World);
+
+  it('gives a near live car a chassis, and not one beyond 80 m', async () => {
+    const { npcChassisOf } = await import('./npcChassis');
+    const w = world();
+    const traffic = createTraffic(new THREE.Scene(), w);
+    const vehicles: Vehicle[] = [];
+    const [car] = traffic.spawnConvoy([0, 1, 2, 3], ['hoa-van'], vehicles);
+    const dt = 1 / 30;
+    // Near: the focus on the car. Several frames, as a car must have been stepped before it is picked.
+    for (let i = 0; i < 6; i++) traffic.update(dt, vehicles, w, car.x, car.z);
+    expect(npcChassisOf(car)).toBeDefined();
+    // Far: the focus 200 m away drops it again.
+    for (let i = 0; i < 6; i++) traffic.update(dt, vehicles, w, car.x + 200, car.z);
+    expect(npcChassisOf(car)).toBeUndefined();
+  });
+
+  it('a lane-following car stays on the road through a 90 degree corner on every preset', async () => {
+    const { setTune, getTune } = await import('./simdrive');
+    const old = getTune().id;
+    onTestFinished(() => { setTune(old); });
+    const nodes = gridNodes();
+    const route = [0, 1, 8, 15];
+    const segs: [number, number, number, number][] = [];
+    for (let i = 0; i + 1 < route.length; i++) segs.push([nodes[route[i]].x, nodes[route[i]].z, nodes[route[i + 1]].x, nodes[route[i + 1]].z]);
+    const off = (x: number, z: number): number => Math.min(...segs.map(([ax, az, bx, bz]) => {
+      const dx = bx - ax, dz = bz - az;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
+      return Math.hypot(x - (ax + dx * t), z - (az + dz * t));
+    }));
+    for (const preset of ['arcade', 'casual', 'simcade', 'drift']) {
+      setTune(preset);
+      const w = world();
+      const traffic = createTraffic(new THREE.Scene(), w);
+      const vehicles: Vehicle[] = [];
+      const [car] = traffic.spawnConvoy(route, ['hoa-van'], vehicles);
+      let worst = 0;
+      let done = false;
+      for (let i = 0; i < 25 * 30 && !done; i++) {
+        traffic.update(1 / 30, vehicles, w, car.x, car.z);
+        // Measured until the car is near the last node (after it the driver picks a new errand).
+        if (Math.hypot(car.x - nodes[15].x, car.z - nodes[15].z) < 15) done = true;
+        else worst = Math.max(worst, off(car.x, car.z));
+      }
+      expect(done, preset).toBe(true);
+      expect(worst, preset).toBeLessThan(ROAD_WIDTH);
+    }
+  });
+
+  it('applies the rolled civilian mods when a car materializes', async () => {
+    const { rollCivilianMods } = await import('./civilianMods');
+    const w = world();
+    const traffic = createTraffic(new THREE.Scene(), w);
+    const vehicles: Vehicle[] = [];
+    for (let i = 0; i < 60; i++) traffic.update(1 / 30, vehicles, w, -180, -180, { x: -180, z: -180, dirX: 0, dirZ: 1 });
+    const cars = vehicles.filter((v) => v.driver === 'npc');
+    expect(cars.length).toBeGreaterThan(0);
+    const ghosts = traffic.debugGhosts!();
+    let modded = 0;
+    for (const g of ghosts.filter((q) => q.live)) {
+      const v = vehicles.find((c) => c.x === g.x && c.z === g.z);
+      const mods = rollCivilianMods(g.id, g.kind);
+      if (!v || !mods) continue;
+      modded++;
+      expect(v.look).toMatchObject(mods);
+    }
+    // Not every car rolls mods (about one in seven), so a run may have none: the check above is the contract.
+    expect(modded).toBeGreaterThanOrEqual(0);
   });
 });

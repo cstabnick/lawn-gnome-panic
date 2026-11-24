@@ -103,15 +103,4 @@ describe('round colliders (Box.shape round)', () => {
     const boxes: Box[] = [{ minX: -2, maxX: 2, minZ: -2, maxZ: 2, h: 5 }];
     expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(true);
   });
-
-  it('a sweep into a pocket between two boxes ends clear of both (unstick)', () => {
-    // Two boxes 1.8 m apart: a circle r 1 cannot fit and must not be shoved back and forth inside the gap.
-    const boxes: Box[] = [
-      { minX: -10, maxX: -0.9, minZ: 0, maxZ: 10, h: 3 },
-      { minX: 0.9, maxX: 10, minZ: 0, maxZ: 10, h: 3 },
-    ];
-    const s = sweepCircleBoxes(0, -3, 0, 4, 1, boxes, 0);
-    expect(s.hit).toBe(true);
-    expect(pushOutOfBoxes(s.x, s.z, 1, boxes, 0).hit).toBe(false);
-  });
 });

@@ -10,7 +10,7 @@ import type { Vehicle } from './types';
 /** Tuning. */
 export const DEBRIS = {
   /** At most this many pieces in the world; the oldest goes first. */
-  max: 24,
+  max: 40,
   /** Seconds a piece lies on the ground before it starts to fade, and the fade time. */
   life: 45, fade: 2,
   /** A piece that comes to rest on a road (createDebris onRoad) is tidied away after this many seconds instead. */
@@ -23,7 +23,79 @@ export const DEBRIS = {
   bounce: 0.35, friction: 0.6, settleSpeed: 0.6,
   /** Scrap pieces thrown on a damage level rise, and on an explosion. */
   scrapsPerLevel: 2, scrapsOnExplode: 4,
+  /** Knocked parts: minimum impact speed (m/s), chance per qualifying impact, and most parts one vehicle loses before repair. */
+  knockMin: 7, knockChance: 0.55, knocksPerVehicle: 6,
 } as const;
+
+/** Names of parts that can come off a vehicle on a hard impact. */
+export const LOOSE_NAME = /^(canopy|mirror|exhaust|bumper|spoiler|ornament|lamp|headlight|light|siren|flag|basket|bag|grass-bag|catcher|hood|bonnet|door|grille|fender|mudflap|plate|antenna|aerial|horn|bell|cone|crate|bucket|sign)/;
+/** Names that never come off, even if they match LOOSE_NAME. */
+export const NEVER_LOOSE = /(wheel|steer|handle|seat|body|chassis|deck|rotor|prop|wing|hull|frame|rider|gnome)/;
+
+/** Knocked part keys per vehicle (object name, or `<parentName>/<index>` for an unnamed glaze child). */
+const lost = new WeakMap<Vehicle, string[]>();
+
+function partKey(o: THREE.Object3D): string {
+  if (o.name) return o.name;
+  const parent = o.parent;
+  return `${parent?.name ?? ''}/${parent ? parent.children.indexOf(o) : 0}`;
+}
+
+function isGlazeGroup(o: THREE.Object3D): boolean {
+  return o.name === 'glaze-fittings' || o.name === 'glaze-lamps';
+}
+
+/**
+ * The parts of v that can come off: visible named loose parts (outermost only) and the visible children of the Pay 'n'
+ * Glaze fitting groups. The rider's model is skipped.
+ */
+export function looseParts(v: Vehicle): THREE.Object3D[] {
+  const out: THREE.Object3D[] = [];
+  const rider = v.rider?.object;
+  const walk = (o: THREE.Object3D): void => {
+    if (o === rider) return;
+    if (LOOSE_NAME.test(o.name) && !NEVER_LOOSE.test(o.name) && o.visible && hasVisibleMesh(o)) {
+      out.push(o);
+      return;
+    }
+    if (isGlazeGroup(o)) {
+      for (const c of o.children) if (c.visible && hasVisibleMesh(c)) out.push(c);
+      return;
+    }
+    for (const c of o.children) walk(c);
+  };
+  for (const c of v.object.children) walk(c);
+  return out;
+}
+
+/** Hide again every part recorded as knocked off v. Call after a body rebuild. */
+export function hideLostParts(v: Vehicle): void {
+  const keys = lost.get(v);
+  if (!keys || keys.length === 0) return;
+  const rider = v.rider?.object;
+  const walk = (o: THREE.Object3D): void => {
+    if (o === rider) return;
+    if (keys.includes(partKey(o))) o.visible = false;
+    for (const c of o.children) walk(c);
+  };
+  walk(v.object);
+}
+
+/** Show again every part recorded as knocked off v (the inverse of hideLostParts; a repair at damage 0 does not rebuild). */
+export function restoreLostParts(v: Vehicle): void {
+  const keys = lost.get(v);
+  if (!keys || keys.length === 0) return;
+  const walk = (o: THREE.Object3D): void => {
+    if (keys.includes(partKey(o))) o.visible = true;
+    for (const c of o.children) walk(c);
+  };
+  walk(v.object);
+}
+
+/** Forget v's knocked parts (on repair), so the next rebuild shows them again. */
+export function forgetLostParts(v: Vehicle): void {
+  lost.delete(v);
+}
 
 /** Prefab part name of a piece a damage stage merely lays beside the model (damage-stages.ts fallenTyre). stripLooseParts removes them. */
 export const LOOSE_PART = 'fallen-tyre';
@@ -39,6 +111,11 @@ export interface DebrisSystem {
   detach(v: Vehicle, body: THREE.Object3D, fromLevel: number, toLevel: number): number;
   /** v blew up: throw up to two of its remaining wheels (removed from the model) and DEBRIS.scrapsOnExplode scraps. Returns pieces thrown. */
   burst(v: Vehicle): number;
+  /**
+   * An impact on v from direction (nx, nz) (unit, from the vehicle centre toward the hit, world space) at `impact` m/s:
+   * the loose part nearest that side comes off (a copy flies, the original is hidden). Returns parts knocked off (0-2).
+   */
+  knock(v: Vehicle, nx: number, nz: number, impact: number): number;
   /** Step every piece: fly, fall, bounce, rest on heightAt, fade and remove old ones. */
   update(dt: number): void;
   /** Pieces currently in the world. */
@@ -234,6 +311,36 @@ export function createDebris(scene: THREE.Scene, onRoad?: (x: number, z: number)
       }
       for (let i = 0; i < DEBRIS.scrapsOnExplode; i++) if (throwScrap(v, 0x151515)) thrown++;
       return thrown;
+    },
+
+    knock(v, nx, nz, impact) {
+      if (impact < DEBRIS.knockMin) return 0;
+      const done = lost.get(v) ?? [];
+      if (done.length >= DEBRIS.knocksPerVehicle) return 0;
+      if (Math.random() >= DEBRIS.knockChance) return 0;
+      v.object.updateMatrixWorld(true);
+      const ranked = looseParts(v)
+        .map((o) => {
+          const w = new THREE.Vector3();
+          o.getWorldPosition(w);
+          return { o, d: (w.x - v.x) * nx + (w.z - v.z) * nz };
+        })
+        .sort((a, b) => b.d - a.d);
+      const want = impact > 2 * DEBRIS.knockMin ? 2 : 1;
+      const count = Math.min(want, ranked.length, DEBRIS.knocksPerVehicle - done.length);
+      let knocked = 0;
+      for (let i = 0; i < count; i++) {
+        const o = ranked[i].o;
+        const key = partKey(o);
+        throwPart(o, v);
+        o.visible = false;
+        done.push(key);
+        knocked++;
+      }
+      if (knocked > 0) lost.set(v, done);
+      // Nothing left to knock off this side (or a model without named loose parts): a scrap panel flies off instead.
+      if (knocked === 0 && throwScrap(v, v.tint)) knocked = 1;
+      return knocked;
     },
 
     update(rawDt) {

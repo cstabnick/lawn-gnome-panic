@@ -38,7 +38,7 @@ export const STUNT_RAMPS: readonly StuntRamp[] = [
 ];
 
 /** Arcade launch: the vertical speed off the lip is the car's speed times the slope's sine, times this. */
-export const RAMP_LAUNCH = { arcadeBoost: 1.15 } as const;
+export const RAMP_LAUNCH = { arcadeBoost: 1.4 } as const;
 
 export interface StuntJumpEvaluation {
   qualifies: boolean;

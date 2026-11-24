@@ -1115,6 +1115,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Buoy Run', description: 'Finish the Loch Moss buoy run.',
     reward: { slot: 'hand', prefabId: 'buoy-pennant', label: 'Buoy Pennant', exclusive: true },
   },
+  {
+    id: 'gta-shell-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Shell Shock', description: 'Leave 500 acorn shells on the ground.', target: 500,
+    reward: { slot: 'back', prefabId: 'acorn-shell-bandolier', label: 'Acorn-Shell Bandolier' },
+  },
+  {
+    id: 'gta-driver-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Pulled Over', description: 'Crack 10 gnomes while they are driving.', target: 10,
+    reward: { slot: 'head', prefabId: 'pulled-over-cap', label: 'Pulled-Over Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

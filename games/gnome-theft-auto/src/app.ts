@@ -75,6 +75,7 @@ import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
 import { questById } from './quests/defs';
 import { createCritters } from './critters';
+import { createLivingWorld } from './living/runtime';
 import { createHunting } from './hunting/hunting';
 import { createBirding } from './birding/birding';
 import { createFishing } from './fishing/fishing';
@@ -483,6 +484,15 @@ const critters = createCritters(scene, world, {
   event: (id) => { if (id in EVENT_BULLETINS) reportNews(id); const a = CRITTER_ACHIEVEMENTS[id]; if (a) void tracker.unlock(a); },
 }, REGION_LIFE);
 let critterTime = 0;
+// E31 living world (living/): the Unmown's rangers and visitors, the hamlet people, the checklist, its achievements.
+const living = createLivingWorld({
+  scene,
+  toast: (t, ms) => hud.toast(t, ms ?? 3500),
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  critters: () => critters.list,
+  storage: helmStorage(),
+});
 // Tuft hunting (hunting/): quarry by region, tracks, the Tuft & Tally Lodge in Mossy Wood. Local to this browser.
 const hunting = createHunting({
   scene, ui, world, hud, economy, fx, play,
@@ -1235,6 +1245,7 @@ function takeWheel(v: Vehicle): void {
     for (const id of euro.unlock) void achievements.unlock(id);
     for (const id of euro.increment) void achievements.increment(id);
   }
+  living.onRideEnter(v.kind);
   fleet.onEnter(v);
   craft.onEnter(v);
   if (v === whirligig && !stats.whirligigStolen) {
@@ -1680,6 +1691,7 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   ambientGnomes.update(dt, 1e6, 1e6);
   plResidents.update(dt, 1e6, 1e6);
   plLife.update(dt, 1e6, 1e6, 0);
+  living.update(dt, 1e6, 1e6, false, 0, true);
   const liveBiome = world.biomeAt(cx, cz);
   atmosphere?.update(dt, cx, cz, liveBiome, false);
   weatherFrame(dt, cx, cz, false);
@@ -2195,6 +2207,7 @@ function frame(now: number): void {
   plResidents.update(dt, simX, simZ);
   plLife.update(dt, simX, simZ, atmosphere?.nightFactor() ?? 0);
   plSound.update(dt, simX, simZ, atmosphere?.nightFactor() ?? 0, !!currentInterior());
+  living.update(dt, simX, simZ, !player.vehicle, atmosphere?.nightFactor() ?? 0, !!currentInterior());
   {
     const pv = player.vehicle;
     plActivities.update(dt, { x: simX, z: simZ, vehicle: pv ? pv.spec.kind : null });
@@ -2500,6 +2513,7 @@ function frame(now: number): void {
     ...outskirts.blips(),
     ...dealers.blips(),
     ...homeVisits.blips(),
+    ...living.blips(),
   ];
   // E08: the player's own vehicles out in the world (taken out or delivered), so they can find them again.
   for (const o of lockup.outVehicles()) {

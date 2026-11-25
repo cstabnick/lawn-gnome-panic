@@ -166,6 +166,12 @@ import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
 import { GTA_DINER } from './gta-diner';
 import { GTA_MECHANIC } from './gta-mechanic';
 import { GTA_COMEDY } from './gta-comedy';
+import { GTA_PRESERVE_KIT } from './gta-preserve-kit';
+import { GTA_PRESERVE_TRAIL } from './gta-preserve-trail';
+import { GTA_LIVING_CRITTERS } from './gta-living-critters';
+import { GTA_LIVING_RIDES } from './gta-living-rides';
+import { GTA_LIVING_GEAR } from './gta-living-gear';
+import { GTA_HAMLET_KIT } from './gta-hamlet-kit';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -204,4 +210,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
+  ...GTA_PRESERVE_KIT, ...GTA_PRESERVE_TRAIL, ...GTA_LIVING_CRITTERS, ...GTA_LIVING_RIDES, ...GTA_LIVING_GEAR, ...GTA_HAMLET_KIT,
 ];

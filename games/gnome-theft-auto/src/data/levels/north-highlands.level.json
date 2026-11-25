@@ -17,6 +17,25 @@
   "stamps": [],
   "paths": [
     {
+      "id": "trail/high-tarn-path",
+      "kind": "road",
+      "points": [
+        [
+          1060,
+          -150
+        ],
+        [
+          1075,
+          -280
+        ],
+        [
+          1072,
+          -410
+        ]
+      ],
+      "width": 3
+    },
+    {
       "id": "north-band",
       "kind": "road",
       "points": [
@@ -105,6 +124,16 @@
   "props": [],
   "markers": [
     {
+      "id": "water/high-tarn",
+      "kind": "water",
+      "x": 975,
+      "z": -460,
+      "data": {
+        "w": 130,
+        "d": 80
+      }
+    },
+    {
       "id": "ski-hill",
       "kind": "slot",
       "x": -350,
@@ -182,7 +211,7 @@
       "data": {
         "hw": 120,
         "hd": 80,
-        "kind": "natural",
+        "kind": "water",
         "epic": "E31",
         "flat": false,
         "label": "the High Tarn"

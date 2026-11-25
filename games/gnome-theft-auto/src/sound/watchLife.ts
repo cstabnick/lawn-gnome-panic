@@ -46,6 +46,15 @@ const CRITTER_CALL: Record<CritterKind, CritterSoundId> = {
   squirrel: 'squirrel',
   'polar-bear': 'bear',
   bee: 'bee-buzz',
+  // E31 small wildlife (stand-ins from the existing set where there is no own call).
+  hare: 'squirrel',
+  hedgehog: 'squirrel',
+  fox: 'crow',
+  frog: 'frog',
+  duck: 'bird-chirp',
+  crab: 'critter-thud',
+  butterfly: 'cricket',
+  dragonfly: 'cricket',
 };
 
 /** The call a critter makes (alarmed or calm). */

@@ -497,6 +497,29 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 19, accel: 8, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
     // No passenger seats: an enclosed cab with a griddle where the second seat would be.
   },
+  // E31 living world (prefabs: packages/prefabs gta-living-rides.ts; life-size metres, front +z, then scaled here).
+  // Seats and doors are in prefab units times `scale`; the prefab issue checks them against its own parts.
+  'ranger-buggy': {
+    kind: 'ranger-buggy', mountStyle: 'hop', name: 'Unmown Ranger Buggy', prefab: 'gta-ranger-buggy', scale: 1.6,
+    maxSpeed: 21, accel: 12, turnRate: 2.3, radius: 1.1, seat: [0.25, 0.5, -0.1], flies: false, mass: 1.6,
+    passengerSeats: [[-0.25, 0.5, -0.1]],
+  },
+  'shell-camper': {
+    kind: 'shell-camper', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.85, 0.8, 0.9] },
+      { side: 'right', pivot: 'door-right', at: [-0.85, 0.8, 0.9] },
+    ], name: 'Snail-Shell Camper', prefab: 'gta-shell-camper', scale: 1.8,
+    maxSpeed: 17, accel: 6, turnRate: 1.4, radius: 1.7, seat: [0.33, 0.56, 0.85], flies: false, mass: 4,
+    passengerSeats: [[-0.33, 0.56, 0.85]],
+  },
+  'cone-van': {
+    kind: 'cone-van', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.8, 0.76, 0.81] },
+      { side: 'right', pivot: 'door-right', at: [-0.8, 0.76, 0.81] },
+    ], name: 'Ninety-Nine Cone Van', prefab: 'gta-cone-van', scale: 1.8,
+    maxSpeed: 18, accel: 7, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
+    // Driver only: the freezer and the serving hatch fill the back.
+  },
 };
 
 /**
@@ -899,6 +922,9 @@ export const WATER = {
     // E11: the Saltwater, the sea along the whole south edge (coast/config.ts). Shelves over half its radius, so the
     // beach wades in and the pier end is deep. meshStep: its surface grid is coarser than the lochs' (m).
     'water/saltwater': { depth: 7, shelf: 0.5, bank: 14, meshStep: 6 },
+    // E31: Reedmere, the Unmown's marsh (shallow: waded on foot, crossed on the boardwalk), and the High Tarn on Snowcap Rise.
+    'water/reedmere': { depth: 0.7, shelf: 0.8, bank: 6 },
+    'water/high-tarn': { depth: 2.5, shelf: 0.5, bank: 8 },
   },
   /** Canal locks, as fractions of the canal's length: the only places the canal steps down. */
   canalLocks: [0.25, 0.75],

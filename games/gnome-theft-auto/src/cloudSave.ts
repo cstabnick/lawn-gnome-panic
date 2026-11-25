@@ -114,6 +114,8 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-mowing-v1': mergeMowSave, // flora/rewards.ts: counts only grow; per-field maximum
   'gta-outskirts-v1': mergeOutskirtsSaves, // outskirts/save.ts: Pebblewick progress only grows; a union
   'gta-odd-rides-v1': unionArrays, // oddRides.ts: the odd rides driven only grow
+  'gta-inventory-v1': null, // inventory.ts: one current bag; the newer side wins
+  'gta-ownership-v1': null, // ownership.ts: properties, policies and wrecks; the newer side wins (pairs with gta-economy-v1 loans)
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory

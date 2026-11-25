@@ -181,8 +181,8 @@ describe('payFor', () => {
 
   it('adds the real-player fare bonus', () => {
     const r = payFor(doneState({ kind: 'player-fare' }, 95), perks, surge);
-    expect(r.bonus).toBe(25);
-    expect(r.notes).toContain('Real gnome +25');
+    expect(r.bonus).toBe(30);
+    expect(r.notes).toContain('Real gnome +30');
   });
 
   it('pays less for a fragile parcel in poor condition', () => {

@@ -7,6 +7,7 @@ import { wheelsPanel } from './glazePanelWheels';
 import { lightsPanel } from './glazePanelLights';
 import { bodyPanel } from './glazePanelBody';
 import { trimPanel } from './glazePanelTrim';
+import { repairPanel } from './glazePanelRepair';
 import type { VehicleKind } from './types';
 
 const registry: { panel: Panel; order: number }[] = [];
@@ -29,3 +30,4 @@ registerGlazePanel(wheelsPanel, 20);
 registerGlazePanel(lightsPanel, 30);
 registerGlazePanel(bodyPanel, 40);
 registerGlazePanel(trimPanel, 50);
+registerGlazePanel(repairPanel, 60);

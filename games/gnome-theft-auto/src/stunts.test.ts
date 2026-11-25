@@ -81,11 +81,11 @@ describe('evaluateStuntJump', () => {
 
     const first = evaluateStuntJump(1.1, 18, 0, true);
     expect(first.qualifies).toBe(true);
-    expect(first.bonus).toBe(150);
+    expect(first.bonus).toBe(180);
 
     const repeat = evaluateStuntJump(1.1, 18, Math.PI * 2, false);
     expect(repeat.qualifies).toBe(true);
-    expect(repeat.bonus).toBe(40);
+    expect(repeat.bonus).toBe(50);
     expect(repeat.label).toContain('360°');
   });
 });
@@ -157,7 +157,7 @@ describe('stunts persistence & lifecycle', () => {
       }
     }
     expect(landed).toBe(true);
-    expect(earned).toEqual([150]);
+    expect(earned).toEqual([180]);
     expect(stunts.completedCount()).toBe(1);
     expect(play).toHaveBeenCalledWith('steal');
     expect(fx.confetti).toHaveBeenCalled();

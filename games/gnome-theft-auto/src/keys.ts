@@ -64,6 +64,8 @@ export const KEYS = {
   confirm: 'Enter',
   /** Sim jobs (jobs/hud.ts): the job action (accept a call, drop cargo, next fare). */
   jobAction: 'KeyI',
+  /** The bag (bag/runtime.ts): eat the quick-use snack. The bag itself opens from the More menu or the phone. */
+  snack: 'Digit1',
 } as const;
 
 export type KeyAction = keyof typeof KEYS;

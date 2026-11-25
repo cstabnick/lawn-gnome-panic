@@ -2,10 +2,10 @@ import { notifySaveChanged } from './saveHook';
 export const ECONOMY_KEY = 'gta-economy-v1';
 export const STARTING_ACORNS = 50;
 export const STARTING_DEBT = 5000;
-export const HOSPITAL_FEE = 25;
+export const HOSPITAL_FEE = 35;
 
 const MIN_FRAUD_IMPACT_SPEED = 4;
-const FRAUD_PAYOUT_PER_SPEED = 8;
+const FRAUD_PAYOUT_PER_SPEED = 10;
 
 export interface FraudZone {
   id: string;
@@ -21,10 +21,24 @@ export const FRAUD_ZONES: readonly FraudZone[] = [
   { id: 'greenhouse', name: 'Greenhouse Strip', x: 60, z: 0, radius: 20 },
 ];
 
+/** A loan booked beside Kiln-Debt (ownership.ts buyProperty). Kiln-Debt stays the headline number; loans are extra. */
+export interface Loan {
+  /** Unique id; a property's loan uses the property id. */
+  id: string;
+  /** Shown name ("Mossbank Farm loan"). */
+  name: string;
+  /** Acorns borrowed. */
+  principal: number;
+  /** Acorns still owed (0 = repaid; repaid loans are dropped from the list). */
+  remaining: number;
+}
+
 export interface EconomyState {
   acorns: number;
   debtRemaining: number;
   debtPaidOff: boolean;
+  /** Open loans (E08). Older saves have none. Never part of debtRemaining / debtPaidOff. */
+  loans: Loan[];
 }
 
 export interface Economy {
@@ -35,6 +49,14 @@ export interface Economy {
   chargeHospital(): { fee: number; receipt: string };
   inFraudZone(x: number, z: number): boolean;
   onPlayerRagdollImpact(speed: number, x?: number, z?: number): number;
+  /** Book a loan (no Acorns change hands here: the caller decides what the loan pays for). Adds to an existing loan
+   *  with the same id. Returns false for a non-positive amount. */
+  borrow(id: string, name: string, amount: number): boolean;
+  /** Pay up to `amount` Acorns off loan `id` from the wallet; returns what was paid (0 = unknown id or no Acorns).
+   *  A loan paid down to 0 is removed. */
+  payLoan(id: string, amount: number): number;
+  /** Kiln-Debt plus every open loan. */
+  totalOwed(): number;
 }
 
 type EconomyStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -80,7 +102,23 @@ function defaultState(): EconomyState {
     acorns: STARTING_ACORNS,
     debtRemaining: STARTING_DEBT,
     debtPaidOff: false,
+    loans: [],
   };
+}
+
+function parseLoans(raw: unknown): Loan[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Loan[] = [];
+  for (const l of raw) {
+    if (!l || typeof l !== 'object') continue;
+    const o = l as Partial<Loan>;
+    if (typeof o.id !== 'string' || typeof o.name !== 'string') continue;
+    const principal = typeof o.principal === 'number' && Number.isFinite(o.principal) ? Math.max(0, Math.round(o.principal)) : 0;
+    const remaining = typeof o.remaining === 'number' && Number.isFinite(o.remaining) ? Math.max(0, Math.round(o.remaining)) : 0;
+    if (remaining <= 0) continue;
+    out.push({ id: o.id, name: o.name, principal, remaining });
+  }
+  return out;
 }
 
 function loadState(storage: EconomyStorage | undefined): EconomyState {
@@ -103,7 +141,7 @@ function loadState(storage: EconomyStorage | undefined): EconomyState {
         : STARTING_DEBT;
     const debtPaidOff = debtRemaining <= 0 || parsed.debtPaidOff === true;
 
-    return { acorns, debtRemaining, debtPaidOff };
+    return { acorns, debtRemaining, debtPaidOff, loans: parseLoans((parsed as { loans?: unknown }).loans) };
   } catch {
     return defaultState();
   }
@@ -188,8 +226,42 @@ export function createEconomy(storage?: EconomyStorage): Economy {
     return payout;
   };
 
+  const borrow = (id: string, name: string, amount: number): boolean => {
+    if (!Number.isFinite(amount) || amount <= 0) return false;
+    const a = Math.round(amount);
+    if (a <= 0) return false;
+    const have = current.loans.find((l) => l.id === id);
+    if (have) {
+      have.principal += a;
+      have.remaining += a;
+      have.name = name;
+    } else {
+      current.loans.push({ id, name, principal: a, remaining: a });
+    }
+    persist();
+    return true;
+  };
+
+  const payLoan = (id: string, amount: number): number => {
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    const loan = current.loans.find((l) => l.id === id);
+    if (!loan) return 0;
+    const paid = Math.max(0, Math.min(Math.round(amount), current.acorns, loan.remaining));
+    if (paid <= 0) return 0;
+    current.acorns -= paid;
+    loan.remaining -= paid;
+    if (loan.remaining <= 0) current.loans = current.loans.filter((l) => l !== loan);
+    persist();
+    return paid;
+  };
+
+  const totalOwed = (): number => current.debtRemaining + current.loans.reduce((n, l) => n + l.remaining, 0);
+
   return {
-    state: () => ({ ...current }),
+    state: () => ({ ...current, loans: current.loans.map((l) => ({ ...l })) }),
+    borrow,
+    payLoan,
+    totalOwed,
     earn,
     spend,
     payDebt,

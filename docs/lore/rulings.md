@@ -887,3 +887,10 @@ as one gnome in two places.
 **Ruling:** Four acts: I Fresh Glaze (Turfton, 1-15), II Turf & Dew (farms, woods and first reaches, 16-35), III Cold Clay, Far Edges (36-53), IV Sandpit Protocol / The Even Cut (54-70). The Grand Combine is built in four parts at the edges of the map: the cutting deck (tested on Hedgeworth Links), the guidance or "Even Line" (computed at the Anthill Observatory), the power (taken from Pinwheel Ridge) and the money (Countess Brassknock). The Golden Acorn is still its ignition core. The finale keeps both endings; Vesper is stopped, not shattered. The outline is `docs/design/gnome-theft-auto/story-outline.md`.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
 **Why:** the user asked for 70 main quests with more character development and quests that explore the whole world.
+
+## R-168
+
+**Question:** Where does Turfton property come from, and how is it paid for?
+**Ruling:** Property in Turfton is bought on a loan. The First Kiln Bank's ledger (R-166) carries the Kiln-Debt balance and each property loan as separate lines: "added to the Kiln-Debt ledger" in R-166 means booked on that ledger beside the Kiln-Debt balance, never added to the balance itself. Paying off Kiln-Debt does not clear a property loan, and the reverse.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the GTA economy (E08) sells property on a loan (flat 3B, Windfall Croft) and needs one rule for where the money sits, so the Kiln-Debt story beats and the "paid off" moment keep their meaning.

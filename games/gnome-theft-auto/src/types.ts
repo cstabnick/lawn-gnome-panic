@@ -380,6 +380,8 @@ export interface Player {
   grounded: boolean;
   /** 1 = dry, 0 = Washed Out. */
   health: number;
+  /** Jump speed multiplier this frame (bag fun items, fizz). Absent = 1. */
+  jumpMult?: number;
   vehicle: Vehicle | null;
   /** The seat in `vehicle`: 0 = driver, 1.. = a passenger seat (see seats.ts). */
   seat: number;
@@ -639,7 +641,8 @@ export interface Blip {
    */
   kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
     | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
-    | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
+    | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
+    | 'dealer-car' | 'dealer-boat' | 'dealer-air';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

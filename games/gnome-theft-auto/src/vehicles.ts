@@ -170,6 +170,16 @@ export function explodeVehicle(v: Vehicle): void {
   });
 }
 
+/** Mend some hit points (0..1 scale), capped at 1; the model steps back down the damage levels it no longer has (E08 Rust Oil). */
+export function mendVehicle(v: Vehicle, amount: number): void {
+  if (amount <= 0 || v.exploded) return;
+  v.hp = Math.min(1, v.hp + amount);
+  const stages = prefabDamageLevels(getPrefab(v.spec.prefab)!);
+  if (stages === 0) return;
+  const level = damageLevelFor(v.hp, stages);
+  if (level !== v.damage) applyDamageLevel(v, level);
+}
+
 /** Back to new: full hit points and the undamaged model. */
 export function repairVehicle(v: Vehicle): void {
   v.hp = 1;

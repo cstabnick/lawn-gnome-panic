@@ -87,6 +87,19 @@ export interface Lockup {
   instanceOf(uid: string): Vehicle | null;
   /** Online (online/slingSync.ts): the Sling-Lift flight in the air now, or null. */
   slingWire(): { state: SlingState; kind: VehicleKind; tint: number } | null;
+  // ---- Ownership (E08, docs/roadmaps/gta-batch-3/E08/contracts.md) ----
+  /** The uid when v is one of the player's own vehicles (out in the world this session), else null. */
+  ownedUidOf(v: Vehicle): string | null;
+  /** The player's vehicles out in the world now (taken out, delivered, or in the air on the Sling-Lift). */
+  outVehicles(): { uid: string; v: Vehicle }[];
+  /** Add a snapshot straight into its garage (dealer purchase, insurance reclaim). Null when that garage is full.
+   *  Does not check deeds: callers check owns(kind) first when it matters. */
+  addSnapshot(snap: VehicleSnapshot): StoredVehicle | null;
+  /** Called with the saved record (hp as last synced) when an owned vehicle is written off (exploded; a sunk one comes back by itself), just
+   *  before its record is removed. Returns an unsubscribe function. */
+  onWrittenOff(cb: (rec: StoredVehicle) => void): () => void;
+  /** Free slots in the garage for kind. */
+  free(kind: StorageKind): number;
 }
 
 interface Flight {
@@ -159,6 +172,7 @@ export function createLockup(deps: LockupDeps): Lockup {
   let flight: Flight | null = null;
   let syncTimer = 0;
   let uiTimer = 0;
+  const writtenOffCbs = new Set<(rec: StoredVehicle) => void>();
 
   /** Unlock the both-estates achievement once the player owns Hangar Two and the Mossbank Boathouse. */
   function checkLanded(): void {
@@ -486,6 +500,8 @@ export function createLockup(deps: LockupDeps): Lockup {
           if (flight && flight.load === v && !flight.state.released) continue;
           if (v.exploded) {
             const kind = store.kindOf(uid) ?? 'ground';
+            const rec = store.get(uid);
+            if (rec) for (const cb of writtenOffCbs) cb(rec);
             store.remove(uid);
             instances.delete(uid);
             deps.hud.toast(`Your ${v.spec.name} was written off. Its slot in ${placeName(kind)} is free.`);
@@ -581,6 +597,26 @@ export function createLockup(deps: LockupDeps): Lockup {
     instanceOf: (uid: string): Vehicle | null => instances.get(uid) ?? null,
 
     slingWire: () => (flight ? { state: flight.state, kind: flight.load.kind, tint: flight.load.tint } : null),
+
+    ownedUidOf: (v: Vehicle): string | null => {
+      const uid = uidOf.get(v);
+      return uid !== undefined && instances.get(uid) === v ? uid : null;
+    },
+
+    outVehicles: () => [...instances].map(([uid, v]) => ({ uid, v })),
+
+    addSnapshot(snap: VehicleSnapshot): StoredVehicle | null {
+      const spec = VEHICLES[snap.kind];
+      const kind: StorageKind = spec.flies ? 'air' : spec.boat ? 'water' : 'ground';
+      return store.add(snap, kind);
+    },
+
+    onWrittenOff(cb: (rec: StoredVehicle) => void): () => void {
+      writtenOffCbs.add(cb);
+      return () => writtenOffCbs.delete(cb);
+    },
+
+    free: (kind: StorageKind): number => store.free(kind),
   };
 }
 

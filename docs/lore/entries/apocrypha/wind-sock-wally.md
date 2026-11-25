@@ -14,6 +14,8 @@ related: [desert-airfield, dust-flats, fort-sandpit]
 
 Ancient, sun-bleached gnome in a leather aviator cap sitting in a folding lawn chair at the end of the Desert Airfield runway with binoculars and a clipboard.
 
+Also sells aircraft and hangar space from [Wally's Wing Lot](wallys-wing-lot.md), beside the charter desk.
+
 ## Story: Stall Speed's 22
 
 Wally has watched three generations of Spade Guard recruits and brazen city thieves sprint across the alkali pan to steal parked Crop Dusters. He has never once tried to stop anybody. He simply clicks his stopwatch, logs your takeoff speed on his weathered clipboard, and mutters, *"Stall speed's 22, kid, don't embarrass yourself."*

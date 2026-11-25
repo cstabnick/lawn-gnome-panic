@@ -8,7 +8,7 @@ import { burst, tone, voiced } from '../sound/synth';
 import type { Recipe, SoundInfo } from '../sound/ids';
 
 export const HUNT_SOUND_IDS = [
-  'hunt-hedgehog', 'hunt-fox', 'hunt-badger', 'hunt-armadillo', 'hunt-hare', 'hunt-mallard', 'hunt-mouse', 'hunt-pheasant',
+  'hunt-hedgehog', 'hunt-fox', 'hunt-badger', 'hunt-armadillo', 'hunt-hare', 'hunt-mallard', 'hunt-mouse', 'hunt-pheasant', 'hunt-deer',
   'hunt-comb', 'hunt-bounce', 'hunt-flush', 'hunt-sell',
 ] as const;
 export type HuntSoundId = (typeof HUNT_SOUND_IDS)[number];
@@ -94,6 +94,14 @@ const RECIPES: Record<HuntSoundId, Recipe> = {
     tone(c, out, 'triangle', t + 0.24, 0.1, 380 * p, 340 * p, lvl(info, 0.14));
     burst(c, out, t + 0.4, 0.35, 'bandpass', 2000 * p, 2400 * p, lvl(info, 0.06), 1.5, 0.05);
     return 0.4 + 0.35;
+  },
+
+  'hunt-deer': (c, out, t, info) => {
+    // A short, hoarse dog-like bark: a noisy burst with a quick pitch drop.
+    const p = pitch(info);
+    voiced(c, out, 'sawtooth', t, 0.35, 520 * p, 260 * p, lvl(info, 0.18), 20, 0.02, 900, 0.01);
+    burst(c, out, t, 0.12, 'bandpass', 1200 * p, 800 * p, lvl(info, 0.08), 1.2, 0.005);
+    return 0.35;
   },
 
   'hunt-comb': (c, out, t, info) => {

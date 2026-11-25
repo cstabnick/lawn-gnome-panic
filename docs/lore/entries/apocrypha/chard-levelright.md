@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-166]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-166, docs/lore/rulings.md#r-203]
 related: [levelright-construction, thorne-even-estates, thorne-lawn-and-order]
 ---
 
@@ -25,7 +25,7 @@ He is not cruel. He has kept the work going for years by looking at the bubble a
 
 ## In the games
 
-Planned (batch 3). Home: a site caravan at the nearest Even-Estates site (site:construction-1, acknowledged). Work: Levelright Construction, Thorne Even-Estates. First main quest 7 (`m07-even-estates`), last 69 (`m69-the-combine-wakes`); also in #15 and #28.
+Home: the site caravan at Plot 1 of Thorne Even-Estates, on the west fringe by Mossy Wood (R-203); the night-shift side quest starts at that gate. Work: Levelright Construction, Thorne Even-Estates. First main quest 7 (`m07-even-estates`), last 69 (`m69-the-combine-wakes`); also in #15 and #28.
 
 ## Loose threads
 

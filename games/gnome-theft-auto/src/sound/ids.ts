@@ -12,7 +12,7 @@ export const COMBAT_SOUNDS = ['gun-pistol', 'gun-shotgun', 'gun-hoa', 'explosion
 /** Animals and wild things (recipes/critters.ts). */
 export const CRITTER_SOUNDS = [
   'moo', 'baa', 'oink', 'cluck', 'squirrel', 'bear', 'bee-buzz', 'bird-chirp', 'bird-song', 'crow', 'owl', 'gull',
-  'frog', 'cricket', 'cicada', 'critter-thud',
+  'frog', 'cricket', 'cicada', 'critter-thud', 'deer-bark', 'goat-bleat',
 ] as const;
 /** Footsteps on every SurfaceKind, one id per kind: `step-${SurfaceKind}` (recipes/world.ts). */
 export const STEP_SOUNDS = [

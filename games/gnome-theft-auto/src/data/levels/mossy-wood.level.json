@@ -710,6 +710,19 @@
         "flat": true,
         "label": "home-11"
       }
+    },
+    {
+      "id": "giver/chard",
+      "kind": "giver",
+      "x": 77,
+      "z": -117,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
     }
   ],
   "data": {

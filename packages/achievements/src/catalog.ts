@@ -1451,6 +1451,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Windfall', description: 'Fly along Pinwheel Ridge below the tops of the pinwheels and between them.',
     reward: { slot: 'head', prefabId: 'pinwheel-hat', label: 'Pinwheel Hat' },
   },
+  // ---- Countryside (games/gnome-theft-auto/src/country; ids in COUNTRY_ACH) ----
+  {
+    id: 'gta-first-sprout', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Sprout', description: 'Harvest your first crop at Windfall Croft.',
+    reward: { slot: 'hand', prefabId: 'croft-trowel', label: 'Croft Trowel' },
+  },
+  {
+    id: 'gta-oak-patience', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Oak Patience', description: 'Grow an oak at Windfall Croft and shake the acorns from it.',
+    reward: { slot: 'head', prefabId: 'croft-straw-hat', label: 'Croft Straw Hat' },
+  },
+  {
+    id: 'gta-mansion-on-the-hill', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mansion on the Hill', description: "Stand at Brassknock Manor's front door, under the knocker nobody uses.",
+    reward: { slot: 'neck', prefabId: 'brass-knocker-pendant', label: 'Brass Knocker Pendant' },
+  },
+  {
+    id: 'gta-deer-me', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Deer Me', description: 'Get close to twelve different deer without scaring them off first.', target: 12,
+    reward: { slot: 'head', prefabId: 'antler-headband', label: 'Antler Headband' },
+  },
+  {
+    id: 'gta-camp-crasher', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Camp Crasher', description: "Visit ten hunters' camps out in the empty country.", target: 10,
+    reward: { slot: 'back', prefabId: 'camp-kettle-pack', label: 'Camp Kettle Pack' },
+  },
+  {
+    id: 'gta-level-best', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Level Best', description: "Walk through the gates of all three Thorne Even-Estates building sites.", target: 3,
+    reward: { slot: 'hand', prefabId: 'spirit-level', label: 'Spirit Level' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

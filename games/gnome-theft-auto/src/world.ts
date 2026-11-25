@@ -36,6 +36,7 @@ import { buildWickets } from './pardonlin/wickets';
 import { buildPardonlinTown } from './pardonlin/town';
 import { buildCoast } from './coast';
 import { buildRootwell } from './campus';
+import { buildCountryside } from './country';
 import { buildUnmownGate } from './unmownGate';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
@@ -1106,6 +1107,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildCoast(scene, boxes);
   // ---- E13: Rootwell (campus/): the university, the Anthill Observatory, Rootwell Field, Pinwheel Ridge ------------------
   buildRootwell(scene, boxes);
+  // ---- E16: the countryside (country/): Even-Estates sites, Trellisdown Vineyard, Brassknock Manor, Windfall Croft, camps --
+  buildCountryside(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

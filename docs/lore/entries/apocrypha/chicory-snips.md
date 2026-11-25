@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-162]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-162, docs/lore/rulings.md#r-204]
 related: [trellisdown-vineyard, brassknock-manor, wisteria-brassknock, grape-dew, granny-gnertrude-cloverfield]
 ---
 
@@ -28,7 +28,7 @@ Chicory likes the Countess and does not trust the money. He buys the stolen Dew 
 
 ## In the games
 
-Planned (batch 3). The gardener who burns Granny's Dew in quest 17 (`m17-the-dew-buyer`); the one to slip past in 50 (`m50-trellisdown-tasting`); a quiet helper in 65 (`m65-the-countess-relents`).
+Built by epic E16 (R-204): his lodge stands just inside the vineyard gate at (-1172, -78), and he is "he" everywhere. The gardener who burns Granny's Dew in quest 17 (`m17-the-dew-buyer`); the one to slip past in 50 (`m50-trellisdown-tasting`); a quiet helper in 65 (`m65-the-countess-relents`).
 
 ## Loose threads
 

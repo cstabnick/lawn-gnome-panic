@@ -167,6 +167,7 @@ import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
 import { installGolf } from './golf/runtime';
 import { installRootwell } from './campus';
+import { installCountryside } from './country';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -1124,6 +1125,9 @@ const golf = installGolf({
 // Rootwell (E13, campus/): campus life, the Anthill Observatory, Rootwell Field, Pinwheel Ridge's turning pinwheels and
 // their achievements. The static scenery is built by world.ts (buildRootwell).
 const rootwell = installRootwell(jobDeps);
+// The countryside (E16, country/ and farm/): the building sites' crews, Trellisdown's residents, Windfall Croft (buy, plant,
+// water, harvest, sell, the oak), the hunter camps and the countryside achievements. Static scenery: world.ts.
+const countryside = installCountryside(jobDeps);
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -1852,7 +1856,7 @@ function frame(now: number): void {
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
-  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z);
+  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z) ?? countryside.prompt(player.x, player.z);
   const townPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : outskirts.prompt(player);
   const portalPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gnomecinoDoor.prompt(Math.floor(watch.heat));
   if (inp.enterExit && !(player.airborne || player.ragdolling)) {
@@ -1866,7 +1870,7 @@ function frame(now: number): void {
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
     else if (fishPrompt) fishing.interact(player);
-    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z)) golf.interact(player.x, player.z); }
+    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z) && !golf.interact(player.x, player.z)) countryside.interact(player.x, player.z); }
     else if (townPrompt) outskirts.interact(player);
     else if (portalPrompt) gnomecinoDoor.interact(Math.floor(watch.heat));
     else if (interPrompt) interactables.interact(player);
@@ -2173,6 +2177,7 @@ function frame(now: number): void {
   winter.update(dt);
   golf.update(dt, rawInp);
   rootwell.update(dt);
+  countryside.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2341,7 +2346,7 @@ function frame(now: number): void {
   section('critters');
   critters.update({
     dt, time: critterTime, playerX: player.x, playerY: player.y, playerZ: player.z, playerVehicle: player.vehicle,
-    playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF,
+    playerSpeed: Math.min(30, footSpeed), vehicles, world, night: nightF, ammo: weapons.ammo,
   });
   hunting.update({
     dt, time: critterTime, playerX: player.x, playerZ: player.z,
@@ -2517,7 +2522,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...rootwell.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...rootwell.blips(), ...countryside.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();

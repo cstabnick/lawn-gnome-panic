@@ -17,6 +17,7 @@ import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
 import { GOLF_QUESTS } from './golfQuests';
 import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
+import { COUNTRY_QUESTS_DEFS } from './countryQuests';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -281,6 +282,23 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // The countryside's side quests (countryQuests.ts): Plot 1's west gate and Windfall Croft's west gate.
+  chard: {
+    id: 'chard',
+    name: 'Even-Estates Plot 1',
+    label: 'Talk to Chard Levelright',
+    ...placed('chard'),
+    room: 'street',
+    letter: '!',
+  },
+  bramble: {
+    id: 'bramble',
+    name: 'Windfall Croft',
+    label: 'Talk to Farmer Bramble',
+    ...placed('bramble'),
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -302,6 +320,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...DIRT_QUESTS,
   ...GOLF_QUESTS,
   ...ROOTWELL_QUESTS_DEFS,
+  ...COUNTRY_QUESTS_DEFS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

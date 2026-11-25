@@ -13,12 +13,11 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14, E15, E24, E13, E31, E25, E16. Running: E17, E19, E26. Next: E32, E33, then E26, E32, E33, then wave 6 (E16, E17, E19, E26), E18, E20–E22. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
-still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
-(was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
-check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
-`bash tools/batch-merge.sh <branch> <msg>`; if not, start a new Opus lead told to continue from that worktree's state.
-Then: E12, wave 5 (E13, E14, E15, E24, E25, E31), wave 6 (E16, E17, E19, E26), E18, E20–E22. Keep at most 3 leads.
+Merged so far: E01–E16, E23–E25, E27–E31, F1 (+ main). Running: E17 (societies), E19 (courts/skate), E26 (street
+racing). Next, as slots free: E32 (nine holes), E33 (mountain routes), then E18 (activities), E20 → E21 → E22 (story),
+then R1 (editorial review). Leads run in worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`;
+if a session ends mid-lead, resume the lead (or start a new one told to continue from its worktree), then merge with
+`bash tools/batch-merge.sh`, `tools/renumber-rulings.py`, `tools/merge-hunks.py` (see the process doc).
 
 ## Tracking
 

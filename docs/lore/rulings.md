@@ -901,3 +901,17 @@ as one gnome in two places.
 **Ruling:** Property in Turfton is bought on a loan. The First Kiln Bank's ledger (R-166) carries the Kiln-Debt balance and each property loan as separate lines: "added to the Kiln-Debt ledger" in R-166 means booked on that ledger beside the Kiln-Debt balance, never added to the balance itself. Paying off Kiln-Debt does not clear a property loan, and the reverse.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
 **Why:** the GTA economy (E08) sells property on a loan (flat 3B, Windfall Croft) and needs one rule for where the money sits, so the Kiln-Debt story beats and the "paid off" moment keep their meaning.
+
+## R-170
+
+**Question:** What can a gnome walk into in Turfton, and what is inside?
+**Ruling:** Four walk-in interiors. **Bodega & Sons** (block x -90, z 90; the game's block placement wins over the older "x -60, z 60" in the entry) is a narrow shop inside the overturned watering can, with the counter on the north wall, Asphalt asleep on the counter, the Acorn-Cola tower that fell over and was never restacked, and Mossley's abandoned grid-survey table. **The Mulch Club** lobby is entered by the members' side door on the south face (the front door on the east face still leads to Don Compost's back room for quests): velvet booths, the cloakroom with the brass plaque "NO SIRENS. NO WET HATS. NO TALKING.", a hat-check gnome, a silent bodyguard at the back-room door, and a card game abandoned the moment somebody spoke. **Flat 3B, Saucer Court** is the player's loaned flat, empty on move-in (a bedroll, moving crates, the bank's notice on the wall); furnishing is E10's. **The Thorne Even-Estates sales floor** is inside the Double Pot, door in the Double Pot Tunnel: a beige scale model of an Even-Estate, HOA posters, a bin of rejected colours, and a lift to the roof.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L36 asked for building interiors.
+
+## R-171
+
+**Question:** Which roofs can a gnome stand on, and where do helicopters land?
+**Ruling:** Every flat downtown tower roof is walkable behind a waist-high parapet. The tunnel-roof slab between the Double Pot's two halves is the **Thorne Helipad**, Thorne Lawn & Order's pad, reached by copter or by the sales floor's lift. Towers with a helipad crown (the Pigeon-Drop Depot among them) take a copter too. Roofs are reached only by air or by a lift: gnomes do not climb.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L75 asked to land on buildings and run around.

@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Mulch Club]
-sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/config.ts]
+sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/config.ts, docs/lore/rulings.md#r-170]
 related: [don-compost, turfton]
 ---
 
@@ -23,6 +23,10 @@ Rookies who try to make small talk in the back room are politely escorted to the
 ## Ledger & Graffiti
 
 A brass plaque by the coat rack reads: *"NO SIRENS. NO WET HATS. NO TALKING."*
+
+## In the games
+
+The lobby is walk-in (R-170, `docs/lore/rulings.md#r-170`), entered by the members' side door on the south face; the front door on the east face still leads to Don Compost's back room for quests. Inside are the velvet booths, the cloakroom with its brass plaque, a hat-check gnome, a silent bodyguard at the back-room door, and a card game that stops the moment somebody speaks.
 
 ## Loose threads
 

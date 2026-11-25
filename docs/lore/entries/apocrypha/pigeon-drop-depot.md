@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The Depot]
-sources: [games/gnome-theft-auto/src/towers/landmarks.ts]
+sources: [games/gnome-theft-auto/src/towers/landmarks.ts, docs/lore/rulings.md#r-171]
 related: [pigeon-drop-couriers, downtown-turfton, turfton-towers]
 ---
 
@@ -22,7 +22,7 @@ The Pigeon-Drop Depot is an H-shaped concrete block with ribbon windows and a he
 
 ## In the games
 
-It stands on the x = 20, z = 90 block of Downtown Turfton, a low H-shaped concrete block with ribbon windows and a helipad. It is kept lower than its neighbours, and the intro tour's camera passes low over it. Its shape and helipad are set in `src/towers/landmarks.ts`.
+It stands on the x = 20, z = 90 block of Downtown Turfton, a low H-shaped concrete block with ribbon windows and a helipad. It is kept lower than its neighbours, and the intro tour's camera passes low over it. Its shape and helipad are set in `src/towers/landmarks.ts`. A copter can land on its helipad (R-171, `docs/lore/rulings.md#r-171`).
 
 ## Loose threads
 

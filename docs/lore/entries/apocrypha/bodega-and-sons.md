@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Bodega and Sons, John Bodegas Shop]
-sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/brands.md]
+sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/brands.md, docs/lore/rulings.md#r-170]
 related: [john-bodega, asphalt-the-cat, acorn-cola, dandelion-fizz, clay-mart]
 ---
 
@@ -21,6 +21,10 @@ The narrow counter is crammed with Dandelion Fizz crates, loose dandelion-silk c
 ## Ledger & Graffiti
 
 Hand-painted sign taped over the register: *"BODEGA & SONS (NO SONS, JUST JOHN). CASH OR ACORNS."*
+
+## In the games
+
+The walk-in interior (R-170, `docs/lore/rulings.md#r-170`) is a narrow shop inside the overturned watering can, on the block at x -90, z 90. The counter sits on the north wall with Asphalt asleep on it, the Acorn-Cola tower that fell over lies where it dropped, and Mossley's abandoned grid-survey table stands by the door.
 
 ## Loose threads
 

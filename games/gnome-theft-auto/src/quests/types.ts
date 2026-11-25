@@ -33,6 +33,8 @@ export interface GiverDef {
   room: CutsceneRoom;
   /** Optional single-character icon on the 3D ground marker ('D', 'P', 'T', 'G', 'B', '!'). */
   letter?: string;
+  /** When set, x, z and exit is local to this interior (E05 src/interiors/registry.ts), metres from its room centre; the map marker shows at the interior's door while the player is outside. */
+  interior?: string;
 }
 
 /** A gnome to be cracked. `near` is snapped to the closest place gnomes walk. Missing look colours are random. */
@@ -90,7 +92,7 @@ export type ObjectiveDef =
    * Reach a place. `scene`: a SCENES id played the moment the player arrives (the story happening where it happens);
    * the step completes when it ends, then heatOnEnter / toastOnEnter apply.
    */
-  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string }
+  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string; interior?: string }
   | {
       kind: 'steal-deliver';
       text: string;
@@ -203,6 +205,8 @@ export interface CheckpointDef {
   height?: number;
   /** Shown in the tracker and the toast, e.g. "Skyway deck over Ring Road North-East". */
   label: string;
+  /** When set, `at` is local to this interior (E05 src/interiors/registry.ts), metres from its room centre; the map marker shows at the interior's door while the player is outside. */
+  interior?: string;
 }
 
 /** A rival driver in a 'race' objective. */

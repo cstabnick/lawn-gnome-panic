@@ -1166,6 +1166,21 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Through the Hedge', description: 'Slip past the hedges into Trellisdown, west of Mossy Wood.',
     reward: { slot: 'neck', prefabId: 'trellisdown-cravat', label: 'Trellisdown Cravat' },
   },
+  {
+    id: 'gta-home-sweet-hovel', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Home Sweet Hovel', description: 'Walk through a door into a building.',
+    reward: { slot: 'head', prefabId: 'tea-cosy-hat', label: 'Tea-Cosy Hat' },
+  },
+  {
+    id: 'gta-roof-rat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Roof Rat', description: 'Land an aircraft on a rooftop.',
+    reward: { slot: 'head', prefabId: 'propeller-beanie', label: 'Propeller Beanie' },
+  },
+  {
+    id: 'gta-rooftop-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rooftop Run', description: 'Stand on 5 different rooftops.', target: 5,
+    reward: { slot: 'back', prefabId: 'rooftop-pigeon-pack', label: 'Rooftop Pigeon' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

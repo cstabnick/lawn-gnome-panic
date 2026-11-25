@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-166]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-166, docs/lore/rulings.md#r-170]
 related: [first-kiln-bank, kiln-debt, downtown-turfton, hyssop-doormat, parsley-inkpot]
 ---
 
@@ -22,6 +22,8 @@ A block of flats in Downtown Turfton built round a giant Tall-One saucer set int
 ## In the games
 
 Planned (batch 3). #2 `m02-roof-on-credit` moves the player in (world change W01: name on the buzzer, flat 3B's window lit at night). #39 `m39-couch-surfing` has Pip move onto the couch (W09). #68 `m68-lights-out` ends on the roof with Pip. Flat 3A belongs to Hyssop Doormat. Epic E10 builds the apartment block and its interior.
+
+Flat 3B is walk-in (R-170, `docs/lore/rulings.md#r-170`): empty on move-in, with a bedroll, moving crates and the bank's notice on the wall. Furnishing it is E10's job.
 
 ## Loose threads
 

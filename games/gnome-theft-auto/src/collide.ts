@@ -1,6 +1,7 @@
 // Circle-vs-box collision on the ground plane, shared by the player, vehicles, pedestrians and officers.
 import type { Box } from './types';
 import { groundAt } from './terrain';
+import { isInteriorPoint } from './interiors/space';
 
 /**
  * A circle's corrected position. (nx, nz) is the unit direction the circle was last pushed (the wall normal, pointing out
@@ -129,8 +130,12 @@ export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly 
   return hit ? { x, z, hit, nx, nz } : { x, z, hit, nx: 0, nz: 0 };
 }
 
-/** Keep a circle inside [-half, half] on both axes. The normal points back inside the world. */
+/**
+ * Keep a circle inside [-half, half] on both axes. The normal points back inside the world. Interior space (x >= 5000,
+ * interiors/space.ts) is exempt: a body standing in an interior pocket is never pulled back onto the map.
+ */
 export function clampToWorld(x: number, z: number, half: number, r: number): Pushed {
+  if (isInteriorPoint(x, z)) return { x, z, hit: false, nx: 0, nz: 0 };
   const lim = half - r;
   const cx = Math.max(-lim, Math.min(lim, x));
   const cz = Math.max(-lim, Math.min(lim, z));

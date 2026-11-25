@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 import { groundAt, heightAt } from './terrain';
+import { isInteriorPoint } from './interiors/space';
 import { deckCeilingAbove } from './highways/deck';
 import { AIM } from './gunMods';
 import { SHAKE_FACTOR, getShakeLevel } from './viewPrefs';
@@ -441,6 +442,9 @@ function lerp(a: number, b: number, t: number): number {
 
 /** A point is blocked by a box, or by ground that rises above the player's ground and reaches up to the point. */
 function isBlocked(x: number, y: number, z: number, radius: number, world: World, baseGround: number): boolean {
+  // Interior rooms (E05, x >= 5000): walls and ceiling are see-through from outside, so the camera ignores colliders
+  // there and keeps its full distance (a dollhouse view) instead of jamming against the wall behind the player.
+  if (isInteriorPoint(x, z)) return false;
   const ground = heightAt(x, z);
   if (ground > baseGround + CAM_STEADY.groundRise && y < ground + CAM_STEADY.groundBand) return true;
   return pushOutOfBoxes(x, z, radius, world.boxes, y - 0.15).hit || insideBox(x, y, z, world.boxes);

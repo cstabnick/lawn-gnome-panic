@@ -27,6 +27,8 @@ import { createHud } from './hud';
 import { landmarkBlips, placeBlips } from './mapPois';
 import { createInteractables } from './interactables';
 import { createGnomecinoDoor } from './portal/gnomecinoDoor';
+import { buildRooftops, createInteriors, createRoofLife } from './interiors';
+import { buildDoublePotRoof } from './interiors/showcase/doublePot';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { SCENES } from './cutscene/scenes';
@@ -634,6 +636,16 @@ const taxi = createTaxi({
 });
 /** The verb for getting into a nearby vehicle: the waiting taxi is boarded, an NPC's mower stolen, anything else driven. */
 const enterVerb = (n: Vehicle): string => (n === taxi.boardable() ? 'Board' : n.driver === 'npc' ? 'Steal' : 'Drive');
+/**
+ * The touch action button's label for any other prompt E would answer (doors, interiors, benches, vending, jobs,
+ * hunting...): its first word ("Enter Bodega & Sons" -> "Enter"), or 'Use' when that word is long. Without it, touch
+ * players had no button for these prompts at all.
+ */
+const promptVerb = (p: string | null): string | null => {
+  if (!p) return null;
+  const w = p.trim().split(/\s+/)[0].replace(/[^\p{L}'-]/gu, '');
+  return w && w.length <= 8 ? w : 'Use';
+};
 const introTour = createIntroTour(ui, {
   setUiVisible(vis) { hud.setVisible(vis); input.setVisible(vis); },
   onDone() {
@@ -894,6 +906,29 @@ if (!new URLSearchParams(location.search).has('offline')) net.start(me?.name ?? 
 const gnomecinoDoor = createGnomecinoDoor({
   ui, hud, player, net, remotes, tracker, room: roomParam ? roomParam.toUpperCase() : null,
   me: me ? { name: me.name, code: me.code } : null,
+});
+
+// Interiors and rooftops (src/interiors/, E05): walk-in rooms at x >= 5000 entered through door prompts, walkable tower
+// roofs and the Double Pot slab that aircraft land on. While inside, the world simulates round the door (interiorHome).
+buildRooftops(scene, world);
+buildDoublePotRoof(scene);
+const interiors = createInteriors({
+  scene, ui, world, player, hud, play,
+  teleport: (x, z, yaw, y) => {
+    const hp = player.health;
+    player.respawn(x, z, yaw);
+    if (y !== undefined) player.y = y;
+    player.health = hp;
+    chase.yaw = yaw;
+  },
+  heat: () => watch.heat,
+  night: () => atmosphere?.nightFactor() ?? 0,
+  unlock: (id) => void achievements.unlock(id),
+});
+const roofLife = createRoofLife({
+  player, hud,
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
 });
 
 // Sim jobs and tubing (jobs/, tubing/, docs/roadmaps/gta-sim-jobs-and-tubing.md): taxi, courier, pilot and boat-driver
@@ -1790,9 +1825,12 @@ function frame(now: number): void {
 
   // While the Pay 'n' Glaze shop is open the vehicle is parked on the showroom stage, far off the map: the world simulation
   // (traffic, gnomes, quests, weather, the Hat Watch) keeps running around the place the player actually left.
-  const simX = stageHome ? stageHome.x : player.x;
-  const simY = stageHome ? stageHome.y : player.y;
-  const simZ = stageHome ? stageHome.z : player.z;
+  // Inside an interior (E05) the same: the world runs round the building's door; quests still see the real position.
+  const interiorHome = stageHome ? null : interiors.home();
+  const home = stageHome ?? interiorHome;
+  const simX = home ? home.x : player.x;
+  const simY = home ? home.y : player.y;
+  const simZ = home ? home.z : player.z;
 
   // Biomes: a toast and an explorer count the first time each one is entered.
   const nowBiome = world.biomeAt(simX, simZ);
@@ -1912,7 +1950,7 @@ function frame(now: number): void {
     fx.fire(w.x, w.y + 0.8, w.z, w.spec.radius * 0.6);
   }
   section('quests');
-  quests.update(dt, simX, simZ);
+  quests.update(dt, interiorHome ? player.x : simX, interiorHome ? player.z : simZ);
   const taxiEvent = taxi.update(dt);
   section('jobs');
   jobs.update(dt);
@@ -2053,6 +2091,8 @@ function frame(now: number): void {
   atmosphere?.update(dt, simX, simZ, biome, player.airborne || !!v?.spec.flies);
   const nightF = atmosphere?.nightFactor() ?? 0;
   setTowerNight(nightF);
+  interiors.update(dt);
+  roofLife.update(dt);
   section('speedway');
   raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   critterTime += dt;
@@ -2120,7 +2160,7 @@ function frame(now: number): void {
   net.setPose({
     x: simX, y: v ? simY : player.y, z: simZ, yaw: v ? v.yaw : player.yaw,
     veh: v ? VEHICLE_CODES.indexOf(v.kind) : -1, tint: v ? v.tint : 0,
-    moving: Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: gunOnFoot && gunRaised, hurt: hurtTimer > 0,
+    moving: !interiorHome && Math.abs(inp.moveX) + Math.abs(inp.moveY) > 0.1, aiming: gunOnFoot && gunRaised, hurt: hurtTimer > 0,
     chute: chuteOpen, ride: riding, pitch: aimPitch,
     ...(v && v.driver === 'player' && v.air ? { tilt: { pitch: v.air.pitch, roll: v.air.roll } } : {}),
   });
@@ -2145,7 +2185,7 @@ function frame(now: number): void {
   section('camera');
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : lockupPrompt ? (lockupPrompt.startsWith('Buy') ? 'Buy' : 'Open') : dealerPrompt ? 'Browse' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : lockupPrompt ? (lockupPrompt.startsWith('Buy') ? 'Buy' : 'Open') : dealerPrompt ? 'Browse' : gunPrompt ? 'Shop' : promptVerb(huntPrompt ?? birdPrompt ?? fishPrompt ?? jobPrompt ?? townPrompt ?? portalPrompt ?? interPrompt) ?? (near ? enterVerb(near) : rideTarget ? 'Ride' : null);
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -2385,6 +2425,15 @@ const at = startParams.get('at')?.split(',').map(Number);
 if (at && at.length >= 2 && at.every(Number.isFinite)) {
   player.respawn(at[0], at[1], at[2] ?? 0);
   chase.yaw = at[2] ?? 0;
+}
+// Dev: ?interior=<id> walks straight into an interior (E05: bodega, mulch-club-lobby, flat-3b, double-pot-sales);
+// ?roof=1 with it skips the room and takes the Double Pot lift to the Thorne Helipad.
+const interiorParam = startParams.get('interior');
+if (interiorParam) {
+  setTimeout(() => {
+    interiors.enter(interiorParam);
+    if (startParams.get('roof') === '1') setTimeout(() => interiors.leave({ x: 120, y: 9, z: -75, yaw: Math.PI }), 5000);
+  }, 800);
 }
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
 if (startParams.has('gunshop')) {

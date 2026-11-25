@@ -28,7 +28,10 @@ export interface VehicleSounds {
 const NEAR = 160;
 const NEAR2 = NEAR * NEAR;
 const HEAVY_KINDS: ReadonlySet<string> = new Set(['combine', 'hoa-van', 'mulch-spreader', 'snail-coach']);
-const TRUCK_HORN_KINDS: ReadonlySet<string> = new Set(['combine', 'mulch-spreader', 'snail-coach']);
+const TRUCK_HORN_KINDS: ReadonlySet<string> = new Set(['combine', 'mulch-spreader', 'snail-coach', 'bin-lorry', 'fire-engine']);
+
+/** Ids of vehicles sounding a fire siren (the fire job adds its engine's id while on a call). */
+export const SIREN_VEHICLES = new Set<number>();
 const CREW_KINDS: ReadonlySet<string> = new Set(['push-bike', 'tessie']);
 
 const CRASH_COOLDOWN = 0.6;
@@ -282,6 +285,8 @@ export function createVehicleSounds(): VehicleSounds {
             }
           }
         }
+
+        if (SIREN_VEHICLES.has(v.id) && !v.exploded) addSource('fire-siren' + v.id, 'siren-ambulance', v.x, v.z, 1);
 
         m.lastSpeed = v.speed;
         m.lastYaw = v.yaw;

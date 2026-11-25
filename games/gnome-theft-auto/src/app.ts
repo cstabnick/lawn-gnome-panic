@@ -1112,9 +1112,11 @@ workplaces = installWorkplaces({
   blocked: jobDeps.blocked,
   timeLabel: jobDeps.timeLabel,
   // The gun is put away while a workplace holds the camera (a comedian with a pistol is a different act).
-  showroom: (t) => { hud.setVisible(!t); chase.showroom(t); weapons.setVisible(!t && !player.vehicle); },
+  showroom: (t) => { hud.setVisible(!t); input.setVisible(!t); chase.showroom(t); weapons.setVisible(!t && !player.vehicle); },
   teleport: (x, z, yaw) => { player.respawn(x, z, yaw); chase.yaw = yaw; },
   getOut: () => { if (player.vehicle) getOut(); },
+  fx,
+  seatPlayer: jobDeps.seatPlayer,
 });
 // Winter sports (E12, winter/): Snowdrop Slope (skis, the tea-tray sled, the Bootlace Tow, timed runs), the Woolly Sock
 // Lodge, Pail Pond ice holes and Bear Hug. Builds its own scenery and pushes its colliders into world.boxes.
@@ -2192,7 +2194,7 @@ function frame(now: number): void {
   if (routeT <= 0) {
     routeT = 0.5;
     const jobWp = jobs.waypoint();
-    const wp = jobWp ?? quests.waypoint();
+    const wp = jobWp ?? workplaces?.waypoint() ?? quests.waypoint();
     const simY = player.vehicle ? player.vehicle.y : player.y;
     route = wp ? { points: jobWp?.direct ? [{ x: simX, z: simZ }, { x: wp.x, z: wp.z }] : roadRoute(world.roads, { x: simX, z: simZ, y: stageHome ? undefined : simY }, wp), color: wp.color } : null;
   }

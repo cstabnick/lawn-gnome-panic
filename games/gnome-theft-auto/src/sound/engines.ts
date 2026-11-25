@@ -102,6 +102,9 @@ const TABLE: Record<string, EngineSoundDef> = {
   'ranger-buggy': { wave: 'buzz', idleHz: 32, maxHz: 125, gears: 3, bright: 0.65, rough: 0.4, gain: 0.9, curve: 0.9, misfire: 0.1 },
   'shell-camper': { wave: 'rumble', idleHz: 12, maxHz: 42, gears: 3, bright: 0.25, rough: 0.7, gain: 1.05, curve: 1.15, misfire: 0.15 },
   'cone-van': { wave: 'rumble', idleHz: 16, maxHz: 55, gears: 3, bright: 0.35, rough: 0.4, gain: 1.0, curve: 1.05 },
+  // E25 work vehicles: a low rough diesel lorry, a brighter Pumper.
+  'bin-lorry': { wave: 'rumble', idleHz: 11, maxHz: 38, gears: 3, bright: 0.2, rough: 0.6, gain: 1.1, curve: 1.15 },
+  'fire-engine': { wave: 'rumble', idleHz: 18, maxHz: 64, gears: 4, bright: 0.6, rough: 0.35, gain: 1.05 },
   'golf-cart': {
     wave: 'electric', idleHz: 25, maxHz: 95, gears: 0, bright: 0.25, rough: 0.02, gain: 0.75,
     whine: 0.55, whineRatio: 7, idleLevel: 0.2, noise: 0.1,

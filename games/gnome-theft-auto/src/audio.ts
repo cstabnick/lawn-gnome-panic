@@ -455,6 +455,17 @@ export function playHorn(kind: VehicleKind, horn?: string): void {
       }
       return;
     }
+    case 'bin-lorry':
+      // Low two-note truck parp.
+      hornNote(c, out, 'sawtooth', t, 0.22, 110, 0.24, 800);
+      hornNote(c, out, 'sawtooth', t + 0.24, 0.3, 138, 0.24, 800);
+      return;
+    case 'fire-engine':
+      // Bright three-note bell-like "dee-da-dee".
+      hornNote(c, out, 'triangle', t, 0.14, 784, 0.18, 3200);
+      hornNote(c, out, 'triangle', t + 0.16, 0.14, 587.33, 0.18, 3200);
+      hornNote(c, out, 'triangle', t + 0.32, 0.22, 784, 0.18, 3200);
+      return;
     case 'lowrider': {
       // 4-note musical honk.
       const notes: readonly [number, number, number][] = [

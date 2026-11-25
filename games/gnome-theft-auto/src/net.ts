@@ -29,6 +29,7 @@ export const VEHICLE_CODES: readonly VehicleKind[] = [
   'tea-tray-sled', 'snow-skis',
   'dirt-bike',
   'ranger-buggy', 'shell-camper', 'cone-van',
+  'bin-lorry', 'fire-engine',
 ];
 
 /** A passenger's seat in someone else's vehicle: the driver's player id and the seat (1.. , see seats.ts). */

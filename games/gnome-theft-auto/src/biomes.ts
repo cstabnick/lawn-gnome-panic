@@ -17,6 +17,7 @@ import { heightAt, waterAt, withGround } from './terrain';
 import { nearTrack } from './raceTrack/tracks';
 import { addGroundToGeometry, placeOnGround } from './terrainMesh';
 import { onWaterCourse } from './water';
+import { deckContactsAt } from './highways/deck';
 
 export interface BiomeBuild {
   /** Static colliders of everything built here (tree trunks, rocks, fort walls, hangars, cabins...). */
@@ -222,12 +223,23 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   const anywhere = (): Pt => ({ x: uni(-half + 14, half - 14), z: uni(-half + 14, half - 14) });
 
   /** A spot an object of radius `margin` can stand on: in the world, off Turfton and the highways, outside the reserved zones, clear of boxes. */
+  /** A skyway embankment or a low stretch of deck within `margin` of (x, z) (nothing tall may stand there). */
+  const nearSkywayFoot = (x: number, z: number, margin: number): boolean => {
+    for (const dx of [0, margin, -margin]) {
+      for (const dz of [0, margin, -margin]) {
+        for (const c of deckContactsAt(x + dx, z + dz)) if (c.solid || c.surfaceY - c.land < 9) return true;
+      }
+    }
+    return false;
+  };
+
   const free = (x: number, z: number, margin: number): boolean => {
     if (Math.abs(x) > half - 12 || Math.abs(z) > half - 12) return false;
     if (Math.abs(x) <= CITY_HALF + margin && Math.abs(z) <= CITY_HALF + margin) return false;
     if (roadDist(x, z, genRoads) < ROAD_CLEAR + margin) return false;
     if (reserved.some((r) => inRect(r, x, z, margin))) return false;
     if (nearTrack(x, z, margin + 2)) return false;
+    if (nearSkywayFoot(x, z, margin + 2)) return false;
     return !boxNear(x, z, margin) && !oldFenceNear(x, z, margin);
   };
 

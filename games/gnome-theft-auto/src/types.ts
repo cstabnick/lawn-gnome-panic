@@ -65,7 +65,11 @@ export type VehicleKind =
   // ice-cream van. Civilian traffic and parked spots (living/); prefabs in packages/prefabs gta-living-rides.ts.
   | 'ranger-buggy'
   | 'shell-camper'
-  | 'cone-van';
+  | 'cone-van'
+  // E25 jobs III (workplaces/garbage, workplaces/firefighter): the Bin Lorry (pivot 'arm', the lift arm on the kerb
+  // side) and the Watering-Can Pumper (pivots 'ladder', 'nozzle'). Spawned by their jobs; never in traffic.
+  | 'bin-lorry'
+  | 'fire-engine';
 export type GunKind =
   | 'pistol'
   | 'smg'

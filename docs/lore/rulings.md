@@ -1154,3 +1154,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** R-021 applies to them as to every creature: nothing dies. A creature that is knocked over or run into tumbles, gets up and carries on, with the usual indignation.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** keeps the preserve's animals within the no-gore rule.
+
+## R-207
+
+**Question:** Where does Turfton's rubbish go, and who collects it?
+**Ruling:** Bin crews from the Turfton Bin Depot collect it by lorry and tip it into the Compost Heap. Spills are an HOA offence, fined against the crew's pay.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's garbage job needs a destination for the load and a reason neatness is pay.
+
+## R-208
+**Question:** Who fights fires in Turfton?
+**Ruling:** A volunteer brigade from Fire Station No. 1. Clay gnomes fear fire less than falls, but sheds and toadstools burn. Water comes from kerb hydrants.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's firefighter job needs a crew, a stake and a water source.
+
+## R-209
+**Question:** What is Gnomazon in Gnome Theft Auto?
+**Ruling:** A parody parcel company with one fulfilment centre, FC-1. Its manager-bots are earnest, not sinister. Associates are paid per parcel, with no tips.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's warehouse job needs a company that satirises warehouse work without being cruel.

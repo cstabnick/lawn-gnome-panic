@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [The Heap]
 sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/brands.md]
-related: [ash-shovel-ernie, black-dew-brand, mossy-wood]
+related: [ash-shovel-ernie, black-dew-brand, mossy-wood, turfton-bin-depot]
 ---
 
 Steaming industrial badlands between Turfton and Mossy Wood, packed with rusted wheelbarrow cranes, mulch boilers, and acid-amber Black Dew refineries.
@@ -25,3 +25,7 @@ When Turfton's yard waste needed somewhere to rot, entrepreneurial gnomes realiz
 ## Loose threads
 
 Whose armored Combine chassis is half-buried under the easternmost mulch mound.
+
+## In the games
+
+Planned (E25). The Turfton Bin Depot tips every round into the Heap, which is why it is so warm. See R-207.

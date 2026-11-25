@@ -4,7 +4,7 @@ import type * as THREE from 'three';
 import type { TimeLabel } from '../atmosphere';
 import type { ShowroomTarget } from '../camera';
 import type { Economy } from '../economy';
-import type { Blip, Hud, Player, Sfx, Vehicle, World } from '../types';
+import type { Blip, Fx, Hud, Player, Sfx, Vehicle, World } from '../types';
 
 export interface WorkDeps {
   scene: THREE.Scene;
@@ -30,6 +30,18 @@ export interface WorkDeps {
   teleport(x: number, z: number, yaw: number): void;
   /** Leave the current vehicle at once (no-op on foot). */
   getOut(): void;
+  /** E25: the world's particle effects (fire, splashes, smash). */
+  fx: Fx;
+  /** E25: put the player in `v`'s driver seat at once (a job vehicle handed over at the depot / station). */
+  seatPlayer(v: Vehicle): void;
+}
+
+/** E25: where a workplace job wants the HUD route to go (app.ts routes along the roads to it). */
+export interface WorkWaypoint {
+  x: number;
+  z: number;
+  color: string;
+  label: string;
 }
 
 /** What each workplace runtime gives app.ts (through workplaces/index.ts). */
@@ -40,4 +52,6 @@ export interface WorkJobRuntime {
   isOpen(): boolean;
   /** Map blips (the workplace, a waiting client). */
   blips(): Blip[];
+  /** E25: the next place to drive to (a bin, a fire, back to the depot), or null. */
+  waypoint?(): WorkWaypoint | null;
 }

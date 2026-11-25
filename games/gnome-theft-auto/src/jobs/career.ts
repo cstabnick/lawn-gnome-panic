@@ -15,11 +15,17 @@ export function emptySave(): JobsSave {
   return {
     v: 1, jobs: { taxi: emptyRecord(), courier: emptyRecord(), pilot: emptyRecord(), boat: emptyRecord() }, parcels: 0,
     fragileClean: 0, perfectLandings: 0, ferryLoops: 0, playerFares: 0, tubeSeconds: 0, tubeBest: 0, towedMax: 0, buoyBest: null,
-    work: { chef: emptyRecord(), mechanic: emptyRecord(), comedy: emptyRecord() }, workStats: emptyWorkStats(),
+    work: {
+      chef: emptyRecord(), mechanic: emptyRecord(), comedy: emptyRecord(), garbage: emptyRecord(), firefighter: emptyRecord(),
+      gnomazon: emptyRecord(),
+    }, workStats: emptyWorkStats(),
   };
 }
 
-const emptyWorkStats = (): WorkStats => ({ dishes: 0, fiveStarDishes: 0, cars: 0, perfectCars: 0, sets: 0, tomatoes: 0, doubleDowns: 0 });
+const emptyWorkStats = (): WorkStats => ({
+  dishes: 0, fiveStarDishes: 0, cars: 0, perfectCars: 0, sets: 0, tomatoes: 0, doubleDowns: 0,
+  bins: 0, neatBins: 0, spills: 0, fires: 0, calls: 0, rescues: 0, parcels: 0, rightSized: 0,
+});
 
 function parseRecord(r: unknown, rec: JobRecord): void {
   if (typeof r !== 'object' || r === null) return;
@@ -118,6 +124,15 @@ export interface WorkExtra {
   sets?: number;
   tomatoes?: number;
   doubleDowns?: number;
+  // E25
+  bins?: number;
+  neatBins?: number;
+  spills?: number;
+  fires?: number;
+  calls?: number;
+  rescues?: number;
+  parcels?: number;
+  rightSized?: number;
 }
 
 /** Book a finished workplace shift (mutates s). Returns the new level when it went up, else null. */
@@ -149,8 +164,12 @@ export function statsOf(s: JobsSave, onDuty: JobId | null): JobStats {
     earned: JOB_IDS.reduce((a, id) => a + s.jobs[id].earned, 0) + WORK_JOB_IDS.reduce((a, id) => a + s.work[id].earned, 0),
     levels: { taxi: levelOf(s.jobs.taxi.xp), courier: levelOf(s.jobs.courier.xp), pilot: levelOf(s.jobs.pilot.xp), boat: levelOf(s.jobs.boat.xp) },
     onDuty,
-    workLevels: { chef: levelOf(s.work.chef.xp), mechanic: levelOf(s.work.mechanic.xp), comedy: levelOf(s.work.comedy.xp) },
+    workLevels: {
+      chef: levelOf(s.work.chef.xp), mechanic: levelOf(s.work.mechanic.xp), comedy: levelOf(s.work.comedy.xp),
+      garbage: levelOf(s.work.garbage.xp), firefighter: levelOf(s.work.firefighter.xp), gnomazon: levelOf(s.work.gnomazon.xp),
+    },
     dishes: s.workStats.dishes, cars: s.workStats.cars, sets: s.workStats.sets,
+    bins: s.workStats.bins, fires: s.workStats.fires, rescues: s.workStats.rescues, packed: s.workStats.parcels,
   };
 }
 

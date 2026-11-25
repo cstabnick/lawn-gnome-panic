@@ -93,6 +93,7 @@ describe('site registry', () => {
       E17: ['skyway-under', 'cult-camp', 'mole-entrance'],
       E19: ['basketball-court', 'skate-park'],
       E30: ['pl-landmark', 'pl-grand-place', 'pl-cafe-row', 'pl-radio-station', 'pl-market', 'pl-jardin', 'pl-harbour'],
+      E25: ['bin-depot', 'fire-station', 'gnomazon-fc'],
       E31: ['unmown-ranger-station', 'unmown-wetland', 'unmown-meadow', 'unmown-hide-1', 'rootwell-field-station'],
     };
     for (const [epic, ids] of Object.entries(want)) {

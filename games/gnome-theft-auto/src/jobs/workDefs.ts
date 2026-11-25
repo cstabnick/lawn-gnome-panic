@@ -49,6 +49,32 @@ export const WORK_JOBS: Record<WorkJobId, WorkJobDef> = {
     uniform: { achievement: 'gta-job-comedian', prefab: 'open-mic-bowtie' },
     unit: 'set',
   },
+  // E25 jobs III (docs/roadmaps/gta-batch-3/E25/). Places are the site anchors (sites.ts): bin-depot gate,
+  // fire-station apron, gnomazon-fc door.
+  garbage: {
+    id: 'garbage', title: 'Bin Crew', icon: '🗑️', employer: 'Turfton Bin Depot', giver: 'Mags Wheelie',
+    blurb: 'Drive the Bin Lorry down the kerbs, lift every bin, empty it, set it down neat. Spill nothing. The HOA is watching.',
+    color: '#5bbf4a', place: { name: 'Turfton Bin Depot (by the Compost Heap)', x: -218, z: -89 },
+    levelTitles: ['Bin Hopper', 'Kerb Runner', 'Lift-Arm Hand', 'Round Leader', 'Depot Chief', 'Lord of the Lids'],
+    uniform: { achievement: 'gta-job-bin-day', prefab: 'bin-crew-cap' },
+    unit: 'bin',
+  },
+  firefighter: {
+    id: 'firefighter', title: 'Firefighter', icon: '🚒', employer: 'Turfton Fire Station No. 1', giver: 'Chief Hydra Pumpwell',
+    blurb: 'Answer the bell in the Watering-Can Pumper. Bins, sheds, barbecues, the odd toadstool. Hose it, ladder it, go home damp.',
+    color: '#e8432c', place: { name: 'Fire Station No. 1 (Mossy Wood edge)', x: -221, z: 135 },
+    levelTitles: ['Probationer', 'Hose Hand', 'Pump Operator', 'Ladder Lead', 'Watch Captain', 'Chief of the Brigade'],
+    uniform: { achievement: 'gta-job-hose-gnome', prefab: 'brass-fire-helmet' },
+    unit: 'call',
+  },
+  gnomazon: {
+    id: 'gnomazon', title: 'Gnomazon Associate', icon: '📦', employer: 'Gnomazon FC-1', giver: 'KPI-9 ("Kippy")',
+    blurb: 'Pick it, box it, tape it, label it, send it. Beat the quota. Kippy the manager-bot believes in you, numerically.',
+    color: '#f5a524', place: { name: 'Gnomazon Fulfilment Centre FC-1 (Dust Flats)', x: 283, z: 84 },
+    levelTitles: ['Seasonal Associate', 'Associate', 'Associate II', 'Senior Associate', 'Associate Lead', 'Associate (Gold)'],
+    uniform: { achievement: 'gta-job-fulfilled', prefab: 'gnomazon-lanyard' },
+    unit: 'parcel',
+  },
 };
 
 /** Pay per job: per unit by level (index 0 = level 1), tips per star over three, XP per unit. */
@@ -58,7 +84,20 @@ export const WORK_PAY: Record<WorkJobId, { perUnit: readonly number[]; tipPerSta
   mechanic: { perUnit: [40, 50, 62, 76, 92, 110], tipPerStarOver3: 12, xpPerUnit: 60 },
   // It pays (barely). Hazard pay per tomato comes in as `bonus`.
   comedy: { perUnit: [6, 7, 8, 9, 10, 12], tipPerStarOver3: 0, xpPerUnit: 70 },
+  // A round is 6-14 bins: about 40-60 Acorns at level 1, 150+ at the top. Neat set-downs tip; spills come off as a fine.
+  garbage: { perUnit: [4, 5, 6, 8, 10, 12], tipPerStarOver3: 1.5, xpPerUnit: 12 },
+  // One call per shift card (1-3 fires and maybe a rescue). Rescue pay comes in as `bonus`.
+  firefighter: { perUnit: [30, 38, 48, 60, 74, 90], tipPerStarOver3: 6, xpPerUnit: 70 },
+  // Gnomazon does not tip. The quota bonus comes in as `bonus`.
+  gnomazon: { perUnit: [3, 4, 5, 6, 7, 8], tipPerStarOver3: 0, xpPerUnit: 9 },
 };
+
+/** E25 garbage: Acorns of HOA litter citation per spilled bin (taken off as a negative bonus). */
+export const SPILL_FINE = 5;
+/** E25 firefighter: Acorns per gnome (or cat) brought down the ladder. */
+export const RESCUE_PAY = 15;
+/** E25 Gnomazon: Acorns for beating the shift quota. */
+export const QUOTA_BONUS = 15;
 
 /** Comedy hazard pay, Acorns per tomato taken on stage. */
 export const TOMATO_HAZARD_PAY = 2;
@@ -147,4 +186,23 @@ export const WORK_ACHIEVEMENTS = {
   tomatoes: 'gta-job-tomato-catcher',
   /** Double Down five times in one set -> hand 'squeaky-rubber-chicken'. */
   doubleDown: 'gta-job-double-down',
+  // ---- E25 ----
+  /** 50 bins emptied (target 50) -> head 'bin-crew-cap'. */
+  binDay: 'gta-job-bin-day',
+  /** A whole round of 8+ bins with no spill -> hand 'golden-bin-lid'. */
+  notADrop: 'gta-job-not-a-drop',
+  /** 25 bins set down perfectly neat (target 25) -> back 'bin-bag-backpack'. */
+  kerbAppeal: 'gta-job-kerb-appeal',
+  /** 20 fires put out (target 20) -> head 'brass-fire-helmet'. */
+  hoseGnome: 'gta-job-hose-gnome',
+  /** 5 rescues down the ladder (target 5) -> neck 'ladder-rescue-medal'. */
+  ladderGnome: 'gta-job-ladder-gnome',
+  /** Put out every kind of fire: bin, shed, barbecue, toadstool (target 4) -> hand 'brass-hose-nozzle'. */
+  bbqSeason: 'gta-job-barbecue-season',
+  /** 100 parcels packed (target 100) -> neck 'gnomazon-lanyard'. */
+  fulfilled: 'gta-job-fulfilled',
+  /** Beat the quota on a shift with every box the right size -> hand 'gnomazon-scanner'. */
+  beatTheBot: 'gta-job-beat-the-bot',
+  /** Stand idle at the packing station for 20 s during a shift while Kippy watches -> head 'cardboard-box-hat'. */
+  timeOffTask: 'gta-job-time-off-task',
 } as const;

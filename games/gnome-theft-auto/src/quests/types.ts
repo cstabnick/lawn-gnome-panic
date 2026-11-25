@@ -2,6 +2,7 @@
 // systems that run it (quests.ts, cutscene.ts) know nothing about any one quest, so a new quest is a new entry in defs.ts.
 import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
+import type { Loadout } from '@lawn/glaze';
 import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
 import type { ScenePlayOptions } from '../cutscene/director';
@@ -103,6 +104,8 @@ export type ObjectiveDef =
       maxDamage?: number;
       squeakPulse?: boolean;
       banter?: string[];
+      /** Pay 'n' Glaze look for the vehicle: the same one a cutscene dressed it in, so the car does not lose its mods. */
+      loadout?: Partial<Loadout>;
     }
   | {
       kind: 'chase-follow';
@@ -318,6 +321,12 @@ export interface QuestDeps {
    * off this (quests/comms.ts).
    */
   onObjectiveStart?: (q: QuestDef, step: number) => void;
+  /**
+   * E03 L09: a quest just started in play (its intro scene is over) and the player may need a ride. app.ts wires this
+   * to `ensureRideNear` (quests/ensureRide.ts), which calls the Lock-Up Sling-Lift for the player's own vehicle when none
+   * is close. E08 may re-point it.
+   */
+  ensureRideNear?: (x: number, z: number, q: QuestDef) => void;
 }
 
 /** One running objective. */
@@ -332,4 +341,6 @@ export interface Run {
   cleanup(): void;
   /** A SCENES id to play when this (last) objective ends the quest, e.g. the chosen ending of a 'choice'. */
   outro?(): string | undefined;
+  /** Debug: chase-follow stall stats, read by the quest sim. */
+  followStats?(): { maxStall: number; waited: number };
 }

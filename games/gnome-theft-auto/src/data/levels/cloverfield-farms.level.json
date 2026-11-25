@@ -450,7 +450,7 @@
       "id": "driftwood-raft",
       "kind": "setpiece",
       "x": 55,
-      "z": -170,
+      "z": -173,
       "data": {
         "builder": "driftwood-raft"
       }

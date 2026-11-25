@@ -292,8 +292,8 @@ export const CLOVERFIELD_STAGES: readonly Stage[] = [
     look: "Driftwood's turf-raft floating on the canal off the north bank, a walnut-shell dinghy tied up beside it and a combine on the bank for the trailer drop, the water gold under the evening sun.",
     sounds: 'Canal water slapping the raft, a fishing reel clicking, a gull, the combine idling on the bank.',
     marks: [
-      mark('driftwood', [55, 230], [52, 220], 'sit', 'sits on the turf-raft, a fishing line over the canal', 0.4),
-      mark('player', [52, 220], [55, 230], 'stand', 'stands on the bank, rope in hand'),
+      mark('driftwood', [55, 227], [52, 220], 'sit', 'sits on the turf-raft, a fishing line over the canal', 0.4),
+      mark('player', [52, 220], [55, 227], 'stand', 'stands on the bank, rope in hand'),
     ],
     cameras: [
       cam('wide', [34, 7, 208], [55, 1.2, 226], 'establishing: the raft, the canal and the north bank'),

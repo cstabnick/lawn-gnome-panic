@@ -57,6 +57,9 @@ const SOFT_KNOCK = 9;
 /** A flying vehicle closer than this (m, sideways) and higher than FLYOVER_UP over a standing gnome makes it look up. */
 const FLYOVER_R = 30;
 const FLYOVER_UP = 5;
+/** Safety cap: at most CROWD_CAP idle pedestrians in one CROWD_CELL-metre square cell of the world. */
+export const CROWD_CAP = 6;
+export const CROWD_CELL = 12;
 
 /** Private per-gnome bookkeeping (kept out of the Npc contract). */
 interface Aux {
@@ -162,11 +165,21 @@ function pickNear(
   });
   if (ok.length === 0) return null;
   if (avoid && avoid.length > 0) {
-    const uncrowded = (p: WalkPoint): boolean => avoid.every((o) => Math.hypot(o.x - p.x, o.z - p.z) >= 8);
+    const near = (p: WalkPoint): number => avoid.reduce((c, o) => c + (Math.hypot(o.x - p.x, o.z - p.z) < 8 ? 1 : 0), 0);
+    let best: WalkPoint | null = null;
+    let bestN = Infinity;
     for (let i = 0; i < 16; i++) {
       const p = rnd(ok);
-      if (uncrowded(p)) return p;
+      const c = near(p);
+      if (c === 0) return p;
+      if (c < bestN) {
+        best = p;
+        bestN = c;
+      }
     }
+    // Every candidate has company. A sparse pocket (3 walk points in a whole ring) used to take the fallback "any
+    // candidate" and pile every spawn and recycle onto itself: refuse a spot that already holds a small crowd.
+    return bestN >= CROWD_CAP / 2 ? null : best;
   }
   return rnd(ok);
 }
@@ -560,6 +573,33 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       }
 
       for (const n of npcs.list) tick(n, dt, world, playerX, playerZ, vehicles);
+
+      // Safety cap: more than CROWD_CAP idle pedestrians in one cell, the extras walk off to a far spot.
+      const cells = new Map<string, Npc[]>();
+      for (const n of npcs.list) {
+        if (n.state !== 'idle' || n.quest) continue;
+        const k = `${Math.floor(n.x / CROWD_CELL)},${Math.floor(n.z / CROWD_CELL)}`;
+        const c = cells.get(k);
+        if (c) c.push(n);
+        else cells.set(k, [n]);
+      }
+      for (const group of cells.values()) {
+        if (group.length <= CROWD_CAP) continue;
+        // Farthest from the player leave first (nobody pops in view).
+        group.sort((a, b) => Math.hypot(b.x - playerX, b.z - playerZ) - Math.hypot(a.x - playerX, a.z - playerZ));
+        for (const n of group.slice(0, group.length - CROWD_CAP)) {
+          if (getAux(n).anim.current?.pair) continue;
+          const p = pickNear(world, n.x, n.z, CROWD_CELL * 2, 120, npcs.list);
+          if (!p || inKeepOut(keepOut, p.x, p.z, 2)) continue;
+          const a = getAux(n);
+          a.anim.cancel(n.model);
+          n.targetX = p.x;
+          n.targetZ = p.z;
+          n.state = 'walk';
+          startWalkStyle(a);
+          resetStuck(n, a);
+        }
+      }
 
       // Trim surplus pedestrians (fleeing ones stay): farthest calm gnomes go first.
       if (npcs.list.length > PEDESTRIANS.count + EXTRA_SLACK) {

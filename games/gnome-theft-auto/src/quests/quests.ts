@@ -617,6 +617,7 @@ export function createQuests(
     activeId = q.id;
     startStep(q);
     deps.onObjectiveStart?.(q, 0);
+    if (deps.player) deps.ensureRideNear?.(deps.player.x, deps.player.z, q);
   }
 
   // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import * as THREE from 'three';
 import { installFakeDom } from './testing/fakeDom';
 import { heightAt } from './terrain';
@@ -6,6 +6,33 @@ import type { RoadNode, World } from './types';
 import { deckContactsAt } from './highways/deck';
 import { addSkywayRoads, roadY } from './highways/roads';
 import { pickSpot, simGraph } from './trafficSim';
+import { TRAFFIC } from './config';
+import type { Vehicle, VehicleKind } from './types';
+
+// Light vehicle records (no meshes); the real physics, chassis and traffic code run.
+vi.mock('./vehicles', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./vehicles')>();
+  const { VEHICLES } = await import('./config');
+  const { heightAt: land } = await import('./terrain');
+  let id = 1;
+  return {
+    ...real,
+    createVehicle: (_s: unknown, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle => ({
+      id: id++, kind, spec: VEHICLES[kind], x, y: land(x, z), z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
+      object: new THREE.Group(), rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0, look: {},
+    }) as Vehicle,
+    syncVehicleMesh: () => undefined,
+    setVehicleLook: (v: Vehicle, look: unknown) => { (v as { look?: unknown }).look = look; },
+    removeVehicle: () => undefined,
+  };
+});
+vi.mock('./audio', () => ({ play: () => undefined }));
+vi.mock('./driverHands', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./driverHands')>()),
+  clearHands: () => undefined,
+}));
+vi.mock('@lawn/gnome', () => ({ createGnomeModel: () => ({ object: new THREE.Group(), update: () => undefined }) }));
+vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() }), randomTownLook: () => ({}), biomeLookFor: () => ({}) }));
 
 let world: World;
 let graph: ReturnType<typeof simGraph>;
@@ -60,4 +87,36 @@ describe('traffic height follows the road level', () => {
     expect(deckSpots).toBeGreaterThan(0);
     expect(groundSpots).toBeGreaterThan(0);
   });
+});
+
+describe('live traffic keeps its level (chassis on)', () => {
+  for (const [name, fx, fz] of [['on the deck', 255, -60], ['under the deck', 0, -60]] as const) {
+    it(`cars stay on a surface and never jump levels: focus ${name}`, async () => {
+      const { createTraffic } = await import('./traffic');
+      const saved = { ...TRAFFIC };
+      Object.assign(TRAFFIC, { liveRadius: 1e9, liveRadiusOut: 1e9, minCars: 14, maxCars: 14, maxLive: 14 });
+      onTestFinished(() => { Object.assign(TRAFFIC, saved); });
+      const traffic = createTraffic(new THREE.Scene(), world);
+      const vehicles: Vehicle[] = [];
+      const dt = 1 / 30;
+      const lastY = new Map<number, number>();      const bad: string[] = [];
+      for (let step = 0; step < 120 * 30; step++) {
+        traffic.update(dt, vehicles, world, fx, fz);
+        for (const v of vehicles) {
+          if (v.driver !== 'npc' || v.spec.boat || v.spec.flies) continue;
+          const land = heightAt(v.x, v.z);
+          const onLand = Math.abs(v.y - land) < 0.5;
+          const onDeck = deckContactsAt(v.x, v.z).some((c) => Math.abs(c.surfaceY - v.y) < 0.5);
+          const prev = lastY.get(v.id);
+          lastY.set(v.id, v.y);
+          const where = `t${step} car ${v.id} at ${v.x.toFixed(0)},${v.z.toFixed(0)}`;
+          if (!onLand && !onDeck) bad.push(`${where} y=${v.y.toFixed(2)} land=${land.toFixed(2)}`);
+          // A moving car changes height gently (ramps); a jump of a metre in one frame is a level snap (L-skyway-traffic).
+          else if (prev !== undefined && Math.abs(v.y - prev) > 1.0) bad.push(`${where} jump ${prev.toFixed(2)}->${v.y.toFixed(2)}`);
+        }
+      }
+      expect(vehicles.filter((v) => v.driver === 'npc').length).toBeGreaterThan(0);
+      expect(bad.slice(0, 10)).toEqual([]);
+    }, 120000);
+  }
 });

@@ -219,7 +219,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
         kind: 'steal-deliver',
         text: "Hijack Gnorwin's Boot Parade Float and crash the Amphitheater tribunal",
         vehicleKind: 'boot-float',
-        spawnAt: [0, -120, Math.PI / 2],
+        spawnAt: [2.5, -120, -Math.PI / 2],
         dropAt: [AMPHITHEATER.x, AMPHITHEATER.z + 18],
         radius: 14,
         hint: 'Turfton Amphitheater',

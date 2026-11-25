@@ -53,6 +53,8 @@ export interface SkyTraffic {
   setSpawning(on: boolean): void;
   /** Online sync: every NPC aircraft right now, for publishing. */
   netList(): SkyNetRec[];
+  /** The vehicle of every flying or leaving aircraft (the same array is refilled each call: read it, do not keep it). */
+  aircraft(): readonly Vehicle[];
   /** Online sync: take over a plane another client owned (the record is new, here). False for an unknown id or one already flying. */
   adopt(id: string, x: number, y: number, z: number, yaw: number, speed: number): boolean;
   /** Online sync: tear the banner of the aircraft with this key loose. */
@@ -664,6 +666,13 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     spawning = on;
   }
 
+  const aircraftList: Vehicle[] = [];
+  function aircraft(): readonly Vehicle[] {
+    aircraftList.length = 0;
+    for (const rec of records) aircraftList.push(rec.v);
+    return aircraftList;
+  }
+
   function netList(): SkyNetRec[] {
     return records.map((rec): SkyNetRec => ({
       key: rec.key,
@@ -706,5 +715,5 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     if (rec && rec.state === 'flying') leave(rec);
   }
 
-  return { update, hitTest, spawn: spawnById, list, clear, setEnabled, setSpawning, netList, adopt, tearBanner, dismiss };
+  return { update, hitTest, spawn: spawnById, list, clear, setEnabled, setSpawning, netList, aircraft, adopt, tearBanner, dismiss };
 }

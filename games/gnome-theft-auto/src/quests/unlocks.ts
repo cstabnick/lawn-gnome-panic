@@ -67,6 +67,12 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-rutbottom-heats', after: 'ch4-runway-flares', why: 'The Carburettors\x27 lowriders are out of the impound by chapter 4. Re-time to #42 when E21 builds it.' },
   { questId: 'race-capwood-open', after: 'ch4-sandpit-drop', why: 'The Fells and Capwood are well open by now. Re-time to #40 when E21 builds it.' },
   { questId: 'sq-capwood-cap-count', after: 'ch5-even-cut', why: 'A quiet walk once the story is done. Re-time to #40 when E21 builds it.' },
+  // E26 street races (streetRaces.ts): one chain of five, each also needing its prereq. E20/E21 may re-time.
+  { questId: 'sr-kerb-row', after: 'ch1-tax-break-in', why: 'The Skyway Foot opens late in chapter 1: the first street race is a warm-up (moved off ch1-founders-boot, which was full). E18/E20 re-time.' },
+  { questId: 'sr-skyway-midnight', after: 'ch2-dew-run', why: 'The night run up the Skyway Sprint, once the Dust Flats roads are open. E20/E21 may re-time.' },
+  { questId: 'sr-boucle', after: 'ch2-vespers-offer', why: 'Pardonlin is reached by the same roads as Vesper; the Commissaire wants a closed road. E20/E21 may re-time.' },
+  { questId: 'sr-saltbucket-dash', after: 'ch3-salvage-raid', why: 'The coast band road opens with the salvage raid; the lay-by races a sandy coast road. E20/E21 may re-time.' },
+  { questId: 'sr-ring-road', after: 'ch4-runway-flares', why: 'The last of the chain: the Ring Road time trial once the player has the airfield and the Fizz Cup nerve. E20/E21 may re-time.' },
   // Pebblewick's side quests (outskirtsQuests.ts): the dry water line, then the humming combine.
   { questId: 'sq-weeping-line', after: 'ch3-kiln-resin-ice', why: 'Pebblewick plots need water; the dry line is found once the player has the tundra kiln run.' },
   { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', why: 'The dunes hum at three once the spade truce has opened the eastern sand.' },
@@ -145,6 +151,9 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'pebblewick-tower': '#9fd0ff',
   gentian: '#e8f2ff',
   'theo-pond': '#7fb6e0',
+  'street-skyway-foot': '#ff3d7f',
+  'street-pardonlin': '#4f7fd8',
+  'street-saltbucket': '#f2b33d',
   'rutbottom-clary': '#e8c27a',
   'rutbottom-teasel': '#d8342c',
   'capwood-lulu': '#8e44ad',

@@ -6,7 +6,8 @@ vi.mock('../audio', () => ({
   setSkid: vi.fn(),
   unlockAudio: vi.fn(),
 }));
-import { ordinal, rankRacers } from './objectivesRace';
+import { keepOutZones, ordinal, rankRacers } from './objectivesRace';
+import { TRACKS } from '../raceTrack/tracks';
 
 describe('ordinal', () => {
   it('gives the place suffix', () => {
@@ -57,5 +58,18 @@ describe('rankRacers', () => {
 
   it('returns an empty order for an empty field', () => {
     expect(rankRacers([])).toEqual([]);
+  });
+});
+
+describe('keepOutZones', () => {
+  it('puts circles on the centre line of a street track', () => {
+    const track = TRACKS['kerb-row-circuit'];
+    const zones = keepOutZones(track);
+    expect(zones.length).toBeGreaterThan(3);
+    const S = track.samples();
+    for (const z of zones) {
+      expect(z.r).toBe(16);
+      expect(S.some((p) => p.x === z.x && p.z === z.z)).toBe(true);
+    }
   });
 });

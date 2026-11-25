@@ -1254,3 +1254,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The Underspan stays inside its site beside the Unfinished Span and never goes under the deck. The Roost, a scaffold deck above it, is the only way "up", and it is not allowed (the HOA cites it as "unauthorised verticality"). The Chute is the way back down.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E17 builds the Underspan and its Updraft and needs its limits fixed.
+
+## R-223
+
+**Question:** Is street racing legal in Turfton, and what does the Hat Watch do about it?
+**Ruling:** It is not legal and not quite illegal. The Hat Watch notices the meets and rarely chases: the Skyway Foot has been officially told it is a car boot sale. A race through live traffic can still draw a wanted star if the driver is careless. Pardonlin's Boucle is the exception: a licensed closed-road event under Commissaire Aurelie Fonce, with no Watch interest at all. The HOA files street racing as "Verge Activity, miscellaneous". The questline's rival is Sable Throttlewick, whose brother's lowrider the Watch impounded; her record arc ends on the Ring Road.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E26 puts racing on real roads and the games need one answer for how much heat it draws.
+
+## R-224
+**Question:** How do wagers work at the street-race meets?
+**Ruling:** Each meet has a bookie who takes wagers in Acorns on a pickup race: 25, 100 or 250, or a friendly for nothing. A winner is paid twice the stake and a loser forfeits it. Nobody takes IOUs. Tuppence Pomfret keeps the Skyway Foot's book, Monsieur Bastien Pipette Pardonlin's (a "small envelope"), and Shingle Nan Trimm the Saltbucket lay-by's (a bucket, from a deckchair).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E26's pickup races need one rule for stakes, with a voice per meet.
+
+## R-225
+**Question:** Where is the Carburettors' night meet, and who runs it?
+**Ruling:** The Skyway Foot, at the west foot of the Turfton Skyway, run by Ratchet Gaskin for the Carburettors. It is quiet by day and full after dark. Lugnut Lulu, their captain, may turn up there; the night race in #5 `m05-sweepers-wages` stages at the Skyway Foot. The Ring Road time trials stay the Carburettors' illicit run (the-carburettors).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E20's m05 needs a place for the Carburettors' night meet, and E26 builds it.

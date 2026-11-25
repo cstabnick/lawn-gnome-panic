@@ -894,6 +894,19 @@
   "props": [],
   "markers": [
     {
+      "id": "giver/street-pardonlin",
+      "kind": "giver",
+      "x": -127.9,
+      "z": -192.8,
+      "data": {
+        "exit": {
+          "dx": 4,
+          "dz": 0.3,
+          "yaw": -1.64
+        }
+      }
+    },
+    {
       "id": "water/pardonlin-basin",
       "kind": "water",
       "x": 0,

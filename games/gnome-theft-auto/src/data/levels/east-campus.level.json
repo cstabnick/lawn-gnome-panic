@@ -2498,6 +2498,19 @@
       }
     },
     {
+      "id": "giver/street-saltbucket",
+      "kind": "giver",
+      "x": -171,
+      "z": 141.4,
+      "data": {
+        "exit": {
+          "dx": -4,
+          "dz": 0.1,
+          "yaw": 1.6
+        }
+      }
+    },
+    {
       "id": "giver/rutbottom-clary",
       "kind": "giver",
       "x": -34,

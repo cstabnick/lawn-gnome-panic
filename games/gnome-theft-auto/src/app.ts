@@ -92,6 +92,11 @@ import { buildLockupMarking } from './lockup/marking';
 import { createHighways } from './highways/system';
 import { createRaceTrack } from './raceTrack';
 import { createDirtCountry } from './dirtCountry';
+import { createStreetRacing } from './streetRace';
+import { createRacingStore } from './streetRace/save';
+import { registerRaceClubApp } from './streetRace/raceApp';
+import { raceActive } from './raceTrack/state';
+import type { RaceModeStart } from './streetRace/types';
 import { autopilotInput } from './raceTrack/autopilot';
 import { questSimInput } from './questSim/input';
 import { RACE_IDS } from './quests/races';
@@ -723,6 +728,35 @@ const quests = createQuests({
   },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
+// E26 street racing (streetRace/): the meets, the bookies, race modes (pickup, time trial, online) and the Race Club app.
+const racingStore = createRacingStore();
+const streetRacing = createStreetRacing(scene, world, {
+  toast: (t, ms) => hud.toast(t, ms ?? 3500),
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  ui,
+  session: {
+    quest: {
+      scene, world, npcs, hud, cutscene,
+      placePlayer(x, z, yaw) { player.respawn(x, z, yaw); chase.yaw = yaw; weapons.setVisible(true); },
+      unlock(id) { void achievements.unlock(id); },
+      play(sfx) { play(sfx); },
+      player, vehicles, watch, traffic, fx, economy,
+      atmosphere: atmosphere ?? undefined,
+    },
+    seat: (v) => { takeWheel(v); },
+    store: racingStore,
+    questBusy: () => quests.getJournal().activeId !== null || cutscene.active || (raceActive() && !streetRacing.session.active()),
+    increment: (id, by) => void achievements.increment(id, by),
+  },
+});
+registerRaceClubApp({
+  session: streetRacing.session,
+  store: racingStore,
+  net: () => onlineSync?.race ?? null,
+  drivingKind: () => (player.vehicle && player.vehicle.driver === 'player' && !player.vehicle.spec.flies && !player.vehicle.spec.boat ? player.vehicle.kind : null),
+  toast: (t) => hud.toast(t, 4000),
+});
 const worldEvents = createWorldEvents({ scene, world, hud, vehicles, economy, play });
 // Street events (events/): small scenes that unfold around the player. Side-quest perks (perks.ts, perkEffects.ts).
 const streetEvents = createEventDirector({
@@ -1000,12 +1034,18 @@ const net = createNet({
 });
 onlineSync = installOnline({
   scene, camera, net, hud, economy, fx, play, world, player, vehicles, npcs, remotes, emote, fishing, birding, hunting,
-  director: streetEvents, sky, lockup,
+  director: streetEvents, sky, lockup, name: () => me?.name ?? 'Gnome',
   damage(v, amount) { damageVehicle(v, amount); if (v.hp <= 0) blowUp(v); },
   // Parked and left-behind vehicles (online/parkSync.ts): everything with no driver right now is the start-up set.
   stableVehicles: vehicles.filter((sv) => sv.driver === 'none'),
   driving: () => (player.vehicle && player.vehicle.driver === 'player' ? player.vehicle : null),
 });
+streetRacing.setNet(onlineSync?.race ?? null);
+// Debug: ?streetrace=<trackId> starts a one-lap lowrider trial 2 s after load.
+{
+  const srTrack = new URLSearchParams(location.search).get('streetrace');
+  if (srTrack) setTimeout(() => { const r = streetRacing.session.start({ kind: 'trial', trackId: srTrack as RaceModeStart['trackId'], vehicle: 'lowrider', laps: 1 }); if (r) console.warn('streetrace refused:', r); }, 2000);
+}
 // Parties (party/): group up with other online players by invite or a 4-letter code; members show green on the map.
 const party = createParty({
   ui, net,
@@ -1894,7 +1934,7 @@ function frame(now: number): void {
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
-  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z) ?? countryside.prompt(player.x, player.z) ?? court.prompt(player.x, player.z) ?? skate.prompt(player.x, player.z);
+  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z) ?? streetRacing.prompt(player.x, player.z) ?? countryside.prompt(player.x, player.z) ?? court.prompt(player.x, player.z) ?? skate.prompt(player.x, player.z);
   const townPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : outskirts.prompt(player);
   const portalPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gnomecinoDoor.prompt(Math.floor(watch.heat));
   if (inp.enterExit && !(player.airborne || player.ragdolling)) {
@@ -1908,7 +1948,7 @@ function frame(now: number): void {
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
     else if (fishPrompt) fishing.interact(player);
-    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z) && !golf.interact(player.x, player.z) && !countryside.interact(player.x, player.z) && !court.interact(player.x, player.z)) skate.interact(player.x, player.z); }
+    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z) && !golf.interact(player.x, player.z) && !streetRacing.interact(player.x, player.z) && !countryside.interact(player.x, player.z) && !court.interact(player.x, player.z)) skate.interact(player.x, player.z); }
     else if (townPrompt) outskirts.interact(player);
     else if (portalPrompt) gnomecinoDoor.interact(Math.floor(watch.heat));
     else if (interPrompt) interactables.interact(player);
@@ -2382,6 +2422,7 @@ function frame(now: number): void {
   section('speedway');
   raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   dirtCountry.update(dt, simX, simZ, nightF);
+  streetRacing.update(dt, simX, simZ, nightF);
   critterTime += dt;
   const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
   lastFootX = player.x;
@@ -2555,6 +2596,7 @@ function frame(now: number): void {
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
     ...raceTrack.blips(),
     ...dirtCountry.blips(),
+    ...streetRacing.blips(),
     gunStore.blip,
     ...outskirts.blips(),
     ...dealers.blips(),
@@ -2885,6 +2927,8 @@ if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as Record<string, unknown>).__gta = {
     // Sim jobs and tubing (jobs/, tubing/): jobs.goOnDuty('taxi'), jobs.forceGig(), jobs.callCab(id), jobs.debug(); tubing.setTow(true), tubing.hopOn(), tubing.debug().
     jobs, tubing, jobDeps, onlineHub: () => onlineSync?.hub,
+    // Street racing (streetRace/): streetRacing.session.start(...), and the online sync (onlineSync.race = RaceNet) for tools/gta-race-e2e.mjs.
+    streetRacing, get onlineSync() { return onlineSync; },
     // Winter sports (winter/): winter.debug(), winter.api.startRun('wool-run'), winter.api.startRun('tea-tray-run').
     winter,
     // Hedgeworth Links (golf/): golf.debug(), golf.api.startRound(0), golf.api.breakBoard().

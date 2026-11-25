@@ -24,6 +24,7 @@ import { PEBBLEWICK_STAGES } from './stages/pebblewick';
 import { COAST_STAGES } from './stages/coast';
 import { WINTER_STAGES } from './stages/winter';
 import { DIRT_STAGES } from './stages/dirt';
+import { STREET_STAGES } from './stages/street';
 import { GOLF_STAGES } from './stages/golf';
 import { SPORTS_STAGES } from './stages/sports';
 import { ROOTWELL_STAGES } from './stages/rootwell';
@@ -252,7 +253,7 @@ export const CAST: readonly CastMember[] = [
 
 // ---- The stages ----------------------------------------------------------------------------------------------------
 
-export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES, ...DIRT_STAGES, ...GOLF_STAGES, ...ROOTWELL_STAGES, ...COUNTRY_STAGES, ...SPORTS_STAGES, ...SOCIETY_STAGES];
+export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES, ...DIRT_STAGES, ...STREET_STAGES, ...GOLF_STAGES, ...ROOTWELL_STAGES, ...COUNTRY_STAGES, ...SPORTS_STAGES, ...SOCIETY_STAGES];
 
 export function stageById(id: string): Stage | undefined {
   return STAGES.find((s) => s.id === id);

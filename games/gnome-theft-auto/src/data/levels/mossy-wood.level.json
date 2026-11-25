@@ -644,6 +644,19 @@
       }
     },
     {
+      "id": "giver/street-skyway-foot",
+      "kind": "giver",
+      "x": 107.3,
+      "z": -64.2,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 3.5,
+          "yaw": -2.62
+        }
+      }
+    },
+    {
       "id": "giver/unmowed-hollow",
       "kind": "giver",
       "x": 50,

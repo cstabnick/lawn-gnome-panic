@@ -60,7 +60,7 @@ export function buildHallsWest(kit: InteriorKit): void {
   place('root-bundle', -48.5, 20, 0, { solid: false, y: crateTop[5] });
   place('root-bundle', -37, 20, 0, { solid: false });
   kit.sign('ROOTS: SORTED BY SMELL\nAsk Old Tamp, do not sniff yourself', -46, 1.8, 12.03, 0, { w: 2.6, h: 0.8 });
-  kit.sign('LOANED, NOT EATEN (we eat grubs)', -29.97, 1.8, 24, W, { w: 2.4, h: 0.5 });
+  kit.sign('LOANED, NOT EATEN (we eat grubs)', -30.05, 1.8, 24, W, { w: 2.4, h: 0.5 });
   // Vignette 3: a gnome's lost spade, cleaned and hung on the north wall.
   place('ranch-spade', -34, 12.3, 0, { solid: false, y: 1.3 });
   kit.sign('FOUND IN OUR CEILING.\nRETURN TO OWNER, GENTLY.', -34, 0.85, 12.03, 0, { w: 1.6, h: 0.5 });
@@ -85,7 +85,7 @@ export function buildHallsWest(kit: InteriorKit): void {
   // Vignette 2 (cont.): a returned letter, stamped.
   kit.sign('NO SUCH BURROW', -35.4, counterTop + 0.2, -35.2, 0, { w: 0.6, h: 0.25 });
   kit.sign('POSTERN HALL\nAll post sorted by Mister Sift (eventually)', -44, 1.8, -37.95, 0, { w: 2.6, h: 0.9 });
-  kit.sign('LETTERS TO THE SURFACE: 0 answered, 412 sent', -29.95, 1.8, -25, W, { w: 2.4, h: 0.6 });
+  kit.sign('LETTERS TO THE SURFACE: 0 answered, 412 sent', -30.05, 1.8, -25, W, { w: 2.4, h: 0.6 });
 
   // ---- The entry tunnel (x -2..2, z 26..45) --------------------------------------------------------------------
   kit.sign('LOAMDEEP', 0, 3.2, 26.03, 0, { w: 1.6, h: 0.4 });

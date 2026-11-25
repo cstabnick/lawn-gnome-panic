@@ -83,7 +83,7 @@ export function buildHallsEast(kit: InteriorKit): void {
     put(kit, 'moss-rug', dfx + 4.2 * Math.sin(a), dfz + 4.2 * Math.cos(a), a, { solid: false });
   }
   // The cable from the decks spot north into the wall: a thin dark run lying on the floor.
-  kit.block(0.05, 0.02, 3, 0, -40.5, { y: 0.03, color: 0x1a1a1a, solid: false });
+  kit.block(0.05, 0.04, 3, 0, -40.5, { y: 0.06, color: 0x1a1a1a, solid: false });
   kit.sign('UNDER-CHORUS HALL\nfeel the floor', 13.6, 1.6, -30, W, { w: 1.8, h: 0.8 });
   kit.sign('WELCOME HOME, COUSIN', -13.6, 1.2, -22, E, { w: 1.6, h: 0.45 });
   put(kit, 'rolled-scroll', -12.8, -19.3, 0, { solid: false });

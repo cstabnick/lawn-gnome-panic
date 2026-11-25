@@ -134,7 +134,7 @@ export function buildUnderspan(scene: THREE.Scene, boxes: Box[]): void {
     [mx, r.minZ + TOWER / 2], [mx, r.maxZ - TOWER / 2],
   ];
   const tb = getPrefab('scaffold-tower') ? prefabBox('scaffold-tower') : null;
-  const towerScale = tb && tb.max.y > 0 ? UNDERSPAN.roostY / tb.max.y : 1;
+  const towerScale = tb && tb.max.y > 0 ? (UNDERSPAN.roostY - 0.2) / tb.max.y : 1;
   for (const [tx, tz] of towers) {
     place('scaffold-tower', tx, tz, 0, { scale: towerScale });
     // Legs: one 3 x 3 box each, so the player can walk underneath the deck between towers.

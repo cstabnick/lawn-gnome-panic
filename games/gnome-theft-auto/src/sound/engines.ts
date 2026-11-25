@@ -98,6 +98,10 @@ const TABLE: Record<string, EngineSoundDef> = {
   'dirt-bike': { wave: 'buzz', idleHz: 38, maxHz: 150, gears: 3, bright: 0.8, rough: 0.55, gain: 0.9, curve: 0.8, misfire: 0.2 },
   'baguette-trike': { wave: 'buzz', idleHz: 36, maxHz: 120, gears: 2, bright: 0.7, rough: 0.6, gain: 0.85, misfire: 0.25 },
   'crepe-van': { wave: 'rumble', idleHz: 15, maxHz: 50, gears: 3, bright: 0.3, rough: 0.5, gain: 1.05, curve: 1.1 },
+  // E31 rides: the ranger buggy is a buzzy little petrol, the camper a slow wheezy diesel, the cone van a mid diesel.
+  'ranger-buggy': { wave: 'buzz', idleHz: 32, maxHz: 125, gears: 3, bright: 0.65, rough: 0.4, gain: 0.9, curve: 0.9, misfire: 0.1 },
+  'shell-camper': { wave: 'rumble', idleHz: 12, maxHz: 42, gears: 3, bright: 0.25, rough: 0.7, gain: 1.05, curve: 1.15, misfire: 0.15 },
+  'cone-van': { wave: 'rumble', idleHz: 16, maxHz: 55, gears: 3, bright: 0.35, rough: 0.4, gain: 1.0, curve: 1.05 },
   'golf-cart': {
     wave: 'electric', idleHz: 25, maxHz: 95, gears: 0, bright: 0.25, rough: 0.02, gain: 0.75,
     whine: 0.55, whineRatio: 7, idleLevel: 0.2, noise: 0.1,

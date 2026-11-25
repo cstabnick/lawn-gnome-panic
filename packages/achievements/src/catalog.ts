@@ -1314,6 +1314,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Round and Round', description: 'Go all the way round a roundabout without taking the exit.',
     reward: { slot: 'neck', prefabId: 'roundabout-rosette', label: 'Roundabout Rosette' },
   },
+  // ---- Gnome Theft Auto: E31 living world ----
+  {
+    id: 'gta-unmown-checklist', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Last Tick', description: "Tick every species on the Unmown rangers' checklist.",
+    reward: { slot: 'head', prefabId: 'ranger-campaign-hat', label: 'Ranger Campaign Hat' },
+  },
+  {
+    id: 'gta-dry-feet', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Dry Feet', description: 'Walk the Reedmere boardwalk from end to end without stepping off.',
+    reward: { slot: 'neck', prefabId: 'reed-whistle', label: 'Reed Whistle' },
+  },
+  {
+    id: 'gta-hide-and-seek', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hide and Seek', description: 'Sit quietly in all three bird hides of the Unmown.', target: 3,
+    reward: { slot: 'back', prefabId: 'hide-camo-cape', label: 'Hide Camo Cape' },
+  },
+  {
+    id: 'gta-fresh-feathers', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fresh Feathers', description: 'Spot 5 of the birds that only turned up recently.', target: 5,
+    reward: { slot: 'hand', prefabId: 'bird-call-whistle', label: 'Bird-Call Whistle' },
+  },
+  {
+    id: 'gta-off-the-beaten-lane', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Off the Beaten Lane', description: 'Find Espalier End, Mittenholt, Dunelow and the High Tarn.', target: 4,
+    reward: { slot: 'neck', prefabId: 'milestone-medal', label: 'Milestone Medal' },
+  },
+  {
+    id: 'gta-weekend-away', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Weekend Away', description: 'Drive the Ranger Buggy, the Snail-Shell Camper and the Cone Van.', target: 3,
+    reward: { slot: 'back', prefabId: 'camping-roll', label: 'Camping Roll' },
+  },
   {
     id: 'gta-hat-wave', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Waved Through', description: 'Wait at a traffic warden\'s line until you are waved through.',

@@ -148,6 +148,13 @@ export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world
     npcRoute('walnut-dinghy', pingPong(upper).reverse(), 0.5, true),
     npcRoute('clog-cruiser', pingPong(waterwayRoute(['saltcut'], { from: { x: 690, z: 860 }, to: { x: 300, z: 1300 } })), 0.6, true),
     npcRoute('gravy-boat', SEA_LOOP, 0.7),
+    // E31: far-out sea line, a fishing loop off Dunelow, the Thymes river run (small boats under its low bridges),
+    // and slow loops on the High Tarn and in the Pardonlin basin.
+    npcRoute('clog-cruiser', pingPong([{ x: -1500, z: 1450 }, { x: 0, z: 1450 }, { x: 1500, z: 1450 }]), 0.6),
+    npcRoute('walnut-dinghy', [{ x: -500, z: 1350 }, { x: -542, z: 1407 }, { x: -609, z: 1385 }, { x: -609, z: 1315 }, { x: -542, z: 1293 }], 0.5),
+    npcRoute('walnut-dinghy', pingPong(waterwayRoute(['thymes'], { every: 5 }).filter((p) => p.z >= -600 && p.z <= 900)), 0.5, true),
+    npcRoute('walnut-dinghy', loopRoute('water/high-tarn', 0.5, 6), 0.3),
+    npcRoute('gravy-boat', loopRoute('water/pardonlin-basin', 0.5, 6), 0.4),
   ];
   // A route with no water to follow (the dry world) is skipped.
   const routes = allRoutes.filter((r) => r.route.length > 0);

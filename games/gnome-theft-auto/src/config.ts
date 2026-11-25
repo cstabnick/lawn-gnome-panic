@@ -501,16 +501,16 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   // Seats and doors are in prefab units times `scale`; the prefab issue checks them against its own parts.
   'ranger-buggy': {
     kind: 'ranger-buggy', mountStyle: 'hop', name: 'Unmown Ranger Buggy', prefab: 'gta-ranger-buggy', scale: 1.6,
-    maxSpeed: 21, accel: 12, turnRate: 2.3, radius: 1.1, seat: [0.25, 0.5, -0.1], flies: false, mass: 1.6,
-    passengerSeats: [[-0.25, 0.5, -0.1]],
+    maxSpeed: 21, accel: 12, turnRate: 2.3, radius: 1.1, seat: [0.256, 0.496, -0.096], flies: false, mass: 1.6,
+    passengerSeats: [[-0.256, 0.496, -0.096]],
   },
   'shell-camper': {
     kind: 'shell-camper', mountStyle: 'door', openTop: false, doors: [
-      { side: 'left', pivot: 'door-left', at: [0.85, 0.8, 0.9] },
-      { side: 'right', pivot: 'door-right', at: [-0.85, 0.8, 0.9] },
+      { side: 'left', pivot: 'door-left', at: [0.78, 0.76, 0.86] },
+      { side: 'right', pivot: 'door-right', at: [-0.78, 0.76, 0.86] },
     ], name: 'Snail-Shell Camper', prefab: 'gta-shell-camper', scale: 1.8,
-    maxSpeed: 17, accel: 6, turnRate: 1.4, radius: 1.7, seat: [0.33, 0.56, 0.85], flies: false, mass: 4,
-    passengerSeats: [[-0.33, 0.56, 0.85]],
+    maxSpeed: 17, accel: 6, turnRate: 1.4, radius: 1.7, seat: [0.324, 0.558, 0.846], flies: false, mass: 4,
+    passengerSeats: [[-0.324, 0.558, 0.846]],
   },
   'cone-van': {
     kind: 'cone-van', mountStyle: 'door', openTop: false, doors: [

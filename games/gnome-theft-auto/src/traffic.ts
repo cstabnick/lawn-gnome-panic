@@ -21,6 +21,8 @@ import { createVehicle, exitPoint, removeVehicle, repairVehicle, seatWorld, setV
 import { assignNpcChassis, npcChassisOf, stepNpcCar } from './npcChassis';
 import { rollCivilianMods } from './civilianMods';
 import { heightAt } from './terrain';
+import { regionAt } from './levels';
+import { REGION_TRAFFIC, regionMixKind } from './living/trafficMix';
 import { nearestRoadNode, roadY } from './highways/roads';
 import { canDrive, onRing, ringById, type Roundabout } from './roundabouts';
 import { directorAt, directorSpeedCap, nowSeconds } from './trafficDirectors';
@@ -550,6 +552,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     // European rides (euroRides.ts): mostly them inside the European zone, now and then in town; ?traffic=euro for demos.
     if (EURO_ONLY || (euroZoneAt(x, z) && Math.random() < TRAFFIC.euroZoneChance)) return pick(EURO_RIDES);
     if (Math.abs(x) < TOWN_HALF && Math.abs(z) < TOWN_HALF && Math.random() < TRAFFIC.euroTownChance) return pick(EURO_RIDES);
+    const region = regionAt(x, z);
+    const mixed = REGION_TRAFFIC[region] ? regionMixKind(region, Math.random(), Math.random()) : null;
+    if (mixed) return mixed;
     const odd = ODD_ONLY ? 1 : TRAFFIC.oddRideChance;
     if (Math.abs(x) < TOWN_HALF && Math.abs(z) < TOWN_HALF && Math.random() < odd) return pick(ODD_RIDES);
     const dist = districtAt(x, z);

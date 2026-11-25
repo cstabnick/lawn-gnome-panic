@@ -3,8 +3,8 @@ import { BIRDS, birdById } from './species';
 import { REGION_IDS } from '../levels';
 
 describe('birding species table', () => {
-  it('has 28 rows with unique kebab-case ids', () => {
-    expect(BIRDS).toHaveLength(28);
+  it('has 36 rows with unique kebab-case ids', () => {
+    expect(BIRDS).toHaveLength(36);
     const ids = BIRDS.map((b) => b.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
@@ -54,6 +54,15 @@ describe('birding species table', () => {
       const count = BIRDS.filter((b) => (b.regions[region] ?? 0) > 0).length;
       expect(count, region).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  it('has the eight batch-3 species and enough birds in the outer regions', () => {
+    for (const id of ['reedmere-bittern', 'marsh-harrier', 'meadow-cuckoo', 'thymes-kingfisher', 'pond-mallard', 'shore-cormorant', 'snowcap-eagle', 'tarn-diver']) {
+      expect(birdById(id), id).toBeDefined();
+    }
+    const count = (r: (typeof REGION_IDS)[number]) => BIRDS.filter((b) => (b.regions[r] ?? 0) > 0).length;
+    expect(count('the-unmown')).toBeGreaterThanOrEqual(10);
+    for (const region of REGION_IDS) expect(count(region), region).toBeGreaterThanOrEqual(5);
   });
 
   it('has exactly 3 owls and 2 mythic birds', () => {

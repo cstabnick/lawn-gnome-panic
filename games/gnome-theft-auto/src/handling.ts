@@ -177,6 +177,18 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.8, 1.3], balance: [-0.2, 0.6], steering: [0.7, 1.2], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
     lean: 0.9,
   },
+  // E31 rides. Ranger Buggy: grippy and planted off-road.
+  'ranger-buggy': {
+    stock: { grip: 1.15, balance: 0.05, steering: 1.1, assists: 1.1, stiffness: 1.1, comHeight: 0.95 },
+    ranges: { grip: [0.8, 1.5], balance: [-0.4, 0.5], steering: [0.8, 1.4], assists: [0.3, 1.8], stiffness: [0.8, 1.4], comHeight: [0.85, 1.3] },
+    lean: 0.9,
+  },
+  // Snail-Shell Camper: heavy, slow to turn, top-heavy with a shell on the back.
+  'shell-camper': {
+    stock: { grip: 0.95, balance: 0.3, steering: 0.75, assists: 1.4, brakes: 0.95, stiffness: 0.85, comHeight: 1.25 },
+    ranges: { grip: [0.75, 1.25], balance: [-0.1, 0.7], steering: [0.55, 1.1], assists: [0.7, 2], brakes: [0.7, 1.3], stiffness: [0.6, 1.1], comHeight: [1.0, 1.5] },
+    lean: 1.2,
+  },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
 export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;

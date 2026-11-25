@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main), E03. Running: E23 (quest robustness), E05 (interiors), E28 (world II). Next as slots free: E29, E23, E27, then E06, E07, E09. New epics E23-E31 (session 2 requests) write their own brief first.
+Merged: E04, E02, E01, E08 (+ main), E03, E23. Running: E29 (European kit), E05 (interiors), E28 (world II). Next as slots free: E29, E23, E27, then E06, E07, E09. New epics E23-E31 (session 2 requests) write their own brief first.
 
 ## Tracking
 
@@ -44,13 +44,13 @@ with deferred items listed).
 | E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
-| E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | running | epic/E23-quests | | |
+| E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | merged | epic/E23-quests | 5d56c186 | pinned quest rides + checkpoint auto-retry; `npm run quest-fuzz` (10 disruptions, 0 open bugs on seeds 1-2); sim 57/58 (nc-party needs relay); HOA: 1-hat cap on shooting steps, delayed arrival, LOS cooling, search circle + evade meter (not checked at 390x844) | | |
 | E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | planned | | | |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | running | epic/E28-world2 | | |
-| E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | planned | | | |
+| E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | running | epic/E29-eurokit | | |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | planned | | | |
 | E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | planned | | | |
 

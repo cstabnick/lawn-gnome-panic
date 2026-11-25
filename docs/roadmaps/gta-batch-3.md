@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06, E29, E07. Running: E30 (Pardonlin town), E09 (sound, voice, direction), E27 (bushes, water skim, flaky tests). Next: wave 4 (E10, E11, E12), then wave 5 (E13, E14, E15, E24, E25, E31).
+Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06, E29, E07, E27. Running: E30 (Pardonlin town), E09 (sound, voice, direction), E10 (homes). Next: E11, E12, then wave 5 (E13, E14, E15, E24, E25, E31).
 
 ## Tracking
 
@@ -31,7 +31,7 @@ with deferred items listed).
 | E06 | Sky, weather and time | Engine | 3 | – | merged | epic/E06-weather | dde5c9e4 | `src/weather/` (clear/cloud/mist/rain/snow by region climate, per-tier budgets, Options row, deterministic per browser, not relayed); cutscene time-lapse (badge + sky race, never changes world time; `advanceWorldTime` for deliberate changes); staggered headlights, fewer particles, wandering flocks, intermittent planes, events 160 s / street 45-90 s; R-178; deferred: rain sound (E09), puddles/snow cover, synced clock; density not checked in a real browser |
 | E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | merged | epic/E07-ui | see log | Gnomlet tablet replaces More menu + phone (`registerGnomletApp`, `phone.addApp` shim; Tab/View/P open it, O/Start → Options); Gnomey Bird + Flappy Gnome achievement; Options/More tap bug fixed (pointer-events under #ui); big map zoom/pan/pinch; options registry `registerOption` (E06 weather row migrated at merge); bird toggles; low quest beams + option; position save `gta-position-v1`; loading screen; phone-sized comms; smoke checks should use `gta-gnomlet`, not `gta-options`; deferred: 3D buildings on the big map; open: telescope button over big map, soft minimap on hi-DPI, no real touch device |
 | E09 | Sound, voice, animation and direction | Polish | 3 | – | running | epic/E09-sound |  |  |
-| E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | planned | | | |
+| E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | running | epic/E10-homes |  |  |
 | E11 | Coast and boardwalk | Content | 4 | E01 | planned | | | |
 | E12 | Winter sports | Content | 4 | E01, E06 | planned | | | |
 | E13 | Campus and skyline | Content | 5 | E01, E05 | planned | | | |
@@ -48,7 +48,7 @@ with deferred items listed).
 | E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
-| E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | running | epic/E27-physics |  |  |
+| E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | merged | epic/E27-physics | see log | little bushes (mowable, <= 1.8 m) flatten, hedges/trees solid; `src/skim.ts` water skimming >= 13 m/s on >= 0.6 m water; traffic tests deterministic (game-time crash limiter, warden clock reset, seeded RNG) — two full suites green in a row after merge; known rare real jam in 'pull out' on 3/16 seeds (traffic code, not fixed); lore R-179 (renumbered); skim never driven in a browser |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | running | epic/E30-pardonlin |  |  |

@@ -26,6 +26,7 @@ export const GTA_WEATHER_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'frost-glaze-muffler', name: 'Frost-Glaze Muffler', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.12, 0] },
     tags: ['muffler', 'scarf', 'frost', 'glaze', 'knit', 'icy', 'neck', 'reward', 'gta'], emoji: [],
     about: 'Glazed Over: the Frost-Glaze Muffler, a pale icy-blue knitted muffler with two glossy white glaze drips down the front. Plain colours, no tint.',
     examine: [

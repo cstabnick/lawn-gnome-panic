@@ -171,6 +171,7 @@ export const GTA_FISH_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'golden-gudgeon', name: 'Golden Gudgeon', category: 'trinket', uses: ['hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['trophy', 'fish', 'gold', 'golden', 'gudgeon', 'statue', 'plinth', 'fishing', 'award', 'reward', 'gta'], emoji: [],
     grip: [0, 0.05, 0],
     about: 'Gnome Theft Auto: the Golden Gudgeon, a small gold fish trophy on a wooden plinth. Reward for the Old Mossjaw achievement.',

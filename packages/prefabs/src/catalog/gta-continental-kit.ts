@@ -26,6 +26,7 @@ export const GTA_CONTINENTAL_KIT: readonly PrefabDef[] = [
   },
   {
     id: 'stop-go-paddle', name: 'Stop-Go Paddle', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['paddle', 'stop', 'go', 'warden', 'sign', 'stick', 'traffic', 'hand', 'pardonlin'], emoji: [],
     about: 'A traffic warden\'s round stop-go paddle on a stick: red on one side, green on the other, with a white rim. Held low, grip at the stick.',
     examine: [

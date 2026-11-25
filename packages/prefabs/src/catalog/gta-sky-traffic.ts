@@ -44,6 +44,7 @@ export const GTA_SKY_TRAFFIC: PrefabDef[] = [
   },
   {
     id: 'banner-scrap-flag', name: 'Banner Scrap Flag', category: 'trinket', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['banner', 'scrap', 'flag', 'cloth', 'torn', 'stick', 'pole', 'sign', 'reward'], emoji: [],
     tint: 'red',
     grip: [0, 0.06, 0],
@@ -64,6 +65,7 @@ export const GTA_SKY_TRAFFIC: PrefabDef[] = [
   },
   {
     id: 'propeller-pendant', name: 'Propeller Pendant', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, -0.08, 0.01] },
     tags: ['propeller', 'pendant', 'wood', 'cord', 'neck', 'charm', 'aircraft', 'necklace', 'reward'], emoji: [],
     about: 'Clear Skies: a small two-blade wooden propeller with a brass hub, hung on a cord at the neck. Achievement reward for Clear Skies.',
     examine: [

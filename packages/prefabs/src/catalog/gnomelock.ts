@@ -73,6 +73,7 @@ export const GNOMELOCK_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'relic-bell',
+    wear: { rot: [0, 0, 180] },
     name: 'Gilded Relic Bell',
     category: 'weapon',
     uses: ['hold', 'cast'],

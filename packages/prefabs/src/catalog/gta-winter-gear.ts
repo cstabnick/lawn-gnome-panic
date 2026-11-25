@@ -64,6 +64,7 @@ export const GTA_WINTER_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'woolly-sock-scarf', name: 'Woolly Sock Scarf', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.12, 0] },
     tags: ['scarf', 'sock', 'woolly', 'knit', 'wool', 'neck', 'winter', 'reward', 'cream'], emoji: [],
     about: 'Ice Station: a cream knitted scarf made from a very long sock, wound round the neck with a hanging end that finishes in a heel and a red toe. Plain colours, no tint.',
     examine: [

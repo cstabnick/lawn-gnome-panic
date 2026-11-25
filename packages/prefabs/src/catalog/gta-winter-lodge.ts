@@ -101,6 +101,7 @@ export const GTA_WINTER_LODGE: readonly PrefabDef[] = [
   },
   {
     id: 'cocoa-mug', name: 'Cocoa Mug', category: 'consumable', uses: ['hold', 'drink', 'place'],
+    wear: { rot: [90, 0, 0] },
     tags: ['cocoa', 'mug', 'cup', 'hot', 'drink', 'chocolate', 'marshmallow', 'winter', 'tea'], emoji: ['☕'],
     about: 'Gnome Theft Auto: the Cocoa Mug. A fat cream enamel mug with a red rim, a handle ring, cocoa and marshmallows on top and a wisp of steam. The Bear Hug reward for the hand slot.',
     examine: [

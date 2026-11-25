@@ -49,6 +49,7 @@ export const GTA_HOMES: readonly PrefabDef[] = [
   // ---- House Key Necklace (neck) -------------------------------------------------------------------------------------
   {
     id: 'house-key-necklace', name: 'House Key Necklace', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.3, 0.1], scale: 0.9 },
     tags: ['key', 'necklace', 'brass', 'string', 'tag', 'loan', 'neck', 'house', 'gta', 'homes'], emoji: [],
     about: 'Gnome Theft Auto: the House Key Necklace. A big brass flat key on a string loop with a blank paper tag. Achievement reward for Home Sweet Loan.',
     examine: [
@@ -92,6 +93,7 @@ export const GTA_HOMES: readonly PrefabDef[] = [
   // ---- Feather Duster (hand) -----------------------------------------------------------------------------------------
   {
     id: 'feather-duster', name: 'Feather Duster', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['duster', 'feather', 'feathers', 'brush', 'wood', 'handle', 'clean', 'hand', 'gta', 'homes'], emoji: [],
     about: 'Gnome Theft Auto: the Feather Duster. A short wooden handle with a fat puff of feathers at the top. Held in the hand. Achievement reward for Interior Decorator.',
     grip: [0, 0.1, 0],

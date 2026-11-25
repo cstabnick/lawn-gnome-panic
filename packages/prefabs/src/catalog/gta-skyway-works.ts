@@ -204,6 +204,7 @@ export const GTA_SKYWAY_WORKS: readonly PrefabDef[] = [
   },
   {
     id: 'hazard-tape-scarf', name: 'Hazard Tape Scarf', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, 0, 0.01] },
     tags: ['scarf', 'hazard', 'tape', 'yellow', 'black', 'stripe', 'neck', 'site', 'works', 'skyway', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Hazard Tape Scarf, a yellow and black striped scarf with a tail, from the Local 404 work sites and the cracks. Plain colours.',
     examine: [

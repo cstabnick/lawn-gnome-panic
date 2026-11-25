@@ -116,10 +116,21 @@ interface Slot {
   interp: Interp | null;
   /** Non-authority: latest sampled [x, z, facing]. */
   shown: number[];
+  /** Last (x, z) at which position.y = heightAt(x, z) was evaluated. */
+  lastHx: number;
+  lastHz: number;
+  /** Last pose state and accumulated dt for distance-strided rig updates. */
+  lastRigX: number;
+  lastRigZ: number;
+  lastRigFacing: number;
+  rigDt: number;
 }
 
 const slots = new Map<number, Slot>();
 const syncIndex = new Map<string, number>();
+let allEntitiesCache: Entity[] | null = null;
+const slotSnapshot: Slot[] = [];
+let entityAnimTick = 0;
 let nextId = 1;
 let nextDynSeq = 1;
 let nextLootSeq = 1;
@@ -221,9 +232,16 @@ function addSlot(p: {
     targetPlayerId: null,
     interp: null,
     shown: [p.x, p.z, 0],
+    lastHx: p.x,
+    lastHz: p.z,
+    lastRigX: NaN,
+    lastRigZ: NaN,
+    lastRigFacing: NaN,
+    rigDt: 0,
     returnTrack: { best: Infinity, stall: 0 },
   };
   slots.set(id, slot);
+  allEntitiesCache = null;
   if (syncKey) syncIndex.set(syncKey, id);
   return slot;
 }
@@ -632,14 +650,15 @@ function updateEnemy(slot: Slot, def: EnemyDef, dt: number): void {
 }
 
 /** Ids of NPCs the player is currently escorting (an active escort stage). */
+const scratchEscorts = new Set<string>();
 function activeEscorts(): Set<string> {
-  const ids = new Set<string>();
+  scratchEscorts.clear();
   for (const [questId, progress] of Object.entries(state.quests)) {
     if (progress.done) continue;
     const stage = QUESTS[questId]?.stages[progress.stage];
-    if (stage && stage.objective.type === 'escort') ids.add(stage.objective.npc);
+    if (stage && stage.objective.type === 'escort') scratchEscorts.add(stage.objective.npc);
   }
-  return ids;
+  return scratchEscorts;
 }
 
 function updateNpc(slot: Slot, def: NpcDef, dt: number, escorts: Set<string>): void {
@@ -695,10 +714,18 @@ function updateLoot(slot: Slot, dt: number): void {
 
 export function updateEntities(dt: number): void {
   const escorts = activeEscorts();
-  // Snapshot: a loot pile may be removed while we loop.
-  for (const slot of Array.from(slots.values())) {
-    if (!slots.has(slot.entity.id)) continue;
+  const px = player.position.x;
+  const pz = player.position.z;
+  const tick = entityAnimTick++;
+
+  // Reuse module snapshot array: a loot pile or noRespawn enemy may be removed while we loop.
+  slotSnapshot.length = 0;
+  for (const s of slots.values()) slotSnapshot.push(s);
+
+  for (let i = 0; i < slotSnapshot.length; i++) {
+    const slot = slotSnapshot[i];
     const e = slot.entity;
+    if (!slots.has(e.id)) continue;
     e.sinceHit += dt;
     slot.speed = 0;
     if (slot.enemy) {
@@ -706,8 +733,41 @@ export function updateEntities(dt: number): void {
       if (e.dead || !isSlotAuthority(slot) || canAct(e.id)) updateEnemy(slot, slot.enemy, dt);
     } else if (slot.npc) updateNpc(slot, slot.npc, dt, escorts);
     else updateLoot(slot, dt);
-    e.position.y = heightAt(e.position.x, e.position.z);
-    slot.rig.update(e.position, e.facing, slot.speed, dt);
+    if (!slots.has(e.id)) continue;
+
+    if (e.position.x !== slot.lastHx || e.position.z !== slot.lastHz) {
+      slot.lastHx = e.position.x;
+      slot.lastHz = e.position.z;
+      e.position.y = heightAt(e.position.x, e.position.z);
+    }
+
+    if (!e.object.visible) {
+      slot.rigDt = 0;
+      continue;
+    }
+
+    slot.rigDt += dt;
+    const dx = e.position.x - px;
+    const dz = e.position.z - pz;
+    const d2 = dx * dx + dz * dz;
+    const unchanged = slot.speed === 0
+      && !e.inCombat
+      && e.sinceHit > 1.0
+      && e.position.x === slot.lastRigX
+      && e.position.z === slot.lastRigZ
+      && e.facing === slot.lastRigFacing;
+
+    if (unchanged && e.kind === 'loot' && d2 > 25 * 25) continue;
+
+    const stride = d2 <= 35 * 35 ? 1 : d2 <= 75 * 75 ? 2 : d2 <= 130 * 130 ? 4 : 8;
+    const effectiveStride = unchanged && d2 > 25 * 25 && stride < 8 ? 8 : stride;
+    if (effectiveStride === 1 || ((e.id + tick) & (effectiveStride - 1)) === 0) {
+      slot.rig.update(e.position, e.facing, slot.speed, slot.rigDt);
+      slot.rigDt = 0;
+      slot.lastRigX = e.position.x;
+      slot.lastRigZ = e.position.z;
+      slot.lastRigFacing = e.facing;
+    }
   }
 }
 
@@ -735,7 +795,10 @@ export function getEntity(id: number): Entity | undefined {
 
 /** Every live entity (dead enemies included, check .dead). */
 export function allEntities(): readonly Entity[] {
-  return Array.from(slots.values(), (s) => s.entity);
+  if (!allEntitiesCache) {
+    allEntitiesCache = Array.from(slots.values(), (s) => s.entity);
+  }
+  return allEntitiesCache;
 }
 
 /** The entity a raycast hit belongs to (walks up parents for userData.entityId). */
@@ -855,6 +918,7 @@ export function removeEntity(id: number): void {
   if (slot.syncKey) syncIndex.delete(slot.syncKey);
   sceneRef?.remove(slot.entity.object);
   slots.delete(id);
+  allEntitiesCache = null;
 }
 
 // ---------------------------------------------------------------- MMO enemy sync

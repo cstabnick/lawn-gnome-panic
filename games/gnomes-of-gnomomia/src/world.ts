@@ -9,8 +9,12 @@ import { buildDressing, updateDressing } from './dressing';
 import { onSettingsChange, settings } from './settings';
 import { buildChunkBuffers, chunkFlora, groundColourAt, heightAt, themeZoneAt, zoneAt, zoneRectDistance, type Flora, type FloraKind } from './terrain';
 
-// Phones (coarse pointer) get a smaller sun shadow map to keep the frame rate up.
+// Phones (coarse pointer) get a tighter view/flora horizon and smaller sun shadow map to keep the frame rate up.
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+export const VIEW_RADIUS = COARSE ? 384 : WORLD.viewRadius;
+export const NEAR_RADIUS = COARSE ? 128 : WORLD.nearRadius;
+export const FOG_NEAR = COARSE ? 160 : WORLD.fogNear;
+export const FOG_FAR = VIEW_RADIUS;
 
 // ---------------------------------------------------------------- state
 
@@ -159,6 +163,8 @@ function buildFlora(group: THREE.Group, items: readonly Flora[]): THREE.Instance
     im.computeBoundingSphere();
     im.castShadow = def.cast;
     im.receiveShadow = true;
+    im.matrixAutoUpdate = false;
+    im.updateMatrix();
     group.add(im);
     out.push(im);
   }
@@ -180,6 +186,17 @@ function buildChunk(ci: number, cj: number, lod: number, cx: number, cz: number)
     geo.setAttribute('position', new THREE.BufferAttribute(wasmBufs.positions, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(wasmBufs.normals, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(wasmBufs.colors, 3));
+    const half = C * 0.5;
+    const midY = (wasmBufs.minY + wasmBufs.maxY) * 0.5;
+    const halfDy = (wasmBufs.maxY - wasmBufs.minY) * 0.5;
+    geo.boundingBox = new THREE.Box3(
+      new THREE.Vector3(cx - half, wasmBufs.minY, cz - half),
+      new THREE.Vector3(cx + half, wasmBufs.maxY, cz + half),
+    );
+    geo.boundingSphere = new THREE.Sphere(
+      new THREE.Vector3(cx, midY, cz),
+      Math.hypot(half, half, halfDy),
+    );
   } else {
     const indexed = new THREE.PlaneGeometry(C, C, n, n).rotateX(-Math.PI / 2).translate(cx, 0, cz);
     const grid = indexed.getAttribute('position') as THREE.BufferAttribute;
@@ -200,13 +217,19 @@ function buildChunk(ci: number, cj: number, lod: number, cx: number, cz: number)
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
     geo.computeVertexNormals();
+    geo.computeBoundingBox();
+    geo.computeBoundingSphere();
   }
   const terrain = new THREE.Mesh(geo, terrainMat);
   terrain.receiveShadow = true;
   // LOD 1 sits a little low so its seams with LOD 0 neighbours are hidden.
   if (lod === 1) terrain.position.y = -0.1;
+  terrain.matrixAutoUpdate = false;
+  terrain.updateMatrix();
 
   const group = new THREE.Group();
+  group.matrixAutoUpdate = false;
+  group.updateMatrix();
   group.add(terrain);
   const flora = lod === 0 ? buildFlora(group, chunkFlora(ci, cj)) : [];
   return { cx, cz, lod, group, terrain, flora };
@@ -240,7 +263,7 @@ const REPLAN_M = 4;
 function streamChunks(focus: THREE.Vector3): void {
   if (!root) return;
   const C = WORLD.chunk;
-  const R = WORLD.viewRadius;
+  const R = VIEW_RADIUS;
   const fx = focus.x, fz = focus.z;
   // Planning walks about 500 chunk cells against every zone: about a fifth of a frame. Skip it while the focus stands
   // (near) still and nothing is left to build.
@@ -258,7 +281,7 @@ function streamChunks(focus: THREE.Vector3): void {
       const dist = Math.hypot(cx - fx, cz - fz);
       if (dist > R) continue;
       if (zoneDistanceAt(cx, cz) >= WORLD.blend + 50) continue;
-      wanted.set(keyOf(ci, cj), { ci, cj, cx, cz, dist, lod: dist <= WORLD.nearRadius ? 0 : 1 });
+      wanted.set(keyOf(ci, cj), { ci, cj, cx, cz, dist, lod: dist <= NEAR_RADIUS ? 0 : 1 });
     }
   }
 
@@ -287,7 +310,7 @@ function streamChunks(focus: THREE.Vector3): void {
   let budget = 2;
   streamSettled = true;
   for (const w of pending) {
-    const urgent = forceNear && w.lod === 0 && w.dist <= WORLD.nearRadius;
+    const urgent = forceNear && w.lod === 0 && w.dist <= NEAR_RADIUS;
     if (!urgent) {
       if (budget <= 0) {
         streamSettled = false;
@@ -335,7 +358,7 @@ export function initWorld(scene: THREE.Scene): void {
 
   bgColour = new THREE.Color(0x9fd0f0);
   scene.background = bgColour;
-  fog = new THREE.Fog(0x9fd0f0, WORLD.fogNear, WORLD.fogFar);
+  fog = new THREE.Fog(0x9fd0f0, FOG_NEAR, FOG_FAR);
   scene.fog = fog;
 
   dressingWalk = buildDressing(root);
@@ -367,8 +390,8 @@ export function updateWorld(dt: number, focus: THREE.Vector3): void {
       hemi.color.setHex(0xcfe8ff);
       hemi.groundColor.setHex(0x4a6b2a);
       hemi.intensity = 1.4;
-      fog.near = WORLD.fogNear;
-      fog.far = WORLD.fogFar;
+      fog.near = FOG_NEAR;
+      fog.far = FOG_FAR;
     }
     const k = 1 - Math.exp(-2 * dt);
     const snap = !themeSnapped;
@@ -386,7 +409,9 @@ export function updateWorld(dt: number, focus: THREE.Vector3): void {
 /** Meshes a click may land on to walk there: every built terrain chunk, plus deck floors and ramps. */
 export function getWalkMeshes(): readonly THREE.Object3D[] {
   if (walkDirty) {
-    walkCache = [...[...built.values()].map((c) => c.terrain), ...dressingWalk];
+    walkCache.length = 0;
+    for (const c of built.values()) walkCache.push(c.terrain);
+    for (const d of dressingWalk) walkCache.push(d);
     walkDirty = false;
   }
   return walkCache;

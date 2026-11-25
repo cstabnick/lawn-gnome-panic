@@ -112,9 +112,12 @@ describe('Wasm kernel parity', () => {
       }
     }
     geo.computeVertexNormals();
+    geo.computeBoundingBox();
     const nrm = geo.getAttribute('normal') as THREE.BufferAttribute;
 
     expect(wasmBufs.positions.length).toBe(pos.array.length);
+    expect(wasmBufs.minY).toBeCloseTo(geo.boundingBox!.min.y, 5);
+    expect(wasmBufs.maxY).toBeCloseTo(geo.boundingBox!.max.y, 5);
     for (let i = 0; i < wasmBufs.positions.length; i += 97) {
       expect(wasmBufs.positions[i]).toBeCloseTo(pos.array[i], 5);
       expect(wasmBufs.normals[i]).toBeCloseTo(nrm.array[i], 5);

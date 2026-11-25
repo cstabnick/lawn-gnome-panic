@@ -24,7 +24,7 @@ import { createBookReader } from './ui/book';
 import { initInteriors, updateInteriorCutaway } from './interiors';
 import { initQuests, updateQuests } from './quests';
 import { initZones, loadZone, updateZones } from './zones';
-import { initWorld, updateWorld } from './world';
+import { initWorld, updateWorld, FOG_FAR } from './world';
 import { initProgression } from './progression';
 import { initBossMoves, updateBossMoves } from './bossmoves';
 import { initMower, updateMower } from './mower';
@@ -75,16 +75,18 @@ const FURNITURE_KINDS: readonly FurnitureKind[] = [
 ];
 const MIDGAME_PREFABS: readonly string[] = ['clover-cig', 'stout-tankard', ...FURNITURE_KINDS];
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !COARSE });
+if (COARSE) renderer.shadowMap.autoUpdate = false;
 function applyRendererSettings(): void {
   renderer.setPixelRatio(settings.highDpi ? Math.min(window.devicePixelRatio, COARSE ? 1.5 : 2) : 1);
   renderer.shadowMap.enabled = settings.shadows;
+  if (COARSE && settings.shadows) renderer.shadowMap.needsUpdate = true;
 }
 applyRendererSettings();
 onSettingsChange(applyRendererSettings);
 renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, Math.min(WORLD.cameraFar, WORLD.fogFar + WORLD.chunk));
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, Math.min(WORLD.cameraFar, FOG_FAR + WORLD.chunk));
 
 function resize(): void {
   renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -136,6 +138,7 @@ let running = false;
 /** Dev only: ?townwalk=<town> is touring (src/townTour.ts). */
 let townTourOn = false;
 let saveTimer = 0;
+let shadowTick = 0;
 let last = performance.now();
 
 function frame(now: number): void {
@@ -172,6 +175,7 @@ function frame(now: number): void {
   timed('updateHud', () => updateHud(dt, camera));
   timed('updateMinimap', () => updateMinimap());
   if (running) timed('updateOnlineUi', () => updateOnlineUi(camera));
+  if (COARSE && settings.shadows && (shadowTick++ & 1) === 0) renderer.shadowMap.needsUpdate = true;
   timed('render', () => renderer.render(scene, camera));
   endFrame();
   requestAnimationFrame(frame);

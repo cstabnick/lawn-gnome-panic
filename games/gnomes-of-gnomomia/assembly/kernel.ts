@@ -3,6 +3,7 @@
 // DeltaGrid/PaintGrid rasters, a 64k-slot generation-stamped f64 height memo, 2D & 3D grid A* with line-of-sight
 // smoothing, terrain chunk vertex/normal/linear-colour meshing, and minimap RGBA tile rasterisation.
 
+@external("env", "ensureStaticColliders") declare function hostEnsureStaticColliders(): void;
 @external("env", "ensureFloraChunk") declare function hostEnsureFloraChunk(ci: i32, cj: i32): void;
 @external("env", "customStep") declare function hostCustomStep(x: f64, z: f64, fromY: f64): f64;
 @external("env", "customBlocked") declare function hostCustomBlocked(x: f64, z: f64): i32;
@@ -12,78 +13,79 @@
 @inline function fastCos(x: f64): f64 { return Math.cos(x); }
 @inline function fastExp(x: f64): f64 { return Math.exp(x); }
 
-// ---- Fixed linear-memory layout (384 pages = 24 MB, pre-allocated so ArrayBuffer views never detach) ----------------
-// 0x000000 .. 0x010000 : Wasm stack (64 KB)
-const CFG_PTR: usize          = 0x010000; // 16 * f64 (128 B)
-const ZONES_PTR: usize        = 0x010100; // 128 * 16 * f64 (16 KB)
-const OUTDOOR_IDS_PTR: usize  = 0x014100; // 128 * i32 (512 B)
-const INDOOR_IDS_PTR: usize   = 0x014300; // 128 * i32 (512 B)
-const INTERIOR_IDS_PTR: usize = 0x014500; // 128 * i32 (512 B)
-const SRGB_LUT_PTR: usize     = 0x014800; // 256 * f32 (1 KB)
-const PAINT_PAL_PTR: usize    = 0x014C00; // 256 * u32 (1 KB)
+// ---- Compact fixed linear-memory layout (124 pages = 7.75 MB, mobile-friendly, views never detach) ------------------
+// 0x000000 .. 0x008000 : Wasm stack (32 KB)
+const CFG_PTR: usize          = 0x008000; // 16 * f64 (128 B)
+const CHUNK_BOUNDS_PTR: usize = 0x008080; // 2 * f32 (minY, maxY)
+const ZONES_PTR: usize        = 0x008100; // 128 * 16 * f64 (16 KB)
+const OUTDOOR_IDS_PTR: usize  = 0x00C100; // 128 * i32 (512 B)
+const INDOOR_IDS_PTR: usize   = 0x00C300; // 128 * i32 (512 B)
+const INTERIOR_IDS_PTR: usize = 0x00C500; // 128 * i32 (512 B)
+const SRGB_LUT_PTR: usize     = 0x00C800; // 256 * f32 (1 KB)
+const PAINT_PAL_PTR: usize    = 0x00CC00; // 256 * u32 (1 KB)
 
-const REGIONS_PTR: usize      = 0x015000; // 512 * 4 * f64 (16 KB)
-const LAKES_PTR: usize        = 0x019000; // 256 * 4 * f64 (8 KB)
-const STAMPS_PTR: usize       = 0x01B000; // 512 * 6 * f64 (24 KB)
-const ROADS_PTR: usize        = 0x021000; // 2048 * 4 * f64 (64 KB)
-const CUT_ROADS_PTR: usize    = 0x031000; // 512 * 4 * f64 (16 KB)
-const PASSES_PTR: usize       = 0x035000; // 64 * 4 * f64 (2 KB)
-const DECKS_PTR: usize        = 0x035800; // 128 * 20 * f64 (20 KB)
+const REGIONS_PTR: usize      = 0x00D000; // 512 * 4 * f64 (16 KB)
+const LAKES_PTR: usize        = 0x011000; // 256 * 4 * f64 (8 KB)
+const STAMPS_PTR: usize       = 0x013000; // 512 * 6 * f64 (24 KB)
+const ROADS_PTR: usize        = 0x019000; // 2048 * 4 * f64 (64 KB)
+const CUT_ROADS_PTR: usize    = 0x029000; // 512 * 4 * f64 (16 KB)
+const PASSES_PTR: usize       = 0x02D000; // 64 * 4 * f64 (2 KB)
+const DECKS_PTR: usize        = 0x02D800; // 128 * 20 * f64 (20 KB)
+const DECK_GRID_PTR: usize    = 0x032800; // 4096 * u16 (8 KB)
 
 // Chained spatial hash tables: Head = (gen: u32, firstNode: i32) = 8 B; Node = (ci: i32, cj: i32, idx: i32, next: i32) = 16 B
-const STAMP_HEADS_PTR: usize  = 0x03B000; // 4096 * 8 = 32 KB
-const STAMP_NODES_PTR: usize  = 0x043000; // 8192 * 16 = 128 KB
-const ROAD_HEADS_PTR: usize   = 0x063000; // 8192 * 8 = 64 KB
-const ROAD_NODES_PTR: usize   = 0x073000; // 32768 * 16 = 512 KB
-const CUT_HEADS_PTR: usize    = 0x0F3000; // 4096 * 8 = 32 KB
-const CUT_NODES_PTR: usize    = 0x0FB000; // 16384 * 16 = 256 KB
+const STAMP_HEADS_PTR: usize  = 0x035000; // 1024 * 8 = 8 KB
+const STAMP_NODES_PTR: usize  = 0x037000; // 4096 * 16 = 64 KB
+const ROAD_HEADS_PTR: usize   = 0x047000; // 4096 * 8 = 32 KB
+const ROAD_NODES_PTR: usize   = 0x04F000; // 16384 * 16 = 256 KB
+const CUT_HEADS_PTR: usize    = 0x08F000; // 2048 * 8 = 16 KB
+const CUT_NODES_PTR: usize    = 0x093000; // 8192 * 16 = 128 KB
 
-// Collider circles: (x: f64, z: f64, r2: f64) = 24 B
-const STATIC_CIRC_PTR: usize  = 0x13B000; // 65536 * 24 = 1536 KB (0x180000)
-const STATIC_HEADS_PTR: usize = 0x2BB000; // 32768 * 8 = 256 KB (0x040000)
-const STATIC_NODES_PTR: usize = 0x2FB000; // 262144 * 16 = 4096 KB (0x400000)
+// Collider circles: (x: f64, z: f64, r2: f64) = 24 B (static colliders loaded lazily only outside baked WalkGrid)
+const STATIC_CIRC_PTR: usize  = 0x0B3000; // 24576 * 24 = 576 KB
+const STATIC_HEADS_PTR: usize = 0x143000; // 16384 * 8 = 128 KB
+const STATIC_NODES_PTR: usize = 0x163000; // 98304 * 16 = 1536 KB
 
-const EXTRA_CIRC_PTR: usize   = 0x6FB000; // 8192 * 24 = 192 KB (0x030000)
-const EXTRA_HEADS_PTR: usize  = 0x72B000; // 8192 * 8 = 64 KB (0x010000)
-const EXTRA_NODES_PTR: usize  = 0x73B000; // 32768 * 16 = 512 KB (0x080000)
+const EXTRA_CIRC_PTR: usize   = 0x2E3000; // 2048 * 24 = 48 KB
+const EXTRA_HEADS_PTR: usize  = 0x2EF000; // 2048 * 8 = 16 KB
+const EXTRA_NODES_PTR: usize  = 0x2F3000; // 8192 * 16 = 128 KB
 
-// Loaded flora chunk set (when WalkGrid is absent/outside tile): 4096 * 12 B (gen: u32, ci: i32, cj: i32)
-const FLORA_SET_PTR: usize    = 0x7BB000; // 48 KB (0x00C000)
+// Loaded flora chunk set (when WalkGrid is absent/outside tile): 2048 * 12 B (gen: u32, ci: i32, cj: i32)
+const FLORA_SET_PTR: usize    = 0x313000; // 24 KB
 
 // DeltaGrid (up to 64 chunks * 4096 i16 = 512 KB) + PaintGrid (up to 64 chunks * 4096 u8 = 256 KB)
-const DELTA_META_PTR: usize   = 0x7C7000; // 64 * 8 B (ci: i32, cj: i32)
-const DELTA_DATA_PTR: usize   = 0x7C7200; // 64 * 8192 B = 512 KB (0x080000)
-const PAINT_META_PTR: usize   = 0x847200; // 64 * 8 B
-const PAINT_DATA_PTR: usize   = 0x847400; // 64 * 4096 B = 256 KB (0x040000)
+const DELTA_META_PTR: usize   = 0x319000; // 64 * 8 B (ci: i32, cj: i32)
+const DELTA_DATA_PTR: usize   = 0x319200; // 64 * 8192 B = 512 KB
+const PAINT_META_PTR: usize   = 0x399200; // 64 * 8 B
+const PAINT_DATA_PTR: usize   = 0x399400; // 64 * 4096 B = 256 KB
 
-// WalkGrid tiles: 32 headers * 32 B (minX: f64, minZ: f64, cols: i32, rows: i32, byteOff: i32, pad: i32) + 3.5 MB bitsets
-const WALK_META_PTR: usize    = 0x887400; // 1 KB
-const WALK_BITS_PTR: usize    = 0x888000; // 3.5 MB (0x380000) -> ends at 0xC08000
+// WalkGrid tiles: 32 headers * 32 B + 1.625 MB bitsets (actual bake is 1.36 MB across 7 tiles)
+const WALK_META_PTR: usize    = 0x3D9400; // 1 KB
+const WALK_BITS_PTR: usize    = 0x3DA000; // 0x1A0000 -> ends at 0x57A000
 
-// Height memo: 65536 slots * 32 B (gen: u32, pad: u32, x: f64, z: f64, h: f64) = 2 MB
-const HMEMO_PTR: usize        = 0xC08000; // 0x200000 -> ends at 0xE08000
+// Height & blocked memo: 16384 slots * 32 B (gen: u32, blockedTag: u32, x: f64, z: f64, h: f64) = 512 KB
+const HMEMO_PTR: usize        = 0x57A000; // 0x080000 -> ends at 0x5FA000
 
-// A* SoA node pool (MAX_NODES = 131072) + open-addressed state hash (STATE_CAP = 262144)
-const NODE_I_PTR: usize       = 0xE08000; // 512 KB (0x080000)
-const NODE_J_PTR: usize       = 0xE88000; // 512 KB
-const NODE_PAR_PTR: usize     = 0xF08000; // 512 KB
-const HEAP_PTR: usize         = 0xF88000; // 512 KB
-const NODE_Y_PTR: usize       = 0x1008000; // 1 MB (0x100000)
-const NODE_G_PTR: usize       = 0x1108000; // 1 MB
-const NODE_H_PTR: usize       = 0x1208000; // 1 MB
-const NODE_F_PTR: usize       = 0x1308000; // 1 MB
-const STATE_GEN_PTR: usize    = 0x1408000; // 262144 * u32 = 1 MB
-const STATE_KEY_PTR: usize    = 0x1508000; // 262144 * u64 = 2 MB
-const STATE_G_PTR: usize      = 0x1708000; // 262144 * f64 = 2 MB -> ends at 0x1908000 (~25.03 MB -> 400 pages)
+// A* SoA node pool (MAX_NODES = 32768) + open-addressed state hash (STATE_CAP = 65536)
+const NODE_I_PTR: usize       = 0x5FA000; // 128 KB
+const NODE_J_PTR: usize       = 0x61A000; // 128 KB
+const NODE_PAR_PTR: usize     = 0x63A000; // 128 KB
+const HEAP_PTR: usize         = 0x65A000; // 128 KB
+const NODE_Y_PTR: usize       = 0x67A000; // 256 KB
+const NODE_G_PTR: usize       = 0x6BA000; // 256 KB
+const NODE_H_PTR: usize       = 0x6FA000; // 256 KB
+const NODE_F_PTR: usize       = 0x73A000; // 256 KB
+const STATE_GEN_PTR: usize    = 0x77A000; // 65536 * u32 = 256 KB
+const STATE_KEY_PTR: usize    = 0x7BA000; // 65536 * u64 = 512 KB
+const STATE_G_PTR: usize      = 0x83A000; // 65536 * f64 = 512 KB -> ends at 0x8BA000
 
 // Output buffers
-const OUT_PATH_PTR: usize     = 0x1908000; // 16384 * 3 * f64 = 384 KB (0x060000)
-const CHUNK_GRID_PTR: usize   = 0x1968000; // 65 * 65 * f64 = 34 KB (0x009000)
-const CHUNK_POS_PTR: usize    = 0x1971000; // 18432 * f32 = 72 KB (0x012000)
-const CHUNK_NRM_PTR: usize    = 0x1983000; // 18432 * f32 = 72 KB (0x012000)
-const CHUNK_COL_PTR: usize    = 0x1995000; // 18432 * f32 = 72 KB (0x012000)
-const MINIMAP_PTR: usize      = 0x19A7000; // 4096 * u32 = 16 KB -> ends at 0x19AB000
-const DECK_GRID_PTR: usize    = 0x19AB000; // 4096 * u16 = 8 KB -> ends at 0x19AD000 (< 26 MB = 416 pages)
+const OUT_PATH_PTR: usize     = 0x8BA000; // 8192 * 3 * f64 = 192 KB
+const CHUNK_GRID_PTR: usize   = 0x8EA000; // 65 * 65 * f64 = 36 KB
+const CHUNK_POS_PTR: usize    = 0x8F3000; // 18432 * f32 = 72 KB
+const CHUNK_NRM_PTR: usize    = 0x905000; // 18432 * f32 = 72 KB
+const CHUNK_COL_PTR: usize    = 0x917000; // 18432 * f32 = 72 KB
+const MINIMAP_PTR: usize      = 0x929000; // 4096 * u32 = 16 KB -> ends at 0x92D000 (9.18 MB < 148 pages)
 
 // ---- Counts & generation counters -----------------------------------------------------------------------------------
 let zoneCount: i32 = 0;
@@ -107,6 +109,7 @@ let roadNodeCount: i32 = 0;
 let cutHashGen: u32 = 1;
 let cutNodeCount: i32 = 0;
 
+let staticLoaded: i32 = 0;
 let staticCircCount: i32 = 0;
 let staticHashGen: u32 = 1;
 let staticNodeCount: i32 = 0;
@@ -136,6 +139,7 @@ let cfgChunk: f64 = 64.0;
 
 // ---- Pointer exports for zero-copy JS views -------------------------------------------------------------------------
 export function getCfgPtr(): usize { return CFG_PTR; }
+export function getChunkBoundsPtr(): usize { return CHUNK_BOUNDS_PTR; }
 export function getZonesPtr(): usize { return ZONES_PTR; }
 export function getOutdoorIdsPtr(): usize { return OUTDOOR_IDS_PTR; }
 export function getIndoorIdsPtr(): usize { return INDOOR_IDS_PTR; }
@@ -270,6 +274,7 @@ export function resetStaticLayers(): void {
   cutHashGen++;
   cutNodeCount = 0;
 
+  staticLoaded = 0;
   staticCircCount = 0;
   staticHashGen++;
   staticNodeCount = 0;
@@ -317,8 +322,8 @@ export function addStamp(op: f64, x: f64, z: f64, p1: f64, p2: f64, p3: f64): vo
   const j1 = <i32>Math.floor((z + r) / 64.0);
   for (let i = i0; i <= i1; i++) {
     for (let j = j0; j <= j1; j++) {
-      if (stampNodeCount < 8192) {
-        insertBucket(STAMP_HEADS_PTR, STAMP_NODES_PTR, 4095, stampHashGen, stampNodeCount++, i, j, idx);
+      if (stampNodeCount < 4096) {
+        insertBucket(STAMP_HEADS_PTR, STAMP_NODES_PTR, 1023, stampHashGen, stampNodeCount++, i, j, idx);
       }
     }
   }
@@ -343,8 +348,8 @@ export function addRoadSeg(ax: f64, az: f64, bx: f64, bz: f64, flags: i32): void
     const j1 = <i32>Math.floor((maxZ + 4.0) / 32.0);
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
-        if (roadNodeCount < 32768) {
-          insertBucket(ROAD_HEADS_PTR, ROAD_NODES_PTR, 8191, roadHashGen, roadNodeCount++, i, j, idx);
+        if (roadNodeCount < 16384) {
+          insertBucket(ROAD_HEADS_PTR, ROAD_NODES_PTR, 4095, roadHashGen, roadNodeCount++, i, j, idx);
         }
       }
     }
@@ -369,8 +374,8 @@ export function addRoadSeg(ax: f64, az: f64, bx: f64, bz: f64, flags: i32): void
     const j1 = <i32>Math.floor((maxZ + pad) / 32.0);
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
-        if (cutNodeCount < 16384) {
-          insertBucket(CUT_HEADS_PTR, CUT_NODES_PTR, 4095, cutHashGen, cutNodeCount++, i, j, cIdx);
+        if (cutNodeCount < 8192) {
+          insertBucket(CUT_HEADS_PTR, CUT_NODES_PTR, 2047, cutHashGen, cutNodeCount++, i, j, cIdx);
         }
       }
     }
@@ -378,7 +383,7 @@ export function addRoadSeg(ax: f64, az: f64, bx: f64, bz: f64, flags: i32): void
 }
 
 export function addStaticCollider(x: f64, z: f64, r: f64): void {
-  if (staticCircCount >= 65536) return;
+  if (staticCircCount >= 24576) return;
   const idx = staticCircCount++;
   const cp = STATIC_CIRC_PTR + <usize>(idx * 24);
   store<f64>(cp, x);
@@ -391,8 +396,8 @@ export function addStaticCollider(x: f64, z: f64, r: f64): void {
   const j1 = <i32>Math.floor((z + r) / 8.0);
   for (let i = i0; i <= i1; i++) {
     for (let j = j0; j <= j1; j++) {
-      if (staticNodeCount < 262144) {
-        insertBucket(STATIC_HEADS_PTR, STATIC_NODES_PTR, 32767, staticHashGen, staticNodeCount++, i, j, idx);
+      if (staticNodeCount < 98304) {
+        insertBucket(STATIC_HEADS_PTR, STATIC_NODES_PTR, 16383, staticHashGen, staticNodeCount++, i, j, idx);
       }
     }
   }
@@ -400,7 +405,7 @@ export function addStaticCollider(x: f64, z: f64, r: f64): void {
 }
 
 export function addExtraCollider(x: f64, z: f64, r: f64): void {
-  if (extraCircCount >= 8192) return;
+  if (extraCircCount >= 2048) return;
   const idx = extraCircCount++;
   const cp = EXTRA_CIRC_PTR + <usize>(idx * 24);
   store<f64>(cp, x);
@@ -413,8 +418,8 @@ export function addExtraCollider(x: f64, z: f64, r: f64): void {
   const j1 = <i32>Math.floor((z + r) / 8.0);
   for (let i = i0; i <= i1; i++) {
     for (let j = j0; j <= j1; j++) {
-      if (extraNodeCount < 32768) {
-        insertBucket(EXTRA_HEADS_PTR, EXTRA_NODES_PTR, 8191, extraHashGen, extraNodeCount++, i, j, idx);
+      if (extraNodeCount < 8192) {
+        insertBucket(EXTRA_HEADS_PTR, EXTRA_NODES_PTR, 2047, extraHashGen, extraNodeCount++, i, j, idx);
       }
     }
   }
@@ -579,7 +584,7 @@ function zoneGround(zIdx: i32, x: f64, z: f64): f64 {
 function distToCutCapped(x: f64, z: f64): f64 {
   const ci = <i32>Math.floor(x / 32.0);
   const cj = <i32>Math.floor(z / 32.0);
-  let node = firstBucketNode(CUT_HEADS_PTR, 4095, cutHashGen, ci, cj);
+  let node = firstBucketNode(CUT_HEADS_PTR, 2047, cutHashGen, ci, cj);
   let bestSq = 1e6;
   while (node >= 0) {
     const np = CUT_NODES_PTR + (<usize>node << 4);
@@ -597,7 +602,7 @@ function distToCutCapped(x: f64, z: f64): f64 {
 export function isWithinRoad(x: f64, z: f64, maxDist: f64): i32 {
   const ci = <i32>Math.floor(x / 32.0);
   const cj = <i32>Math.floor(z / 32.0);
-  let node = firstBucketNode(ROAD_HEADS_PTR, 8191, roadHashGen, ci, cj);
+  let node = firstBucketNode(ROAD_HEADS_PTR, 4095, roadHashGen, ci, cj);
   const maxSq = maxDist * maxDist;
   while (node >= 0) {
     const np = ROAD_NODES_PTR + (<usize>node << 4);
@@ -711,7 +716,7 @@ function computeHeightUncached(x: f64, z: f64): f64 {
     if (stampCount > 0) {
       const ci = <i32>Math.floor(x / 64.0);
       const cj = <i32>Math.floor(z / 64.0);
-      let node = firstBucketNode(STAMP_HEADS_PTR, 4095, stampHashGen, ci, cj);
+      let node = firstBucketNode(STAMP_HEADS_PTR, 1023, stampHashGen, ci, cj);
       // Bucket inserts prepend, so collect matching indices onto a small stack segment to apply in ascending order.
       let matchCount = 0;
       while (node >= 0) {
@@ -762,7 +767,7 @@ function computeHeightUncached(x: f64, z: f64): f64 {
   let hash = (ux * 0x9e3779b97f4a7c15) ^ (uz * 0xbf58476d1ce4e5b9);
   hash ^= hash >>> 32;
   hash ^= hash >>> 16;
-  return <usize>(hash & 65535);
+  return <usize>(hash & 16383);
 }
 
 export function heightAt(x: f64, z: f64): f64 {
@@ -839,8 +844,8 @@ function circleBucketHit(headsPtr: usize, nodesPtr: usize, circPtr: usize, mask:
 }
 
 function ensureFloraChunkLoaded(ci: i32, cj: i32): void {
-  let slot = hashPair(ci, cj, 4095);
-  for (let probe = 0; probe < 4096; probe++) {
+  let slot = hashPair(ci, cj, 2047);
+  for (let probe = 0; probe < 2048; probe++) {
     const fp = FLORA_SET_PTR + <usize>(slot * 12);
     if (load<u32>(fp) != floraSetGen) {
       store<u32>(fp, floraSetGen);
@@ -850,13 +855,17 @@ function ensureFloraChunkLoaded(ci: i32, cj: i32): void {
       return;
     }
     if (load<i32>(fp + 4) == ci && load<i32>(fp + 8) == cj) return;
-    slot = (slot + 1) & 4095;
+    slot = (slot + 1) & 2047;
   }
   hostEnsureFloraChunk(ci, cj);
 }
 
 function staticSolidAt(x: f64, z: f64): bool {
   if (heightAt(x, z) < cfgWaterLevel + 0.1) return true;
+  if (staticLoaded == 0) {
+    staticLoaded = 1;
+    hostEnsureStaticColliders();
+  }
   const i0 = <i32>Math.floor((x - 3.0) / cfgChunk);
   const i1 = <i32>Math.floor((x + 3.0) / cfgChunk);
   const j0 = <i32>Math.floor((z - 3.0) / cfgChunk);
@@ -866,7 +875,7 @@ function staticSolidAt(x: f64, z: f64): bool {
       ensureFloraChunkLoaded(i, j);
     }
   }
-  if (circleBucketHit(STATIC_HEADS_PTR, STATIC_NODES_PTR, STATIC_CIRC_PTR, 32767, staticHashGen, x, z)) return true;
+  if (circleBucketHit(STATIC_HEADS_PTR, STATIC_NODES_PTR, STATIC_CIRC_PTR, 16383, staticHashGen, x, z)) return true;
   return inRampBody(x, z);
 }
 
@@ -935,7 +944,7 @@ function computeIsBlockedUncached(x: f64, z: f64): i32 {
   if (passBlocks(x, z, !deepInside)) return 1;
   const baked = walkGridLookup(x, z);
   if (baked < 0 ? staticSolidAt(x, z) : baked != 0) return 1;
-  return circleBucketHit(EXTRA_HEADS_PTR, EXTRA_NODES_PTR, EXTRA_CIRC_PTR, 8191, extraHashGen, x, z) ? 1 : 0;
+  return circleBucketHit(EXTRA_HEADS_PTR, EXTRA_NODES_PTR, EXTRA_CIRC_PTR, 2047, extraHashGen, x, z) ? 1 : 0;
 }
 
 export function isBlocked(x: f64, z: f64): i32 {
@@ -1152,13 +1161,21 @@ export function buildChunkBuffers(cx: f64, cz: f64, chunkSize: f64, segments: i3
   const xStart = cx - half;
   const zStart = cz - half;
 
+  let minY: f32 = Infinity;
+  let maxY: f32 = -Infinity;
   for (let iy = 0; iy < n1; iy++) {
     const wz = <f64>(<f32>(zStart + <f64>iy * step));
     for (let ix = 0; ix < n1; ix++) {
       const wx = <f64>(<f32>(xStart + <f64>ix * step));
-      store<f64>(CHUNK_GRID_PTR + (<usize>(iy * n1 + ix) << 3), heightAt(wx, wz));
+      const h = heightAt(wx, wz);
+      const fh = <f32>h;
+      if (fh < minY) minY = fh;
+      if (fh > maxY) maxY = fh;
+      store<f64>(CHUNK_GRID_PTR + (<usize>(iy * n1 + ix) << 3), h);
     }
   }
+  store<f32>(CHUNK_BOUNDS_PTR, minY);
+  store<f32>(CHUNK_BOUNDS_PTR + 4, maxY);
 
   let vIdx = 0;
   for (let iy = 0; iy < segments; iy++) {
@@ -1218,8 +1235,8 @@ const HEIGHT_TOL: f64 = 1.5;
 const GOAL_SNAP: i32 = 12;
 const STALL_EXPAND: i32 = 8000;
 const HOPELESS_EXPAND: i32 = 3000;
-const MAX_NODES: i32 = 131072;
-const STATE_MASK: u32 = 262143; // 262144 - 1
+const MAX_NODES: i32 = 32768;
+const STATE_MASK: u32 = 65535; // 65536 - 1
 
 // DIRS: [1,0], [-1,0], [0,1], [0,-1], [1,1], [1,-1], [-1,1], [-1,-1]
 @inline function dirX(d: i32): i32 {
@@ -1437,7 +1454,7 @@ export function findPath3Wasm(
 
   astarStateGen += 2;
   if (astarStateGen >= 0xfffffff0) {
-    memory.fill(STATE_GEN_PTR, 0, 262144 * 4);
+    memory.fill(STATE_GEN_PTR, 0, 65536 * 4);
     astarStateGen = 2;
   }
   const genOpen = astarStateGen;
@@ -1661,7 +1678,7 @@ export function findPath2Wasm(fromX: f64, fromZ: f64, toX: f64, toZ: f64, maxExp
 
   astarStateGen += 2;
   if (astarStateGen >= 0xfffffff0) {
-    memory.fill(STATE_GEN_PTR, 0, 262144 * 4);
+    memory.fill(STATE_GEN_PTR, 0, 65536 * 4);
     astarStateGen = 2;
   }
   const genOpen = astarStateGen;

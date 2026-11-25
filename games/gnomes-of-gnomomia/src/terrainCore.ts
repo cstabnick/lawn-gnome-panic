@@ -156,6 +156,23 @@ export function createTerrain(input: TerrainInput): Terrain {
   let memoX = NaN;
   let memoZ = NaN;
   let memoH = 0;
+  const HMEMO_SIZE = 4096;
+  const HMEMO_MASK = HMEMO_SIZE - 1;
+  const hMemoGen = new Uint32Array(HMEMO_SIZE);
+  const hMemoX = new Float64Array(HMEMO_SIZE);
+  const hMemoZ = new Float64Array(HMEMO_SIZE);
+  const hMemoY = new Float64Array(HMEMO_SIZE);
+  const hScratchF64 = new Float64Array(2);
+  const hScratchU32 = new Uint32Array(hScratchF64.buffer);
+  let curHMemoGen = 1;
+  function bumpHeightMemo(): void {
+    memoX = NaN;
+    curHMemoGen = (curHMemoGen + 1) >>> 0;
+    if (curHMemoGen === 0) {
+      hMemoGen.fill(0);
+      curHMemoGen = 1;
+    }
+  }
   let roads: RoadSeg[] | null = null;
   const roadBuckets = new Map<number, RoadSeg[]>();
   const cutBuckets = new Map<number, RoadSeg[]>();
@@ -398,9 +415,22 @@ export function createTerrain(input: TerrainInput): Terrain {
    * (WORLD.ridge high, over the last 28 m) and between zones, except along a pass road, which cuts through it. Then the
    * zones' stamps and the brush deltas are added (overworld only). */
   function heightAt(x: number, z: number): number {
-    // One-entry memo: a walking test (standY -> surfacesAt -> isBlocked -> isBlocked) asks for the same point three
-    // times in a row, and A* makes about 65 such tests per node. The height field is fixed data, so this is exact.
+    // Fast 1-entry register check + 4096-slot typed-array hash memo so consecutive walking tests AND per-frame
+    // entity/companion height queries hit cache in nanoseconds with exact JS IEEE-754 f64 parity.
     if (x === memoX && z === memoZ) return memoH;
+    const nx = x + 0;
+    const nz = z + 0;
+    hScratchF64[0] = nx;
+    hScratchF64[1] = nz;
+    let hash = (Math.imul(hScratchU32[0] ^ hScratchU32[1], 0x9e3779b1) ^ Math.imul(hScratchU32[2] ^ hScratchU32[3], 0x85ebca6b)) >>> 0;
+    hash = (hash ^ (hash >>> 16)) & HMEMO_MASK;
+    if (hMemoGen[hash] === curHMemoGen && hMemoX[hash] === nx && hMemoZ[hash] === nz) {
+      const cached = hMemoY[hash];
+      memoX = x;
+      memoZ = z;
+      memoH = cached;
+      return cached;
+    }
     let h = computeHeight(x, z);
     if (z <= INSTANCES_FROM_Z) {
       if (stamps.length > 0) {
@@ -409,6 +439,10 @@ export function createTerrain(input: TerrainInput): Terrain {
       }
       if (!deltas.isEmpty()) h += deltas.sample(x, z);
     }
+    hMemoGen[hash] = curHMemoGen;
+    hMemoX[hash] = nx;
+    hMemoZ[hash] = nz;
+    hMemoY[hash] = h;
     memoH = h;
     memoX = x;
     memoZ = z;
@@ -824,7 +858,7 @@ export function createTerrain(input: TerrainInput): Terrain {
   }
 
   function invalidate(rect?: Rect): void {
-    memoX = NaN;
+    bumpHeightMemo();
     roads = null;
     roadBuckets.clear();
     cutBuckets.clear();
@@ -892,7 +926,7 @@ export function createTerrain(input: TerrainInput): Terrain {
     setWalkGrid(grid) { walk = grid; wasmBridge.onWalkGridChange(); },
     get walkGrid() { return walk; },
     get deltas() { return deltas; },
-    setDeltas(grid) { deltas = grid; memoX = NaN; wasmBridge.onDeltasChange(); },
+    setDeltas(grid) { deltas = grid; bumpHeightMemo(); wasmBridge.onDeltasChange(); },
     get paint() { return paint; },
     setPaint(grid) { paint = grid; wasmBridge.onPaintChange(); },
     invalidate,

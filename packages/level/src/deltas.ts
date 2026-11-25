@@ -90,6 +90,13 @@ export class DeltaGrid {
     for (const [k, c] of this.chunks) if (!c.some((v) => v !== 0)) this.chunks.delete(k);
   }
 
+  /** Visits every allocated chunk `(ci, cj)` with its raw 64×64 row-major Int16 centimetre array. */
+  forEachChunk(fn: (ci: number, cj: number, data: Int16Array) => void): void {
+    for (const [k, c] of this.chunks) {
+      fn(Math.floor(k / 65536) - 32768, (k % 65536) - 32768, c);
+    }
+  }
+
   /** The box (metres) covered by allocated chunks, or null when empty. */
   bounds(): Rect | null {
     if (this.chunks.size === 0) return null;

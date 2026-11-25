@@ -72,9 +72,12 @@ let multiTouch = false;
 let markerGroup: THREE.Group | null = null;
 const markerMats: THREE.MeshBasicMaterial[] = [];
 let markerAge = Infinity;
+const pickTargets: THREE.Object3D[] = [];
+const entityRootSet = new Set<THREE.Object3D>();
+const walkMeshSet = new Set<THREE.Object3D>();
 
-const isUnder = (obj: THREE.Object3D, root: THREE.Object3D): boolean => {
-  for (let o: THREE.Object3D | null = obj; o; o = o.parent) if (o === root) return true;
+const isUnderAny = (obj: THREE.Object3D, roots: ReadonlySet<THREE.Object3D>): boolean => {
+  for (let o: THREE.Object3D | null = obj; o; o = o.parent) if (roots.has(o)) return true;
   return false;
 };
 
@@ -94,23 +97,34 @@ function pickAt(clientX: number, clientY: number, maxDist = 260): Pick {
   raycaster.far = maxDist;
 
   const walk = getWalkMeshes();
-  const targets: THREE.Object3D[] = [...walk];
-  const entityRoots = new Set<THREE.Object3D>();
-  for (const e of allEntities()) {
-    entityRoots.add(e.object);
-    if (!e.dead && e.object.visible) targets.push(e.object);
+  pickTargets.length = 0;
+  entityRootSet.clear();
+  walkMeshSet.clear();
+  for (let i = 0; i < walk.length; i++) {
+    const w = walk[i];
+    pickTargets.push(w);
+    walkMeshSet.add(w);
+  }
+  const entities = allEntities();
+  for (let i = 0; i < entities.length; i++) {
+    const e = entities[i];
+    entityRootSet.add(e.object);
+    if (!e.dead && e.object.visible) pickTargets.push(e.object);
   }
   // Other scene roots (world objects, other players) are targets too; the world itself (named 'world': thousands of
   // meshes) is not, only its walkable meshes above. Entities and the click marker are already handled.
   if (sceneRef) {
-    for (const o of sceneRef.children) {
-      if (o.visible && o.name !== 'world' && o !== markerGroup && !entityRoots.has(o)) targets.push(o);
+    const children = sceneRef.children;
+    for (let i = 0; i < children.length; i++) {
+      const o = children[i];
+      if (o.visible && o.name !== 'world' && o !== markerGroup && !entityRootSet.has(o)) pickTargets.push(o);
     }
   }
-  for (const p of getInteractablePrefabs()) {
-    if (p.visible) targets.push(p);
+  const prefabs = getInteractablePrefabs();
+  for (let i = 0; i < prefabs.length; i++) {
+    if (prefabs[i].visible) pickTargets.push(prefabs[i]);
   }
-  const hits = raycaster.intersectObjects(targets, true);
+  const hits = raycaster.intersectObjects(pickTargets, true);
 
   // The first hit that belongs to an entity wins.
   for (const h of hits) {
@@ -156,7 +170,7 @@ function pickAt(clientX: number, clientY: number, maxDist = 260): Pick {
   }
   // Otherwise the first ground hit is a walk point.
   for (const h of hits) {
-    if (walk.some((w) => isUnder(h.object, w))) {
+    if (isUnderAny(h.object, walkMeshSet)) {
       out.ground = h.point.clone();
       break;
     }

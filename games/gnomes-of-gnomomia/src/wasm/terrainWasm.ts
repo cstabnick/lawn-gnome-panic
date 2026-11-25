@@ -54,11 +54,14 @@ export interface ChunkMeshBuffers {
   positions: Float32Array;
   normals: Float32Array;
   colors: Float32Array;
+  minY: number;
+  maxY: number;
 }
 
 interface KernelExports extends WebAssembly.Exports {
   memory: WebAssembly.Memory;
   getCfgPtr(): number;
+  getChunkBoundsPtr(): number;
   getZonesPtr(): number;
   getOutdoorIdsPtr(): number;
   getIndoorIdsPtr(): number;
@@ -123,7 +126,8 @@ let runtime: KernelRuntime | null = null;
 let initPromise: Promise<void> | null = null;
 let wasmDisabled = false;
 
-// Active callbacks for custom test closures or lazy unbaked flora colliders
+// Active callbacks for custom test closures or lazy unbaked colliders
+let activeEnsureStatic: (() => void) | null = null;
 let activeEnsureFlora: ((ci: number, cj: number) => void) | null = null;
 let activeCustomStep: ((x: number, z: number, fromY: number) => number | null) | null = null;
 let activeCustomBlocked: ((x: number, z: number) => boolean) | null = null;
@@ -133,9 +137,9 @@ let wasmBusy = false;
 function buildImports(): WebAssembly.Imports {
   return {
     env: {
-      sin: Math.sin,
-      cos: Math.cos,
-      exp: Math.exp,
+      ensureStaticColliders(): void {
+        activeEnsureStatic?.();
+      },
       ensureFloraChunk(ci: number, cj: number): void {
         activeEnsureFlora?.(ci, cj);
       },
@@ -244,15 +248,17 @@ export function registerTerrainWasm(
   isBlockedFn: (x: number, z: number) => boolean,
 ): TerrainWasmBridge {
   let staticDirty = true;
+  let staticUploaded = false;
   let walkDirty = true;
   let deltasDirty = true;
   let paintDirty = true;
   let extraSyncedCount = 0;
   const uploadedFloraChunks = new Set<number>();
 
-  function uploadZonesAndStatic(rt: KernelRuntime): void {
+  function uploadZonesAndTerrain(rt: KernelRuntime): void {
     const { ex, f64, i32 } = rt;
     ex.resetStaticLayers();
+    staticUploaded = false;
     uploadedFloraChunks.clear();
 
     // Config scalars
@@ -386,9 +392,13 @@ export function registerTerrainWasm(
       if (st.op === 'flatten') ex.addStamp(1, st.x, st.z, st.inner, st.outer, st.to);
       else ex.addStamp(0, st.x, st.z, st.sigma, st.amount, 0);
     }
+  }
 
+  function ensureStaticUploaded(rt: KernelRuntime): void {
+    if (staticUploaded) return;
+    staticUploaded = true;
     for (const c of src.staticCircles()) {
-      ex.addStaticCollider(c.x, c.z, c.r);
+      rt.ex.addStaticCollider(c.x, c.z, c.r);
     }
   }
 
@@ -406,7 +416,7 @@ export function registerTerrainWasm(
     }
     ex.clearWalkTiles(1);
     const bitsBase = ex.getWalkBitsPtr();
-    const maxBytes = 0x380000;
+    const maxBytes = 0x1a0000;
     let byteOff = 0;
     for (const t of tiles) {
       if (byteOff + t.bits.byteLength > maxBytes) {
@@ -425,33 +435,11 @@ export function registerTerrainWasm(
     ex.clearDeltaChunks();
     const dg = src.deltas();
     if (dg.isEmpty()) return;
-    const b = dg.bounds();
-    if (!b) return;
     const dataBase = ex.getDeltaDataPtr() >>> 1; // Int16 index
-    const ci0 = Math.floor(b.minX / 64), ci1 = Math.ceil(b.maxX / 64);
-    const cj0 = Math.floor(b.minZ / 64), cj1 = Math.ceil(b.maxZ / 64);
-    for (let ci = ci0; ci < ci1; ci++) {
-      for (let cj = cj0; cj < cj1; cj++) {
-        // Quick scan for non-zero chunk
-        let nonZero = false;
-        const x0 = ci * 64, z0 = cj * 64;
-        outer: for (let dz = 0; dz < 64; dz++) {
-          for (let dx = 0; dx < 64; dx++) {
-            if (dg.getUnits(x0 + dx, z0 + dz) !== 0) { nonZero = true; break outer; }
-          }
-        }
-        if (!nonZero) continue;
-        const slot = ex.addDeltaChunkMeta(ci, cj);
-        if (slot < 0) break;
-        const dst = dataBase + slot * 4096;
-        for (let dz = 0; dz < 64; dz++) {
-          const row = dst + dz * 64;
-          for (let dx = 0; dx < 64; dx++) {
-            i16[row + dx] = dg.getUnits(x0 + dx, z0 + dz);
-          }
-        }
-      }
-    }
+    dg.forEachChunk((ci, cj, data) => {
+      const slot = ex.addDeltaChunkMeta(ci, cj);
+      if (slot >= 0) i16.set(data, dataBase + slot * 4096);
+    });
   }
 
   function uploadPaint(rt: KernelRuntime): void {
@@ -459,32 +447,11 @@ export function registerTerrainWasm(
     ex.clearPaintChunks();
     const pg = src.paint();
     if (pg.isEmpty()) return;
-    const b = pg.bounds();
-    if (!b) return;
     const dataBase = ex.getPaintDataPtr();
-    const ci0 = Math.floor(b.minX / 64), ci1 = Math.ceil(b.maxX / 64);
-    const cj0 = Math.floor(b.minZ / 64), cj1 = Math.ceil(b.maxZ / 64);
-    for (let ci = ci0; ci < ci1; ci++) {
-      for (let cj = cj0; cj < cj1; cj++) {
-        let nonZero = false;
-        const x0 = ci * 64, z0 = cj * 64;
-        outer: for (let dz = 0; dz < 64; dz++) {
-          for (let dx = 0; dx < 64; dx++) {
-            if (pg.get(x0 + dx, z0 + dz) !== 0) { nonZero = true; break outer; }
-          }
-        }
-        if (!nonZero) continue;
-        const slot = ex.addPaintChunkMeta(ci, cj);
-        if (slot < 0) break;
-        const dst = dataBase + slot * 4096;
-        for (let dz = 0; dz < 64; dz++) {
-          const row = dst + dz * 64;
-          for (let dx = 0; dx < 64; dx++) {
-            u8[row + dx] = pg.get(x0 + dx, z0 + dz);
-          }
-        }
-      }
-    }
+    pg.forEachChunk((ci, cj, data) => {
+      const slot = ex.addPaintChunkMeta(ci, cj);
+      if (slot >= 0) u8.set(data, dataBase + slot * 4096);
+    });
   }
 
   function syncPassMask(rt: KernelRuntime): void {
@@ -497,6 +464,28 @@ export function registerTerrainWasm(
       else hi |= 1 << (i - 32);
     }
     rt.ex.setPassMask(lo >>> 0, hi >>> 0);
+  }
+
+  function syncTerrainShape(rt: KernelRuntime): boolean {
+    const switchedOwner = activeBridge !== bridge;
+    if (switchedOwner) {
+      activeBridge = bridge;
+      staticDirty = true;
+      walkDirty = true;
+      deltasDirty = true;
+      paintDirty = true;
+      extraSyncedCount = 0;
+    }
+    if (deltasDirty) {
+      uploadDeltas(rt);
+      deltasDirty = false;
+    }
+    if (staticDirty) {
+      uploadZonesAndTerrain(rt);
+      rt.ex.invalidateHeights();
+      staticDirty = false;
+    }
+    return switchedOwner;
   }
 
   const bridge: TerrainWasmBridge = {
@@ -525,25 +514,7 @@ export function registerTerrainWasm(
       }
     },
     syncAndPrepare(rt: KernelRuntime) {
-      const switchedOwner = activeBridge !== bridge;
-      if (switchedOwner) {
-        activeBridge = bridge;
-        staticDirty = true;
-        walkDirty = true;
-        deltasDirty = true;
-        paintDirty = true;
-        extraSyncedCount = 0;
-      }
-      if (deltasDirty) {
-        uploadDeltas(rt);
-        deltasDirty = false;
-      }
-      if (staticDirty) {
-        uploadZonesAndStatic(rt);
-        // Re-upload deltas height invalidation after static reset
-        rt.ex.invalidateHeights();
-        staticDirty = false;
-      }
+      const switchedOwner = syncTerrainShape(rt);
       if (walkDirty) {
         uploadWalkGrid(rt);
         walkDirty = false;
@@ -562,6 +533,7 @@ export function registerTerrainWasm(
         rt.ex.addExtraCollider(c.x, c.z, c.r);
       }
       syncPassMask(rt);
+      activeEnsureStatic = () => ensureStaticUploaded(rt);
       activeEnsureFlora = (ci, cj) => {
         const key = ci * 1_000_003 + cj;
         if (uploadedFloraChunks.has(key)) return;
@@ -576,7 +548,7 @@ export function registerTerrainWasm(
       if (!rt || wasmBusy) return null;
       wasmBusy = true;
       try {
-        bridge.syncAndPrepare(rt);
+        syncTerrainShape(rt);
         if (paintDirty) {
           uploadPaint(rt);
           paintDirty = false;
@@ -585,10 +557,13 @@ export function registerTerrainWasm(
         const posStart = rt.ex.getChunkPosPtr() >>> 2;
         const nrmStart = rt.ex.getChunkNrmPtr() >>> 2;
         const colStart = rt.ex.getChunkColPtr() >>> 2;
+        const boundsStart = rt.ex.getChunkBoundsPtr() >>> 2;
         return {
           positions: rt.f32.slice(posStart, posStart + floatCount),
           normals: rt.f32.slice(nrmStart, nrmStart + floatCount),
           colors: rt.f32.slice(colStart, colStart + floatCount),
+          minY: rt.f32[boundsStart],
+          maxY: rt.f32[boundsStart + 1],
         };
       } finally {
         wasmBusy = false;
@@ -599,7 +574,7 @@ export function registerTerrainWasm(
       if (!rt || wasmBusy) return null;
       wasmBusy = true;
       try {
-        bridge.syncAndPrepare(rt);
+        syncTerrainShape(rt);
         if (paintDirty) {
           uploadPaint(rt);
           paintDirty = false;

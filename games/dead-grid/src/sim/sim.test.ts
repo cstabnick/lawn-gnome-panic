@@ -124,10 +124,43 @@ describe('Dead Grid 256K WASM simulation', () => {
     const tile = sim.inspectTile(ax, ay);
     expect(tile.food + tile.water + tile.gear).toBeGreaterThan(0);
 
-    for (const overlay of [0, 1, 2, 3, 4] as const) {
+    for (const overlay of [0, 1, 2, 3, 4, 5] as const) {
       sim.renderFrame(overlay, overlay === 0);
       expect(sim.frameRgba[0]).not.toBe(0);
     }
+  });
+
+  it('decays unmaintained roads, expands territory, and federates societies into Republics', async () => {
+    const decaySim = await createSim(555, {
+      ...DEFAULT_PARAMS,
+      initialHumans: 100,
+      initialZombies: 100,
+      initialAnimals: 100,
+      roadDecayRate: 2.0,
+    });
+    const initialRoads = decaySim.readStats().roadTiles;
+    decaySim.step(400);
+    expect(decaySim.readStats().roadTiles).toBeLessThan(initialRoads);
+
+    const repSim = await createSim(1337, {
+      ...DEFAULT_PARAMS,
+      initialHumans: 6500,
+      initialZombies: 1200,
+      initialAnimals: 1500,
+      cooperationBias: 0.9,
+      banditry: 0.05,
+      settlementGrowth: 1.6,
+      roadBuildCost: 0.4,
+      roadDecayRate: 0.1,
+    });
+    repSim.step(500);
+    const stats = repSim.readStats();
+    expect(stats.territoryTiles).toBeGreaterThan(500);
+    expect(stats.republics).toBeGreaterThan(0);
+    expect(repSim.readRepublics().length).toBeGreaterThan(0);
+
+    repSim.renderFrame(5, true);
+    expect(repSim.frameRgba[0]).not.toBe(0);
   });
 
   it('saves, exports, imports, and deletes custom scenarios', () => {

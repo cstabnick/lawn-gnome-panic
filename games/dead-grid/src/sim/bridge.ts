@@ -2,11 +2,12 @@ import { SIM_WASM_BASE64 } from '../wasm/simBytes';
 
 export const MAX_AGENTS = 262144;
 export const MAX_FACTIONS = 32;
+export const MAX_REPUBLICS = 8;
 export const MAX_EVENTS = 64;
 
 export type GridSize = 512 | 768 | 1024;
 export type WaterStyle = 0 | 1 | 2 | 3; // 0=Coastal, 1=River Valleys, 2=Archipelago, 3=Arid Basin
-export type OverlayMode = 0 | 1 | 2 | 3 | 4; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography
+export type OverlayMode = 0 | 1 | 2 | 3 | 4 | 5; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography, 5=Nations
 export type BrushTool = 'inspect' | 'zombies' | 'humans' | 'animals' | 'airdrop' | 'clear';
 
 export const WATER_STYLE_NAMES = [
@@ -66,10 +67,25 @@ const SETTLEMENT_SUFFIXES = [
   'Bastion', 'Haven', 'Watch', 'Crossing', 'Depot', 'Refuge', 'Hold', 'Reach',
 ];
 
+const REPUBLIC_NAMES = [
+  'Chernarus Republic',
+  'Northern Commonwealth',
+  'Green Sea Federation',
+  'Coastal Compact',
+  'Highland Union',
+  'Valley League',
+  'Bastion Coalition',
+  'Frontier Directorate',
+];
+
 export function settlementName(slot: number, seed: number): string {
   const idx = (slot * 7 + (seed % 32)) % SETTLEMENT_PREFIXES.length;
   const sfx = (slot * 3 + ((seed >> 3) % 8)) % SETTLEMENT_SUFFIXES.length;
   return `${SETTLEMENT_PREFIXES[idx]} ${SETTLEMENT_SUFFIXES[sfx]}`;
+}
+
+export function republicName(slot: number, seed: number): string {
+  return REPUBLIC_NAMES[(slot * 3 + (seed % 8)) % REPUBLIC_NAMES.length];
 }
 
 export interface SimParams {
@@ -87,6 +103,8 @@ export interface SimParams {
   banditry: number;
   cooperationBias: number;
   zombieMigration: number;
+  roadDecayRate: number;
+  roadBuildCost: number;
   initialHumans: number;
   initialZombies: number;
   initialAnimals: number;
@@ -108,6 +126,8 @@ export const DEFAULT_PARAMS: SimParams = {
   banditry: 0.22,
   cooperationBias: 0.65,
   zombieMigration: 0.2,
+  roadDecayRate: 0.35,
+  roadBuildCost: 1.0,
   initialHumans: 3000,
   initialZombies: 14000,
   initialAnimals: 2500,
@@ -127,6 +147,23 @@ export const PRESETS: PresetDef[] = [
     label: 'Classic Chernarus',
     description: '512x512 coast, 14k zombies, 3k humans, 2.5k wildlife.',
     params: { ...DEFAULT_PARAMS },
+  },
+  {
+    id: 'rise-of-republics',
+    label: 'Rise of Republics',
+    description: 'Cooperative 768x768 world where societies federate into Republics and build highway networks.',
+    params: {
+      ...DEFAULT_PARAMS,
+      gridSize: 768,
+      waterStyle: 1,
+      cooperationBias: 0.85,
+      banditry: 0.1,
+      settlementGrowth: 1.4,
+      roadBuildCost: 0.6,
+      initialHumans: 7500,
+      initialZombies: 6000,
+      initialAnimals: 3000,
+    },
   },
   {
     id: 'mega-horde',
@@ -267,6 +304,10 @@ export interface SimStats {
   activeAgents: number;
   gridW: number;
   gridH: number;
+  republics: number;
+  roadTiles: number;
+  roadsBuilt: number;
+  territoryTiles: number;
 }
 
 export interface FactionInfo {
@@ -284,6 +325,18 @@ export interface FactionInfo {
   colorAbgr: number;
   kills: number;
   foundedTick: number;
+  republicId: number; // -1 if independent
+}
+
+export interface RepublicInfo {
+  id: number;
+  name: string;
+  capitalId: number;
+  members: number;
+  pop: number;
+  treasury: number;
+  colorCss: string;
+  foundedTick: number;
 }
 
 export interface SimEvent {
@@ -300,6 +353,7 @@ export interface TileInspection {
   tileType: number;
   tileName: string;
   elevation: number;
+  roadCond: number;
   food: number;
   water: number;
   gear: number;
@@ -346,6 +400,16 @@ interface SimWasmExports extends WebAssembly.Exports {
   getFactionClaimPtr(): number;
   getScentHeatPtr(): number;
   getFrameRgbaPtr(): number;
+  getRoadCondPtr(): number;
+
+  getRepActivePtr(): number;
+  getRepCapitalPtr(): number;
+  getRepMembersPtr(): number;
+  getRepColorPtr(): number;
+  getRepPopPtr(): number;
+  getRepTreasuryPtr(): number;
+  getRepFoundedPtr(): number;
+  getFacRepublicPtr(): number;
 
   getFacActivePtr(): number;
   getFacLevelPtr(): number;
@@ -418,7 +482,17 @@ export class DeadGridSim {
   readonly lootGear: Uint8Array;
   readonly factionClaim: Uint8Array;
   readonly scentHeat: Uint8Array;
+  readonly roadCond: Uint8Array;
   private readonly frameRgbaFull: Uint8ClampedArray;
+
+  private readonly repActive: Uint8Array;
+  private readonly repCapital: Uint8Array;
+  private readonly repMembers: Uint8Array;
+  private readonly repColor: Uint32Array;
+  private readonly repPop: Uint32Array;
+  private readonly repTreasury: Float32Array;
+  private readonly repFounded: Uint32Array;
+  private readonly facRepublic: Uint8Array;
 
   private readonly facActive: Uint8Array;
   private readonly facLevel: Uint8Array;
@@ -475,7 +549,17 @@ export class DeadGridSim {
     this.lootGear = new Uint8Array(buf, ex.getLootGearPtr(), maxGridN);
     this.factionClaim = new Uint8Array(buf, ex.getFactionClaimPtr(), maxGridN);
     this.scentHeat = new Uint8Array(buf, ex.getScentHeatPtr(), maxGridN);
+    this.roadCond = new Uint8Array(buf, ex.getRoadCondPtr(), maxGridN);
     this.frameRgbaFull = new Uint8ClampedArray(buf, ex.getFrameRgbaPtr(), maxGridN * 4);
+
+    this.repActive = new Uint8Array(buf, ex.getRepActivePtr(), MAX_REPUBLICS);
+    this.repCapital = new Uint8Array(buf, ex.getRepCapitalPtr(), MAX_REPUBLICS);
+    this.repMembers = new Uint8Array(buf, ex.getRepMembersPtr(), MAX_REPUBLICS);
+    this.repColor = new Uint32Array(buf, ex.getRepColorPtr(), MAX_REPUBLICS);
+    this.repPop = new Uint32Array(buf, ex.getRepPopPtr(), MAX_REPUBLICS);
+    this.repTreasury = new Float32Array(buf, ex.getRepTreasuryPtr(), MAX_REPUBLICS);
+    this.repFounded = new Uint32Array(buf, ex.getRepFoundedPtr(), MAX_REPUBLICS);
+    this.facRepublic = new Uint8Array(buf, ex.getFacRepublicPtr(), MAX_FACTIONS);
 
     this.facActive = new Uint8Array(buf, ex.getFacActivePtr(), MAX_FACTIONS);
     this.facLevel = new Uint8Array(buf, ex.getFacLevelPtr(), MAX_FACTIONS);
@@ -532,6 +616,8 @@ export class DeadGridSim {
     this.cfgView[13] = p.initialZombies;
     this.cfgView[14] = p.initialAnimals;
     this.cfgView[15] = p.cityDensity;
+    this.cfgView[16] = p.roadDecayRate;
+    this.cfgView[17] = p.roadBuildCost;
   }
 
   reset(seed: number, params: SimParams): void {
@@ -602,6 +688,10 @@ export class DeadGridSim {
       activeAgents: s[22],
       gridW: s[23] || this.gridW,
       gridH: s[24] || this.gridH,
+      republics: s[25],
+      roadTiles: s[26],
+      roadsBuilt: s[27],
+      territoryTiles: s[28],
     };
   }
 
@@ -609,6 +699,7 @@ export class DeadGridSim {
     const out: FactionInfo[] = [];
     for (let f = 0; f < MAX_FACTIONS; f++) {
       if (this.facActive[f] === 0) continue;
+      const rep = this.facRepublic[f];
       out.push({
         id: f,
         name: settlementName(f, this.seed),
@@ -624,6 +715,25 @@ export class DeadGridSim {
         colorAbgr: this.facColor[f],
         kills: this.facKills[f],
         foundedTick: this.facFounded[f],
+        republicId: rep < MAX_REPUBLICS ? rep : -1,
+      });
+    }
+    return out;
+  }
+
+  readRepublics(): RepublicInfo[] {
+    const out: RepublicInfo[] = [];
+    for (let r = 0; r < MAX_REPUBLICS; r++) {
+      if (this.repActive[r] === 0) continue;
+      out.push({
+        id: r,
+        name: republicName(r, this.seed),
+        capitalId: this.repCapital[r],
+        members: this.repMembers[r],
+        pop: this.repPop[r],
+        treasury: Math.round(this.repTreasury[r]),
+        colorCss: abgrToCss(this.repColor[r]),
+        foundedTick: this.repFounded[r],
       });
     }
     return out;
@@ -648,6 +758,9 @@ export class DeadGridSim {
       else if (type === 4) text = `Day ${Math.floor(tick / 200)}: Horde breached ${name}'s wall`;
       else if (type === 5) text = `Day ${Math.floor(tick / 200)}: ${name} launched a raid`;
       else if (type === 6) text = `Day ${Math.floor(tick / 200)}: Survivors banded into Group #${argA}`;
+      else if (type === 7) text = `Day ${Math.floor(tick / 200)}: ${name} began highway to ${settlementName(argB, this.seed)}`;
+      else if (type === 8) text = `Day ${Math.floor(tick / 200)}: ${republicName(argA, this.seed)} founded!`;
+      else if (type === 9) text = `Day ${Math.floor(tick / 200)}: ${settlementName(argB, this.seed)} joined ${republicName(argA, this.seed)}`;
       if (text) out.push({ tick, type, argA, argB, text });
     }
     this.lastEventRead = writeIdx;
@@ -666,6 +779,7 @@ export class DeadGridSim {
       tileType: t,
       tileName: TILE_NAMES[t] ?? 'Unknown',
       elevation: this.elevation[idx],
+      roadCond: this.roadCond[idx],
       food: this.lootFood[idx],
       water: this.lootWater[idx],
       gear: this.lootGear[idx],

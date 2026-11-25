@@ -8,10 +8,11 @@ export const MAX_HASH_DIM: i32 = 256;
 export const MAX_HASH_N: i32 = 65536;   // 256 * 256
 export const MAX_AGENTS: i32 = 262144;  // 256k
 export const MAX_FACTIONS: i32 = 32;
+export const MAX_REPUBLICS: i32 = 8;
 export const MAX_GROUPS: i32 = 256;
 export const MAX_EVENTS: i32 = 64;
 
-// ---- Fixed Linear Memory Map (0x000000 .. 0x17D0000 < 25 MB) ----
+// ---- Fixed Linear Memory Map (0x000000 .. 0x18D0000 < 27 MB = 432 pages) ----
 const CFG_PTR: usize        = 0x008000; // 64 * f32 (256 B)
 const STATS_PTR: usize      = 0x008100; // 32 * i32 (128 B)
 const EVENTS_PTR: usize     = 0x008200; // 64 * 16 B (1024 B)
@@ -44,6 +45,22 @@ const SCR_GRP_SX: usize     = 0x00A2A0; // 256 * f32 (1024 B)
 const SCR_GRP_SY: usize     = 0x00A6A0; // 256 * f32 (1024 B)
 const SCR_HUB_X: usize      = 0x00AAA0; // 96 * i32 (384 B)
 const SCR_HUB_Y: usize      = 0x00AC20; // 96 * i32 (384 B -> 0x00ADA0)
+
+// Republic & Road Infrastructure tables (0x00B000 .. 0x00B600)
+const REP_ACTIVE: usize     = 0x00B000; // 8 * u8
+const REP_CAPITAL: usize    = 0x00B010; // 8 * u8
+const REP_MEMBERS: usize    = 0x00B020; // 8 * u8
+const REP_COLOR: usize      = 0x00B040; // 8 * u32 (32 B)
+const REP_POP: usize        = 0x00B060; // 8 * u32 (32 B)
+const REP_TREASURY: usize   = 0x00B080; // 8 * f32 (32 B)
+const REP_FOUNDED: usize    = 0x00B0A0; // 8 * u32 (32 B)
+
+const FAC_REPUBLIC: usize   = 0x00B100; // 32 * u8 (255 = independent)
+const FAC_ROAD_ACTIVE: usize = 0x00B120; // 32 * u8
+const FAC_ROAD_TX: usize    = 0x00B140; // 32 * u16 (64 B)
+const FAC_ROAD_TY: usize    = 0x00B180; // 32 * u16 (64 B)
+const FAC_ROAD_CX: usize    = 0x00B1C0; // 32 * u16 (64 B)
+const FAC_ROAD_CY: usize    = 0x00B200; // 32 * u16 (64 B)
 
 const TILE_TYPE: usize      = 0x010000; // 1048576 * u8 (1 MB)
 const ELEVATION: usize      = 0x110000; // 1048576 * u8 (1 MB)
@@ -84,6 +101,7 @@ const AG_VX: usize          = 0x11D0000; // 262144 * f32 (1 MB)
 const AG_VY: usize          = 0x12D0000; // 262144 * f32 (1 MB)
 
 const FRAME_RGBA: usize     = 0x13D0000; // 1048576 * u32 (4 MB -> 0x17D0000)
+const ROAD_COND: usize      = 0x17D0000; // 1048576 * u8 (1 MB -> 0x18D0000)
 
 // ---- Tile types ----
 const TILE_WATER: u8      = 0;
@@ -166,6 +184,8 @@ const CFG_INIT_HUMANS: i32       = 12;
 const CFG_INIT_ZOMBIES: i32      = 13;
 const CFG_INIT_ANIMALS: i32      = 14;
 const CFG_CITY_DENSITY: i32      = 15;
+const CFG_ROAD_DECAY: i32        = 16;
+const CFG_ROAD_COST: i32         = 17;
 
 // Stats indices (i32[32])
 const ST_TICK: i32           = 0;
@@ -193,14 +213,21 @@ const ST_EVENT_IDX: i32      = 21;
 const ST_ACTIVE_AG: i32      = 22;
 const ST_GRID_W: i32         = 23;
 const ST_GRID_H: i32         = 24;
+const ST_REPUBLICS: i32      = 25;
+const ST_ROAD_TILES: i32     = 26;
+const ST_ROADS_BUILT: i32    = 27;
+const ST_TERRITORY_TILES: i32 = 28;
 
 // Event types
-const EVT_FOUNDED: i32      = 1;
-const EVT_UPGRADED: i32     = 2;
-const EVT_FALLEN: i32       = 3;
-const EVT_HORDE_BREACH: i32 = 4;
-const EVT_RAID: i32         = 5;
-const EVT_GROUP_FORMED: i32 = 6;
+const EVT_FOUNDED: i32         = 1;
+const EVT_UPGRADED: i32        = 2;
+const EVT_FALLEN: i32          = 3;
+const EVT_HORDE_BREACH: i32    = 4;
+const EVT_RAID: i32            = 5;
+const EVT_GROUP_FORMED: i32    = 6;
+const EVT_ROAD_BUILT: i32      = 7;
+const EVT_REPUBLIC_FORMED: i32 = 8;
+const EVT_REPUBLIC_JOINED: i32 = 9;
 
 // ---- Pointer getters ----
 export function getCfgPtr(): usize { return CFG_PTR; }
@@ -214,6 +241,16 @@ export function getLootGearPtr(): usize { return LOOT_GEAR; }
 export function getFactionClaimPtr(): usize { return FACTION_CLAIM; }
 export function getScentHeatPtr(): usize { return SCENT_HEAT; }
 export function getFrameRgbaPtr(): usize { return FRAME_RGBA; }
+export function getRoadCondPtr(): usize { return ROAD_COND; }
+
+export function getRepActivePtr(): usize { return REP_ACTIVE; }
+export function getRepCapitalPtr(): usize { return REP_CAPITAL; }
+export function getRepMembersPtr(): usize { return REP_MEMBERS; }
+export function getRepColorPtr(): usize { return REP_COLOR; }
+export function getRepPopPtr(): usize { return REP_POP; }
+export function getRepTreasuryPtr(): usize { return REP_TREASURY; }
+export function getRepFoundedPtr(): usize { return REP_FOUNDED; }
+export function getFacRepublicPtr(): usize { return FAC_REPUBLIC; }
 
 export function getFacActivePtr(): usize { return FAC_ACTIVE; }
 export function getFacLevelPtr(): usize { return FAC_LEVEL; }
@@ -437,6 +474,7 @@ function drawRoad(x0: i32, y0: i32, x1: i32, y1: i32): void {
         const cur = tileAt(nx, ny);
         if (cur != TILE_WATER && cur != TILE_CITY && cur != TILE_MILITARY && cur != TILE_MOUNTAIN) {
           setTile(nx, ny, TILE_ROAD);
+          store<u8>(ROAD_COND + <usize>(ny * gridW + nx), 150);
         }
       }
     }
@@ -589,7 +627,10 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
   memory.fill(EVENTS_PTR, 0, MAX_EVENTS * 16);
   memory.fill(FAC_ACTIVE, 0, 0x0820);
   memory.fill(GRP_ACTIVE, 0, 0x1000);
+  memory.fill(REP_ACTIVE, 0, 0x0260);
+  memory.fill(FAC_REPUBLIC, 255, MAX_FACTIONS);
   memory.fill(FACTION_CLAIM, 0, <usize>gridN);
+  memory.fill(ROAD_COND, 0, <usize>gridN);
   memory.fill(SCENT_HEAT, 0, <usize>gridN);
   memory.fill(SCENT_SCRATCH, 0, <usize>gridN);
   memory.fill(AG_KIND, 0, MAX_AGENTS);
@@ -1089,6 +1130,19 @@ function resolvePrisonersDilemma(a: i32, b: i32): void {
     }
     store<u8>(AG_STATE + ua, STATE_TRADE);
     store<u8>(AG_STATE + ub, STATE_TRADE);
+
+    // Society diplomacy: mutual cooperation warms relations
+    if (load<u8>(AG_SOCIAL + ua) == SOC_SOCIETY && load<u8>(AG_SOCIAL + ub) == SOC_SOCIETY) {
+      const fA = <i32>load<u16>(AG_GROUP + (ua << 1));
+      const fB = <i32>load<u16>(AG_GROUP + (ub << 1));
+      if (fA != fB && fA < MAX_FACTIONS && fB < MAX_FACTIONS) {
+        const pAB = FAC_REL + <usize>(fA * MAX_FACTIONS + fB);
+        const pBA = FAC_REL + <usize>(fB * MAX_FACTIONS + fA);
+        const nr = <i8>clampI(<i32>load<i8>(pAB) + 6, -100, 100);
+        store<i8>(pAB, nr);
+        store<i8>(pBA, nr);
+      }
+    }
   } else if (!aCoop && bCoop) {
     // A betrays B
     addStat(ST_PD_BETRAYALS, 1);
@@ -1285,7 +1339,9 @@ function stepHuman(i: i32, tick: i32): void {
   let vx: f32 = load<f32>(AG_VX + (u << 2));
   let vy: f32 = load<f32>(AG_VY + (u << 2));
   let state: u8 = STATE_ROAM;
-  const spd = cfg(CFG_HUMAN_SPEED) * (curTile == TILE_ROAD ? 1.3 : (curTile == TILE_FOREST || curTile == TILE_SWAMP ? 0.8 : 1.0));
+  const rCond = curTile == TILE_ROAD ? <i32>load<u8>(ROAD_COND + tileIdx) : 0;
+  const roadMult: f32 = curTile == TILE_ROAD ? (rCond >= 200 ? 1.45 : 1.28) : 1.0;
+  const spd = cfg(CFG_HUMAN_SPEED) * (curTile == TILE_ROAD ? roadMult : (curTile == TILE_FOREST || curTile == TILE_SWAMP ? 0.8 : 1.0));
 
   if (nearZ >= 0) {
     const zx = load<f32>(AG_X + (<usize>nearZ << 2));
@@ -1665,6 +1721,254 @@ function stepAnimal(i: i32, tick: i32): void {
   store<u8>(AG_STATE + u, state);
 }
 
+function updateRoads(tick: i32): void {
+  const decayAmt = <i32>Mathf.max(0.0, cfg(CFG_ROAD_DECAY) * 3.0);
+  if (decayAmt <= 0 && (tick & 31) != 0) return;
+
+  const stride = 16;
+  const phase = tick & 15;
+  for (let i = phase; i < gridN; i += stride) {
+    if (load<u8>(TILE_TYPE + <usize>i) != TILE_ROAD) continue;
+    const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);
+    let cond = <i32>load<u8>(ROAD_COND + <usize>i);
+    if (claim > 0 && claim <= MAX_FACTIONS) {
+      const f = claim - 1;
+      if (load<u8>(FAC_ACTIVE + <usize>f) != 0 && load<f32>(FAC_MATS + (<usize>f << 2)) > 4.0) {
+        if (cond < 220) {
+          cond = clampI(cond + 6, 0, 255);
+          store<u8>(ROAD_COND + <usize>i, <u8>cond);
+          const mp = FAC_MATS + (<usize>f << 2);
+          store<f32>(mp, Mathf.max(0.0, load<f32>(mp) - 0.05));
+        }
+        continue;
+      }
+    }
+    if (decayAmt > 0) {
+      cond -= decayAmt;
+      if (cond <= 0) {
+        store<u8>(ROAD_COND + <usize>i, 0);
+        // Nature reclaims unmaintained road
+        store<u8>(TILE_TYPE + <usize>i, (i & 3) == 0 ? TILE_FOREST : TILE_GRASS);
+      } else {
+        store<u8>(ROAD_COND + <usize>i, <u8>cond);
+      }
+    }
+  }
+}
+
+function stepRoadConstruction(f: i32): void {
+  const u = <usize>f;
+  const roadCost = Mathf.max(0.25, cfg(CFG_ROAD_COST));
+  const active = load<u8>(FAC_ROAD_ACTIVE + u);
+  const matsPtr = FAC_MATS + (u << 2);
+  let mats = load<f32>(matsPtr);
+
+  if (active == 0) {
+    // Late-game expensive investment: Level >= 3, Pop >= 18, Mats >= 70 * cost
+    if (load<u8>(FAC_LEVEL + u) < 3 || load<u16>(FAC_POP + (u << 1)) < 18) return;
+    if (mats < 70.0 * roadCost) return;
+
+    const fx = <i32>load<u16>(FAC_X + (u << 1));
+    const fy = <i32>load<u16>(FAC_Y + (u << 1));
+    let bestT = -1;
+    let bestD2 = 99999999;
+    const myRep = load<u8>(FAC_REPUBLIC + u);
+    for (let o = 0; o < MAX_FACTIONS; o++) {
+      if (o == f || load<u8>(FAC_ACTIVE + <usize>o) == 0) continue;
+      const oRep = load<u8>(FAC_REPUBLIC + <usize>o);
+      const rel = load<i8>(FAC_REL + <usize>(f * MAX_FACTIONS + o));
+      if ((myRep != 255 && myRep == oRep) || rel >= 20) {
+        const ox = <i32>load<u16>(FAC_X + (<usize>o << 1));
+        const oy = <i32>load<u16>(FAC_Y + (<usize>o << 1));
+        const d2 = (ox - fx) * (ox - fx) + (oy - fy) * (oy - fy);
+        if (d2 > 20 * 20 && d2 < bestD2) {
+          bestD2 = d2; bestT = o;
+        }
+      }
+    }
+    if (bestT < 0) return;
+
+    store<u8>(FAC_ROAD_ACTIVE + u, 1);
+    store<u16>(FAC_ROAD_CX + (u << 1), <u16>fx);
+    store<u16>(FAC_ROAD_CY + (u << 1), <u16>fy);
+    store<u16>(FAC_ROAD_TX + (u << 1), load<u16>(FAC_X + (<usize>bestT << 1)));
+    store<u16>(FAC_ROAD_TY + (u << 1), load<u16>(FAC_Y + (<usize>bestT << 1)));
+    pushEvent(EVT_ROAD_BUILT, f, bestT);
+    return;
+  }
+
+  // Advance road by 2 tiles per society step if materials allow
+  const segCost: f32 = 1.6 * roadCost;
+  if (mats < segCost) return;
+  let cx = <i32>load<u16>(FAC_ROAD_CX + (u << 1));
+  let cy = <i32>load<u16>(FAC_ROAD_CY + (u << 1));
+  const tx = <i32>load<u16>(FAC_ROAD_TX + (u << 1));
+  const ty = <i32>load<u16>(FAC_ROAD_TY + (u << 1));
+
+  for (let s = 0; s < 2; s++) {
+    if (abs(cx - tx) <= 2 && abs(cy - ty) <= 2) {
+      store<u8>(FAC_ROAD_ACTIVE + u, 0);
+      break;
+    }
+    if (cx < tx) cx++; else if (cx > tx) cx--;
+    if (cy < ty) cy++; else if (cy > ty) cy--;
+    cx = clampI(cx, 1, gridW - 2);
+    cy = clampI(cy, 1, gridH - 2);
+
+    const cur = tileAt(cx, cy);
+    if (cur != TILE_WATER && cur != TILE_MOUNTAIN) {
+      if (cur != TILE_ROAD) addStat(ST_ROADS_BUILT, 1);
+      setTile(cx, cy, TILE_ROAD);
+      store<u8>(ROAD_COND + <usize>(cy * gridW + cx), 255);
+      store<u8>(FACTION_CLAIM + <usize>(cy * gridW + cx), <u8>(f + 1));
+    }
+    mats = Mathf.max(0.0, mats - segCost);
+  }
+  store<f32>(matsPtr, mats);
+  store<u16>(FAC_ROAD_CX + (u << 1), <u16>cx);
+  store<u16>(FAC_ROAD_CY + (u << 1), <u16>cy);
+}
+
+function stepTerritory(tick: i32): void {
+  // Organic nation-state territory expansion from claimed borders
+  const phase = (tick >> 3) & 15;
+  for (let y = 2 + phase; y < gridH - 2; y += 16) {
+    const row = y * gridW;
+    for (let x = 2; x < gridW - 2; x += 2) {
+      const idx = row + x;
+      const claim = <i32>load<u8>(FACTION_CLAIM + <usize>idx);
+      if (claim == 0 || claim > MAX_FACTIONS) continue;
+      const f = claim - 1;
+      if (load<u8>(FAC_ACTIVE + <usize>f) == 0) {
+        store<u8>(FACTION_CLAIM + <usize>idx, 0);
+        continue;
+      }
+
+      const pop = <i32>load<u16>(FAC_POP + (<usize>f << 1));
+      const lvl = <i32>load<u8>(FAC_LEVEL + <usize>f);
+      const maxRad = 8 + lvl * 5 + (pop >> 2);
+      const fx = <i32>load<u16>(FAC_X + (<usize>f << 1));
+      const fy = <i32>load<u16>(FAC_Y + (<usize>f << 1));
+      if ((x - fx) * (x - fx) + (y - fy) * (y - fy) > maxRad * maxRad) continue;
+
+      const dir = randInt(4);
+      const nx = x + (dir == 0 ? 1 : (dir == 1 ? -1 : 0));
+      const ny = y + (dir == 2 ? 1 : (dir == 3 ? -1 : 0));
+      const nIdx = ny * gridW + nx;
+      const nt = load<u8>(TILE_TYPE + <usize>nIdx);
+      if (nt == TILE_WATER || nt == TILE_MOUNTAIN) continue;
+
+      const nClaim = <i32>load<u8>(FACTION_CLAIM + <usize>nIdx);
+      if (nClaim == 0) {
+        if (nt == TILE_ROAD || (randU32() & 3) == 0) {
+          store<u8>(FACTION_CLAIM + <usize>nIdx, <u8>claim);
+        }
+      } else if (nClaim != claim && nClaim <= MAX_FACTIONS) {
+        const o = nClaim - 1;
+        const myRep = load<u8>(FAC_REPUBLIC + <usize>f);
+        const oRep = load<u8>(FAC_REPUBLIC + <usize>o);
+        if (myRep != 255 && myRep == oRep) continue; // Republic allies respect borders
+        if (load<i8>(FAC_REL + <usize>(f * MAX_FACTIONS + o)) < -20 && pop > <i32>load<u16>(FAC_POP + (<usize>o << 1)) + 4) {
+          if ((randU32() & 7) == 0) store<u8>(FACTION_CLAIM + <usize>nIdx, <u8>claim);
+        }
+      }
+    }
+  }
+}
+
+function stepDiplomacyAndRepublics(tick: i32): void {
+  // Update Republic memberships, populations & treasury aid
+  for (let r = 0; r < MAX_REPUBLICS; r++) {
+    if (load<u8>(REP_ACTIVE + <usize>r) == 0) continue;
+    let members: u8 = 0;
+    let totalPop: u32 = 0;
+    let cap: u8 = 255;
+    let bestPop = 0;
+    for (let f = 0; f < MAX_FACTIONS; f++) {
+      if (load<u8>(FAC_ACTIVE + <usize>f) != 0 && load<u8>(FAC_REPUBLIC + <usize>f) == <u8>r) {
+        members++;
+        const p = <i32>load<u16>(FAC_POP + (<usize>f << 1));
+        totalPop += <u32>p;
+        if (p > bestPop) { bestPop = p; cap = <u8>f; }
+      }
+    }
+    if (members < 2) {
+      // Dissolve Republic if < 2 active members remain
+      store<u8>(REP_ACTIVE + <usize>r, 0);
+      for (let f = 0; f < MAX_FACTIONS; f++) {
+        if (load<u8>(FAC_REPUBLIC + <usize>f) == <u8>r) store<u8>(FAC_REPUBLIC + <usize>f, 255);
+      }
+    } else {
+      store<u8>(REP_MEMBERS + <usize>r, members);
+      store<u8>(REP_CAPITAL + <usize>r, cap);
+      store<u32>(REP_POP + (<usize>r << 2), totalPop);
+      // Pool surplus & aid struggling members
+      const tPtr = REP_TREASURY + (<usize>r << 2);
+      let treas = load<f32>(tPtr);
+      for (let f = 0; f < MAX_FACTIONS; f++) {
+        if (load<u8>(FAC_ACTIVE + <usize>f) == 0 || load<u8>(FAC_REPUBLIC + <usize>f) != <u8>r) continue;
+        const fp = FAC_FOOD + (<usize>f << 2);
+        const fFood = load<f32>(fp);
+        if (fFood > 45.0) { store<f32>(fp, fFood - 1.5); treas += 1.5; }
+        else if (fFood < 14.0 && treas >= 2.0) { store<f32>(fp, fFood + 2.0); treas -= 2.0; }
+      }
+      store<f32>(tPtr, treas);
+    }
+  }
+
+  // Form new Republics or join existing ones when FAC_REL >= 40
+  if ((tick & 31) != 0) return;
+  for (let a = 0; a < MAX_FACTIONS; a++) {
+    if (load<u8>(FAC_ACTIVE + <usize>a) == 0 || load<u8>(FAC_ETHOS + <usize>a) == ETHOS_RAIDER) continue;
+    const repA = load<u8>(FAC_REPUBLIC + <usize>a);
+    const ax = <i32>load<u16>(FAC_X + (<usize>a << 1));
+    const ay = <i32>load<u16>(FAC_Y + (<usize>a << 1));
+    for (let b = a + 1; b < MAX_FACTIONS; b++) {
+      if (load<u8>(FAC_ACTIVE + <usize>b) == 0 || load<u8>(FAC_ETHOS + <usize>b) == ETHOS_RAIDER) continue;
+      const pAB = FAC_REL + <usize>(a * MAX_FACTIONS + b);
+      let rel = <i32>load<i8>(pAB);
+      // Peaceful neighbors warm diplomatic ties over time
+      if ((tick & 63) == 0 && rel < 60) {
+        const bx = <i32>load<u16>(FAC_X + (<usize>b << 1));
+        const by = <i32>load<u16>(FAC_Y + (<usize>b << 1));
+        if ((bx - ax) * (bx - ax) + (by - ay) * (by - ay) < 160 * 160) {
+          rel = clampI(rel + 4, -100, 100);
+          store<i8>(pAB, <i8>rel);
+          store<i8>(FAC_REL + <usize>(b * MAX_FACTIONS + a), <i8>rel);
+        }
+      }
+      if (rel < 40) continue;
+      const repB = load<u8>(FAC_REPUBLIC + <usize>b);
+      if (repA == 255 && repB == 255) {
+        let rSlot = -1;
+        for (let r = 0; r < MAX_REPUBLICS; r++) {
+          if (load<u8>(REP_ACTIVE + <usize>r) == 0) { rSlot = r; break; }
+        }
+        if (rSlot >= 0) {
+          const ru = <usize>rSlot;
+          store<u8>(REP_ACTIVE + ru, 1);
+          store<u8>(REP_CAPITAL + ru, <u8>a);
+          store<u8>(REP_MEMBERS + ru, 2);
+          store<u32>(REP_COLOR + (ru << 2), load<u32>(FAC_COLOR + (<usize>a << 2)));
+          store<u32>(REP_POP + (ru << 2), <u32>load<u16>(FAC_POP + (<usize>a << 1)) + <u32>load<u16>(FAC_POP + (<usize>b << 1)));
+          store<f32>(REP_TREASURY + (ru << 2), 20.0);
+          store<u32>(REP_FOUNDED + (ru << 2), <u32>tick);
+          store<u8>(FAC_REPUBLIC + <usize>a, <u8>rSlot);
+          store<u8>(FAC_REPUBLIC + <usize>b, <u8>rSlot);
+          pushEvent(EVT_REPUBLIC_FORMED, rSlot, a);
+        }
+      } else if (<i32>repA < MAX_REPUBLICS && repB == 255) {
+        store<u8>(FAC_REPUBLIC + <usize>b, repA);
+        pushEvent(EVT_REPUBLIC_JOINED, <i32>repA, b);
+      } else if (<i32>repB < MAX_REPUBLICS && repA == 255) {
+        store<u8>(FAC_REPUBLIC + <usize>a, repB);
+        pushEvent(EVT_REPUBLIC_JOINED, <i32>repB, a);
+      }
+      break;
+    }
+  }
+}
+
 function stepSocieties(tick: i32): void {
   memory.fill(SCR_FAC_COUNTS, 0, MAX_FACTIONS * 4);
   for (let i = 0; i < activeLimit; i++) {
@@ -1733,7 +2037,11 @@ function stepSocieties(tick: i32): void {
       claimTerritory(f, fx, fy, 6 + <i32>nextLvl * 3, nextLvl >= 2);
       pushEvent(EVT_UPGRADED, f, <i32>nextLvl);
     }
+
+    stepRoadConstruction(f);
   }
+  stepTerritory(tick);
+  stepDiplomacyAndRepublics(tick);
 }
 
 function recountAll(): void {
@@ -1779,6 +2087,18 @@ function recountAll(): void {
     if (load<u8>(FAC_ACTIVE + <usize>f) != 0) facCount++;
   }
 
+  let repCount = 0;
+  for (let r = 0; r < MAX_REPUBLICS; r++) {
+    if (load<u8>(REP_ACTIVE + <usize>r) != 0) repCount++;
+  }
+
+  let roadTiles = 0;
+  let terrTiles = 0;
+  for (let i = 0; i < gridN; i += 4) {
+    if (load<u8>(TILE_TYPE + <usize>i) == TILE_ROAD) roadTiles += 4;
+    if (load<u8>(FACTION_CLAIM + <usize>i) != 0) terrTiles += 4;
+  }
+
   setStat(ST_HUMANS, hum);
   setStat(ST_ZOMBIES, zom);
   setStat(ST_ANIMALS, ani);
@@ -1792,6 +2112,9 @@ function recountAll(): void {
   setStat(ST_AVG_WATER, hum > 0 ? (sumW * 10) / hum : 0);
   setStat(ST_AVG_GEAR, hum > 0 ? sumG / hum : 0);
   setStat(ST_ACTIVE_AG, activeLimit);
+  setStat(ST_REPUBLICS, repCount);
+  setStat(ST_ROAD_TILES, roadTiles);
+  setStat(ST_TERRITORY_TILES, terrTiles);
 }
 
 export function stepTicks(count: i32): void {
@@ -1802,6 +2125,7 @@ export function stepTicks(count: i32): void {
 
     rebuildSpatialHash();
     updateScentAndLoot(tick);
+    updateRoads(tick);
 
     const migRate = cfg(CFG_ZOMBIE_MIGRATION);
     if (migRate > 0.01 && (tick & 15) == 0) {
@@ -1876,6 +2200,27 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
         const g = clampI(190 - abs(el - 115), 35, 210);
         const b = clampI(80 + (el >> 2), 40, 160);
         col = contour ? 0xFF20252A : (0xFF000000 | (<u32>b << 16) | (<u32>g << 8) | <u32>r);
+      }
+    } else if (overlayMode == 5) {
+      // Nations & Republics overlay with crisp borders
+      const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);
+      if (claim > 0 && claim <= MAX_FACTIONS) {
+        const f = claim - 1;
+        const rep = <i32>load<u8>(FAC_REPUBLIC + <usize>f);
+        const fCol = rep < MAX_REPUBLICS
+          ? load<u32>(REP_COLOR + (<usize>rep << 2))
+          : load<u32>(FAC_COLOR + (<usize>f << 2));
+        const x = i % gridW;
+        const y = i / gridW;
+        const isBorder =
+          (x > 0 && <i32>load<u8>(FACTION_CLAIM + <usize>(i - 1)) != claim) ||
+          (x < gridW - 1 && <i32>load<u8>(FACTION_CLAIM + <usize>(i + 1)) != claim) ||
+          (y > 0 && <i32>load<u8>(FACTION_CLAIM + <usize>(i - gridW)) != claim) ||
+          (y < gridH - 1 && <i32>load<u8>(FACTION_CLAIM + <usize>(i + gridW)) != claim);
+        col = blendABGR(col, fCol, isBorder ? 225 : 135);
+      }
+      if (t == TILE_ROAD && load<u8>(ROAD_COND + <usize>i) >= 200) {
+        col = 0xFFD8D0C8;
       }
     } else if (overlayMode == 1) {
       const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);

@@ -4,6 +4,7 @@ import {
   TIER_NAMES,
   type FactionInfo,
   type OverlayMode,
+  type RepublicInfo,
 } from '../sim/bridge';
 
 export interface ViewportCallbacks {
@@ -127,7 +128,7 @@ export class Viewport {
     this.clampCamera();
   }
 
-  render(sim: DeadGridSim, factions: FactionInfo[]): void {
+  render(sim: DeadGridSim, factions: FactionInfo[], republics: RepublicInfo[] = []): void {
     if (sim.gridW !== this.gridW || sim.gridH !== this.gridH) {
       this.syncWorldSize(sim.gridW, sim.gridH);
     }
@@ -233,12 +234,19 @@ export class Viewport {
       }
     }
 
-    // Settlement markers
+    // Settlement & Republic markers
+    const repMap = new Map<number, RepublicInfo>();
+    for (const r of republics) repMap.set(r.id, r);
+
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const f of factions) {
       const p = this.worldToScreen(f.x, f.y);
       if (p.x < -80 || p.x > w + 80 || p.y < -40 || p.y > h + 40) continue;
+
+      const rep = f.republicId >= 0 ? repMap.get(f.republicId) : undefined;
+      const badgeCol = this.overlay === 5 && rep ? rep.colorCss : f.colorCss;
+      const isCapital = rep && rep.capitalId === f.id;
 
       const badgeR = Math.max(5, Math.min(11, 4 + f.level * 1.5));
       ctx.fillStyle = 'rgba(11, 14, 18, 0.85)';
@@ -246,24 +254,24 @@ export class Viewport {
       ctx.arc(p.x, p.y, badgeR + 2, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = f.colorCss;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = badgeCol;
+      ctx.lineWidth = isCapital ? 3 : 2;
       ctx.beginPath();
       ctx.arc(p.x, p.y, badgeR, 0, Math.PI * 2);
       ctx.stroke();
 
-      const label = `${f.name} · ${f.pop}`;
+      const label = isCapital ? `★ ${rep!.name} · ${rep!.pop}` : `${f.name} · ${f.pop}`;
       ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
       const tw = ctx.measureText(label).width;
       const ly = p.y - badgeR - 11;
       ctx.fillStyle = 'rgba(11, 14, 18, 0.78)';
       ctx.fillRect(p.x - tw / 2 - 5, ly - 8, tw + 10, 16);
-      ctx.fillStyle = '#e6edf3';
+      ctx.fillStyle = isCapital ? '#ffd33d' : '#e6edf3';
       ctx.fillText(label, p.x, ly);
       if (this.zoom >= 3) {
         ctx.font = '500 9px ui-sans-serif, system-ui, sans-serif';
-        ctx.fillStyle = f.colorCss;
-        ctx.fillText(TIER_NAMES[f.level] ?? 'Camp', p.x, p.y + badgeR + 9);
+        ctx.fillStyle = badgeCol;
+        ctx.fillText(rep ? `${TIER_NAMES[f.level] ?? 'Camp'} · ${rep.name}` : (TIER_NAMES[f.level] ?? 'Camp'), p.x, p.y + badgeR + 9);
       }
     }
 

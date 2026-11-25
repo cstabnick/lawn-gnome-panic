@@ -1,4 +1,5 @@
 // The data table of NPC flights (docs/roadmaps/gta-npc-planes.md). Each entry says what flies, where, when, and its route.
+import { ROOTWELL_AIRFIELD } from '../config';
 import { SKY } from './config';
 import { SKY_SOUNDS } from './sounds';
 import { airfieldCircuit, cropPasses, dropRoute, orbitRoute, polyRoute, skyWriterRoute } from './routes';
@@ -42,6 +43,20 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     repeat: 'loop',
     startAirborne: false,
     route: (c) => airfieldCircuit(c.airfield, { x: c.airfield.x - 40, z: c.airfield.z - 22, yaw: c.airfield.yaw }),
+  },
+  {
+    id: 'rootwell-circuit',
+    title: 'Rootwell Aeronautics Circuit',
+    kind: 'hedge-hopper',
+    sound: SKY_SOUNDS.sport,
+    anchor: { x: ROOTWELL_AIRFIELD.x, z: ROOTWELL_AIRFIELD.z },
+    radius: 600,
+    cooldown: 75,
+    presence: { onFor: [120, 200], offFor: [120, 240] },
+    priority: 6,
+    repeat: 'loop',
+    startAirborne: false,
+    route: () => airfieldCircuit(ROOTWELL_AIRFIELD, { x: 1250, z: 545, yaw: Math.PI / 2 }),
   },
   {
     id: 'crop-duster',

@@ -40,7 +40,7 @@ const PROMISED_PAINT: Partial<Record<Exclude<RegionId, 'turfton'>, PaintKind[]>>
   'loch-moss': ['gravel', 'rock'],
   'north-highlands': ['meadow', 'snow'],
   'south-shore': ['sand', 'grass'],
-  'east-campus': ['grass'],
+  'east-campus': ['grass', 'dirt'],
   'west-estates': ['grass', 'meadow'],
   pardonlin: ['grass', 'meadow'],
   'the-unmown': ['meadow', 'moss'],

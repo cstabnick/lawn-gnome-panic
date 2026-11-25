@@ -84,6 +84,7 @@ export interface FollowSpec {
 export type SkyBehaviourId =
   | 'banner-tow'
   | 'airfield-circuit'
+  | 'rootwell-circuit'
   | 'crop-duster'
   | 'scenic-copter'
   | 'sky-writer'

@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159, docs/lore/rulings.md#r-191]
 related: [rootwell-university, the-anthill, desert-airfield, wind-sock-wally, dust-flats]
 ---
 
@@ -24,7 +24,7 @@ The aeronautics department has one working plane and four students. They are gla
 
 ## In the games
 
-Row 46 `m46-starfall-at-the-anthill` ends with the player reaching it after Dean's Leap and flying out, with Wind-Sock Wally on the radio. Site runway-2 (1300, 600), built by E01: planned (batch 3).
+Row 46 `m46-starfall-at-the-anthill` ends with the player reaching it after Dean's Leap and flying out, with Wind-Sock Wally on the radio. Site runway-2 (R-201): a 420 m north-south runway at x 1300 (centre (1300, 600)) with edge lights lit at night; an apron to the west with two Crop Dusters, a Hedge-Hopper and a Sycamore Copter, a pad, a hangar, the "very small tower" (a brick stalk with a glazed cab) and an orange-and-white windsock. The Hedge-Hopper flies circuits ("Rootwell Aeronautics Circuit"); Wally's Charters sometimes fly a visiting professor in. Landing on it earns "Touch and Go".
 
 ## Loose threads
 

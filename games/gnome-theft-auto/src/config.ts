@@ -118,7 +118,20 @@ export interface Airfield {
  * Every airstrip (batch 3, E01). The desert AIRFIELD is first and stays exported on its own; E13 appends runway 2 (the
  * `runway-2` slot in sites.ts) and converts the consumers that must know about both.
  */
-export const AIRFIELDS: readonly Airfield[] = [{ id: 'airfield', ...AIRFIELD }];
+export const AIRFIELDS: readonly Airfield[] = [{ id: 'airfield', ...AIRFIELD }, readAirfield('rootwell-field')];
+
+/** An airstrip from its `site` marker (data yaw, length, width, planeSpots[] {dx, dz, yaw, kind}). */
+function readAirfield(id: string): Airfield {
+  const m = marker('site', id);
+  return {
+    id, x: m.x, z: m.z, yaw: markerNum(m, 'yaw'), length: markerNum(m, 'length'), width: markerNum(m, 'width'),
+    planeSpots: (m.data!.planeSpots as { dx: number; dz: number; yaw: number; kind: string }[]).map((p) => ({
+      x: m.x + p.dx, z: m.z + p.dz, yaw: p.yaw, kind: p.kind as VehicleKind,
+    })),
+  };
+}
+/** E13: Rootwell Field, the university's runway (east-campus `site/rootwell-field`; campus/types.ts ROOTWELL_FIELD). */
+export const ROOTWELL_AIRFIELD: Airfield = AIRFIELDS[1];
 
 const spawn = marker('spawn', 'player');
 export const SPAWN: PlacedPoint = { x: spawn.x, z: spawn.z, yaw: markerNum(spawn, 'yaw') };

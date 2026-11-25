@@ -733,7 +733,9 @@ export interface Blip {
     // Winter sports (E12, winter/): Snowdrop Slope + the Woolly Sock Lodge, the Bear Deck, Pail Pond ice fishing.
     | 'ski' | 'bears' | 'icefish'
     // Hedgeworth Links (E15, golf/).
-    | 'golf';
+    | 'golf'
+    // Rootwell (E13, campus/).
+    | 'campus' | 'observatory' | 'windfarm';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

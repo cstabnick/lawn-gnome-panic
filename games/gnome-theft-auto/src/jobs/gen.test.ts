@@ -74,13 +74,25 @@ describe('pilot gigs', () => {
     expect(AIR_PADS.map((p) => p.id)).toContain(last.id);
   });
 
-  it('a fixed-wing charter has a gate and ends at home', () => {
+  it('a fixed-wing charter goes over a gate or to Rootwell Field, and ends at home', () => {
     const home = { x: 500, z: -80 };
     const g = makePilotGig(ctx('pilot', 1, mulberry32(4), home, vehicle({ kind: 'plane', flies: true, fixedWing: true }), home), 'charter') as Gig;
-    expect(g.stops.some((s) => s.action === 'gate')).toBe(true);
+    const gate = g.stops.some((s) => s.action === 'gate');
+    const rootwell = g.stops.some((s) => s.id === 'rootwell-field');
+    expect(gate || rootwell).toBe(true);
     const last = g.stops[g.stops.length - 1];
     expect(last.x).toBe(home.x);
     expect(last.z).toBe(home.z);
+  });
+
+  it('some fixed-wing charters fly to Rootwell Field', () => {
+    const home = { x: 500, z: -80 };
+    const titles = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const g = makePilotGig(ctx('pilot', 1, mulberry32(seed), home, vehicle({ kind: 'plane', flies: true, fixedWing: true }), home), 'charter') as Gig;
+      titles.add(g.title);
+    }
+    expect(titles.has('Charter to Rootwell Field')).toBe(true);
   });
 });
 

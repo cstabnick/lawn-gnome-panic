@@ -839,6 +839,7 @@ function macroMaskAt(x: f64, z: f64): f64 {
   const treach = mTrailClear + mTrailFade;
   for (let i = 0; i < trailCount; i++) {
     const tp = TRAIL_META_PTR + (<usize>i << 6); // 8 * f64 = 64 B
+    if (load<f64>(tp + 56) != 0.0) continue; // flagged: does not erode the macro relief (the Anthill road, E13)
     if (x < load<f64>(tp + 16) - treach || x > load<f64>(tp + 24) + treach ||
         z < load<f64>(tp + 32) - treach || z > load<f64>(tp + 40) + treach) continue;
     const d = distToPts(TRAIL_PTS_PTR, <i32>load<f64>(tp), <i32>load<f64>(tp + 8), x, z);
@@ -1153,7 +1154,21 @@ function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, height: f64, rDis
     return 12; // meadow
   }
   if (reg == 8) return z > 1130.0 ? 7 : 8; // south-shore: sand beach, grass inland
-  if (reg == 9) return 8; // east-campus: grass
+  if (reg == 9) {
+    // east-campus: the Anthill (anthill, kind 13): gravel forecourt within 32 m of its point, dirt to its r, else grass (E13)
+    for (let k = 0; k < fCount; k++) {
+      const fp = LF_FEAT_PTR + <usize>((fStart + k) * 48);
+      if (<i32>load<f64>(fp) != 13) continue;
+      const ptCount = <i32>load<f64>(fp + 32);
+      if (ptCount <= 0) continue;
+      const r = load<f64>(fp + 8);
+      const p0 = LF_PTS_PTR + (<usize>(<i32>load<f64>(fp + 24)) << 4);
+      const d = hypot2(x - load<f64>(p0), z - load<f64>(p0 + 8));
+      if (d < 32.0) return 3; // gravel
+      if (d < r) return 2; // dirt
+    }
+    return 8; // grass
+  }
   if (reg == 10) return fbmStd(x / 120.0, z / 120.0, 93, 2) > 0.25 ? 12 : 8; // west-estates
   if (reg == 11) return fbmStd(x / 90.0, z / 90.0, 103, 2) > 0.35 ? 12 : 8; // pardonlin
   if (reg == 12) {

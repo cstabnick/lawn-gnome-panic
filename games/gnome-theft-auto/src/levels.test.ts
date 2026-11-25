@@ -52,7 +52,7 @@ describe('region documents', () => {
     const doc = REGION_DOCS['dust-flats'];
     expect(r.markers[0].x).toBe(doc.markers[0].x + r.origin.x);
     expect(r.props[0].z).toBe(doc.props[0].z + r.origin.z);
-    expect(markersOf('site').map((m) => m.id).sort()).toEqual(['airfield', 'fort-sandpit']);
+    expect(markersOf('site').map((m) => m.id).sort()).toEqual(['airfield', 'fort-sandpit', 'rootwell-field']);
   });
 });
 

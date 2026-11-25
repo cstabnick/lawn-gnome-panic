@@ -98,6 +98,59 @@ const campusBell: Recipe = (c, out, t, info) => {
   return 3;
 };
 
+/** A geared motor: a square wave gliding f0 -> f1 through a lowpass; the filter is disconnected with the oscillator. */
+function whirr(c: AudioContext, out: AudioNode, t: number, dur: number, f0: number, f1: number, peak: number): void {
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 400;
+  lp.connect(out);
+  const o = c.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.linearRampToValueAtTime(f1, t + dur);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.15);
+  g.gain.setValueAtTime(peak, t + dur - 0.2);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(lp);
+  o.start(t);
+  o.stop(t + dur + 0.01);
+  o.onended = () => {
+    o.disconnect();
+    g.disconnect();
+    lp.disconnect();
+  };
+}
+
+const turbineWhoosh: Recipe = (c, out, t, info) => {
+  // A slow swell as the vane comes round, the band falling 500 -> 180 Hz, and a faint hum under it.
+  const p = amp(info, 0.22);
+  burst(c, out, t, 1.6, 'lowpass', 500, 180, p, 0.7, 0.5);
+  tone(c, out, 'sine', t, 1.6, 70, 70, amp(info, 0.02), 0.3);
+  return 1.6;
+};
+
+const antSkitter: Recipe = (c, out, t, info) => {
+  // Twenty-five tiny ticks at irregular gaps (a fixed pattern, shifted per play by info.rand).
+  let at = 0;
+  let seed = Math.floor(info.rand * 4096) + 1;
+  for (let k = 0; k < 25; k++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const r = seed / 0x7fffffff;
+    burst(c, out, t + at, 0.02, 'highpass', 5000, 5000, amp(info, 0.05), 1.2, 0.001);
+    at += 0.03 + r * 0.02;
+  }
+  return 1.25;
+};
+
+const telescopeWhirr: Recipe = (c, out, t, info) => {
+  // The dome motor and the telescope slewing (90 -> 140 Hz), then a soft clunk as it stops.
+  whirr(c, out, t, 1.9, 90, 140, amp(info, 0.08));
+  tone(c, out, 'sine', t + 1.9, 0.25, 60, 40, amp(info, 0.2), 0.003);
+  return 2.2;
+};
+
 const sprinklerTick: Recipe = (c, out, t, info) => {
   // Ten ticks of the sprinkler arm, then a soft hiss.
   for (let k = 0; k < 10; k++) {
@@ -118,4 +171,7 @@ export const REGION_RECIPES: RecipeTable<RegionSoundId> = {
   'thunder-far': thunderFar,
   'campus-bell': campusBell,
   'sprinkler-tick': sprinklerTick,
+  'turbine-whoosh': turbineWhoosh,
+  'ant-skitter': antSkitter,
+  'telescope-whirr': telescopeWhirr,
 };

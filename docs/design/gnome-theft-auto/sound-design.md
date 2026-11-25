@@ -101,7 +101,7 @@ come from `sound/ids.ts`. Region spots marked (R) are `REGION_SOUNDS`, fired by 
 Night: layers `night` (0.012 x night) is added in every biome except city and tundra (crickets and tree hush);
 hum shrinks 40% at full night. Airborne: wind x1.8, everything else x0.25.
 
-### The six batch-3 places
+### The batch-3 places
 
 Each place is a part of a region above. The row says what makes it sound like itself. Lore:
 `npm run lore -- find <name>`; the setting rows are in `docs/lore/settings.md`.
@@ -111,6 +111,9 @@ Each place is a part of a region above. The row says what makes it sound like it
 | Snowcap Rise | North Highlands | Hush. Wind is the only big sound; steps are `step-snow` creaks; ice ticks as it warms. Silence between gusts is part of the palette. | `snow` | `snow-creak`, `icicle-tink`, `wind-gust` | `frost` (sparse: one bell phrase, not the whole loop) |
 | Saltbucket Shore | South Shore | Surf wash on a slow cycle, a buoy bell that does not keep time, gulls with opinions. | `shore` | `surf-wash`, `buoy-bell`, `gull`, `water-lap` | none |
 | Rootwell University | East Campus | A fluorescent hum in the halls, a bell on the hour, earnest footsteps on stone (`step-asphalt`). | `office` inside, `forest` on the lawn | `campus-bell`, `bird-chirp` | none |
+| Pinwheel Ridge | North Highlands | A slow whoom as each giant vane sweeps past (`turbine-whoosh`, about every few seconds, louder when near); otherwise wind. Never an engine. | `wind` | `turbine-whoosh`, `wind-gust` | none |
+| The Anthill (ant doors) | East Campus | A busy patter of tiny feet at an ant door, heard only close up (`ant-skitter`); the ants never speak. | `forest` | `ant-skitter`, `bird-chirp` | none |
+| Anthill Observatory | East Campus | The dome motor whirring round and the telescope slewing, then a soft clunk as it stops (`telescope-whirr`). | `office` | `telescope-whirr`, `campus-bell` | none |
 | Trellisdown | West Estates | Garden sounds at the correct volume: sprinklers on a timer, a distant mower, birds on a schedule. | `garden` | `sprinkler-tick`, `bird-song` | none |
 | Pardonlin | Pardonlin | A café square: murmur, cups, a chapel chime that apologises. Everyone is sorry in a low voice. | `market` | `cafe-clink`, `chapel-chime`, `crowd-murmur` | none; `warm` at a table scene |
 | The Unmown | The Unmown | Tall grass hiss, insects, no hum of any kind (no mower, no engine: that is the point). Engines sound loud and rude here; leave them. | `meadow` | `grass-hiss`, `cricket`, `owl` | `fescue` |

@@ -35,7 +35,17 @@ export const STUNT_RAMPS: readonly StuntRamp[] = [
   { id: 'compost-heap', name: 'Compost Heap Launch', x: -290, z: 112, yaw: Math.PI / 4, width: 6, length: 12, height: 3.0, biome: 'forest' },
   { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 61, z: -296, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
   { id: 'cloverfield-barn', name: 'Cloverfield Barn Leap', x: 56, z: 312, yaw: Math.PI, width: 6.5, length: 13, height: 3.3, biome: 'farmland' },
+  // E13: Dean's Leap on the Anthill's flat summit (campus/types.ts OBSERVATORY), launching north toward the campus.
+  { id: 'deans-leap', name: "Dean's Leap", x: 1238, z: 126.5, yaw: Math.PI, width: 8, length: 14, height: 6, biome: 'campus' },
 ];
+
+/** Listeners told when a stunt jump lands and qualifies (E13: achievements read Dean's Leap from here). */
+const landedListeners = new Set<(rampId: string, dist: number, airTime: number) => void>();
+/** Subscribe to qualifying stunt landings; returns the unsubscribe. */
+export function onStuntLanded(cb: (rampId: string, dist: number, airTime: number) => void): () => void {
+  landedListeners.add(cb);
+  return () => { landedListeners.delete(cb); };
+}
 
 /** Arcade launch: the vertical speed off the lip is the car's speed times the slope's sine, times this. */
 export const RAMP_LAUNCH = { arcadeBoost: 1.4 } as const;
@@ -340,6 +350,7 @@ export function createStunts(
             hud.toast(`${evalRes.label}! ${sub}`, 3200);
             (hud as { callout?: (t: string, s?: string) => void }).callout?.(evalRes.label, sub);
             jumpJustLanded = true;
+            for (const cb of landedListeners) cb(activeJump.rampId, dist, activeJump.airTime);
           }
           activeJump = null;
         }

@@ -166,6 +166,12 @@ import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
 import { GTA_DINER } from './gta-diner';
 import { GTA_MECHANIC } from './gta-mechanic';
 import { GTA_COMEDY } from './gta-comedy';
+import { GTA_CAMPUS_HALLS } from './gta-campus-halls';
+import { GTA_CAMPUS_BUILDINGS } from './gta-campus-buildings';
+import { GTA_ANTHILL_FIELD } from './gta-anthill-field';
+import { GTA_PINWHEEL_CAMPUS_PROPS } from './gta-pinwheel-campus-props';
+import { GTA_CAMPUS_PROPS } from './gta-campus-props';
+import { GTA_CAMPUS_GEAR } from './gta-campus-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -204,4 +210,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
+  ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,
 ];

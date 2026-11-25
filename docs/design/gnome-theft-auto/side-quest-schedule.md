@@ -85,8 +85,8 @@ written by its constant, `TESSIE.questId`.
 | `coast-boardwalk-tubing` | Tubing the Long Spoon | Driftwood (driftwood) | #45 `m45-rootwell-admissions` | Driftwood's tube hut opened at #43 and needs someone to test the course. | `saltbucket-shore` | 6 | E11 |
 | `coast-bathtub-tours` | Pirate Tours, Mostly | Captain Samphire Bilge (samphire) | #46 `m46-starfall-at-the-anthill` | Bilge joined the crew (#44) and has a boat to fill. | `saltbucket-shore` | 6 | E11 |
 | `coast-queens-treasure` | The Queen's Treasure | Captain Samphire Bilge (samphire) | `coast-bathtub-tours` done | Bilge lets slip about the treasure at the end of the tour. | `saltbucket-shore` | 6 | E11 |
-| `sq-rootwell-lost-essay` | The Lost Essay | Dean Lovage Inkwell (lovage) | #47 `m47-hedgeworth-links` | Lovage was dodged at #45; he is sure the player is a student and wants a paper on level lines. | `rootwell` | 6 | E13 |
-| `sq-anthill-rent` | Rent for the Landlords | Professor Betony Sextant (betony) | #48 `m48-the-groundskeepers-secret` | Sextant knows the ants (#46) and the ants are late on a sugar invoice. | `rootwell` | 6 | E13 |
+| `sq-rootwell-lost-essay` | The Lost Essay | Dean Lovage Inkwell (lovage) | #47 `m47-hedgeworth-links` (for now `ch4-spade-truce`; E21 moves it) | Lovage was dodged at #45; he is sure the player is a student and wants a paper on level lines. | `rootwell` | 6 | E13 |
+| `sq-anthill-rent` | Rent for the Landlords | Professor Betony Sextant (betony) | #48 `m48-the-groundskeepers-secret` (for now `ch4-spade-truce`; E21 moves it) | Sextant knows the ants (#46) and the ants are late on a sugar invoice. | `rootwell` | 6 | E13 |
 | `sq-hedgeworth-pro-lesson` | A Lesson from the Pro | Basil Divot (basil) | #49 `m49-loamdeep` | Basil lost a hole to the player (#47) and wants to see how. | `hedgeworth` | 6 | E15 (until E21: after `ch3-kiln-resin-ice`, needs Lost Balls) |
 | `sq-loamdeep-lamps` | Lamplighters | Old Mother Tumblesoil (tumblesoil) | #50 `m50-trellisdown-tasting` | The Burrowfolk agreed to help (#49); the lamp round is next. | `loamdeep` | 6 | E17 |
 | `sq-hedgeworth-ninth-green` | The Ninth Green | Thrift Hosepipe (thrift) | #50 `m50-trellisdown-tasting` | Thrift needs the moles' tunnels shored up after #48. | `hedgeworth` | 6 | E15 (until E21: after `ch3-tundra-drift-run`, needs Lost Balls) |
@@ -128,7 +128,7 @@ Every new area has at least one side quest:
 | Pinwheel Ridge (E13) | `sq-pinwheel-linemen` |
 | Rutbottom (E14) | `sq-rutbottom-heats` |
 | Saltbucket Boardwalk, the Spokewheel, the Bathtub Queen (E11) | `coast-boardwalk-tubing`, `coast-spokewheel-gondola`, `coast-bathtub-tours` |
-| Rootwell and the Anthill (E13) | `sq-rootwell-lost-essay`, `sq-anthill-rent` |
+| Rootwell and the Anthill (E13) | `sq-rootwell-lost-essay`, `sq-anthill-rent` (both unlocked after `ch4-spade-truce` until E21 builds m47/m48) |
 | Trellisdown (E15) | `sq-trellisdown-pickers` |
 | Route South Acorn Diner (chef job, E18) | `sq-chef-first-shift` |
 | Hobbies (E18) | `nc-bent-pin` (fishing), `nc-sky-spotting` and `nc-reedwatch` (birding), `nc-tuft-and-tally` (hunting) |

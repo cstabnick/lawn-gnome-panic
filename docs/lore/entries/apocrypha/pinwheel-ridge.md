@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-192]
 related: [turfton, black-dew-brand, snowcap-rise, ragwort-coilspring, hoa, lugnut-lulu]
 ---
 
@@ -25,7 +25,7 @@ The pinwheels run lamps, signs and the Combine's cells, never an engine; that is
 
 ## In the games
 
-Planned (batch 3): E01 site wind-farm at (850, -1180), built by the area epic. Quest row 41 (m41-pinwheel-ridge): Ragwort Coilspring shows the player three pinwheels to free; the lights come back in Turfton (world change W10).
+Site wind-farm (R-202): ten giant pinwheels (`pinwheel-1` to `pinwheel-10`, red, yellow and blue in turn), each on a 24 m white-and-red mast with a ladder, 30 m apart along the crest from x 715 to 985 at z about -1202, all facing south and always turning. Ragwort Coilspring's control hut (860, -1234) and a substation (905, -1236) stand on the north flank below the crest; a gravel service track runs up from the north-band-east road. Flying along the ridge earns "Windfall". Quest row 41 (m41-pinwheel-ridge): Ragwort Coilspring shows the player three pinwheels to free; the lights come back in Turfton (world change W10).
 
 ## Loose threads
 

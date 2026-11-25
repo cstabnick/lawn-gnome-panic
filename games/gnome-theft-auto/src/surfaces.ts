@@ -1,5 +1,5 @@
 // Surface classification and driving-feel multipliers for Gnome Theft Auto.
-import { AIRFIELD, CITY_HALF, HIGHWAYS, ROAD_LINES, ROAD_WIDTH, biomeAt } from './config';
+import { AIRFIELD, CITY_HALF, HIGHWAYS, ROAD_LINES, ROAD_WIDTH, ROOTWELL_AIRFIELD, biomeAt } from './config';
 import { paintedSurfaceAt } from './terrainPaint';
 import type { VehicleKind, World } from './types';
 import { bridgeDeckAt, waterDepthAt } from './water';
@@ -102,7 +102,7 @@ export function surfaceAt(
   let track: SurfaceKind | null = null;
   if ((waterDepthAt(x, z) > 0.05 && bridgeDeckAt(x, z) === null) || fordWaterAt(x, z)) {
     kind = 'water';
-  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD)) {
+  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD) || onAirfieldRunway(x, z, ROOTWELL_AIRFIELD)) {
     kind = 'asphalt';
   } else if ((track = trackSurfaceAt(x, z))) {
     // A race track's road (raceTrack/tracks.ts): asphalt at the Speedway, dirt at Rutbottom and on the Capwood Run.

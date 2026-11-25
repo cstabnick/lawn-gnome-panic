@@ -83,6 +83,9 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-hedgeworth-pro-lesson', after: 'ch3-kiln-resin-ice', why: "Basil wants to see the swing of whoever came through the board (needs Lost Balls). E21 moves it to after m49-loamdeep." },
   { questId: 'sq-hedgeworth-ninth-green', after: 'ch3-tundra-drift-run', why: "Thrift's moles under the ninth green (needs Lost Balls). E21 moves it to after m50-trellisdown-tasting." },
   { questId: 'sq-hedgeworth-members-cup', after: 'ch4-runway-flares', why: "Peony's cup, on the first of the month (needs the pro's lesson). E21 moves it to after m52-the-test-cut." },
+  // Rootwell (rootwellQuests.ts). Temporary: the schedule has them after m47/m48 (acts II-IV, E20-E22), which do not exist yet.
+  { questId: 'sq-rootwell-lost-essay', after: 'ch4-spade-truce', why: 'Rootwell is past the Dust Flats, open once the spade truce has opened the eastern sand. E21 moves it to after m47-hedgeworth-links.' },
+  { questId: 'sq-anthill-rent', after: 'ch4-spade-truce', why: "The ants' rent is late once the eastern sand is open. E21 moves it to after m48-the-groundskeepers-secret." },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -135,6 +138,8 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   thrift: '#7bc45a',
   basil: '#f2c230',
   peony: '#c9a9e8',
+  lovage: '#c9a227',
+  betony: '#8fa8ff',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

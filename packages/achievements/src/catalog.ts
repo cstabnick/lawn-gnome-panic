@@ -1425,6 +1425,32 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Double Down', description: 'Double down five times in one set.',
     reward: { slot: 'hand', prefabId: 'squeaky-rubber-chicken', label: 'Squeaky Rubber Chicken' },
   },
+  // ---- Rootwell (games/gnome-theft-auto/src/campus; ids in ROOTWELL_ACH) ----
+  {
+    id: 'gta-deans-leap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Not Termites', description: "Drive off Dean's Leap at the top of the Anthill and land it.",
+    reward: { slot: 'head', prefabId: 'ant-antenna-headband', label: 'Ant Antenna Headband' },
+  },
+  {
+    id: 'gta-first-class-honours', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Class Honours', description: 'Visit the front door of all twelve Rootwell University buildings.', target: 12,
+    reward: { slot: 'neck', prefabId: 'rootwell-college-scarf', label: 'Rootwell College Scarf' },
+  },
+  {
+    id: 'gta-stargazer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Level with the Stars', description: "Look through the Anthill Observatory's telescope at night.",
+    reward: { slot: 'back', prefabId: 'star-chart-tube', label: 'Star Chart Tube' },
+  },
+  {
+    id: 'gta-touch-and-go', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Touch and Go', description: "Land an aircraft on Rootwell Field's runway.",
+    reward: { slot: 'head', prefabId: 'rootwell-flight-goggles', label: 'Rootwell Flight Goggles' },
+  },
+  {
+    id: 'gta-windfall', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Windfall', description: 'Fly along Pinwheel Ridge below the tops of the pinwheels and between them.',
+    reward: { slot: 'head', prefabId: 'pinwheel-hat', label: 'Pinwheel Hat' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

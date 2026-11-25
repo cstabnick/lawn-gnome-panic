@@ -108,6 +108,8 @@ export function macroMaskAt(x: number, z: number): number {
     // Cheap skip: a point outside the trail's box grown by the fade reach is past the fade (same result, far faster).
     const tb = TRAIL_BOUNDS[i];
     if (x < tb.minX - treach || x > tb.maxX + treach || z < tb.minZ - treach || z > tb.maxZ + treach) continue;
+    // E13: the Anthill road climbs the mound it would otherwise erase (the kernel skips it too: trail meta slot 7).
+    if (TRAILS[i].id === 'trail/anthill-road') continue;
     const d = distToPolyline(x, z, TRAILS[i].points);
     if (d < treach) m *= smoothstep(P.trailClear, treach, d);
     if (m <= 0) return 0;

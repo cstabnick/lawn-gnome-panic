@@ -132,6 +132,7 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-homes-visited-v1': unionArrays, // homes/visits.ts: home ids visited only grow
   'gta-winter-v1': null, // winter/save.ts: best times, run counts, ice catches; the newer side wins
   'gta-golf-v1': mergeGolfSave, // golf/save.ts: counts and bests merge, the board stays broken, ids union
+  'gta-rootwell-v1': null, // campus/achievements.ts: campus doors visited; the newer side wins
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory

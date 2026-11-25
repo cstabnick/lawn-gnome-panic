@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159, games/gnome-theft-auto/src/data/levels/east-campus.level.json, games/gnome-theft-auto/src/sites.ts]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159, docs/lore/rulings.md#r-189, games/gnome-theft-auto/src/data/levels/east-campus.level.json, games/gnome-theft-auto/src/sites.ts]
 related: [the-anthill, anthill-observatory, rootwell-field, betony-sextant, lovage-inkwell, turfton, dust-flats, vesper-thorne]
 ---
 
@@ -26,7 +26,7 @@ The twelve buildings, round the quad: **The Long Shelf** (library), **the Crucib
 
 The east band of the map (code region `east-campus`, x 900 to 1400, z -900 to 900), built by E01, called Rootwell by the gnomes. Roads: `east-band` runs on from Route East at (870, 50) and north along x 950, `east-band-south` runs south, and `runway-spur` runs to the field. Rootwell University's ground is 320 x 300 m at (1140, -200). The Anthill mound stands at (1240, 150), about 45 m high. Rootwell Field's runway runs north to south at (1300, 600). The Rutbottom Dirt Bowl is 300 x 200 m at (1150, -650), and an aircraft dealership stands beside the runway at (1150, 640).
 
-Rows 45 `m45-rootwell-admissions`, 46 `m46-starfall-at-the-anthill`, 70 (finale call) use the region tag `rootwell`. E13 builds the twelve buildings from this list: planned (batch 3).
+Rows 45 `m45-rootwell-admissions`, 46 `m46-starfall-at-the-anthill`, 70 (finale call) use the region tag `rootwell`. E13 builds the campus (site `campus`, x 980 to 1300, z -350 to -50; R-199): the twelve buildings stand round a quad lawn with the founder's statue (a bronze gnome holding out a plumb bob) at its centre. North are the Long Shelf and Plumbob Hall (helipad roof, a plumb bob under the clock tower's arch); south, Tilth Hall (walkable roof, stairs inside) and the Crucible Block; east, the Trencher (sugar store behind it), the Cold Frame Club and the Cloche. Bedstraw House, Bodger's Shed, the Heap Barn, Wicket Lodge, the Clod and the Dean's lodge (facing the quad) stand further out. The drive runs in from the east-band road along z -200 to the quad, with a car park south of it. The Long Shelf, the Crucible Block and Tilth Hall can be entered. Students walk the quad and the university bell rings.
 
 Since the second expansion the band reaches the east edge, where Rootwell Field Station stands (R-177).
 

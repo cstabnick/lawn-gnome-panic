@@ -28,11 +28,12 @@ export const WORLD_SOUNDS = [
 /**
  * Region and weather spot sounds for the batch-3 places (recipes/regions.ts; docs/design/gnome-theft-auto/sound-design.md):
  * surf and a buoy bell on Saltbucket Shore, snow creak and icicles on Snowcap Rise, café clinks and the chapel chime in
- * Pardonlin, tall-grass hiss in the Unmown, the Rootwell University bell, Trellisdown's garden sprinklers, far thunder in rain.
+ * Pardonlin, tall-grass hiss in the Unmown, the Rootwell University bell, Trellisdown's garden sprinklers, far thunder in rain,
+ * Pinwheel Ridge's turning pinwheels, the Anthill's ants, the observatory telescope.
  */
 export const REGION_SOUNDS = [
   'surf-wash', 'buoy-bell', 'snow-creak', 'icicle-tink', 'cafe-clink', 'chapel-chime', 'grass-hiss', 'thunder-far',
-  'campus-bell', 'sprinkler-tick',
+  'campus-bell', 'sprinkler-tick', 'turbine-whoosh', 'ant-skitter', 'telescope-whirr',
 ] as const;
 
 export type VehicleSoundId = (typeof VEHICLE_SOUNDS)[number];

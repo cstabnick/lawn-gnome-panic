@@ -94,6 +94,7 @@ export const GTA_ECONOMY_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'glaze-repair-mallet', name: 'Repair Mallet', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['mallet', 'hammer', 'repair', 'glaze', 'dent', 'fix', 'hand', 'tool', 'reward', 'gta'], emoji: ['🔨'],
     grip: [0, 0.06, 0],
     about: 'Gnome Theft Auto: the Repair Mallet. A short wooden-handled mallet with a glazed blue head. Held in the hand.',

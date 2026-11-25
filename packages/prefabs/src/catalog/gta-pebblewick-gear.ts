@@ -24,6 +24,7 @@ export const GTA_PEBBLEWICK_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'dry-spoon-ladle', name: 'Dry Spoon Ladle', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['ladle', 'spoon', 'wooden', 'wood', 'dry', 'scoop', 'bowl', 'kitchen', 'reward', 'pebblewick', 'gta'], emoji: [],
     grip: [0, 0.15, 0],
     about: 'Gnome Theft Auto: the Dry Spoon Ladle, a big wooden ladle, handle at the bottom and bowl up. Reward for the Regular achievement.',
@@ -64,7 +65,7 @@ export const GTA_PEBBLEWICK_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'chrome-hubcap-pendant', name: 'Chrome Hubcap Pendant', category: 'trinket', uses: ['wear-neck'],
-    wear: { at: [0, -0.07, 0.05] },
+    wear: { at: [0, -0.07, 0.15] },
     tags: ['pendant', 'hubcap', 'disc', 'chrome', 'necklace', 'amulet', 'cord', 'neck', 'shiny', 'reward', 'pebblewick', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Chrome Hubcap Pendant, a chrome disc on a cord loop. Reward for The Hum at Three achievement.',
     examine: [
@@ -82,6 +83,7 @@ export const GTA_PEBBLEWICK_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'chrome-tuning-fork', name: 'Chrome Tuning Fork', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['tuning', 'fork', 'chrome', 'steel', 'tines', 'hum', 'metal', 'rod', 'pebblewick', 'reward', 'gta'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'Gnome Theft Auto: the Chrome Tuning Fork, a chrome fork about 0.45 tall, stem at the bottom. Reward for the Three A.M. Knock achievement.',

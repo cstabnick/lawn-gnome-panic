@@ -90,7 +90,7 @@ export const GTA_BIRDING_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'field-binoculars', name: 'Field Binoculars', category: 'trinket', uses: ['wear-neck'],
-    wear: { at: [0, -0.07, 0.05] },
+    wear: { at: [0, -0.15, 0.07] },
     tags: ['binoculars', 'glasses', 'scope', 'strap', 'neck', 'lens', 'field', 'birding', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Field Binoculars, small black binoculars on a leather strap. Reward for the Twitcher achievement.',
     examine: [
@@ -150,6 +150,7 @@ export const GTA_BIRDING_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'kiln-feather-quill', name: 'Kiln-Feather Quill', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['quill', 'feather', 'pen', 'glow', 'kiln', 'orange', 'spark', 'mythic', 'hand', 'reward', 'birding', 'gta'], emoji: [],
     grip: [0, 0.05, 0],
     about: 'Gnome Theft Auto: the Kiln-Feather Quill, a long glowing orange feather on a bone shaft. Reward for the Said To Be Seen achievement.',
@@ -168,6 +169,7 @@ export const GTA_BIRDING_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'box-camera', name: 'Box Camera', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['camera', 'box', 'photo', 'photograph', 'lens', 'shutter', 'hide', 'hand', 'reward', 'birding', 'gta'], emoji: [],
     grip: [0, 0.04, 0],
     about: 'Gnome Theft Auto: the Box Camera, a small boxy camera with a round glass lens and a leather handle. Reward for the Hide Photographer achievement.',

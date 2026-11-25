@@ -124,7 +124,7 @@ export const GTA_HUNT_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'quill-collar', name: 'Quill Collar', category: 'trinket', uses: ['wear-neck'],
-    wear: { at: [0, -0.07, 0.05] },
+    wear: { at: [0, -0.13, 0.05] },
     tags: ['collar', 'quill', 'quills', 'necklace', 'neck', 'hedgehog', 'hunt', 'reward', 'gta', 'cord'], emoji: [],
     about: 'Gnome Theft Auto: the Quill Collar, shed hedgehog quills stood up around a cord collar. Reward for the Field Guide achievement.',
     examine: [
@@ -146,6 +146,7 @@ export const GTA_HUNT_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'hunters-spyglass', name: "Hunter's Spyglass", category: 'tool', uses: ['hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['spyglass', 'telescope', 'glass', 'scope', 'eye', 'lens', 'brass', 'hunt', 'far', 'reward', 'gta'], emoji: [],
     grip: [0, 0.04, 0],
     about: 'Gnome Theft Auto: the Hunter\'s Spyglass, a short brass tube with a glass lens and a leather grip. Reward for the Patient Eye achievement.',
@@ -165,6 +166,7 @@ export const GTA_HUNT_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'grizzle-brush', name: 'Grizzle Brush', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['brush', 'grooming', 'bristles', 'silver', 'badger', 'hunt', 'grizzle', 'comb', 'reward', 'gta'], emoji: [],
     grip: [0, 0.1, 0],
     about: 'Gnome Theft Auto: the Grizzle Brush, a stubby wooden grooming brush with silver-grey bristles. Reward for the Old Grizzle achievement.',

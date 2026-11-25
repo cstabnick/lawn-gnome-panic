@@ -83,6 +83,7 @@ export const GTA_FLEET: readonly PrefabDef[] = [
   // ---- Spark Plug Pendant: a plug on a cord (neck) -------------------------------------------------------------------
   {
     id: 'spark-plug-pendant', name: 'Spark Plug Pendant', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.25, 0] },
     tags: ['pendant', 'necklace', 'spark', 'plug', 'cord', 'mower', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Spark Plug Pendant. A white ceramic spark plug with a steel hex and a copper tip, hung on a cord loop. Worn on the neck, hanging at the chest.',
     examine: [

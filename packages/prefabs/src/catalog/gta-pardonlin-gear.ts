@@ -187,6 +187,7 @@ export const GTA_PARDONLIN_GEAR: readonly PrefabDef[] = [
   // ---- Queue Ticket Lanyard (neck) -------------------------------------------------------------------------------------
   {
     id: 'queue-ticket-lanyard', name: 'Queue Ticket Lanyard', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.18, 0] },
     tags: ['lanyard', 'ticket', 'queue', 'number', 'paper', 'red', 'neck', 'pardonlin', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Queue Ticket Lanyard. A red cord round the neck with a big paper ticket numbered 0001 hanging on the chest. Neck slot.',
     examine: [
@@ -207,6 +208,7 @@ export const GTA_PARDONLIN_GEAR: readonly PrefabDef[] = [
   // ---- Daily Baguette (hand) -------------------------------------------------------------------------------------------
   {
     id: 'daily-baguette', name: 'Daily Baguette', category: 'tool', uses: ['hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['baguette', 'bread', 'loaf', 'sleeve', 'paper', 'food', 'daily', 'pardonlin', 'gta'], emoji: [],
     grip: [0, 0.08, 0],
     about: 'Gnome Theft Auto: the Daily Baguette. A long baguette standing upright in a paper sleeve, held by the sleeve, with three diagonal scores. Hand slot.',
@@ -252,6 +254,7 @@ export const GTA_PARDONLIN_GEAR: readonly PrefabDef[] = [
   // ---- Cello Case (back) ---------------------------------------------------------------------------------------------------
   {
     id: 'cello-case', name: 'Cello Case', category: 'armor', uses: ['wear-back'],
+    wear: { at: [0, 0, 0.03] },
     tags: ['cello', 'case', 'music', 'strap', 'back', 'sticker', 'instrument', 'pardonlin', 'gta'], emoji: [],
     tint: 0x5a3320,
     about: 'Gnome Theft Auto: the Cello Case. A wooden instrument case on the back (the tint), with two shoulder straps, a carry handle and a Bean Tower sticker. Back slot.',
@@ -274,6 +277,7 @@ export const GTA_PARDONLIN_GEAR: readonly PrefabDef[] = [
   // ---- Flaneur Cravat (neck) ---------------------------------------------------------------------------------------------
   {
     id: 'flaneur-cravat', name: 'Flaneur Cravat', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.1, 0] },
     tags: ['cravat', 'scarf', 'silk', 'neck', 'pin', 'tie', 'ascot', 'flaneur', 'pardonlin', 'gta'], emoji: [],
     tint: 0x7a2e4a,
     about: 'Gnome Theft Auto: the Flaneur Cravat. A loosely tied silk cravat (the tint) with two trailing ends and a small gold pin. Neck slot.',

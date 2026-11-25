@@ -80,6 +80,7 @@ export const GTA_JOBS: readonly PrefabDef[] = [
   },
   {
     id: 'parcel-box', name: 'Parcel Box', category: 'tool', uses: ['hold', 'place'],
+    wear: { rot: [0, 0, 180] },
     tags: ['parcel', 'box', 'cardboard', 'package', 'carton', 'delivery', 'tape', 'gta'], emoji: [],
     grip: [0, 0.05, 0],
     about: 'Gnome Theft Auto: a cardboard parcel with a tape cross, held by the centre-bottom. Used for the courier job.',

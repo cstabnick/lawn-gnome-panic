@@ -286,6 +286,7 @@ export const COSMETICS_NECK: PrefabDef[] = [
   },
   {
     id: 'roundabout-rosette', name: 'Roundabout Rosette', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, -0.04, 0] },
     tags: ['rosette', 'arrow', 'roundabout', 'ring', 'badge', 'neck', 'pardonlin', 'reward', 'continental'], emoji: [],
     about: 'A round red rosette on a pin with a white arc ring and an arrow going anticlockwise, the badge of a driver who has been all the way round.',
     examine: [

@@ -6,6 +6,7 @@ export const GTA_PHYSICS_REWARDS: PrefabDef[] = [
   // ---- Skipping-Stone Pendant: a flat pebble on a cord, for the gnome who skimmed the loch ----------------------------
   {
     id: 'skipping-stone-pendant', name: 'Skipping-Stone Pendant', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.04, 0.1] },
     tags: ['pendant', 'pebble', 'stone', 'skip', 'skipping', 'water', 'cord', 'neck', 'loch', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Skipping-Stone Pendant. A flat, smooth grey pebble (stone) on a thin brown cord loop (leather), with a small blue water-drop bead (water) beside it. Worn on the neck, about 0.12 across.',
     examine: [

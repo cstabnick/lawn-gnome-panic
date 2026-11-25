@@ -105,7 +105,7 @@ export const GTA_JOBS_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'flight-scarf', name: 'Flight Scarf', category: 'trinket', uses: ['wear-neck'],
-    wear: { at: [0, -0.07, 0.05] },
+    wear: { at: [0, -0.12, 0.05] },
     tags: ['scarf', 'silk', 'white', 'flying', 'pilot', 'neck', 'wrap', 'cloth', 'long', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Flight Scarf, a long white silk scarf with one tail blown back. Reward for the Butter Landing achievement.',
     examine: [
@@ -161,6 +161,7 @@ export const GTA_JOBS_GEAR: readonly PrefabDef[] = [
   },
   {
     id: 'night-shift-lantern', name: 'Night-Shift Lantern', category: 'tool', uses: ['hold'],
+    wear: { rot: [90, 0, 0] },
     tags: ['lantern', 'lamp', 'light', 'tin', 'night', 'shift', 'flame', 'candle', 'glow', 'hand', 'reward', 'gta'], emoji: [],
     grip: [0, 0.05, 0],
     about: 'Gnome Theft Auto: the Night-Shift Lantern, a small tin hand lantern with a glowing flame. Reward for the Working Gnome achievement.',

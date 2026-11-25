@@ -26,6 +26,7 @@ export const GTA_EURO_GEAR: readonly PrefabDef[] = [
   // ---- Baguette Quiver (back) ----------------------------------------------------------------------------------------
   {
     id: 'baguette-quiver', name: 'Baguette Quiver', category: 'armor', uses: ['wear-back'],
+    wear: { at: [0, 0, 0.03] },
     tags: ['quiver', 'baguette', 'bread', 'canvas', 'tube', 'strap', 'back', 'gta', 'euro'], emoji: [],
     tint: 0xc9b48a,
     about: 'Gnome Theft Auto: the Baguette Quiver. A tall canvas tube (the tint) with a strap and a leather rim, and four baguettes poking out of the top. Back slot.',
@@ -51,6 +52,7 @@ export const GTA_EURO_GEAR: readonly PrefabDef[] = [
   // ---- Riviera Scarf (neck) ------------------------------------------------------------------------------------------
   {
     id: 'riviera-scarf', name: 'Riviera Scarf', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.15, 0] },
     tags: ['scarf', 'neck', 'blue', 'stripes', 'knot', 'silk', 'riviera', 'gta', 'euro'], emoji: [],
     tint: 0x2f6bb0, trim: 0xf4f4f0,
     about: 'Gnome Theft Auto: the Riviera Scarf. A knotted blue neck scarf (the tint) with a white stripe wrap (the trim) and two short tails at the front. Neck slot.',

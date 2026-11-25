@@ -123,6 +123,7 @@ export const GTA_PARDONLIN_PROPS: readonly PrefabDef[] = [
   },
   {
     id: 'pl-accordion', name: 'Accordion', category: 'prop', uses: ['place', 'hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['gta', 'pardonlin', 'accordion', 'music', 'bellows', 'instrument'], emoji: [],
     grip: [0, 0.2, 0],
     about: 'Gnome Theft Auto: the Pardonlin accordion. Upright 0.45 m instrument: leather bellows folds, two wooden button blocks with ivory keys. Grip on the bellows. No tint.',
@@ -156,6 +157,7 @@ export const GTA_PARDONLIN_PROPS: readonly PrefabDef[] = [
   },
   {
     id: 'pl-baguette', name: 'Baguette', category: 'prop', uses: ['place', 'hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['gta', 'pardonlin', 'baguette', 'bread', 'loaf', 'food'], emoji: [],
     grip: [0, 0.1, 0],
     about: 'Gnome Theft Auto: the Pardonlin baguette. Long crusty loaf, 0.7 m, standing upright with three slashes on its face. Grip near the bottom. No tint.',
@@ -413,6 +415,7 @@ export const GTA_PARDONLIN_PROPS: readonly PrefabDef[] = [
   },
   {
     id: 'pl-tour-flag', name: 'Tour Guide Flag', category: 'prop', uses: ['place', 'hold'],
+    wear: { rot: [0, 0, 180] },
     tags: ['gta', 'pardonlin', 'flag', 'pole', 'tour', 'guide', 'pennant'], emoji: [],
     grip: [0, 0.35, 0],
     tint: 'red',

@@ -8,6 +8,8 @@ const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 export const CHAPTER_5_QUESTS: readonly QuestDef[] = [
   {
     id: 'ch5-even-cut',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 0: { cap: 1 } },
     title: 'The Even Cut',
     giver: 'dust-overlook',
     prereq: 'ch4-spade-truce',

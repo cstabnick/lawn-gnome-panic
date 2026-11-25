@@ -20,6 +20,9 @@ import { checkpointsRun, probeRun } from './objectivesCity';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
 import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
+import { createQuestPins, recoverVehicleNear } from './questPins';
+import type { QuestPins } from './questPins';
+import { hoaCap, hoaPolicyFor } from './hoaPolicy';
 import type { CutsceneRequest, CutsceneSpec, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
 export type { QuestDeps, Run };
@@ -77,6 +80,15 @@ export interface Quests {
   pinGiver(id: string | null): void;
   /** Hide every giver marker (beam, star, ring, badge) while a cutscene plays. */
   setMarkersHidden?(hidden: boolean): void;
+  /**
+   * E23 L101: the player was just cracked (app.ts, after the death beat, instead of waking at the hospital door). With a
+   * quest active: retries its step from the checkpoint (which places the player) and returns true. Else false.
+   */
+  onPlayerDown?(): boolean;
+  /** E23 L101: retry the active step from its checkpoint after a short "Retrying…" beat. False when no quest is active. */
+  retryActive?(reason: string): boolean;
+  /** E23 L101: the active quest's pins (vehicles, NPCs, props, the player's quest ride). */
+  pins?: QuestPins;
 }
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
@@ -189,6 +201,14 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
     },
     blips: () => [...live.values()].map((e) => ({ x: e.npc.x, z: e.npc.z, color: TARGET_COLOR, quest: e.def.name })),
     cracked: () => [...cracked],
+    // E23 L102 (fuzz): a target that left the world without being cracked can never be cracked: retry the step, which
+    // spawns the targets still missing (cracked ones stay cracked).
+    failed() {
+      for (const e of live.values()) {
+        if (!deps.npcs.list.includes(e.npc)) return `${e.def.name} slipped away! The targets are back in place.`;
+      }
+      return null;
+    },
     cleanup() {
       for (const e of live.values()) {
         e.npc.model.object.remove(e.marker);
@@ -416,6 +436,10 @@ export function createQuests(
   /** Runners whose lines depend on the moment (in a boat or not, near or far) are re-read this often, seconds. */
   let trackerRefreshT = 0;
   let lastLines = '';
+  /** E23 L101: pinned vehicles/NPCs/props and the player's quest ride; seconds until a pending retry; wreck-recovery timer. */
+  const pins = createQuestPins();
+  let retryIn = 0;
+  let rideWreckT = 0;
 
   let clockT = 0;
   /** One giver's 3D marker parts. `kind` is the colour they were last set to. */
@@ -501,7 +525,51 @@ export function createQuests(
       },
       (t) => deps.hud.toast(t, 3200),
     );
+    // E23 L101: each step saves a checkpoint (a resumed save keeps its own) and applies its Hat Watch policy.
+    const p = deps.player;
+    if (p && save.checkpoint?.step !== save.step) {
+      save.checkpoint = { step: save.step, x: p.x, z: p.z, yaw: p.yaw };
+      storeSaves(saves);
+    }
+    deps.watch?.setCap?.(hoaCap(hoaPolicyFor(q, save.step)));
     refreshTracker();
+  }
+
+  /** E23 L101: put the step back at its checkpoint (player, ride, watch), keeping the crack progress. */
+  function doRetry(): void {
+    if (!activeId) return;
+    const q = quest(activeId);
+    const save = saves[activeId];
+    if (!q || !save) return;
+    retryIn = 0;
+    run?.cleanup();
+    run = null;
+    const p = deps.player;
+    if (p?.vehicle) {
+      const v = p.vehicle;
+      p.exit();
+      v.driver = 'none';
+    }
+    // The runner may have removed its own vehicle (the one the player rode): forget it before recovering the ride.
+    if (deps.vehicles) pins.prune(deps.vehicles);
+    const cp = save.checkpoint ?? (p ? { step: save.step, x: p.x, z: p.z, yaw: p.yaw } : null);
+    if (cp) {
+      deps.placePlayer(cp.x, cp.z, cp.yaw);
+      const ride = pins.ride();
+      if (ride) recoverVehicleNear(ride, cp.x, cp.z, deps.world);
+    }
+    deps.watch?.clear();
+    startStep(q);
+    deps.hud.toast('Back at the start of: ' + q.objectives[save.step].text, 3500);
+  }
+
+  function retryActive(reason: string): boolean {
+    if (!activeId) return false;
+    if (retryIn > 0) return true;
+    deps.hud.banner('RETRYING…', 1500);
+    deps.hud.toast(reason, 3500);
+    retryIn = 1.5;
+    return true;
   }
 
   /** After progress: go on to the next objective, or finish the quest. */
@@ -537,6 +605,9 @@ export function createQuests(
     run = null;
     activeId = null;
     save.state = 'done';
+    pins.releaseAll();
+    retryIn = 0;
+    deps.watch?.setCap?.(null);
     storeSaves(saves);
     notifySaveChanged();
     tessieCheck();
@@ -692,6 +763,30 @@ export function createQuests(
         m.side.position.y = bob;
       }
       run?.update(dt, px, pz);
+      if (activeId) {
+        const pl = deps.player;
+        const pv = pl?.vehicle;
+        if (pv && !pv.exploded && pv !== pins.ride() && !pv.questOwned) pins.setRide(pv);
+        if (deps.vehicles) pins.prune(deps.vehicles);
+        const ride = pins.ride();
+        if (pl && ride && (ride.exploded || ride.sunk) && pl.vehicle !== ride) {
+          rideWreckT += dt;
+          if (rideWreckT >= 3) {
+            rideWreckT = 0;
+            recoverVehicleNear(ride, pl.x, pl.z, deps.world);
+            deps.hud.toast('Your ride is back beside you.', 3000);
+          }
+        } else {
+          rideWreckT = 0;
+        }
+        if (retryIn > 0) {
+          retryIn -= dt;
+          if (retryIn <= 0) doRetry();
+        } else if (run && !deps.cutscene.active) {
+          const why = run.failed?.();
+          if (why) retryActive(why);
+        }
+      }
       trackerRefreshT -= dt;
       if (run && trackerRefreshT <= 0) {
         trackerRefreshT = 0.5;
@@ -787,6 +882,9 @@ export function createQuests(
       if (!activeId) return false;
       run?.cleanup();
       run = null;
+      pins.releaseAll();
+      retryIn = 0;
+      deps.watch?.setCap?.(null);
       delete saves[activeId];
       activeId = null;
       storeSaves(saves);
@@ -804,7 +902,18 @@ export function createQuests(
       storeSaves(saves);
       notifySaveChanged();
       startStep(q);
+      const ride = pins.ride();
+      if (ride && deps.player) recoverVehicleNear(ride, deps.player.x, deps.player.z, deps.world);
       deps.hud.toast('Objective step restarted.', 3000);
+      return true;
+    },
+
+    pins,
+    retryActive,
+    onPlayerDown() {
+      if (!activeId) return false;
+      deps.hud.toast('Cracked! Retrying the step.', 3500);
+      doRetry();
       return true;
     },
 

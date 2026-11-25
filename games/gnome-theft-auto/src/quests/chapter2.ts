@@ -39,6 +39,8 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'ch2-sprinkler-gauntlet',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 0: { cap: 1 } },
     title: 'The Cloverfield Sprinkler Gauntlet',
     giver: 'cloverfield-barn',
     prereq: 'ch2-dew-run',
@@ -81,6 +83,8 @@ export const CHAPTER_2_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'ch2-vespers-offer',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 1: { cap: 1 } },
     title: 'Order Over Chaos',
     giver: 'cloverfield-barn',
     prereq: 'ch2-sprinkler-gauntlet',

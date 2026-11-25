@@ -247,6 +247,11 @@ export interface Vehicle {
   hornCooldown?: number;
   /** True for quest/event-controlled NPC vehicles so ambient traffic.ts never hijacks or recycles them. */
   questOwned?: boolean;
+  /**
+   * E23 L101: the player's quest ride (quests/questPins.ts setRide): traffic cleanup never removes it while the quest
+   * runs. Unlike questOwned it does not make the vehicle "spoken for" (the player can still store it in the Lock-Up).
+   */
+  questPinned?: boolean;
   /** Nitro boost meter (0..100) and active state. */
   boost?: number;
   boostActive?: boolean;
@@ -650,6 +655,32 @@ export interface Watch {
   knockArea?(x: number, z: number, radius: number, force: number, up: number, fromX: number, fromZ: number): number;
   /** Eject the officer driver when the player steals a pursuit mower or HOA van. */
   ejectPursuitDriver?(v: Vehicle): void;
+  /**
+   * E23 L103: cap heat at `cap` (0 = no Hat Watch at all: heat held at 0, officers and pursuits leave) until called with
+   * null. addHeat never goes past the cap while it is set. Quests set it per step (quests/hoaPolicy.ts).
+   */
+  setCap?(cap: number | null): void;
+  /** E23 L103: the search area and evade progress the HUD draws, or null at heat < 1. */
+  search?(): WatchSearch | null;
+}
+
+/** E23 L103: where the Hat Watch is looking for the player, and how close they are to losing a level. */
+export interface WatchSearch {
+  /** Centre of the search area (the player's last seen point), world x/z. */
+  x: number;
+  z: number;
+  /** Radius, m (WATCH.searchRadius + WATCH.searchRadiusPerLevel * (level - 1)). */
+  r: number;
+  /** A unit has line of sight to the player right now. */
+  seen: boolean;
+  /** The player is inside the search circle. */
+  inside: boolean;
+  /** 0..1: progress to losing the current level (0 while seen; fills with unseen time, then with cooled heat). */
+  evade: number;
+  /** Current level (Math.floor(heat)). */
+  level: number;
+  /** Seconds until dispatched units arrive (0 = they are here). */
+  dispatchIn: number;
 }
 
 /**
@@ -684,6 +715,8 @@ export interface HudRoute {
 export interface HudState {
   /** 0..4 watch level. */
   heat: number;
+  /** E23 L103: the Hat Watch search area and evade meter (watch.search()), null / absent at heat < 1. */
+  search?: WatchSearch | null;
   /** 0..1. */
   health: number;
   /** Rounds in the magazine and the magazine size. */

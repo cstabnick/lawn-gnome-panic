@@ -3,7 +3,7 @@
 // flyer to a point at a height. Timed runs and chases use these; everything else may teleport.
 import { angleDiff } from '../../collide';
 import { planRoute } from '../../errands';
-import { nearestRoadNode } from '../../highways/roads';
+import { nearestRoadNode, nodeY } from '../../highways/roads';
 import { groundAt } from '../../terrain';
 import type { RoadNode, Vehicle } from '../../types';
 import type { SimCtx } from '../types';
@@ -76,7 +76,9 @@ interface Aim { x: number; z: number; deck?: boolean }
 
 function roadAims(ctx: SimCtx, v: Vehicle, x: number, z: number, deckY: number | undefined, why: string): Aim[] {
   const nodes = ctx.world.roads.nodes;
-  const from = nearestRoadNode(nodes, v.x, v.z, v.y);
+  // A car on the ground under a ramp or deck must not start from a deck node above it: route from the street.
+  const near = nearestRoadNode(nodes, v.x, v.z, v.y);
+  const from = near && near.deck !== undefined && nodeY(near) - v.y > 2.5 ? nearestRoadNode(nodes, v.x, v.z) : near;
   const to = nearestRoadNode(nodes, x, z, deckY);
   const route = from && to ? planRoute(nodes, from.id, to.id) : null;
   if (!route) throw new SimFail('bot', `driveTo ${why}: no road route from (${fmt(v.x)}, ${fmt(v.z)}) to (${fmt(x)}, ${fmt(z)})`);
@@ -107,7 +109,7 @@ function roadAims(ctx: SimCtx, v: Vehicle, x: number, z: number, deckY: number |
 export async function driveTo(ctx: SimCtx, x: number, z: number, o: MoveOpts & { deckY?: number }): Promise<void> {
   const first = ctx.player.vehicle;
   if (!first) throw new SimFail('bot', `driveTo ${o.why}: not in a vehicle`);
-  const aims = first.spec.boat ? [{ x, z }] : roadAims(ctx, first, x, z, o.deckY, o.why);
+  let aims: Aim[] = first.spec.boat ? [{ x, z }] : roadAims(ctx, first, x, z, o.deckY, o.why);
   const budget = o.budget ?? 300;
   const t0 = ctx.now();
   let idx = 0;
@@ -120,7 +122,13 @@ export async function driveTo(ctx: SimCtx, x: number, z: number, o: MoveOpts & {
     for (;;) {
       const v = ctx.player.vehicle;
       if (!v) throw new SimFail('bot', `driveTo ${o.why}: left the vehicle`);
-      if (Math.hypot(x - v.x, z - v.z) <= o.arrive || o.until?.()) return;
+      const high = o.deckY === undefined || Math.abs(v.y - o.deckY) < 4;
+      // Under the deck, not on it: plan again from here (the street, then the ramp).
+      if (!high && !first.spec.boat && idx >= aims.length - 1 && Math.hypot(x - v.x, z - v.z) <= o.arrive + 10) {
+        aims = roadAims(ctx, v, x, z, o.deckY, o.why);
+        idx = 0;
+      }
+      if ((high && Math.hypot(x - v.x, z - v.z) <= o.arrive) || o.until?.()) return;
       const now = ctx.now();
       if (now - t0 > budget) throw new SimFail('bot', `driveTo ${o.why}: stuck at (${fmt(v.x)}, ${fmt(v.z)})`);
       // Stuck: moved under a metre in the window. Reverse and steer the other way for 1.2 s.
@@ -134,7 +142,9 @@ export async function driveTo(ctx: SimCtx, x: number, z: number, o: MoveOpts & {
       const last = aims.length - 1;
       while (idx < last) {
         const a = aims[idx];
-        const behind = idx === 0 && (a.x - v.x) * Math.sin(v.yaw) + (a.z - v.z) * Math.cos(v.yaw) < 0;
+        const nx0 = aims[idx + 1];
+        // Passed the first aim: the car is already past it along its road leg (a straight line back would cut across blocks).
+        const behind = idx === 0 && nx0 !== undefined && (v.x - a.x) * (nx0.x - a.x) + (v.z - a.z) * (nx0.z - a.z) > 0;
         if (Math.hypot(a.x - v.x, a.z - v.z) >= (a.deck ? 2.5 : 6) && !behind) break;
         idx++;
       }

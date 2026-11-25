@@ -8,7 +8,8 @@ import { VEHICLES } from '../config';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
 import type { Blip, Vehicle } from '../types';
-import { createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
+import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
+import { restoreVehicle } from './questPins';
 import type { CheckpointDef, ObjectiveDef, QuestDeps, Run } from './types';
 import { readProbe } from '../city/probes';
 
@@ -93,6 +94,8 @@ export function checkpointsRun(
     const p = pushOutOfBoxes(vx, vz, VEHICLES[obj.vehicle.kind].radius + 0.5, deps.world.boxes, 0);
     rideAt = [p.x, p.z, yaw];
     ride = createVehicle(deps.scene, obj.vehicle.kind, p.x, p.z, yaw);
+    // E23 L101: the job's ride is the quest's while the job runs: traffic cleanup and parking leave it be.
+    ride.questOwned = true;
     deps.vehicles.push(ride);
   }
 
@@ -135,12 +138,12 @@ export function checkpointsRun(
       }
 
       // A wrecked (or too damaged) ride: a fresh one at the start, and the run starts over.
-      if (ride && rideAt && (ride.exploded || (obj.maxDamage !== undefined && 1 - ride.hp > obj.maxDamage))) {
+      if (ride && rideAt && (ride.exploded || ride.sunk || (obj.maxDamage !== undefined && 1 - ride.hp > obj.maxDamage))) {
         if (deps.player?.vehicle === ride) {
           deps.player.exit();
           ride.driver = 'none';
         }
-        repairVehicle(ride);
+        restoreVehicle(ride);
         ride.x = rideAt[0];
         ride.z = rideAt[1];
         ride.yaw = rideAt[2];
@@ -186,6 +189,7 @@ export function checkpointsRun(
     cleanup() {
       disposeMesh(deps.scene, gateMesh);
       gateMesh = null;
+      if (ride) ride.questOwned = false;
       if (ride && deps.vehicles && deps.player?.vehicle !== ride) {
         const idx = deps.vehicles.indexOf(ride);
         if (idx >= 0) deps.vehicles.splice(idx, 1);

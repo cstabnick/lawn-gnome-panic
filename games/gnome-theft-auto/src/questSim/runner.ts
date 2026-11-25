@@ -19,6 +19,12 @@ export interface RunOpts {
   roundTrip?: boolean;
   /** Called with each status line (the browser HUD, the CLI). */
   onStatus?: (line: string) => void;
+  /** Called with every session the run plays on: right after `host.open` and after every save round trip reopen. */
+  onSession?: (s: RunSession) => void;
+  /** Before solving this objective, do a save/reload (round trip) mid-quest (the one at step 0 still happens). */
+  reloadBeforeStep?: number;
+  /** When a solver throws a 'bot' failure: step once and call it again for the same step, this many times (default 0). */
+  solverRetries?: number;
 }
 
 /** The scene ids a run of `q` should play: intro, beats, arrival scenes, and the outro (or the chosen ending's). */
@@ -93,6 +99,7 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
       throw new SimFail('content', `prerequisites: ${(e as Error).message}`);
     }
     s = await host.open(saves, opts.cheats);
+    opts.onSession?.(s);
     const ctx = s;
     layer = ctx.layer;
 
@@ -110,11 +117,12 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
     if (!taken) throw new SimFail('bug', `quest not active after the giver's scene (active: ${ctx.quests.getJournal().activeId})`);
 
     const roundTripAt = opts.roundTrip === false || !host.reopen ? -2 : q.objectives.length > 1 ? 0 : -1;
-    if (roundTripAt === -1) s = await roundTrip(host, s, q, 0, records);
+    if (roundTripAt === -1) s = await roundTrip(host, s, q, 0, records, opts.onSession);
 
     // 3. Each objective.
     for (let i = 0; i < q.objectives.length; i++) {
       const obj = q.objectives[i];
+      if (opts.reloadBeforeStep === i && host.reopen) s = await roundTrip(host, s!, q, i, records, opts.onSession);
       const cur: RunSession = s!;
       const t0 = cur.now();
       const sr: StepResult = { step: i, kind: obj.kind, status: 'pass', simSeconds: 0 };
@@ -124,7 +132,17 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
       // A beat scene may still be playing; the run starts once it is over.
       await waitFor(cur, () => cur.quests.getJournal().activeLines.length > 0 || stepDone(cur, q.id, i), 60);
       try {
-        await solverFor(obj).solve(obj as never, cur, { questId: q.id, step: i, choice: opts.variant, budget });
+        for (let tries = opts.solverRetries ?? 0; ; tries--) {
+          try {
+            await solverFor(obj).solve(obj as never, cur, { questId: q.id, step: i, choice: opts.variant, budget });
+            break;
+          } catch (e) {
+            if (!(e instanceof SimFail) || e.failClass !== 'bot' || tries <= 0) throw e;
+            if (stepDone(cur, q.id, i)) break;
+            cur.log(`solver retry (${tries} left) after: ${e.message}`);
+            await cur.step();
+          }
+        }
         if (!stepDone(cur, q.id, i)) throw new SimFail('bot', `${obj.kind} solver returned but the step is not done`);
       } catch (e) {
         sr.status = 'fail';
@@ -134,7 +152,7 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
         throw e;
       }
       sr.simSeconds = cur.now() - t0;
-      if (i === roundTripAt) s = await roundTrip(host, cur, q, i + 1, records);
+      if (i === roundTripAt) s = await roundTrip(host, cur, q, i + 1, records, opts.onSession);
     }
 
     // 4. The payoff: outro scene, banner.
@@ -161,10 +179,11 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
   return result;
 }
 
-async function roundTrip(host: SessionHost, s: RunSession, q: QuestDef, expectStep: number, records: SessionRecord[]): Promise<RunSession> {
+async function roundTrip(host: SessionHost, s: RunSession, q: QuestDef, expectStep: number, records: SessionRecord[], onSession?: (s: RunSession) => void): Promise<RunSession> {
   records.push(s.record);
   roundTripSim += s.now();
   const n = await host.reopen!(s);
+  onSession?.(n);
   const j = n.quests.getJournal();
   if (j.activeId !== q.id) throw new SimFail('bug', `save round trip: active quest ${j.activeId}, expected ${q.id}`);
   if (j.activeStep !== expectStep) throw new SimFail('bug', `save round trip: step ${j.activeStep}, expected ${expectStep}`);

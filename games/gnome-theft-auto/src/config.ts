@@ -760,6 +760,20 @@ export const WATCH = {
   hoaCoat: 0xc9b99b,
   porcelainHat: 0xf4f4f8,
   porcelainCoat: 0xe6e8f0,
+  // ---- E23 L103 rebalance: units are dispatched from out of view, and lost by breaking line of sight ----
+  /** Seconds from a level-up until the new units arrive, by level (index = level). */
+  dispatchDelay: [0, 6, 5, 4, 3],
+  /** Officers appear on walk points this far from the player, m (preferring points behind the player's heading). */
+  officerSpawnMin: 60,
+  officerSpawnMax: 110,
+  /** Pursuit mowers and the HOA van appear on road nodes this far out, m. */
+  pursuitSpawnMin: 90,
+  pursuitSpawnMax: 160,
+  /** Nothing ever appears closer than this, m. */
+  spawnNever: 50,
+  /** Search circle radius at level 1, m, plus this much per level above 1. */
+  searchRadius: 45,
+  searchRadiusPerLevel: 15,
 } as const;
 export const CRACKED_TEXT = 'CRACKED';
 

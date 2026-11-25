@@ -862,7 +862,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
         let bestD = -1;
         for (let i = 0; i < vehicles.length; i++) {
           const v = vehicles[i];
-          if (v.driver !== 'none' || v.kind === 'whirligig' || v.questOwned) continue;
+          if (v.driver !== 'none' || v.kind === 'whirligig' || v.questOwned || v.questPinned) continue;
           const dd = Math.hypot(v.x - playerX, v.z - playerZ);
           if (dd > CLEANUP_DISTANCE && dd > bestD) { bestD = dd; best = i; }
         }

@@ -27,6 +27,9 @@ export function mergeQuestSaves(local: string | null, remote: string): string {
     const step = Math.max(sa.step ?? 0, sb.step ?? 0);
     const cracked = [...new Set([...(sa.cracked ?? []), ...(sb.cracked ?? [])])];
     out[id] = { state, step, cracked };
+    // E23 L101: the checkpoint of the side whose step is the merged step (local first).
+    const cp = [sa.checkpoint, sb.checkpoint].find((c) => c && c.step === step);
+    if (cp) out[id].checkpoint = cp;
     // The Tessie trigger beat (tessieUnlock.ts): this device's roll wins, so the beat never changes under the player.
     const beat = sa.beat ?? sb.beat;
     if (beat) out[id].beat = beat;

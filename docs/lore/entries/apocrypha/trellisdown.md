@@ -30,6 +30,8 @@ The west band of the map (code region `west-estates`, x -1400 to -900, z -900 to
 
 Quest 17 (`m17-the-dew-buyer`) is the first reach; 50 (`m50-trellisdown-tasting`) and 65 (`m65-the-countess-relents`) play out at the manor; Act III sends the crew back for the money part of the Grand Combine.
 
+Pardonlin, the Continental garden town, lies beyond the old fence to the west: the Grand Wicket (z -30), the North Wicket (z -500) and the Harbour Wicket (z 1000) are the three gates between the two (R-170, R-175). Pardonlin itself has its own entry.
+
 ## Look and motifs
 
 - Motifs: long clipped hedges; topiary; gravel drives; rose beds behind the neighbour's fence.

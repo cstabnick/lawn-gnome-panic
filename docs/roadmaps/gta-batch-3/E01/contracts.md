@@ -5,16 +5,19 @@ coordinates throughout: +x east, +z south (north is -z), metres.
 
 ## The map
 
-- `WORLD_HALF` (`config.ts`, from `src/data/world.layout.json` `worldHalf`) is **1400**: the map is 2800 x 2800. The
+- **E28 update:** the map grew again to 3600 x 3600 (`worldHalf` 1800, fence 1795) and the bands below were pushed to
+  the new edge; Pardonlin and the Unmown were added. See [../E28/contracts.md](../E28/contracts.md). The E01 numbers
+  below are as E01 left them, except where marked "E28".
+- `WORLD_HALF` (`config.ts`, from `src/data/world.layout.json` `worldHalf`) was **1400** (E28: 1800): the map was 2800 x 2800. The
   perimeter fence stands at `fenceEdge` **1395**. `MAP_EXTENT` (`sites.ts`) is the same number for map code.
 - The old 1800 square (|x|, |z| <= 900) keeps its seven regions. Four band regions surround it; each is its own region
   document with its own biome:
 
 | region id | name (E04) | biome | area | document origin |
 |---|---|---|---|---|
-| `north-highlands` | Snowcap Rise | `highland` | x -1400..1400, z -1400..-900 | (0, -1150) |
-| `south-shore` | Saltbucket Shore | `coast` | x -1400..1400, z 900..1400 | (0, 1150) |
-| `east-campus` | Rootwell | `campus` | x 900..1400, z -900..900 | (1150, 0) |
+| `north-highlands` | Snowcap Rise | `highland` | x -1400..1400, z -1400..-900 (E28: + z -1800..-1400 east of x -200, + x 1400..1800) | (0, -1150) |
+| `south-shore` | Saltbucket Shore | `coast` | x -1400..1400, z 900..1400 (E28: the whole strip z 1100..1800 too) | (0, 1150) |
+| `east-campus` | Rootwell | `campus` | x 900..1400, z -900..900 (E28: + x 1400..1800 to z 1100) | (1150, 0) |
 | `west-estates` | Trellisdown | `estate` | x -1400..-900, z -900..900 | (-1150, 0) |
 
 - New highways (appended to `layout.highways`, so the old road graph numbering is unchanged): `north-band`,
@@ -151,8 +154,8 @@ Sizes are full width x depth (hw/hd x 2). "natural" = `flat: false`.
 | `vineyard` | Trellisdown Vineyard | E16 | farm | (-1140, -170) | 300 x 220 | natural | on `hill/vineyard-slope` (~14 m) |
 | `mansion` | Brassknock Manor | E16 | building | (-1150, 40) | 120 x 100 | flat | door (-1150, -10) |
 | `golf-yard` | Hedgeworth Links | E15 | venue | (-1180, 620) | 360 x 420 | flat | breach (-895, 640) = the Kicked Board, approach (-1000, 500) |
-| `ocean` | the Saltwater | E11 | water | (0, 1290) | 2780 x 200 | natural | land only: E11 adds the water marker, `WATER.order`/bodies and the carve; the rim raises the ground near the edge |
-| `beach` | Saltbucket Shore beach | E11 | natural | (0, 1165) | 2780 x 50 | natural | |
+| `ocean` | the Saltwater | E11 | water | (0, 1490) (E28; was (0, 1290)) | 3580 x 600 (E28; was 2780 x 200) | natural | land only: E11 adds the water marker, `WATER.order`/bodies and the carve; the rim raises the ground near the edge |
+| `beach` | Saltbucket Shore beach | E11 | natural | (0, 1165) | 3580 x 50 (E28; was 2780 x 50) | natural | |
 | `boardwalk` | Saltbucket Boardwalk | E11 | venue | (0, 1115) | 420 x 50 | flat | entrance (0, 1090) at the end of `coast-spur` (0, 1060) |
 | `ferris-wheel` | the Spokewheel | E11 | venue | (-260, 1100) | 60 x 60 | flat | |
 | `pirate-ship` | the Bathtub Queen | E11 | venue | (300, 1280) | 80 x 50 | natural | parent `ocean` |

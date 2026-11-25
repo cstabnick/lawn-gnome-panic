@@ -78,16 +78,16 @@ function crossing(a: [number, number], b: [number, number], c: [number, number],
 }
 
 describe('the region map', () => {
-  it('the world is 2800 x 2800 with the fence 5 inside the edge', () => {
-    expect(LAYOUT.worldHalf).toBe(1400);
-    expect(LAYOUT.fenceEdge).toBe(1395);
+  it('the world is 3600 x 3600 with the fence 5 inside the edge', () => {
+    expect(LAYOUT.worldHalf).toBe(1800);
+    expect(LAYOUT.fenceEdge).toBe(1795);
   });
 
   it('inside the old 1800 x 1800 square no point is in a batch-3 band, and every point outside it is', () => {
-    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates'];
+    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates', 'pardonlin', 'the-unmown'];
     const rnd = lcg(11);
     for (let i = 0; i < 20000; i++) {
-      const x = (rnd() * 2 - 1) * 1400, z = (rnd() * 2 - 1) * 1400;
+      const x = (rnd() * 2 - 1) * 1800, z = (rnd() * 2 - 1) * 1800;
       const old = Math.abs(x) <= 900 && Math.abs(z) <= 900;
       expect(BANDS.includes(regionAt(x, z)), `${x}, ${z}`).toBe(!old);
     }
@@ -97,6 +97,20 @@ describe('the region map', () => {
     expect(regionAt(1200, 0)).toBe('east-campus');
     expect(regionAt(-1200, 0)).toBe('west-estates');
     expect(regionAt(900, 0)).toBe('dust-flats');
+    // E28: the next yard west (Pardonlin), the preserve in the north-west (the Unmown), and the bands pushed out.
+    expect(regionAt(-1600, 0)).toBe('pardonlin');
+    expect(regionAt(-1600, 1050)).toBe('pardonlin');
+    expect(regionAt(-1600, 1200)).toBe('south-shore');
+    expect(regionAt(-1600, -1200)).toBe('the-unmown');
+    expect(regionAt(-1000, -1600)).toBe('the-unmown');
+    expect(regionAt(0, -1600)).toBe('north-highlands');
+    expect(regionAt(1600, -1600)).toBe('north-highlands');
+    expect(regionAt(1600, -1200)).toBe('north-highlands');
+    expect(regionAt(1600, 0)).toBe('east-campus');
+    expect(regionAt(1600, 1050)).toBe('east-campus');
+    expect(regionAt(1600, 1600)).toBe('south-shore');
+    expect(regionAt(0, 1700)).toBe('south-shore');
+    expect(regionAt(-1300, 0)).toBe('west-estates');
   });
 
   it('inside the old 1200 x 1200 world every point keeps its old biome (edges and diagonals included)', () => {
@@ -115,7 +129,7 @@ describe('the region map', () => {
   it('the borders tile the map: every point is in some border, and the raster agrees with the exact test', () => {
     const rnd = lcg(7);
     for (let i = 0; i < 40000; i++) {
-      const x = (rnd() * 2 - 1) * 1400, z = (rnd() * 2 - 1) * 1400;
+      const x = (rnd() * 2 - 1) * 1800, z = (rnd() * 2 - 1) * 1800;
       expect(REGION_IDS.some((id) => inPolygon(REGIONS[id].border, x, z)), `${x}, ${z}`).toBe(true);
       expect(regionAt(x, z)).toBe(regionAtExact(x, z));
     }
@@ -150,11 +164,12 @@ describe('the region map', () => {
     expect(start('east-band')).toEqual(end('east-outer'));
     expect(start('south-band')).toEqual(end('south-outer'));
     expect(start('west-band')).toEqual(end('west-outer'));
-    expect(end('north-band')).toEqual(end('west-band'));
-    expect(end('north-band-east')).toEqual(end('east-band'));
+    // E28 turned the west and east band junctions into roundabouts: the band roads now run on from the ring.
+    expect(end('north-band')).toEqual(end('west-band-north'));
+    expect(end('north-band-east')).toEqual(end('east-band-north'));
     expect(end('east-band-south')).toEqual(end('south-band-east'));
     expect(end('west-band-south')).toEqual(end('south-band'));
-    for (const id of ['north-band', 'north-band-east', 'east-band', 'east-band-south', 'runway-spur', 'south-band', 'south-band-east', 'coast-spur', 'west-band', 'west-band-south']) {
+    for (const id of ['north-band', 'north-band-east', 'east-band', 'east-band-south', 'runway-spur', 'south-band', 'south-band-east', 'coast-spur', 'west-band', 'west-band-south', 'west-band-north', 'east-band-north', 'vineyard-lane', 'unmown-road', 'harbour-road']) {
       for (const [x, z] of highways().find((h) => h.id === id)!.points) {
         expect(Math.max(Math.abs(x), Math.abs(z)), `${id} stays inside the fence`).toBeLessThan(LAYOUT.fenceEdge - 20);
       }
@@ -163,7 +178,7 @@ describe('the region map', () => {
 
   it('the reserved river is one connected course from the Basin to the Puddle Sea, crossing roads only at the five bridges', () => {
     const w = waterPaths();
-    expect(w.map((p) => p.id)).toEqual(['river-ravine', 'river-upper', 'canal', 'river-farm']);
+    expect(w.map((p) => p.id)).toEqual(['river-ravine', 'river-upper', 'canal', 'river-farm', 'thymes']);
     const byId = Object.fromEntries(w.map((p) => [p.id, p.points]));
     expect(byId['river-ravine'].at(-1)).toEqual(byId.canal[0]);
     expect(byId.canal.at(-1)).toEqual(byId['river-farm'][0]);
@@ -177,7 +192,7 @@ describe('the region map', () => {
     expect(inBody('water/loch-moss', byId['river-ravine'][0])).toBe(true);
     expect(inBody('water/puddle-sea', byId['river-farm'].at(-1)!)).toBe(true);
     const bridges: string[] = [];
-    for (const p of w) {
+    for (const p of w.filter((q) => q.id !== 'thymes')) {
       for (const h of highways()) {
         for (let i = 0; i + 1 < p.points.length; i++) {
           for (let j = 0; j + 1 < h.points.length; j++) {

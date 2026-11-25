@@ -2,6 +2,7 @@
 // picks a new errand after a visit. Pure maths on the road graph, no three.js, so it is unit-tested headless.
 import { PLACES, type Place } from './config';
 import type { RoadNode, VehicleKind } from './types';
+import { canDrive } from './roundabouts';
 
 /** A driver's current errand: the place, and the nodes still to drive through (path[0] is the node it is heading for). */
 export interface Errand {
@@ -100,6 +101,7 @@ export function planRoute(nodes: readonly RoadNode[], from: number, goal: number
       if (!n) continue;
       for (const l of n.links) {
         if (cur === from && l === forbidden) continue;
+        if (!canDrive(n, l)) continue; // a one-way roundabout link the wrong way
         const m = byId.get(l);
         if (!m) continue;
         const nd = curD + Math.hypot(m.x - n.x, m.z - n.z);
@@ -225,7 +227,7 @@ export function nextLeg(
   if (to === undefined) {
     e = null;
     const node = byIdFor(w.nodes).get(arrive);
-    const options = node ? node.links.filter((l) => l !== came) : [];
+    const options = node ? node.links.filter((l) => l !== came && canDrive(node, l)) : [];
     to = options.length > 0 ? options[Math.floor(rand() * options.length)] : came;
   }
   const next = e && e.step + 1 < e.path.length ? e.path[e.step + 1] : null;

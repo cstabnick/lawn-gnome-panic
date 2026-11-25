@@ -35,6 +35,12 @@ export const SITE_IDS = [
   'ocean', 'beach', 'boardwalk', 'ferris-wheel', 'pirate-ship',
   // West band
   'vineyard', 'mansion', 'cult-camp', 'mole-entrance', 'golf-yard',
+  // E28, the second expansion. Pardonlin (the next yard west), filled by E30
+  'pl-landmark', 'pl-grand-place', 'pl-cafe-row', 'pl-radio-station', 'pl-market', 'pl-jardin', 'pl-harbour',
+  'pl-allotments', 'pl-backyards',
+  // The Unmown (the nature preserve) and the pushed-out bands, filled by E31
+  'unmown-ranger-station', 'unmown-wetland', 'unmown-meadow', 'unmown-old-wood', 'unmown-hide-1', 'unmown-hide-2',
+  'unmown-hide-3', 'rootwell-field-station', 'snowcap-high-tarn',
 ] as const;
 export type SiteId = (typeof SITE_IDS)[number];
 

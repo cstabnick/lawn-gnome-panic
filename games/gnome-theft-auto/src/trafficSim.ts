@@ -4,6 +4,8 @@
 import { TRAFFIC } from './config';
 import { freshErrand, nextLeg, placeNodes, type Errand, type ErrandWorld } from './errands';
 import type { RoadNode, VehicleKind } from './types';
+import { canDrive } from './roundabouts';
+import { advanceDirectorClock } from './trafficDirectors';
 
 /** A ghost this close to the end of its errand's last segment parks for a visit. */
 export const GHOST_PARK = 14;
@@ -238,6 +240,9 @@ function advanceGhost(
 
 /** Advance every non-live ghost by dt (see the algorithm). */
 export function stepGhosts(ghosts: Ghost[], dt: number, g: SimGraph, rand: () => number = Math.random): void {
+  // Off-screen ghosts ignore the traffic-hat wardens (only live cars near the player stop for them), but their step is the
+  // one per-frame tick traffic always makes, so it keeps the wardens' clock (trafficDirectors.ts).
+  advanceDirectorClock(dt);
   const groups = new Map<string, Ghost[]>();
   const snap = new Map<Ghost, { t: number; speed: number }>();
   for (const gh of ghosts) {
@@ -326,7 +331,11 @@ export function pickSpot(g: SimGraph, q: SpotQuery, rand: () => number = Math.ra
       }
     }
     const t = seg.len < 8 ? seg.len / 2 : 3 + rand() * (seg.len - 6);
-    const forward = rand() < 0.5;
+    let forward = rand() < 0.5;
+    const na = g.byId.get(seg.a);
+    const nb = g.byId.get(seg.b);
+    if (forward && na && !canDrive(na, seg.b)) forward = false;
+    else if (!forward && nb && !canDrive(nb, seg.a)) forward = true;
     const from = forward ? seg.a : seg.b;
     const to = forward ? seg.b : seg.a;
     const p = lanePose(g, from, to, t);

@@ -62,10 +62,15 @@ export function drapedRibbon(points: readonly (readonly [number, number])[], wid
     const l = Math.hypot(bx - ax, bz - az) || 1;
     return [(bx - ax) / l, (bz - az) / l] as const;
   });
+  // A closed ring (a roundabout: first point = last point) mitres its seam like any other vertex.
+  const [fx, fz] = points[0];
+  const [lx, lz] = points[points.length - 1];
+  const closed = points.length > 3 && Math.hypot(fx - lx, fz - lz) < 1e-6;
   // Side offset (left of travel) at each vertex: the mitre of its two segments, limited at sharp turns.
   const sideAt = (k: number): [number, number] => {
-    const a = dirs[Math.max(0, k - 1)];
-    const b = dirs[Math.min(dirs.length - 1, k)];
+    const last = dirs.length - 1;
+    const a = dirs[k > 0 ? k - 1 : closed ? last : 0];
+    const b = dirs[k <= last ? k : closed ? 0 : last];
     let mx = a[0] + b[0], mz = a[1] + b[1];
     const ml = Math.hypot(mx, mz) || 1;
     mx /= ml; mz /= ml;
@@ -130,7 +135,7 @@ export function drapedRibbon(points: readonly (readonly [number, number])[], wid
 /** Texture kind of each biome's ground (same as world.ts's flat ground). */
 export const GROUND_KIND: Record<RegionBiome, GroundKind> = {
   desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass', loch: 'moss', parkland: 'meadow',
-  highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass',
+  highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass', continental: 'grass', preserve: 'meadow',
 };
 
 export interface TerrainChunks {

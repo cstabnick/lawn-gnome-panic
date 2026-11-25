@@ -60,6 +60,17 @@ export function placeBlips(): Blip[] {
     // One blip per park name: Founders' Green is three PARKS rows (L92).
     ...PARKS.filter((p, i) => PARKS.findIndex((q) => q.name === p.name) === i).map((p) => at('park', p.x, p.z, p.name)),
     ...(Object.keys(EDGE_NAMES) as EdgeId[]).map((id) => at('edge', EDGE_LABELS[id].x, EDGE_LABELS[id].z, EDGE_NAMES[id])),
+    // Pardonlin, the Unmown and the roads between them (E28). Kinds reuse existing ones: town, park, edge, skyway.
+    at('town', -1600, -100, 'Pardonlin'),
+    at('park', -1000, -1600, 'The Unmown'),
+    at('park', -1560, -1150, 'Unmown Ranger Station'),
+    at('park', -1600, 1040, 'Pardonlin Basin'),
+    at('edge', -1400, -30, 'The Grand Wicket'),
+    at('edge', -1400, -500, 'North Wicket'),
+    at('edge', -1400, 1000, 'Harbour Wicket'),
+    at('skyway', -1555, -30, 'The Hatwheel'),
+    at('skyway', -950, -30, 'Trellis Cross'),
+    at('skyway', 940, 40, 'The Anthill Ring'),
   ];
 }
 

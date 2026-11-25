@@ -109,6 +109,9 @@ import { beginPlantHarvest } from './flora/harvest';
 import { createFlora } from './flora/runtime';
 import { setTowerNight } from './towers';
 import { createWorldDetails } from './worldDetails';
+import { createDirectorViews } from './trafficDirectorsView';
+import { createWaveWatch, nowSeconds } from './trafficDirectors';
+import { createLapWatch } from './roundabouts';
 import { installCityDressing } from './cityScenery/install';
 import { buildStageMarks, buildStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
@@ -369,6 +372,10 @@ const encounters = createEncounters(scene, world, hud, economy, watch, fx, play)
 const vibeNpcs = createVibeNpcs(scene, world, hud);
 const easterEggs = createEasterEggs(scene, world, hud, (amt, reason) => economy.earn(amt, reason));
 const worldDetails = createWorldDetails(scene, hud, world.boxes);
+// E28: the traffic-hat wardens at the busy crossings, and the watches for their achievements and the roundabout lap.
+const directorViews = createDirectorViews(scene);
+const waveWatch = createWaveWatch();
+const lapWatch = createLapWatch();
 const ambientGnomes = createAmbientGnomes(scene);
 // The Lost & Found Speedway (raceTrack/): circuit, grandstands, crowd, free-roam lap timer. Its races are quests (quests/races.ts).
 const raceTrack = createRaceTrack(scene, world, ui, { hud, unlock: (id) => void achievements.unlock(id), play });
@@ -1933,6 +1940,14 @@ function frame(now: number): void {
   vibeNpcs.update(dt, simX, simZ, v);
   easterEggs.update(dt, player, vehicles);
   worldDetails.update(dt, simX, simZ);
+  directorViews.update(dt, nowSeconds(), simX, simZ);
+  {
+    const dv = drivenVehicle();
+    if (dv) {
+      if (lapWatch.step(dv.x, dv.z, dt)) void achievements.unlock('gta-roundabout-lap');
+      if (waveWatch.step(dv.x, dv.z, dv.yaw, dv.speed, nowSeconds())) void achievements.unlock('gta-hat-wave');
+    }
+  }
   ambientGnomes.update(dt, simX, simZ);
   cityDressing.update(dt, simX, simZ);
   garages.update(dt, player, watch);

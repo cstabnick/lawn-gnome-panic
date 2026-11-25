@@ -39,15 +39,16 @@ describe('placeBlips', () => {
     // At least these 32; other features add more (one line each in mapPois.ts).
     expect(blips.length).toBeGreaterThanOrEqual(32);
     expect(new Set(blips.map((b) => b.label)).size).toBe(blips.length);
-    const repeats = new Set<string>(['onramp', 'works', 'skyway', 'park', 'edge']);
+    const repeats = new Set<string>(['onramp', 'works', 'skyway', 'park', 'edge', 'town']);
     const counts = new Map<string, number>();
     for (const b of blips) counts.set(b.kind as string, (counts.get(b.kind as string) ?? 0) + 1);
     for (const [kind, n] of counts) if (!repeats.has(kind)) expect(n).toBe(1);
     expect(counts.get('onramp')).toBe(5);
     expect(counts.get('works')).toBe(2);
-    expect(counts.get('skyway')).toBe(2);
-    expect(counts.get('park')).toBe(7); // the 6 parks + Founders' Green (one blip for its two added blocks)
-    expect(counts.get('edge')).toBe(4);
+    expect(counts.get('skyway')).toBe(5); // 2 + the Hatwheel, Trellis Cross and the Anthill Ring (E28)
+    expect(counts.get('park')).toBe(10); // the 6 parks + Founders' Green (one blip for its two added blocks) + 3 E28 (Unmown, ranger station, basin)
+    expect(counts.get('edge')).toBe(7); // 4 city edges + 3 E28 wickets
+    expect(counts.get('town')).toBe(2); // Pebblewick + Pardonlin (E28)
     for (const b of blips) {
       expect(isPlace(b)).toBe(true);
       expect(b.color).toBe(PLACE_STYLE[b.kind as PlaceKind].color);

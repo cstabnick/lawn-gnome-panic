@@ -138,6 +138,17 @@ export const FRINGE_THEMES: Record<RegionId, FringeTheme> = {
     works: ['lean-to-shed'], scrub: ['lean-to-shed'], field: ['polytunnel', 'lean-to-shed'],
     clutter: ['hay-bale', 'crate'], weeds: ['wildflower-patch'], trees: ['broadleaf-tree'], hedge: 'hedgerow',
   },
+  // E28: no fringe belt reaches them yet either.
+  pardonlin: {
+    ground: 'gravel', track: 'gravel', fences: ['wooden-fence'],
+    works: ['lean-to-shed'], scrub: ['lean-to-shed'], field: ['polytunnel'],
+    clutter: ['crate', 'woodpile'], weeds: ['ornamental-grass'], trees: ['broadleaf-tree'], hedge: 'hedgerow',
+  },
+  'the-unmown': {
+    ground: 'dirt', track: 'dirt', fences: ['wooden-fence'],
+    works: ['lean-to-shed'], scrub: ['lean-to-shed'], field: ['lean-to-shed'],
+    clutter: ['woodpile', 'stone-cairn'], weeds: ['wildflower-patch'], trees: ['broadleaf-tree'], hedge: null,
+  },
 };
 
 /** The fringe look at (x, z): the region there (the city counts as its nearest neighbour's edge). */

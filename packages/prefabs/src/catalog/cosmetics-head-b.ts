@@ -214,4 +214,64 @@ export const COSMETICS_HEAD_B: PrefabDef[] = [
       { s: 'box', d: [0.008, 0.07, 0.008], at: [0.08, 0.08, 0.08], c: 'gold' },
     ],
   },
+  {
+    id: 'hoa-traffic-hat', name: 'HOA Traffic Hat', category: 'armor', uses: ['wear-head'],
+    tags: ['hat', 'traffic', 'warden', 'hoa', 'whistle', 'stripes', 'peak', 'head', 'reward', 'pardonlin'], emoji: [],
+    about: 'A tall warden\'s hat in white and HOA green stripes, with a peak and a little brass whistle on a cord, for the traffic gnomes of Pardonlin.',
+    examine: [
+      'A tall hat with white and green bands round the crown, a short stiff peak at the front and a whistle on a cord.',
+      'Saying: the warden blows the whistle, and the traffic stops. Nobody ever checks whether the whistle was working.',
+      'Tip: wear the peak forward and nobody can see where you are looking, which is the whole point of a warden.',
+      'Joke: the whistle has never made a sound, but three hundred gnomes have stopped walking when it was pointed at them.',
+      'The stripes are white for the road and green for the hedge, and the hat is green on the inside for the same reason.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.14, 0.15, 0.3], at: [0, 0.15, 0], c: 'green', seg: 10 },                // crown
+      { s: 'cyl', d: [0.152, 0.152, 0.04], at: [0, 0.07, 0], c: 'white', seg: 10 },             // white bands
+      { s: 'cyl', d: [0.152, 0.152, 0.04], at: [0, 0.21, 0], c: 'white', seg: 10 },
+      { s: 'box', d: [0.28, 0.02, 0.14], at: [0, 0.03, 0.2], c: 'leaf-dark' },                  // peak
+      { s: 'box', d: [0.01, 0.12, 0.01], at: [0.16, 0.17, 0.02], c: 'black' },                 // cord
+      { s: 'cyl', d: [0.02, 0.02, 0.07], at: [0.2, 0.12, 0.02], rot: [0, 0, 90], c: 'silver', seg: 6 }, // whistle
+    ],
+  },
+  {
+    id: 'pardonlin-beret', name: 'Pardonlin Beret', category: 'armor', uses: ['wear-head'],
+    tags: ['beret', 'hat', 'cap', 'pardonlin', 'continental', 'stalk', 'ribbon', 'head', 'reward'], emoji: [],
+    about: 'A floppy navy beret with a tiny stalk on top and a black ribbon round the band, as worn in the cafes of Pardonlin.',
+    examine: [
+      'A floppy round beret, dark blue and slightly lopsided, with a tiny stalk on top and a black ribbon round the band.',
+      'Saying: a beret is worn to the left in Pardonlin and to the right in the next town, which is why nobody travels there.',
+      'Tip: tilt it forward to look thoughtful. The gnomes of the Rive Gauche tilt theirs backwards to look hungry.',
+      'Joke: the stalk on top is for a flower, but the flower was eaten by a visiting goat in the first week.',
+      'The beret is made to fit a head that is never quite the same size, which is the secret of every good Pardonlin hat.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.2, 0.21, 0.1], at: [0, 0.05, 0], c: 'blue', seg: 12 },                  // floppy disc
+      { s: 'ring', d: [0.2, 0.012], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'black', seg: 12 },   // ribbon
+      { s: 'cyl', d: [0.012, 0.012, 0.04], at: [0, 0.12, 0], c: 'wool', seg: 6 },              // tiny stalk
+    ],
+  },
+  {
+    id: 'meadow-crown', name: 'Meadow Crown', category: 'armor', uses: ['wear-head'],
+    tags: ['crown', 'grass', 'flowers', 'wildflower', 'meadow', 'unmown', 'head', 'reward', 'preserve'], emoji: [],
+    about: 'A crown of woven grass blades and three wildflowers, picked from the Unmown.',
+    examine: [
+      'A ring of woven grass blades, standing up in five points, with a bright wildflower on three of them.',
+      'Saying: the meadow crowns its own, and it crowns them very slowly, over the course of one whole summer.',
+      'Tip: keep the crown damp, or the grass goes brittle and sheds on the first gnome who sits down.',
+      'Joke: the flowers are the first ones a passing bee tries to visit, and the crown is the second.',
+      'Whoever wears it is said to be the Unmown\'s favourite, which the Unmown has never confirmed or denied in writing.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.14, 0.025], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'grass', seg: 12 },   // woven band
+      { s: 'cone', d: [0.03, 0.12], at: [0, 0.09, 0.14], c: 'grass', seg: 6 },                  // grass points
+      { s: 'cone', d: [0.03, 0.12], at: [0.133, 0.09, 0.043], c: 'grass', seg: 6 },
+      { s: 'cone', d: [0.03, 0.12], at: [0.082, 0.09, -0.113], c: 'grass', seg: 6 },
+      { s: 'cone', d: [0.03, 0.12], at: [-0.082, 0.09, -0.113], c: 'grass', seg: 6 },
+      { s: 'cone', d: [0.03, 0.12], at: [-0.133, 0.09, 0.043], c: 'grass', seg: 6 },
+      { s: 'ball', d: [0.03], at: [0, 0.16, 0.14], c: 'petal', seg: 6 },                        // wildflowers
+      { s: 'ball', d: [0.03], at: [0.133, 0.16, 0.043], c: 'honey', seg: 6 },
+      { s: 'ball', d: [0.03], at: [-0.082, 0.16, -0.113], c: 'purple', seg: 6 },
+    ],
+  },
 ];

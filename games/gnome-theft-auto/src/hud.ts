@@ -296,6 +296,7 @@ const MAP = {
   road: 0x23272e, roadEdge: 0xfff1c2, sand: 0xf3dc98, wall: 0x3b2f14, runway: 0x23272e, runwayEdge: 0xffffff,
   building: 0x9aa6b4, outline: 0x0c0f13, loch: 0x3f7f6a, parkland: 0xb6e05a, water: 0x3d8fd6,
   highland: 0x8fa77a, coast: 0xeedc9e, campus: 0x7fbf5e, estate: 0x5e9e4a,
+  continental: 0xc9b48a, preserve: 0x6f8f3a,
 } as const;
 const OUTLINE = hexColor(MAP.outline);
 const PIN = '#ffd23f';

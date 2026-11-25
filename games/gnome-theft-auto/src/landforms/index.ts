@@ -21,6 +21,8 @@ import { landform as northHighlands } from './northHighlands';
 import { landform as southShore } from './southShore';
 import { landform as eastCampus } from './eastCampus';
 import { landform as westEstates } from './westEstates';
+import { landform as pardonlin } from './pardonlin';
+import { landform as theUnmown } from './theUnmown';
 
 export type { GroundFacts, Landform, LandformFeature, LandformInput, PaintKind } from './types';
 export { PAINT_KINDS } from './types';
@@ -39,6 +41,8 @@ export const LANDFORMS: Partial<Record<RegionId, Landform>> = {
   'south-shore': southShore,
   'east-campus': eastCampus,
   'west-estates': westEstates,
+  pardonlin,
+  'the-unmown': theUnmown,
 };
 
 interface Entry { landform: Landform; input: LandformInput }

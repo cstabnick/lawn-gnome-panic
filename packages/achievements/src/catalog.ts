@@ -1349,6 +1349,52 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Bear Hug', description: 'Stand beside 9 different polar bears. They will not mind. They will barely notice.', target: 9,
     reward: { slot: 'hand', prefabId: 'cocoa-mug', label: 'Cocoa Mug' },
   },
+  // ---- Gnome Theft Auto E24: jobs II (chef, mechanic, comedy stage; games/gnome-theft-auto/src/jobs/workDefs.ts) ----
+  {
+    id: 'gta-job-chef', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Order Up', description: 'Serve 25 dishes at the Route South Acorn Diner.', target: 25,
+    reward: { slot: 'head', prefabId: 'diner-chef-toque', label: 'Diner Chef Toque' },
+  },
+  {
+    id: 'gta-job-five-star-rush', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Five Stars', description: 'Work a whole diner shift (6 tickets or more) with every ticket at five stars.',
+    reward: { slot: 'neck', prefabId: 'pass-bell-medal', label: 'Pass Bell Medal' },
+  },
+  {
+    id: 'gta-job-full-menu', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Menu', description: 'Cook every dish on the Acorn Diner menu at least once.', target: 8,
+    reward: { slot: 'hand', prefabId: 'golden-ladle', label: 'Golden Ladle' },
+  },
+  {
+    id: 'gta-job-mechanic', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Customer Is Always Right', description: "Hand back 5 client cars at Pay 'n' Glaze.", target: 5,
+    reward: { slot: 'head', prefabId: 'glaze-shop-overalls-cap', label: 'Glaze Shop Cap' },
+  },
+  {
+    id: 'gta-job-nailed-the-brief', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nailed the Brief', description: 'A client rates your work five stars.',
+    reward: { slot: 'hand', prefabId: 'torque-wrench-chrome', label: 'Chrome Torque Wrench' },
+  },
+  {
+    id: 'gta-job-creative-differences', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Creative Differences', description: 'Hand back a car that matches nothing the client asked for.',
+    reward: { slot: 'hand', prefabId: 'paint-swatch-fan', label: 'Paint Swatch Fan' },
+  },
+  {
+    id: 'gta-job-comedian', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tough Room', description: 'Perform 3 sets at Le Petit Groan, all the way to the end.', target: 3,
+    reward: { slot: 'neck', prefabId: 'open-mic-bowtie', label: 'Open Mic Bow Tie' },
+  },
+  {
+    id: 'gta-job-tomato-catcher', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fresh Produce', description: 'Take 10 tomatoes on stage. With your face.', target: 10,
+    reward: { slot: 'head', prefabId: 'tomato-splat-beret', label: 'Tomato-Splat Beret' },
+  },
+  {
+    id: 'gta-job-double-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Double Down', description: 'Double down five times in one set.',
+    reward: { slot: 'hand', prefabId: 'squeaky-rubber-chicken', label: 'Squeaky Rubber Chicken' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

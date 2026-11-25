@@ -159,6 +159,9 @@ import { GTA_WINTER_GEAR } from './gta-winter-gear';
 import { GTA_FISH_ICE } from './gta-fish-ice';
 import { GTA_DIRT_RALLY } from './gta-dirt-rally';
 import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
+import { GTA_DINER } from './gta-diner';
+import { GTA_MECHANIC } from './gta-mechanic';
+import { GTA_COMEDY } from './gta-comedy';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -195,4 +198,5 @@ export const CATALOG: readonly PrefabDef[] = [
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
+  ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
 ];

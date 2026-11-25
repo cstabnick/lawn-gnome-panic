@@ -9,7 +9,7 @@ import { aboveGround, waterAt } from '../terrain';
 import { seaState, waveSlope, waveTime } from '../waves';
 import { speakAt } from '../voice/speech';
 import { CHATTER, JOBS, JOB_ACHIEVEMENTS, JOB_TUNING as J, perksFor } from './defs';
-import { bindJobStats, levelOf, levelProgress, recordFail, recordGig, sharedJobsStore, statsOf } from './career';
+import { anyJobAtLevel, bindJobStats, levelOf, levelProgress, recordFail, recordGig, sharedJobsStore, statsOf } from './career';
 import { loaded, startGig, stepGig, timeLeft } from './gig';
 import type { GenCtx, GenVehicle, CallInfo } from './gen';
 import { makeBoatGig, makeCourierRoute, makePilotGig, makePlayerFare, makeTaxiFare } from './gen';
@@ -359,7 +359,7 @@ export function installJobs(deps: JobsDeps): Jobs {
     if (job === 'pilot') deps.increment(JOB_ACHIEVEMENTS.pilot);
     if (extra.perfectLanding) deps.unlock(JOB_ACHIEVEMENTS.butter);
     if (extra.ferryLoop) deps.unlock(JOB_ACHIEVEMENTS.ferry);
-    if (JOB_IDS.some((id) => levelOf(store.get().jobs[id].xp) >= 5)) deps.unlock(JOB_ACHIEVEMENTS.career);
+    if (anyJobAtLevel(store.get(), 5)) deps.unlock(JOB_ACHIEVEMENTS.career);
 
     if (level) deps.hud.banner(`${JOBS[job].title} level ${level}`);
     clearLoad();
@@ -745,7 +745,7 @@ export function installJobs(deps: JobsDeps): Jobs {
       store.commit();
       const after = levelOf(rec.xp);
       if (after > before) deps.hud.banner(`${JOBS[job].title} level ${after}`);
-      if (JOB_IDS.some((id) => levelOf(store.get().jobs[id].xp) >= 5)) deps.unlock(JOB_ACHIEVEMENTS.career);
+      if (anyJobAtLevel(store.get(), 5)) deps.unlock(JOB_ACHIEVEMENTS.career);
     },
     callCab,
     takeCall,

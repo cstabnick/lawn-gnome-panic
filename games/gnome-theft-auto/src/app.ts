@@ -159,6 +159,8 @@ import { createSkyTraffic } from './skyTraffic/runtime';
 import { bindSkyTraffic } from './skyTraffic/api';
 import { createPhone } from './phone/phone';
 import { installJobs } from './jobs/runtime';
+import { installWorkplaces, type Workplaces } from './workplaces';
+import { isClientVehicle } from './glazeClient';
 import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
 import { installCoast } from './coast';
@@ -898,7 +900,9 @@ const snackPickups = createPickups({
   onPick: (id) => inventory.add(id) > 0,
 });
 setRepairHook(() => void achievements.unlock(ECON_ACH.repair));
-const econOpen = (): boolean => dealers.isOpen() || insurance.isOpen() || ledger.isOpen() || bag.isOpen();
+let workplaces: Workplaces | null = null;
+// E24 workplaces (chef, mechanic, comedy) count as an open shop: controls held while their UI or stage is up.
+const econOpen = (): boolean => dealers.isOpen() || insurance.isOpen() || ledger.isOpen() || bag.isOpen() || !!workplaces?.isOpen();
 
 // ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
 // Seats: the mower I drive has passenger seats, and its seat book hands them out to players who ask (seats.ts). I can
@@ -1086,6 +1090,17 @@ const tubing = installTubing(jobDeps);
 // E11 the coast (coast/): the Spokewheel ride, boarding the Bathtub Queen, Saltbucket's residents and sounds.
 const coast = installCoast(jobDeps);
 registerJobsTrainer(jobs, tubing);
+// E24 workplace jobs (workplaces/): chef at the Route South Acorn Diner, mechanic at Pay 'n' Glaze, comedian at Le Petit Groan.
+workplaces = installWorkplaces({
+  scene, ui, hud, economy, player, vehicles, play,
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  blocked: jobDeps.blocked,
+  timeLabel: jobDeps.timeLabel,
+  showroom: (t) => { hud.setVisible(!t); chase.showroom(t); },
+  teleport: (x, z, yaw) => { player.respawn(x, z, yaw); chase.yaw = yaw; },
+  getOut: () => { if (player.vehicle) getOut(); },
+});
 // Winter sports (E12, winter/): Snowdrop Slope (skis, the tea-tray sled, the Bootlace Tow, timed runs), the Woolly Sock
 // Lodge, Pail Pond ice holes and Bear Hug. Builds its own scenery and pushes its colliders into world.boxes.
 const winter = installWinter({
@@ -1194,7 +1209,8 @@ function takeWheel(v: Vehicle): void {
   // The player's own Pay 'n' Glaze work shows on any vehicle of that model they drive (before the sim reads the ride height).
   // E08: the player's own vehicles (Lock-Up uid) keep their own look; only stock vehicles wear the per-model loadout.
   const own = ownedLoadout(v.kind);
-  if (own && v.rig && !lockup.ownedUidOf(v)) setVehicleLook(v, own);
+  // E24: a mechanic-job client car keeps the client's look.
+  if (own && v.rig && !lockup.ownedUidOf(v) && !isClientVehicle(v)) setVehicleLook(v, own);
   if (simActive() && !v.spec.flies && !v.spec.boat) v.sim = createSimDrive(v);
   player.enter(v);
   input.refresh();
@@ -2133,6 +2149,7 @@ function frame(now: number): void {
   const taxiEvent = taxi.update(dt);
   section('jobs');
   jobs.update(dt);
+  workplaces?.update(dt);
   tubing.update(dt);
   coast.update(dt);
   winter.update(dt);
@@ -2478,7 +2495,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips(), ...winter.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();

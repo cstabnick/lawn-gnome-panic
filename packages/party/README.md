@@ -134,3 +134,4 @@ Every new game adds its row: a slice idea, or why not (yet).
 | hoard-rush | nothing-left-to-collect | Hoard Rush: 30 s, four gnomes on one office floor while the ceiling rains office supplies and the multiplier doubles every 10 s; most collected wins (reuses collect.ts, walk.ts, office.ts) | building |
 | gnomelock-orb-rush | gnomelock | later: 40 s 4-gnome Soul Acorn last-hit & deny race; full 2v2 MOBA has too many verbs for a party slice | later |
 | hose-dodge | gnome-souls | later: 40 s 4-gnome dodge survival in the Sunken Spigot Basin against Slink's sweeps; full Souls combat has too many verbs for a party slice | later |
+| — | dead-grid | Not a party slice: open-ended WASM society simulation sandbox with thousands of agents | no |

@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Frank]
 sources: [docs/design/gnome-theft-auto/world-lore.md, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
-related: [cloverfield-farms, buck-iron, razor-back]
+related: [franks-shack, cloverfield-farms, buck-iron, razor-back]
 ---
 
 Cloverfield Farms highway watcher leaning permanently against the `south` welcome sign at `x: 0, z: 260`, chewing timothy grass and identifying stolen rigs by ear.

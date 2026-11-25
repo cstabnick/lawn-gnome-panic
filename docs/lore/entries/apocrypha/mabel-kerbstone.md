@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Mabel]
 sources: [docs/lore/rulings.md, games/gnome-theft-auto/src/taxi.ts, games/gnome-theft-auto/src/config.ts]
-related: [turfton-taxi, turfton-bus-stop, snail-coach, newcomers-card, kerbside-exchange]
+related: [kerbstone-cabs, turfton-taxi, turfton-bus-stop, snail-coach, newcomers-card, kerbside-exchange]
 ---
 
 The driver of the Turfton Taxi. She calls everyone "dear", and she has never once been short of change.

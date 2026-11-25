@@ -224,6 +224,8 @@ export function createLedger(deps: LedgerDeps): Ledger {
       row.appendChild(info);
       if (deps.ownership.ownsProperty(def.id)) {
         row.appendChild(text('div', 'gta-ledger-badge', 'Yours'));
+      } else if (def.buyHint) {
+        row.appendChild(text('div', 'gta-ledger-meta', def.buyHint));
       } else {
         const actions = document.createElement('div');
         actions.className = 'gta-ledger-actions';

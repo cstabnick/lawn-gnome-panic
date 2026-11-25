@@ -127,11 +127,13 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-ownership-v1': null, // ownership.ts: properties, policies and wrecks; the newer side wins (pairs with gta-economy-v1 loans)
   'gta-position-v1': null, // positionSave.ts: the last place stood; the newer side wins
   'gta-gnomeybird-v1': bestGnomeyBird, // gnomlet/apps/gnomeyBird.ts: the higher best score wins
+  'gta-home-v1': null, // home/layout.ts: one current flat layout; the newer side wins
+  'gta-homes-visited-v1': unionArrays, // homes/visits.ts: home ids visited only grow
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory
  *  copy in a save module must not drop what another device added mid-session). */
-const GROWS = new Set<GtaSaveKey>(['gta-gnomeybird-v1', 'gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1', 'gta-outskirts-v1', 'gta-mowing-v1', 'gta-odd-rides-v1']);
+const GROWS = new Set<GtaSaveKey>(['gta-gnomeybird-v1', 'gta-homes-visited-v1', 'gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1', 'gta-outskirts-v1', 'gta-mowing-v1', 'gta-odd-rides-v1']);
 
 function newer(a: BundleEntry, b: BundleEntry): BundleEntry {
   if (a.t !== b.t) return a.t > b.t ? a : b;

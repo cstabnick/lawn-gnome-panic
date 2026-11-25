@@ -4,6 +4,7 @@
 // Scenes: cutscene/scenes/city/. Comms: quests/commsCity.ts. Unlock beats: unlocks.ts. Perks: perks.ts.
 import type { GnomeLook } from '@lawn/gnome';
 import { PAY_N_GLAZE, THORNE_TOWER } from '../config';
+import { homeDoor } from '../homes/data';
 import type { QuestDef } from './types';
 
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
@@ -45,11 +46,19 @@ export const CITY_QUESTS: readonly QuestDef[] = [
       },
       {
         kind: 'visit',
-        text: 'Pin a notice on the City Hall board for Councilwoman Vance, Downtown',
-        at: [8, -70],
-        radius: 9,
-        hint: 'City Hall steps (Downtown)',
-        toastOnEnter: 'Notice pinned: ZONING BOARD MEETS THURSDAY. BRING A CHAIR.',
+        text: "Drop the Tattler through Councilwoman Vance's letterbox on Kerb Row",
+        at: homeDoor('juniper'),
+        radius: 5,
+        hint: 'Councilwoman Vance (Kerb Row)',
+        toastOnEnter: 'The zoning board notice goes in with it. Two letterboxes: PAPERWORK, and MORE PAPERWORK. You use the second.',
+      },
+      {
+        kind: 'visit',
+        text: "Leave Mabel's copy at the Kerbstone Cabs garage (flat above)",
+        at: homeDoor('mabel'),
+        radius: 5,
+        hint: 'Kerbstone Cabs garage (flat above)',
+        toastOnEnter: 'Mabel pays for it in exact change before you ask. She has been waiting since Tuesday.',
       },
       {
         kind: 'visit',

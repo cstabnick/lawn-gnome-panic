@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Diggs]
 sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/society.md]
-related: [fort-sandpit, spade-guard, the-whirligig, desert-airfield]
+related: [diggs-bungalow, fort-sandpit, spade-guard, the-whirligig, desert-airfield]
 ---
 
 Olive-capped hardliner commanding Fort Sandpit's Spade Guard, who has spent fifteen sun-baked years guarding a flying mower nobody is legally cleared to start.

@@ -147,6 +147,7 @@ import { GTA_EURO_GARDEN_B } from './gta-euro-garden-b';
 import { GTA_EURO_FLEET } from './gta-euro-fleet';
 import { GTA_EURO_FLEET_B } from './gta-euro-fleet-b';
 import { GTA_EURO_GEAR } from './gta-euro-gear';
+import { GTA_HOMES } from './gta-homes';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -178,5 +179,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_CONTINENTAL_KIT,
   ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
-  ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR,
+  ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES,
 ];

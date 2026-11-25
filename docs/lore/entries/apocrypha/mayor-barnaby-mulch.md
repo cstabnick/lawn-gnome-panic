@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Mayor Mulch, Two-Coat]
 sources: [docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/story.md]
-related: [turfton-city-hall, vesper-thorne, juniper-vance, pay-n-glaze]
+related: [mayors-residence, turfton-city-hall, vesper-thorne, juniper-vance, pay-n-glaze]
 ---
 
 Turfton's grinning career politician, infamous for surviving three consecutive corruption scandals by getting a fresh coat of glossy paint and claiming it was a different glaze.

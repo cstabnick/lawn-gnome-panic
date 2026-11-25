@@ -34,6 +34,14 @@ import { createInteractables } from './interactables';
 import { createGnomecinoDoor } from './portal/gnomecinoDoor';
 import { buildRooftops, createInteriors, createRoofLife } from './interiors';
 import { buildDoublePotRoof } from './interiors/showcase/doublePot';
+import { buildSaucerCourt } from './homes/saucerCourt';
+import { buildTownHomes } from './homes/townHomes';
+import { buildOuterHomes } from './homes/outerHomes';
+import './homes/interiors';
+import { updateHomeWindows } from './homes/pieces';
+import { createHomeVisits } from './homes/visits';
+import { createDecorPanel } from './home/decorUi';
+import { installHome, type HomeRuntime } from './home/runtime';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
 import { SCENES } from './cutscene/scenes';
@@ -616,6 +624,8 @@ const cutscene = createCutscene(scene, ui, {
   }
 }
 const briefing = createBriefing(ui);
+/** E10: the home runtime (installed after the interiors); the move-in quest signs the flat's loan through it. */
+let homeRuntime: HomeRuntime | null = null;
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {
@@ -656,6 +666,7 @@ const quests = createQuests({
   },
   // Mission comms (quests/comms.ts): the talking-head briefing at a quest's start and a call as each objective begins.
   onObjectiveStart(q, step) {
+    homeRuntime?.onQuestStep(q.id, step);
     const c = commsFor(q.id, step);
     if (c) briefing.show(briefingLines(c), { mode: c.mode, title: q.title });
   },
@@ -980,6 +991,25 @@ const interiors = createInteriors({
   heat: () => watch.heat,
   night: () => atmosphere?.nightFactor() ?? 0,
   unlock: (id) => void achievements.unlock(id),
+});
+// Homes (E10, src/home/ and src/homes/): Saucer Court and the characters' homes, the player's Flat 3B (loan, furniture,
+// sleep), the Decorate panel, the Home app, and homes found on the map once visited.
+world.boxes.push(...buildSaucerCourt(scene), ...buildTownHomes(scene), ...buildOuterHomes(scene));
+const decor = createDecorPanel({ ui, economy, toast: (t) => hud.toast(t, 3500) });
+homeRuntime = installHome({
+  hud, economy, decor,
+  heal: () => { player.health = 1; },
+  advanceWorldTime: atmosphere ? (mode, seconds) => atmosphere.advanceWorldTime(mode, seconds) : null,
+  nightFactor: () => atmosphere?.nightFactor() ?? 0,
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  activeQuestId: () => quests.getJournal().activeId,
+  currentInterior,
+});
+homeRuntime.catchUp(quests.getJournal().saves);
+const homeVisits = createHomeVisits({
+  increment: (id, by) => void achievements.increment(id, by),
+  toast: (t) => hud.toast(t, 4000),
 });
 const roofLife = createRoofLife({
   player, hud,
@@ -2200,7 +2230,10 @@ function frame(now: number): void {
   weatherFrame(dt, simX, simZ, !interiorHome && !stageHome);
   const nightF = atmosphere?.nightFactor() ?? 0;
   setTowerNight(nightF);
+  updateHomeWindows(nightF);
   interiors.update(dt);
+  homeRuntime?.update(dt);
+  if (!interiorHome) homeVisits.update(player.x, player.z);
   roofLife.update(dt);
   section('speedway');
   raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
@@ -2362,6 +2395,7 @@ function frame(now: number): void {
     gunStore.blip,
     ...outskirts.blips(),
     ...dealers.blips(),
+    ...homeVisits.blips(),
   ];
   // E08: the player's own vehicles out in the world (taken out or delivered), so they can find them again.
   for (const o of lockup.outVehicles()) {
@@ -2594,6 +2628,9 @@ if (interiorParam) {
     if (startParams.get('roof') === '1') setTimeout(() => interiors.leave({ x: 120, y: 9, z: -75, yaw: Math.PI }), 5000);
   }, 800);
 }
+// Dev (E10): ?decor=room|shop|colours opens the flat's Decorate panel (with ?interior=flat-3b to see the room move).
+const decorParam = startParams.get('decor');
+if (decorParam) setTimeout(() => decor.open(decorParam === 'shop' || decorParam === 'colours' ? decorParam : 'room'), 2500);
 // Demo: ?tessie=surface surfaces Tessie in the loch near the player, quest or not (the quest only reacts to ?tessie=now).
 if (startParams.has('gunshop')) {
   player.respawn(199, -30, Math.PI / 2);

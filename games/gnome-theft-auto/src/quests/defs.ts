@@ -1,6 +1,7 @@
 // The quests and givers across Turfton and the four outer biomes.
 import { marker, markerNum } from '../levels';
 import { CHAPTER_1_QUESTS } from './chapter1';
+import { HOME_QUESTS } from './homeQuests';
 import { CHAPTER_2_QUESTS } from './chapter2';
 import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
@@ -185,7 +186,9 @@ export const GIVERS: Record<string, GiverDef> = {
 };
 
 export const QUESTS: readonly QuestDef[] = [
-  ...CHAPTER_1_QUESTS,
+  CHAPTER_1_QUESTS[0],
+  ...HOME_QUESTS,
+  ...CHAPTER_1_QUESTS.slice(1),
   ...CHAPTER_2_QUESTS,
   ...CHAPTER_3_QUESTS,
   ...CHAPTER_4_QUESTS,

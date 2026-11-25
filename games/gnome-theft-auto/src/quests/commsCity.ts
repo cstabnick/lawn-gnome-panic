@@ -20,12 +20,13 @@ export const CITY_COMMS: Readonly<Record<string, Readonly<Record<number, CommsCa
   'city-kerbside-rounds': {
     0: brief(
       ['dot', 'Next stop, Kerbside Rounds! I need a runner with decent shoes.'],
-      ['dot', 'Three stops: a bundle, a drop, and a notice. Fares, please!'],
+      ['dot', 'Four stops: a bundle, then three drops. Fares, please!'],
       ['dot', 'Report back here when you are done. I punch cards, not feelings.'],
     ),
     1: call(['bodega', 'Tattlers, all warm. Nina is on the Strip. Mind the cat, she bites.']),
-    2: call(['nina', 'Got the bundle, sugar! Now pin that notice before the moth eats it.']),
-    3: call(['juniper', 'Notice up on the board. Page four is the one people read. Return to Dot.']),
+    2: call(['nina', 'Got the bundle, sugar! Now Kerb Row, before the moth eats it.']),
+    3: call(['mabel', 'Mine goes upstairs, over the garage. I will have the change ready.']),
+    4: call(['juniper', 'Page four is the one people read. Return to Dot.']),
   },
   'city-impound-run': {
     0: brief(

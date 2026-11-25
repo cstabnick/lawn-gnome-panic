@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Juniper Vance, The Trowel]
 sources: [docs/design/gnome-theft-auto/society.md, docs/design/gnome-theft-auto/story.md]
-related: [turfton-city-hall, reginald-vance, mayor-barnaby-mulch, hoa]
+related: [kerb-row, turfton-city-hall, reginald-vance, mayor-barnaby-mulch, hoa]
 ---
 
 Turfton Zoning Board's lone loud voice fighting HOA foreclosures, famous for burying Vesper Thorne's lawyers under 400-page Grass Height Impact Studies.

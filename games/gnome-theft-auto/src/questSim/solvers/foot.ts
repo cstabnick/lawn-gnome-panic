@@ -5,6 +5,7 @@ import type { ObjectiveDef } from '../../quests/types';
 import type { Finding, Solver, SimCtx } from '../types';
 import { SimFail } from '../types';
 import { runUntil, travelTo } from '../util';
+import { interiorById, interiorToWorld } from '../../interiors/registry';
 
 /** Crack targets are shot from this far or closer (the water gun's reach). */
 const SHOOT_RANGE = 40;
@@ -67,11 +68,22 @@ export const crackSolver: Solver<'crack'> = {
 export const visitSolver: Solver<'visit'> = {
   kind: 'visit',
   async solve(obj, ctx, o) {
-    await travelTo(ctx, obj.at[0], obj.at[1], `visit ${obj.hint}`);
+    // E10: a visit inside an interior (`interior` set, `at` local): walk to its door, then step in (the harness has no
+    // door prompt, so the bot is put at the local spot in the interior's pocket, as entering would).
+    let [ax, az] = obj.at;
+    if (obj.interior) {
+      const p = interiorById(obj.interior);
+      if (!p) throw new SimFail('content', `visit: unknown interior ${obj.interior}`);
+      await travelTo(ctx, p.def.door.x, p.def.door.z, `door of ${obj.hint}`);
+      [ax, az] = interiorToWorld(obj.interior, obj.at[0], obj.at[1]);
+      ctx.teleport(ax, az, { y: 0 });
+    } else {
+      await travelTo(ctx, ax, az, `visit ${obj.hint}`);
+    }
     let insideSince: number | null = null;
     await runUntil(ctx, { questId: o.questId, step: o.step, budget: o.budget, what: `visit ${obj.hint}` }, () => {
       // An arrival scene ends by itself in the harness; the step completes when it does.
-      const inside = Math.hypot(ctx.player.x - obj.at[0], ctx.player.z - obj.at[1]) <= obj.radius;
+      const inside = Math.hypot(ctx.player.x - ax, ctx.player.z - az) <= obj.radius;
       if (!inside) { insideSince = null; return; }
       if (insideSince === null) insideSince = ctx.now();
       if (ctx.now() - insideSince >= INSIDE_LIMIT) {
@@ -80,6 +92,7 @@ export const visitSolver: Solver<'visit'> = {
     });
   },
   check(obj, world, questId, step) {
+    if (obj.interior) return []; // local coordinates inside a pocket off the map
     return spotFinding(questId, step, world, `visit ${obj.hint}`, obj.at[0], obj.at[1]);
   },
 };

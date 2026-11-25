@@ -32,6 +32,8 @@ export const GTA_SAVE_KEYS = [
   'gta-ownership-v1', // ownership.ts: properties bought, Kiln-Shield policies, written-off insured vehicles
   'gta-position-v1', // positionSave.ts: where the player last stood (restored on the next start, E07 L70)
   'gta-gnomeybird-v1', // gnomlet/apps/gnomeyBird.ts: Gnomey Bird best score
+  'gta-home-v1', // home/layout.ts: Flat 3B furniture layout, stored pieces, wall and floor colours (E10)
+  'gta-homes-visited-v1', // homes/visits.ts: character homes the player has stood at (E10 House Call)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

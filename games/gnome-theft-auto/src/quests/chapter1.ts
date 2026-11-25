@@ -1,6 +1,7 @@
 // Prologue & Chapter 1: "Fresh Out the Kiln" & "Acorns & Alibis".
 import type { GnomeLook } from '@lawn/gnome';
 import { AMPHITHEATER, SIDE_VALVE } from '../config';
+import { homeDoor } from '../homes/data';
 import type { QuestDef } from './types';
 
 const GOLD_HAT = 0xffd23f;
@@ -152,6 +153,14 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
           { id: 'tail-hoa-1', name: 'HOA Bodyguard Felt', near: [160, -160], hint: 'Patio Heights', look: HOA_LOOK },
           { id: 'tail-hoa-2', name: 'HOA Bodyguard Loam', near: [170, -170], hint: 'Patio Heights', look: HOA_LOOK },
         ],
+      },
+      {
+        kind: 'visit',
+        text: "Post a copy of the photos through Mayor Mulch's own letterbox at his red villa",
+        at: homeDoor('mayor-mulch'),
+        radius: 4,
+        hint: "The Mayor's Residence (Patio Heights)",
+        toastOnEnter: 'Through the letterbox. Somewhere inside, a small dog and a large Mayor both start barking.',
       },
       {
         kind: 'visit',

@@ -1,6 +1,7 @@
 // Sim jobs: named places a gig can go to (taxi and courier destinations, docks, landing pads, sky sights, drop zones).
 // Pure data. Every coordinate is checked by places.test.ts (land places dry, water stops deep, pads flat and dry).
 import { AIRFIELD, AMPHITHEATER, BASE, CLAY_MART, GNOMECINO, HOSPITAL, SIDE_VALVE, THORNE_TOWER } from '../config';
+import { homeLandPlaces } from '../homes/data';
 
 export type PlaceArea = 'city' | 'outskirts' | 'loch' | 'sea' | 'canal' | 'desert' | 'farm' | 'forest' | 'fells';
 
@@ -33,6 +34,8 @@ export const LAND_PLACES: readonly Place[] = [
   { id: 'desert-airfield-gate', name: 'Desert Airfield gate', x: AIRFIELD.x - 40, z: AIRFIELD.z, area: 'desert' },
   { id: 'loch-moss-dock-road', name: 'Loch Moss dock road', x: -722, z: -545, area: 'loch' },
   { id: 'reedwatch-hide', name: 'Reedwatch Hide', x: -630, z: -540, area: 'loch' },
+  // built homes (E10): the acknowledged ones with a front door
+  ...homeLandPlaces(),
 ];
 
 /** Boat stops: open water off a dock or shore. */

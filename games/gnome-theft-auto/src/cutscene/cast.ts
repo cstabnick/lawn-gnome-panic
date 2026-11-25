@@ -5,6 +5,7 @@ import { DEFAULT_LOOK } from '../config';
 import type { VoiceSpec } from '@lawn/mutter';
 import type { DialogueLine } from '../quests/types';
 import { playerVoice, voiceFor } from '../voice/voices';
+import { HEDGEWORTH_CAST } from '../golf/types';
 import type { ScriptActor } from './script';
 
 export const BASE_SPEAKER_LOOK: GnomeLook = {
@@ -50,6 +51,10 @@ export const CAST: Record<string, CastPreset> = {
   nina: { look: { hat: 0x7a3cff, shirt: 0x1c1c2a, beard: null, hair: { color: 0x39ff88, style: 'pigtails' } }, hz: 136, scale: 1.38 },
   grout: { look: { hat: 0x3d4a5c, shirt: 0x5b6b3a, pants: 0x2f3a4a, beard: 0x4a3a2a }, hz: 74, scale: 1.58 },
   mabel: { look: { hat: 0xf2c200, shirt: 0x222222, beard: null, glasses: true, hair: { color: 0xc0c0c0, style: 'pigtails' } }, hz: 140, scale: 1.4 },
+  // Hedgeworth Links (golf/types.ts HEDGEWORTH_CAST).
+  peony: { look: HEDGEWORTH_CAST.peony.look, hz: HEDGEWORTH_CAST.peony.hz, held: HEDGEWORTH_CAST.peony.held, scale: 1.44 },
+  basil: { look: HEDGEWORTH_CAST.basil.look, hz: HEDGEWORTH_CAST.basil.hz, held: HEDGEWORTH_CAST.basil.held, scale: 1.42 },
+  thrift: { look: HEDGEWORTH_CAST.thrift.look, hz: HEDGEWORTH_CAST.thrift.hz, held: HEDGEWORTH_CAST.thrift.held, scale: 1.5 },
 };
 
 /** The preset whose key appears in a speaker label ("Pip Potsworth" -> pip), or undefined. */

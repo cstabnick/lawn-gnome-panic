@@ -8,11 +8,11 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
-related: [hedgeworth, hedgeworth-links, tallgrass-commons, fence-post-frank, thrift-hosepipe]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, docs/lore/rulings.md#r-191]
+related: [hedgeworth, hedgeworth-links, tallgrass-commons, fence-post-frank, thrift-hosepipe, the-members-gate]
 ---
 
-A fence board, loose at the bottom, at about (-895, 640): the way from Tallgrass Commons into the neighbour's garden. A gnome can push it aside and a mower can just about fit.
+A fence board, loose at the bottom, on the neighbour's east fence at about (-1001, 640): the way from Tallgrass Commons into the garden. A gnome can push it aside and a mower can just about fit.
 
 ## What gnomes say
 
@@ -26,7 +26,7 @@ The board was loosened by a golf ball, not a foot; the name is only what the gno
 
 ## In the games
 
-Planned (batch 3). The breach marker on the fence line. Quest 29 (`m29-the-kicked-board`) has the player drive the fence line to it; it is the first reach into Hedgeworth.
+Built (batch 3, E15): the loose board in the east fence, across the road from Tallgrass Commons. A vehicle at speed or a kick on foot breaks through it, and it stays broken. Breaking it earns "The Kicked Board" achievement. It is the only public way into Hedgeworth (R-191); Quest 29 (`m29-the-kicked-board`) has the player drive the fence line to it.
 
 ## Loose threads
 

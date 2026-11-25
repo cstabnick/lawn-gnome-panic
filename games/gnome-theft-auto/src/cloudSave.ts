@@ -16,6 +16,7 @@ import { createCloudSlot, defaultDeps, type CloudDeps, type CloudSlot, type Clou
 import { mergeBirdSaves } from './birding/birdSave';
 import { mergeOutskirtsSaves } from './outskirts/save';
 import { mergeMowSave } from './flora/rewards';
+import { mergeGolfSave } from './golf/save';
 import { mergeQuestSaves, parseSavesJson } from './quests/questSave';
 import { GTA_SAVE_KEYS, type GtaSaveKey } from './saveIO';
 import { setSaveChangedListener } from './saveHook';
@@ -130,6 +131,7 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-home-v1': null, // home/layout.ts: one current flat layout; the newer side wins
   'gta-homes-visited-v1': unionArrays, // homes/visits.ts: home ids visited only grow
   'gta-winter-v1': null, // winter/save.ts: best times, run counts, ice catches; the newer side wins
+  'gta-golf-v1': mergeGolfSave, // golf/save.ts: counts and bests merge, the board stays broken, ids union
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory

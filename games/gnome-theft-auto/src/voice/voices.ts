@@ -35,6 +35,12 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   hedda: { hz: 124, wave: 'square', style: 'syllables', speed: 1.1, formant: 0.93 },
   nina: { hz: 136, wave: 'triangle', speed: 1.5, glide: 0.25, wobble: 0.15, formant: 1.25 },
   grout: { hz: 74, wave: 'sine', style: 'words', speed: 0.6, sub: 1, formant: 0.8 },
+  // Hedgeworth Links (golf/types.ts HEDGEWORTH_CAST). Two formants differ from the brief to keep the
+  // (wave, style, formant) combinations unique, which the test forbids: peony 1.12 (1.1 matches thermos theo),
+  // basil 1.02 (1.0 matches granny).
+  peony: { hz: 104, speed: 1.05, range: 0.7, glide: -0.1, formant: 1.12 },
+  basil: { hz: 128, speed: 1.25, range: 1.4, wave: 'triangle', formant: 1.02 },
+  thrift: { hz: 74, speed: 0.7, breath: 0.25, style: 'words', wave: 'triangle', formant: 0.85 },
 
   // ---- speakers without a cast preset ----
   narrator: { hz: 130, wave: 'triangle', speed: 0.8, range: 0.6, glide: -0.3, bright: 2200, formant: 0.95 },

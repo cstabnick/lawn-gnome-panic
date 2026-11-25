@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, games/gnome-theft-auto/src/golf/types.ts]
 related: [hedgeworth-links, hedgeworth-clubhouse, peony-gravelrake, thrift-hosepipe, the-burrowfolk, nubbin]
 ---
 
@@ -28,7 +28,7 @@ In that final a mole moved his ball. It was saving it from a sprinkler. Basil ha
 
 ## In the games
 
-Planned (batch 3). The pro the player beats at one hole in quest 47 (`m47-hedgeworth-links`); sets a trap for the moles in 48 (`m48-the-groundskeepers-secret`) and softens once he learns the truth; evacuated in 52 (`m52-the-test-cut`).
+Built (batch 3, E15): practising his swing on the first tee, with a spare ball in his sock, beside his cottage. He is the pro the player beats at one hole in quest 47 (`m47-hedgeworth-links`); he sets a trap for the moles in 48 (`m48-the-groundskeepers-secret`) and softens once he learns the truth; he is evacuated in 52 (`m52-the-test-cut`).
 
 ## Loose threads
 

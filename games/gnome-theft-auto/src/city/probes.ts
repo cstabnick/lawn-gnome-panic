@@ -9,6 +9,8 @@ import { createHuntStore } from '../hunting/huntSave';
 import { createBirdStore } from '../birding/birdSave';
 import { createFishStore } from '../fishing/fishSave';
 import { createWinterStore } from '../winter/save';
+import { createGolfStore } from '../golf/save';
+import { GOLF_PROBES } from '../golf/types';
 import { jobStats } from '../jobs/career';
 
 export type ProbeFn = () => number;
@@ -42,6 +44,13 @@ const SAVED: Readonly<Record<string, ProbeFn>> = {
   'winter-ski-runs': () => withStore(() => createWinterStore(storage() ?? undefined).data().runs['wool-run'] ?? 0) ?? 0,
   'ice-holes': () => withStore(() => createWinterStore(storage() ?? undefined).data().holes) ?? 0,
   'ice-catches': () => withStore(() => createWinterStore(storage() ?? undefined).data().iceCatches) ?? 0,
+  // Hedgeworth Links (golf/save.ts): gta-golf-v1.
+  [GOLF_PROBES.boardBroken]: () => withStore(() => (createGolfStore(storage() ?? undefined).data().boardBroken ? 1 : 0)) ?? 0,
+  [GOLF_PROBES.holes]: () => withStore(() => createGolfStore(storage() ?? undefined).data().holesPlayed) ?? 0,
+  [GOLF_PROBES.parHoles]: () => withStore(() => createGolfStore(storage() ?? undefined).data().parHoles) ?? 0,
+  [GOLF_PROBES.rounds]: () => withStore(() => createGolfStore(storage() ?? undefined).data().rounds) ?? 0,
+  [GOLF_PROBES.balls]: () => withStore(() => createGolfStore(storage() ?? undefined).data().ballsFound.length) ?? 0,
+  [GOLF_PROBES.molehills]: () => withStore(() => createGolfStore(storage() ?? undefined).data().molehills.length) ?? 0,
   // Sim jobs (jobs/, docs/roadmaps/gta-sim-jobs-and-tubing.md): their own live stats getter.
   'job-gigs': () => withStore(() => { const j = jobStats(); return j.taxiFares + j.parcels + j.flights + j.boatTrips + j.ferryLoops; }) ?? 0,
   'job-taxi': () => withStore(() => jobStats().taxiFares) ?? 0,

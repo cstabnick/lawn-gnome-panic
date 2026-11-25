@@ -14,6 +14,7 @@ import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
+import { GOLF_QUESTS } from './golfQuests';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -203,6 +204,31 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // Hedgeworth Links' side quests (golfQuests.ts): the groundskeeper, the pro and the owner.
+  thrift: {
+    id: 'thrift',
+    name: "Thrift's shed",
+    label: 'Talk to Thrift Hosepipe',
+    ...placed('thrift'),
+    room: 'street',
+    letter: '!',
+  },
+  basil: {
+    id: 'basil',
+    name: 'The first tee',
+    label: 'Talk to Basil Divot',
+    ...placed('basil'),
+    room: 'street',
+    letter: '!',
+  },
+  peony: {
+    id: 'peony',
+    name: 'The clubhouse terrace',
+    label: 'Talk to Dame Peony',
+    ...placed('peony'),
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -221,6 +247,7 @@ export const QUESTS: readonly QuestDef[] = [
   TESSIE_QUEST,
   ...RACE_QUESTS,
   ...WINTER_QUESTS,
+  ...GOLF_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

@@ -8,11 +8,11 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [over the fence]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
-related: [hedgeworth-links, hedgeworth-clubhouse, the-kicked-board, tallgrass-commons, patio-country-club, vesper-thorne, the-grand-combine-parts]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, docs/lore/rulings.md#r-189, docs/lore/rulings.md#r-190, docs/lore/rulings.md#r-191]
+related: [hedgeworth-links, hedgeworth-clubhouse, the-kicked-board, the-members-gate, hosepipe-pond, gnome-yard, tallgrass-commons, patio-country-club, vesper-thorne, the-grand-combine-parts]
 ---
 
-The garden of another Tall One, west of Tallgrass Commons, reached by a loose board in the fence. Its gnomes talk about "over the fence" the way Turfton talks about Fescue. Big hedges, tall grass, giant plants and a nine-hole golf course.
+The garden of another Tall One, west of Tallgrass Commons, reached by a loose board in the fence. Its gnomes talk about "over the fence" the way Turfton talks about Fescue. Big hedges, tall grass, giant plants and a four-hole golf course that the card calls nine.
 
 ## What gnomes say
 
@@ -26,7 +26,7 @@ Hedgeworth is a smaller, quieter garden than Turfton's, kept by a Tall One who p
 
 ## In the games
 
-Planned (batch 3). The golf-yard site (-1180, 620) in the west band, entered through the Kicked Board (-895, 640). Quests 29 (`m29-the-kicked-board`), 47 (`m47-hedgeworth-links`), 48 (`m48-the-groundskeepers-secret`) and 52 (`m52-the-test-cut`) are set here, and 38 (`m38-pail-pond`) names it as the deck's test site. W14 leaves a dead-straight mown scar across it.
+Built (batch 3, E15). The neighbour's yard is the E01 site `golf-yard`, 360 by 420 m, measured in gnome yards (R-189). The Tall-One board fence runs round it: the Kicked Board on the east side is the only public way in (R-191), and the Members' Gate beside it is always locked. Inside are the four holes of Hedgeworth Links, numbered 1, 2, 3 and 9 (R-190), the clubhouse, Basil's cottage, Thrift's shed and the cart shelter. Quest 29 (`m29-the-kicked-board`) sends the player through the board; 47 (`m47-hedgeworth-links`), 48 (`m48-the-groundskeepers-secret`) and 52 (`m52-the-test-cut`) are set here, and 38 (`m38-pail-pond`) names it as the deck's test site.
 
 ## Loose threads
 

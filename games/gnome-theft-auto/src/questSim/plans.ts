@@ -41,6 +41,10 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'coast-queens-treasure': { suite: 'side', expect: 'pass' },
   'sq-snowdrop-sled-trials': { suite: 'side', expect: 'pass' },
   'sq-pail-pond-lines': { suite: 'side', expect: 'pass' },
+  'sq-hedgeworth-lost-balls': { suite: 'side', expect: 'pass' },
+  'sq-hedgeworth-pro-lesson': { suite: 'side', expect: 'pass' },
+  'sq-hedgeworth-ninth-green': { suite: 'side', expect: 'pass' },
+  'sq-hedgeworth-members-cup': { suite: 'side', expect: 'pass' },
   'city-kerbside-rounds': { suite: 'city', expect: 'pass' },
   'city-impound-run': { suite: 'city', expect: 'pass' },
   'city-glow-band-express': { suite: 'city', expect: 'pass' }, // E23: driveTo no longer skips a route aim behind it

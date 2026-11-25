@@ -8,11 +8,11 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, docs/lore/rulings.md#r-191]
 related: [hedgeworth, hedgeworth-links, peony-gravelrake, basil-divot, thrift-hosepipe, vesper-thorne]
 ---
 
-The old stone-and-timber clubhouse of Hedgeworth Links: a bar, a trophy case and a notice board, with Dame Peony Gravelrake's rooms upstairs. It overlooks the first tee and the last green.
+The mock-Tudor clubhouse of Hedgeworth Links: a terrace over the first tee, a pro shop, a bar, an honours board and a trophy cabinet, with Dame Peony Gravelrake's rooms upstairs.
 
 ## What gnomes say
 
@@ -26,7 +26,7 @@ Behind the trophy case hangs a framed bank notice, hung there so nobody has to l
 
 ## In the games
 
-Planned (batch 3). An enterable building (interior, site `golf-yard`). Quest 47 (`m47-hedgeworth-links`) starts here; 52 (`m52-the-test-cut`) has the backers' gala on its terrace.
+Built (batch 3, E15): a building at the north-east of the course, with a terrace in front of its south door looking over the first tee. Walk in for the interior (about 22 by 14 m): the pro shop counter, the bar, the honours board, and a trophy cabinet whose trophy is a gold-sprayed flowerpot. Peony's rooms are upstairs. A cart shelter with two golf carts stands beside it. Quest 47 (`m47-hedgeworth-links`) starts here; 52 (`m52-the-test-cut`) has the backers' gala on its terrace.
 
 ## Loose threads
 

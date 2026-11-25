@@ -44,6 +44,7 @@ describe('saveIO', () => {
       'gta-home-v1': JSON.stringify({ v: 1, items: [], stored: { bed: 1 }, wall: 'cream', floor: 'oak' }),
       'gta-homes-visited-v1': JSON.stringify(['juniper']),
       'gta-winter-v1': JSON.stringify({ v: 1, best: { 'wool-run': 31.5 }, runs: { 'wool-run': 2 } }),
+      'gta-golf-v1': JSON.stringify({ v: 1, boardBroken: true, holesPlayed: 4, parHoles: 2, rounds: 1, best: [4, null, null, 5], bestRound: 19, aces: 0, ballsFound: ['lb-1'], molehills: [] }),
       'unrelated-key': 'keep-me',
     });
 

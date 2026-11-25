@@ -1319,6 +1319,36 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Bear Hug', description: 'Stand beside 9 different polar bears. They will not mind. They will barely notice.', target: 9,
     reward: { slot: 'hand', prefabId: 'cocoa-mug', label: 'Cocoa Mug' },
   },
+  {
+    id: 'gta-kicked-board', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Kicked Board', description: 'Break through the loose board in the fence round Hedgeworth Links.',
+    reward: { slot: 'back', prefabId: 'kicked-board-plank', label: 'The Kicked Board' },
+  },
+  {
+    id: 'gta-hedgeworth-card', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Card in Hand', description: 'Play all four holes of Hedgeworth Links (the 1st, 2nd, 3rd and 9th) in one round.',
+    reward: { slot: 'neck', prefabId: 'scorecard-lanyard', label: 'Scorecard Lanyard' },
+  },
+  {
+    id: 'gta-hedgeworth-ace', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ace, Champ', description: 'Hole in one at Hedgeworth Links. Basil will say it was luck. It was.',
+    reward: { slot: 'head', prefabId: 'argyle-tam', label: 'Argyle Tam' },
+  },
+  {
+    id: 'gta-birdie-birdie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Birdie, Birdie', description: 'Birdie (or better) two Hedgeworth holes in a row.',
+    reward: { slot: 'hand', prefabId: 'driver-cane', label: 'Driver Cane' },
+  },
+  {
+    id: 'gta-through-the-hedge', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Hedge', description: 'Drive a golf cart through a hedge arch at Hedgeworth Links.',
+    reward: { slot: 'back', prefabId: 'golf-bag-pack', label: 'Golf Bag' },
+  },
+  {
+    id: 'gta-groundskeepers-secret', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "The Groundskeeper's Secret", description: 'Pat down every molehill on the ninth green before Basil sees them.', target: 4,
+    reward: { slot: 'head', prefabId: 'hosepipe-cap', label: 'Hosepipe Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

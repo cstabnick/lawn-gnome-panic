@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Dame Peony]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, games/gnome-theft-auto/src/golf/types.ts]
 related: [hedgeworth-links, hedgeworth-clubhouse, basil-divot, thrift-hosepipe, vesper-thorne, hedgeworth]
 ---
 
@@ -28,7 +28,7 @@ Peony trusts Vesper because he is the one gnome who has never asked her to chang
 
 ## In the games
 
-Planned (batch 3). Glimpsed in quest 29 (`m29-the-kicked-board`); the giver of 47 (`m47-hedgeworth-links`), who lets the crew in once the player beats Basil at a hole; evacuated in 52 (`m52-the-test-cut`); present in 70 (`ch5-even-cut`).
+Built (batch 3, E15): standing on the clubhouse terrace over the first tee, looking it over with her driver for a cane. Quest 29 (`m29-the-kicked-board`) glimpses her; she gives 47 (`m47-hedgeworth-links`), and lets the crew in once the player beats Basil at a hole; she is evacuated in 52 (`m52-the-test-cut`) and present in 70 (`ch5-even-cut`).
 
 ## Loose threads
 

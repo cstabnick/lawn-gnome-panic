@@ -24,6 +24,10 @@ import { CRAFT_PAINT_PRICE } from '../../craft/craftPanels';
 import { LOCKUP } from '../../lockup/config';
 import { SIDE_VALVE } from '../../config';
 import { createWinterStore } from '../../winter/save';
+import { createGolfStore } from '../../golf/save';
+import { golfApi } from '../../golf/runtime';
+import { defineClubhouseInterior } from '../../golf/clubhouse';
+import { LOST_BALLS, MOLEHILLS } from '../../golf/types';
 
 export type ProbeFidelity = 'api' | 'action' | 'economy' | 'vehicle';
 
@@ -243,6 +247,58 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
     fidelity: 'api',
     async run(ctx) {
       createWinterStore(store()).recordIceCatch();
+      await ctx.step();
+    },
+  },
+  // Hedgeworth Links (golf/): the save's own store, the calls the round and the pick-ups make.
+  'golf-board-broken': {
+    fidelity: 'api',
+    async run(ctx) {
+      golfApi()?.breakBoard();
+      createGolfStore(store()).breakBoard();
+      await ctx.step();
+    },
+  },
+  'golf-balls-found': {
+    fidelity: 'api',
+    async run(ctx) {
+      const golf = createGolfStore(store());
+      const next = LOST_BALLS.find((b) => !golf.data().ballsFound.includes(b.id));
+      if (!next) throw new SimFail('bot', 'golf-balls-found: every lost ball is already found');
+      golf.findBall(next.id);
+      await ctx.step();
+    },
+  },
+  'golf-molehills': {
+    fidelity: 'api',
+    async run(ctx) {
+      const golf = createGolfStore(store());
+      const next = MOLEHILLS.find((m) => !golf.data().molehills.includes(m.id));
+      if (!next) throw new SimFail('bot', 'golf-molehills: every molehill is already flat');
+      golf.flattenMolehill(next.id);
+      await ctx.step();
+    },
+  },
+  'golf-par-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createGolfStore(store()).recordHole(0, 3, 4);
+      await ctx.step();
+    },
+  },
+  'golf-holes-played': {
+    fidelity: 'api',
+    async run(ctx) {
+      createGolfStore(store()).recordHole(1, 3, 3);
+      await ctx.step();
+    },
+  },
+  'golf-rounds': {
+    fidelity: 'api',
+    async run(ctx) {
+      // The clubhouse room is defined by the runtime at install; the sim has no runtime, so define it here (as the coast does at import).
+      defineClubhouseInterior({ store: () => createGolfStore(store()), startRound: () => null, toast: () => {} });
+      createGolfStore(store()).recordRound(16);
       await ctx.step();
     },
   },

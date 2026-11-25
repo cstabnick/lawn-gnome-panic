@@ -20,7 +20,7 @@ import { AMBIENT_GNOMES } from '../ambientGnomes';
 import { GOLDEN_ACORN_SPOTS, HOA_SIGN_SPOTS } from '../easterEggs';
 import { vibeSetPieceSpots } from '../vibeNpcs';
 import { STUNT_RAMPS } from '../stunts';
-import { markersOf, markerNum } from '../levels';
+import { reservedRects } from '../sites';
 import { deckContactsAt } from '../highways/deck';
 import { SKYWAY_SITES } from '../highways/skyways';
 import { mowableAt } from '../flora/kinds';
@@ -206,8 +206,11 @@ function keepOuts(world: World): Rect[] {
       minZ: Math.min(...pts.map((p) => p[1])), maxZ: Math.max(...pts.map((p) => p[1])),
     });
   }
-  for (const m of markersOf('reserve')) {
-    out.push(growRect(rectAround(m.x, m.z, markerNum(m, 'hw'), markerNum(m, 'hd')), 4));
+  // Every reserve marker and every slot (sites.ts). Slots inside a downtown block are not grown, so the sidewalk
+  // dressing round the block (bunting posts, lamps) stays.
+  for (const r of reservedRects()) {
+    const inCity = Math.max(Math.abs((r.minX + r.maxX) / 2), Math.abs((r.minZ + r.maxZ) / 2)) <= CITY_HALF;
+    out.push(growRect({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ }, r.source === 'slot' && inCity ? 0 : 4));
   }
   out.push(growRect({ minX: BASE.minX, maxX: BASE.maxX, minZ: BASE.minZ, maxZ: BASE.maxZ }, 6));
   out.push(growRect(rectAround(AIRFIELD.x, AIRFIELD.z, AIRFIELD.length / 2, AIRFIELD.width / 2 + 30), 6));

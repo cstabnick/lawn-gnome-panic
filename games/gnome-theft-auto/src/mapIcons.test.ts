@@ -35,7 +35,7 @@ describe('placeBlips', () => {
   it('returns the fixed places: distinct labels, and each kind once unless it repeats by design', () => {
     const blips = placeBlips();
     // 10 original places + 4 services/bent pin + 4 road ramps + the Unfinished Span + East Beltway + 2 work sites
-    // + the Kerbside Exchange + 6 parks + 4 city edges.
+    // + the Kerbside Exchange + 7 parks + 4 city edges.
     // At least these 32; other features add more (one line each in mapPois.ts).
     expect(blips.length).toBeGreaterThanOrEqual(32);
     expect(new Set(blips.map((b) => b.label)).size).toBe(blips.length);
@@ -46,7 +46,7 @@ describe('placeBlips', () => {
     expect(counts.get('onramp')).toBe(5);
     expect(counts.get('works')).toBe(2);
     expect(counts.get('skyway')).toBe(2);
-    expect(counts.get('park')).toBe(6);
+    expect(counts.get('park')).toBe(7); // the 6 parks + Founders' Green (one blip for its two added blocks)
     expect(counts.get('edge')).toBe(4);
     for (const b of blips) {
       expect(isPlace(b)).toBe(true);

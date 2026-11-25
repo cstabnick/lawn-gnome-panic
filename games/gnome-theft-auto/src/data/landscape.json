@@ -27,6 +27,11 @@
     { "id": "hill/fells-inner", "kind": "hill", "points": [[190, -470]], "r": 95, "h": 18 },
     { "id": "hill/farms-inner", "kind": "hill", "points": [[170, 550]], "r": 85, "h": 14 },
     { "id": "hill/commons-inner", "kind": "hill", "points": [[-180, 470]], "r": 95, "h": 16 },
-    { "id": "hill/dust-inner", "kind": "hill", "points": [[490, -230]], "r": 85, "h": 18 }
+    { "id": "hill/dust-inner", "kind": "hill", "points": [[490, -230]], "r": 85, "h": 18 },
+    { "id": "mountain/ski-hill", "kind": "mountain", "points": [[-350, -1340]], "r": 360, "h": 85 },
+    { "id": "ridge/highland-spine", "kind": "ridge", "points": [[420, -1080], [560, -1180], [640, -1260]], "r": 70, "h": 35 },
+    { "id": "ridge/wind-farm", "kind": "ridge", "points": [[640, -1200], [850, -1205], [1060, -1195]], "r": 60, "h": 24 },
+    { "id": "hill/observatory-mound", "kind": "hill", "points": [[1240, 150]], "r": 120, "h": 45, "seed": 1240 },
+    { "id": "hill/vineyard-slope", "kind": "hill", "points": [[-1180, -230]], "r": 200, "h": 14 }
   ]
 }

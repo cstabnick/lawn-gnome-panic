@@ -23,13 +23,21 @@ import frostbiteFellsJson from './data/levels/frostbite-fells.level.json';
 import cloverfieldFarmsJson from './data/levels/cloverfield-farms.level.json';
 import lochMossJson from './data/levels/loch-moss.level.json';
 import tallgrassCommonsJson from './data/levels/tallgrass-commons.level.json';
+import northHighlandsJson from './data/levels/north-highlands.level.json';
+import southShoreJson from './data/levels/south-shore.level.json';
+import eastCampusJson from './data/levels/east-campus.level.json';
+import westEstatesJson from './data/levels/west-estates.level.json';
 
 /** Same strings as BiomeId in types.ts (declared here so this file imports nothing from the game). */
-export type RegionBiome = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland';
+export type RegionBiome =
+  | 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate';
 export type RegionId =
-  | 'turfton' | 'dust-flats' | 'mossy-wood' | 'frostbite-fells' | 'cloverfield-farms' | 'loch-moss' | 'tallgrass-commons';
+  | 'turfton' | 'dust-flats' | 'mossy-wood' | 'frostbite-fells' | 'cloverfield-farms' | 'loch-moss' | 'tallgrass-commons'
+  | 'north-highlands' | 'south-shore' | 'east-campus' | 'west-estates';
 /** Every biome id, in BiomeId order. */
-export const REGION_BIOMES: readonly RegionBiome[] = ['city', 'desert', 'forest', 'tundra', 'farmland', 'loch', 'parkland'];
+export const REGION_BIOMES: readonly RegionBiome[] = [
+  'city', 'desert', 'forest', 'tundra', 'farmland', 'loch', 'parkland', 'highland', 'coast', 'campus', 'estate',
+];
 /** Same strings as SurfaceKind in surfaces.ts. */
 export type RegionSurface = 'asphalt' | 'ice' | 'snow' | 'sand' | 'mud' | 'grass' | 'farm';
 
@@ -112,8 +120,10 @@ export interface GtaLayout {
  *   walk      a point townsgnomes wander between: no data
  *   water     a reserved still-water body (the loch, the Puddle Sea), a rectangle centred on the marker: { w, d }.
  *             Reserved only: nothing is carved or drawn in 3D yet (Epic 4 turns these into polygons).
+ *   slot      a site reserved for a later epic (src/sites.ts reads these): { hw, hd, yaw?, kind, epic, flat, label?, parent?,
+ *             overRoad?, anchors?: { name: {dx, dz, yaw?} } }. Scenery keeps out; flat: true also levels the ground.
  */
-export const MARKER_KINDS = ['spawn', 'landmark', 'area', 'portal', 'giver', 'site', 'setpiece', 'reserve', 'walk', 'water'] as const;
+export const MARKER_KINDS = ['spawn', 'landmark', 'area', 'portal', 'giver', 'site', 'setpiece', 'reserve', 'walk', 'water', 'slot'] as const;
 export type GtaMarkerKind = (typeof MARKER_KINDS)[number];
 
 /** Setpiece builder ids (biomes.ts has one builder per id). */
@@ -136,6 +146,10 @@ export const GENERATORS: Record<RegionId, { id: string; version: number }> = {
   'cloverfield-farms': { id: 'gta-farmland-scatter', version: 2 },
   'loch-moss': { id: 'gta-loch-scatter', version: 1 },
   'tallgrass-commons': { id: 'gta-parkland-scatter', version: 1 },
+  'north-highlands': { id: 'gta-highland-scatter', version: 1 },
+  'south-shore': { id: 'gta-coast-scatter', version: 1 },
+  'east-campus': { id: 'gta-campus-scatter', version: 1 },
+  'west-estates': { id: 'gta-estate-scatter', version: 1 },
 };
 
 export const LAYOUT = layoutJson as unknown as GtaLayout;
@@ -149,6 +163,10 @@ export const REGION_DOCS: Record<RegionId, GtaRegionDoc> = {
   'cloverfield-farms': cloverfieldFarmsJson as unknown as GtaRegionDoc,
   'loch-moss': lochMossJson as unknown as GtaRegionDoc,
   'tallgrass-commons': tallgrassCommonsJson as unknown as GtaRegionDoc,
+  'north-highlands': northHighlandsJson as unknown as GtaRegionDoc,
+  'south-shore': southShoreJson as unknown as GtaRegionDoc,
+  'east-campus': eastCampusJson as unknown as GtaRegionDoc,
+  'west-estates': westEstatesJson as unknown as GtaRegionDoc,
 };
 
 /** Region ids in build order (LAYOUT.regions order). */
@@ -247,6 +265,8 @@ export function trails(): { id: string; region: RegionId; points: [number, numbe
  */
 export const REGION_PRIORITY: readonly RegionId[] = [
   'turfton', 'dust-flats', 'mossy-wood', 'frostbite-fells', 'cloverfield-farms', 'loch-moss', 'tallgrass-commons',
+  // The batch-3 bands round the old 1800 x 1800 square: their inner edges meet the old regions' outer edges, which win.
+  'north-highlands', 'south-shore', 'east-campus', 'west-estates',
 ];
 const EDGE_EPS = 1e-9;
 
@@ -378,6 +398,16 @@ export function regionDocProblems(doc: unknown): string[] {
     if (m.kind === 'setpiece' && !(SETPIECE_BUILDERS as readonly string[]).includes(String(m.data?.builder))) out.push(`markers[${i}].data.builder: "${String(m.data?.builder)}" is not a setpiece builder`);
     if (m.kind === 'reserve' && !(typeof m.data?.hw === 'number' && typeof m.data?.hd === 'number')) out.push(`markers[${i}].data: a reserve needs hw and hd`);
     if (m.kind === 'water' && !(typeof m.data?.w === 'number' && typeof m.data?.d === 'number')) out.push(`markers[${i}].data: a water body needs w and d`);
+    if (m.kind === 'slot') {
+      const sd = (m.data ?? {}) as Record<string, unknown>;
+      if (!(typeof sd.hw === 'number' && sd.hw > 0 && typeof sd.hd === 'number' && sd.hd > 0)) out.push(`markers[${i}].data: a slot needs hw and hd > 0`);
+      if (typeof sd.kind !== 'string' || typeof sd.epic !== 'string' || typeof sd.flat !== 'boolean') out.push(`markers[${i}].data: a slot needs kind, epic and flat`);
+      if (sd.yaw !== undefined && typeof sd.yaw !== 'number') out.push(`markers[${i}].data.yaw: must be a number`);
+      if (sd.anchors !== undefined) {
+        const a = sd.anchors as Record<string, { dx?: unknown; dz?: unknown }>;
+        if (!a || typeof a !== 'object' || !Object.values(a).every((v) => typeof v?.dx === 'number' && typeof v?.dz === 'number')) out.push(`markers[${i}].data.anchors: each anchor needs dx and dz`);
+      }
+    }
   });
   d.paths.forEach((p, i) => {
     if (p.kind !== 'road' && p.kind !== 'water') out.push(`paths[${i}].kind: GTA regions only have roads and water for now`);

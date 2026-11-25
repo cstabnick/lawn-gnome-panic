@@ -57,7 +57,8 @@ export function placeBlips(): Blip[] {
     ...stunts,
     at('skyway', 255, -130, 'East Beltway'),
     ...SKYWAY_SITES.map((s) => at('works', s.x, s.z, s.name)),
-    ...PARKS.map((p) => at('park', p.x, p.z, p.name)),
+    // One blip per park name: Founders' Green is three PARKS rows (L92).
+    ...PARKS.filter((p, i) => PARKS.findIndex((q) => q.name === p.name) === i).map((p) => at('park', p.x, p.z, p.name)),
     ...(Object.keys(EDGE_NAMES) as EdgeId[]).map((id) => at('edge', EDGE_LABELS[id].x, EDGE_LABELS[id].z, EDGE_NAMES[id])),
   ];
 }

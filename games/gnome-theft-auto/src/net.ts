@@ -5,7 +5,7 @@
 import { createNetClient, serverUrl, type NetClient } from '@lawn/mp/client';
 import { steadyInterval } from '@lawn/mp/background';
 import type { PlayerInfo, ServerMsg } from '@lawn/mp/protocol';
-import { GAME_ID } from './config';
+import { GAME_ID, WORLD_HALF } from './config';
 import { parseWireMsg, type WireMsg } from './online/protocol';
 import { parsePartyMsg, type PartyMsg } from './party/protocol';
 import type { StationId } from './radio/content';
@@ -43,8 +43,11 @@ export interface RemotePose {
 
 /** Widest aircraft pitch / roll the wire carries, radians (one signed byte each). */
 export const TILT_MAX = 1.6;
-/** Positions farther from the centre than this on either axis are not believed (the world is 1800 square). */
-export const POS_BOUND = 950;
+/**
+ * Positions farther from the centre than this on either axis are not believed: the map's half size plus 50 (2800 square
+ * since batch 3, so 1450). Off-map rooms (sites.ts OFF_MAP, interiors at x >= 5000) are outside it on purpose.
+ */
+export const POS_BOUND = WORLD_HALF + 50;
 const tiltByte = (v: number): number => Math.round((Math.max(-TILT_MAX, Math.min(TILT_MAX, Number.isFinite(v) ? v : 0)) / TILT_MAX) * 127);
 
 /** Widest aim pitch the wire carries, radians (gunHold.ts clamps the pose to the same). */
@@ -187,7 +190,7 @@ export function parseMsg(d: unknown): GtaMsg | null {
   }
   if (o.k === 'pos' && Array.isArray(o.p) && (o.p.length === 9 || o.p.length === 10 || o.p.length === 12) && o.p.every(isNum) && isNum(o.t)) {
     const p = o.p as number[];
-    // The world is 1800 units square (WORLD_HALF 900) and planes fly high, so the bounds are a little wider than that.
+    // POS_BOUND is the map plus a margin (planes fly high, so the height bound is generous).
     if (Math.abs(p[0]) > POS_BOUND || Math.abs(p[2]) > POS_BOUND || p[1] < -5 || p[1] > 400) return null;
     // A vehicle code this client does not know (a newer client's kind; codes are append-only) shows the player on foot
     // instead of dropping the whole pose.

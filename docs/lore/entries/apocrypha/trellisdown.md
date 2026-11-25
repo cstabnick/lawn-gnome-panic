@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [the Trellis Hills]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-162]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-162, games/gnome-theft-auto/src/data/levels/west-estates.level.json, games/gnome-theft-auto/src/sites.ts]
 related: [trellisdown-vineyard, brassknock-manor, grape-dew, wisteria-brassknock, chicory-snips, mossy-wood, turfton, the-grand-combine-parts]
 ---
 
@@ -26,7 +26,15 @@ The hills were terraced long ago for the vines and never un-terraced for anythin
 
 ## In the games
 
-Planned (batch 3). The west-estates band of the map (x -1400 to -900), built by an area epic after E01. Quest 17 (`m17-the-dew-buyer`) is the first reach; 50 (`m50-trellisdown-tasting`) and 65 (`m65-the-countess-relents`) play out at the manor; Act III sends the crew back for the money part of the Grand Combine.
+The west band of the map (code region `west-estates`, x -1400 to -900, z -900 to 900), built by E01. Roads: `west-band` runs on from the west highway at (-870, -30) and north along x -950, and `west-band-south` runs south. Trellisdown Vineyard is 300 x 220 m on a gentle hill at (-1140, -170). Brassknock Manor stands at (-1150, 40). Wader's Rest is 180 x 180 m at (-1130, -640), about 400 m west of Loch Moss and not on its shore. The Burrow Door sits at (-1000, 300), just across the west road from Mossy Wood's western edge. Hedgeworth Links is 360 x 420 m at (-1180, 620), entered through the Kicked Board at (-895, 640).
+
+Quest 17 (`m17-the-dew-buyer`) is the first reach; 50 (`m50-trellisdown-tasting`) and 65 (`m65-the-countess-relents`) play out at the manor; Act III sends the crew back for the money part of the Grand Combine.
+
+## Look and motifs
+
+- Motifs: long clipped hedges; topiary; gravel drives; rose beds behind the neighbour's fence.
+- Palette: paper and bone walls, slate roofs, pink and red flowers.
+- In the game: theme `west-estates` in `src/data/regionThemes.json`.
 
 ## Loose threads
 

@@ -39,9 +39,11 @@ describe('outer-region settlements plan', () => {
     expect(a.placements.length).toBeLessThanOrEqual(2400);
   });
 
-  it('has at least 3 houses in every region except Turfton', () => {
+  it('has at least 3 houses in every region of the old 1800 square except Turfton', () => {
+    // The batch-3 bands (E01) are filled by their own epics; settlements there are not promised.
+    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates'];
     for (const id of REGION_IDS) {
-      if (id === 'turfton') continue;
+      if (id === 'turfton' || BANDS.includes(id)) continue;
       expect(a.houses.filter((h) => h.region === id).length, id).toBeGreaterThanOrEqual(3);
     }
   });

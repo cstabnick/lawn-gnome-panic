@@ -117,6 +117,27 @@ export const FRINGE_THEMES: Record<RegionId, FringeTheme> = {
     works: ['lean-to-shed'], scrub: ['caravan', 'polytunnel'], field: ['polytunnel', 'lean-to-shed'],
     clutter: ['bee-skep', 'hay-bale'], weeds: ['wildflower-patch', 'ornamental-grass'], trees: ['broadleaf-tree'], hedge: null,
   },
+  // Batch 3 bands (E01): no fringe belt reaches them yet; these are the looks a later fringe pass would use.
+  'north-highlands': {
+    ground: 'gravel', track: 'dirt', fences: ['dry-stone-wall'],
+    works: ['nissen-hut', 'lean-to-shed'], scrub: ['lean-to-shed', 'caravan'], field: ['lean-to-shed'],
+    clutter: ['stone-cairn', 'woodpile'], weeds: ['ornamental-grass'], trees: ['cone-pine'], hedge: null,
+  },
+  'south-shore': {
+    ground: 'sand', track: 'sand', fences: ['wooden-fence'],
+    works: ['lean-to-shed', 'shipping-container'], scrub: ['caravan', 'lean-to-shed'], field: ['lean-to-shed'],
+    clutter: ['crate', 'oil-drum'], weeds: ['ornamental-grass'], trees: ['palm-tree'], hedge: null,
+  },
+  'east-campus': {
+    ground: 'gravel', track: 'gravel', fences: ['chain-link-fence', 'wooden-fence'],
+    works: ['portacabin', 'rough-workshop'], scrub: ['portacabin', 'lean-to-shed'], field: ['polytunnel'],
+    clutter: ['pallet-stack', 'crate'], weeds: ['ornamental-grass'], trees: ['broadleaf-tree'], hedge: 'hedgerow',
+  },
+  'west-estates': {
+    ground: 'gravel', track: 'gravel', fences: ['wooden-fence', 'dry-stone-wall'],
+    works: ['lean-to-shed'], scrub: ['lean-to-shed'], field: ['polytunnel', 'lean-to-shed'],
+    clutter: ['hay-bale', 'crate'], weeds: ['wildflower-patch'], trees: ['broadleaf-tree'], hedge: 'hedgerow',
+  },
 };
 
 /** The fringe look at (x, z): the region there (the city counts as its nearest neighbour's edge). */

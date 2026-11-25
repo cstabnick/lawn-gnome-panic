@@ -12,7 +12,7 @@ sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-164]
 related: [loamdeep, the-burrowfolk, old-mother-tumblesoil, nubbin, mossy-wood, dj-moleman]
 ---
 
-A mound with a round door in it, at the west edge of Mossy Wood near (-1000, 360). It is the way down to Loamdeep, and it is always a little open.
+A mound with a round door in it, just across the west road from Mossy Wood's western edge, at (-1000, 300). It is the way down to Loamdeep, and it is always a little open.
 
 ## What gnomes say
 

@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { AIRFIELD, BASE, TERRAIN } from './config';
 import { installFakeDom } from './testing/fakeDom';
-import { REGION_DOCS, highways, markerNum, markersOf, regionAt, trails, waterPaths, type RegionId } from './levels';
+import { LAYOUT, REGION_DOCS, highways, markerNum, markersOf, regionAt, trails, waterPaths, type RegionId } from './levels';
 import { LANDFORMS, tiltAt, waterDistAt, type PaintKind } from './landforms';
 import { heightAt, heightGrid, naturalHeightAt, resetTerrainOptions, setTerrainOptions, slopeAt } from './terrain';
 import { paintAt } from './terrainPaint';
@@ -31,20 +31,25 @@ const MAX_RIVER_RISE = 1.5;
 const MAX_FOOTPRINT_STEP = 1.2;
 
 /** Paint each region's landforms promise (at least one cell of each). */
-const PROMISED_PAINT: Record<Exclude<RegionId, 'turfton'>, PaintKind[]> = {
+const PROMISED_PAINT: Partial<Record<Exclude<RegionId, 'turfton'>, PaintKind[]>> = {
   'dust-flats': ['dirt', 'rock'],
   'mossy-wood': ['mud', 'forest'],
   'frostbite-fells': ['ice', 'rock'],
   'cloverfield-farms': ['mud', 'farm'],
   'tallgrass-commons': ['meadow'],
   'loch-moss': ['gravel', 'rock'],
+  'north-highlands': ['meadow', 'snow'],
+  'south-shore': ['sand', 'grass'],
+  'east-campus': ['grass'],
+  'west-estates': ['grass', 'meadow'],
 };
 
 /** Points of a region on a `step` grid. */
 function samples(id: RegionId, step: number): [number, number][] {
   const out: [number, number][] = [];
-  for (let z = -900 + step / 2; z < 900; z += step) {
-    for (let x = -900 + step / 2; x < 900; x += step) if (regionAt(x, z) === id) out.push([x, z]);
+  const h = LAYOUT.worldHalf;
+  for (let z = -h + step / 2; z < h; z += step) {
+    for (let x = -h + step / 2; x < h; x += step) if (regionAt(x, z) === id) out.push([x, z]);
   }
   return out;
 }
@@ -171,6 +176,6 @@ describe.each(Object.keys(PROMISED_PAINT) as Exclude<RegionId, 'turfton'>[])('%s
       const p = paintAt(x, z);
       if (p) seen.add(p);
     }
-    for (const k of PROMISED_PAINT[id]) expect([...seen], `paint "${k}" somewhere in ${id}`).toContain(k);
+    for (const k of PROMISED_PAINT[id] ?? []) expect([...seen], `paint "${k}" somewhere in ${id}`).toContain(k);
   });
 });

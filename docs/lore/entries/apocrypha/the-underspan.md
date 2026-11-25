@@ -11,7 +11,7 @@ sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-165]
 related: [turfton-skyway, the-underspanners, local-404-union-hall, hogweed-sprocket]
 ---
 
-The shade under the Skyway's Unfinished Span, where the Underspanners live and work. Hammocks, welding benches and half-built machines hang from the underside of the concrete.
+The shade beside the Skyway's Unfinished Span, where the Underspanners live and work. Hammocks, welding benches and half-built machines hang from the underside of the concrete.
 
 ## What gnomes say
 

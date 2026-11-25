@@ -16,7 +16,8 @@
       "half": 600,
       "fence": 595,
       "roads": 10,
-      "outerSeed": 2718281828
+      "outerSeed": 2718281828,
+      "outerHalf": 900
     }
   },
   "stamps": [],
@@ -666,6 +667,48 @@
           "dz": 0,
           "yaw": 1.5707963267948966
         }
+      }
+    },
+    {
+      "id": "construction-1",
+      "kind": "slot",
+      "x": 105,
+      "z": -120,
+      "data": {
+        "hw": 25,
+        "hd": 25,
+        "kind": "construction",
+        "epic": "E16",
+        "flat": true,
+        "label": "Thorne Even-Estates (site 1)"
+      }
+    },
+    {
+      "id": "home-05",
+      "kind": "slot",
+      "x": 0,
+      "z": 50,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-05"
+      }
+    },
+    {
+      "id": "home-11",
+      "kind": "slot",
+      "x": -300,
+      "z": 300,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-11"
       }
     }
   ],

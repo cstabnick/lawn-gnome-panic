@@ -1,0 +1,195 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "north-highlands",
+  "name": "Snowcap Rise",
+  "bounds": {
+    "w": 2800,
+    "d": 500
+  },
+  "base": {
+    "id": "gta-highland-scatter",
+    "version": 1,
+    "seed": 1101,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "north-band",
+      "kind": "road",
+      "points": [
+        [
+          20,
+          280
+        ],
+        [
+          10,
+          190
+        ],
+        [
+          -150,
+          185
+        ],
+        [
+          -480,
+          190
+        ],
+        [
+          -800,
+          200
+        ],
+        [
+          -950,
+          200
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "north-band-east",
+      "kind": "road",
+      "points": [
+        [
+          10,
+          190
+        ],
+        [
+          40,
+          90
+        ],
+        [
+          60,
+          -170
+        ],
+        [
+          400,
+          -180
+        ],
+        [
+          700,
+          -145
+        ],
+        [
+          1060,
+          -150
+        ],
+        [
+          1060,
+          50
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "ski-hill",
+      "kind": "slot",
+      "x": -350,
+      "z": 0,
+      "data": {
+        "hw": 110,
+        "hd": 150,
+        "kind": "venue",
+        "epic": "E12",
+        "flat": false,
+        "label": "Snowdrop Slope",
+        "anchors": {
+          "top": {
+            "dx": 0,
+            "dz": -140
+          },
+          "bottom": {
+            "dx": 0,
+            "dz": 140
+          },
+          "lift-base": {
+            "dx": 60,
+            "dz": 135
+          }
+        }
+      }
+    },
+    {
+      "id": "ice-lake",
+      "kind": "slot",
+      "x": -640,
+      "z": 90,
+      "data": {
+        "hw": 90,
+        "hd": 70,
+        "kind": "water",
+        "epic": "E12",
+        "flat": true,
+        "label": "Pail Pond"
+      }
+    },
+    {
+      "id": "toadstool-forest",
+      "kind": "slot",
+      "x": 250,
+      "z": -30,
+      "data": {
+        "hw": 150,
+        "hd": 100,
+        "kind": "natural",
+        "epic": "E14",
+        "flat": false,
+        "label": "Capwood"
+      }
+    },
+    {
+      "id": "wind-farm",
+      "kind": "slot",
+      "x": 850,
+      "z": -50,
+      "data": {
+        "hw": 150,
+        "hd": 45,
+        "kind": "natural",
+        "epic": "E13",
+        "flat": false,
+        "label": "Pinwheel Ridge"
+      }
+    }
+  ],
+  "data": {
+    "region": "highland",
+    "ground": 8359786,
+    "surface": "grass",
+    "batch": "highland-scenery",
+    "border": [
+      [
+        -1400,
+        -250
+      ],
+      [
+        1400,
+        -250
+      ],
+      [
+        1400,
+        250
+      ],
+      [
+        -1400,
+        250
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-highland-relief",
+        "version": 1,
+        "params": {
+          "swell": 4,
+          "swellScale": 240,
+          "crags": 5,
+          "cragScale": 90
+        }
+      }
+    }
+  }
+}

@@ -280,6 +280,149 @@
           "yaw": 1.5707963267948966
         }
       }
+    },
+    {
+      "id": "basketball-court",
+      "kind": "slot",
+      "x": -90,
+      "z": 30,
+      "data": {
+        "hw": 20,
+        "hd": 14,
+        "kind": "park",
+        "epic": "E19",
+        "flat": true,
+        "label": "Drainpipe Court",
+        "anchors": {
+          "centre": {
+            "dx": 0,
+            "dz": 0,
+            "yaw": 1.5708
+          }
+        }
+      }
+    },
+    {
+      "id": "skate-park",
+      "kind": "slot",
+      "x": -30,
+      "z": 90,
+      "data": {
+        "hw": 20,
+        "hd": 20,
+        "kind": "park",
+        "epic": "E19",
+        "flat": true,
+        "label": "the Gutter Bowls"
+      }
+    },
+    {
+      "id": "double-pot",
+      "kind": "slot",
+      "x": 120,
+      "z": -90,
+      "data": {
+        "hw": 51,
+        "hd": 21,
+        "kind": "block",
+        "epic": "E10",
+        "flat": true,
+        "overRoad": true,
+        "label": "the Double Pot",
+        "anchors": {
+          "tunnel-north": {
+            "dx": 0,
+            "dz": -21,
+            "yaw": 3.14159
+          },
+          "tunnel-south": {
+            "dx": 0,
+            "dz": 21,
+            "yaw": 0
+          },
+          "roof": {
+            "dx": 0,
+            "dz": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "home-01",
+      "kind": "slot",
+      "x": -90,
+      "z": 140,
+      "data": {
+        "hw": 12,
+        "hd": 8,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-01",
+        "anchors": {
+          "door": {
+            "dx": 0,
+            "dz": -11,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "home-02",
+      "kind": "slot",
+      "x": 80,
+      "z": -150,
+      "data": {
+        "hw": 10,
+        "hd": 15,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-02"
+      }
+    },
+    {
+      "id": "home-03",
+      "kind": "slot",
+      "x": 102,
+      "z": -150,
+      "data": {
+        "hw": 8,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-03"
+      }
+    },
+    {
+      "id": "home-04",
+      "kind": "slot",
+      "x": -150,
+      "z": 30,
+      "data": {
+        "hw": 10,
+        "hd": 10,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-04"
+      }
+    },
+    {
+      "id": "saucer-court",
+      "kind": "slot",
+      "x": 30,
+      "z": 90,
+      "data": {
+        "hw": 21,
+        "hd": 21,
+        "kind": "block",
+        "epic": "E10",
+        "flat": true,
+        "label": "Saucer Court"
+      }
     }
   ],
   "data": {

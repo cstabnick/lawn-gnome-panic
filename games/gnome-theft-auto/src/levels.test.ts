@@ -56,7 +56,7 @@ describe('region documents', () => {
   });
 });
 
-// ---- The 1800 x 1800 map (Wild World epic 3) ----------------------------------------------------------------------
+// ---- The 2800 x 2800 map (Wild World epic 3, grown by GTA batch 3 E01) --------------------------------------------
 /** The pre-expansion rule, kept here only to prove the borders reproduce it inside the old 1200 x 1200 world. */
 function oldBiomeAt(x: number, z: number): string {
   if (Math.abs(x) <= 215 && Math.abs(z) <= 215) return 'city';
@@ -78,9 +78,25 @@ function crossing(a: [number, number], b: [number, number], c: [number, number],
 }
 
 describe('the region map', () => {
-  it('the world is 1800 x 1800 with the fence 5 inside the edge', () => {
-    expect(LAYOUT.worldHalf).toBe(900);
-    expect(LAYOUT.fenceEdge).toBe(895);
+  it('the world is 2800 x 2800 with the fence 5 inside the edge', () => {
+    expect(LAYOUT.worldHalf).toBe(1400);
+    expect(LAYOUT.fenceEdge).toBe(1395);
+  });
+
+  it('inside the old 1800 x 1800 square no point is in a batch-3 band, and every point outside it is', () => {
+    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates'];
+    const rnd = lcg(11);
+    for (let i = 0; i < 20000; i++) {
+      const x = (rnd() * 2 - 1) * 1400, z = (rnd() * 2 - 1) * 1400;
+      const old = Math.abs(x) <= 900 && Math.abs(z) <= 900;
+      expect(BANDS.includes(regionAt(x, z)), `${x}, ${z}`).toBe(!old);
+    }
+    expect(regionAt(0, -1200)).toBe('north-highlands');
+    expect(regionAt(1300, -1300)).toBe('north-highlands');
+    expect(regionAt(0, 1200)).toBe('south-shore');
+    expect(regionAt(1200, 0)).toBe('east-campus');
+    expect(regionAt(-1200, 0)).toBe('west-estates');
+    expect(regionAt(900, 0)).toBe('dust-flats');
   });
 
   it('inside the old 1200 x 1200 world every point keeps its old biome (edges and diagonals included)', () => {
@@ -99,7 +115,7 @@ describe('the region map', () => {
   it('the borders tile the map: every point is in some border, and the raster agrees with the exact test', () => {
     const rnd = lcg(7);
     for (let i = 0; i < 40000; i++) {
-      const x = (rnd() * 2 - 1) * 900, z = (rnd() * 2 - 1) * 900;
+      const x = (rnd() * 2 - 1) * 1400, z = (rnd() * 2 - 1) * 1400;
       expect(REGION_IDS.some((id) => inPolygon(REGIONS[id].border, x, z)), `${x}, ${z}`).toBe(true);
       expect(regionAt(x, z)).toBe(regionAtExact(x, z));
     }
@@ -112,7 +128,7 @@ describe('the region map', () => {
     expect(regionAt(500, -800)).toBe('frostbite-fells');
     expect(regionAt(0, 0)).toBe('turfton');
     expect(regionAt(215, 215)).toBe('turfton');
-    expect(regionAt(5000, 0)).toBe('dust-flats');
+    expect(regionAt(5000, 0)).toBe('east-campus');
   });
 
   it('the old highways reach the new edges, and the spurs end inside Loch Moss and Tallgrass Commons', () => {
@@ -129,6 +145,20 @@ describe('the region map', () => {
     expect(start('west-outer')).toEqual(end('west'));
     expect(start('north-outer')).toEqual(end('north'));
     expect(start('south-outer')).toEqual(end('south'));
+    // Batch 3 (E01): each outer highway runs on into its band, and the band roads close a ring round the old square.
+    expect(start('north-band')).toEqual(end('north-outer'));
+    expect(start('east-band')).toEqual(end('east-outer'));
+    expect(start('south-band')).toEqual(end('south-outer'));
+    expect(start('west-band')).toEqual(end('west-outer'));
+    expect(end('north-band')).toEqual(end('west-band'));
+    expect(end('north-band-east')).toEqual(end('east-band'));
+    expect(end('east-band-south')).toEqual(end('south-band-east'));
+    expect(end('west-band-south')).toEqual(end('south-band'));
+    for (const id of ['north-band', 'north-band-east', 'east-band', 'east-band-south', 'runway-spur', 'south-band', 'south-band-east', 'coast-spur', 'west-band', 'west-band-south']) {
+      for (const [x, z] of highways().find((h) => h.id === id)!.points) {
+        expect(Math.max(Math.abs(x), Math.abs(z)), `${id} stays inside the fence`).toBeLessThan(LAYOUT.fenceEdge - 20);
+      }
+    }
   });
 
   it('the reserved river is one connected course from the Basin to the Puddle Sea, crossing roads only at the five bridges', () => {

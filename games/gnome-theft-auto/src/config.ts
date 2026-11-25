@@ -27,9 +27,11 @@ function areaRect(id: string): GroundRect {
 export const GAME_ID = 'gnome-theft-auto';
 
 // ---- World layout ------------------------------------------------------------------------------------------------
-// Turfton (the city) is a grid in the middle. Six regions fill the rest of the 1800 x 1800 map (four wedges split
-// along the diagonals, Loch Moss and Tallgrass Commons in the west corners; borders are polygons in the region
-// documents), joined to the city by winding highways. Ground height comes from terrain.ts heightAt(x, z) (flat, y = 0,
+// Turfton (the city) is a grid in the middle. Six regions fill the rest of the old 1800 x 1800 square (four wedges
+// split along the diagonals, Loch Moss and Tallgrass Commons in the west corners; borders are polygons in the region
+// documents), joined to the city by winding highways. Since GTA batch 3 (E01) the map is 2800 x 2800: four band regions
+// (Snowcap Rise north, Saltbucket Shore south, Rootwell east, Trellisdown west) ring the old square, and src/sites.ts
+// reserves named ground in them for later content. Ground height comes from terrain.ts heightAt(x, z) (flat, y = 0,
 // while TERRAIN.amplitude is 0); biomes differ by colour, props, roads and landmarks.
 /** Playable area is x, z in [-WORLD_HALF, WORLD_HALF]. */
 export const WORLD_HALF = LAYOUT.worldHalf;
@@ -99,6 +101,18 @@ export const AIRFIELD: {
     x: af.x + p.dx, z: af.z + p.dz, yaw: p.yaw, kind: p.kind as VehicleKind,
   })),
 };
+
+/** One airstrip: a runway (centre, yaw = the take-off heading, length along it, width across) and its parked planes. */
+export interface Airfield {
+  readonly id: string;
+  readonly x: number; readonly z: number; readonly yaw: number; readonly length: number; readonly width: number;
+  readonly planeSpots: readonly { readonly x: number; readonly z: number; readonly yaw: number; readonly kind: VehicleKind }[];
+}
+/**
+ * Every airstrip (batch 3, E01). The desert AIRFIELD is first and stays exported on its own; E13 appends runway 2 (the
+ * `runway-2` slot in sites.ts) and converts the consumers that must know about both.
+ */
+export const AIRFIELDS: readonly Airfield[] = [{ id: 'airfield', ...AIRFIELD }];
 
 const spawn = marker('spawn', 'player');
 export const SPAWN: PlacedPoint = { x: spawn.x, z: spawn.z, yaw: markerNum(spawn, 'yaw') };

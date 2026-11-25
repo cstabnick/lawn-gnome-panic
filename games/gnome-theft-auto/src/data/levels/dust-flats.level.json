@@ -16,7 +16,8 @@
       "half": 600,
       "fence": 595,
       "roads": 10,
-      "outerSeed": 3141592653
+      "outerSeed": 3141592653,
+      "outerHalf": 900
     }
   },
   "stamps": [],
@@ -862,6 +863,48 @@
       "kind": "walk",
       "x": 289,
       "z": 175
+    },
+    {
+      "id": "skyway-under",
+      "kind": "slot",
+      "x": 180,
+      "z": -26,
+      "data": {
+        "hw": 20,
+        "hd": 25,
+        "kind": "society",
+        "epic": "E17",
+        "flat": true,
+        "label": "the Underspan"
+      }
+    },
+    {
+      "id": "home-06",
+      "kind": "slot",
+      "x": 215,
+      "z": 220,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-06"
+      }
+    },
+    {
+      "id": "home-12",
+      "kind": "slot",
+      "x": -80,
+      "z": -210,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-12"
+      }
     }
   ],
   "data": {

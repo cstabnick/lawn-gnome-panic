@@ -17,6 +17,10 @@ import { landform as frostbiteFells } from './frostbiteFells';
 import { landform as cloverfieldFarms } from './cloverfieldFarms';
 import { landform as tallgrassCommons } from './tallgrassCommons';
 import { landform as lochMoss } from './lochMoss';
+import { landform as northHighlands } from './northHighlands';
+import { landform as southShore } from './southShore';
+import { landform as eastCampus } from './eastCampus';
+import { landform as westEstates } from './westEstates';
 
 export type { GroundFacts, Landform, LandformFeature, LandformInput, PaintKind } from './types';
 export { PAINT_KINDS } from './types';
@@ -31,6 +35,10 @@ export const LANDFORMS: Partial<Record<RegionId, Landform>> = {
   'cloverfield-farms': cloverfieldFarms,
   'tallgrass-commons': tallgrassCommons,
   'loch-moss': lochMoss,
+  'north-highlands': northHighlands,
+  'south-shore': southShore,
+  'east-campus': eastCampus,
+  'west-estates': westEstates,
 };
 
 interface Entry { landform: Landform; input: LandformInput }

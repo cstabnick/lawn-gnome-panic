@@ -20,7 +20,7 @@ export const TURFTON_B_STAGES: readonly Stage[] = [
       mark('player', [151, -126], [150, -130], 'stand', 'waits outside the gate in the dawn'),
     ],
     cameras: [
-      cam('wide', [150, 5, -100], [150, 1.2, -127], 'establishing: the gate in the wall, the road and the Zero-Turn parked beside it'),
+      cam('wide', [150, 5, -114], [150, 1.2, -127], 'establishing: the gate in the wall, the road and the Zero-Turn parked beside it'),
       cam('two-shot', [151, 1.6, -119], [151, 1.3, -126], 'over the road onto the player at the gate'),
       cam('arrival', [158, 2.5, -112], [150, 1.2, -122], 'arrival: watching the pull-up mark on the road'),
     ],
@@ -289,8 +289,8 @@ export const TURFTON_B_STAGES: readonly Stage[] = [
     marks: [
       mark('hoa-enforcer', [53, -56], [60, -56], 'stand', 'guards the first clamped bike with a clipboard'),
       mark('hoa-enforcer', [67, -64], [64, -64], 'stand', 'guards the second clamped bike, arms folded'),
-      mark('red-cap', [72, -72], [64, -64], 'stand', 'glares across the crossing from the Red Cap kerb'),
-      mark('blue-cap', [82, -70], [64, -64], 'stand', 'glares across the crossing from the Blue Cap kerb'),
+      mark('red-cap', [66.5, -67], [64, -64], 'stand', 'glares across the crossing from the Red Cap kerb'),
+      mark('blue-cap', [82, -66.2], [64, -64], 'stand', 'glares across the crossing from the Blue Cap kerb'),
       mark('player', [56, -52], [60, -60], 'stand', 'stands on the kerb with the crossing ahead'),
     ],
     cameras: [
@@ -299,8 +299,8 @@ export const TURFTON_B_STAGES: readonly Stage[] = [
       cam('close', [78, 2.2, -62], [66, 1.1, -64], 'close-up on the two caps glaring across the crossing'),
     ],
     walks: [
-      { who: 'red-cap', points: [[72, -72], [72, -64]], loop: true, speed: 1.0, pauseS: 3, activity: 'paces the Red Cap kerb, glaring at the other side' },
-      { who: 'blue-cap', points: [[82, -70], [88, -70]], loop: true, speed: 1.0, pauseS: 3, activity: 'paces the Blue Cap kerb, glaring back' },
+      { who: 'red-cap', points: [[66.5, -67], [66.5, -64]], loop: true, speed: 1.0, pauseS: 3, activity: 'paces the Red Cap kerb, glaring at the other side' },
+      { who: 'blue-cap', points: [[82, -66.2], [88, -66.2]], loop: true, speed: 1.0, pauseS: 3, activity: 'paces the Blue Cap kerb, glaring back' },
     ],
     vehicles: [
       car('clamped-bike-1', 'parked', 'push-bike', [60, -56], Math.PI / 2, undefined, 'clamped to the crossing light, wheel locked'),

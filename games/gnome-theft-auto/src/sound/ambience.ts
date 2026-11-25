@@ -43,6 +43,10 @@ const DAY: Record<BiomeId, Partial<Mix>> = {
   desert: { wind: 0.03 },
   farmland: { wind: 0.018, leaves: 0.01 },
   loch: { wind: 0.02, water: 0.035 },
+  highland: { wind: 0.05 },
+  coast: { wind: 0.03, water: 0.04 },
+  campus: { hum: 0.015, leaves: 0.015, wind: 0.01 },
+  estate: { leaves: 0.02, wind: 0.012 },
 };
 
 const clamp01 = (v: number): number => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);

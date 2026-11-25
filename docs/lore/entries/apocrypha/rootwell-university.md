@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159, games/gnome-theft-auto/src/data/levels/east-campus.level.json, games/gnome-theft-auto/src/sites.ts]
 related: [the-anthill, anthill-observatory, rootwell-field, betony-sextant, lovage-inkwell, turfton, dust-flats, vesper-thorne]
 ---
 
@@ -24,7 +24,15 @@ The twelve buildings, round the quad: **The Long Shelf** (library), **the Crucib
 
 ## In the games
 
-Region tag `rootwell`, the `east-campus` band, campus at (1130, -180). Rows 45 `m45-rootwell-admissions`, 46 `m46-starfall-at-the-anthill`, 70 (finale call). E01 builds the area; E13 builds the twelve buildings from this list: planned (batch 3).
+The east band of the map (code region `east-campus`, x 900 to 1400, z -900 to 900), built by E01, called Rootwell by the gnomes. Roads: `east-band` runs on from Route East at (870, 50) and north along x 950, `east-band-south` runs south, and `runway-spur` runs to the field. Rootwell University's ground is 320 x 300 m at (1140, -200). The Anthill mound stands at (1240, 150), about 45 m high. Rootwell Field's runway runs north to south at (1300, 600). The Rutbottom Dirt Bowl is 300 x 200 m at (1150, -650), and an aircraft dealership stands beside the runway at (1150, 640).
+
+Rows 45 `m45-rootwell-admissions`, 46 `m46-starfall-at-the-anthill`, 70 (finale call) use the region tag `rootwell`. E13 builds the twelve buildings from this list: planned (batch 3).
+
+## Look and motifs
+
+- Motifs: mown lawns; clipped hedges; iron railings round old learned halls.
+- Palette: stone and clay walls, slate roofs, red flowers.
+- In the game: theme `east-campus` in `src/data/regionThemes.json`.
 
 ## Loose threads
 

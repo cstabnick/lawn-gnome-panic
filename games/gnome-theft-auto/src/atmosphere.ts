@@ -317,6 +317,27 @@ const BIOME_PROFILES: Record<BiomeId, BiomeAtmosphereProfile> = {
     vz: 0.6,
     swirl: 1.15,
   },
+  // Batch 3 bands (E01): placeholder profiles; the epics that fill each band tune them.
+  highland: {
+    skyTint: 0xb8d4ee, skyWeight: 0.24, fogTint: 0xc6dcef, fogWeight: 0.3, fogNearMult: 0.92, fogFarMult: 0.94,
+    moteColorDay: 0xf0f6ff, moteColorNight: 0xbcd6f5, moteOpacityDay: 0.5, moteOpacityNight: 0.4, moteSize: 0.26,
+    vx: 2.4, vy: -0.6, vz: 0.8, swirl: 1.1,
+  },
+  coast: {
+    skyTint: 0xa8dcef, skyWeight: 0.22, fogTint: 0xc4e6ef, fogWeight: 0.32, fogNearMult: 0.9, fogFarMult: 0.92,
+    moteColorDay: 0xfdfbf2, moteColorNight: 0xa8d8f0, moteOpacityDay: 0.45, moteOpacityNight: 0.35, moteSize: 0.25,
+    vx: 3.2, vy: 0.2, vz: -1.4, swirl: 1.0,
+  },
+  campus: {
+    skyTint: 0xa6d6f0, skyWeight: 0.1, fogTint: 0xb4dcef, fogWeight: 0.12, fogNearMult: 0.98, fogFarMult: 0.98,
+    moteColorDay: 0xfff6dc, moteColorNight: 0xb8dcff, moteOpacityDay: 0.3, moteOpacityNight: 0.4, moteSize: 0.24,
+    vx: 0.5, vy: 0.2, vz: 0.3, swirl: 0.7,
+  },
+  estate: {
+    skyTint: 0xe8d8a0, skyWeight: 0.16, fogTint: 0xe6dcae, fogWeight: 0.2, fogNearMult: 0.96, fogFarMult: 0.96,
+    moteColorDay: 0xfff0c8, moteColorNight: 0xd8d0a0, moteOpacityDay: 0.45, moteOpacityNight: 0.4, moteSize: 0.26,
+    vx: 0.8, vy: 0.3, vz: 0.4, swirl: 0.9,
+  },
 };
 
 export function wrapPhase(phase: number): number {

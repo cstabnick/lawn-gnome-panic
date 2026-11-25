@@ -25,11 +25,78 @@
       #ui * { touch-action: none; -webkit-user-select: none; user-select: none; }
       #game { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
       #ui { position: fixed; inset: 0; pointer-events: none; }
+      /* Loading screen (src/loading/loader.ts fills it in and removes it once the first frame is drawn). */
+      #gta-loader {
+        position: fixed; inset: 0; z-index: 100; box-sizing: border-box; pointer-events: auto;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        padding: calc(env(safe-area-inset-top, 0px) + 14px) calc(env(safe-area-inset-right, 0px) + 16px)
+                 calc(env(safe-area-inset-bottom, 0px) + 14px) calc(env(safe-area-inset-left, 0px) + 16px);
+        background: linear-gradient(180deg, #3b2a5a 0%, #b4577a 48%, #f2a65a 100%);
+        color: #fff6e0; text-align: center; overflow: hidden; transition: opacity 0.3s ease;
+      }
+      #gta-loader * { box-sizing: border-box; }
+      #gta-loader-title {
+        margin: 0; font: 900 clamp(28px, 8vw, 54px)/1 'Segoe UI', system-ui, sans-serif; letter-spacing: 1px;
+        text-transform: uppercase; color: #ffd966; text-shadow: 0 3px 0 #7a2e1d, 0 6px 14px rgba(0,0,0,.35);
+      }
+      #gta-loader-main { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(560px, 100%); }
+      #gta-loader-info { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+      #gta-loader-stage { font-weight: 700; font-size: 16px; min-height: 22px; }
+      #gta-loader-barwrap { height: 10px; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; }
+      #gta-loader-bar { width: 8%; height: 100%; background: linear-gradient(90deg, #ffd966, #ff8a3d); transition: width 0.35s ease; }
+      #gta-loader-fact {
+        min-height: 3.6em; padding: 10px 14px; border-radius: 12px; background: rgba(0,0,0,.28);
+        font-size: 14px; line-height: 1.4; display: flex; align-items: center; justify-content: center;
+      }
+      #gta-loader-page { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; min-height: 0; }
+      #gta-loader-pagerow { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+      #gta-loader-art {
+        flex: 1 1 auto; max-width: 340px; min-width: 0; border-radius: 6px; overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0,0,0,.4); line-height: 0; transform: rotate(-1deg); background: #f4ead2;
+      }
+      #gta-loader-art svg { width: 100%; height: auto; max-height: 36vh; display: block; }
+      #gta-loader-page button {
+        flex: 0 0 auto; width: 44px; height: 44px; border: 0; border-radius: 22px; cursor: pointer;
+        background: rgba(255,246,224,.9); color: #4a2a3a; font: 700 20px/1 system-ui, sans-serif;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      }
+      #gta-loader-caption { font-size: 12px; opacity: .9; min-height: 1.3em; }
+      #gta-loader-dots { display: flex; gap: 8px; justify-content: center; }
+      #gta-loader-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,246,224,.4); }
+      #gta-loader-dots i.on { background: #ffd966; }
+      @media (orientation: landscape) and (max-height: 500px) {
+        #gta-loader { gap: 6px; }
+        #gta-loader-title { font-size: clamp(20px, 5vh, 30px); }
+        #gta-loader-main { flex-direction: row; align-items: center; width: min(820px, 100%); gap: 16px; }
+        #gta-loader-info { flex: 1 1 0; min-width: 0; }
+        #gta-loader-page { flex: 1 1 0; }
+        #gta-loader-art svg { max-height: 44vh; }
+        #gta-loader-fact { min-height: 0; font-size: 13px; padding: 8px 12px; }
+      }
     </style>
   </head>
   <body>
     <canvas id="game"></canvas>
     <div id="ui"></div>
+    <div id="gta-loader">
+      <h1 id="gta-loader-title">Gnome Theft Auto</h1>
+      <div id="gta-loader-main">
+        <div id="gta-loader-info">
+          <div id="gta-loader-stage">Unpacking the gnomes...</div>
+          <div id="gta-loader-barwrap"><div id="gta-loader-bar"></div></div>
+          <div id="gta-loader-fact" aria-live="polite" data-seed="Gnomes are fired clay. They never bleed: they chip, crack, and get glued back together at the Glaze Clinic.|Nobody has ever seen the Tall Ones. Only their footprints, their dropped tools and, at the edge, their Fence.|Turfton is laid out in a perfect grid, 60 paces to a block. Nobody saw who laid it.">Gnomes are fired clay. They never bleed: they chip, crack, and get glued back together at the Glaze Clinic.</div>
+        </div>
+        <div id="gta-loader-page">
+          <div id="gta-loader-pagerow">
+            <button type="button" id="gta-loader-prev" aria-label="Previous page">&#8249;</button>
+            <div id="gta-loader-art"></div>
+            <button type="button" id="gta-loader-next" aria-label="Next page">&#8250;</button>
+          </div>
+          <div id="gta-loader-caption"></div>
+          <div id="gta-loader-dots"></div>
+        </div>
+      </div>
+    </div>
     <script>
       // No accidental zoom on phones: iOS ignores user-scalable=no, so block pinch (gesture*), double-tap zoom,
       // page scroll/bounce and trackpad ctrl+wheel zoom. Game input uses pointer events, which still fire.

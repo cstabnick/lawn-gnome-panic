@@ -8,6 +8,7 @@ import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
 import { SCENES } from '../cutscene/scenes';
@@ -485,6 +486,7 @@ export function createQuests(
       new THREE.MeshBasicMaterial({ color: MAIN_COLOR, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
     );
     beam.position.set(g.x, heightAt(g.x, g.z) + 45, g.z);
+    trackBeam(beam, heightAt(g.x, g.z), 90);
     deps.scene.add(beam);
 
     const star = makeMarker();

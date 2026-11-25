@@ -1201,6 +1201,11 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Waved Through', description: 'Wait at a traffic warden\'s line until you are waved through.',
     reward: { slot: 'head', prefabId: 'hoa-traffic-hat', label: 'HOA Traffic Hat' },
   },
+  {
+    id: 'gta-flappy-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Flappy Gnome', description: 'Score 10 in Gnomey Bird on the Gnomlet.',
+    reward: { slot: 'head', prefabId: 'hedge-hopper-cap', label: 'Hedge-Hopper Cap' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

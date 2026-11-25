@@ -7,6 +7,7 @@ import { pushOutOfBoxes } from '../collide';
 import { VEHICLES } from '../config';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 import type { Blip, Vehicle } from '../types';
 import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
 import { restoreVehicle } from './questPins';
@@ -70,6 +71,7 @@ function buildGate(g: CheckpointDef, from: [number, number]): THREE.Group {
     new THREE.MeshBasicMaterial({ color: GATE_COLOR, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
   );
   beacon.position.set(x, ground + (g.height ?? 0) + 20, z);
+  trackBeam(beacon, ground + (g.height ?? 0), 40);
   group.add(beacon);
   return group;
 }

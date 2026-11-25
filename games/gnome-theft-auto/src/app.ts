@@ -156,7 +156,10 @@ import { ensureRideNear } from './quests/ensureRide';
 import { enterLabelFor } from './ui/enterLabel';
 import { buildEstates } from './lockup/estates';
 import { waterDepthAt } from './water';
-import { SPAWN as FLEET_NEAR } from './config';
+import { SPAWN as FLEET_NEAR, WORLD_HALF } from './config';
+import { readPosition, validatePosition, writePosition, type SavedPosition } from './positionSave';
+import { interiorById } from './interiors/registry';
+import { currentInterior } from './interiors/runtime';
 import { mountSteamConnect } from '@lawn/gamepad';
 import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
 import { ownedLoadout } from './glazeStore';
@@ -192,7 +195,7 @@ ensureGlyphStyle();
 document.body.dataset.touchLayout = getTouchLayout();
 createDock(ui);
 createGnomlet(ui);
-registerGnomeyBird();
+registerGnomeyBird({ unlock: (id) => void achievements.unlock(id) });
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.shadowMap.enabled = true;
@@ -2481,6 +2484,41 @@ if (startParams.has('herd')) {
   }
 }
 
+// Where the gnome last stood (positionSave.ts): restored on foot, except on a dev start, a room join, or the first start
+// (the intro tour runs at the spawn). Saved every 5 s and when the page is left.
+{
+  const devStart = ['mount', 'mountat', 'at', 'interior', 'gunshop', 'cutscene', 'briefing', 'herd', 'pileup', 'mountdemo', 'room', 'gunfit', 'cutscenecheck']
+    .some((k) => startParams.has(k));
+  let introSeen = false;
+  try { introSeen = localStorage.getItem('gta-intro-seen-v1') === '1'; } catch { introSeen = false; }
+  const saved = !devStart && introSeen ? validatePosition(readPosition(), {
+    half: WORLD_HALF,
+    isWater: (x, z) => !!terrain.waterAt(x, z),
+    interiorExists: (id) => !!interiorById(id),
+  }) : null;
+  if (saved) {
+    player.respawn(saved.x, saved.z, saved.yaw);
+    chase.yaw = saved.yaw;
+    if (saved.interior) setTimeout(() => interiors.enter(saved.interior!), 800);
+  }
+  let lastSaved: { x: number; z: number } | null = null;
+  const savePosition = (): void => {
+    if (cutscene.active || introTour.active || deathT > 0) return;
+    let spot: Omit<SavedPosition, 'v' | 't'>;
+    const inside = currentInterior();
+    const pl = inside ? interiorById(inside) : undefined;
+    if (inside && pl) spot = { x: pl.def.door.x, z: pl.def.door.z, yaw: pl.def.door.yaw, interior: inside };
+    else if (inside) return;
+    else if (player.vehicle) spot = { x: player.vehicle.x, z: player.vehicle.z, yaw: player.vehicle.yaw };
+    else spot = { x: player.x, z: player.z, yaw: player.yaw };
+    if (lastSaved && Math.hypot(spot.x - lastSaved.x, spot.z - lastSaved.z) <= 1) return;
+    lastSaved = { x: spot.x, z: spot.z };
+    writePosition(spot);
+  };
+  setInterval(savePosition, 5000);
+  window.addEventListener('pagehide', savePosition);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') savePosition(); });
+}
 // Dev: ?at=x,z[,yaw] starts the player there, on the ground (e.g. ?terrain=hill&at=500,30,1.57 at the test hill).
 const at = startParams.get('at')?.split(',').map(Number);
 if (at && at.length >= 2 && at.every(Number.isFinite)) {

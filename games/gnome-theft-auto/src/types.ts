@@ -780,6 +780,8 @@ export interface Hud {
   callout?(title: string, sub?: string): void;
   /** Brief camera shutter flash. */
   flash?(): void;
+  /** The big map: open / close it, or open it centred on a world point at `scale` screen px per world unit (clamped). */
+  bigMap?: { open(): void; close(): void; isOpen(): boolean; zoomTo(x: number, z: number, scale: number): void };
 }
 
 export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom' | 'boost' | 'stunt' | 'splash' | 'shutter' | 'smash' | 'drink' | 'hoa-shot' | 'gnome-hit' | 'player-crack';

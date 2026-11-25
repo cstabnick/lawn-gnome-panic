@@ -23,7 +23,7 @@ export const KEYS = {
   enterExit: 'KeyE',
   /** Tap: next gun. Hold: the weapon wheel (weaponWheel.ts). */
   switchGun: 'KeyQ',
-  /** Open and close the More menu (ui/moreMenu.ts): phone, emotes, journal, map, party, journals, options... Tab used to duplicate holding Q. */
+  /** Open and close the Gnomlet tablet (gnomlet/gnomlet.ts): phone apps, emotes, journal, map, party, journals, options... Tab used to duplicate holding Q. */
   more: 'Tab',
   /** Open the Ammu-Gnation Pocket Kit: fit gun mods anywhere on foot (gunModKit.ts). */
   modKit: 'KeyK',

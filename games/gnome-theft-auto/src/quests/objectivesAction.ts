@@ -9,6 +9,7 @@ import { collideVehicles, createVehicle, removeVehicle, stepVehicle, syncVehicle
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 
 const TARGET_COLOR = '#ff7a00';
 const ALT_COLOR = '#7cf0ff';
@@ -30,6 +31,7 @@ function makeBeacon(scene: THREE.Scene, x: number, z: number, color: number): TH
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
   );
   m.position.set(x, heightAt(x, z) + 20, z);
+  trackBeam(m, heightAt(x, z), 40);
   scene.add(m);
   return m;
 }

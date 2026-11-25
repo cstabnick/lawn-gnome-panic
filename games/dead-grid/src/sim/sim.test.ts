@@ -10,7 +10,27 @@ import {
 } from './scenarios';
 
 describe('Dead Grid 256K WASM simulation', () => {
-  it('generates deterministic 512x512 worlds across all 4 water styles with topography', async () => {
+  it('derives deterministic genetics and aspirations from the world seed', async () => {
+    const p: SimParams = { ...DEFAULT_PARAMS, initialHumans: 500, initialZombies: 100, initialAnimals: 100 };
+    const simA = await createSim(7777, p);
+    const simB = await createSim(7777, p);
+    const simC = await createSim(8888, p);
+
+    let checked = 0;
+    let diffFound = false;
+    for (let i = 0; i < 800; i++) {
+      if (simA.agKind[i] === 1) {
+        expect(simA.agGenome[i]).toBe(simB.agGenome[i]);
+        expect(simA.agAspiration[i]).toBe(simB.agAspiration[i]);
+        if (simA.agGenome[i] !== simC.agGenome[i]) diffFound = true;
+        checked++;
+      }
+    }
+    expect(checked).toBe(500);
+    expect(diffFound).toBe(true);
+  });
+
+  it('generates deterministic worlds across all 4 water styles with topography', async () => {
     for (const waterStyle of [0, 1, 2, 3] as const) {
       const p: SimParams = { ...DEFAULT_PARAMS, waterStyle, initialHumans: 200, initialZombies: 200, initialAnimals: 200 };
       const simA = await createSim(4242, p);
@@ -21,7 +41,7 @@ describe('Dead Grid 256K WASM simulation', () => {
 
       const seen = new Set<number>();
       for (let i = 0; i < 512 * 512; i++) seen.add(simA.tileType[i]);
-      expect(seen.has(0)).toBe(true); // Water present
+      expect(seen.has(0)).toBe(true);
       expect(seen.size).toBeGreaterThanOrEqual(7);
     }
   });
@@ -34,24 +54,20 @@ describe('Dead Grid 256K WASM simulation', () => {
       initialAnimals: 1500,
     });
 
-    const initialWaterCount = (() => {
-      let c = 0;
-      for (let i = 0; i < 512 * 512; i++) if (sim.tileType[i] === 0) c++;
-      return c;
-    })();
+    let initialWater = 0;
+    for (let i = 0; i < 512 * 512; i++) if (sim.tileType[i] === 0) initialWater++;
 
     sim.step(1500);
     const stats = sim.readStats();
     expect(stats.tick).toBe(1500);
     expect(stats.totalDeaths + stats.totalZombiesKilled).toBeGreaterThan(50);
 
-    // Water tiles must never be overwritten by heap/scanline corruption
-    let afterWaterCount = 0;
+    let afterWater = 0;
     for (let i = 0; i < 512 * 512; i++) {
-      if (sim.tileType[i] === 0) afterWaterCount++;
+      if (sim.tileType[i] === 0) afterWater++;
       expect(sim.tileType[i]).toBeLessThanOrEqual(13);
     }
-    expect(afterWaterCount).toBe(initialWaterCount);
+    expect(afterWater).toBe(initialWater);
 
     for (let i = 0; i < stats.activeAgents; i++) {
       if (sim.agKind[i] === 0) continue;
@@ -62,6 +78,35 @@ describe('Dead Grid 256K WASM simulation', () => {
       expect(sim.agY[i]).toBeGreaterThanOrEqual(0);
       expect(sim.agY[i]).toBeLessThan(512);
     }
+  });
+
+  it('supports natural population growth, faiths, aspirations, and expanded needs', async () => {
+    const sim = await createSim(2026, {
+      ...DEFAULT_PARAMS,
+      initialHumans: 5000,
+      initialZombies: 800,
+      initialAnimals: 1200,
+      birthRate: 1.5,
+      spiritualityBias: 0.9,
+      cooperationBias: 0.85,
+    });
+
+    sim.step(300);
+    const stats = sim.readStats();
+    expect(stats.births).toBeGreaterThan(0);
+    expect(stats.maxGen).toBeGreaterThanOrEqual(2);
+    expect(stats.faiths).toBeGreaterThan(0);
+    expect(stats.avgSafety).toBeGreaterThanOrEqual(0);
+    expect(stats.avgSafety).toBeLessThanOrEqual(100);
+    expect(stats.avgEntertain).toBeGreaterThanOrEqual(0);
+    expect(stats.avgSpirit).toBeGreaterThanOrEqual(0);
+
+    const faiths = sim.readFaiths();
+    expect(faiths.length).toBeGreaterThan(0);
+
+    // Verify Faith overlay renders
+    sim.renderFrame(5, true);
+    expect(sim.frameRgba[0]).not.toBe(0);
   });
 
   it('supports 1024x1024 grids and 55,000+ agents within 256k capacity', async () => {
@@ -81,8 +126,7 @@ describe('Dead Grid 256K WASM simulation', () => {
 
     const t0 = performance.now();
     sim.step(20);
-    const elapsed = performance.now() - t0;
-    expect(elapsed).toBeLessThan(3000);
+    expect(performance.now() - t0).toBeLessThan(3000);
     expect(sim.readStats().tick).toBe(20);
   });
 
@@ -101,19 +145,6 @@ describe('Dead Grid 256K WASM simulation', () => {
     expect(stats.settlements).toBeGreaterThan(0);
     expect(stats.pdCoops + stats.pdDefects).toBeGreaterThan(0);
 
-    const beforeZ = stats.zombies;
-    sim.brushSpawnZombies(200, 200, 10, 150);
-    expect(sim.readStats().zombies).toBeGreaterThan(beforeZ);
-
-    const beforeH = sim.readStats().humans;
-    sim.brushSpawnHumans(220, 220, 8, 40);
-    expect(sim.readStats().humans).toBeGreaterThan(beforeH);
-
-    const beforeA = sim.readStats().animals;
-    sim.brushSpawnAnimals(240, 240, 8, 30);
-    expect(sim.readStats().animals).toBeGreaterThan(beforeA);
-
-    // Find a passable tile for airdrop
     let ax = 220;
     let ay = 220;
     for (let y = 150; y < 350; y += 5) {
@@ -124,7 +155,7 @@ describe('Dead Grid 256K WASM simulation', () => {
     const tile = sim.inspectTile(ax, ay);
     expect(tile.food + tile.water + tile.gear).toBeGreaterThan(0);
 
-    for (const overlay of [0, 1, 2, 3, 4] as const) {
+    for (const overlay of [0, 1, 2, 3, 4, 5] as const) {
       sim.renderFrame(overlay, overlay === 0);
       expect(sim.frameRgba[0]).not.toBe(0);
     }

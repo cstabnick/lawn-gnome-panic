@@ -68,7 +68,7 @@ async function main(): Promise<void> {
       viewport.selectedTile = { x: Math.floor(wx), y: Math.floor(wy) };
       const tile = sim.inspectTile(wx, wy);
       const agent = ag >= 0 ? sim.inspectAgent(ag) : null;
-      hud.showInspection(tile, agent, sim.readFactions());
+      hud.showInspection(tile, agent, sim.readFactions(), sim.readFaiths());
     },
   });
 
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
       tickAccum = 0;
       viewport.selectedAgent = -1;
       viewport.selectedTile = null;
-      hud.showInspection(null, null, []);
+      hud.showInspection(null, null, [], []);
       sim.reset(seed, params);
       viewport.syncWorldSize(sim.gridW, sim.gridH);
     },
@@ -182,19 +182,26 @@ async function main(): Promise<void> {
         avgFood: stats.avgFood,
         avgWater: stats.avgWater,
         avgGear: stats.avgGear,
+        avgSafety: stats.avgSafety,
+        avgEntertain: stats.avgEntertain,
+        avgSpirit: stats.avgSpirit,
+        faiths: stats.faiths,
+        births: stats.births,
+        maxGen: stats.maxGen,
       });
       if (history.length > 1000) history.shift();
     }
 
     const factions = sim.readFactions();
-    viewport.render(sim, factions);
+    const faiths = sim.readFaiths();
+    viewport.render(sim, factions, faiths);
     hud.updateStats(stats, history);
     hud.appendEvents(sim.drainEvents());
 
     if (viewport.selectedAgent >= 0) {
       const ag = sim.inspectAgent(viewport.selectedAgent);
       if (ag) {
-        hud.showInspection(sim.inspectTile(ag.x, ag.y), ag, factions);
+        hud.showInspection(sim.inspectTile(ag.x, ag.y), ag, factions, faiths);
       }
     }
 

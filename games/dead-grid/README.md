@@ -21,8 +21,10 @@ npm test -w games/dead-grid           # Run Vitest simulation tests
 
 ## Features
 
-- **256k Agent WASM Kernel** (`assembly/sim.ts`): Zero-heap-allocation fixed linear memory (`25 MB` / `400` pages) supporting `512×512`, `768×768`, and `1024×1024` grids and `262,144` SoA agents.
-- **Topography & Water Styles**: Multi-octave fBm + ridged elevation with 4 water generators (`Coastal Mainland`, `River Valleys`, `Archipelago`, `Arid Basin`) and a `Topography` contour overlay.
+- **256k Agent WASM Kernel** (`assembly/sim.ts`): Zero-heap-allocation fixed linear memory (`28 MB` / `448` pages) supporting `512×512`, `768×768`, and `1024×1024` grids and `262,144` SoA agents.
+- **Deterministic Seed-Derived Genetics & Natural Growth**: Every human carries an 8-trait 32-bit genome (`Coop`, `Brave`, `Greed`, `Trust`, `Spirit`, `Social`, `Ambition`, `Caution`) and derived Life Aspiration (`Survivor`, `Founder`, `Prophet`, `Explorer`, `Warlord`, `Philanthropist`, `Architect`, `Patriarch`), passed down and mutated across generations via natural reproduction.
+- **Expanded Needs & Emergent Faiths**: Tracks Hunger, Thirst, Energy, Safety, Entertainment, and Spirituality; ambitious spiritual humans found faiths, convert neighbors, trigger schisms, and form faith-based alliances or conflicts.
+- **Topography & Water Styles**: Multi-octave fBm + ridged elevation with 4 water generators (`Coastal Mainland`, `River Valleys`, `Archipelago`, `Arid Basin`), `Topography` contour overlay, and `Faith` overlay.
 - **3 Species & Social Tiers**: Humans (solo, small roving groups, or up to 32 fortified societies), Zombies (Walkers, Runners, Pack Alphas forming hordes), and Wild Animals (Deer, Wolves, Boars).
 - **Real Inventory, Personalities & Prisoner's Dilemma**: Humans carry food, water, gear, meds, and materials, and negotiate daily resource encounters using Cooperation, Bravery, Greed, Trust, and Reputation.
 - **Historical Graphs & Scenario Sandbox**: Interactive multi-tab analytics modal (`Populations`, `Social Tiers`, `Prisoner's Dilemma`, `Inventory Avg`) plus local scenario saving and JSON export/import.

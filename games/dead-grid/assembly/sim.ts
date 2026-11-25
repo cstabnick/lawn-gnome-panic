@@ -1,6 +1,7 @@
 // Dead Grid WASM Simulation Kernel (AssemblyScript, --runtime stub -O3)
-// Supports dynamic grids (512, 768, 1024), up to 262,144 (256k) agents, 32 societies, 256 roving groups/packs.
-// Zero heap allocations: every buffer and scratch array sits at a fixed linear memory address (< 25 MB = 400 pages).
+// Supports dynamic grids (512, 768, 1024), up to 262,144 (256k) agents, 32 societies, 16 faiths, 256 roving groups.
+// Deterministic seed-derived genetics, expanded needs, aspirations, emergent faiths/schisms, and natural reproduction.
+// Zero heap allocations: every buffer and scratch array sits at a fixed linear memory address (< 28 MB = 448 pages).
 
 export const MAX_GRID_DIM: i32 = 1024;
 export const MAX_GRID_N: i32 = 1048576; // 1024 * 1024
@@ -8,10 +9,11 @@ export const MAX_HASH_DIM: i32 = 256;
 export const MAX_HASH_N: i32 = 65536;   // 256 * 256
 export const MAX_AGENTS: i32 = 262144;  // 256k
 export const MAX_FACTIONS: i32 = 32;
+export const MAX_FAITHS: i32 = 16;
 export const MAX_GROUPS: i32 = 256;
 export const MAX_EVENTS: i32 = 64;
 
-// ---- Fixed Linear Memory Map (0x000000 .. 0x17D0000 < 25 MB) ----
+// ---- Fixed Linear Memory Map (0x000000 .. 0x1A10000 < 28 MB) ----
 const CFG_PTR: usize        = 0x008000; // 64 * f32 (256 B)
 const STATS_PTR: usize      = 0x008100; // 32 * i32 (128 B)
 const EVENTS_PTR: usize     = 0x008200; // 64 * 16 B (1024 B)
@@ -31,7 +33,7 @@ const FAC_FOUNDED: usize    = 0x0089A0; // 32 * u32 (128 B)
 const FAC_REL: usize        = 0x008A20; // 1024 * i8 (1024 B -> 0x008E20)
 
 const GRP_ACTIVE: usize     = 0x008E20; // 256 * u8
-const GRP_KIND: usize       = 0x008F20; // 256 * u8 (1=human group, 2=zombie pack, 3=wolf pack)
+const GRP_KIND: usize       = 0x008F20; // 256 * u8
 const GRP_X: usize          = 0x009020; // 256 * u16 (512 B)
 const GRP_Y: usize          = 0x009220; // 256 * u16 (512 B)
 const GRP_POP: usize        = 0x009420; // 256 * u16 (512 B)
@@ -40,10 +42,19 @@ const GRP_WATER: usize      = 0x009A20; // 256 * f32 (1024 B -> 0x009E20)
 
 const SCR_FAC_COUNTS: usize = 0x009E20; // 32 * i32 (128 B)
 const SCR_GRP_COUNTS: usize = 0x009EA0; // 256 * i32 (1024 B)
-const SCR_GRP_SX: usize     = 0x00A2A0; // 256 * f32 (1024 B)
-const SCR_GRP_SY: usize     = 0x00A6A0; // 256 * f32 (1024 B)
 const SCR_HUB_X: usize      = 0x00AAA0; // 96 * i32 (384 B)
 const SCR_HUB_Y: usize      = 0x00AC20; // 96 * i32 (384 B -> 0x00ADA0)
+
+// Faith tables (MAX_FAITHS = 16)
+const FAITH_ACTIVE: usize   = 0x00B000; // 16 * u8
+const FAITH_TENET: usize    = 0x00B020; // 16 * u8 (0=Harmony, 1=Crusade, 2=Ascetic, 3=Prosperity)
+const FAITH_X: usize        = 0x00B040; // 16 * u16 (32 B)
+const FAITH_Y: usize        = 0x00B060; // 16 * u16 (32 B)
+const FAITH_POP: usize      = 0x00B080; // 16 * u32 (64 B)
+const FAITH_COLOR: usize    = 0x00B0C0; // 16 * u32 (64 B)
+const FAITH_FOUNDED: usize  = 0x00B100; // 16 * u32 (64 B)
+const FAITH_REL: usize      = 0x00B140; // 256 * i8 (256 B)
+const SCR_FAITH_COUNTS: usize = 0x00B240; // 16 * i32 (64 B)
 
 const TILE_TYPE: usize      = 0x010000; // 1048576 * u8 (1 MB)
 const ELEVATION: usize      = 0x110000; // 1048576 * u8 (1 MB)
@@ -69,21 +80,31 @@ const AG_INV_GEAR: usize    = 0xB50000; // 262144 * u8
 const AG_INV_MEDS: usize    = 0xB90000; // 262144 * u8
 const AG_INV_MATS: usize    = 0xBD0000; // 262144 * u8
 const AG_STATE: usize       = 0xC10000; // 262144 * u8
-const AG_SOCIAL: usize      = 0xC50000; // 262144 * u8 (0=solo, 1=group/pack, 2=society)
+const AG_SOCIAL: usize      = 0xC50000; // 262144 * u8
 const AG_REP: usize         = 0xC90000; // 262144 * i8
 const AG_COOLDOWN: usize    = 0xCD0000; // 262144 * u8
 const AG_INFECTION: usize   = 0xD10000; // 262144 * u8
-const AG_GROUP: usize       = 0xD50000; // 262144 * u16 (512 KB)
-const AG_PERSONALITY: usize = 0xDD0000; // 262144 * u16 (512 KB)
-const AG_AGE: usize         = 0xE50000; // 262144 * u16 (512 KB)
-const AG_TARGET_X: usize    = 0xED0000; // 262144 * u16 (512 KB)
-const AG_TARGET_Y: usize    = 0xF50000; // 262144 * u16 (512 KB)
-const AG_X: usize           = 0xFD0000; // 262144 * f32 (1 MB)
-const AG_Y: usize           = 0x10D0000; // 262144 * f32 (1 MB)
-const AG_VX: usize          = 0x11D0000; // 262144 * f32 (1 MB)
-const AG_VY: usize          = 0x12D0000; // 262144 * f32 (1 MB)
 
-const FRAME_RGBA: usize     = 0x13D0000; // 1048576 * u32 (4 MB -> 0x17D0000)
+const AG_SAFETY: usize      = 0xD50000; // 262144 * u8
+const AG_ENTERTAIN: usize   = 0xD90000; // 262144 * u8
+const AG_SPIRIT: usize      = 0xDD0000; // 262144 * u8
+const AG_FAITH: usize       = 0xE10000; // 262144 * u8 (255 = secular)
+const AG_ASPIRATION: usize  = 0xE50000; // 262144 * u8 (0..7)
+const AG_ASP_PROG: usize    = 0xE90000; // 262144 * u8 (0..100)
+const AG_GENERATION: usize  = 0xED0000; // 262144 * u8 (1..255)
+
+const AG_AGE: usize         = 0xF10000; // 262144 * u16 (512 KB)
+const AG_GROUP: usize       = 0xF90000; // 262144 * u16 (512 KB)
+const AG_TARGET_X: usize    = 0x1010000; // 262144 * u16 (512 KB)
+const AG_TARGET_Y: usize    = 0x1090000; // 262144 * u16 (512 KB)
+
+const AG_GENOME: usize      = 0x1110000; // 262144 * u32 (1 MB)
+const AG_X: usize           = 0x1210000; // 262144 * f32 (1 MB)
+const AG_Y: usize           = 0x1310000; // 262144 * f32 (1 MB)
+const AG_VX: usize          = 0x1410000; // 262144 * f32 (1 MB)
+const AG_VY: usize          = 0x1510000; // 262144 * f32 (1 MB)
+
+const FRAME_RGBA: usize     = 0x1610000; // 1048576 * u32 (4 MB -> 0x1A10000)
 
 // ---- Tile types ----
 const TILE_WATER: u8      = 0;
@@ -107,7 +128,6 @@ const KIND_HUMAN: u8    = 1;
 const KIND_ZOMBIE: u8   = 2;
 const KIND_ANIMAL: u8   = 3;
 
-// Human archetypes (subkind)
 const ARCH_SCAVENGER: u8 = 0;
 const ARCH_BUILDER: u8   = 1;
 const ARCH_GUARD: u8     = 2;
@@ -115,34 +135,51 @@ const ARCH_TRADER: u8    = 3;
 const ARCH_RAIDER: u8    = 4;
 const ARCH_NOMAD: u8     = 5;
 
-// Zombie subkinds
 const ZOM_WALKER: u8 = 0;
 const ZOM_RUNNER: u8 = 1;
 const ZOM_ALPHA: u8  = 2;
 
-// Animal subkinds
 const ANI_DEER: u8 = 0;
 const ANI_WOLF: u8 = 1;
 const ANI_BOAR: u8 = 2;
 
-// Social tiers
 const SOC_SOLO: u8    = 0;
 const SOC_GROUP: u8   = 1;
 const SOC_SOCIETY: u8 = 2;
 
+// Aspirations
+const ASP_SURVIVOR: u8      = 0;
+const ASP_FOUNDER: u8       = 1;
+const ASP_PROPHET: u8       = 2;
+const ASP_EXPLORER: u8      = 3;
+const ASP_WARLORD: u8       = 4;
+const ASP_PHILANTHROPIST: u8 = 5;
+const ASP_ARCHITECT: u8     = 6;
+const ASP_PATRIARCH: u8     = 7;
+
+// Faith tenets
+const TENET_HARMONY: u8    = 0;
+const TENET_CRUSADE: u8    = 1;
+const TENET_ASCETIC: u8    = 2;
+const TENET_PROSPERITY: u8 = 3;
+
 // Agent states
-const STATE_ROAM: u8     = 0;
-const STATE_SCAVENGE: u8 = 1;
-const STATE_FLEE: u8     = 2;
-const STATE_FIGHT: u8    = 3;
-const STATE_RETURN: u8   = 4;
-const STATE_GUARD: u8    = 5;
-const STATE_RAID: u8     = 6;
-const STATE_SHAMBLE: u8  = 7;
-const STATE_CHASE: u8    = 8;
-const STATE_GRAZE: u8    = 9;
-const STATE_HUNT: u8     = 10;
-const STATE_TRADE: u8    = 11;
+const STATE_ROAM: u8      = 0;
+const STATE_SCAVENGE: u8  = 1;
+const STATE_FLEE: u8      = 2;
+const STATE_FIGHT: u8     = 3;
+const STATE_RETURN: u8    = 4;
+const STATE_GUARD: u8     = 5;
+const STATE_RAID: u8      = 6;
+const STATE_SHAMBLE: u8   = 7;
+const STATE_CHASE: u8     = 8;
+const STATE_GRAZE: u8     = 9;
+const STATE_HUNT: u8      = 10;
+const STATE_TRADE: u8     = 11;
+const STATE_SOCIALIZE: u8 = 12;
+const STATE_WORSHIP: u8   = 13;
+const STATE_PREACH: u8    = 14;
+const STATE_REST: u8      = 15;
 
 // Faction Ethos
 const ETHOS_COOP: u8   = 0;
@@ -166,6 +203,9 @@ const CFG_INIT_HUMANS: i32       = 12;
 const CFG_INIT_ZOMBIES: i32      = 13;
 const CFG_INIT_ANIMALS: i32      = 14;
 const CFG_CITY_DENSITY: i32      = 15;
+const CFG_BIRTH_RATE: i32        = 16;
+const CFG_SPIRIT_BIAS: i32       = 17;
+const CFG_MUTATION_RATE: i32     = 18;
 
 // Stats indices (i32[32])
 const ST_TICK: i32           = 0;
@@ -193,14 +233,23 @@ const ST_EVENT_IDX: i32      = 21;
 const ST_ACTIVE_AG: i32      = 22;
 const ST_GRID_W: i32         = 23;
 const ST_GRID_H: i32         = 24;
+const ST_FAITHS: i32         = 25;
+const ST_BIRTHS: i32         = 26;
+const ST_MAX_GEN: i32        = 27;
+const ST_AVG_SAFETY: i32     = 28;
+const ST_AVG_ENTERTAIN: i32  = 29;
+const ST_AVG_SPIRIT: i32     = 30;
+const ST_CONVERSIONS: i32    = 31;
 
 // Event types
-const EVT_FOUNDED: i32      = 1;
-const EVT_UPGRADED: i32     = 2;
-const EVT_FALLEN: i32       = 3;
-const EVT_HORDE_BREACH: i32 = 4;
-const EVT_RAID: i32         = 5;
-const EVT_GROUP_FORMED: i32 = 6;
+const EVT_FOUNDED: i32       = 1;
+const EVT_UPGRADED: i32      = 2;
+const EVT_FALLEN: i32        = 3;
+const EVT_HORDE_BREACH: i32  = 4;
+const EVT_RAID: i32          = 5;
+const EVT_GROUP_FORMED: i32  = 6;
+const EVT_FAITH_FOUNDED: i32 = 7;
+const EVT_SCHISM: i32        = 8;
 
 // ---- Pointer getters ----
 export function getCfgPtr(): usize { return CFG_PTR; }
@@ -228,6 +277,14 @@ export function getFacColorPtr(): usize { return FAC_COLOR; }
 export function getFacKillsPtr(): usize { return FAC_KILLS; }
 export function getFacFoundedPtr(): usize { return FAC_FOUNDED; }
 
+export function getFaithActivePtr(): usize { return FAITH_ACTIVE; }
+export function getFaithTenetPtr(): usize { return FAITH_TENET; }
+export function getFaithXPtr(): usize { return FAITH_X; }
+export function getFaithYPtr(): usize { return FAITH_Y; }
+export function getFaithPopPtr(): usize { return FAITH_POP; }
+export function getFaithColorPtr(): usize { return FAITH_COLOR; }
+export function getFaithFoundedPtr(): usize { return FAITH_FOUNDED; }
+
 export function getAgKindPtr(): usize { return AG_KIND; }
 export function getAgSubkindPtr(): usize { return AG_SUBKIND; }
 export function getAgHpPtr(): usize { return AG_HP; }
@@ -237,16 +294,22 @@ export function getAgEnergyPtr(): usize { return AG_ENERGY; }
 export function getAgInvFoodPtr(): usize { return AG_INV_FOOD; }
 export function getAgInvWaterPtr(): usize { return AG_INV_WATER; }
 export function getAgInvGearPtr(): usize { return AG_INV_GEAR; }
-const AG_INV_MEDS_EXP: usize = AG_INV_MEDS;
-export function getAgInvMedsPtr(): usize { return AG_INV_MEDS_EXP; }
+export function getAgInvMedsPtr(): usize { return AG_INV_MEDS; }
 export function getAgInvMatsPtr(): usize { return AG_INV_MATS; }
 export function getAgStatePtr(): usize { return AG_STATE; }
 export function getAgSocialPtr(): usize { return AG_SOCIAL; }
 export function getAgGroupPtr(): usize { return AG_GROUP; }
-export function getAgPersonalityPtr(): usize { return AG_PERSONALITY; }
+export function getAgGenomePtr(): usize { return AG_GENOME; }
 export function getAgRepPtr(): usize { return AG_REP; }
 export function getAgInfectionPtr(): usize { return AG_INFECTION; }
 export function getAgAgePtr(): usize { return AG_AGE; }
+export function getAgSafetyPtr(): usize { return AG_SAFETY; }
+export function getAgEntertainPtr(): usize { return AG_ENTERTAIN; }
+export function getAgSpiritPtr(): usize { return AG_SPIRIT; }
+export function getAgFaithPtr(): usize { return AG_FAITH; }
+export function getAgAspirationPtr(): usize { return AG_ASPIRATION; }
+export function getAgAspProgPtr(): usize { return AG_ASP_PROG; }
+export function getAgGenerationPtr(): usize { return AG_GENERATION; }
 export function getAgXPtr(): usize { return AG_X; }
 export function getAgYPtr(): usize { return AG_Y; }
 
@@ -279,6 +342,13 @@ let freeCursor: i32 = 0;
 @inline function randInt(n: i32): i32 {
   if (n <= 1) return 0;
   return <i32>(randU32() % <u32>n);
+}
+
+@inline function splitmix32(x: u32): u32 {
+  let z = x + 0x9E3779B9;
+  z = (z ^ (z >> 16)) * 0x85EBCA6B;
+  z = (z ^ (z >> 13)) * 0xC2B2AE35;
+  return z ^ (z >> 16);
 }
 
 @inline function cfg(idx: i32): f32 {
@@ -352,6 +422,85 @@ function factionPalette(slot: i32): u32 {
     case 14: return 0xFF88D4A8;
     default: return 0xFFF0D4A8;
   }
+}
+
+function faithPalette(slot: i32): u32 {
+  switch (slot & 15) {
+    case 0:  return 0xFFFFD84D; // Golden Sun
+    case 1:  return 0xFF9E6BFF; // Violet Order
+    case 2:  return 0xFF64E8B2; // Emerald Verdant
+    case 3:  return 0xFF62B8FF; // Azure Vigil
+    case 4:  return 0xFFFF8864; // Ember Dawn
+    case 5:  return 0xFFE866D2; // Magenta Choir
+    case 6:  return 0xFF8CE854; // Sage Grove
+    case 7:  return 0xFF54E0E8; // Cyan Tide
+    default: return factionPalette(slot);
+  }
+}
+
+// ---- Deterministic Seed-Derived Genetics ----
+// 8 x 4-bit traits in u32:
+//  0..3:   coop
+//  4..7:   brave
+//  8..11:  greed
+//  12..15: trust
+//  16..19: spirit
+//  20..23: social
+//  24..27: ambition
+//  28..31: caution
+@inline function gene(g: u32, idx: i32): i32 {
+  return <i32>((g >> (idx * 4)) & 15);
+}
+
+function deriveGenome(seed: u32, idx: i32, coopBias: f32, banditry: f32, spiritBias: f32): u32 {
+  const h1 = splitmix32(seed ^ (<u32>idx * 0x9E3779B1));
+  const h2 = splitmix32(h1 ^ 0xBF58476D);
+  const isRaider = (<f32>(h1 & 255) / 255.0) < banditry;
+
+  let coop = clampI(<i32>(<f32>(h1 & 15) * 0.7 + coopBias * 6.0) - (isRaider ? 5 : 0), 0, 15);
+  let brave = <i32>((h1 >> 4) & 15);
+  let greed = isRaider ? clampI(9 + <i32>((h1 >> 8) & 7), 0, 15) : clampI(<i32>((h1 >> 8) & 15) - 2, 0, 15);
+  let trust = clampI(<i32>(<f32>((h1 >> 12) & 15) * 0.7 + coopBias * 5.0), 0, 15);
+  let spirit = clampI(<i32>(<f32>((h2) & 15) * 0.65 + spiritBias * 6.5), 0, 15);
+  let social = <i32>((h2 >> 4) & 15);
+  let ambition = <i32>((h2 >> 8) & 15);
+  let caution = <i32>((h2 >> 12) & 15);
+
+  return <u32>(
+    coop | (brave << 4) | (greed << 8) | (trust << 12) |
+    (spirit << 16) | (social << 20) | (ambition << 24) | (caution << 28)
+  );
+}
+
+function deriveAspiration(g: u32): u8 {
+  const spirit = gene(g, 4);
+  const social = gene(g, 5);
+  const ambition = gene(g, 6);
+  const caution = gene(g, 7);
+  const brave = gene(g, 1);
+  const coop = gene(g, 0);
+  const greed = gene(g, 2);
+
+  if (spirit >= 11 && ambition >= 8) return ASP_PROPHET;
+  if (ambition >= 11 && social >= 9) return ASP_FOUNDER;
+  if (brave >= 11 && greed >= 9) return ASP_WARLORD;
+  if (coop >= 11 && social >= 9) return ASP_PHILANTHROPIST;
+  if (caution >= 11 && ambition >= 7) return ASP_ARCHITECT;
+  if (social >= 10 && coop >= 8) return ASP_PATRIARCH;
+  if (brave >= 9 && caution <= 6) return ASP_EXPLORER;
+  return ASP_SURVIVOR;
+}
+
+function inheritGenome(gA: u32, gB: u32, mutRate: f32): u32 {
+  let out: u32 = 0;
+  for (let i = 0; i < 8; i++) {
+    let v = (randInt(2) == 0) ? gene(gA, i) : gene(gB, i);
+    if (randF() < mutRate) {
+      v = clampI(v + (randInt(2) == 0 ? 1 : -1), 0, 15);
+    }
+    out |= (<u32>v) << (i * 4);
+  }
+  return out;
 }
 
 // ---- Noise & Topography ----
@@ -457,7 +606,6 @@ function carveRiver(startX: i32, startY: i32, width: i32): void {
         setTile(nx, ny, TILE_WATER);
       }
     }
-    // Flow downhill toward lowest neighbor or southward
     let bestDx: f32 = (randF() - 0.5) * 0.8;
     let bestDy: f32 = 0.85;
     let lowest = elevAt(cx, cy);
@@ -479,10 +627,6 @@ function carveRiver(startX: i32, startY: i32, width: i32): void {
   }
 }
 
-@inline function packPersonality(coop: i32, brave: i32, greed: i32, trust: i32): u16 {
-  return <u16>((coop & 15) | ((brave & 15) << 4) | ((greed & 15) << 8) | ((trust & 15) << 12));
-}
-
 function spawnAgent(
   kind: u8,
   subkind: u8,
@@ -498,10 +642,11 @@ function spawnAgent(
   mats: u8,
   social: u8,
   group: u16,
-  personality: u16,
+  genome: u32,
+  faith: u8,
+  generation: u8,
 ): i32 {
   let slot = -1;
-  // Fast cursor scan for dead slots
   for (let probe = 0; probe < 128 && freeCursor < activeLimit; probe++) {
     if (load<u8>(AG_KIND + <usize>freeCursor) == KIND_DEAD) {
       slot = freeCursor;
@@ -514,7 +659,6 @@ function spawnAgent(
     if (activeLimit < MAX_AGENTS) {
       slot = activeLimit++;
     } else {
-      // Full scan fallback
       for (let i = 0; i < MAX_AGENTS; i++) {
         if (load<u8>(AG_KIND + <usize>i) == KIND_DEAD) {
           slot = i;
@@ -542,11 +686,20 @@ function spawnAgent(
   store<i8>(AG_REP + u, 0);
   store<u8>(AG_COOLDOWN + u, <u8>randInt(8));
   store<u8>(AG_INFECTION + u, 0);
+  store<u8>(AG_SAFETY + u, 75);
+  store<u8>(AG_ENTERTAIN + u, 75);
+  store<u8>(AG_SPIRIT + u, 75);
+  store<u8>(AG_FAITH + u, faith);
+  store<u8>(AG_ASPIRATION + u, kind == KIND_HUMAN ? deriveAspiration(genome) : 0);
+  store<u8>(AG_ASP_PROG + u, 0);
+  store<u8>(AG_GENERATION + u, generation);
+
   store<u16>(AG_GROUP + (u << 1), group);
-  store<u16>(AG_PERSONALITY + (u << 1), personality);
-  store<u16>(AG_AGE + (u << 1), 0);
+  store<u16>(AG_AGE + (u << 1), generation > 1 ? 0 : <u16>(18 + randInt(22)));
   store<u16>(AG_TARGET_X + (u << 1), <u16>clampI(<i32>x, 0, gridW - 1));
   store<u16>(AG_TARGET_Y + (u << 1), <u16>clampI(<i32>y, 0, gridH - 1));
+
+  store<u32>(AG_GENOME + (u << 2), genome);
   store<f32>(AG_X + (u << 2), x);
   store<f32>(AG_Y + (u << 2), y);
   store<f32>(AG_VX + (u << 2), 0.0);
@@ -584,11 +737,11 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
   rngState = worldSeed * 1664525 + 1013904223;
   if (rngState == 0) rngState = 0x9E3779B9;
 
-  // Clear state tables
   memory.fill(STATS_PTR, 0, 128);
   memory.fill(EVENTS_PTR, 0, MAX_EVENTS * 16);
   memory.fill(FAC_ACTIVE, 0, 0x0820);
   memory.fill(GRP_ACTIVE, 0, 0x1000);
+  memory.fill(FAITH_ACTIVE, 0, 0x0280);
   memory.fill(FACTION_CLAIM, 0, <usize>gridN);
   memory.fill(SCENT_HEAT, 0, <usize>gridN);
   memory.fill(SCENT_SCRATCH, 0, <usize>gridN);
@@ -598,8 +751,8 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
 
   setStat(ST_GRID_W, gridW);
   setStat(ST_GRID_H, gridH);
+  setStat(ST_MAX_GEN, 1);
 
-  // 1. Topography + Water Style generation
   const scale = <f32>dim / 4.5;
   for (let y = 0; y < gridH; y++) {
     for (let x = 0; x < gridW; x++) {
@@ -611,52 +764,37 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
 
       let waterLevel: f32 = 0.30;
       if (waterStyle == 0) {
-        // Coastal Mainland (Chernarus style south/east sea)
         const southDist = <f32>(gridH - 1 - y);
         const eastDist = <f32>(gridW - 1 - x);
         const coastDist = Mathf.min(southDist, eastDist) + (elev - 0.5) * 42.0;
         if (coastDist < 22.0) elev *= 0.25;
         waterLevel = 0.27;
       } else if (waterStyle == 1) {
-        // River Valleys (inland basins + lakes)
         waterLevel = 0.34;
       } else if (waterStyle == 2) {
-        // Archipelago (high water level, island chains)
         waterLevel = 0.48;
       } else {
-        // Arid Basin (low water, rare oasis lakes)
         waterLevel = 0.20;
       }
 
-      const elevByte = <u8>clampI(<i32>(elev * 255.0), 0, 255);
-      store<u8>(ELEVATION + <usize>idx, elevByte);
+      store<u8>(ELEVATION + <usize>idx, <u8>clampI(<i32>(elev * 255.0), 0, 255));
 
       let tile: u8 = TILE_GRASS;
-      if (elev < waterLevel) {
-        tile = TILE_WATER;
-      } else if (elev < waterLevel + 0.035) {
-        tile = TILE_BEACH;
-      } else if (elev < waterLevel + 0.085 && moisture > 0.58) {
-        tile = TILE_SWAMP;
-      } else if (elev > 0.79) {
-        tile = TILE_MOUNTAIN;
-      } else if (elev > 0.65) {
-        tile = TILE_HILL;
-      } else if (moisture > 0.54 || (elev > 0.52 && moisture > 0.46)) {
-        tile = TILE_FOREST;
-      }
+      if (elev < waterLevel) tile = TILE_WATER;
+      else if (elev < waterLevel + 0.035) tile = TILE_BEACH;
+      else if (elev < waterLevel + 0.085 && moisture > 0.58) tile = TILE_SWAMP;
+      else if (elev > 0.79) tile = TILE_MOUNTAIN;
+      else if (elev > 0.65) tile = TILE_HILL;
+      else if (moisture > 0.54 || (elev > 0.52 && moisture > 0.46)) tile = TILE_FOREST;
       store<u8>(TILE_TYPE + <usize>idx, tile);
     }
   }
 
-  // Carve rivers based on waterStyle
   const numRivers = waterStyle == 1 ? 3 : (waterStyle == 0 ? 2 : (waterStyle == 3 ? 1 : 0));
   for (let r = 0; r < numRivers; r++) {
-    const sx = 24 + randInt(gridW - 48);
-    carveRiver(sx, 2, 1 + (dim >= 768 ? 1 : 0));
+    carveRiver(24 + randInt(gridW - 48), 2, 1 + (dim >= 768 ? 1 : 0));
   }
 
-  // 2. Cities, towns, military bases, industrial & farms
   const density = clampF(cfg(CFG_CITY_DENSITY), 0.3, 2.0) * (<f32>dim / 512.0);
   const numCities = clampI(<i32>(6.0 * density), 3, 18);
   const numTowns = clampI(<i32>(14.0 * density), 6, 40);
@@ -702,40 +840,26 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
     }
   }
 
-  // 3. Connect hubs with roads
   for (let i = 0; i < hubCount; i++) {
     const hx = load<i32>(SCR_HUB_X + (<usize>i << 2));
     const hy = load<i32>(SCR_HUB_Y + (<usize>i << 2));
-    let bestA = -1;
-    let bestDistA = 99999999;
-    let bestB = -1;
-    let bestDistB = 99999999;
+    let bestA = -1; let bestDistA = 99999999;
+    let bestB = -1; let bestDistB = 99999999;
     for (let j = 0; j < hubCount; j++) {
       if (i == j) continue;
       const dx = load<i32>(SCR_HUB_X + (<usize>j << 2)) - hx;
       const dy = load<i32>(SCR_HUB_Y + (<usize>j << 2)) - hy;
       const d = dx * dx + dy * dy;
-      if (d < bestDistA) {
-        bestDistB = bestDistA; bestB = bestA;
-        bestDistA = d; bestA = j;
-      } else if (d < bestDistB) {
-        bestDistB = d; bestB = j;
-      }
+      if (d < bestDistA) { bestDistB = bestDistA; bestB = bestA; bestDistA = d; bestA = j; }
+      else if (d < bestDistB) { bestDistB = d; bestB = j; }
     }
-    if (bestA >= 0) {
-      drawRoad(hx, hy, load<i32>(SCR_HUB_X + (<usize>bestA << 2)), load<i32>(SCR_HUB_Y + (<usize>bestA << 2)));
-    }
-    if (bestB >= 0 && randInt(2) == 0) {
-      drawRoad(hx, hy, load<i32>(SCR_HUB_X + (<usize>bestB << 2)), load<i32>(SCR_HUB_Y + (<usize>bestB << 2)));
-    }
+    if (bestA >= 0) drawRoad(hx, hy, load<i32>(SCR_HUB_X + (<usize>bestA << 2)), load<i32>(SCR_HUB_Y + (<usize>bestA << 2)));
+    if (bestB >= 0 && randInt(2) == 0) drawRoad(hx, hy, load<i32>(SCR_HUB_X + (<usize>bestB << 2)), load<i32>(SCR_HUB_Y + (<usize>bestB << 2)));
   }
 
-  // 4. Seed initial Food, Water, and Gear loot
   for (let i = 0; i < gridN; i++) {
     const t = load<u8>(TILE_TYPE + <usize>i);
-    let f: u8 = 0;
-    let w: u8 = 0;
-    let g: u8 = 0;
+    let f: u8 = 0; let w: u8 = 0; let g: u8 = 0;
     const r = randU32() & 255;
     if (t == TILE_CITY) {
       if (r < 95) f = <u8>(18 + (r & 31));
@@ -764,52 +888,34 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
     store<u8>(LOOT_GEAR + <usize>i, g);
   }
 
-  // 5. Spawn Zombies (with packs), Humans (with personalities & archetypes), and Wild Animals
   const initZ = clampI(<i32>cfg(CFG_INIT_ZOMBIES), 0, 220000);
   const initH = clampI(<i32>cfg(CFG_INIT_HUMANS), 0, 120000);
   const initA = clampI(<i32>cfg(CFG_INIT_ANIMALS), 0, 60000);
 
   const coopBias = cfg(CFG_COOP_BIAS);
   const banditProb = cfg(CFG_BANDITRY);
+  const spiritBias = cfg(CFG_SPIRIT_BIAS);
 
   for (let i = 0; i < initZ; i++) {
-    const pos = i % 5 == 0
-      ? findSpawnTile(TILE_GRASS, TILE_ROAD)
-      : findSpawnTile(TILE_CITY, TILE_TOWN);
+    const pos = i % 5 == 0 ? findSpawnTile(TILE_GRASS, TILE_ROAD) : findSpawnTile(TILE_CITY, TILE_TOWN);
     const zx = <f32>(pos % gridW) + randF();
     const zy = <f32>(pos / gridW) + randF();
     const sub: u8 = i % 15 == 0 ? ZOM_ALPHA : (i % 4 == 0 ? ZOM_RUNNER : ZOM_WALKER);
-    spawnAgent(KIND_ZOMBIE, sub, zx, zy, <u8>(75 + randInt(40)), 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0);
+    spawnAgent(KIND_ZOMBIE, sub, zx, zy, <u8>(75 + randInt(40)), 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
   }
 
   for (let i = 0; i < initH; i++) {
-    const pos = i % 3 == 0
-      ? findSpawnTile(TILE_BEACH, TILE_ROAD)
-      : findSpawnTile(TILE_GRASS, TILE_TOWN);
+    const pos = i % 3 == 0 ? findSpawnTile(TILE_BEACH, TILE_ROAD) : findSpawnTile(TILE_GRASS, TILE_TOWN);
     const hx = <f32>(pos % gridW) + randF();
     const hy = <f32>(pos / gridW) + randF();
-    const isRaider = randF() < banditProb;
-    const arch: u8 = isRaider ? ARCH_RAIDER : <u8>randInt(6);
-    const coop = clampI(<i32>((randF() * 0.7 + coopBias * 0.45) * 15.0) - (isRaider ? 5 : 0), 0, 15);
-    const brave = randInt(16);
-    const greed = isRaider ? 10 + randInt(6) : randInt(13);
-    const trust = clampI(<i32>((randF() * 0.7 + coopBias * 0.35) * 15.0), 0, 15);
+    const genome = deriveGenome(worldSeed, i, coopBias, banditProb, spiritBias);
+    const isRaider = gene(genome, 2) >= 11 && gene(genome, 0) <= 5;
+    const arch: u8 = isRaider ? ARCH_RAIDER : <u8>(splitmix32(worldSeed + <u32>i) % 6);
     spawnAgent(
-      KIND_HUMAN,
-      arch,
-      hx,
-      hy,
-      100,
-      <u8>(78 + randInt(22)),
-      <u8>(78 + randInt(22)),
-      <u8>(2 + randInt(4)),
-      <u8>(2 + randInt(4)),
-      <u8>(8 + randInt(18)),
-      <u8>randInt(2),
-      <u8>randInt(3),
-      SOC_SOLO,
-      0xFFFF,
-      packPersonality(coop, brave, greed, trust),
+      KIND_HUMAN, arch, hx, hy,
+      100, <u8>(78 + randInt(22)), <u8>(78 + randInt(22)),
+      <u8>(2 + randInt(4)), <u8>(2 + randInt(4)), <u8>(8 + randInt(18)), <u8>randInt(2), <u8>randInt(3),
+      SOC_SOLO, 0xFFFF, genome, 255, 1,
     );
   }
 
@@ -818,19 +924,7 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
     const ax = <f32>(pos % gridW) + randF();
     const ay = <f32>(pos / gridW) + randF();
     const sub: u8 = i % 5 == 0 ? ANI_WOLF : (i % 3 == 0 ? ANI_BOAR : ANI_DEER);
-    spawnAgent(
-      KIND_ANIMAL,
-      sub,
-      ax,
-      ay,
-      <u8>(sub == ANI_BOAR ? 70 : 50),
-      <u8>(75 + randInt(25)),
-      <u8>(75 + randInt(25)),
-      0, 0, 0, 0, 0,
-      SOC_SOLO,
-      0xFFFF,
-      0,
-    );
+    spawnAgent(KIND_ANIMAL, sub, ax, ay, <u8>(sub == ANI_BOAR ? 70 : 50), <u8>(75 + randInt(25)), <u8>(75 + randInt(25)), 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
   }
 
   recountAll();
@@ -920,9 +1014,7 @@ function claimTerritory(facId: i32, cx: i32, cy: i32, radius: i32, buildWalls: b
       if (t == TILE_WATER || t == TILE_MOUNTAIN) continue;
       store<u8>(FACTION_CLAIM + <usize>idx, <u8>(facId + 1));
       if (buildWalls && d2 >= wallInner && t != TILE_ROAD && t != TILE_WALL) {
-        if (abs(dx) > 1 && abs(dy) > 1) {
-          store<u8>(TILE_TYPE + <usize>idx, TILE_WALL);
-        }
+        if (abs(dx) > 1 && abs(dy) > 1) store<u8>(TILE_TYPE + <usize>idx, TILE_WALL);
       }
     }
   }
@@ -944,13 +1036,52 @@ function findFreeGroupSlot(kind: u8, x: i32, y: i32): i32 {
   return -1;
 }
 
+function tryFoundFaith(founderIdx: i32, x: i32, y: i32, isSchism: bool, parentFaith: i32): void {
+  let slot = -1;
+  for (let f = 0; f < MAX_FAITHS; f++) {
+    if (load<u8>(FAITH_ACTIVE + <usize>f) == 0) { slot = f; break; }
+  }
+  if (slot < 0) return;
+
+  const g = load<u32>(AG_GENOME + (<usize>founderIdx << 2));
+  const brave = gene(g, 1);
+  const coop = gene(g, 0);
+  const greed = gene(g, 2);
+  let tenet: u8 = TENET_HARMONY;
+  if (brave >= 10 && coop <= 7) tenet = TENET_CRUSADE;
+  else if (greed >= 10) tenet = TENET_PROSPERITY;
+  else if (gene(g, 4) >= 12) tenet = TENET_ASCETIC;
+
+  const u = <usize>slot;
+  store<u8>(FAITH_ACTIVE + u, 1);
+  store<u8>(FAITH_TENET + u, tenet);
+  store<u16>(FAITH_X + (u << 1), <u16>x);
+  store<u16>(FAITH_Y + (u << 1), <u16>y);
+  store<u32>(FAITH_POP + (u << 2), 1);
+  store<u32>(FAITH_COLOR + (u << 2), faithPalette(slot));
+  store<u32>(FAITH_FOUNDED + (u << 2), <u32>stat(ST_TICK));
+
+  for (let o = 0; o < MAX_FAITHS; o++) {
+    const oTenet = load<u8>(FAITH_TENET + <usize>o);
+    let rel: i8 = 10;
+    if (tenet == TENET_CRUSADE || oTenet == TENET_CRUSADE) rel = -55;
+    else if (tenet == TENET_HARMONY && oTenet == TENET_HARMONY) rel = 40;
+    if (isSchism && o == parentFaith) rel = -75;
+    store<i8>(FAITH_REL + <usize>(slot * MAX_FAITHS + o), rel);
+    store<i8>(FAITH_REL + <usize>(o * MAX_FAITHS + slot), rel);
+  }
+
+  store<u8>(AG_FAITH + <usize>founderIdx, <u8>slot);
+  store<u8>(AG_ASP_PROG + <usize>founderIdx, <u8>clampI(<i32>load<u8>(AG_ASP_PROG + <usize>founderIdx) + 35, 0, 100));
+  pushEvent(isSchism ? EVT_SCHISM : EVT_FAITH_FOUNDED, slot, (x << 10) | y);
+}
+
 function tryFoundSociety(leaderIdx: i32, x: i32, y: i32): void {
   for (let f = 0; f < MAX_FACTIONS; f++) {
     if (load<u8>(FAC_ACTIVE + <usize>f) == 0) continue;
     const fx = <i32>load<u16>(FAC_X + (<usize>f << 1));
     const fy = <i32>load<u16>(FAC_Y + (<usize>f << 1));
-    const dx = fx - x;
-    const dy = fy - y;
+    const dx = fx - x; const dy = fy - y;
     if (dx * dx + dy * dy < 36 * 36) return;
   }
 
@@ -960,8 +1091,7 @@ function tryFoundSociety(leaderIdx: i32, x: i32, y: i32): void {
   }
   if (slot < 0) return;
 
-  const bx = x >> 2;
-  const by = y >> 2;
+  const bx = x >> 2; const by = y >> 2;
   let allies = 0;
   for (let dy = -2; dy <= 2; dy++) {
     const ny = by + dy;
@@ -973,9 +1103,7 @@ function tryFoundSociety(leaderIdx: i32, x: i32, y: i32): void {
       let guard = 0;
       while (cur >= 0 && guard < 16) {
         guard++;
-        if (load<u8>(AG_KIND + <usize>cur) == KIND_HUMAN && load<u8>(AG_SOCIAL + <usize>cur) != SOC_SOCIETY) {
-          allies++;
-        }
+        if (load<u8>(AG_KIND + <usize>cur) == KIND_HUMAN && load<u8>(AG_SOCIAL + <usize>cur) != SOC_SOCIETY) allies++;
         cur = load<i32>(AG_NEXT + (<usize>cur << 2));
       }
     }
@@ -1025,48 +1153,51 @@ function tryFoundSociety(leaderIdx: i32, x: i32, y: i32): void {
   }
   store<u8>(AG_SOCIAL + <usize>leaderIdx, SOC_SOCIETY);
   store<u16>(AG_GROUP + (<usize>leaderIdx << 1), <u16>slot);
+  store<u8>(AG_ASP_PROG + <usize>leaderIdx, <u8>clampI(<i32>load<u8>(AG_ASP_PROG + <usize>leaderIdx) + 35, 0, 100));
   claimTerritory(slot, x, y, 7, false);
   pushEvent(EVT_FOUNDED, slot, (x << 10) | y);
 }
 
-// ---- Prisoner's Dilemma Encounter between two humans ----
-function resolvePrisonersDilemma(a: i32, b: i32): void {
+function resolveHumanEncounter(a: i32, b: i32): void {
   const ua = <usize>a;
   const ub = <usize>b;
-  const pa = <i32>load<u16>(AG_PERSONALITY + (ua << 1));
-  const pb = <i32>load<u16>(AG_PERSONALITY + (ub << 1));
+  const ga = load<u32>(AG_GENOME + (ua << 2));
+  const gb = load<u32>(AG_GENOME + (ub << 2));
 
-  const coopA = pa & 15;
-  const greedA = (pa >> 8) & 15;
-  const trustA = (pa >> 12) & 15;
+  const coopA = gene(ga, 0); const greedA = gene(ga, 2); const trustA = gene(ga, 3);
+  const coopB = gene(gb, 0); const greedB = gene(gb, 2); const trustB = gene(gb, 3);
+  const repA = <i32>load<i8>(AG_REP + ua);
   const repB = <i32>load<i8>(AG_REP + ub);
 
-  const coopB = pb & 15;
-  const greedB = (pb >> 8) & 15;
-  const trustB = (pb >> 12) & 15;
-  const repA = <i32>load<i8>(AG_REP + ua);
+  // Faith modifier on cooperation
+  const fA = <i32>load<u8>(AG_FAITH + ua);
+  const fB = <i32>load<u8>(AG_FAITH + ub);
+  let faithMod = 0;
+  if (fA < MAX_FAITHS && fB < MAX_FAITHS) {
+    if (fA == fB) faithMod = 4;
+    else {
+      const rel = <i32>load<i8>(FAITH_REL + <usize>(fA * MAX_FAITHS + fB));
+      if (rel < -30) faithMod = -5;
+      else if (rel > 25) faithMod = 2;
+    }
+  }
 
   const despA = (<i32>load<u8>(AG_HUNGER + ua) < 25 || <i32>load<u8>(AG_THIRST + ua) < 25) ? -4 : 0;
   const despB = (<i32>load<u8>(AG_HUNGER + ub) < 25 || <i32>load<u8>(AG_THIRST + ub) < 25) ? -4 : 0;
 
-  const scoreA = coopA * 2 + trustA + (repB >> 4) + despA - greedA + randInt(7) - 3;
-  const scoreB = coopB * 2 + trustB + (repA >> 4) + despB - greedB + randInt(7) - 3;
+  const scoreA = coopA * 2 + trustA + (repB >> 4) + despA + faithMod - greedA + randInt(7) - 3;
+  const scoreB = coopB * 2 + trustB + (repA >> 4) + despB + faithMod - greedB + randInt(7) - 3;
 
   const aCoop = scoreA >= 8;
   const bCoop = scoreB >= 8;
-
   if (aCoop) addStat(ST_PD_COOPS, 1); else addStat(ST_PD_DEFECTS, 1);
   if (bCoop) addStat(ST_PD_COOPS, 1); else addStat(ST_PD_DEFECTS, 1);
 
   if (aCoop && bCoop) {
-    // Mutual Cooperation: share resources, boost reputation, optionally band into a small group!
     addStat(ST_PD_MUTUAL_COOP, 1);
-    const rA = clampI(repA + 6, -120, 120);
-    const rB = clampI(repB + 6, -120, 120);
-    store<i8>(AG_REP + ua, <i8>rA);
-    store<i8>(AG_REP + ub, <i8>rB);
+    store<i8>(AG_REP + ua, <i8>clampI(repA + 6, -120, 120));
+    store<i8>(AG_REP + ub, <i8>clampI(repB + 6, -120, 120));
 
-    // Balance food & water
     const totF = <i32>load<u8>(AG_INV_FOOD + ua) + <i32>load<u8>(AG_INV_FOOD + ub);
     const totW = <i32>load<u8>(AG_INV_WATER + ua) + <i32>load<u8>(AG_INV_WATER + ub);
     store<u8>(AG_INV_FOOD + ua, <u8>(totF >> 1));
@@ -1074,7 +1205,19 @@ function resolvePrisonersDilemma(a: i32, b: i32): void {
     store<u8>(AG_INV_WATER + ua, <u8>(totW >> 1));
     store<u8>(AG_INV_WATER + ub, <u8>(totW - (totW >> 1)));
 
-    // Form small roving group if both solo
+    // Socialize restores entertainment
+    store<u8>(AG_ENTERTAIN + ua, <u8>clampI(<i32>load<u8>(AG_ENTERTAIN + ua) + 22, 0, 100));
+    store<u8>(AG_ENTERTAIN + ub, <u8>clampI(<i32>load<u8>(AG_ENTERTAIN + ub) + 22, 0, 100));
+
+    // Preach / Convert on mutual cooperation
+    if (fA < MAX_FAITHS && fB == 255 && gene(ga, 4) >= 8 && randInt(3) == 0) {
+      store<u8>(AG_FAITH + ub, <u8>fA);
+      addStat(ST_CONVERSIONS, 1);
+    } else if (fB < MAX_FAITHS && fA == 255 && gene(gb, 4) >= 8 && randInt(3) == 0) {
+      store<u8>(AG_FAITH + ua, <u8>fB);
+      addStat(ST_CONVERSIONS, 1);
+    }
+
     if (load<u8>(AG_SOCIAL + ua) == SOC_SOLO && load<u8>(AG_SOCIAL + ub) == SOC_SOLO) {
       const gx = <i32>load<f32>(AG_X + (ua << 2));
       const gy = <i32>load<f32>(AG_Y + (ua << 2));
@@ -1087,32 +1230,61 @@ function resolvePrisonersDilemma(a: i32, b: i32): void {
         pushEvent(EVT_GROUP_FORMED, g, (gx << 10) | gy);
       }
     }
+
+    // Natural Reproduction if healthy, safe, and room in agent table
+    const birthRate = cfg(CFG_BIRTH_RATE);
+    if (
+      birthRate > 0.01 &&
+      activeLimit < MAX_AGENTS - 128 &&
+      load<u16>(AG_AGE + (ua << 1)) >= 20 &&
+      load<u16>(AG_AGE + (ub << 1)) >= 20 &&
+      load<u8>(AG_HP + ua) >= 65 && load<u8>(AG_HP + ub) >= 65 &&
+      load<u8>(AG_HUNGER + ua) >= 50 && load<u8>(AG_THIRST + ua) >= 50 &&
+      load<u8>(AG_SAFETY + ua) >= 45 &&
+      randF() < birthRate * 0.14
+    ) {
+      const childGenome = inheritGenome(ga, gb, cfg(CFG_MUTATION_RATE));
+      const genA = <i32>load<u8>(AG_GENERATION + ua);
+      const genB = <i32>load<u8>(AG_GENERATION + ub);
+      const childGen = <u8>clampI((genA > genB ? genA : genB) + 1, 2, 255);
+      const cx = clampF(load<f32>(AG_X + (ua << 2)) + (randF() - 0.5) * 2.0, 2.0, <f32>(gridW - 3));
+      const cy = clampF(load<f32>(AG_Y + (ua << 2)) + (randF() - 0.5) * 2.0, 2.0, <f32>(gridH - 3));
+      if (isPassable(tileAt(<i32>cx, <i32>cy))) {
+        const cSoc = load<u8>(AG_SOCIAL + ua);
+        const cGrp = load<u16>(AG_GROUP + (ua << 1));
+        const cFaith = fA < MAX_FAITHS ? <u8>fA : <u8>fB;
+        spawnAgent(
+          KIND_HUMAN, <u8>randInt(6), cx, cy,
+          100, 90, 90, 2, 2, 5, 0, 0,
+          cSoc, cGrp, childGenome, cFaith, childGen,
+        );
+        addStat(ST_BIRTHS, 1);
+        if (<i32>childGen > stat(ST_MAX_GEN)) setStat(ST_MAX_GEN, <i32>childGen);
+        if (load<u8>(AG_ASPIRATION + ua) == ASP_PATRIARCH) {
+          store<u8>(AG_ASP_PROG + ua, <u8>clampI(<i32>load<u8>(AG_ASP_PROG + ua) + 34, 0, 100));
+        }
+      }
+    }
+
     store<u8>(AG_STATE + ua, STATE_TRADE);
     store<u8>(AG_STATE + ub, STATE_TRADE);
   } else if (!aCoop && bCoop) {
-    // A betrays B
     addStat(ST_PD_BETRAYALS, 1);
     store<i8>(AG_REP + ua, <i8>clampI(repA - 18, -120, 120));
-    const stealF = load<u8>(AG_INV_FOOD + ub) > 0 ? 1 : 0;
-    if (stealF > 0) {
+    if (load<u8>(AG_INV_FOOD + ub) > 0) {
       store<u8>(AG_INV_FOOD + ub, load<u8>(AG_INV_FOOD + ub) - 1);
       store<u8>(AG_INV_FOOD + ua, <u8>clampI(<i32>load<u8>(AG_INV_FOOD + ua) + 1, 0, 25));
     }
   } else if (aCoop && !bCoop) {
-    // B betrays A
     addStat(ST_PD_BETRAYALS, 1);
     store<i8>(AG_REP + ub, <i8>clampI(repB - 18, -120, 120));
-    const stealF = load<u8>(AG_INV_FOOD + ua) > 0 ? 1 : 0;
-    if (stealF > 0) {
+    if (load<u8>(AG_INV_FOOD + ua) > 0) {
       store<u8>(AG_INV_FOOD + ua, load<u8>(AG_INV_FOOD + ua) - 1);
       store<u8>(AG_INV_FOOD + ub, <u8>clampI(<i32>load<u8>(AG_INV_FOOD + ub) + 1, 0, 25));
     }
   } else {
-    // Mutual Defection: minor skirmish
-    const hpA = clampI(<i32>load<u8>(AG_HP + ua) - 8, 0, 100);
-    const hpB = clampI(<i32>load<u8>(AG_HP + ub) - 8, 0, 100);
-    store<u8>(AG_HP + ua, <u8>hpA);
-    store<u8>(AG_HP + ub, <u8>hpB);
+    store<u8>(AG_HP + ua, <u8>clampI(<i32>load<u8>(AG_HP + ua) - 8, 0, 100));
+    store<u8>(AG_HP + ub, <u8>clampI(<i32>load<u8>(AG_HP + ub) - 8, 0, 100));
     store<i8>(AG_REP + ua, <i8>clampI(repA - 8, -120, 120));
     store<i8>(AG_REP + ub, <i8>clampI(repB - 8, -120, 120));
   }
@@ -1125,6 +1297,11 @@ function stepHuman(i: i32, tick: i32): void {
   let hp = <i32>load<u8>(AG_HP + u);
   let hunger = <i32>load<u8>(AG_HUNGER + u);
   let thirst = <i32>load<u8>(AG_THIRST + u);
+  let energy = <i32>load<u8>(AG_ENERGY + u);
+  let safety = <i32>load<u8>(AG_SAFETY + u);
+  let entertain = <i32>load<u8>(AG_ENTERTAIN + u);
+  let spirit = <i32>load<u8>(AG_SPIRIT + u);
+
   let food = <i32>load<u8>(AG_INV_FOOD + u);
   let water = <i32>load<u8>(AG_INV_WATER + u);
   let gear = <i32>load<u8>(AG_INV_GEAR + u);
@@ -1133,6 +1310,9 @@ function stepHuman(i: i32, tick: i32): void {
   let soc = load<u8>(AG_SOCIAL + u);
   let grp = load<u16>(AG_GROUP + (u << 1));
   const sub = load<u8>(AG_SUBKIND + u);
+  const genome = load<u32>(AG_GENOME + (u << 2));
+  const asp = load<u8>(AG_ASPIRATION + u);
+  let faith = <i32>load<u8>(AG_FAITH + u);
   let cd = <i32>load<u8>(AG_COOLDOWN + u);
   if (cd > 0) cd--;
 
@@ -1142,29 +1322,30 @@ function stepHuman(i: i32, tick: i32): void {
     if (age < 65530) store<u16>(agePtr, age + 1);
   }
 
-  // Hunger & Thirst demands
+  // Needs decay & fulfillment
   if ((tick & 7) == (i & 7)) {
-    hunger -= <i32>Mathf.max(1.0, cfg(CFG_HUNGER_RATE) * 1.8);
-    thirst -= <i32>Mathf.max(1.0, cfg(CFG_THIRST_RATE) * 2.2);
+    hunger -= <i32>Mathf.max(1.0, cfg(CFG_HUNGER_RATE) * 1.7);
+    thirst -= <i32>Mathf.max(1.0, cfg(CFG_THIRST_RATE) * 2.1);
+    const socGene = gene(genome, 5);
+    const spiGene = gene(genome, 4);
+    entertain = clampI(entertain - (1 + (socGene >> 2)), 0, 100);
+    spirit = clampI(spirit - (1 + (spiGene >> 2)), 0, 100);
+    energy = clampI(energy + (soc == SOC_SOCIETY ? 2 : 1), 0, 100);
+
     if (hunger < 38 && food > 0) {
-      food--;
-      hunger = clampI(hunger + 46, 0, 100);
-      hp = clampI(hp + 6, 0, 100);
+      food--; hunger = clampI(hunger + 46, 0, 100); hp = clampI(hp + 6, 0, 100);
     }
     if (thirst < 38 && water > 0) {
-      water--;
-      thirst = clampI(thirst + 48, 0, 100);
+      water--; thirst = clampI(thirst + 48, 0, 100);
     }
     if (hunger <= 0) { hunger = 0; hp -= 3; }
     if (thirst <= 0) { thirst = 0; hp -= 4; }
   }
 
-  // Infection & Meds
   let inf = <i32>load<u8>(AG_INFECTION + u);
   if (inf > 0) {
     if (meds > 0 && inf < 180) {
-      meds--;
-      inf = 0;
+      meds--; inf = 0;
     } else {
       inf += 2;
       if (inf >= 250) {
@@ -1182,11 +1363,7 @@ function stepHuman(i: i32, tick: i32): void {
     store<u8>(AG_INFECTION + u, <u8>inf);
   }
 
-  if (hp < 45 && meds > 0) {
-    meds--;
-    hp = clampI(hp + 35, 0, 100);
-  }
-
+  if (hp < 45 && meds > 0) { meds--; hp = clampI(hp + 35, 0, 100); }
   if (hp <= 0) {
     store<u8>(AG_KIND + u, KIND_DEAD);
     addStat(ST_DEATHS, 1);
@@ -1198,7 +1375,7 @@ function stepHuman(i: i32, tick: i32): void {
   const curTile = tileAt(tx, ty);
   const tileIdx = <usize>(ty * gridW + tx);
 
-  // Scavenge tile resources
+  // Scavenge
   const fLoot = <i32>load<u8>(LOOT_FOOD + tileIdx);
   if (fLoot > 0 && food < 12) {
     const take = fLoot > 3 ? 3 : fLoot;
@@ -1219,7 +1396,7 @@ function stepHuman(i: i32, tick: i32): void {
     if (mats < 12 && (randU32() & 3) == 0) mats++;
   }
 
-  // Validate society / group membership
+  // Validate memberships
   if (soc == SOC_SOCIETY && (<i32>grp >= MAX_FACTIONS || load<u8>(FAC_ACTIVE + <usize>grp) == 0)) {
     soc = SOC_SOLO; grp = 0xFFFF;
     store<u8>(AG_SOCIAL + u, SOC_SOLO);
@@ -1229,8 +1406,25 @@ function stepHuman(i: i32, tick: i32): void {
     store<u8>(AG_SOCIAL + u, SOC_SOLO);
     store<u16>(AG_GROUP + (u << 1), 0xFFFF);
   }
+  if (faith < MAX_FAITHS && load<u8>(FAITH_ACTIVE + <usize>faith) == 0) {
+    faith = 255;
+    store<u8>(AG_FAITH + u, 255);
+  }
 
-  // Neighbor scan (staggered every 2 ticks for high agent counts)
+  // Faith founding & schism checks
+  if ((tick + i) % 140 == 0) {
+    const spiG = gene(genome, 4);
+    const ambG = gene(genome, 6);
+    if (faith == 255 && spiG >= 10 && ambG >= 8) {
+      tryFoundFaith(i, tx, ty, false, 255);
+      faith = <i32>load<u8>(AG_FAITH + u);
+    } else if (faith < MAX_FAITHS && ambG >= 13 && spirit < 35 && randInt(4) == 0) {
+      tryFoundFaith(i, tx, ty, true, faith);
+      faith = <i32>load<u8>(AG_FAITH + u);
+    }
+  }
+
+  // Neighbor scan
   let nearZ = -1;
   let nearZD2: f32 = 144.0;
   let zCount = 0;
@@ -1270,7 +1464,7 @@ function stepHuman(i: i32, tick: i32): void {
                 const ox = load<f32>(AG_X + (<usize>cur << 2)) - ax;
                 const oy = load<f32>(AG_Y + (<usize>cur << 2)) - ay;
                 if (ox * ox + oy * oy < 16.0) {
-                  resolvePrisonersDilemma(i, cur);
+                  resolveHumanEncounter(i, cur);
                   cd = 16;
                 }
               }
@@ -1280,6 +1474,14 @@ function stepHuman(i: i32, tick: i32): void {
         }
       }
     }
+  }
+
+  // Update Safety need
+  if (zCount > 0) {
+    safety = clampI(safety - zCount * 4, 0, 100);
+  } else {
+    const claimed = load<u8>(FACTION_CLAIM + tileIdx) > 0;
+    safety = clampI(safety + (claimed ? 4 : 1) + (gear > 40 ? 1 : 0), 0, 100);
   }
 
   let vx: f32 = load<f32>(AG_VX + (u << 2));
@@ -1293,8 +1495,8 @@ function stepHuman(i: i32, tick: i32): void {
     const dx = zx - ax;
     const dy = zy - ay;
     const dist = Mathf.sqrt(nearZD2) + 0.001;
-    const brave = (<i32>load<u16>(AG_PERSONALITY + (u << 1)) >> 4) & 15;
-    const overwhelmed = (zCount >= 3 + (brave >> 2) && gear < 40) || hp < 28;
+    const brave = gene(genome, 1);
+    const overwhelmed = (zCount >= 3 + (brave >> 2) && gear < 40) || hp < 28 || (safety < 20 && brave < 8);
     if (overwhelmed) {
       state = STATE_FLEE;
       vx = -(dx / dist) * spd * 1.15;
@@ -1313,10 +1515,14 @@ function stepHuman(i: i32, tick: i32): void {
               const fkPtr = FAC_KILLS + (<usize>grp << 2);
               store<u32>(fkPtr, load<u32>(fkPtr) + 1);
             }
+            if (asp == ASP_WARLORD) {
+              store<u8>(AG_ASP_PROG + u, <u8>clampI(<i32>load<u8>(AG_ASP_PROG + u) + 5, 0, 100));
+            }
           } else {
             store<u8>(AG_HP + <usize>nearZ, <u8>zHp);
           }
           cd = 6;
+          energy = clampI(energy - 2, 0, 100);
           addScent(tx, ty, <i32>((gear > 30 ? 46.0 : 18.0) * cfg(CFG_HORDE_HEARING)));
         }
         vx = 0.0; vy = 0.0;
@@ -1329,8 +1535,7 @@ function stepHuman(i: i32, tick: i32): void {
     state = STATE_HUNT;
     const px = load<f32>(AG_X + (<usize>nearPrey << 2));
     const py = load<f32>(AG_Y + (<usize>nearPrey << 2));
-    const dx = px - ax;
-    const dy = py - ay;
+    const dx = px - ax; const dy = py - ay;
     const dist = Mathf.sqrt(nearPreyD2) + 0.001;
     if (dist <= 2.2) {
       if (cd == 0) {
@@ -1344,20 +1549,48 @@ function stepHuman(i: i32, tick: i32): void {
         cd = 8;
       }
     } else {
-      vx = (dx / dist) * spd;
-      vy = (dy / dist) * spd;
+      vx = (dx / dist) * spd; vy = (dy / dist) * spd;
+    }
+  } else if (spirit < 35 && (faith < MAX_FAITHS || gene(genome, 4) >= 8)) {
+    state = faith < MAX_FAITHS ? STATE_PREACH : STATE_WORSHIP;
+    if (faith < MAX_FAITHS) {
+      const fx = <f32>load<u16>(FAITH_X + (<usize>faith << 1));
+      const fy = <f32>load<u16>(FAITH_Y + (<usize>faith << 1));
+      const dx = fx - ax; const dy = fy - ay;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= 36.0) {
+        spirit = clampI(spirit + 25, 0, 100);
+        vx = 0.0; vy = 0.0;
+      } else {
+        const d = Mathf.sqrt(d2) + 0.001;
+        vx = (dx / d) * spd * 0.85;
+        vy = (dy / d) * spd * 0.85;
+      }
+    } else if (curTile == TILE_HILL || curTile == TILE_FOREST) {
+      spirit = clampI(spirit + 15, 0, 100);
+    }
+  } else if (entertain < 35 && soc == SOC_SOCIETY) {
+    state = STATE_SOCIALIZE;
+    const fx = <f32>load<u16>(FAC_X + (<usize>grp << 1));
+    const fy = <f32>load<u16>(FAC_Y + (<usize>grp << 1));
+    const dx = fx - ax; const dy = fy - ay;
+    const d2 = dx * dx + dy * dy;
+    if (d2 <= 36.0) {
+      entertain = clampI(entertain + 20, 0, 100);
+    } else {
+      const d = Mathf.sqrt(d2) + 0.001;
+      vx = (dx / d) * spd * 0.8;
+      vy = (dy / d) * spd * 0.8;
     }
   } else if (soc == SOC_SOCIETY) {
     const fx = <f32>load<u16>(FAC_X + (<usize>grp << 1));
     const fy = <f32>load<u16>(FAC_Y + (<usize>grp << 1));
-    const dxH = fx - ax;
-    const dyH = fy - ay;
+    const dxH = fx - ax; const dyH = fy - ay;
     const dH2 = dxH * dxH + dyH * dyH;
     if ((food >= 4 || water >= 4) && dH2 > 25.0) {
       state = STATE_RETURN;
       const d = Mathf.sqrt(dH2) + 0.001;
-      vx = (dxH / d) * spd;
-      vy = (dyH / d) * spd;
+      vx = (dxH / d) * spd; vy = (dyH / d) * spd;
     } else if (dH2 <= 25.0 && (food > 1 || water > 1)) {
       if (food > 1) {
         const dep = food - 1; food = 1;
@@ -1385,12 +1618,10 @@ function stepHuman(i: i32, tick: i32): void {
     }
   }
 
-  // Roam / Scavenge steering
   if ((vx == 0.0 && vy == 0.0) || (tick + i) % 75 == 0) {
     const tgtX = <f32>load<u16>(AG_TARGET_X + (u << 1));
     const tgtY = <f32>load<u16>(AG_TARGET_Y + (u << 1));
-    const dtx = tgtX - ax;
-    const dty = tgtY - ay;
+    const dtx = tgtX - ax; const dty = tgtY - ay;
     if (dtx * dtx + dty * dty < 9.0 || (tick + i) % 75 == 0) {
       const nx = clampI(tx + randInt(57) - 28, 2, gridW - 3);
       const ny = clampI(ty + randInt(57) - 28, 2, gridH - 3);
@@ -1409,17 +1640,11 @@ function stepHuman(i: i32, tick: i32): void {
   if (vx != 0.0 || vy != 0.0) {
     const nx = clampF(ax + vx, 1.0, <f32>(gridW - 2));
     const ny = clampF(ay + vy, 1.0, <f32>(gridH - 2));
-    const ntx = <i32>nx;
-    const nty = <i32>ny;
-    if (isPassable(tileAt(ntx, nty))) {
-      ax = nx; ay = ny;
-    } else if (isPassable(tileAt(ntx, ty))) {
-      ax = nx;
-    } else if (isPassable(tileAt(tx, nty))) {
-      ay = ny;
-    } else {
-      vx = -vx; vy = -vy;
-    }
+    const ntx = <i32>nx; const nty = <i32>ny;
+    if (isPassable(tileAt(ntx, nty))) { ax = nx; ay = ny; }
+    else if (isPassable(tileAt(ntx, ty))) { ax = nx; }
+    else if (isPassable(tileAt(tx, nty))) { ay = ny; }
+    else { vx = -vx; vy = -vy; }
   }
 
   store<f32>(AG_X + (u << 2), ax);
@@ -1429,6 +1654,10 @@ function stepHuman(i: i32, tick: i32): void {
   store<u8>(AG_HP + u, <u8>hp);
   store<u8>(AG_HUNGER + u, <u8>hunger);
   store<u8>(AG_THIRST + u, <u8>thirst);
+  store<u8>(AG_ENERGY + u, <u8>energy);
+  store<u8>(AG_SAFETY + u, <u8>safety);
+  store<u8>(AG_ENTERTAIN + u, <u8>entertain);
+  store<u8>(AG_SPIRIT + u, <u8>spirit);
   store<u8>(AG_INV_FOOD + u, <u8>food);
   store<u8>(AG_INV_WATER + u, <u8>water);
   store<u8>(AG_INV_GEAR + u, <u8>gear);
@@ -1454,8 +1683,7 @@ function stepZombie(i: i32, tick: i32): void {
   let packLeader = -1;
 
   if (((tick + i) & 1) == 0) {
-    const bx = tx >> 2;
-    const by = ty >> 2;
+    const bx = tx >> 2; const by = ty >> 2;
     for (let dy = -1; dy <= 1; dy++) {
       const ny = by + dy;
       if (ny < 0 || ny >= hashH) continue;
@@ -1490,8 +1718,7 @@ function stepZombie(i: i32, tick: i32): void {
     state = STATE_CHASE;
     const px = load<f32>(AG_X + (<usize>nearPrey << 2));
     const py = load<f32>(AG_Y + (<usize>nearPrey << 2));
-    const dx = px - ax;
-    const dy = py - ay;
+    const dx = px - ax; const dy = py - ay;
     const dist = Mathf.sqrt(nearD2) + 0.001;
     if (dist <= 1.65) {
       if (cd == 0) {
@@ -1521,30 +1748,22 @@ function stepZombie(i: i32, tick: i32): void {
       }
       vx = 0.0; vy = 0.0;
     } else {
-      vx = (dx / dist) * spd;
-      vy = (dy / dist) * spd;
+      vx = (dx / dist) * spd; vy = (dy / dist) * spd;
     }
   } else if (packLeader >= 0 && sub != ZOM_ALPHA) {
-    // Pack cohesion: follow nearby Pack Alpha
     state = STATE_CHASE;
     const lx = load<f32>(AG_X + (<usize>packLeader << 2));
     const ly = load<f32>(AG_Y + (<usize>packLeader << 2));
-    const dx = lx - ax;
-    const dy = ly - ay;
+    const dx = lx - ax; const dy = ly - ay;
     const d = Mathf.sqrt(dx * dx + dy * dy) + 0.001;
-    if (d > 2.5) {
-      vx = (dx / d) * spd * 0.8;
-      vy = (dy / d) * spd * 0.8;
-    }
+    if (d > 2.5) { vx = (dx / d) * spd * 0.8; vy = (dy / d) * spd * 0.8; }
     if (load<u8>(AG_SOCIAL + u) == SOC_SOLO) {
       store<u8>(AG_SOCIAL + u, SOC_GROUP);
       store<u16>(AG_GROUP + (u << 1), <u16>(packLeader & 127));
     }
   } else {
-    // Follow scent/noise gradient or shamble
     let bestScent = <i32>load<u8>(SCENT_HEAT + <usize>(ty * gridW + tx));
-    let sdx = 0;
-    let sdy = 0;
+    let sdx = 0; let sdy = 0;
     if (tx > 2 && ty > 2 && tx < gridW - 3 && ty < gridH - 3) {
       const sN = <i32>load<u8>(SCENT_HEAT + <usize>((ty - 2) * gridW + tx));
       const sS = <i32>load<u8>(SCENT_HEAT + <usize>((ty + 2) * gridW + tx));
@@ -1569,20 +1788,16 @@ function stepZombie(i: i32, tick: i32): void {
   if (vx != 0.0 || vy != 0.0) {
     const nx = clampF(ax + vx, 1.0, <f32>(gridW - 2));
     const ny = clampF(ay + vy, 1.0, <f32>(gridH - 2));
-    const ntx = <i32>nx;
-    const nty = <i32>ny;
+    const ntx = <i32>nx; const nty = <i32>ny;
     const nt = tileAt(ntx, nty);
-    if (isPassable(nt)) {
-      ax = nx; ay = ny;
-    } else if (nt == TILE_WALL) {
+    if (isPassable(nt)) { ax = nx; ay = ny; }
+    else if (nt == TILE_WALL) {
       if ((randU32() & 31) == 0) {
         setTile(ntx, nty, TILE_GRASS);
         const claim = <i32>load<u8>(FACTION_CLAIM + <usize>(nty * gridW + ntx));
         if (claim > 0) pushEvent(EVT_HORDE_BREACH, claim - 1, (ntx << 10) | nty);
       }
-    } else {
-      vx = -vx; vy = -vy;
-    }
+    } else { vx = -vx; vy = -vy; }
   }
 
   store<f32>(AG_X + (u << 2), ax);
@@ -1599,10 +1814,7 @@ function stepAnimal(i: i32, tick: i32): void {
   let ay = load<f32>(AG_Y + (u << 2));
   const sub = load<u8>(AG_SUBKIND + u);
   let hp = <i32>load<u8>(AG_HP + u);
-  if (hp <= 0) {
-    store<u8>(AG_KIND + u, KIND_DEAD);
-    return;
-  }
+  if (hp <= 0) { store<u8>(AG_KIND + u, KIND_DEAD); return; }
 
   const tx = clampI(<i32>ax, 0, gridW - 1);
   const ty = clampI(<i32>ay, 0, gridH - 1);
@@ -1613,9 +1825,7 @@ function stepAnimal(i: i32, tick: i32): void {
   let state: u8 = STATE_GRAZE;
 
   if (sub == ANI_WOLF && ((tick + i) & 3) == 0) {
-    // Wolves hunt nearby deer or lone humans
-    const bx = tx >> 2;
-    const by = ty >> 2;
+    const bx = tx >> 2; const by = ty >> 2;
     let cur = load<i32>(HASH_HEAD + (<usize>(by * hashW + bx) << 2));
     let guard = 0;
     while (cur >= 0 && guard < 10) {
@@ -1624,8 +1834,7 @@ function stepAnimal(i: i32, tick: i32): void {
       if ((k == KIND_ANIMAL && load<u8>(AG_SUBKIND + <usize>cur) == ANI_DEER) || k == KIND_HUMAN) {
         const px = load<f32>(AG_X + (<usize>cur << 2));
         const py = load<f32>(AG_Y + (<usize>cur << 2));
-        const dx = px - ax;
-        const dy = py - ay;
+        const dx = px - ax; const dy = py - ay;
         const d2 = dx * dx + dy * dy;
         if (d2 < 64.0) {
           state = STATE_HUNT;
@@ -1634,13 +1843,20 @@ function stepAnimal(i: i32, tick: i32): void {
             const tHp = <i32>load<u8>(AG_HP + <usize>cur) - 10;
             store<u8>(AG_HP + <usize>cur, <u8>(tHp > 0 ? tHp : 0));
           } else {
-            vx = (dx / d) * spd;
-            vy = (dy / d) * spd;
+            vx = (dx / d) * spd; vy = (dy / d) * spd;
           }
           break;
         }
       }
       cur = load<i32>(AG_NEXT + (<usize>cur << 2));
+    }
+  }
+
+  // Slow wildlife natural breeding in forests/grass
+  if ((tick + i) % 520 == 0 && stat(ST_ANIMALS) < 8000 && activeLimit < MAX_AGENTS - 128) {
+    const t = tileAt(tx, ty);
+    if ((t == TILE_FOREST || t == TILE_GRASS) && randInt(4) == 0) {
+      spawnAgent(KIND_ANIMAL, sub, ax, ay, 55, 85, 85, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
     }
   }
 
@@ -1652,11 +1868,8 @@ function stepAnimal(i: i32, tick: i32): void {
 
   const nx = clampF(ax + vx, 1.0, <f32>(gridW - 2));
   const ny = clampF(ay + vy, 1.0, <f32>(gridH - 2));
-  if (isPassable(tileAt(<i32>nx, <i32>ny))) {
-    ax = nx; ay = ny;
-  } else {
-    vx = -vx; vy = -vy;
-  }
+  if (isPassable(tileAt(<i32>nx, <i32>ny))) { ax = nx; ay = ny; }
+  else { vx = -vx; vy = -vy; }
 
   store<f32>(AG_X + (u << 2), ax);
   store<f32>(AG_Y + (u << 2), ay);
@@ -1665,16 +1878,31 @@ function stepAnimal(i: i32, tick: i32): void {
   store<u8>(AG_STATE + u, state);
 }
 
-function stepSocieties(tick: i32): void {
+function stepSocietiesAndFaiths(tick: i32): void {
   memory.fill(SCR_FAC_COUNTS, 0, MAX_FACTIONS * 4);
+  memory.fill(SCR_FAITH_COUNTS, 0, MAX_FAITHS * 4);
+
   for (let i = 0; i < activeLimit; i++) {
     if (load<u8>(AG_KIND + <usize>i) != KIND_HUMAN) continue;
-    if (load<u8>(AG_SOCIAL + <usize>i) != SOC_SOCIETY) continue;
-    const f = <i32>load<u16>(AG_GROUP + (<usize>i << 1));
-    if (f >= 0 && f < MAX_FACTIONS) {
-      const p = SCR_FAC_COUNTS + (<usize>f << 2);
-      store<i32>(p, load<i32>(p) + 1);
+    if (load<u8>(AG_SOCIAL + <usize>i) == SOC_SOCIETY) {
+      const f = <i32>load<u16>(AG_GROUP + (<usize>i << 1));
+      if (f >= 0 && f < MAX_FACTIONS) {
+        const p = SCR_FAC_COUNTS + (<usize>f << 2);
+        store<i32>(p, load<i32>(p) + 1);
+      }
     }
+    const fa = <i32>load<u8>(AG_FAITH + <usize>i);
+    if (fa >= 0 && fa < MAX_FAITHS) {
+      const fp = SCR_FAITH_COUNTS + (<usize>fa << 2);
+      store<i32>(fp, load<i32>(fp) + 1);
+    }
+  }
+
+  for (let fa = 0; fa < MAX_FAITHS; fa++) {
+    if (load<u8>(FAITH_ACTIVE + <usize>fa) == 0) continue;
+    const pop = load<i32>(SCR_FAITH_COUNTS + (<usize>fa << 2));
+    store<u32>(FAITH_POP + (<usize>fa << 2), <u32>pop);
+    if (pop <= 0) store<u8>(FAITH_ACTIVE + <usize>fa, 0);
   }
 
   const growthMult = cfg(CFG_SETTLEMENT_GROWTH);
@@ -1699,21 +1927,14 @@ function stepSocieties(tick: i32): void {
 
     const thresh: f32 = 28.0 / Mathf.max(0.2, growthMult);
     if (food > thresh && water > thresh && pop < 220 && (tick + f * 7) % 32 == 0) {
-      food -= 10.0;
-      water -= 10.0;
+      food -= 10.0; water -= 10.0;
       const fx = <f32>load<u16>(FAC_X + (u << 1));
       const fy = <f32>load<u16>(FAC_Y + (u << 1));
       const sx = clampF(fx + (randF() - 0.5) * 6.0, 2.0, <f32>(gridW - 3));
       const sy = clampF(fy + (randF() - 0.5) * 6.0, 2.0, <f32>(gridH - 3));
       if (isPassable(tileAt(<i32>sx, <i32>sy))) {
-        spawnAgent(
-          KIND_HUMAN,
-          <u8>randInt(4),
-          sx, sy, 100, 90, 90, 3, 3, <u8>(15 + randInt(25)), 1, 1,
-          SOC_SOCIETY,
-          <u16>f,
-          packPersonality(8 + randInt(8), randInt(16), randInt(10), 8 + randInt(8)),
-        );
+        const g = deriveGenome(worldSeed ^ <u32>tick, f * 97 + pop, cfg(CFG_COOP_BIAS), cfg(CFG_BANDITRY), cfg(CFG_SPIRIT_BIAS));
+        spawnAgent(KIND_HUMAN, <u8>randInt(4), sx, sy, 100, 90, 90, 3, 3, <u8>(15 + randInt(25)), 1, 1, SOC_SOCIETY, <u16>f, g, 255, 1);
       }
     }
     store<f32>(foodPtr, food);
@@ -1737,18 +1958,11 @@ function stepSocieties(tick: i32): void {
 }
 
 function recountAll(): void {
-  let hum = 0;
-  let zom = 0;
-  let ani = 0;
-  let inf = 0;
-  let soloH = 0;
-  let grpH = 0;
-  let socH = 0;
-  let sumF = 0;
-  let sumW = 0;
-  let sumG = 0;
-  let zPacks = 0;
-  let lastAlive = 0;
+  let hum = 0; let zom = 0; let ani = 0; let inf = 0;
+  let soloH = 0; let grpH = 0; let socH = 0;
+  let sumF = 0; let sumW = 0; let sumG = 0;
+  let sumSaf = 0; let sumEnt = 0; let sumSpi = 0;
+  let zPacks = 0; let lastAlive = 0;
 
   for (let i = 0; i < activeLimit; i++) {
     const k = load<u8>(AG_KIND + <usize>i);
@@ -1764,6 +1978,9 @@ function recountAll(): void {
       sumF += <i32>load<u8>(AG_INV_FOOD + <usize>i);
       sumW += <i32>load<u8>(AG_INV_WATER + <usize>i);
       sumG += <i32>load<u8>(AG_INV_GEAR + <usize>i);
+      sumSaf += <i32>load<u8>(AG_SAFETY + <usize>i);
+      sumEnt += <i32>load<u8>(AG_ENTERTAIN + <usize>i);
+      sumSpi += <i32>load<u8>(AG_SPIRIT + <usize>i);
     } else if (k == KIND_ZOMBIE) {
       zom++;
       if (load<u8>(AG_SUBKIND + <usize>i) == ZOM_ALPHA) zPacks++;
@@ -1778,6 +1995,10 @@ function recountAll(): void {
   for (let f = 0; f < MAX_FACTIONS; f++) {
     if (load<u8>(FAC_ACTIVE + <usize>f) != 0) facCount++;
   }
+  let faithCount = 0;
+  for (let fa = 0; fa < MAX_FAITHS; fa++) {
+    if (load<u8>(FAITH_ACTIVE + <usize>fa) != 0) faithCount++;
+  }
 
   setStat(ST_HUMANS, hum);
   setStat(ST_ZOMBIES, zom);
@@ -1788,9 +2009,13 @@ function recountAll(): void {
   setStat(ST_SOC_HUMANS, socH);
   setStat(ST_SETTLEMENTS, facCount);
   setStat(ST_ZOMBIE_PACKS, zPacks);
+  setStat(ST_FAITHS, faithCount);
   setStat(ST_AVG_FOOD, hum > 0 ? (sumF * 10) / hum : 0);
   setStat(ST_AVG_WATER, hum > 0 ? (sumW * 10) / hum : 0);
   setStat(ST_AVG_GEAR, hum > 0 ? sumG / hum : 0);
+  setStat(ST_AVG_SAFETY, hum > 0 ? sumSaf / hum : 0);
+  setStat(ST_AVG_ENTERTAIN, hum > 0 ? sumEnt / hum : 0);
+  setStat(ST_AVG_SPIRIT, hum > 0 ? sumSpi / hum : 0);
   setStat(ST_ACTIVE_AG, activeLimit);
 }
 
@@ -1814,7 +2039,7 @@ export function stepTicks(count: i32): void {
         else if (edge == 2) { mx = 4; my = 4 + randInt(gridH - 8); }
         else { mx = gridW - 5; my = 4 + randInt(gridH - 8); }
         if (isPassable(tileAt(mx, my))) {
-          spawnAgent(KIND_ZOMBIE, <u8>(m == 0 ? ZOM_ALPHA : ZOM_WALKER), <f32>mx, <f32>my, 85, 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0);
+          spawnAgent(KIND_ZOMBIE, <u8>(m == 0 ? ZOM_ALPHA : ZOM_WALKER), <f32>mx, <f32>my, 85, 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
         }
       }
     }
@@ -1826,7 +2051,7 @@ export function stepTicks(count: i32): void {
       else if (k == KIND_ANIMAL) stepAnimal(i, tick);
     }
 
-    if ((tick & 7) == 0) stepSocieties(tick);
+    if ((tick & 7) == 0) stepSocietiesAndFaiths(tick);
   }
   recountAll();
 }
@@ -1866,11 +2091,9 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
     let col = biomeColor(t);
 
     if (overlayMode == 4) {
-      // Topography hypsometric + contour lines
       const el = <i32>load<u8>(ELEVATION + <usize>i);
-      if (t == TILE_WATER) {
-        col = 0xFF62371D;
-      } else {
+      if (t == TILE_WATER) col = 0xFF62371D;
+      else {
         const contour = (el & 15) < 2;
         const r = clampI(el - 20, 20, 230);
         const g = clampI(190 - abs(el - 115), 35, 210);
@@ -1894,11 +2117,11 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
       }
     } else if (overlayMode == 3) {
       const sc = <u32>load<u8>(SCENT_HEAT + <usize>i);
-      if (sc > 4) {
-        col = blendABGR(col, 0xFF000000 | (sc << 8) | 0xFF, sc > 220 ? 220 : sc);
-      }
+      if (sc > 4) col = blendABGR(col, 0xFF000000 | (sc << 8) | 0xFF, sc > 220 ? 220 : sc);
+    } else if (overlayMode == 5) {
+      // Faith overlay: muted terrain so believers & shrines pop
+      col = blendABGR(col, 0xFF14181E, 110);
     } else {
-      // Standard: subtle hillshade + territory tint
       const el = <i32>load<u8>(ELEVATION + <usize>i);
       if (el > 140) col = blendABGR(col, 0xFFFFFFFF, <u32>((el - 140) >> 2));
       const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);
@@ -1917,22 +2140,25 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
       const ax = clampI(<i32>load<f32>(AG_X + (<usize>i << 2)), 0, gridW - 1);
       const ay = clampI(<i32>load<f32>(AG_Y + (<usize>i << 2)), 0, gridH - 1);
       const idx = ay * gridW + ax;
-      let col: u32 = 0xFF4B53E5; // zombie crimson
+      let col: u32 = 0xFF4B53E5;
       if (k == KIND_HUMAN) {
-        if (load<u8>(AG_INFECTION + <usize>i) > 0) {
+        if (overlayMode == 5) {
+          const fa = <i32>load<u8>(AG_FAITH + <usize>i);
+          col = fa < MAX_FAITHS ? load<u32>(FAITH_COLOR + (<usize>fa << 2)) : 0xFF707880;
+        } else if (load<u8>(AG_INFECTION + <usize>i) > 0) {
           col = 0xFF3FD6D6;
         } else if (load<u8>(AG_SOCIAL + <usize>i) == SOC_SOCIETY) {
           const f = <i32>load<u16>(AG_GROUP + (<usize>i << 1));
           col = (f >= 0 && f < MAX_FACTIONS) ? load<u32>(FAC_COLOR + (<usize>f << 2)) : 0xFFF5F5F5;
         } else if (load<u8>(AG_SOCIAL + <usize>i) == SOC_GROUP) {
-          col = 0xFFFFD8A8; // warm sky for small groups
+          col = 0xFFFFD8A8;
         } else {
           col = 0xFFF5F5F5;
         }
       } else if (k == KIND_ANIMAL) {
         col = load<u8>(AG_SUBKIND + <usize>i) == ANI_WOLF ? 0xFF90A8D8 : 0xFF52B8E0;
       } else if (load<u8>(AG_SUBKIND + <usize>i) == ZOM_ALPHA) {
-        col = 0xFF9038E8; // alpha purple-red
+        col = 0xFF9038E8;
       }
       store<u32>(FRAME_RGBA + (<usize>idx << 2), col);
     }
@@ -1948,7 +2174,7 @@ export function brushSpawnZombies(cx: i32, cy: i32, radius: i32, count: i32): vo
     const x = clampI(<i32>(<f32>cx + Mathf.cos(ang) * dist), 1, gridW - 2);
     const y = clampI(<i32>(<f32>cy + Mathf.sin(ang) * dist), 1, gridH - 2);
     if (isPassable(tileAt(x, y))) {
-      spawnAgent(KIND_ZOMBIE, <u8>(n % 12 == 0 ? ZOM_ALPHA : (n % 4 == 0 ? ZOM_RUNNER : ZOM_WALKER)), <f32>x + randF(), <f32>y + randF(), 85, 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0);
+      spawnAgent(KIND_ZOMBIE, <u8>(n % 12 == 0 ? ZOM_ALPHA : (n % 4 == 0 ? ZOM_RUNNER : ZOM_WALKER)), <f32>x + randF(), <f32>y + randF(), 85, 60, 60, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
     }
   }
   recountAll();
@@ -1956,13 +2182,15 @@ export function brushSpawnZombies(cx: i32, cy: i32, radius: i32, count: i32): vo
 
 export function brushSpawnHumans(cx: i32, cy: i32, radius: i32, count: i32): void {
   const r = clampI(radius, 1, 60);
+  const tick = stat(ST_TICK);
   for (let n = 0; n < count; n++) {
     const ang = randF() * 6.283;
     const dist = Mathf.sqrt(randF()) * <f32>r;
     const x = clampI(<i32>(<f32>cx + Mathf.cos(ang) * dist), 1, gridW - 2);
     const y = clampI(<i32>(<f32>cy + Mathf.sin(ang) * dist), 1, gridH - 2);
     if (isPassable(tileAt(x, y))) {
-      spawnAgent(KIND_HUMAN, <u8>randInt(6), <f32>x + randF(), <f32>y + randF(), 100, 90, 90, 3, 3, <u8>(15 + randInt(25)), 1, 1, SOC_SOLO, 0xFFFF, packPersonality(randInt(16), randInt(16), randInt(16), randInt(16)));
+      const g = deriveGenome(worldSeed ^ <u32>tick, n + activeLimit, cfg(CFG_COOP_BIAS), cfg(CFG_BANDITRY), cfg(CFG_SPIRIT_BIAS));
+      spawnAgent(KIND_HUMAN, <u8>randInt(6), <f32>x + randF(), <f32>y + randF(), 100, 90, 90, 3, 3, <u8>(15 + randInt(25)), 1, 1, SOC_SOLO, 0xFFFF, g, 255, 1);
     }
   }
   recountAll();
@@ -1976,7 +2204,7 @@ export function brushSpawnAnimals(cx: i32, cy: i32, radius: i32, count: i32): vo
     const x = clampI(<i32>(<f32>cx + Mathf.cos(ang) * dist), 1, gridW - 2);
     const y = clampI(<i32>(<f32>cy + Mathf.sin(ang) * dist), 1, gridH - 2);
     if (isPassable(tileAt(x, y))) {
-      spawnAgent(KIND_ANIMAL, <u8>(n % 5 == 0 ? ANI_WOLF : (n % 3 == 0 ? ANI_BOAR : ANI_DEER)), <f32>x + randF(), <f32>y + randF(), 55, 85, 85, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0);
+      spawnAgent(KIND_ANIMAL, <u8>(n % 5 == 0 ? ANI_WOLF : (n % 3 == 0 ? ANI_BOAR : ANI_DEER)), <f32>x + randF(), <f32>y + randF(), 55, 85, 85, 0, 0, 0, 0, 0, SOC_SOLO, 0xFFFF, 0, 255, 1);
     }
   }
   recountAll();
@@ -2006,9 +2234,7 @@ export function brushClear(cx: i32, cy: i32, radius: i32): void {
     if (load<u8>(AG_KIND + <usize>i) == KIND_DEAD) continue;
     const dx = load<f32>(AG_X + (<usize>i << 2)) - <f32>cx;
     const dy = load<f32>(AG_Y + (<usize>i << 2)) - <f32>cy;
-    if (dx * dx + dy * dy <= r2) {
-      store<u8>(AG_KIND + <usize>i, KIND_DEAD);
-    }
+    if (dx * dx + dy * dy <= r2) store<u8>(AG_KIND + <usize>i, KIND_DEAD);
   }
   recountAll();
 }
@@ -2021,10 +2247,7 @@ export function findNearestAgent(wx: f32, wy: f32, maxDist: f32): i32 {
     const dx = load<f32>(AG_X + (<usize>i << 2)) - wx;
     const dy = load<f32>(AG_Y + (<usize>i << 2)) - wy;
     const d2 = dx * dx + dy * dy;
-    if (d2 < bestD2) {
-      bestD2 = d2;
-      best = i;
-    }
+    if (d2 < bestD2) { bestD2 = d2; best = i; }
   }
   return best;
 }

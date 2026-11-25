@@ -1,8 +1,10 @@
 import {
   DeadGridSim,
   MAX_FACTIONS,
+  MAX_FAITHS,
   TIER_NAMES,
   type FactionInfo,
+  type FaithInfo,
   type OverlayMode,
 } from '../sim/bridge';
 
@@ -127,7 +129,7 @@ export class Viewport {
     this.clampCamera();
   }
 
-  render(sim: DeadGridSim, factions: FactionInfo[]): void {
+  render(sim: DeadGridSim, factions: FactionInfo[], faiths: FaithInfo[] = []): void {
     if (sim.gridW !== this.gridW || sim.gridH !== this.gridH) {
       this.syncWorldSize(sim.gridW, sim.gridH);
     }
@@ -185,6 +187,8 @@ export class Viewport {
 
       const facColorMap = new Map<number, string>();
       for (const f of factions) facColorMap.set(f.id, f.colorCss);
+      const faithColorMap = new Map<number, string>();
+      for (const fa of faiths) faithColorMap.set(fa.id, fa.colorCss);
 
       const radius = Math.max(1.8, Math.min(6.5, this.zoom * 0.28));
       const activeLimit = sim.readStats().activeAgents;
@@ -198,29 +202,31 @@ export class Viewport {
         const sx = left + ax * this.zoom;
         const sy = top + ay * this.zoom;
         if (k === 2) {
-          // Zombie
           ctx.fillStyle = sim.agSubkind[i] === 2 ? '#e83890' : '#e5534b';
           ctx.beginPath();
           ctx.arc(sx, sy, radius * (sim.agSubkind[i] === 2 ? 1.1 : 0.9), 0, Math.PI * 2);
           ctx.fill();
         } else if (k === 3) {
-          // Wild animal
           ctx.fillStyle = sim.agSubkind[i] === 1 ? '#d8a890' : '#e0b852';
           ctx.beginPath();
           ctx.arc(sx, sy, radius * 0.85, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // Human
           const inf = sim.agInfection[i] > 0;
           const soc = sim.agSocial[i];
           const grp = sim.agGroup[i];
-          ctx.fillStyle = inf
-            ? '#d6d63f'
-            : soc === 2 && grp < MAX_FACTIONS
-              ? (facColorMap.get(grp) ?? '#f0f6fc')
-              : soc === 1
-                ? '#a8d8ff'
-                : '#f0f6fc';
+          const fa = sim.agFaith[i];
+          if (this.overlay === 5) {
+            ctx.fillStyle = fa < MAX_FAITHS ? (faithColorMap.get(fa) ?? '#707880') : '#707880';
+          } else {
+            ctx.fillStyle = inf
+              ? '#d6d63f'
+              : soc === 2 && grp < MAX_FACTIONS
+                ? (facColorMap.get(grp) ?? '#f0f6fc')
+                : soc === 1
+                  ? '#a8d8ff'
+                  : '#f0f6fc';
+          }
           ctx.beginPath();
           ctx.arc(sx, sy, radius, 0, Math.PI * 2);
           ctx.fill();
@@ -229,6 +235,32 @@ export class Viewport {
             ctx.lineWidth = 1.2;
             ctx.stroke();
           }
+        }
+      }
+    }
+
+    // Faith Shrines (in Faith overlay or zoomed in)
+    if (this.overlay === 5 || this.zoom >= 2.2) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const fa of faiths) {
+        const p = this.worldToScreen(fa.x, fa.y);
+        if (p.x < -80 || p.x > w + 80 || p.y < -40 || p.y > h + 40) continue;
+        ctx.fillStyle = fa.colorCss;
+        ctx.strokeStyle = '#0d1117';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - 7);
+        ctx.lineTo(p.x + 7, p.y);
+        ctx.lineTo(p.x, p.y + 7);
+        ctx.lineTo(p.x - 7, p.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        if (this.overlay === 5) {
+          ctx.font = '600 10px ui-sans-serif, system-ui, sans-serif';
+          ctx.fillStyle = '#f0f6fc';
+          ctx.fillText(`${fa.name} (${fa.pop})`, p.x, p.y - 13);
         }
       }
     }

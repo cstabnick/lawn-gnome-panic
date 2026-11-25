@@ -2,11 +2,12 @@ import { SIM_WASM_BASE64 } from '../wasm/simBytes';
 
 export const MAX_AGENTS = 262144;
 export const MAX_FACTIONS = 32;
+export const MAX_FAITHS = 16;
 export const MAX_EVENTS = 64;
 
 export type GridSize = 512 | 768 | 1024;
 export type WaterStyle = 0 | 1 | 2 | 3; // 0=Coastal, 1=River Valleys, 2=Archipelago, 3=Arid Basin
-export type OverlayMode = 0 | 1 | 2 | 3 | 4; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography
+export type OverlayMode = 0 | 1 | 2 | 3 | 4 | 5; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography, 5=Faith
 export type BrushTool = 'inspect' | 'zombies' | 'humans' | 'animals' | 'airdrop' | 'clear';
 
 export const WATER_STYLE_NAMES = [
@@ -37,6 +38,17 @@ export const HUMAN_ARCHETYPES = ['Scavenger', 'Builder', 'Guard', 'Trader', 'Rai
 export const ZOMBIE_SUBKINDS = ['Walker', 'Runner', 'Pack Alpha'] as const;
 export const ANIMAL_SUBKINDS = ['Deer', 'Wolf', 'Boar'] as const;
 export const SOCIAL_TIERS = ['Solo', 'Small Group', 'Society'] as const;
+export const ASPIRATION_NAMES = [
+  'Survivor',
+  'Founder',
+  'Prophet',
+  'Explorer',
+  'Warlord',
+  'Philanthropist',
+  'Architect',
+  'Patriarch',
+] as const;
+export const FAITH_TENETS = ['Harmony', 'Crusade', 'Ascetic', 'Prosperity'] as const;
 
 export const AGENT_STATES = [
   'Roaming',
@@ -51,6 +63,10 @@ export const AGENT_STATES = [
   'Grazing',
   'Hunting',
   'Trading',
+  'Socializing',
+  'Worshipping',
+  'Preaching',
+  'Resting',
 ] as const;
 
 export const ETHOS_NAMES = ['Cooperative', 'Fortress', 'Raider'] as const;
@@ -66,10 +82,24 @@ const SETTLEMENT_SUFFIXES = [
   'Bastion', 'Haven', 'Watch', 'Crossing', 'Depot', 'Refuge', 'Hold', 'Reach',
 ];
 
+const FAITH_PREFIXES = [
+  'Order of the', 'Keepers of the', 'Children of the', 'Vigil of the',
+  'Choir of the', 'Covenant of the', 'Seekers of the', 'Disciples of the',
+];
+const FAITH_NOUNS = [
+  'Ember', 'Green', 'Ridge', 'Dawn', 'Ashes', 'Lantern', 'River', 'Horizon',
+];
+
 export function settlementName(slot: number, seed: number): string {
   const idx = (slot * 7 + (seed % 32)) % SETTLEMENT_PREFIXES.length;
   const sfx = (slot * 3 + ((seed >> 3) % 8)) % SETTLEMENT_SUFFIXES.length;
   return `${SETTLEMENT_PREFIXES[idx]} ${SETTLEMENT_SUFFIXES[sfx]}`;
+}
+
+export function faithName(slot: number, seed: number): string {
+  const p = (slot * 5 + (seed % 8)) % FAITH_PREFIXES.length;
+  const n = (slot * 3 + ((seed >> 4) % 8)) % FAITH_NOUNS.length;
+  return `${FAITH_PREFIXES[p]} ${FAITH_NOUNS[n]}`;
 }
 
 export interface SimParams {
@@ -87,6 +117,9 @@ export interface SimParams {
   banditry: number;
   cooperationBias: number;
   zombieMigration: number;
+  birthRate: number;
+  spiritualityBias: number;
+  mutationRate: number;
   initialHumans: number;
   initialZombies: number;
   initialAnimals: number;
@@ -108,6 +141,9 @@ export const DEFAULT_PARAMS: SimParams = {
   banditry: 0.22,
   cooperationBias: 0.65,
   zombieMigration: 0.2,
+  birthRate: 0.7,
+  spiritualityBias: 0.55,
+  mutationRate: 0.15,
   initialHumans: 3000,
   initialZombies: 14000,
   initialAnimals: 2500,
@@ -142,6 +178,21 @@ export const PRESETS: PresetDef[] = [
     },
   },
   {
+    id: 'faith-schism',
+    label: 'Faith & Schism',
+    description: 'High spirituality & ambition—prophets, conversions, and religious schisms.',
+    params: {
+      ...DEFAULT_PARAMS,
+      gridSize: 768,
+      waterStyle: 1,
+      spiritualityBias: 0.92,
+      birthRate: 1.1,
+      initialHumans: 7500,
+      initialZombies: 6000,
+      initialAnimals: 3000,
+    },
+  },
+  {
     id: 'fast-infected',
     label: '28 Days Later',
     description: 'Sprinting infected, high bite contagion, high noise attraction.',
@@ -158,7 +209,7 @@ export const PRESETS: PresetDef[] = [
   {
     id: 'walking-dead',
     label: 'Slow Walkers',
-    description: 'Shuffling hordes, low starvation, strong settlement growth.',
+    description: 'Shuffling hordes, low starvation, strong settlement & family growth.',
     params: {
       ...DEFAULT_PARAMS,
       zombieSpeed: 0.24,
@@ -166,6 +217,7 @@ export const PRESETS: PresetDef[] = [
       hungerRate: 0.6,
       thirstRate: 0.6,
       settlementGrowth: 1.5,
+      birthRate: 1.2,
       zombieMigration: 0.6,
       initialZombies: 18000,
       initialHumans: 2800,
@@ -202,7 +254,7 @@ export const PRESETS: PresetDef[] = [
   {
     id: 'wilderness',
     label: 'Wilderness Rebirth',
-    description: 'Abundant wildlife, rare zombies, small pioneer bands.',
+    description: 'Abundant wildlife, rare zombies, fertile pioneer bands.',
     params: {
       ...DEFAULT_PARAMS,
       waterStyle: 1,
@@ -210,6 +262,7 @@ export const PRESETS: PresetDef[] = [
       initialZombies: 2000,
       initialAnimals: 8000,
       settlementGrowth: 1.4,
+      birthRate: 1.3,
     },
   },
   {
@@ -267,6 +320,13 @@ export interface SimStats {
   activeAgents: number;
   gridW: number;
   gridH: number;
+  faiths: number;
+  births: number;
+  maxGen: number;
+  avgSafety: number;
+  avgEntertain: number;
+  avgSpirit: number;
+  conversions: number;
 }
 
 export interface FactionInfo {
@@ -283,6 +343,18 @@ export interface FactionInfo {
   colorCss: string;
   colorAbgr: number;
   kills: number;
+  foundedTick: number;
+}
+
+export interface FaithInfo {
+  id: number;
+  name: string;
+  tenet: number;
+  tenetName: string;
+  x: number;
+  y: number;
+  pop: number;
+  colorCss: string;
   foundedTick: number;
 }
 
@@ -316,6 +388,10 @@ export interface AgentInspection {
   hp: number;
   hunger: number;
   thirst: number;
+  energy: number;
+  safety: number;
+  entertain: number;
+  spirit: number;
   food: number;
   water: number;
   gear: number;
@@ -324,11 +400,20 @@ export interface AgentInspection {
   stateName: string;
   socialName: string;
   groupId: number;
+  faithId: number;
+  faithName: string;
+  aspirationName: string;
+  aspirationProgress: number;
+  generation: number;
   rep: number;
   coop: number;
   brave: number;
   greed: number;
   trust: number;
+  spiritGene: number;
+  socialGene: number;
+  ambition: number;
+  caution: number;
   infection: number;
   age: number;
 }
@@ -360,11 +445,20 @@ interface SimWasmExports extends WebAssembly.Exports {
   getFacKillsPtr(): number;
   getFacFoundedPtr(): number;
 
+  getFaithActivePtr(): number;
+  getFaithTenetPtr(): number;
+  getFaithXPtr(): number;
+  getFaithYPtr(): number;
+  getFaithPopPtr(): number;
+  getFaithColorPtr(): number;
+  getFaithFoundedPtr(): number;
+
   getAgKindPtr(): number;
   getAgSubkindPtr(): number;
   getAgHpPtr(): number;
   getAgHungerPtr(): number;
   getAgThirstPtr(): number;
+  getAgEnergyPtr(): number;
   getAgInvFoodPtr(): number;
   getAgInvWaterPtr(): number;
   getAgInvGearPtr(): number;
@@ -373,10 +467,17 @@ interface SimWasmExports extends WebAssembly.Exports {
   getAgStatePtr(): number;
   getAgSocialPtr(): number;
   getAgGroupPtr(): number;
-  getAgPersonalityPtr(): number;
+  getAgGenomePtr(): number;
   getAgRepPtr(): number;
   getAgInfectionPtr(): number;
   getAgAgePtr(): number;
+  getAgSafetyPtr(): number;
+  getAgEntertainPtr(): number;
+  getAgSpiritPtr(): number;
+  getAgFaithPtr(): number;
+  getAgAspirationPtr(): number;
+  getAgAspProgPtr(): number;
+  getAgGenerationPtr(): number;
   getAgXPtr(): number;
   getAgYPtr(): number;
 
@@ -433,11 +534,20 @@ export class DeadGridSim {
   private readonly facKills: Uint32Array;
   private readonly facFounded: Uint32Array;
 
+  private readonly faithActive: Uint8Array;
+  private readonly faithTenet: Uint8Array;
+  private readonly faithX: Uint16Array;
+  private readonly faithY: Uint16Array;
+  private readonly faithPop: Uint32Array;
+  private readonly faithColor: Uint32Array;
+  private readonly faithFounded: Uint32Array;
+
   readonly agKind: Uint8Array;
   readonly agSubkind: Uint8Array;
   readonly agHp: Uint8Array;
   readonly agHunger: Uint8Array;
   readonly agThirst: Uint8Array;
+  readonly agEnergy: Uint8Array;
   readonly agInvFood: Uint8Array;
   readonly agInvWater: Uint8Array;
   readonly agInvGear: Uint8Array;
@@ -446,10 +556,17 @@ export class DeadGridSim {
   readonly agState: Uint8Array;
   readonly agSocial: Uint8Array;
   readonly agGroup: Uint16Array;
-  readonly agPersonality: Uint16Array;
+  readonly agGenome: Uint32Array;
   readonly agRep: Int8Array;
   readonly agInfection: Uint8Array;
   readonly agAge: Uint16Array;
+  readonly agSafety: Uint8Array;
+  readonly agEntertain: Uint8Array;
+  readonly agSpirit: Uint8Array;
+  readonly agFaith: Uint8Array;
+  readonly agAspiration: Uint8Array;
+  readonly agAspProg: Uint8Array;
+  readonly agGeneration: Uint8Array;
   readonly agX: Float32Array;
   readonly agY: Float32Array;
 
@@ -490,11 +607,20 @@ export class DeadGridSim {
     this.facKills = new Uint32Array(buf, ex.getFacKillsPtr(), MAX_FACTIONS);
     this.facFounded = new Uint32Array(buf, ex.getFacFoundedPtr(), MAX_FACTIONS);
 
+    this.faithActive = new Uint8Array(buf, ex.getFaithActivePtr(), MAX_FAITHS);
+    this.faithTenet = new Uint8Array(buf, ex.getFaithTenetPtr(), MAX_FAITHS);
+    this.faithX = new Uint16Array(buf, ex.getFaithXPtr(), MAX_FAITHS);
+    this.faithY = new Uint16Array(buf, ex.getFaithYPtr(), MAX_FAITHS);
+    this.faithPop = new Uint32Array(buf, ex.getFaithPopPtr(), MAX_FAITHS);
+    this.faithColor = new Uint32Array(buf, ex.getFaithColorPtr(), MAX_FAITHS);
+    this.faithFounded = new Uint32Array(buf, ex.getFaithFoundedPtr(), MAX_FAITHS);
+
     this.agKind = new Uint8Array(buf, ex.getAgKindPtr(), MAX_AGENTS);
     this.agSubkind = new Uint8Array(buf, ex.getAgSubkindPtr(), MAX_AGENTS);
     this.agHp = new Uint8Array(buf, ex.getAgHpPtr(), MAX_AGENTS);
     this.agHunger = new Uint8Array(buf, ex.getAgHungerPtr(), MAX_AGENTS);
     this.agThirst = new Uint8Array(buf, ex.getAgThirstPtr(), MAX_AGENTS);
+    this.agEnergy = new Uint8Array(buf, ex.getAgEnergyPtr(), MAX_AGENTS);
     this.agInvFood = new Uint8Array(buf, ex.getAgInvFoodPtr(), MAX_AGENTS);
     this.agInvWater = new Uint8Array(buf, ex.getAgInvWaterPtr(), MAX_AGENTS);
     this.agInvGear = new Uint8Array(buf, ex.getAgInvGearPtr(), MAX_AGENTS);
@@ -503,10 +629,17 @@ export class DeadGridSim {
     this.agState = new Uint8Array(buf, ex.getAgStatePtr(), MAX_AGENTS);
     this.agSocial = new Uint8Array(buf, ex.getAgSocialPtr(), MAX_AGENTS);
     this.agGroup = new Uint16Array(buf, ex.getAgGroupPtr(), MAX_AGENTS);
-    this.agPersonality = new Uint16Array(buf, ex.getAgPersonalityPtr(), MAX_AGENTS);
+    this.agGenome = new Uint32Array(buf, ex.getAgGenomePtr(), MAX_AGENTS);
     this.agRep = new Int8Array(buf, ex.getAgRepPtr(), MAX_AGENTS);
     this.agInfection = new Uint8Array(buf, ex.getAgInfectionPtr(), MAX_AGENTS);
     this.agAge = new Uint16Array(buf, ex.getAgAgePtr(), MAX_AGENTS);
+    this.agSafety = new Uint8Array(buf, ex.getAgSafetyPtr(), MAX_AGENTS);
+    this.agEntertain = new Uint8Array(buf, ex.getAgEntertainPtr(), MAX_AGENTS);
+    this.agSpirit = new Uint8Array(buf, ex.getAgSpiritPtr(), MAX_AGENTS);
+    this.agFaith = new Uint8Array(buf, ex.getAgFaithPtr(), MAX_AGENTS);
+    this.agAspiration = new Uint8Array(buf, ex.getAgAspirationPtr(), MAX_AGENTS);
+    this.agAspProg = new Uint8Array(buf, ex.getAgAspProgPtr(), MAX_AGENTS);
+    this.agGeneration = new Uint8Array(buf, ex.getAgGenerationPtr(), MAX_AGENTS);
     this.agX = new Float32Array(buf, ex.getAgXPtr(), MAX_AGENTS);
     this.agY = new Float32Array(buf, ex.getAgYPtr(), MAX_AGENTS);
   }
@@ -532,6 +665,9 @@ export class DeadGridSim {
     this.cfgView[13] = p.initialZombies;
     this.cfgView[14] = p.initialAnimals;
     this.cfgView[15] = p.cityDensity;
+    this.cfgView[16] = p.birthRate;
+    this.cfgView[17] = p.spiritualityBias;
+    this.cfgView[18] = p.mutationRate;
   }
 
   reset(seed: number, params: SimParams): void {
@@ -602,6 +738,13 @@ export class DeadGridSim {
       activeAgents: s[22],
       gridW: s[23] || this.gridW,
       gridH: s[24] || this.gridH,
+      faiths: s[25],
+      births: s[26],
+      maxGen: s[27],
+      avgSafety: s[28],
+      avgEntertain: s[29],
+      avgSpirit: s[30],
+      conversions: s[31],
     };
   }
 
@@ -629,6 +772,26 @@ export class DeadGridSim {
     return out;
   }
 
+  readFaiths(): FaithInfo[] {
+    const out: FaithInfo[] = [];
+    for (let f = 0; f < MAX_FAITHS; f++) {
+      if (this.faithActive[f] === 0) continue;
+      const tenet = this.faithTenet[f];
+      out.push({
+        id: f,
+        name: faithName(f, this.seed),
+        tenet,
+        tenetName: FAITH_TENETS[tenet] ?? 'Harmony',
+        x: this.faithX[f],
+        y: this.faithY[f],
+        pop: this.faithPop[f],
+        colorCss: abgrToCss(this.faithColor[f]),
+        foundedTick: this.faithFounded[f],
+      });
+    }
+    return out;
+  }
+
   drainEvents(): SimEvent[] {
     const writeIdx = this.statsView[21];
     const start = Math.max(this.lastEventRead, writeIdx - MAX_EVENTS);
@@ -641,6 +804,7 @@ export class DeadGridSim {
       const argA = this.eventsView[base + 2];
       const argB = this.eventsView[base + 3];
       const name = settlementName(argA, this.seed);
+      const fName = faithName(argA, this.seed);
       let text = '';
       if (type === 1) text = `Day ${Math.floor(tick / 200)}: ${name} society founded`;
       else if (type === 2) text = `Day ${Math.floor(tick / 200)}: ${name} upgraded to ${TIER_NAMES[argB] ?? 'Outpost'}`;
@@ -648,6 +812,8 @@ export class DeadGridSim {
       else if (type === 4) text = `Day ${Math.floor(tick / 200)}: Horde breached ${name}'s wall`;
       else if (type === 5) text = `Day ${Math.floor(tick / 200)}: ${name} launched a raid`;
       else if (type === 6) text = `Day ${Math.floor(tick / 200)}: Survivors banded into Group #${argA}`;
+      else if (type === 7) text = `Day ${Math.floor(tick / 200)}: ${fName} emerged`;
+      else if (type === 8) text = `Day ${Math.floor(tick / 200)}: Schism! ${fName} broke away`;
       if (text) out.push({ tick, type, argA, argB, text });
     }
     this.lastEventRead = writeIdx;
@@ -686,8 +852,9 @@ export class DeadGridSim {
         : k === 2
           ? (ZOMBIE_SUBKINDS[sub] ?? 'Walker')
           : (ANIMAL_SUBKINDS[sub] ?? 'Deer');
-    const p = this.agPersonality[idx];
+    const g = this.agGenome[idx];
     const soc = this.agSocial[idx];
+    const fId = this.agFaith[idx];
     return {
       index: idx,
       kind,
@@ -697,6 +864,10 @@ export class DeadGridSim {
       hp: this.agHp[idx],
       hunger: this.agHunger[idx],
       thirst: this.agThirst[idx],
+      energy: this.agEnergy[idx],
+      safety: this.agSafety[idx],
+      entertain: this.agEntertain[idx],
+      spirit: this.agSpirit[idx],
       food: this.agInvFood[idx],
       water: this.agInvWater[idx],
       gear: this.agInvGear[idx],
@@ -705,11 +876,20 @@ export class DeadGridSim {
       stateName: AGENT_STATES[this.agState[idx]] ?? 'Idle',
       socialName: SOCIAL_TIERS[soc] ?? 'Solo',
       groupId: this.agGroup[idx],
+      faithId: fId < MAX_FAITHS ? fId : -1,
+      faithName: fId < MAX_FAITHS ? faithName(fId, this.seed) : 'Secular',
+      aspirationName: ASPIRATION_NAMES[this.agAspiration[idx]] ?? 'Survivor',
+      aspirationProgress: this.agAspProg[idx],
+      generation: this.agGeneration[idx] || 1,
       rep: this.agRep[idx],
-      coop: p & 15,
-      brave: (p >> 4) & 15,
-      greed: (p >> 8) & 15,
-      trust: (p >> 12) & 15,
+      coop: g & 15,
+      brave: (g >> 4) & 15,
+      greed: (g >> 8) & 15,
+      trust: (g >> 12) & 15,
+      spiritGene: (g >> 16) & 15,
+      socialGene: (g >> 20) & 15,
+      ambition: (g >> 24) & 15,
+      caution: (g >> 28) & 15,
       infection: this.agInfection[idx],
       age: this.agAge[idx],
     };

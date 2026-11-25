@@ -6,6 +6,7 @@ import {
   type AgentInspection,
   type BrushTool,
   type FactionInfo,
+  type FaithInfo,
   type GridSize,
   type OverlayMode,
   type SimEvent,
@@ -41,6 +42,12 @@ export interface HistorySample {
   avgFood: number;
   avgWater: number;
   avgGear: number;
+  avgSafety: number;
+  avgEntertain: number;
+  avgSpirit: number;
+  faiths: number;
+  births: number;
+  maxGen: number;
 }
 
 export interface HudCallbacks {
@@ -64,7 +71,7 @@ const SPEED_OPTIONS = [
   { label: '40x', speed: 40, paused: false, title: '40x Speed (4)' },
 ];
 
-type GraphTab = 'populations' | 'social' | 'pd' | 'resources';
+type GraphTab = 'populations' | 'social' | 'pd' | 'resources' | 'needs';
 
 export class Hud {
   private readonly root: HTMLDivElement;
@@ -240,6 +247,7 @@ export class Hud {
       ['social', 'Social Tiers'],
       ['pd', "Prisoner's Dilemma"],
       ['resources', 'Inventory Avg'],
+      ['needs', 'Needs & Faith'],
     ];
     for (const [id, label] of tabs) {
       const tb = document.createElement('button');
@@ -373,6 +381,7 @@ export class Hud {
       [2, 'Loot'],
       [3, 'Noise'],
       [4, 'Topography'],
+      [5, 'Faith'],
     ];
     for (const [mode, label] of overlays) {
       const b = document.createElement('button');
@@ -446,6 +455,9 @@ export class Hud {
     this.addSlider(d, 'settlementGrowth', 'Society Growth', 0.2, 2.5, 0.1, (v) => `${v.toFixed(1)}x`);
     this.addSlider(d, 'banditry', 'Banditry %', 0, 1.0, 0.05, (v) => `${Math.round(v * 100)}%`);
     this.addSlider(d, 'cooperationBias', 'PD Coop Bias', 0, 1.0, 0.05, (v) => `${Math.round(v * 100)}%`);
+    this.addSlider(d, 'spiritualityBias', 'Spirituality Bias', 0, 1.0, 0.05, (v) => `${Math.round(v * 100)}%`);
+    this.addSlider(d, 'birthRate', 'Birth Rate', 0, 2.0, 0.05, (v) => `${v.toFixed(2)}x`);
+    this.addSlider(d, 'mutationRate', 'Mutation %', 0, 0.5, 0.05, (v) => `${Math.round(v * 100)}%`);
     this.addSlider(d, 'zombieMigration', 'Edge Migration', 0, 1.5, 0.1, (v) => `${v.toFixed(1)}x`);
 
     // World Generator
@@ -709,7 +721,7 @@ export class Hud {
       <span class="dg-stat dg-z">Zomb <b>${stats.zombies.toLocaleString()}</b></span>
       <span class="dg-stat dg-a">Wild <b>${stats.animals.toLocaleString()}</b></span>
       <span class="dg-stat dg-f">Soc <b>${stats.settlements}</b></span>
-      <span class="dg-stat dg-i">PD <b>${stats.pdCoops}/${stats.pdDefects}</b></span>
+      <span class="dg-stat dg-i">Faith <b>${stats.faiths}</b> · Gen <b>${stats.maxGen}</b></span>
     `;
     this.drawSparkline(history);
     if (this.graphsModal.classList.contains('open')) {
@@ -734,6 +746,7 @@ export class Hud {
     tile: TileInspection | null,
     agent: AgentInspection | null,
     factions: FactionInfo[],
+    faiths: FaithInfo[] = [],
   ): void {
     if (!tile && !agent) {
       this.inspectorCard.classList.remove('open');
@@ -742,20 +755,24 @@ export class Hud {
     this.inspectorCard.classList.add('open');
     const facMap = new Map<number, FactionInfo>();
     for (const f of factions) facMap.set(f.id, f);
+    const faithMap = new Map<number, FaithInfo>();
+    for (const fa of faiths) faithMap.set(fa.id, fa);
 
     const lines: string[] = [];
     if (agent) {
       const f = agent.socialName === 'Society' ? facMap.get(agent.groupId) : undefined;
+      const fa = agent.faithId >= 0 ? faithMap.get(agent.faithId) : undefined;
       lines.push(
-        `<div class="dg-ins-head"><strong>${agent.kind.toUpperCase()} · ${agent.subkindName}</strong><span>#${agent.index}</span></div>`,
+        `<div class="dg-ins-head"><strong>${agent.kind.toUpperCase()} · ${agent.subkindName} (Gen ${agent.generation})</strong><span>#${agent.index}</span></div>`,
         `<div>State: <b>${agent.stateName}</b> · Social: <b>${agent.socialName}${agent.socialName === 'Small Group' ? ` #${agent.groupId}` : ''}</b> · HP: <b>${agent.hp}</b></div>`,
       );
       if (agent.kind === 'human') {
         lines.push(
-          `<div>Demands: Hunger <b>${agent.hunger}</b> · Thirst <b>${agent.thirst}</b> · Inf <b>${agent.infection > 0 ? `${Math.round((agent.infection / 250) * 100)}%` : '0%'}</b></div>`,
+          `<div>Aspiration: <b>${agent.aspirationName}</b> (${agent.aspirationProgress}%) · Faith: <b style="color:${fa ? fa.colorCss : '#8b949e'}">${fa ? `${fa.name} (${fa.tenetName})` : 'Secular'}</b></div>`,
+          `<div>Needs: Hung <b>${agent.hunger}</b> · Thir <b>${agent.thirst}</b> · Safe <b>${agent.safety}</b> · Fun <b>${agent.entertain}</b> · Spir <b>${agent.spirit}</b></div>`,
           `<div>Inv: Food <b>${agent.food}</b> · Water <b>${agent.water}</b> · Gear <b>${agent.gear}</b> · Meds <b>${agent.meds}</b> · Mats <b>${agent.mats}</b></div>`,
-          `<div>Personality: Coop <b>${agent.coop}</b> · Brave <b>${agent.brave}</b> · Greed <b>${agent.greed}</b> · Trust <b>${agent.trust}</b> · Rep <b>${agent.rep}</b></div>`,
-          `<div>Society: <b style="color:${f ? f.colorCss : '#8b949e'}">${f ? f.name : 'None'}</b></div>`,
+          `<div>Genes: Coop <b>${agent.coop}</b> · Brv <b>${agent.brave}</b> · Grd <b>${agent.greed}</b> · Trs <b>${agent.trust}</b> · Spi <b>${agent.spiritGene}</b> · Soc <b>${agent.socialGene}</b> · Amb <b>${agent.ambition}</b> · Cau <b>${agent.caution}</b></div>`,
+          `<div>Society: <b style="color:${f ? f.colorCss : '#8b949e'}">${f ? f.name : 'None'}</b> · Rep: <b>${agent.rep}</b> · Inf: <b>${agent.infection > 0 ? `${Math.round((agent.infection / 250) * 100)}%` : '0%'}</b></div>`,
         );
       }
     }
@@ -847,6 +864,12 @@ export class Hud {
         { label: 'Avg Water', color: '#539bf5', pick: (s) => s.avgWater },
         { label: 'Avg Gear', color: '#e0b852', pick: (s) => s.avgGear },
       ],
+      needs: [
+        { label: 'Avg Safety', color: '#539bf5', pick: (s) => s.avgSafety },
+        { label: 'Avg Fun', color: '#e0b852', pick: (s) => s.avgEntertain },
+        { label: 'Avg Spirit', color: '#9e6bff', pick: (s) => s.avgSpirit },
+        { label: 'Births', color: '#57ab5a', pick: (s) => s.births },
+      ],
     };
 
     const list = seriesMap[this.activeGraphTab];
@@ -909,7 +932,7 @@ export class Hud {
     this.graphLegendEl.innerHTML = list
       .map((ser) => `<span><i style="background:${ser.color}"></i>${ser.label}: <b>${ser.pick(sample).toLocaleString()}</b></span>`)
       .join('');
-    this.graphReadoutEl.textContent = `Tick ${sample.tick} (Day ${sample.day}) · Societies: ${sample.settlements}`;
+    this.graphReadoutEl.textContent = `Tick ${sample.tick} (Day ${sample.day}) · Societies: ${sample.settlements} · Faiths: ${sample.faiths} · Births: ${sample.births} · Max Gen: ${sample.maxGen}`;
   }
 
   private injectStyles(): void {

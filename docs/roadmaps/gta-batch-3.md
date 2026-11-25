@@ -58,6 +58,9 @@ with deferred items listed).
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | merged | epic/E30-pardonlin | see log | 4 districts (Old Town, Teacup Row & Quays, Left Bank, Jardin & Basin), 33 vignettes, 400+ signs, 22 residents, Radio Adagio 96.1 (13 pieces, Maestro Ottavio Lento), Café Pardon + radio foyer/studio, 4 town activities, 5 achievements, screens in E30/; rulings renumbered R-182..R-184; at merge: Left Bank allotment beds lost their colliders (E27 made them mowable), duplicate import fixed; open: Left Bank 848 buildings — check low-end phones; deferred: story quests with residents (E20–E22), tram, online town state |
 | E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | running | epic/E31-living |  |  |
+| E32 | Hedgeworth to nine holes | Content | 6 | E15 | planned | | | |
+| E33 | Mountain routes | Content | 6 | E12, E14 | planned | | | |
+| R1 | Editorial review and polish (editors by content group, decider for disputes, iterate) | Review | 10 | everything | planned | | | |
 
 ## Cross-cutting cleanup (do in E22 or a small fix epic)
 
@@ -115,6 +118,9 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 | 8 | E21 | story act III, visits all new places |
 | 9 | E22 | final story act, lore pass, full checks, demos |
 
+**After session 3:** E32 (nine holes) and E33 (mountain routes) join wave 6. After E22, phase **R1** runs the
+editorial review (process doc, "Editorial review"); the batch PR merges only after R1.
+
 **Revised order after session 2 (supersedes the table above where they differ):** E28 (world II engine) runs in wave 2
 next to E05; E23, E27 and E29 join wave 3 with E06, E07 and E09 (at most 3 leads at once, so wave 3 runs in two
 halves); E30 joins wave 4; E24, E25 and E31 join wave 5; E26 joins wave 6. Story epics E20–E22 stay last and also visit
@@ -155,6 +161,9 @@ the European town and the nature preserve.
 | E29 | L99 (European buildings, vehicles, plants and backyard prefabs) |
 | E30 | L99 (the town itself, environmental storytelling, classical radio station, its quests and people) |
 | E31 | L99 (nature preserve, more birds and animals everywhere, more vehicles in traffic, detailing existing places) |
+| E32 | L115 |
+| E33 | L116 |
+| R1 | L117 |
 
 ## Source list (verbatim)
 
@@ -272,6 +281,9 @@ the European town and the nature preserve.
 - L112 add street races. add street race quests and modes f or players to race (as well as racing on the tracks).
 - L113 idk if covered already but make little bushes able to be ran over
 - L114 allow player to drive over water on jumps
+- L115 (added in session 3) add 5 more holes to the course. make it 9 hole.
+- L116 Add a few different routes on the mountains and such.
+- L117 once all work is done. make an spawn subagents to act as editors and review all of this and provide feedback. spawn them by group of content. then proceed with addressing feedback. if somethign cuts against hte spirit, send it to a decider agent to evaluate the pros/cons of both and hte lore and make a decision. I want this to come back really polished and clean. I want the world to feel hand crafted and that requires spending a lot of time on the details making iterative adjustments until it all feels just right. otherwise good work keep going
 
 ## Standing decisions (leads do not ask about these)
 

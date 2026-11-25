@@ -51,6 +51,27 @@ sessions, without overloading any one agent. First used for the Gnome Theft Auto
     uploaded through the media-upload MCP, linked in the PR description), PR description rewritten to describe the
     whole batch.
 
+## Editorial review (after the last epic, before the PR merges)
+
+The goal is a world that feels hand-crafted: details, consistency, tone, feel. Content that "works" is not done.
+
+1. **Group the content** into review groups that one editor can hold in mind, e.g. per region (Turfton downtown,
+   Pardonlin, the coast, Snowcap Rise, Rootwell, Capwood and Rutbottom, Hedgeworth, the Unmown, countryside), per
+   system (vehicles and driving, jobs, activities and minigames, UI/Gnomlet/map/options, audio), and the story (per act).
+2. **Editors** (Opus, one per group, run in parallel up to the agent limit, read-only on code): play/inspect through the
+   dev server, screenshots (`tools/gta-shots.mjs`), headless checks, the lore and the design docs; write a findings file
+   `docs/roadmaps/<batch>/review/<group>.md` with numbered findings, each: what, where (file / coordinates / quest step),
+   why it matters, a proposed fix, severity (blocker / polish / nit), and whether it is a *spirit* question (taste,
+   tone, design direction) or a *craft* issue (bug, inconsistency, rough edge).
+3. **Decider** (Opus): every *spirit* finding, and any finding two editors disagree on, goes to a decider agent with
+   the finding, the current state, the lore (`docs/lore/canon.md`, rulings), the standing decisions (incl. "keep the
+   charm") and the user's own words. It writes pros/cons of each option and a decision with a one-line reason into
+   `review/decisions.md`. Its decision is final for the batch.
+4. **Fix rounds**: craft findings and decided spirit findings are grouped into fix epics and run like any epic (Opus
+   lead, decompose, workers), merged, checked.
+5. **Iterate**: editors re-review their group against the previous findings file; repeat until a round finds no
+   blockers and only nits. Record each round's counts in the tracking doc.
+
 ## Load rules (so no agent drowns)
 
 - A lead owns one epic. If decompose finds more than ~30 issues, the lead stops after the first ~30, commits a working

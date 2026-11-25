@@ -92,7 +92,10 @@ export type SkyBehaviourId =
   | 'mail-drop'
   | 'balloon'
   | 'watch-copter'
-  | 'air-ambulance';
+  | 'air-ambulance'
+  | 'preserve-survey'
+  | 'coast-patrol'
+  | 'snowcap-sightseer';
 
 /** What a behaviour may look at when it decides to fly and builds its route. */
 export interface SkyContext {

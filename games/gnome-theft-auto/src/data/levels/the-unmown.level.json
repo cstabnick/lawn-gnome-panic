@@ -113,6 +113,16 @@
   "props": [],
   "markers": [
     {
+      "id": "water/reedmere",
+      "kind": "water",
+      "x": -150,
+      "z": -155,
+      "data": {
+        "w": 220,
+        "d": 100
+      }
+    },
+    {
       "id": "unmown-ranger-station",
       "kind": "slot",
       "x": -560,
@@ -145,7 +155,7 @@
       "data": {
         "hw": 160,
         "hd": 80,
-        "kind": "natural",
+        "kind": "water",
         "epic": "E31",
         "flat": false,
         "label": "Reedmere"

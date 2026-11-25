@@ -60,7 +60,12 @@ export type VehicleKind =
   | 'tea-tray-sled'
   | 'snow-skis'
   // Dirt country (E14): the Knobbly Dirt-Mower.
-  | 'dirt-bike';
+  | 'dirt-bike'
+  // E31 living world: the Unmown Ranger Buggy, the Snail-Shell Camper (tourists on the band roads), the Saltbucket
+  // ice-cream van. Civilian traffic and parked spots (living/); prefabs in packages/prefabs gta-living-rides.ts.
+  | 'ranger-buggy'
+  | 'shell-camper'
+  | 'cone-van';
 export type GunKind =
   | 'pistol'
   | 'smg'

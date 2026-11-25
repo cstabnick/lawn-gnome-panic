@@ -80,6 +80,9 @@ const DEUX_POTS_WHEEL: Vec3 = [0.16, 0.6, -0.02];
 const WESPA_BARS: Vec3 = [0, 0.62, 0];
 const TRIKE_BARS: Vec3 = [0, 0.66, 0.2];
 const DIRT_BARS: Vec3 = [0, 0.62, 0.05];
+const BUGGY_WHEEL: Vec3 = [0.16, 0.6, 0.1];
+const CAMPER_WHEEL: Vec3 = [0.18, 0.655, 0.59];
+const CONE_VAN_WHEEL: Vec3 = [0.18, 0.64, 0.54];
 
 /**
  * Every vehicle kind's control. A kind left out keeps its hands in the lap, for a reason:
@@ -194,6 +197,10 @@ export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>
     control: 'handlebar', pivot: 'steer', grips: pair(TRIKE_BARS, 0.21),
     variant: { dropParts: [], wheelAt: TRIKE_BARS },
   },
+  // E31 rides: each prefab draws its own tilted steering ring (group steer) where the driver's hands reach it, so no variant.
+  'ranger-buggy': { control: 'wheel', pivot: 'steer', grips: pair(BUGGY_WHEEL, 0.09), axis: ringAxis(120) },
+  'shell-camper': { control: 'wheel', pivot: 'steer', grips: pair(CAMPER_WHEEL, 0.09), axis: ringAxis(120) },
+  'cone-van': { control: 'wheel', pivot: 'steer', grips: pair(CONE_VAN_WHEEL, 0.09), axis: ringAxis(120) },
   // Dandelion Drifter: a balloon does not steer; the pilot holds the front of the basket rim (r 0.7, y 0.85).
   'dandelion-drifter': { control: 'rim', pivot: null, grips: [[0.25, 0.85, 0.654], [-0.25, 0.85, 0.654]] },
 };

@@ -172,6 +172,12 @@ import { GTA_ANTHILL_FIELD } from './gta-anthill-field';
 import { GTA_PINWHEEL_CAMPUS_PROPS } from './gta-pinwheel-campus-props';
 import { GTA_CAMPUS_PROPS } from './gta-campus-props';
 import { GTA_CAMPUS_GEAR } from './gta-campus-gear';
+import { GTA_PRESERVE_KIT } from './gta-preserve-kit';
+import { GTA_PRESERVE_TRAIL } from './gta-preserve-trail';
+import { GTA_LIVING_CRITTERS } from './gta-living-critters';
+import { GTA_LIVING_RIDES } from './gta-living-rides';
+import { GTA_LIVING_GEAR } from './gta-living-gear';
+import { GTA_HAMLET_KIT } from './gta-hamlet-kit';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -211,4 +217,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
   ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,
+  ...GTA_PRESERVE_KIT, ...GTA_PRESERVE_TRAIL, ...GTA_LIVING_CRITTERS, ...GTA_LIVING_RIDES, ...GTA_LIVING_GEAR, ...GTA_HAMLET_KIT,
 ];

@@ -6,7 +6,8 @@ import { buildPrefab, type StaticPrefabPlacement, type Swatch } from '@lawn/pref
 import { buildStaticCells } from './cull';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, PLACES, ROAD_WIDTH, SPAWN, type Highway } from './config';
-import { REGION_IDS, regionAt } from './levels';
+import { REGION_IDS, regionAt, type RegionId } from './levels';
+import { HAMLETS, HIGH_TARN } from './living/config';
 import { reservedRects } from './sites';
 import type { Box } from './types';
 import { heightAt } from './terrain';
@@ -172,9 +173,49 @@ function sitesAlong(points: readonly (readonly [number, number])[], rnd: () => n
   return out;
 }
 
+export interface SettlementOpts {
+  seed?: number;
+  maxHouses?: number;
+  maxPlacements?: number;
+  /** Chebyshev distance max(|x|, |z|) a house centre must be beyond (default: the CITY_HALF + CITY_GROW rule only). */
+  minEdge?: number;
+  /** A house centre must lie within this Chebyshev distance (default MAP_EDGE). */
+  maxEdge?: number;
+  /** Only these regions get houses (default: all). */
+  regions?: readonly RegionId[];
+  /** Per-region house prefab ids used instead of the theme's `houses` (a region with an override counts as having houses). */
+  housesFor?: Readonly<Partial<Record<RegionId, readonly string[]>>>;
+  /** Circles houses keep out of (centre + radius, metres). */
+  keepOut?: readonly { x: number; z: number; r: number }[];
+}
+
+/** The outer bands (Trellisdown, Snowcap Rise, the Saltbucket hinterland): roadside houses beyond 900 m. */
+export const BAND_SETTLEMENTS: SettlementOpts = {
+  seed: 9311,
+  maxHouses: 70,
+  maxPlacements: 1400,
+  minEdge: 905,
+  maxEdge: 1780,
+  regions: ['west-estates', 'north-highlands', 'south-shore'],
+  housesFor: {
+    'west-estates': ['gnome-cottage', 'thatched-cottage'],
+    'north-highlands': ['snow-cottage', 'log-cabin'],
+    'south-shore': ['gnome-cottage', 'stilt-cottage'],
+  },
+  keepOut: [...HAMLETS, HIGH_TARN].map((p) => ({ x: p.x, z: p.z, r: p.r + 30 })),
+};
+
 /** The settlements: pure and deterministic. `existing` are colliders already in the world (keep clear of them). */
-export function planSettlements(existing: readonly Box[]): SettlementPlan {
-  const rnd = mulberry32(7331);
+export function planSettlements(existing: readonly Box[], opts: SettlementOpts = {}): SettlementPlan {
+  const rnd = mulberry32(opts.seed ?? 7331);
+  const maxHouses = opts.maxHouses ?? MAX_HOUSES;
+  const maxPlacements = opts.maxPlacements ?? MAX_PLACEMENTS;
+  const maxEdge = opts.maxEdge ?? MAP_EDGE;
+  /** The house ids a region offers under these options (the theme's, or the override). */
+  const housesOf = (region: RegionId, themed: readonly string[]): readonly string[] => {
+    if (opts.regions && !opts.regions.includes(region)) return [];
+    return opts.housesFor?.[region] ?? themed;
+  };
   const placements: SettlementPlacement[] = [];
   const boxes: Box[] = [];
   const houses: { x: number; z: number; region: string }[] = [];
@@ -236,13 +277,17 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
     const H: Pt = { x: R.x + d.x * s + n.x * LOT_DEPTH, z: R.z + d.z * s + n.z * LOT_DEPTH };
     const at = (u: number, v: number): Pt => ({ x: H.x + d.x * u + t.x * v, z: H.z + d.z * u + t.z * v });
 
-    if (Math.abs(H.x) > MAP_EDGE || Math.abs(H.z) > MAP_EDGE) return false;
-    if (Math.max(Math.abs(H.x), Math.abs(H.z)) <= CITY_HALF + CITY_GROW) return false;
+    if (Math.abs(H.x) > maxEdge || Math.abs(H.z) > maxEdge) return false;
+    const edge = Math.max(Math.abs(H.x), Math.abs(H.z));
+    if (edge <= CITY_HALF + CITY_GROW) return false;
+    if (opts.minEdge !== undefined && edge <= opts.minEdge) return false;
     if (nearSpawn(H)) return false;
     const theme = themeAt(H.x, H.z, rnd());
-    if (theme.houses.length === 0) return false;
+    const houseIds = housesOf(regionAt(H.x, H.z), theme.houses);
+    if (houseIds.length === 0) return false;
+    if (opts.keepOut?.some((k) => Math.hypot(H.x - k.x, H.z - k.z) < k.r)) return false;
 
-    const houseId = pick(theme.houses);
+    const houseId = pick(houseIds);
     const scale = scaleOf(houseId) * (0.9 + 0.25 * rnd());
     const tint = pick(theme.palette.walls);
     const trim = pick(theme.palette.roofs);
@@ -342,11 +387,11 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
     }
 
     // Budget: a lot that would overflow the placement budget ends the planning.
-    if (placements.length + pl.length > MAX_PLACEMENTS) { stop = true; return false; }
+    if (placements.length + pl.length > maxPlacements) { stop = true; return false; }
     for (const p of pl) placements.push(p);
     for (const b of lotBoxes) { boxes.push(b); file(b); }
     houses.push({ x: H.x, z: H.z, region: regionAt(H.x, H.z) });
-    if (houses.length >= MAX_HOUSES) stop = true;
+    if (houses.length >= maxHouses) stop = true;
     return true;
   };
 
@@ -373,7 +418,8 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
     for (const site of sitesAlong(h.points, rnd)) {
       if (stop) break;
       if (Math.max(Math.abs(site.x), Math.abs(site.z)) <= CITY_HALF + CITY_GROW) continue;
-      if (themeAt(site.x, site.z).houses.length === 0) continue;
+      if (opts.minEdge !== undefined && Math.max(Math.abs(site.x), Math.abs(site.z)) <= opts.minEdge - LOT_DEPTH) continue;
+      if (housesOf(regionAt(site.x, site.z), themeAt(site.x, site.z).houses).length === 0) continue;
       cluster(h, site);
     }
     if (stop) break;
@@ -382,7 +428,7 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
   // Every region with houses in its theme gets a hamlet: a region the regular spacing missed (its stretch of road is
   // short, like Tallgrass Commons' end of the commons spur) is tried every 30 m along its own roads.
   for (const region of REGION_IDS) {
-    if (stop || REGION_THEMES[region].houses.length === 0) continue;
+    if (stop || housesOf(region, REGION_THEMES[region].houses).length === 0) continue;
     for (const h of HIGHWAYS as readonly Highway[]) {
       for (let k = 0; k + 1 < h.points.length; k++) {
         const [ax, az] = h.points[k], [bx, bz] = h.points[k + 1];
@@ -391,6 +437,7 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
           if (stop || houses.filter((x) => x.region === region).length >= CLUSTER_MIN) break;
           const x = ax + ((bx - ax) * t) / L, z = az + ((bz - az) * t) / L;
           if (regionAt(x, z) !== region || Math.max(Math.abs(x), Math.abs(z)) <= CITY_HALF + CITY_GROW) continue;
+          if (opts.minEdge !== undefined && Math.max(Math.abs(x), Math.abs(z)) <= opts.minEdge - LOT_DEPTH) continue;
           cluster(h, { x, z, dx: (bx - ax) / L, dz: (bz - az) / L });
         }
       }
@@ -413,4 +460,14 @@ export function buildSettlements(scene: THREE.Scene, boxes: Box[]): void {
   // Per cell, culled as buildings (cull.ts).
   scene.add(buildStaticCells(batch, { lights: false, name: 'settlements', cls: 'building' }));
   for (const b of plan.boxes) boxes.push(b);
+
+  // Second pass: roadside houses in the outer bands.
+  const bands = planSettlements([...boxes, ...plan.boxes, ...stageKeepOut(), ...stageSetBoxes()], BAND_SETTLEMENTS);
+  const bandBatch: StaticPrefabPlacement[] = bands.placements.map((p) => ({
+    ...p,
+    tint: p.tint as Swatch | number | undefined,
+    trim: p.trim as Swatch | number | undefined,
+  }));
+  scene.add(buildStaticCells(bandBatch, { lights: false, name: 'settlements-bands', cls: 'building' }));
+  for (const b of bands.boxes) boxes.push(b);
 }

@@ -37,6 +37,8 @@ import { buildPardonlinTown } from './pardonlin/town';
 import { buildCoast } from './coast';
 import { buildRootwell } from './campus';
 import { buildUnmownGate } from './unmownGate';
+import { buildLivingWorld } from './living/build';
+import { livingParked } from './living/parked';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -1106,6 +1108,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildCoast(scene, boxes);
   // ---- E13: Rootwell (campus/): the university, the Anthill Observatory, Rootwell Field, Pinwheel Ridge ------------------
   buildRootwell(scene, boxes);
+  // ---- E31: the living world (living/build.ts): the Unmown preserve, the band hamlets, the High Tarn, roadside life ----
+  buildLivingWorld(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {
@@ -1166,6 +1170,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       if (validSpot(spot, axis)) { parked.push(spot); break; }
     }
   }
+  // E31: parked vehicles in the outer bands and the Unmown (living/parked.ts).
+  for (const p of livingParked(boxes)) parked.push(p);
 
   // ---- Road graph output and the World ------------------------------------------------------------------------------
   const world: World = {

@@ -102,6 +102,9 @@ const AG_VY: usize          = 0x12D0000; // 262144 * f32 (1 MB)
 
 const FRAME_RGBA: usize     = 0x13D0000; // 1048576 * u32 (4 MB -> 0x17D0000)
 const ROAD_COND: usize      = 0x17D0000; // 1048576 * u8 (1 MB -> 0x18D0000)
+const WATER_DEPTH: usize    = 0x18D0000; // 1048576 * u8 (1 MB -> 0x19D0000)
+const WATER_SCRATCH: usize  = 0x19D0000; // 1048576 * u8 (1 MB -> 0x1AD0000)
+const FIRE_HEAT: usize      = 0x1AD0000; // 1048576 * u8 (1 MB -> 0x1BD0000 < 480 pages)
 
 // ---- Tile types ----
 const TILE_WATER: u8      = 0;
@@ -186,6 +189,8 @@ const CFG_INIT_ANIMALS: i32      = 14;
 const CFG_CITY_DENSITY: i32      = 15;
 const CFG_ROAD_DECAY: i32        = 16;
 const CFG_ROAD_COST: i32         = 17;
+const CFG_WATER_FLOW: i32        = 18;
+const CFG_DISASTER_RATE: i32     = 19;
 
 // Stats indices (i32[32])
 const ST_TICK: i32           = 0;
@@ -217,6 +222,9 @@ const ST_REPUBLICS: i32      = 25;
 const ST_ROAD_TILES: i32     = 26;
 const ST_ROADS_BUILT: i32    = 27;
 const ST_TERRITORY_TILES: i32 = 28;
+const ST_FARMS_BUILT: i32    = 29;
+const ST_TERRAFORMS: i32     = 30;
+const ST_DISASTERS: i32      = 31;
 
 // Event types
 const EVT_FOUNDED: i32         = 1;
@@ -228,6 +236,8 @@ const EVT_GROUP_FORMED: i32    = 6;
 const EVT_ROAD_BUILT: i32      = 7;
 const EVT_REPUBLIC_FORMED: i32 = 8;
 const EVT_REPUBLIC_JOINED: i32 = 9;
+const EVT_DISASTER: i32        = 10;
+const EVT_TERRAFORM: i32       = 11;
 
 // ---- Pointer getters ----
 export function getCfgPtr(): usize { return CFG_PTR; }
@@ -242,6 +252,8 @@ export function getFactionClaimPtr(): usize { return FACTION_CLAIM; }
 export function getScentHeatPtr(): usize { return SCENT_HEAT; }
 export function getFrameRgbaPtr(): usize { return FRAME_RGBA; }
 export function getRoadCondPtr(): usize { return ROAD_COND; }
+export function getWaterDepthPtr(): usize { return WATER_DEPTH; }
+export function getFireHeatPtr(): usize { return FIRE_HEAT; }
 
 export function getRepActivePtr(): usize { return REP_ACTIVE; }
 export function getRepCapitalPtr(): usize { return REP_CAPITAL; }
@@ -631,6 +643,9 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
   memory.fill(FAC_REPUBLIC, 255, MAX_FACTIONS);
   memory.fill(FACTION_CLAIM, 0, <usize>gridN);
   memory.fill(ROAD_COND, 0, <usize>gridN);
+  memory.fill(WATER_DEPTH, 0, <usize>gridN);
+  memory.fill(WATER_SCRATCH, 0, <usize>gridN);
+  memory.fill(FIRE_HEAT, 0, <usize>gridN);
   memory.fill(SCENT_HEAT, 0, <usize>gridN);
   memory.fill(SCENT_SCRATCH, 0, <usize>gridN);
   memory.fill(AG_KIND, 0, MAX_AGENTS);
@@ -774,6 +789,9 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
   // 4. Seed initial Food, Water, and Gear loot
   for (let i = 0; i < gridN; i++) {
     const t = load<u8>(TILE_TYPE + <usize>i);
+    if (t == TILE_WATER) store<u8>(WATER_DEPTH + <usize>i, 85);
+    else if (t == TILE_SWAMP) store<u8>(WATER_DEPTH + <usize>i, 14);
+    else if (t == TILE_FARM) store<u8>(ROAD_COND + <usize>i, 160);
     let f: u8 = 0;
     let w: u8 = 0;
     let g: u8 = 0;
@@ -1723,12 +1741,11 @@ function stepAnimal(i: i32, tick: i32): void {
 
 function updateRoads(tick: i32): void {
   const decayAmt = <i32>Mathf.max(0.0, cfg(CFG_ROAD_DECAY) * 3.0);
-  if (decayAmt <= 0 && (tick & 31) != 0) return;
-
   const stride = 16;
   const phase = tick & 15;
   for (let i = phase; i < gridN; i += stride) {
-    if (load<u8>(TILE_TYPE + <usize>i) != TILE_ROAD) continue;
+    const t = load<u8>(TILE_TYPE + <usize>i);
+    if (t != TILE_ROAD && t != TILE_FARM && t != TILE_WALL) continue;
     const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);
     let cond = <i32>load<u8>(ROAD_COND + <usize>i);
     if (claim > 0 && claim <= MAX_FACTIONS) {
@@ -1738,7 +1755,7 @@ function updateRoads(tick: i32): void {
           cond = clampI(cond + 6, 0, 255);
           store<u8>(ROAD_COND + <usize>i, <u8>cond);
           const mp = FAC_MATS + (<usize>f << 2);
-          store<f32>(mp, Mathf.max(0.0, load<f32>(mp) - 0.05));
+          store<f32>(mp, Mathf.max(0.0, load<f32>(mp) - 0.04));
         }
         continue;
       }
@@ -1747,11 +1764,162 @@ function updateRoads(tick: i32): void {
       cond -= decayAmt;
       if (cond <= 0) {
         store<u8>(ROAD_COND + <usize>i, 0);
-        // Nature reclaims unmaintained road
-        store<u8>(TILE_TYPE + <usize>i, (i & 3) == 0 ? TILE_FOREST : TILE_GRASS);
+        // Unmaintained roads, farms, and walls develop into new wild land
+        const wd = load<u8>(WATER_DEPTH + <usize>i);
+        if (wd >= 10) store<u8>(TILE_TYPE + <usize>i, TILE_SWAMP);
+        else store<u8>(TILE_TYPE + <usize>i, (i & 3) == 0 ? TILE_FOREST : TILE_GRASS);
       } else {
         store<u8>(ROAD_COND + <usize>i, <u8>cond);
       }
+    }
+  }
+}
+
+function stepWater(tick: i32): void {
+  const flowRate = cfg(CFG_WATER_FLOW);
+  if (flowRate <= 0.01 || (tick & 3) != 0) return;
+
+  memory.copy(WATER_SCRATCH, WATER_DEPTH, <usize>gridN);
+  const stride = 4;
+  const phaseY = (tick >> 2) & 3;
+  for (let y = 1 + phaseY; y < gridH - 1; y += stride) {
+    const row = y * gridW;
+    for (let x = 1; x < gridW - 1; x++) {
+      const idx = row + x;
+      const wd = <i32>load<u8>(WATER_DEPTH + <usize>idx);
+      if (wd <= 2) continue;
+
+      const hSelf = <i32>load<u8>(ELEVATION + <usize>idx) + wd;
+      let bestN = -1;
+      let bestH = hSelf - 2;
+
+      const n0 = idx - gridW;
+      const n1 = idx + gridW;
+      const n2 = idx - 1;
+      const n3 = idx + 1;
+      const h0 = <i32>load<u8>(ELEVATION + <usize>n0) + <i32>load<u8>(WATER_DEPTH + <usize>n0);
+      const h1 = <i32>load<u8>(ELEVATION + <usize>n1) + <i32>load<u8>(WATER_DEPTH + <usize>n1);
+      const h2 = <i32>load<u8>(ELEVATION + <usize>n2) + <i32>load<u8>(WATER_DEPTH + <usize>n2);
+      const h3 = <i32>load<u8>(ELEVATION + <usize>n3) + <i32>load<u8>(WATER_DEPTH + <usize>n3);
+
+      if (h0 < bestH) { bestH = h0; bestN = n0; }
+      if (h1 < bestH) { bestH = h1; bestN = n1; }
+      if (h2 < bestH) { bestH = h2; bestN = n2; }
+      if (h3 < bestH) { bestH = h3; bestN = n3; }
+
+      if (bestN >= 0) {
+        let move = clampI(<i32>(<f32>(hSelf - bestH) * 0.25 * flowRate), 1, wd >> 1);
+        if (move > 0) {
+          const curSrc = <i32>load<u8>(WATER_SCRATCH + <usize>idx);
+          const curDst = <i32>load<u8>(WATER_SCRATCH + <usize>bestN);
+          store<u8>(WATER_SCRATCH + <usize>idx, <u8>clampI(curSrc - move, 0, 255));
+          store<u8>(WATER_SCRATCH + <usize>bestN, <u8>clampI(curDst + move, 0, 255));
+        }
+      }
+    }
+  }
+  memory.copy(WATER_DEPTH, WATER_SCRATCH, <usize>gridN);
+
+  // Flood / drain tile transitions on strided slice
+  const tPhase = (tick >> 2) & 7;
+  for (let i = tPhase; i < gridN; i += 8) {
+    const wd = <i32>load<u8>(WATER_DEPTH + <usize>i);
+    const t = load<u8>(TILE_TYPE + <usize>i);
+    if (wd >= 24 && t != TILE_WATER && t != TILE_MOUNTAIN) {
+      store<u8>(TILE_TYPE + <usize>i, TILE_WATER);
+    } else if (wd >= 10 && wd < 24 && (t == TILE_GRASS || t == TILE_BEACH || t == TILE_FARM)) {
+      store<u8>(TILE_TYPE + <usize>i, TILE_SWAMP);
+    } else if (wd < 4 && (t == TILE_WATER || t == TILE_SWAMP)) {
+      // Drained water/swamp becomes new land!
+      store<u8>(TILE_TYPE + <usize>i, t == TILE_WATER ? TILE_BEACH : TILE_GRASS);
+    }
+  }
+}
+
+function stepFire(tick: i32): void {
+  if ((tick & 3) != 0) return;
+  const phase = (tick >> 2) & 3;
+  for (let y = 1 + phase; y < gridH - 1; y += 4) {
+    const row = y * gridW;
+    for (let x = 1; x < gridW - 1; x++) {
+      const idx = row + x;
+      let fh = <i32>load<u8>(FIRE_HEAT + <usize>idx);
+      if (fh <= 0) continue;
+
+      if (load<u8>(WATER_DEPTH + <usize>idx) > 4 || load<u8>(TILE_TYPE + <usize>idx) == TILE_WATER) {
+        store<u8>(FIRE_HEAT + <usize>idx, 0);
+        continue;
+      }
+
+      const t = load<u8>(TILE_TYPE + <usize>idx);
+      if (t == TILE_FOREST || t == TILE_FARM) {
+        if (fh > 100 && (randU32() & 7) == 0) store<u8>(TILE_TYPE + <usize>idx, TILE_GRASS);
+      }
+
+      // Spread to flammable neighbors
+      if (fh > 35 && (randU32() & 3) == 0) {
+        const dir = randInt(4);
+        const nIdx = idx + (dir == 0 ? 1 : (dir == 1 ? -1 : (dir == 2 ? gridW : -gridW)));
+        const nt = load<u8>(TILE_TYPE + <usize>nIdx);
+        if ((nt == TILE_FOREST || nt == TILE_GRASS || nt == TILE_FARM || nt == TILE_TOWN) && load<u8>(WATER_DEPTH + <usize>nIdx) <= 4) {
+          const curN = <i32>load<u8>(FIRE_HEAT + <usize>nIdx);
+          if (curN < 140) store<u8>(FIRE_HEAT + <usize>nIdx, <u8>(curN + 60));
+        }
+      }
+
+      fh -= 6;
+      store<u8>(FIRE_HEAT + <usize>idx, <u8>(fh > 0 ? fh : 0));
+    }
+  }
+}
+
+function stepTerraformingAndFarms(f: i32): void {
+  const u = <usize>f;
+  if (load<u8>(FAC_LEVEL + u) < 2) return;
+  const matsPtr = FAC_MATS + (u << 2);
+  let mats = load<f32>(matsPtr);
+  if (mats < 14.0) return;
+
+  const fx = <i32>load<u16>(FAC_X + (u << 1));
+  const fy = <i32>load<u16>(FAC_Y + (u << 1));
+  const rad = 8 + <i32>load<u8>(FAC_LEVEL + u) * 3;
+  const tx = clampI(fx + randInt(rad * 2 + 1) - rad, 2, gridW - 3);
+  const ty = clampI(fy + randInt(rad * 2 + 1) - rad, 2, gridH - 3);
+  const idx = ty * gridW + tx;
+  const claim = <i32>load<u8>(FACTION_CLAIM + <usize>idx);
+  if (claim != f + 1) return;
+
+  const t = load<u8>(TILE_TYPE + <usize>idx);
+  const wd = <i32>load<u8>(WATER_DEPTH + <usize>idx);
+
+  if (t == TILE_GRASS && (randU32() & 1) == 0) {
+    // Claim and cultivate farmland
+    store<u8>(TILE_TYPE + <usize>idx, TILE_FARM);
+    store<u8>(ROAD_COND + <usize>idx, 180);
+    store<u8>(LOOT_FOOD + <usize>idx, <u8>clampI(<i32>load<u8>(LOOT_FOOD + <usize>idx) + 25, 0, 255));
+    store<f32>(matsPtr, mats - 4.0);
+    addStat(ST_FARMS_BUILT, 1);
+  } else if ((t == TILE_SWAMP || (t == TILE_WATER && wd < 45)) && mats >= 18.0) {
+    // Polder / Levee: raise land & push water out
+    const el = <i32>load<u8>(ELEVATION + <usize>idx);
+    store<u8>(ELEVATION + <usize>idx, <u8>clampI(el + 18, 0, 255));
+    store<u8>(WATER_DEPTH + <usize>idx, 0);
+    store<u8>(TILE_TYPE + <usize>idx, TILE_GRASS);
+    store<f32>(matsPtr, mats - 10.0);
+    addStat(ST_TERRAFORMS, 1);
+    pushEvent(EVT_TERRAFORM, f, (tx << 10) | ty);
+  } else if (t == TILE_GRASS && mats >= 18.0) {
+    // Check if adjacent to water -> dig irrigation canal
+    const nearW =
+      tileAt(tx + 1, ty) == TILE_WATER || tileAt(tx - 1, ty) == TILE_WATER ||
+      tileAt(tx, ty + 1) == TILE_WATER || tileAt(tx, ty - 1) == TILE_WATER;
+    if (nearW) {
+      const el = <i32>load<u8>(ELEVATION + <usize>idx);
+      store<u8>(ELEVATION + <usize>idx, <u8>clampI(el - 16, 0, 255));
+      store<u8>(WATER_DEPTH + <usize>idx, 28);
+      store<u8>(TILE_TYPE + <usize>idx, TILE_WATER);
+      store<f32>(matsPtr, mats - 10.0);
+      addStat(ST_TERRAFORMS, 1);
     }
   }
 }
@@ -2039,6 +2207,7 @@ function stepSocieties(tick: i32): void {
     }
 
     stepRoadConstruction(f);
+    stepTerraformingAndFarms(f);
   }
   stepTerritory(tick);
   stepDiplomacyAndRepublics(tick);
@@ -2126,6 +2295,21 @@ export function stepTicks(count: i32): void {
     rebuildSpatialHash();
     updateScentAndLoot(tick);
     updateRoads(tick);
+    stepWater(tick);
+    stepFire(tick);
+
+    // Organic natural disasters
+    const dRate = cfg(CFG_DISASTER_RATE);
+    if (dRate > 0.01 && (tick & 63) == 0 && randF() < dRate * 0.12) {
+      const dx = 16 + randInt(gridW - 32);
+      const dy = 16 + randInt(gridH - 32);
+      const kind = randInt(5);
+      if (kind == 0) disasterWildfire(dx, dy, 12);
+      else if (kind == 1) disasterFlood(dx, dy, 14);
+      else if (kind == 2) disasterQuake(dx, dy, 14);
+      else if (kind == 3) disasterPlague(dx, dy, 16);
+      else disasterDrought(dx, dy, 18);
+    }
 
     const migRate = cfg(CFG_ZOMBIE_MIGRATION);
     if (migRate > 0.01 && (tick & 15) == 0) {
@@ -2201,6 +2385,19 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
         const b = clampI(80 + (el >> 2), 40, 160);
         col = contour ? 0xFF20252A : (0xFF000000 | (<u32>b << 16) | (<u32>g << 8) | <u32>r);
       }
+    } else if (overlayMode == 6) {
+      // Water & Fire hydrological overlay
+      const wd = <u32>load<u8>(WATER_DEPTH + <usize>i);
+      const fh = <u32>load<u8>(FIRE_HEAT + <usize>i);
+      if (fh > 0) {
+        col = 0xFF000000 | (clampI(<i32>fh, 60, 255) << 8) | 0xFF;
+      } else if (wd > 0) {
+        const b = clampI(<i32>(90 + wd), 90, 255);
+        const g = clampI(<i32>(50 + (wd >> 1)), 40, 180);
+        col = 0xFF000000 | (<u32>b << 16) | (<u32>g << 8) | 0x1E;
+      } else {
+        col = blendABGR(col, 0xFF14181E, 90);
+      }
     } else if (overlayMode == 5) {
       // Nations & Republics overlay with crisp borders
       const claim = <i32>load<u8>(FACTION_CLAIM + <usize>i);
@@ -2250,6 +2447,13 @@ export function renderFrame(overlayMode: i32, drawAgents: i32): void {
       if (claim > 0 && claim <= MAX_FACTIONS) {
         col = blendABGR(col, load<u32>(FAC_COLOR + (<usize>(claim - 1) << 2)), 42);
       }
+    }
+
+    // Active wildfire glow in any overlay
+    const fh = <i32>load<u8>(FIRE_HEAT + <usize>i);
+    if (fh > 8) {
+      const fireCol = 0xFF000000 | (<u32>clampI(fh, 80, 220) << 8) | 0xFF;
+      col = blendABGR(col, fireCol, <u32>clampI(fh + 40, 60, 230));
     }
 
     store<u32>(FRAME_RGBA + (<usize>i << 2), col);
@@ -2372,4 +2576,93 @@ export function findNearestAgent(wx: f32, wy: f32, maxDist: f32): i32 {
     }
   }
   return best;
+}
+
+// ---- Natural Disasters (Organic + Spawnable) ----
+export function disasterWildfire(cx: i32, cy: i32, radius: i32): void {
+  const r = clampI(radius, 2, 40);
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) {
+    const y = clampI(cy + dy, 1, gridH - 2);
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const x = clampI(cx + dx, 1, gridW - 2);
+      const idx = <usize>(y * gridW + x);
+      if (load<u8>(TILE_TYPE + idx) != TILE_WATER && load<u8>(WATER_DEPTH + idx) <= 4) {
+        store<u8>(FIRE_HEAT + idx, 220);
+      }
+    }
+  }
+  addStat(ST_DISASTERS, 1);
+  pushEvent(EVT_DISASTER, 0, (cx << 10) | cy);
+}
+
+export function disasterFlood(cx: i32, cy: i32, radius: i32): void {
+  const r = clampI(radius, 2, 45);
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) {
+    const y = clampI(cy + dy, 1, gridH - 2);
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const x = clampI(cx + dx, 1, gridW - 2);
+      const idx = <usize>(y * gridW + x);
+      const nw = <i32>load<u8>(WATER_DEPTH + idx) + 48;
+      store<u8>(WATER_DEPTH + idx, <u8>(nw > 255 ? 255 : nw));
+      store<u8>(FIRE_HEAT + idx, 0);
+    }
+  }
+  addStat(ST_DISASTERS, 1);
+  pushEvent(EVT_DISASTER, 1, (cx << 10) | cy);
+}
+
+export function disasterQuake(cx: i32, cy: i32, radius: i32): void {
+  const r = clampI(radius, 2, 45);
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) {
+    const y = clampI(cy + dy, 1, gridH - 2);
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const x = clampI(cx + dx, 1, gridW - 2);
+      const idx = <usize>(y * gridW + x);
+      const shift = randInt(37) - 18;
+      store<u8>(ELEVATION + idx, <u8>clampI(<i32>load<u8>(ELEVATION + idx) + shift, 0, 255));
+      if (load<u8>(TILE_TYPE + idx) == TILE_WALL && (randU32() & 1) == 0) {
+        store<u8>(TILE_TYPE + idx, TILE_GRASS);
+      }
+    }
+  }
+  addStat(ST_DISASTERS, 1);
+  pushEvent(EVT_DISASTER, 2, (cx << 10) | cy);
+}
+
+export function disasterPlague(cx: i32, cy: i32, radius: i32): void {
+  const r2 = <f32>(radius * radius);
+  for (let i = 0; i < activeLimit; i++) {
+    if (load<u8>(AG_KIND + <usize>i) != KIND_HUMAN) continue;
+    const dx = load<f32>(AG_X + (<usize>i << 2)) - <f32>cx;
+    const dy = load<f32>(AG_Y + (<usize>i << 2)) - <f32>cy;
+    if (dx * dx + dy * dy <= r2) {
+      store<u8>(AG_INFECTION + <usize>i, <u8>clampI(<i32>load<u8>(AG_INFECTION + <usize>i) + 90, 1, 240));
+    }
+  }
+  addStat(ST_DISASTERS, 1);
+  pushEvent(EVT_DISASTER, 3, (cx << 10) | cy);
+}
+
+export function disasterDrought(cx: i32, cy: i32, radius: i32): void {
+  const r = clampI(radius, 2, 55);
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) {
+    const y = clampI(cy + dy, 1, gridH - 2);
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const x = clampI(cx + dx, 1, gridW - 2);
+      const idx = <usize>(y * gridW + x);
+      const nw = <i32>load<u8>(WATER_DEPTH + idx) - 45;
+      store<u8>(WATER_DEPTH + idx, <u8>(nw > 0 ? nw : 0));
+      store<u8>(LOOT_WATER + idx, 0);
+    }
+  }
+  addStat(ST_DISASTERS, 1);
+  pushEvent(EVT_DISASTER, 4, (cx << 10) | cy);
 }

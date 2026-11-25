@@ -21,7 +21,9 @@ npm test -w games/dead-grid           # Run Vitest simulation tests
 
 ## Features
 
-- **256k Agent WASM Kernel** (`assembly/sim.ts`): Zero-heap-allocation fixed linear memory (`27 MB` / `432` pages) supporting `512×512`, `768×768`, and `1024×1024` grids and `262,144` SoA agents.
+- **256k Agent WASM Kernel** (`assembly/sim.ts`): Zero-heap-allocation fixed linear memory (`30 MB` / `480` pages) supporting `512×512`, `768×768`, and `1024×1024` grids and `262,144` SoA agents.
+- **2D Shallow-Water, Terraforming & Farmland**: Water flows downhill based on `ELEVATION + WATER_DEPTH`, floods or drains into new land, and societies cultivate farmland, dig irrigation canals, or build polders/levees (while unmaintained farms/walls/roads revert to wild nature).
+- **Natural Disasters**: Organic and spawnable `Wildfire`, `Flash Flood`, `Earthquake`, `Plague`, and `Drought` brushes, plus a `Water` hydrological overlay.
 - **Nation-States, Republics & Road Infrastructure**: Societies organically expand territory borders, federate with friendly neighbors into **Republics** (pooling treasury aid and sharing borders), maintain claimed roads, invest late-game materials into new paved highways, and watch unmaintained roads decay back to nature.
 - **Topography & Water Styles**: Multi-octave fBm + ridged elevation with 4 water generators (`Coastal Mainland`, `River Valleys`, `Archipelago`, `Arid Basin`) and a `Topography` contour overlay.
 - **3 Species & Social Tiers**: Humans (solo, small roving groups, or up to 32 fortified societies), Zombies (Walkers, Runners, Pack Alphas forming hordes), and Wild Animals (Deer, Wolves, Boars).

@@ -46,6 +46,9 @@ export interface HistorySample {
   roadTiles: number;
   roadsBuilt: number;
   territoryTiles: number;
+  farmsBuilt: number;
+  terraforms: number;
+  disasters: number;
 }
 
 export interface HudCallbacks {
@@ -380,6 +383,7 @@ export class Hud {
       [3, 'Noise'],
       [4, 'Topography'],
       [5, 'Nations'],
+      [6, 'Water'],
     ];
     for (const [mode, label] of overlays) {
       const b = document.createElement('button');
@@ -411,6 +415,11 @@ export class Hud {
       ['animals', '+Animals'],
       ['airdrop', 'Airdrop'],
       ['clear', 'Clear'],
+      ['wildfire', '🔥 Fire'],
+      ['flood', '🌊 Flood'],
+      ['quake', '🌋 Quake'],
+      ['plague', '☣ Plague'],
+      ['drought', '☀ Drought'],
     ];
     for (const [tool, label] of brushes) {
       const b = document.createElement('button');
@@ -455,6 +464,8 @@ export class Hud {
     this.addSlider(d, 'cooperationBias', 'PD Coop Bias', 0, 1.0, 0.05, (v) => `${Math.round(v * 100)}%`);
     this.addSlider(d, 'roadDecayRate', 'Road Decay', 0, 1.5, 0.05, (v) => `${v.toFixed(2)}x`);
     this.addSlider(d, 'roadBuildCost', 'Road Cost', 0.25, 2.5, 0.05, (v) => `${v.toFixed(2)}x`);
+    this.addSlider(d, 'waterFlowRate', 'Water Flow', 0, 2.0, 0.05, (v) => `${v.toFixed(2)}x`);
+    this.addSlider(d, 'disasterRate', 'Disaster Rate', 0, 2.0, 0.05, (v) => `${v.toFixed(2)}x`);
     this.addSlider(d, 'zombieMigration', 'Edge Migration', 0, 1.5, 0.1, (v) => `${v.toFixed(1)}x`);
 
     // World Generator
@@ -780,7 +791,7 @@ export class Hud {
         : '';
       lines.push(
         `<div class="dg-ins-tile">Tile (${tile.x}, ${tile.y}): <b>${tile.tileName}</b> · Elev <b>${tile.elevation}</b>${condLabel}</div>`,
-        `<div>Food: <b>${tile.food}</b> · Water: <b>${tile.water}</b> · Gear: <b>${tile.gear}</b> · Noise: <b>${tile.scent}</b></div>`,
+        `<div>Water: <b>${tile.waterDepth}</b> · Fire: <b>${tile.fireHeat}</b> · Food: <b>${tile.food}</b> · Gear: <b>${tile.gear}</b> · Noise: <b>${tile.scent}</b></div>`,
       );
       if (f) {
         lines.push(
@@ -932,7 +943,7 @@ export class Hud {
     this.graphLegendEl.innerHTML = list
       .map((ser) => `<span><i style="background:${ser.color}"></i>${ser.label}: <b>${ser.pick(sample).toLocaleString()}</b></span>`)
       .join('');
-    this.graphReadoutEl.textContent = `Tick ${sample.tick} (Day ${sample.day}) · Societies: ${sample.settlements} · Republics: ${sample.republics} · Roads Built: ${sample.roadsBuilt}`;
+    this.graphReadoutEl.textContent = `Tick ${sample.tick} (Day ${sample.day}) · Societies: ${sample.settlements} · Republics: ${sample.republics} · Roads: ${sample.roadsBuilt} · Farms: ${sample.farmsBuilt} · Terraforms: ${sample.terraforms} · Disasters: ${sample.disasters}`;
   }
 
   private injectStyles(): void {

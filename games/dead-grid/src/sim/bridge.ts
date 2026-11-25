@@ -7,8 +7,19 @@ export const MAX_EVENTS = 64;
 
 export type GridSize = 512 | 768 | 1024;
 export type WaterStyle = 0 | 1 | 2 | 3; // 0=Coastal, 1=River Valleys, 2=Archipelago, 3=Arid Basin
-export type OverlayMode = 0 | 1 | 2 | 3 | 4 | 5; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography, 5=Nations
-export type BrushTool = 'inspect' | 'zombies' | 'humans' | 'animals' | 'airdrop' | 'clear';
+export type OverlayMode = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0=Standard, 1=Territory, 2=Loot, 3=Noise, 4=Topography, 5=Nations, 6=Water
+export type BrushTool =
+  | 'inspect'
+  | 'zombies'
+  | 'humans'
+  | 'animals'
+  | 'airdrop'
+  | 'clear'
+  | 'wildfire'
+  | 'flood'
+  | 'quake'
+  | 'plague'
+  | 'drought';
 
 export const WATER_STYLE_NAMES = [
   'Coastal Mainland',
@@ -105,6 +116,8 @@ export interface SimParams {
   zombieMigration: number;
   roadDecayRate: number;
   roadBuildCost: number;
+  waterFlowRate: number;
+  disasterRate: number;
   initialHumans: number;
   initialZombies: number;
   initialAnimals: number;
@@ -128,6 +141,8 @@ export const DEFAULT_PARAMS: SimParams = {
   zombieMigration: 0.2,
   roadDecayRate: 0.35,
   roadBuildCost: 1.0,
+  waterFlowRate: 0.65,
+  disasterRate: 0.25,
   initialHumans: 3000,
   initialZombies: 14000,
   initialAnimals: 2500,
@@ -266,6 +281,53 @@ export const PRESETS: PresetDef[] = [
     },
   },
   {
+    id: 'floodplain-empire',
+    label: 'Floodplain Empire',
+    description: 'River valleys with dynamic water flow, polder terraforming, and high disaster risk.',
+    params: {
+      ...DEFAULT_PARAMS,
+      gridSize: 768,
+      waterStyle: 1,
+      waterFlowRate: 1.2,
+      disasterRate: 0.6,
+      settlementGrowth: 1.3,
+      initialHumans: 5500,
+      initialZombies: 8000,
+      initialAnimals: 3000,
+    },
+  },
+  {
+    id: 'ring-of-fire',
+    label: 'Ring of Fire',
+    description: 'Frequent wildfires, quakes, and floods testing civilization resilience.',
+    params: {
+      ...DEFAULT_PARAMS,
+      waterStyle: 2,
+      disasterRate: 1.25,
+      waterFlowRate: 0.9,
+      lootRespawnRate: 1.2,
+      initialHumans: 4500,
+      initialZombies: 10000,
+      initialAnimals: 3500,
+    },
+  },
+  {
+    id: 'canal-frontier',
+    label: 'Canal Frontier',
+    description: 'Arid basin where societies irrigate deserts, claim farmland, and build highways.',
+    params: {
+      ...DEFAULT_PARAMS,
+      gridSize: 768,
+      waterStyle: 3,
+      waterFlowRate: 0.85,
+      roadBuildCost: 0.5,
+      cooperationBias: 0.8,
+      initialHumans: 6000,
+      initialZombies: 7000,
+      initialAnimals: 2500,
+    },
+  },
+  {
     id: 'blank-sandbox',
     label: 'Blank Sandbox',
     description: 'Minimal starting population—paint your own zombies, humans, and animals.',
@@ -308,6 +370,9 @@ export interface SimStats {
   roadTiles: number;
   roadsBuilt: number;
   territoryTiles: number;
+  farmsBuilt: number;
+  terraforms: number;
+  disasters: number;
 }
 
 export interface FactionInfo {
@@ -354,6 +419,8 @@ export interface TileInspection {
   tileName: string;
   elevation: number;
   roadCond: number;
+  waterDepth: number;
+  fireHeat: number;
   food: number;
   water: number;
   gear: number;
@@ -401,6 +468,8 @@ interface SimWasmExports extends WebAssembly.Exports {
   getScentHeatPtr(): number;
   getFrameRgbaPtr(): number;
   getRoadCondPtr(): number;
+  getWaterDepthPtr(): number;
+  getFireHeatPtr(): number;
 
   getRepActivePtr(): number;
   getRepCapitalPtr(): number;
@@ -452,6 +521,11 @@ interface SimWasmExports extends WebAssembly.Exports {
   brushSpawnAnimals(cx: number, cy: number, radius: number, count: number): void;
   brushAirdrop(cx: number, cy: number, radius: number): void;
   brushClear(cx: number, cy: number, radius: number): void;
+  disasterWildfire(cx: number, cy: number, radius: number): void;
+  disasterFlood(cx: number, cy: number, radius: number): void;
+  disasterQuake(cx: number, cy: number, radius: number): void;
+  disasterPlague(cx: number, cy: number, radius: number): void;
+  disasterDrought(cx: number, cy: number, radius: number): void;
   findNearestAgent(wx: number, wy: number, maxDist: number): number;
 }
 
@@ -483,6 +557,8 @@ export class DeadGridSim {
   readonly factionClaim: Uint8Array;
   readonly scentHeat: Uint8Array;
   readonly roadCond: Uint8Array;
+  readonly waterDepth: Uint8Array;
+  readonly fireHeat: Uint8Array;
   private readonly frameRgbaFull: Uint8ClampedArray;
 
   private readonly repActive: Uint8Array;
@@ -550,6 +626,8 @@ export class DeadGridSim {
     this.factionClaim = new Uint8Array(buf, ex.getFactionClaimPtr(), maxGridN);
     this.scentHeat = new Uint8Array(buf, ex.getScentHeatPtr(), maxGridN);
     this.roadCond = new Uint8Array(buf, ex.getRoadCondPtr(), maxGridN);
+    this.waterDepth = new Uint8Array(buf, ex.getWaterDepthPtr(), maxGridN);
+    this.fireHeat = new Uint8Array(buf, ex.getFireHeatPtr(), maxGridN);
     this.frameRgbaFull = new Uint8ClampedArray(buf, ex.getFrameRgbaPtr(), maxGridN * 4);
 
     this.repActive = new Uint8Array(buf, ex.getRepActivePtr(), MAX_REPUBLICS);
@@ -618,6 +696,8 @@ export class DeadGridSim {
     this.cfgView[15] = p.cityDensity;
     this.cfgView[16] = p.roadDecayRate;
     this.cfgView[17] = p.roadBuildCost;
+    this.cfgView[18] = p.waterFlowRate;
+    this.cfgView[19] = p.disasterRate;
   }
 
   reset(seed: number, params: SimParams): void {
@@ -657,6 +737,26 @@ export class DeadGridSim {
     this.ex.brushClear(cx | 0, cy | 0, radius | 0);
   }
 
+  disasterWildfire(cx: number, cy: number, radius = 14): void {
+    this.ex.disasterWildfire(cx | 0, cy | 0, radius | 0);
+  }
+
+  disasterFlood(cx: number, cy: number, radius = 14): void {
+    this.ex.disasterFlood(cx | 0, cy | 0, radius | 0);
+  }
+
+  disasterQuake(cx: number, cy: number, radius = 16): void {
+    this.ex.disasterQuake(cx | 0, cy | 0, radius | 0);
+  }
+
+  disasterPlague(cx: number, cy: number, radius = 18): void {
+    this.ex.disasterPlague(cx | 0, cy | 0, radius | 0);
+  }
+
+  disasterDrought(cx: number, cy: number, radius = 20): void {
+    this.ex.disasterDrought(cx | 0, cy | 0, radius | 0);
+  }
+
   findNearestAgent(wx: number, wy: number, maxDist = 6): number {
     return this.ex.findNearestAgent(wx, wy, maxDist);
   }
@@ -692,6 +792,9 @@ export class DeadGridSim {
       roadTiles: s[26],
       roadsBuilt: s[27],
       territoryTiles: s[28],
+      farmsBuilt: s[29],
+      terraforms: s[30],
+      disasters: s[31],
     };
   }
 
@@ -761,6 +864,12 @@ export class DeadGridSim {
       else if (type === 7) text = `Day ${Math.floor(tick / 200)}: ${name} began highway to ${settlementName(argB, this.seed)}`;
       else if (type === 8) text = `Day ${Math.floor(tick / 200)}: ${republicName(argA, this.seed)} founded!`;
       else if (type === 9) text = `Day ${Math.floor(tick / 200)}: ${settlementName(argB, this.seed)} joined ${republicName(argA, this.seed)}`;
+      else if (type === 10) {
+        const dNames = ['Wildfire', 'Flash Flood', 'Earthquake', 'Plague', 'Drought'];
+        text = `Day ${Math.floor(tick / 200)}: ${dNames[argA] ?? 'Disaster'} struck!`;
+      } else if (type === 11) {
+        text = `Day ${Math.floor(tick / 200)}: ${name} terraformed wetlands`;
+      }
       if (text) out.push({ tick, type, argA, argB, text });
     }
     this.lastEventRead = writeIdx;
@@ -780,6 +889,8 @@ export class DeadGridSim {
       tileName: TILE_NAMES[t] ?? 'Unknown',
       elevation: this.elevation[idx],
       roadCond: this.roadCond[idx],
+      waterDepth: this.waterDepth[idx],
+      fireHeat: this.fireHeat[idx],
       food: this.lootFood[idx],
       water: this.lootWater[idx],
       gear: this.lootGear[idx],

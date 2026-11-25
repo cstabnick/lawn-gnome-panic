@@ -21,8 +21,8 @@ const { error, stderr } = await ascMain(
     '--shrinkLevel', '2',
     '--converge',
     '--noAssert',
-    '--initialMemory', '432',
-    '--maximumMemory', '432',
+    '--initialMemory', '480',
+    '--maximumMemory', '480',
     '--stackSize', '32768',
   ],
   {

@@ -354,6 +354,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
         text: 'Chauffeur the VIP Zero-Turn Racer from Park & Arts to The Gnomecino without a single smudge',
         vehicleKind: 'zero-turn',
         spawnAt: [-93, -54, Math.PI / 2],
+        // The dressed car the vip scene showed (cutscene/scenes/side/bigLou.ts), so it keeps its mods after the cutscene.
+        loadout: { paint: 0xf2f2f2, finish: 'pearl', tyre: 'whitewall', lamp: 'square', beam: 'xenon' },
         dropAt: [GNOMECINO.x - 16, GNOMECINO.z],
         radius: 10,
         hint: 'The Gnomecino VIP Entrance',

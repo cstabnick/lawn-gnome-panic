@@ -10,8 +10,8 @@ installFakeDom();
 const { buildBiomes } = await import('./biomes');
 const b = buildBiomes(new THREE.Scene());
 
-// The raft's collider is 5.6 x 3.6 (see the 'driftwood-raft' setpiece); nothing else is that size on water.
-const RAFT = { w: 5.6, d: 3.6 };
+// The raft's collider is 5.2 x 3.0 (the deck; see the 'driftwood-raft' setpiece, E03 L24); nothing else is that size on water.
+const RAFT = { w: 5.2, d: 3.0 };
 
 describe('biome scenery keeps off the water courses', () => {
   it('no collider centre sits on a course, except the driftwood raft', () => {

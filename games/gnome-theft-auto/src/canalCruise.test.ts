@@ -56,7 +56,7 @@ function cruise(boxes: Box[]) {
 
 // Two props stand in the canal channel and block a 2.4 m hull (reported, owned outside this issue's files):
 //  - the south-buck-iron billboard (brands.ts BILLBOARD_SPOTS): moved from z 235 to 240 by E02, clear of the water now.
-//  - Driftwood's turf-raft (biomes.ts 'driftwood-raft', (55, 230)): a 5.6 x 3.6 collider mid-channel leaves 3.2 m each side.
+//  - Driftwood's turf-raft (biomes.ts 'driftwood-raft', (55, 227)): fixed by L24 (moved to the north bank, deck-sized collider).
 const blocker = (b: Box): boolean => b.minZ > 228 && b.maxZ < 239 && ((b.minX > 10 && b.maxX < 22) || (b.minX > 50 && b.maxX < 60));
 
 async function world(): Promise<World> {
@@ -83,8 +83,8 @@ describe('the Clog Cruiser on the canal', () => {
     }
   });
 
-  // Expected to fail until E03 (L24) narrows or moves the raft collider: then remove .fails.
-  it.fails('sails the real world with every collider', async () => {
+  // L24: the raft sits in a pocket against the north bank with a deck-sized collider, leaving ~6 m of open channel.
+  it('sails the real world with every collider', async () => {
     const restore = installFakeDom();
     try {
       const w = await world();

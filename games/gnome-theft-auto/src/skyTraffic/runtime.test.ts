@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SKY } from './config';
 import { SKY_BEHAVIOURS } from './behaviours';
-import { pickBehaviour, pickSpawn } from './runtime';
+import * as THREE from 'three';
+import type { Vehicle } from '../types';
+import { createSkyTraffic, pickBehaviour, pickSpawn } from './runtime';
 import type { SkyContext, SkyWaypoint } from './types';
 
 const square = (half: number): SkyWaypoint[] => [
@@ -100,5 +102,34 @@ describe('pickBehaviour', () => {
     const def = pickBehaviour(SKY_BEHAVIOURS, ctxAt(0, 0, 0), none, cool, 0);
     expect(def?.id).not.toBe('banner-tow');
     expect(def).not.toBeNull();
+  });
+});
+
+describe('createSkyTraffic aircraft()', () => {
+  it('lists the flying aircraft, and their positions move between frames (cutscenes step them too)', () => {
+    const vehicles: Vehicle[] = [];
+    const sky = createSkyTraffic({
+      scene: new THREE.Scene(),
+      world: { boxes: [], airfield: { x: 0, z: 0, yaw: 0, length: 400 } } as never,
+      vehicles,
+      fx: {} as never,
+      hud: {} as never,
+      economy: { earn: () => {} },
+      achievements: { unlock: () => null, increment: () => null },
+      heat: () => 0,
+      play: () => {},
+    });
+    expect(sky.aircraft()).toHaveLength(0);
+    expect(sky.spawn('banner-tow')).toBe(true);
+    const mine = vehicles[vehicles.length - 1];
+    sky.update(0.1, 0, 0, 0, null, false);
+    expect(sky.aircraft()).toContain(mine);
+    const x0 = mine.x;
+    const z0 = mine.z;
+    for (let i = 0; i < 20; i++) sky.update(0.1, 0, 0, 0, null, false);
+    expect(sky.aircraft()).toContain(mine);
+    expect(mine.x !== x0 || mine.z !== z0).toBe(true);
+    sky.clear();
+    expect(sky.aircraft()).toHaveLength(0);
   });
 });

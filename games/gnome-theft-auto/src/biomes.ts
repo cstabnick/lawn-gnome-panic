@@ -876,7 +876,9 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
       addWorld([
         boxGeo(0.08, 1.8, 1.8, drx - 0.4, 2.6 + dy, drz, 0.3),
       ], new THREE.MeshStandardMaterial({ color: 0xd9cbb0, roughness: 0.95 }));
-      addSafeBox({ minX: drx - 2.8, maxX: drx + 2.8, minZ: drz - 1.8, maxZ: drz + 1.8, h: 3.8 + dy });
+      // Collider = the deck (5.2 x 3.0), not the mast's reach. The marker sits in a pocket against the north bank, so ~6 m
+      // of the ~9 m channel stays open for boats (L24).
+      addSafeBox({ minX: drx - 2.6, maxX: drx + 2.6, minZ: drz - 1.5, maxZ: drz + 1.5, h: 3.8 + dy });
     },
 
     // 5 (knot-hole). The glowing knot-hole overlook in the perimeter fence (its crate and pail are props).

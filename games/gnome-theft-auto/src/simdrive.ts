@@ -2,7 +2,7 @@
 // the vehicle's profile and setup (handling.ts). Traffic and the flyers (Crop Duster, Whirligig) stay arcade.
 // "Driving realism" is a CHEAT in Options (options.ts): the default is the Casual sim; Arcade brings back the original flat model.
 // Online play works: remote players see the driven vehicle's broadcast pose (see main.ts).
-import { VehicleController, qRotate, qYaw, v3, type TuningValues, type VehicleInput } from '@lawn/vehicle';
+import { VehicleController, qRotate, qYaw, v3, type GroundProbe, type TuningValues, type VehicleInput } from '@lawn/vehicle';
 import { play } from './audio';
 import { angleDiff, clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
 import {
@@ -89,6 +89,25 @@ export interface SimDrive {
 export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight = 0) =>
   vehicleConfig(spec, tune, getSetup(spec.kind), rideHeight);
 
+/**
+ * VehicleController.place() finds the road by casting down from 50 m above the spot, so a car standing on the street
+ * under a skyway deck was set ON the deck (and an NPC chassis made under one climbed up to it). While placing, the cast
+ * starts at most this far above the ground we mean (placeCap), so a deck higher up is never reached.
+ */
+const PLACE_LIFT = 1.5;
+let placeCap: number | null = null;
+const GUARDED_PROBE: GroundProbe = {
+  cast(origin, dir, maxDist) {
+    const o = placeCap !== null && origin.y > placeCap ? { x: origin.x, y: placeCap, z: origin.z } : origin;
+    return terrainProbe().cast(o, dir, maxDist);
+  },
+};
+/** ctrl.place at (x, groundY, z), with the ground search kept to the level of groundY. */
+function placeOn(ctrl: VehicleController, x: number, groundY: number, z: number, yaw: number, speed: number): void {
+  placeCap = groundY + PLACE_LIFT;
+  try { ctrl.place(v3(x, groundY, z), yaw, speed); } finally { placeCap = null; }
+}
+
 export function createSimDrive(v: Vehicle): SimDrive {
   return createChassis(v, current, getSetup(v.spec.kind), v.look?.rideHeight ?? 0);
 }
@@ -98,8 +117,8 @@ export function createSimDrive(v: Vehicle): SimDrive {
  * saved setup; npcChassis.ts uses the Casual tune and the stock setup, whatever the player picked).
  */
 export function createChassis(v: Vehicle, tune: Tune, setup: TuningValues, rideHeight = 0): SimDrive {
-  const ctrl = new VehicleController(vehicleConfig(v.spec, tune, setup, rideHeight), { ground: terrainProbe() });
-  ctrl.place(v3(v.x, groundAt(v.x, v.z, v.y), v.z), v.yaw, v.speed);
+  const ctrl = new VehicleController(vehicleConfig(v.spec, tune, setup, rideHeight), { ground: GUARDED_PROBE });
+  placeOn(ctrl, v.x, groundAt(v.x, v.z, v.y), v.z, v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);
   return sd;
@@ -200,7 +219,8 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
-  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, groundAt(body.pos.x, body.pos.z, body.pos.y));
+  // The altitude is the chassis's own height, not the terrain under it: a car flying over a wall (a ramp jump) clears it (L16).
+  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, Math.max(groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.y - sd.ctrl.rideHeight));
   if (sw.hit) {
     body.pos.x = sw.x; body.pos.z = sw.z;
     const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);
@@ -229,7 +249,7 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
     const upDir = qRotate(body.quat, v3(0, 1, 0));
     const ul = Math.hypot(upDir.x, upDir.z);
     if (ul > 1e-3) for (let i = 0; i < 2; i++) knockParts(v, upDir.x / ul, upDir.z / ul, 2 * DEBRIS.knockMin);
-    sd.ctrl.place(v3(body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z), qYaw(body.quat), 0);
+    placeOn(sd.ctrl, body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z, qYaw(body.quat), 0);
     sd.tippedT = 0;
     righted = true;
   }

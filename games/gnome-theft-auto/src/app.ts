@@ -134,7 +134,10 @@ import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
-import { boxesBlocked } from './lockup/safeSpot';
+import { boxesBlocked, findSafeSpot } from './lockup/safeSpot';
+import { LOCKUP } from './lockup/config';
+import { ensureRideNear } from './quests/ensureRide';
+import { enterLabelFor } from './ui/enterLabel';
 import { buildEstates } from './lockup/estates';
 import { waterDepthAt } from './water';
 import { SPAWN as FLEET_NEAR } from './config';
@@ -566,6 +569,21 @@ const quests = createQuests({
   fx,
   economy,
   onRadioBulletin: (id) => reportNews(id),
+  // E03 L09: bring the player's own vehicle (Sling-Lift, free) or park a loaner when a quest starts on foot.
+  ensureRideNear: (x, z, q) => {
+    ensureRideNear(x, z, q, {
+      player, vehicles, lockup,
+      toast: (t) => hud.toast(t, 4500),
+      spawnLoaner(px, pz) {
+        const D = LOCKUP.delivery;
+        const s = findSafeSpot(px, pz, lockupProbe, { radius: D.clearRadius, minDist: D.minDist, maxDist: D.maxDist, maxSlope: D.maxSlope, maxWater: D.maxWater });
+        if (!s) return null;
+        const v = createVehicle(scene, 'ride-on', s.x, s.z, s.yaw);
+        vehicles.push(v);
+        return v;
+      },
+    });
+  },
   atmosphere: atmosphere ?? undefined,
   tessieNow: new URLSearchParams(location.search).get(TESSIE.devParam) === 'now',
   onSideUnlock(q, g) {
@@ -701,6 +719,12 @@ const cityDressing = stageParams.get('dressing') === '0' ? { update() {} } : ins
 // Sling-Lift drop spots: clear of buildings, and never on a sidewalk or in a driving lane (parking.ts).
 const lockupBoxesHit = boxesBlocked(world.boxes, world.half);
 const lockupBoxesBlocked = (x: number, z: number, r: number): boolean => lockupBoxesHit(x, z, r) || !circleClearOfStreets(x, z, r);
+const lockupProbe = {
+  ground: (x: number, z: number) => terrain.groundAt(x, z),
+  water: waterDepthAt,
+  slope: (x: number, z: number) => terrain.slopeAt(x, z),
+  blocked: lockupBoxesBlocked,
+};
 const lockup = createLockup({
   scene, ui, hud, economy, play, vehicles, phone,
   player: () => ({ x: player.x, y: player.y, z: player.z, vehicle: player.vehicle }),
@@ -721,12 +745,7 @@ const lockup = createLockup({
     if (Math.floor(watch.heat) >= 2) return 'Tansy will not fly the Sling-Lift into a Hat Watch chase. Lose them first.';
     return null;
   },
-  probe: {
-    ground: (x, z) => terrain.groundAt(x, z),
-    water: waterDepthAt,
-    slope: (x, z) => terrain.slopeAt(x, z),
-    blocked: lockupBoxesBlocked,
-  },
+  probe: lockupProbe,
   achievements,
 });
 
@@ -1446,6 +1465,25 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   remotes.update(dt);
 }
 
+/**
+ * Cutscene frames: the NPC aircraft (and the banners they tow) and the bird flocks keep flying under any scene, so
+ * nothing hangs frozen in the air while something else moves. A live scene already steps the sky and critters in
+ * liveWorldFrame (and advances critterTime); a plain scene steps the sky here and advances critterTime itself.
+ */
+function cutsceneSkyFrame(dt: number, live: LiveWorld | null): void {
+  if (!live) {
+    sky.update(dt, camera.position.x, camera.position.y, camera.position.z, null, false);
+    critterTime += dt;
+  }
+  for (const v of sky.aircraft()) syncVehicleMesh(v, dt);
+  birding.update({
+    dt, time: critterTime,
+    playerX: live ? live.x : player.x, playerY: live ? heightAt(live.x, live.z) : player.y, playerZ: live ? live.z : player.z,
+    onFoot: false, footSpeed: 0, vehicles, timeLabel: atmosphere?.timeLabel() ?? 'Noon', ammo: weapons.ammo,
+    lookYaw: 0, lookPitch: 0, camYaw: chase.yaw, camPitch: chase.pitch, paused: true,
+  });
+}
+
 function frame(now: number): void {
   beginFrame();
   beginVehicleFrame();
@@ -1485,6 +1523,7 @@ function frame(now: number): void {
   if (cutscene.active) {
     if (cutscene.mode === 'contract' && (rawInp.jump || rawInp.enterExit || rawInp.fire)) cutscene.skip();
     if (liveZones) liveWorldFrame(dt, liveZones);
+    cutsceneSkyFrame(dt, liveZones);
     // Online: the scene is mine alone (its actors and vehicles are never relayed). Keep the link serviced (other players'
     // mirrors, host changes) but publish nothing from my frozen world and do not lead (hub.ts `away`).
     onlineSync?.update(dt, player.vehicle ? player.vehicle.x : player.x, player.vehicle ? player.vehicle.z : player.z, true);
@@ -2074,7 +2113,13 @@ function frame(now: number): void {
   section('camera');
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : lockupPrompt ? (lockupPrompt.startsWith('Buy') ? 'Buy' : 'Open') : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
+  // Same priority as the interact key above (ui/enterLabel.ts): every prompt gets a touch button.
+  const enterLabel = enterLabelFor({
+    mounting: !!mount, inVehicle: !!v, preferredVehicleVerb: preferVehicle && near ? enterVerb(near) : null,
+    giver: giverPrompt, garage: garagePrompt, lockup: lockupPrompt, gun: gunPrompt, hunt: huntPrompt, bird: birdPrompt,
+    fish: fishPrompt, job: jobPrompt, town: townPrompt, portal: portalPrompt, interactable: interPrompt,
+    vehicleVerb: near ? enterVerb(near) : null, ride: !!rideTarget,
+  });
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);

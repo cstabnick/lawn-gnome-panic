@@ -5,6 +5,7 @@
 import { createChassis, stepChassis, type SimDrive } from './simdrive';
 import { stockSetup, tuneById } from './handling';
 import { stepVehicle } from './vehicles';
+import { pushOutOfDecks } from './highways/deck';
 import type { Vehicle, World } from './types';
 
 /** Tuning. */
@@ -65,6 +66,41 @@ export function dropNpcChassis(v: Vehicle): void {
  * (vehicles.ts stepVehicle). Use this instead of stepVehicle for every NPC-driven ground car.
  */
 export function stepNpcCar(v: Vehicle, c: NpcCommand, dt: number, world: World): void {
+  stepNpcCarFree(v, c, dt, world);
+  keepOnDeck(v);
+}
+
+/**
+ * Skyway rails for NPC cars (the player's car gets them from highways/system.ts): a car on a deck stays inside its rails
+ * instead of rolling over the edge and dropping to the street, and one beside a deck stays out of its side. A car on
+ * the street under a viaduct passes (pushOutOfDecks looks at the body height). Without this, deck traffic that drifted
+ * wide fell to the ground, where the next step put it on the street level.
+ */
+function keepOnDeck(v: Vehicle): void {
+  const sd = chassis.get(v);
+  const s = pushOutOfDecks(v.x, v.z, v.spec.radius, sd ? sd.py : v.y);
+  if (!s.hit) return;
+  if (sd) {
+    const body = sd.ctrl.body;
+    body.pos.x += s.x - v.x;
+    body.pos.z += s.z - v.z;
+    sd.lastX = s.x;
+    sd.lastZ = s.z;
+    const vn = body.vel.x * s.nx + body.vel.z * s.nz;
+    if (vn < 0) { body.vel.x -= vn * s.nx; body.vel.z -= vn * s.nz; }
+    sd.px = s.x;
+    sd.pz = s.z;
+  } else {
+    const fx = Math.sin(v.yaw);
+    const fz = Math.cos(v.yaw);
+    const vn = fx * v.speed * s.nx + fz * v.speed * s.nz;
+    if (vn < 0) v.speed = Math.max(0, v.speed * (1 - Math.min(1, -vn / Math.max(1e-3, Math.abs(v.speed)))));
+  }
+  v.x = s.x;
+  v.z = s.z;
+}
+
+function stepNpcCarFree(v: Vehicle, c: NpcCommand, dt: number, world: World): void {
   lastStepped.set(v, frame);
   const sd = chassis.get(v);
   if (!sd) { stepVehicle(v, c, dt, world); return; }

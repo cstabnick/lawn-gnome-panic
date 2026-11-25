@@ -6,8 +6,10 @@ import { VEHICLES } from '../config';
 import { planRoute } from '../errands';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Box, Npc, Vehicle } from '../types';
-import { collideVehicles, createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
+import { normalizeLoadout } from '@lawn/glaze';
+import { collideVehicles, createVehicle, removeVehicle, repairVehicle, setVehicleLook, syncVehicleMesh } from '../vehicles';
 import { stepNpcCar } from '../npcChassis';
+import { createFollowWatchdog, setFollowStats } from './followWatchdog';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
@@ -25,7 +27,7 @@ function makeCone(color = 0xffd23f): THREE.Mesh {
   return m;
 }
 
-function clearVehicleSpawn(
+export function clearVehicleSpawn(
   x: number,
   z: number,
   radius: number,
@@ -149,6 +151,9 @@ export function stealDeliverRun(
 ): Run {
   const [spawnX, spawnZ] = clearVehicleSpawn(obj.spawnAt[0], obj.spawnAt[1], VEHICLES[obj.vehicleKind].radius, deps.world);
   const target = createVehicle(deps.scene, obj.vehicleKind, spawnX, spawnZ, obj.spawnAt[2]);
+  if (obj.loadout && target.look) setVehicleLook(target, normalizeLoadout({ ...target.look, ...obj.loadout }, target.tint));
+  // The objective's vehicle is the quest's: traffic, parking and the ambient street leave it where it was set down.
+  target.questOwned = true;
   deps.vehicles?.push(target);
   const marker = makeCone(0xffd23f);
   target.object.add(marker);
@@ -234,6 +239,7 @@ export function stealDeliverRun(
     },
     cracked: () => [],
     cleanup() {
+      target.questOwned = false;
       target.object.remove(marker);
       deps.scene.remove(pickupRing);
       pickupRing.geometry.dispose();
@@ -282,14 +288,65 @@ export function chaseFollowRun(
   let wpIdx = 1;
   let completed = false;
   let warnCool = 0;
-  let stuckT = 0;
-  let lastX = leader.x;
-  let lastZ = leader.z;
   let t = 0;
+  const watchdog = createFollowWatchdog();
+  let waiting = false;
+  let waitT = 0; // continuous seconds the leader has waited for the player
+  let waitedTotal = 0;
+  let graceGiven = false; // after 20 s of waiting the leash grows by 50%
+  let arrived = false;
+  let endWait = 0;
+
+  const groundNodes = (): { x: number; z: number }[] =>
+    (deps.world.roads?.nodes ?? []).filter((n) => n.links.length > 0 && n.deck === undefined);
+  const clearLeader = (): void => {
+    const boxes = deps.world.boxes;
+    if (boxes && boxes.length > 0) {
+      for (let i = 0; i < 4; i++) {
+        const p = pushOutOfBoxes(leader.x, leader.z, 2.4, boxes, 0);
+        if (!p.hit) break;
+        leader.x = p.x;
+        leader.z = p.z;
+      }
+    }
+    leader.speed = 0;
+    syncVehicleMesh(leader, 0);
+  };
+  const faceAim = (ax: number, az: number): void => {
+    leader.yaw = Math.atan2(ax - leader.x, az - leader.z);
+  };
+  /** Put the leader on the ground road node near it that is closest to the aim point. */
+  const snapToRoad = (ax: number, az: number): void => {
+    const nodes = groundNodes();
+    const here = Math.hypot(leader.x - ax, leader.z - az);
+    let best: { x: number; z: number } | null = null;
+    let bestD = Infinity;
+    let nearest: { x: number; z: number } | null = null;
+    let nearestD = Infinity;
+    for (const n of nodes) {
+      const dl = Math.hypot(n.x - leader.x, n.z - leader.z);
+      if (dl < 3) continue;
+      if (dl < nearestD) { nearestD = dl; nearest = n; }
+      const da = Math.hypot(n.x - ax, n.z - az);
+      if (dl <= 40 && da < here && da < bestD) { bestD = da; best = n; }
+    }
+    const pick = best ?? nearest;
+    if (!pick) return;
+    leader.x = pick.x;
+    leader.z = pick.z;
+    faceAim(ax, az);
+    clearLeader();
+  };
+
+  setFollowStats(() => ({ maxStall: watchdog.maxStall(), waited: waitedTotal }));
 
   return {
-    lines: () => [obj.text, `Stay within ${obj.maxDist}m of {{${obj.leaderName}}}.`],
+    lines: () => [
+      obj.text,
+      waiting ? `{{${obj.leaderName}}} is waiting for you` : `Stay within ${obj.maxDist}m of {{${obj.leaderName}}}.`,
+    ],
     done: () => completed,
+    followStats: () => ({ maxStall: watchdog.maxStall(), waited: waitedTotal }),
     update(dt, px, pz) {
       t += dt;
       warnCool = Math.max(0, warnCool - dt);
@@ -313,21 +370,39 @@ export function chaseFollowRun(
         return;
       }
 
-      const wp = path[wpIdx];
-      if (!wp) {
-        completed = true;
-        changed();
-        return;
-      }
       const distPlayer = Math.hypot(leader.x - px, leader.z - pz);
-      if (distPlayer > obj.maxDist * 1.05) {
+      const effMax = graceGiven ? obj.maxDist * 1.5 : obj.maxDist;
+      const tooFar = distPlayer > effMax * 1.05;
+      const wasWaiting = waiting;
+      waiting = tooFar || (arrived && distPlayer > effMax);
+      if (waiting) {
+        waitT += dt;
+        waitedTotal += dt;
+        if (!graceGiven && waitT >= 20) {
+          graceGiven = true;
+          say(`${obj.leaderName} slows down so you can catch up.`);
+        }
+      } else {
+        waitT = 0;
+      }
+      if (waiting !== wasWaiting) changed();
+
+      if (arrived) {
         leader.speed *= Math.max(0, 1 - 3 * dt);
         syncVehicleMesh(leader, dt);
-        stuckT = 0;
-        if (warnCool <= 0) {
-          say(`Wait up! Catch up to ${obj.leaderName}.`);
-          warnCool = 4;
+        if (distPlayer <= effMax || (endWait >= 10 && distPlayer <= obj.maxDist * 2)) {
+          completed = true;
+          say(`Arrived with ${obj.leaderName}!`);
+          changed();
+        } else {
+          endWait += dt;
         }
+        return;
+      }
+
+      const wp = path[wpIdx];
+      if (!wp) {
+        arrived = true;
         return;
       }
       const prevWp = path[Math.max(0, wpIdx - 1)] ?? start;
@@ -339,39 +414,53 @@ export function chaseFollowRun(
       const laneOff = isFinalLeg ? 0 : 2.0;
       const aimX = wp[0] - (segDz / segLen) * laneOff;
       const aimZ = wp[1] + (segDx / segLen) * laneOff;
+
+      const action = watchdog.step(dt, {
+        leaderX: leader.x,
+        leaderZ: leader.z,
+        aimX,
+        aimZ,
+        playerDist: distPlayer,
+        maxDist: effMax,
+        waiting: tooFar,
+      });
+
+      if (tooFar) {
+        leader.speed *= Math.max(0, 1 - 3 * dt);
+        syncVehicleMesh(leader, dt);
+        if (warnCool <= 0) {
+          say(`Wait up! Catch up to ${obj.leaderName}.`);
+          warnCool = 4;
+        }
+        return;
+      }
+
+      if (action === 'nudge') {
+        leader.x -= Math.sin(leader.yaw) * 2;
+        leader.z -= Math.cos(leader.yaw) * 2;
+        faceAim(aimX, aimZ);
+        clearLeader();
+      } else if (action === 'snap-road') {
+        snapToRoad(aimX, aimZ);
+      } else if (action === 'skip-waypoint') {
+        if (isFinalLeg) {
+          leader.x = wp[0];
+          leader.z = wp[1];
+          clearLeader();
+        } else {
+          wpIdx++;
+          return;
+        }
+      }
+
       const diff = angleDiff(Math.atan2(aimX - leader.x, aimZ - leader.z), leader.yaw);
-      const pace = distPlayer > obj.maxDist * 0.65 ? obj.speed * 0.55 : obj.speed;
+      const pace = distPlayer > effMax * 0.65 ? obj.speed * 0.55 : obj.speed;
       const cornerPace = Math.abs(diff) > 0.35 ? pace * 0.6 : pace;
       steerToward(leader, aimX, aimZ, cornerPace, dt, deps);
-      if (Math.hypot(leader.x - lastX, leader.z - lastZ) < 0.5 * dt * 10) {
-        stuckT += dt;
-        if (stuckT > 2.5) {
-          stuckT = 0;
-          const dx = aimX - leader.x;
-          const dz = aimZ - leader.z;
-          const d = Math.hypot(dx, dz) || 1;
-          leader.x += (dx / d) * 3;
-          leader.z += (dz / d) * 3;
-          leader.yaw = Math.atan2(dx, dz);
-          syncVehicleMesh(leader, 0);
-        }
-      } else {
-        stuckT = 0;
-      }
-      lastX = leader.x;
-      lastZ = leader.z;
 
       if (Math.hypot(leader.x - aimX, leader.z - aimZ) < 6) {
         wpIdx++;
-        if (wpIdx >= path.length) {
-          if (distPlayer <= obj.maxDist) {
-            completed = true;
-            say(`Arrived with ${obj.leaderName}!`);
-            changed();
-          } else {
-            wpIdx = path.length - 1;
-          }
-        }
+        if (wpIdx >= path.length) arrived = true;
       }
     },
     onCracked() {},

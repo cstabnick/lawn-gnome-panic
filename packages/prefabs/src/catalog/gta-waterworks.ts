@@ -29,6 +29,28 @@ export const GTA_WATERWORKS: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'canal-road-bridge', name: 'Canal Road Bridge', category: 'prop', uses: ['place'],
+    tags: ['bridge', 'road', 'canal', 'stone', 'railing', 'deck', 'span', 'abutment', 'crossing', 'low'],
+    emoji: [],
+    footprint: { r: 6, h: 4 },
+    about: 'Gnome Theft Auto: the Canal Road Bridge. A low 12 wide, 24 long road deck (top at 3.0) on two stone abutments, with kerbs and iron railings every 3 m. Made for the shallow canal, where a tall arch would sink through the bed. Long axis along z.',
+    examine: [
+      'A squat grey bridge with iron railings, standing on two stubby stone feet either side of the canal.',
+      'Canal saying: a low bridge teaches a tall hat humility, and a tall gnome patience.',
+      'Tip: the boats get under with a hand to spare. Duck anyway, and keep your hat on your own head.',
+      'Joke: the bridge is so low that the ducks cross it on foot and file a complaint about the draught.',
+      'Someone has chalked a row of little boats on the abutment, one for every one that touched the stonework.',
+    ],
+    parts: [
+      { s: 'box', d: [12, 0.5, 24], at: [0, 2.75, 0], c: 'slate' },                                    // deck slab, top at 3.0
+      { s: 'box', d: [12, 2.5, 3], at: [0, 1.25, -10.5], c: 'stone-dark' },                             // abutment, -z
+      { s: 'box', d: [12, 2.5, 3], at: [0, 1.25, 10.5], c: 'stone-dark' },                              // abutment, +z
+      { s: 'box', d: [0.5, 0.3, 24], at: [5.5, 3.15, 0], c: 'stone', mirror: true },                  // kerb
+      ...RAIL_POSTS.map((z): Part => ({ s: 'cyl', d: [0.06, 0.06, 0.9], at: [5.85, 3.45, z], c: 'iron-dark', seg: 6, mirror: true })), // rail posts
+      { s: 'box', d: [0.1, 0.1, 24], at: [5.85, 3.85, 0], c: 'iron-dark', mirror: true },              // top rail, top at 3.9
+    ],
+  },
+  {
     id: 'arch-road-bridge', name: 'Arch Road Bridge', category: 'prop', uses: ['place'],
     tags: ['bridge', 'road', 'river', 'stone', 'arch', 'railing', 'deck', 'span', 'parapet', 'abutment', 'crossing', 'plaque'],
     emoji: [],

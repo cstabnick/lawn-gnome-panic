@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06, E29. Running: E30 (Pardonlin town), E07 (map, options, Gnomlet), E27 (bushes, water skim, flaky tests). Next: E09, then wave 4 (E10, E11, E12, E30).
+Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06, E29, E07. Running: E30 (Pardonlin town), E09 (sound, voice, direction), E27 (bushes, water skim, flaky tests). Next: wave 4 (E10, E11, E12), then wave 5 (E13, E14, E15, E24, E25, E31).
 
 ## Tracking
 
@@ -29,8 +29,8 @@ with deferred items listed).
 | E05 | Interiors and rooftops | Engine | 2 | E01 | merged | epic/E05-interiors | b7646a33 | `src/interiors/` (`defineInterior`, rooms off-map x>=5000, up to 600x600 m cells for E17), quest `interior` gate; showcase: Bodega & Sons, Mulch Club lobby, Flat 3B shell (E10 fills it), Thorne Even-Estates sales floor + lift; walkable tower roofs + Thorne Helipad, aircraft land on roofs (live copter landing not yet flown); deferred: weapons away indoors, saving 'inside', shared rooms online, roof clutter colliders |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | merged | epic/E08-economy | b5bbef96 | loans sit **beside** Kiln-Debt (R-169), not inside it (E10 must follow); `DEALER_SITES` are fallback spots, move to E01 sites; deferred: 3D showroom, per-vehicle boat/aircraft looks, glaze/Pebblewick/hunting/taxi price tables, real-phone pass | | |
 | E06 | Sky, weather and time | Engine | 3 | – | merged | epic/E06-weather | dde5c9e4 | `src/weather/` (clear/cloud/mist/rain/snow by region climate, per-tier budgets, Options row, deterministic per browser, not relayed); cutscene time-lapse (badge + sky race, never changes world time; `advanceWorldTime` for deliberate changes); staggered headlights, fewer particles, wandering flocks, intermittent planes, events 160 s / street 45-90 s; R-178; deferred: rain sound (E09), puddles/snow cover, synced clock; density not checked in a real browser |
-| E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | running | epic/E07 | | |
-| E09 | Sound, voice, animation and direction | Polish | 3 | – | planned | | | |
+| E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | merged | epic/E07-ui | see log | Gnomlet tablet replaces More menu + phone (`registerGnomletApp`, `phone.addApp` shim; Tab/View/P open it, O/Start → Options); Gnomey Bird + Flappy Gnome achievement; Options/More tap bug fixed (pointer-events under #ui); big map zoom/pan/pinch; options registry `registerOption` (E06 weather row migrated at merge); bird toggles; low quest beams + option; position save `gta-position-v1`; loading screen; phone-sized comms; smoke checks should use `gta-gnomlet`, not `gta-options`; deferred: 3D buildings on the big map; open: telescope button over big map, soft minimap on hi-DPI, no real touch device |
+| E09 | Sound, voice, animation and direction | Polish | 3 | – | running | epic/E09-sound |  |  |
 | E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | planned | | | |
 | E11 | Coast and boardwalk | Content | 4 | E01 | planned | | | |
 | E12 | Winter sports | Content | 4 | E01, E06 | planned | | | |

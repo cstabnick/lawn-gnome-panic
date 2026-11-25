@@ -161,18 +161,18 @@
     {
       "id": "dirt-track",
       "kind": "slot",
-      "x": 0,
+      "x": 50,
       "z": -650,
       "data": {
-        "hw": 150,
-        "hd": 100,
+        "hw": 200,
+        "hd": 130,
         "kind": "venue",
         "epic": "E14",
         "flat": true,
         "label": "Rutbottom Dirt Bowl",
         "anchors": {
           "gate": {
-            "dx": -150,
+            "dx": -200,
             "dz": 0
           }
         }

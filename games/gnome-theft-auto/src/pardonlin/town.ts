@@ -137,7 +137,7 @@ function paint(ctx: CanvasRenderingContext2D, s: PlanSign, ox: number, oy: numbe
  * Every sign's text on canvas atlases (64 plates each), as planes just in front of the sign faces, merged per atlas and
  * per culling cell, drawn on the decal layer and culled as details.
  */
-function buildSignText(signs: readonly PlanSign[]): THREE.Group {
+export function buildSignText(signs: readonly PlanSign[]): THREE.Group {
   const root = new THREE.Group();
   root.name = 'pardonlin-sign-text';
   root.userData.cullCells = true;

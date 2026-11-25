@@ -130,6 +130,8 @@ import { SOCIAL_ANIMS } from './anim/social';
 import { createTessieWorld } from './tessie';
 import { CAPTAIN_CLAY, CRITTER_ACHIEVEMENTS, recordHelm, type HelmStorage } from './wildAchievements';
 import { SUNDAY_DRIVER, recordOddRide } from './oddRides';
+import { euroRideAchievements, recordEuroRide } from './euroRides';
+import { buildEuroShowcase } from './eurokit/showcase';
 import { applyVariant, parkLegally, planParked } from './fleet';
 import { mulberry32 as fleetRng } from '@lawn/level';
 import { shareVehicle } from './online/shared';
@@ -1118,6 +1120,11 @@ function takeWheel(v: Vehicle): void {
   }
   if (v.spec.boat && recordHelm(v.kind, helmStorage())) void achievements.increment(CAPTAIN_CLAY);
   if (recordOddRide(v.kind, helmStorage())) void achievements.increment(SUNDAY_DRIVER);
+  if (recordEuroRide(v.kind, helmStorage())) {
+    const euro = euroRideAchievements(v.kind);
+    for (const id of euro.unlock) void achievements.unlock(id);
+    for (const id of euro.increment) void achievements.increment(id);
+  }
   fleet.onEnter(v);
   craft.onEnter(v);
   if (v === whirligig && !stats.whirligigStolen) {
@@ -2494,6 +2501,14 @@ if (mountDemo !== null) {
   } else {
     vehicles.push(createVehicle(scene, mountDemo === 'van' ? 'hoa-van' : 'ride-on', 0, 0, 0, MOWER_TINTS[1]));
   }
+}
+// ?eurokit (E29 lab, eurokit/showcase.ts): one packed European street, its furniture, a back garden and the five European
+// rides parked, built on clear ground near the start, with the player standing at the end of the street.
+if (startParams.has('eurokit')) {
+  const show = buildEuroShowcase({ scene, boxes: world.boxes, heightAt, near: { x: player.x, z: player.z } });
+  for (const p of show.parked) vehicles.push(createVehicle(scene, p.kind, p.x, p.z, p.yaw));
+  player.respawn(show.stand.x, show.stand.z, show.stand.yaw);
+  chase.yaw = show.stand.yaw;
 }
 if (startParams.has('herd')) {
   // A crowd across the road ahead of the player (the camera's heading, or the mower's with ?mount).

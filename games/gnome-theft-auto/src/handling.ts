@@ -140,6 +140,36 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
     lean: 1.1,
   },
+  // European rides. Euro-Hatch: nippy and planted city car.
+  'euro-hatch': {
+    stock: { grip: 1.1, balance: 0.05, steering: 1.25, assists: 1.1, stiffness: 1.05, comHeight: 0.95 },
+    ranges: { grip: [0.8, 1.4], balance: [-0.4, 0.5], steering: [0.9, 1.5], assists: [0.3, 1.8], stiffness: [0.8, 1.3], comHeight: [0.85, 1.3] },
+    lean: 0.7,
+  },
+  // Deux-Pots: soft, leans hugely, never quite rolls.
+  'deux-pots': {
+    stock: { grip: 0.95, balance: 0, steering: 1.0, assists: 1.1, stiffness: 0.7, comHeight: 1.15 },
+    ranges: { grip: [0.75, 1.2], balance: [-0.3, 0.4], steering: [0.7, 1.3], assists: [0.3, 1.8], stiffness: [0.6, 1.0], comHeight: [0.9, 1.4] },
+    lean: 1.8,
+  },
+  // Wespa: light and twitchy scooter.
+  wespa: {
+    stock: { grip: 0.9, balance: -0.1, steering: 1.35, assists: 0.9, stiffness: 0.9, comHeight: 1.1 },
+    ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.3], steering: [0.9, 1.5], assists: [0.2, 1.6], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
+    lean: 1.4,
+  },
+  // Baguette-Trike: tippy three-wheeler.
+  'baguette-trike': {
+    stock: { grip: 0.9, balance: 0.25, steering: 1.0, assists: 1.2, stiffness: 0.85, comHeight: 1.2 },
+    ranges: { grip: [0.7, 1.2], balance: [-0.2, 0.6], steering: [0.7, 1.3], assists: [0.5, 1.8], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
+    lean: 1.3,
+  },
+  // Crepe-Van: tall and wallowy.
+  'crepe-van': {
+    stock: { grip: 1.0, balance: 0.2, steering: 0.9, assists: 1.3, brakes: 1.1, stiffness: 0.9, comHeight: 1.15 },
+    ranges: { grip: [0.8, 1.3], balance: [-0.2, 0.6], steering: [0.7, 1.2], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
+    lean: 0.9,
+  },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
 export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;

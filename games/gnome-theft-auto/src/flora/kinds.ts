@@ -57,6 +57,8 @@ export const PLANT_KINDS: readonly PlantKind[] = [
   { id: 'reed-bed', name: 'Reeds', size: 'big', mowable: true, slow: 0.9, clip: 0x8fa457, regrow: [80, 120], sound: 'mow-chop', longGrass: true }, // 1.40
   { id: 'boxwood-ball', name: 'Boxwood', size: 'big', mowable: true, slow: 0.86, clip: 0x3f7a35, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 1.00
   { id: 'round-bush', name: 'Round bush', size: 'big', mowable: true, slow: 0.86, clip: 0x4a8a3c, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 1.23
+  // European plants (E29).
+  { id: 'euro-geranium-bed', name: 'Geraniums', size: 'small', mowable: true, slow: 0.97, clip: 0xd8342c, regrow: [70, 110], sound: 'mow-snip', longGrass: false },
   // Not mowable: trees, hedgerow walls, set-piece topiary, tall cacti. They keep their colliders.
   { id: 'hedgerow', name: 'Hedgerow', size: 'big', mowable: false, ...NEVER }, // 1.30, a wall
   { id: 'hedge-arch', name: 'Hedge arch', size: 'big', mowable: false, ...NEVER },
@@ -67,6 +69,12 @@ export const PLANT_KINDS: readonly PlantKind[] = [
   { id: 'snow-pine', name: 'Snow pine', size: 'big', mowable: false, ...NEVER },
   { id: 'palm-tree', name: 'Palm', size: 'big', mowable: false, ...NEVER },
   { id: 'giant-oak', name: 'Giant oak', size: 'big', mowable: false, ...NEVER },
+  // European plants (E29).
+  { id: 'euro-box-hedge', name: 'Box hedge', size: 'big', mowable: false, ...NEVER },
+  { id: 'euro-topiary-spiral', name: 'Spiral topiary', size: 'big', mowable: false, ...NEVER },
+  { id: 'euro-topiary-lollipop', name: 'Bay tree', size: 'big', mowable: false, ...NEVER },
+  { id: 'euro-espalier-pear', name: 'Espalier pear', size: 'big', mowable: false, ...NEVER },
+  { id: 'euro-plane-tree', name: 'Plane tree', size: 'big', mowable: false, ...NEVER },
 ];
 
 const byId = new Map<string, number>(PLANT_KINDS.map((k, i) => [k.id, i]));

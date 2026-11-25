@@ -12,6 +12,7 @@ import { createGnomeModel, type GnomeLook } from '@lawn/gnome';
 import { angleDiff } from './collide';
 import { MOWER_TINTS, PLACES, TRAFFIC, VEHICLES, biomeAt } from './config';
 import { districtAt } from './districts';
+import { EURO_RIDES, euroZoneAt } from './euroRides';
 import { errandReason, freshErrand, nextLeg, placeNodes, type Errand, type ErrandWorld } from './errands';
 import { biomeLookFor, gnomeState, randomTownLook } from './gnomes';
 import { clearHands, poseHands, settleHands } from './driverHands';
@@ -113,6 +114,8 @@ const ODD_RIDES: readonly VehicleKind[] = ['pot-rod', 'lawn-roller', 'teacup-tru
 const TOWN_HALF = 200;
 /** ?traffic=odd (demos): every new car in town is an odd ride. */
 const ODD_ONLY = typeof location !== 'undefined' && new URLSearchParams(location.search).get('traffic') === 'odd';
+/** ?traffic=euro (demos): every new car is a European ride. */
+const EURO_ONLY = typeof location !== 'undefined' && new URLSearchParams(location.search).get('traffic') === 'euro';
 
 const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
 const between = (r: readonly [number, number]): number => r[0] + Math.random() * (r[1] - r[0]);
@@ -544,6 +547,9 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
   function pickKind(x: number, z: number): VehicleKind {
     const hasBus = ghosts.some((g) => g.kind === 'snail-coach');
     if (!hasBus && Math.random() < 0.14) return 'snail-coach';
+    // European rides (euroRides.ts): mostly them inside the European zone, now and then in town; ?traffic=euro for demos.
+    if (EURO_ONLY || (euroZoneAt(x, z) && Math.random() < TRAFFIC.euroZoneChance)) return pick(EURO_RIDES);
+    if (Math.abs(x) < TOWN_HALF && Math.abs(z) < TOWN_HALF && Math.random() < TRAFFIC.euroTownChance) return pick(EURO_RIDES);
     const odd = ODD_ONLY ? 1 : TRAFFIC.oddRideChance;
     if (Math.abs(x) < TOWN_HALF && Math.abs(z) < TOWN_HALF && Math.random() < odd) return pick(ODD_RIDES);
     const dist = districtAt(x, z);

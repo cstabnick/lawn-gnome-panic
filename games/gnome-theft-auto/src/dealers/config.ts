@@ -64,6 +64,12 @@ export const DEALERS: Record<DealerId, DealerDef> = {
       { id: 'lowrider', kind: 'lowrider', price: 2000, blurb: 'Low, slow on purpose, and very shiny.' },
       { id: 'snail-coach', kind: 'snail-coach', price: 2400, blurb: 'Seats for the whole crew and a shell to hide in.' },
       { id: 'combine', kind: 'combine', price: 3500, blurb: 'The biggest thing on the lot. Parking is your problem.' },
+      // European rides (E29).
+      { id: 'wespa', kind: 'wespa', price: 700, blurb: 'Two small wheels, one loud opinion. Comes with a pillion.' },
+      { id: 'baguette-trike', kind: 'baguette-trike', price: 800, blurb: 'Three wheels and a box of bread. The bread is not included. It is.' },
+      { id: 'deux-pots', kind: 'deux-pots', price: 1200, blurb: 'Leans in every corner like it has heard a rumour. Roof rolls back.' },
+      { id: 'euro-hatch', kind: 'euro-hatch', price: 1500, blurb: 'Parks in a gap you did not know was a gap.' },
+      { id: 'crepe-van', kind: 'crepe-van', price: 2200, blurb: 'Corrugated, slow, and it smells of batter for ever.' },
     ],
   },
   boatyard: {

@@ -784,6 +784,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 4,
     reward: { slot: 'head', prefabId: 'sunday-driver-cap', label: "Sunday Driver's Cap" },
   },
+  // European rides (E29, games/gnome-theft-auto/src/euroRides.ts; rewards in packages/prefabs/src/catalog/gta-euro-gear.ts).
+  {
+    id: 'gta-grand-tour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Grand Tour',
+    description: 'Drive every European ride: the Petit Pois, Deux-Pots, Wespa, Baguette Trike and Crepe Van.', target: 5,
+    reward: { slot: 'head', prefabId: 'tour-beret', label: 'Tour Beret' },
+  },
+  { id: 'gta-baguette-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Baguette Run',
+    description: 'Drive the Baguette Trike.', reward: { slot: 'back', prefabId: 'baguette-quiver', label: 'Baguette Quiver' } },
+  { id: 'gta-petit-pois', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Small Is Beautiful',
+    description: 'Drive the Petit Pois.', reward: { slot: 'neck', prefabId: 'riviera-scarf', label: 'Riviera Scarf' } },
   { id: 'gta-fore', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Fore!',
     description: 'Drive the Putting-Green Cart.', reward: { slot: 'head', prefabId: 'country-club-visor', label: 'Country Club Visor' } },
   { id: 'gta-swamp-engine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Bog Standard',

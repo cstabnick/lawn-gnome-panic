@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06. Running: E29 (European kit), E07 (map, options, Gnomlet), E27 (bushes, water skim, flaky tests). Next: E09, then wave 4 (E10, E11, E12, E30).
+Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06, E29. Running: E30 (Pardonlin town), E07 (map, options, Gnomlet), E27 (bushes, water skim, flaky tests). Next: E09, then wave 4 (E10, E11, E12, E30).
 
 ## Tracking
 
@@ -50,8 +50,8 @@ with deferred items listed).
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | running | epic/E27-physics |  |  |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
-| E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | running | epic/E29-eurokit | | |
-| E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | planned | | | |
+| E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
+| E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | running | epic/E30-pardonlin |  |  |
 | E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | planned | | | |
 
 ## Engine work (built first, others build on it)

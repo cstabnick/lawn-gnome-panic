@@ -51,7 +51,9 @@ export type VehicleKind =
   | 'deux-pots'
   | 'wespa'
   | 'baguette-trike'
-  | 'crepe-van';
+  | 'crepe-van'
+  // Dirt country (E14): the Knobbly Dirt-Mower.
+  | 'dirt-bike';
 export type GunKind =
   | 'pistol'
   | 'smg'

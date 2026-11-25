@@ -783,6 +783,8 @@ for (const { plan, ...spot } of parkedPlans) {
   vehicles.push(pv);
 }
 for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
+// E14: two Knobbly Dirt-Mowers parked beside the Rutbottom Dirt Bowl's entrance.
+for (const bx of [1030, 1034]) vehicles.push(createVehicle(scene, 'dirt-bike', bx, -672, 0));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
 // Air and sea (craft/): the Hedge-Hopper, Sycamore Copter and Dandelion Drifter at the airfield, and the Wingwright's Slipway.

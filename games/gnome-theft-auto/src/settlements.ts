@@ -10,6 +10,7 @@ import { REGION_IDS, regionAt } from './levels';
 import { reservedRects } from './sites';
 import type { Box } from './types';
 import { heightAt } from './terrain';
+import { nearTrack } from './raceTrack/tracks';
 import { onWaterCourse } from './water';
 import { stageKeepOut } from './stageClear';
 import { stageSetBoxes } from './quests/stages';
@@ -267,6 +268,7 @@ export function planSettlements(existing: readonly Box[]): SettlementPlan {
     }
     if (!clear(hRect, COLLIDER_CLEAR)) return false;
     if (reserves.some((r) => overlaps(grow(r, RESERVE_GROW), hRect))) return false;
+    if (nearTrack(H.x, H.z, 20)) return false;
     if (highwayGap(H.x, H.z, road.id) < OTHER_ROAD_CLEAR) return false;
 
     const y = heightAt(H.x, H.z);

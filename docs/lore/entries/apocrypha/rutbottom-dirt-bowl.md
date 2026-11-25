@@ -7,7 +7,7 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158, docs/lore/rulings.md#r-186, docs/lore/rulings.md#r-187]
 related: [the-carburettors, lost-and-found-speedway, clary-mudguard, turfton]
 ---
 
@@ -24,7 +24,7 @@ The Bowl was dug out by whoever got tired of the Speedway's tarmac. It is rough 
 
 ## In the games
 
-Region tag `rutbottom`, the dirt-track site (1150, -620). Row 42 `m42-rutbottom-impound`: race for the impounded rides under Marshal Clary Mudguard, on a dirt bike (race, E14); row 64 `m64-all-hats` (By Road). Built by E01 and the area epic: planned (batch 3).
+Region tag `rutbottom`. Built (E14): the Dirt Bowl sits at (1200, -650), a banked dirt circuit with whoops and jumps, entered by the gate at (1000, -650) on the east-band-north road. Row 42 `m42-rutbottom-impound`: race for the impounded rides under Marshal Clary Mudguard, on a dirt bike (race, E14); row 64 `m64-all-hats` (By Road). Side quests "Rutbottom: Knobbly Heat" (`race-rutbottom-knobbly`, the Knobbly, R-187) and "Rutbottom Heats" (`sq-rutbottom-heats`, Teasel's rematch, R-186).
 
 ## Loose threads
 

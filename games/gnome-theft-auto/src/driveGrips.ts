@@ -79,6 +79,7 @@ const SYCAMORE_YOKE: Vec3 = [0.35, 1.0, 0.5];
 const DEUX_POTS_WHEEL: Vec3 = [0.16, 0.6, -0.02];
 const WESPA_BARS: Vec3 = [0, 0.62, 0];
 const TRIKE_BARS: Vec3 = [0, 0.66, 0.2];
+const DIRT_BARS: Vec3 = [0, 0.62, 0.05];
 
 /**
  * Every vehicle kind's control. A kind left out keeps its hands in the lap, for a reason:
@@ -185,6 +186,8 @@ export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>
     control: 'handlebar', pivot: 'steer', grips: pair(WESPA_BARS, 0.2),
     variant: { dropParts: [], wheelAt: WESPA_BARS },
   },
+  // Knobbly Dirt-Mower: the bar is drawn where the rider holds it (group steer), so no variant.
+  'dirt-bike': { control: 'handlebar', pivot: 'steer', grips: pair(DIRT_BARS, 0.2) },
   // Baguette Trike: its handlebar (group steer) comes back towards the saddle, held at both ends.
   'baguette-trike': {
     control: 'handlebar', pivot: 'steer', grips: pair(TRIKE_BARS, 0.21),

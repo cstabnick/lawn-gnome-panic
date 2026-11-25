@@ -75,10 +75,12 @@ written by its constant, `TESSIE.questId`.
 | `sq-pail-pond-lines` | Lines on Pail Pond | Thermos Theo (theo) | #39 `m39-couch-surfing` | Theo fished with the player (#38); the polar bears have been paid in sardines. | `snowcap-rise` | 6 | E12 |
 | `nc-odd-jobs` | Odd Jobs | Newcomers' Card host (R-156) | #15 `ch1-founders-boot` | Act II costs Acorns and the flat has a loan; the sim jobs earn them (as today). | `downtown` | 3 | existing |
 | `TESSIE.questId` | The Loch Moss Monster | Driftwood (loch-driftwood) | #40 `m40-the-capwood-run` | Driftwood rings from his trailer once the crew is back in the city (#39). | `loch-moss` | 6 | existing |
-| `sq-capwood-cap-count` | The Cap Count | Warden Chanterelle Stook (chanterelle) | #41 `m41-pinwheel-ridge` | Chanterelle fined the player at #40 and has a clipboard of unfined caps. | `capwood` | 6 | E12 |
-| `sq-pinwheel-linemen` | Free the Pinwheels | Ragwort Coilspring (ragwort) | #42 `m42-rutbottom-impound` | Ragwort showed the player which pinwheels to free (#41). | `pinwheel-ridge` | 6 | E14 |
+| `sq-capwood-cap-count` | The Cap Count | Warden Chanterelle Stook (chanterelle) | #41 `m41-pinwheel-ridge` | Chanterelle fined the player at #40 and has a clipboard of unfined caps. | `capwood` | 6 | E14 |
+| `sq-pinwheel-linemen` | Free the Pinwheels | Ragwort Coilspring (ragwort) | #42 `m42-rutbottom-impound` | Ragwort showed the player which pinwheels to free (#41). | `pinwheel-ridge` | 6 | E13 |
 | `race-lowrider-derby` | Fizz Cup: Low & Loud Derby | Lugnut Lulu (speedway) | #43 `m43-saltbucket-boardwalk` | The Carburettors are back on their wheels (#42). | `speedway` | 6 | existing |
 | `sq-rutbottom-heats` | Rutbottom Heats | Teasel Mudguard (teasel) | #44 `m44-the-bathtub-queen` | Teasel watched the impound race (#42) and wants a rematch on the dirt. | `rutbottom` | 6 | E14 |
+| `race-rutbottom-knobbly` | Rutbottom: Knobbly Heat | Marshal Clary Mudguard (clary) | #42 `m42-rutbottom-impound` | Clary let the player race the impound; now the Bowl is open to anyone on a Knobbly. | `rutbottom` | 6 | E14 |
+| `race-capwood-open` | The Capwood Run: Open Stage | Lugnut Lulu (lulu) | #40 `m40-the-capwood-run` | Lulu keeps the route open for anyone who wants to beat her time. | `capwood` | 6 | E14 |
 | `sq-spokewheel-gondola` | The Wobbly Gondola | Marram Teaspoon (marram) | #45 `m45-rootwell-admissions` | Marram took the player up the Spokewheel at #43. | `saltbucket-shore` | 6 | E11 |
 | `sq-boardwalk-tubing` | Tubing the Long Spoon | Driftwood (driftwood) | #45 `m45-rootwell-admissions` | Driftwood's tube hut opened at #43 and needs someone to test the course. | `saltbucket-shore` | 6 | E11 |
 | `sq-bathtub-queen-tours` | Pirate Tours, Mostly | Captain Samphire Bilge (samphire) | #46 `m46-starfall-at-the-anthill` | Bilge joined the crew (#44) and has a boat to fill. | `saltbucket-shore` | 6 | E11 |
@@ -121,8 +123,8 @@ Every new area has at least one side quest:
 | Wader's Rest (E15) | `sq-flock-errands`, `sq-flock-vigil` |
 | Hedgeworth (E15): owner, pro, groundskeeper | `sq-hedgeworth-lost-balls`, `sq-hedgeworth-pro-lesson`, `sq-hedgeworth-ninth-green`, `sq-hedgeworth-members-cup`, `sq-hedgeworth-reseed` |
 | Snowdrop Slope, sledding and polar bears (E12) | `sq-snowdrop-sled-trials`, `sq-pail-pond-lines` |
-| Capwood (E12) | `sq-capwood-cap-count` |
-| Pinwheel Ridge (E14) | `sq-pinwheel-linemen` |
+| Capwood (E14) | `sq-capwood-cap-count` |
+| Pinwheel Ridge (E13) | `sq-pinwheel-linemen` |
 | Rutbottom (E14) | `sq-rutbottom-heats` |
 | Saltbucket Boardwalk, the Spokewheel, the Bathtub Queen (E11) | `sq-boardwalk-tubing`, `sq-spokewheel-gondola`, `sq-bathtub-queen-tours` |
 | Rootwell and the Anthill (E13) | `sq-rootwell-lost-essay`, `sq-anthill-rent` |

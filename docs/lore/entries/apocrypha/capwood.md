@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-188]
 related: [capwood-run, chanterelle-stook, snowcap-rise, lugnut-lulu, the-carburettors]
 ---
 
@@ -25,7 +25,7 @@ The woodpile is the reason for the forest: the toadstools feed on it and have fo
 
 ## In the games
 
-Planned (batch 3): E01 site toadstool-forest at (250, -1150), built by the area epic. Quest row 40 (m40-the-capwood-run) runs through it; Chanterelle Stook fines the racers for bruising the caps.
+Built (E14): natural ground at x 100..400, z -1280..-1080, about 2 m high. The Warden's hut is in a hollow toadstool stalk at (360, -1245), and the Great Ring, a fairy ring of toadstools round a clearing, sits at (150, -1125). The caps glow faintly after dark, the Great Ring brightest (R-188). Quest row 40 (m40-the-capwood-run) runs through it; Chanterelle Stook fines the racers for bruising the caps.
 
 ## Loose threads
 

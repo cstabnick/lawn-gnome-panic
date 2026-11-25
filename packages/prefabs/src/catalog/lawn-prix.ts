@@ -6,6 +6,23 @@ const DARK = 0x222222;
 const METAL = 0x8a8f96;
 const SEAT = 0x333333;
 
+/** A knobbly tyre for the dirt-mower bike: a fat tread cylinder with a ring of small knobs round it, all in one wheel group. */
+function knobbyTyre(group: string, z: number): PrefabDef['parts'][number][] {
+  const r = 0.14;
+  const y = 0.14;
+  const parts: PrefabDef['parts'][number][] = [
+    { s: 'cyl', d: [r, r, 0.08], rot: [0, 0, 90], at: [0, y, z], c: DARK, seg: 12, group },
+    { s: 'cyl', d: [0.05, 0.05, 0.1], rot: [0, 0, 90], at: [0, y, z], c: METAL, seg: 8, group },
+  ];
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    parts.push({ s: 'box', d: [0.09, 0.035, 0.03], rot: [(-a * 180) / Math.PI, 0, 0], at: [0, y + Math.cos(a) * (r + 0.01), z + Math.sin(a) * (r + 0.01)], c: DARK, group });
+  }
+  return parts;
+}
+
+const DIRT_BARS: readonly [number, number, number] = [0, 0.62, 0.05];
+
 export const LAWN_PRIX: readonly PrefabDef[] = [
   {
     id: 'ride-on-mower', name: 'Ride-On Mower', category: 'prop', uses: ['place'],
@@ -71,6 +88,40 @@ export const LAWN_PRIX: readonly PrefabDef[] = [
       { s: 'cyl', d: [0.02, 0.02, 0.7616], rot: [23.2, 0, 0], at: [-0.25, 0.65, 0.05], c: METAL, seg: 6, group: 'handle' },
       { s: 'cyl', d: [0.02, 0.02, 0.7616], rot: [23.2, 0, 0], at: [0.25, 0.65, 0.05], c: METAL, seg: 6, group: 'handle' },
       { s: 'cyl', d: [0.025, 0.025, 0.5], rot: [0, 0, 90], at: [0, 1.0, 0.2], c: SEAT, seg: 6, group: 'handle' },
+    ],
+  },
+  {
+    id: 'dirt-mower-bike', name: 'Knobbly Dirt-Mower', category: 'prop', uses: ['place', 'sit'],
+    tags: ['mower', 'machine', 'bike', 'dirt', 'motocross', 'knobbly', 'racer', 'seat', 'wheel', 'lawn', 'vehicle', 'ride'], emoji: [],
+    tint: 0x3f8f3a,
+    seat: [0, 0.36, -0.12],
+    pivots: { 'wheel-0': [0, 0.14, -0.4], 'wheel-1': [0, 0.14, 0.42], steer: [0, 0.62, 0.05] },
+    about: 'Gnome Theft Auto: the Knobbly Dirt-Mower. A push-mower bike rebuilt for the dirt: a tinted frame and tank, knobbly fat tyres (wheel-0 rear, wheel-1 front), long telescopic forks, a high front mudguard, a raised exhaust and a white number plate with a black 7. The steer group holds the bar, grips, forks and plate. Nose +z.',
+    examine: [
+      'A green two-wheeler on fat knobbly tyres, with forks as long as a gnome and a number plate that says 7.',
+      'Saying: a dirt bike is a push mower that has been told it can have a personality.',
+      'Tip: it floats over the bumps and lands the jumps, so do not slow down for the part you came for.',
+      'Joke: the high mudguard keeps the mud off the front wheel and puts it on the rider, which is fairer.',
+      'The exhaust points at the sky, which is the only direction nobody has ever complained from.',
+    ],
+    parts: [
+      { s: 'box', d: [0.14, 0.12, 0.5], at: [0, 0.3, -0.05], c: 'tint', name: 'frame' },
+      { s: 'ball', d: [0.1], at: [0, 0.42, 0.12], scale: [1, 0.8, 1.4], c: 'tint', seg: 8, name: 'tank' },
+      { s: 'box', d: [0.16, 0.06, 0.4], at: [0, 0.4, -0.2], c: SEAT, name: 'saddle' },
+      { s: 'box', d: [0.2, 0.02, 0.2], at: [0, 0.34, -0.42], c: 'tint', name: 'rear-fender' },
+      { s: 'box', d: [0.16, 0.14, 0.14], at: [0, 0.2, 0.0], c: METAL, name: 'engine' },
+      { s: 'cyl', d: [0.02, 0.02, 0.5], rot: [-80, 0, 0], at: [0.1, 0.38, -0.25], c: METAL, seg: 6, name: 'exhaust' },
+      { s: 'cyl', d: [0.03, 0.03, 0.12], rot: [-80, 0, 0], at: [0.1, 0.5, -0.5], c: 'silver', seg: 6, name: 'muffler' },
+      { s: 'cyl', d: [0.015, 0.015, 0.5], rot: [-10, 0, 0], at: [0, 0.3, -0.4], c: METAL, seg: 6, name: 'swingarm' },
+      { s: 'box', d: [0.12, 0.015, 0.2], at: [0, 0.34, 0.42], rot: [-15, 0, 0], c: 'tint', name: 'mudguard' },
+      ...knobbyTyre('wheel-0', -0.4),
+      ...knobbyTyre('wheel-1', 0.42),
+      { s: 'cyl', d: [0.02, 0.02, 0.44], rot: [0, 0, 90], at: DIRT_BARS, c: 'steel', seg: 6, group: 'steer', name: 'bar' },
+      { s: 'cyl', d: [0.026, 0.026, 0.08], rot: [0, 0, 90], at: [0.2, 0.62, 0.05], c: 'black', seg: 6, mirror: true, group: 'steer', name: 'grip' },
+      { s: 'pill', d: [0.016, 0.52], at: [0.05, 0.36, 0.2], rot: [-18, 0, 0], c: 'silver', seg: 6, mirror: true, group: 'steer', name: 'fork' },
+      { s: 'box', d: [0.16, 0.11, 0.012], at: [0, 0.55, 0.22], rot: [-18, 0, 0], c: 'white', group: 'steer', name: 'plate' },
+      { s: 'box', d: [0.07, 0.015, 0.006], at: [0, 0.585, 0.229], rot: [-18, 0, 0], c: 'black', group: 'steer', name: 'seven-top' },
+      { s: 'box', d: [0.015, 0.075, 0.006], at: [0.012, 0.545, 0.229], rot: [-18, 0, 12], c: 'black', group: 'steer', name: 'seven-stem' },
     ],
   },
 ];

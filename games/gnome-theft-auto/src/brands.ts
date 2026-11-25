@@ -61,7 +61,7 @@ export const BRANDS: Record<BrandId, BrandDef> = {
     secondary: 0xc8d0d8,
     slogan: 'Loud Enough To Wake The Tall Ones.',
     finePrint: 'Illegal two-stroke exhaust kits sold separately at Side-Valve Salvage.',
-    vehicleKinds: ['push-bike'],
+    vehicleKinds: ['push-bike', 'dirt-bike'],
   },
   'black-dew': {
     id: 'black-dew',
@@ -560,6 +560,7 @@ export function brandForVehicle(kind: VehicleKind, _tint: number): BrandDef {
     case 'zero-turn':
       return BRANDS['razor-back'];
     case 'push-bike':
+    case 'dirt-bike':
       return BRANDS['husky-blade'];
     case 'snail-coach':
       return BRANDS['dandelion-fizz'];

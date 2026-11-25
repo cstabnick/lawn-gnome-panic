@@ -47,3 +47,35 @@ describe('race rival', () => {
     expect(vehicles).not.toContain(r.v);
   });
 });
+
+const { TRACKS } = await import('./tracks');
+// The dirt tracks lie outside the Speedway test's 900 m world.
+const bigWorld = { ...world, half: 3000 } as World;
+
+describe('race rival on the dirt tracks', () => {
+  for (const id of ['rutbottom', 'capwood-run'] as const) {
+    it(`makes progress on ${id} and stays near the centre line`, { timeout: 60_000 }, () => {
+      const track = TRACKS[id];
+      const scene = new THREE.Scene();
+      const vehicles: Vehicle[] = [];
+      const def = { name: 'Dirt Rival', look: {}, pace: 0.95, grip: 1, line: 0, aggression: 0.3, taunts: [] };
+      const r = spawnRival(scene, vehicles, def, 'ride-on', 1, track);
+      expect(r.track).toBe(track);
+
+      const dt = 1 / 60;
+      let time = 0;
+      let near = 0;
+      const frames = 60 * 60;
+      for (let frame = 0; frame < frames; frame++) {
+        driveRival(r, dt, bigWorld, { hold: false, playerDist: r.dist, time });
+        time += dt;
+        const spot = track.locate(r.v.x, r.v.z, 60, r.hint);
+        if (spot && Math.abs(spot.lat) <= track.def.barrierOffset + 3) near++;
+      }
+      console.log(`[raceAi] ${id}: dist ${r.dist.toFixed(0)} m in 60 s, ${((near / frames) * 100).toFixed(1)}% near the line`);
+      expect(r.dist).toBeGreaterThan(150);
+      expect(near / frames).toBeGreaterThanOrEqual(0.9);
+      removeRival(scene, vehicles, r);
+    });
+  }
+});

@@ -8,7 +8,7 @@ import { placeOnGround } from '../terrainMesh';
 import { driveRival, removeRival, resetRival, spawnRival } from '../raceTrack/raceAi';
 import type { Rival } from '../raceTrack/raceAi';
 import { setRaceActive, setStartLights } from '../raceTrack/state';
-import { GateTracker, gates, gridSlot, locate, trackLength } from '../raceTrack/track';
+import { trackById } from '../raceTrack/tracks';
 import { SCENES } from '../cutscene/scenes';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 
@@ -96,16 +96,23 @@ export function raceRun(
   changed: () => void,
   say: (t: string) => void,
 ): Run {
-  const L = trackLength();
+  const track = trackById(obj.trackId ?? 'lost-and-found');
+  const isSpeedway = track.id === 'lost-and-found';
+  const closed = track.closed;
+  const L = track.length();
+  // Race distance is measured from the start line (closed: a lap behind it on the grid, open: from startS()).
+  const base = closed ? L : track.startS();
+  // Race distance at which a rival has finished.
+  const raceLen = closed ? obj.laps * L : track.finishS() - track.startS();
   const n = obj.rivals.length;
   const playerSlot = n;
-  const myGrid = gridSlot(playerSlot);
+  const myGrid = track.gridSlot(playerSlot);
   const vehicles = deps.vehicles!;
   const gridSpot = (slot: number) => {
-    const g = gridSlot(slot);
-    return locate(g.x, g.z, 20);
+    const g = track.gridSlot(slot);
+    return track.locate(g.x, g.z, 20);
   };
-  const slotS = (slot: number): number => gridSpot(slot)?.s ?? L - 8;
+  const slotS = (slot: number): number => gridSpot(slot)?.s ?? track.wrapS(track.startS() - 8);
 
   let phase: Phase = 'travel';
   let wonAt = 0;
@@ -120,11 +127,13 @@ export function raceRun(
   let t = 0;
 
   // The player's race distance: a running total of the lap distance driven, starting `slotS - L` (behind the line).
-  const tracker = new GateTracker();
-  let pDist = slotS(playerSlot) - L;
+  const tracker = track.tracker();
+  let pDist = slotS(playerSlot) - base;
   let lastS = slotS(playerSlot);
   let pHint = gridSpot(playerSlot)?.i ?? -1;
   let pFinishedAt: number | null = null;
+  // Open tracks: the finish line was crossed (the tracker's 'lap' event).
+  let crossedFinish = false;
 
   setRaceActive(true);
   const mine: Vehicle = createVehicle(deps.scene, obj.vehicle, myGrid.x, myGrid.z, myGrid.yaw, obj.tint);
@@ -132,9 +141,9 @@ export function raceRun(
   vehicles.push(mine);
 
   const rivals: Rival[] = obj.rivals.map((def, i) => {
-    const r = spawnRival(deps.scene, vehicles, def, obj.vehicle, i);
+    const r = spawnRival(deps.scene, vehicles, def, obj.vehicle, i, track);
     resetRival(r, i);
-    r.dist = slotS(i) - L;
+    r.dist = slotS(i) - base;
     r.finishedAt = null;
     r.hint = gridSpot(i)?.i ?? -1;
     return r;
@@ -192,7 +201,7 @@ export function raceRun(
   const reset = (): void => {
     rivals.forEach((r, i) => {
       resetRival(r, i);
-      r.dist = slotS(i) - L;
+      r.dist = slotS(i) - base;
       r.finishedAt = null;
       r.hint = gridSpot(i)?.i ?? -1;
     });
@@ -203,7 +212,8 @@ export function raceRun(
     mine.sunkT = 0;
     holdPlayer();
     tracker.reset();
-    pDist = slotS(playerSlot) - L;
+    crossedFinish = false;
+    pDist = slotS(playerSlot) - base;
     lastS = slotS(playerSlot);
     pHint = gridSpot(playerSlot)?.i ?? -1;
     pFinishedAt = null;
@@ -237,7 +247,13 @@ export function raceRun(
       deps.hud.banner(`${ordinal(p)} PLACE!`);
       deps.play('steal');
       deps.fx?.confetti(mine.x, mine.y + 1, mine.z);
-      // A cool-down roll past the crowd, then the podium scene (cutscene/scenes/speedway.ts); the quest completes after it.
+      const gold = obj.timeAchievement;
+      if (gold && raceTime < gold.seconds) {
+        deps.unlock(gold.id);
+        deps.hud.toast(`Gold time! ${clock(raceTime)}`);
+      }
+      // A cool-down roll past the crowd, then (on the Speedway) the podium scene (cutscene/scenes/speedway.ts); the quest
+      // completes after it.
       phase = 'won';
       wonAt = raceTime + PODIUM_AFTER;
     } else {
@@ -257,6 +273,9 @@ export function raceRun(
     });
   };
 
+  const cpTotal = Math.max(0, track.gates().length - 2);
+  const checkpoints = (): number => Math.min(cpTotal, Math.max(0, tracker.passed));
+
   const drawHud = (): void => {
     if (phase === 'travel' || phase === 'done') {
       hud.style.display = 'none';
@@ -272,8 +291,12 @@ export function raceRun(
     } else {
       if (raceTime < GO_TEXT) html += '<div class="go">GO!</div>';
       const { p } = place();
-      const lap = Math.min(obj.laps, tracker.laps + 1);
-      html += `<div class="pill">POS ${p}/${n + 1}&nbsp; LAP ${lap}/${obj.laps}&nbsp; ${clock(raceTime)}</div>`;
+      if (closed) {
+        const lap = Math.min(obj.laps, tracker.laps + 1);
+        html += `<div class="pill">POS ${p}/${n + 1}&nbsp; LAP ${lap}/${obj.laps}&nbsp; ${clock(raceTime)}</div>`;
+      } else {
+        html += `<div class="pill">POS ${p}/${n + 1}&nbsp; CP ${checkpoints()}/${cpTotal}&nbsp; ${clock(raceTime)}</div>`;
+      }
     }
     if (html !== hudKey) {
       hudKey = html;
@@ -284,10 +307,13 @@ export function raceRun(
   return {
     lines: () => {
       if (phase === 'travel') {
-        return [`Head to the {{Lost & Found Speedway}} grid and get in your ${mine.spec.name} (last slot).`];
+        return [isSpeedway
+          ? `Head to the {{Lost & Found Speedway}} grid and get in your ${mine.spec.name} (last slot).`
+          : `Head to the ${track.name} start and get in your ${mine.spec.name} (last slot).`];
       }
       if (phase === 'countdown') return ['Wait for the lights…'];
       if (phase === 'done') return [obj.text];
+      if (!closed) return [`Checkpoint ${checkpoints()}/${cpTotal} · Position ${place().p}/${n + 1}`, obj.text];
       const lap = Math.min(obj.laps, tracker.laps + 1);
       return [`Lap ${lap}/${obj.laps} · Position ${place().p}/${n + 1}`, obj.text];
     },
@@ -307,7 +333,7 @@ export function raceRun(
         if (!podiumPlaying && raceTime >= wonAt) {
           podiumPlaying = true;
           const finish = (): void => { phase = 'done'; changed(); };
-          const script = SCENES[`race-${obj.raceId}-podium`];
+          const script = isSpeedway ? SCENES[`race-${obj.raceId}-podium`] : undefined;
           if (script && !deps.cutscene.active) deps.cutscene.play({ kind: 'script', script }, finish);
           else finish();
         }
@@ -345,16 +371,18 @@ export function raceRun(
         for (let i = 0; i < rivals.length; i++) {
           const r = rivals[i];
           driveRival(r, dt, deps.world, { hold: r.finishedAt !== null, playerDist: pDist, time: raceTime });
-          if (r.finishedAt === null && r.dist >= obj.laps * L) r.finishedAt = raceTime;
+          if (r.finishedAt === null && r.dist >= raceLen) r.finishedAt = raceTime;
         }
 
         if (phase === 'racing') {
-          tracker.update(dt, mine.x, mine.z);
-          const spot = locate(mine.x, mine.z, 60, pHint);
+          if (tracker.update(dt, mine.x, mine.z) === 'lap' && !closed) crossedFinish = true;
+          const spot = track.locate(mine.x, mine.z, 60, pHint);
           if (spot) {
             let d = spot.s - lastS;
-            if (d < -L / 2) d += L;
-            else if (d > L / 2) d -= L;
+            if (closed) {
+              if (d < -L / 2) d += L;
+              else if (d > L / 2) d -= L;
+            }
             pDist += d;
             lastS = spot.s;
             pHint = spot.i;
@@ -367,7 +395,7 @@ export function raceRun(
             abandon('Race abandoned! Back to the grid.');
           } else {
             taunts();
-            if (tracker.laps >= obj.laps) {
+            if (closed ? tracker.laps >= obj.laps : crossedFinish) {
               pFinishedAt = raceTime;
               finishPlayer();
             } else if (rivalsFinished() >= obj.mustPlace) {
@@ -387,7 +415,7 @@ export function raceRun(
         return [{ x: myGrid.x, z: myGrid.z, color: MARK_COLOR, quest: obj.hint }];
       }
       if (phase === 'finished') return [];
-      const G = gates();
+      const G = track.gates();
       const gate = G[tracker.next < 0 ? 0 : tracker.next % G.length];
       return [{ x: gate.x, z: gate.z, color: MARK_COLOR, quest: obj.hint }];
     },

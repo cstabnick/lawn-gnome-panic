@@ -8,14 +8,17 @@ import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { Vehicle, VehicleKind, World } from '../types';
 import { createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
 import { stepNpcCar } from '../npcChassis';
-import { TRACK, gridSlot, locate, sampleAt, trackFrame, trackLength } from './track';
+import { SPEEDWAY } from './track';
+import type { Track } from './trackDef';
 
 export interface Rival {
   def: RaceRival;
+  /** The track it races on (the Speedway unless spawnRival was given another). */
+  track: Track;
   v: Vehicle;
   /** Index of the nearest centre-line sample last frame (locate() hint). */
   hint: number;
-  /** Race distance: metres driven along the lap since the start (negative while still behind the line). */
+  /** Race distance: metres driven since the start line (closed: along the laps; open: from startS(); negative while behind the line). */
   dist: number;
   /** Seconds since the start when it finished, or null. */
   finishedAt: number | null;
@@ -98,6 +101,20 @@ function stateOf(r: Rival): DriverState {
   return st;
 }
 
+/** The centre-line distance a race distance `dist` stands for (closed: wrapped round the lap; open: clamped). */
+function distToS(track: Track, dist: number): number {
+  if (track.closed) {
+    const L = track.length();
+    return ((dist % L) + L) % L;
+  }
+  return track.wrapS(dist + track.startS());
+}
+
+/** The race distance of a car at centre-line distance `s` on the grid (closed: a lap behind the line; open: from the line). */
+function gridDist(track: Track, s: number): number {
+  return track.closed ? s - track.length() : s - track.startS();
+}
+
 /** Fit (or refit) a rider gnome on the seat, as chaseFollowRun does for its leader. */
 function seatRider(v: Vehicle, look: GnomeLook): void {
   if (v.rider) return;
@@ -110,10 +127,9 @@ function seatRider(v: Vehicle, look: GnomeLook): void {
 
 /** Set a rival's bookkeeping from where it stands on the lap at race distance `dist`. */
 function anchorAt(r: Rival, st: DriverState): void {
-  const L = trackLength();
-  const spot = locate(r.v.x, r.v.z, 60, r.hint);
+  const spot = r.track.locate(r.v.x, r.v.z, 60, r.hint);
   r.hint = spot?.i ?? -1;
-  st.lastS = spot?.s ?? ((r.dist % L) + L) % L;
+  st.lastS = spot?.s ?? distToS(r.track, r.dist);
   st.anchorX = r.v.x;
   st.anchorZ = r.v.z;
   st.anchorT = st.t;
@@ -121,9 +137,7 @@ function anchorAt(r: Rival, st: DriverState): void {
 
 /** Put the rival back on the centre line at its race distance, facing along the track, at a crawl. */
 function backOnLine(r: Rival, st: DriverState): void {
-  const L = trackLength();
-  const s = ((r.dist % L) + L) % L;
-  const p = trackFrame(s, 0);
+  const p = r.track.frame(distToS(r.track, r.dist), 0);
   r.v.x = p.x;
   r.v.z = p.z;
   r.v.yaw = p.yaw;
@@ -133,19 +147,19 @@ function backOnLine(r: Rival, st: DriverState): void {
 }
 
 /** Create a rival's vehicle (with its driver gnome) on grid `slot` and add it to `vehicles`. */
-export function spawnRival(scene: THREE.Scene, vehicles: Vehicle[], def: RaceRival, kind: VehicleKind, slot: number): Rival {
-  const g = gridSlot(slot);
+export function spawnRival(scene: THREE.Scene, vehicles: Vehicle[], def: RaceRival, kind: VehicleKind, slot: number, track: Track = SPEEDWAY): Rival {
+  const g = track.gridSlot(slot);
   const v = createVehicle(scene, def.kind ?? kind, g.x, g.z, g.yaw, def.tint);
-  const r: Rival = { def, v, hint: -1, dist: 0, finishedAt: null };
+  const r: Rival = { def, track, v, hint: -1, dist: 0, finishedAt: null };
   const st = stateOf(r);
   seatRider(v, st.look);
   v.driver = 'npc';
   v.questOwned = true;
   vehicles.push(v);
-  const spot = locate(g.x, g.z)!;
+  const spot = track.locate(g.x, g.z)!;
   r.hint = spot.i;
-  r.dist = spot.s - trackLength();
-  st.lap = Math.floor(r.dist / trackLength());
+  r.dist = gridDist(track, spot.s);
+  st.lap = Math.floor(r.dist / track.length());
   st.lastS = spot.s;
   st.anchorX = v.x;
   st.anchorZ = v.z;
@@ -158,18 +172,18 @@ export function resetRival(r: Rival, slot: number): void {
   const st = stateOf(r);
   repairVehicle(v);
   v.exploded = false;
-  const g = gridSlot(slot);
+  const g = r.track.gridSlot(slot);
   v.x = g.x;
   v.z = g.z;
   v.yaw = g.yaw;
   v.speed = 0;
   v.vy = 0;
   seatRider(v, st.look);
-  const spot = locate(g.x, g.z)!;
+  const spot = r.track.locate(g.x, g.z)!;
   r.hint = spot.i;
-  r.dist = spot.s - trackLength();
+  r.dist = gridDist(r.track, spot.s);
   r.finishedAt = null;
-  st.lap = Math.floor(r.dist / trackLength());
+  st.lap = Math.floor(r.dist / r.track.length());
   st.lastS = spot.s;
   st.mistakeS = null;
   st.mistakeT = 0;
@@ -180,11 +194,11 @@ export function resetRival(r: Rival, slot: number): void {
 }
 
 /** Speed the rival may hold here: the tightest corner in range, reached by braking at 9 m/s^2 from where it is. */
-function cornerSpeed(s: number, speed: number, grip: number): number {
+function cornerSpeed(track: Track, s: number, speed: number, grip: number): number {
   const ahead = 20 + Math.abs(speed) * 1.2;
   let allowed = Infinity;
   for (let d = 0; d <= ahead; d += 2) {
-    const curv = sampleAt(s + d).curv;
+    const curv = track.sampleAt(s + d).curv;
     const R = 1 / Math.max(Math.abs(curv), 1e-4);
     const vCorner2 = grip * 9.81 * R;
     const vAllowed = Math.sqrt(vCorner2 + 2 * 9 * d);
@@ -198,7 +212,17 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   const v = r.v;
   const def = r.def;
   const st = stateOf(r);
-  const L = trackLength();
+  const track = r.track;
+  const L = track.length();
+
+  // A finisher on a point-to-point track brakes to a stop and stays put.
+  if (r.finishedAt !== null && !track.closed) {
+    if (v.exploded || v.driver !== 'npc') return;
+    stepNpcCar(v, { throttle: v.speed > 0.5 ? -0.8 : 0, steer: 0, lift: 0 }, dt, world);
+    if (Math.abs(v.speed) < 0.5) v.speed = 0;
+    syncVehicleMesh(v, dt);
+    return;
+  }
 
   if (ctx.hold) {
     v.speed = 0;
@@ -221,15 +245,17 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   st.mistakeT = Math.max(0, st.mistakeT - dt);
 
   // Where am I.
-  const spot = locate(v.x, v.z, 60, r.hint);
-  if (!spot || Math.abs(spot.lat) > TRACK.barrierOffset + 3) {
+  const spot = track.locate(v.x, v.z, 60, r.hint);
+  if (!spot || Math.abs(spot.lat) > track.def.barrierOffset + 3) {
     backOnLine(r, st);
     return;
   }
   r.hint = spot.i;
   let ds = spot.s - st.lastS;
-  if (ds > L / 2) ds -= L;
-  if (ds < -L / 2) ds += L;
+  if (track.closed) {
+    if (ds > L / 2) ds -= L;
+    if (ds < -L / 2) ds += L;
+  }
   r.dist += Math.max(-40, Math.min(40, ds));
   st.lastS = spot.s;
 
@@ -241,7 +267,7 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
     if (st.rng() < def.aggression) {
       let s0 = st.rng() * L;
       for (let k = 0; k < 200; k++) {
-        if (Math.abs(sampleAt(s0).curv) > 0.025) break;
+        if (Math.abs(track.sampleAt(s0).curv) > 0.025) break;
         s0 += 2;
       }
       st.mistakeS = s0;
@@ -258,11 +284,11 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   // Aim: a point ahead on the line, with a slow weave so the pack spreads out.
   const weave = st.weaveAmp * Math.sin((2 * Math.PI * st.t) / st.weavePeriod + st.weavePhase);
   const ahead = 6 + Math.abs(v.speed) * 0.55;
-  const aim = trackFrame(spot.s + ahead, def.line + weave);
+  const aim = track.frame(spot.s + ahead, def.line + weave);
   const steer = Math.max(-1, Math.min(1, -angleDiff(Math.atan2(aim.x - v.x, aim.z - v.z), v.yaw) * 2.4));
 
   // Speed: the pace on the straights, cut for the corners ahead, then the rubber band and any mistake.
-  let target = Math.min(v.spec.maxSpeed * def.pace, cornerSpeed(spot.s, v.speed, def.grip));
+  let target = Math.min(v.spec.maxSpeed * def.pace, cornerSpeed(track, spot.s, v.speed, def.grip));
   const gap = r.dist - ctx.playerDist;
   if (gap > 60) target *= 0.9;
   else if (gap < -60) target *= 1.06;

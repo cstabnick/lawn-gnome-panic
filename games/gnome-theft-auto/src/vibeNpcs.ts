@@ -629,6 +629,7 @@ export function createVibeNpcs(scene: THREE.Scene, world: World, hud: Hud): Vibe
     (playerVehicle) => {
       if (playerVehicle?.kind === 'zero-turn') return 'Gate-Guard Gary: "Nice Zero-Turn. Right through, sir."';
       if (playerVehicle?.kind === 'push-bike') return 'Gate-Guard Gary: "A Push-Bike? That\'s a citation."';
+      if (playerVehicle?.kind === 'dirt-bike') return 'Gate-Guard Gary: "Mud on the bylaw, sir. Mud on the bylaw."';
       return 'Gate-Guard Gary: "HOA binder says no loitering."';
     },
   );

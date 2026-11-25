@@ -54,7 +54,7 @@ export function crashKind(lastSpeed: number, speed: number, dt: number): 'crash-
 
 /** The horn a vehicle of this kind honks. Boats first, then bikes, trucks, the HOA van, and cars. */
 export function hornFor(kind: VehicleKind, boat: boolean): 'horn-car' | 'horn-truck' | 'horn-bike' | 'horn-boat' | 'horn-hoa' {
-  if (kind === 'push-bike') return 'horn-bike';
+  if (kind === 'push-bike' || kind === 'dirt-bike') return 'horn-bike';
   if (boat) return 'horn-boat';
   if (TRUCK_HORN_KINDS.has(kind)) return 'horn-truck';
   if (kind === 'hoa-van') return 'horn-hoa';

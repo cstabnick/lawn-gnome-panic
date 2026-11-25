@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Capwood Rally]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-185]
 related: [capwood, chanterelle-stook, lugnut-lulu, the-carburettors, frostbite-fells, frozen-birdbath-basin, hoa]
 ---
 
@@ -25,7 +25,7 @@ Stages, for the race build: (1) the start in the Frostbite Fells, by the Carbure
 
 ## In the games
 
-Planned (batch 3): E14 builds the route as a rally or checkpoint race (E01 rally-route). Quest row 40 (m40-the-capwood-run): Lugnut Lulu will help the crew if the player wins it. The Carburettors get their own scene.
+Built (E14): the Capwood Run is a race on the rally route. It starts in the Frostbite Fells paddock at (90, -760), climbs over the Fells summit (about 69 m at (300, -900)), comes down the north flank, goes through Capwood, crosses two Cap-water fords (R-185: they slow a mower and never stall it), and finishes near (150, -1300). Quest row 40 (m40-the-capwood-run): Lugnut Lulu will help the crew if the player wins it. The open stage, "The Capwood Run: Open Stage" (race-capwood-open), lets anyone try for Lulu's time. The Carburettors get their own scene.
 
 ## Loose threads
 

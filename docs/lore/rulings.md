@@ -1010,3 +1010,31 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** **Radio Adagio** (96.1, classical, from the Opera Hall on the Left Bank, id `radio-adagio`) is a bonus station: it is not on the dial of every car radio in the Yard, and it is not heard by tuning to it from afar. It is heard in and near Pardonlin on foot (from the Opera Hall horn speaker, the café gramophones, the bandstand and the Beetle Market's stall radio), and on any car radio while the car is in or near Pardonlin. Leave the region and the signal fades. Its conductor, Maestro Ottavio Lento (id `ottavio-lento`), is its only on-air voice. No real composers or pieces are named.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** the station should feel like a place's own sound, not a fourth genre every driver always has.
+
+## R-185
+
+**Question:** Do the Cap-water fords on the Capwood Run flood an engine?
+**Ruling:** No. Cap-water, the thick slow water that seeps out of Capwood's buried Tall-One woodpile, soaks a mower's engine only a little: enough to slow it, never enough to sputter or stall. Ordinary water elsewhere still floods (the "waterlogged mowers" ruling stands). In game: `WATERLOG.fordCap`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 puts two Cap-water fords on the Capwood Run, and the rally must drag without drowning anyone's mower.
+
+## R-186
+
+**Question:** Who is Two-Ton Teasel, and how is he related to Clary?
+**Ruling:** Two-Ton Teasel is Teasel Mudguard. His family name is Mudguard; he is Marshal Clary Mudguard's older brother, a Fizz Cup racer, and he wants a rematch on the dirt (side quest Rutbottom Heats). She has never let him win a start.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 gives Teasel a side quest at the Dirt Bowl, and the quest needs a family tie to the Marshal.
+
+## R-187
+
+**Question:** What is the Knobbly, and how does a player get one?
+**Ruling:** The Knobbly Dirt-Mower is a push-mower bike rebuilt for dirt by Rutbottom's mechanics: knobbly tyres, long forks, a number plate. It is sold at the dealer, and parked at the Dirt Bowl gate for anyone who signs Clary's clipboard (nobody checks the clipboard).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14's Knobbly Heat (`race-rutbottom-knobbly`) needs a dirt bike the player can reach without the impound.
+
+## R-188
+
+**Question:** Why do Capwood's caps glow, and what does Section Nine cover?
+**Ruling:** Capwood's caps glow faintly after dark (spores, not magic: gnomes argue about this). The brightest glow is the Great Ring, a fairy ring of toadstools round a clearing. Bruising a cap is a fine under Section Nine of the Warden's rules.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 lights Capwood at night and places the Great Ring, and the Warden's fines need a rule to cite.

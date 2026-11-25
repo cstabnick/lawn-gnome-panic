@@ -115,6 +115,9 @@ export const GLOW_BAND_OUTRO: SceneScript = {
     { do: 'gesture', who: 'toad2', name: 'cheer', s: 1.6 },
     beat('pause'),
     // Nina counts the take, one glow-band at a time.
+    // The take, counted off: a fold of notes, then a flutter of moth wings.
+    { do: 'sfx', id: 'paper', at: 'nina', async: true },
+    { do: 'sfx', id: 'flutter', async: true, gain: 0.7 },
     cut(ARENA.single('nina', 'mcu')),
     { do: 'gesture', who: 'nina', name: 'think', s: 1.4, async: true },
     { do: 'say', who: 'nina', text: 'Forty-two glow-bands sold, sugar. The moth ate one.' },

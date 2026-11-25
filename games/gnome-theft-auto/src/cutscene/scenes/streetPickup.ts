@@ -27,7 +27,8 @@ export const STREET_PICKUP: SceneScript = {
     { do: 'face', who: 'player', at: 'pip', s: 0.3, async: true },
     { do: 'cam', shot: { kind: 'cut', pos: [-7.05, 1.5, 15.45], look: 'pip', fov: 46 } },
     { do: 'say', who: 'pip', text: 'You came! I tuned her myself. She only backfires when she is happy.' },
-    { do: 'cam', shot: { kind: 'cut', pos: [-2.9, 1.5, 13.3], look: 'player', fov: 46 } },
+    // E09 variety: the reply drifts in a little, so the talk is not four locked cuts in a row.
+    { do: 'cam', shot: { kind: 'dolly', from: [-2.9, 1.5, 13.3], to: [-3.2, 1.5, 13.6], look: 'player', s: 3, fov: 46 } },
     { do: 'say', who: 'player', text: 'Breathe, Pip. Where is the gear?' },
     { do: 'cam', shot: { kind: 'cut', pos: [-7.05, 1.5, 15.45], look: 'pip', fov: 46 } },
     { do: 'gesture', who: 'pip', name: 'point', s: 1.2, async: true },
@@ -35,10 +36,12 @@ export const STREET_PICKUP: SceneScript = {
     { do: 'gesture', who: 'pip', name: 'shrug', s: 1.2, async: true },
     { do: 'say', who: 'pip', text: 'Do not ask where I got it. I asked nicely. Mostly.' },
     { do: 'cam', shot: { kind: 'cut', pos: [-5.4, 1.6, 17.2], look: [-5.3, 0.85, 13.5], fov: 50 } },
+    { do: 'sfx', id: 'cloth', at: 'pip', async: true },
     { do: 'give', from: 'pip', to: 'player', prop: 'gta-pistol' },
     { do: 'stinger', id: 'reveal', async: true },
     { do: 'say', who: 'player', text: 'Nice doing business with you. Get in.' },
     { do: 'cam', shot: { kind: 'track', pos: [-7.5, 2.0, 16.5], who: 'lowrider', fov: 52 } },
+    { do: 'sfx', id: 'latch', at: 'lowrider', async: true },
     { do: 'enter', who: 'player', vehicle: 'lowrider', seat: 1 },
     { do: 'enter', who: 'pip', vehicle: 'lowrider', seat: 0 },
     // The getaway: the chase camera takes over, the music changes, and the lowrider leaves at speed.

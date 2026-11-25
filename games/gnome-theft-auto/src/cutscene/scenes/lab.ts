@@ -2,6 +2,7 @@
 // dismounts and held items can be looked at in one place. ?cutscene=seat-lab, ?cutscene=exit-lab, ?cutscene=gun-lab.
 import { VEHICLES } from '../../config';
 import { castById } from '../../quests/stages';
+import { beat, coverage, cut } from '../direct';
 import type { PacingWaiver, SceneScript, ScriptActor, ScriptVehicle, Step } from '../script';
 
 /** Labs are dev tools, not story: no hook, still shots held as long as needed to look. */
@@ -111,4 +112,32 @@ export const GUN_LAB: SceneScript = {
   ],
 };
 
-export const LAB_SCENES: Record<string, SceneScript> = { 'seat-lab': SEAT_LAB, 'exit-lab': EXIT_LAB, 'gun-lab': GUN_LAB };
+/** Smoke test for the character intro card (`?cutscene=intro-demo`): Pip and Tansy each speak, then get their card. */
+const DEMO_TALK = coverage('pip', 'tansy', 1);
+export const INTRO_DEMO: SceneScript = {
+  id: 'intro-demo',
+  stage: { kind: 'room', room: 'mulch-club' },
+  title: 'Intro Demo',
+  music: 'warm',
+  ambience: 'room',
+  actors: [
+    { id: 'pip', preset: 'pip', name: 'Pip', at: [6.2, 3.5], yaw: 3.4 },
+    { id: 'tansy', preset: 'tansy', name: 'Tansy', at: [4.4, 1.9], yaw: 0.6 },
+  ],
+  steps: [
+    { do: 'sfx', id: 'latch', async: true },
+    cut(DEMO_TALK.single('pip', 'mcu')),
+    { do: 'sfx', id: 'cloth', at: 'pip', async: true },
+    { do: 'say', who: 'pip', text: 'Everyone, this is the lock-up. Mind the paint.' },
+    { do: 'intro', who: 'pip' },
+    cut(DEMO_TALK.single('tansy', 'mcu')),
+    { do: 'sfx', id: 'keys', at: 'tansy', async: true },
+    { do: 'say', who: 'tansy', text: 'The paint is the least of your problems.' },
+    { do: 'intro', who: 'tansy' },
+    // Pip's answer, a beat to close on.
+    cut(DEMO_TALK.single('pip', 'mcu')),
+    beat('pause'),
+  ],
+};
+
+export const LAB_SCENES: Record<string, SceneScript> = { 'seat-lab': SEAT_LAB, 'exit-lab': EXIT_LAB, 'gun-lab': GUN_LAB, 'intro-demo': INTRO_DEMO };

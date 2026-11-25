@@ -165,6 +165,9 @@ export function racePodium(title: string, race: Race): SceneScript {
     { do: 'fade', to: 0, s: 0.4 },
     { do: 'music', track: 'triumph', fade: 0.3 },
     { do: 'stinger', id: 'triumph', async: true },
+    // The tea towel waves, the cups clink: the crowd's part, before anyone speaks.
+    { do: 'sfx', id: 'flutter', at: 'burdock', async: true },
+    { do: 'sfx', id: 'clink', async: true, gain: 0.8 },
     { do: 'gesture', who: 'you', name: 'cheer', s: 2.2, async: true },
     ...(talk.emptySecond ? [] : [{ do: 'gesture', who: 'second', name: 'wave', s: 2, async: true } as Step]),
     { do: 'gesture', who: 'third', name: race.mustPlace === 1 ? 'crossArms' : 'cheer', s: 2, async: true },

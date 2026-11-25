@@ -10,7 +10,7 @@ character intro mechanism; E20 places the intros) and E06's deferred weather sou
 |---|---|---|---|
 | 0 (lead) | Foundation: `intro` scene step (script/timeline/director/pacing), `introCard.ts` + `castIntros.ts` stubs, `cueSynth.ts` split out of cueAudio, `FoleySfx` / `ExtraBed` / 'intro' stinger ids with `cueFoley.ts` / `cueBeds.ts` stubs, `REGION_SOUNDS` ids + `recipes/regions.ts` stub, weather + region on the ambience frame (app.ts, sound/index.ts), anim `VARIANT_IDS` + `variants.ts` stub, `frame` shot `push`, mutter `SayOptions.radio` (typed) | tsc + cutscene/sound/anim tests | commit `db262180` |
 | 1 | Everything that fills the foundation, in parallel | `npm run build`, `npm test`, cutscene-report | 14 issues below |
-| 2 | Apply: cutscene sound pass (L46) and shot variety (L73) on the existing scenes, using the step-1 audit; an intro demo scene | build, tests, cutscene-report clean, `?cutscene=` smoke | 4 Sonnet issues (written after step 1, from the audit) |
+| 2 | Apply: cutscene sound pass (L46) and shot variety (L73) on the existing scenes, using the step-1 audit; an intro demo scene (`?cutscene=intro-demo`) | build, tests, cutscene-report clean, `?cutscene=` smoke | [15-scene-pass.md](15-scene-pass.md), 4 Sonnet groups (A story ch1-2, B story ch3-5, C side, D city + root + intro-demo). Done: only the dev labs remain in the report's Variety / Sound lists |
 
 Step 1 issues (each owns its files; no file is under two issues):
 

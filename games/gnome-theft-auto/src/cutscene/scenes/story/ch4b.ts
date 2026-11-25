@@ -60,6 +60,7 @@ export const RUNWAY_INTRO: SceneScript = {
     { do: 'title', text: null },
     // 2. The safehouse. Tansy has the plan and the problem.
     { do: 'cam', shot: spot(SAFE, 'wide') },
+    { do: 'sfx', id: 'paper', at: 'tansy', gain: 0.5, async: true },
     { do: 'gesture', who: 'tansy', name: 'lean', s: 1.5, async: true },
     { do: 'wait', s: 2 },
     cut(TABLE.single('tansy', 'mcu')),
@@ -132,6 +133,7 @@ export const SANDPIT_DROP_INTRO: SceneScript = {
     // 1. Hook: Pip bounces to the table; the first line lands at the table; then the player's blank stare.
     cut(TABLE.single('pip', 'ms')),
     { do: 'walk', who: 'pip', path: [PIP_TABLE], speed: 2.5 },
+    { do: 'sfx', id: 'paper', at: 'pip', gain: 0.6, async: true },
     cut(TABLE.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'Okay. Okay. Hear me out.' },
     ...reaction('player', { toward: 'pip', hold: 'pause' }),
@@ -152,6 +154,7 @@ export const SANDPIT_DROP_INTRO: SceneScript = {
     { do: 'stinger', id: 'reveal' },
     { do: 'wait', s: 1.5 },
     { do: 'cam', shot: shot('sniper-w', 'ms', { height: 'low', toward: 'sniper-e' }) },
+    { do: 'sfx', id: 'cloth', at: 'sniper-w', gain: 0.5, async: true },
     { do: 'face', who: 'sniper-w', at: 'sniper-e', s: 0.6 },
     { do: 'wait', s: 1.2 },
     // 5. Back at the table: Tansy's verdict on the ticket.

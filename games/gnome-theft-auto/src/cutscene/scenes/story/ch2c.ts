@@ -72,6 +72,7 @@ export const SPRINKLER_INTRO: SceneScript = {
   steps: [
     // 1. Hook: Rooster, low and close, with the windmill behind him. The prophecy is the first line.
     cut(shot('rooster', 'mcu', { height: 'low' })),
+    { do: 'sfx', id: 'flutter', at: 'rooster', gain: 0.5, async: true },
     { do: 'gesture', who: 'rooster', name: 'handsUp', s: 1.5, async: true },
     { do: 'say', who: 'rooster', text: 'THE BAROMETER IS DROPPING! VESPERS IN THE CLOUDS!' },
     { do: 'say', who: 'rooster', text: 'THE SPRINKLERS KNOW! THEY ALWAYS KNOW!' },
@@ -83,6 +84,7 @@ export const SPRINKLER_INTRO: SceneScript = {
     // 3. The turn: the Reginald van crawls up the farm road, surveyors walking beside it. A sprinkler hisses on: the prophecy holds.
     { do: 'sfx', id: 'squirt', gain: 0.6 },
     { do: 'cam', shot: { kind: 'track', pos: up(8, 290, 1.8), who: 'reg-van', fov: 50 } },
+    { do: 'sfx', id: 'engine-rev', at: 'reg-van', gain: 0.35, async: true },
     { do: 'drive', vehicle: 'reg-van', path: [[-24, 296]], speed: 4.5, async: true },
     { do: 'walk', who: 'peel', path: [[-1, 250], [-4, 262]], speed: 1.4, async: true },
     { do: 'walk', who: 'tine', path: [[5, 252], [2, 262]], speed: 1.4, async: true },
@@ -116,15 +118,19 @@ export const SPRINKLER_OUTRO: SceneScript = {
   steps: [
     // 1. Hook: Granny's Ride-On comes in off the highway, the camera tracking it to the drop.
     { do: 'cam', shot: { kind: 'track', pos: up(70, 466, 1.8), who: 'granny-ride', fov: 50 } },
+    { do: 'sfx', id: 'engine-rev', at: 'granny-ride', gain: 0.4, async: true },
     { do: 'drive', vehicle: 'granny-ride', path: [[60, 450], [52, 444], [48, 450]], speed: 7 },
+    { do: 'sfx', id: 'latch', at: 'granny-ride', gain: 0.5, async: true },
     { do: 'exit', who: 'granny' },
     // 2. Granny: pie and forged permits. The first rung of the pie joke; "I brought pie" is kept for its payoff.
     cut(shot('granny', 'mcu')),
     { do: 'say', who: 'granny', text: 'Pie, sugar. And forged HOA permits. Official as a pie crust.' },
+    { do: 'sfx', id: 'paper', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'player', prop: 'ledger' },
     { do: 'give', from: 'granny', to: 'pip', prop: 'acorn-cake' },
     // 3. Pip with the cake, in frame.
     cut(shot('pip', 'ms')),
+    { do: 'sfx', id: 'crunch', at: 'pip', gain: 0.5, async: true },
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
     { do: 'say', who: 'pip', text: 'Pie. Evidence of a very good morning.' },
     // 4. The turn: Driftwood, from the trailer, asks about the turtle. The mystery stinger marks it.
@@ -171,6 +177,7 @@ export const COMPOST_FORGE: SceneScript = {
     cut(spot('compost-heap', 'wide')),
     { do: 'wait', s: 1.4 },
     cut(shot('ernie', 'mcu')),
+    { do: 'sfx', id: 'crunch', at: 'ernie', gain: 0.4, async: true },
     { do: 'gesture', who: 'ernie', name: 'point', s: 1.0, async: true },
     { do: 'say', who: 'ernie', text: 'Chestnut? Nearly edible. Roasted on a trowel, like my granddad did.' },
     // 2. The welders: one coverage for the pair, so the camera stays on one side of their line.

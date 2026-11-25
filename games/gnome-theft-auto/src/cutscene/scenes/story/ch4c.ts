@@ -135,6 +135,7 @@ export const SPADE_TRUCE_INTRO: SceneScript = {
     // 1. Hook: the standoff holds; the phone chirps at Diggs and he answers without breaking eye contact.
     { do: 'cam', shot: { kind: 'cut', pos: up(283, 1.7, 50), look: 'diggs', fov: 48 } },
     { do: 'sfx', id: 'phone', at: 'diggs' },
+    { do: 'sfx', id: 'static', at: 'diggs', gain: 0.5, async: true },
     { do: 'gesture', who: 'diggs', name: 'clutch', s: 1.0, async: true },
     { do: 'wait', s: 1.5 },
     // 2. Vesper on the phone (off-screen). The camera pushes in on Diggs's face while the news lands.

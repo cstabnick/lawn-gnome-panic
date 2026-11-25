@@ -54,7 +54,9 @@ export const FESCUE_INTRO: SceneScript = {
     // Hook: Bracken, low, at the moss line; the player walks up to him through the firelight.
     cut(shot('bracken', 'ms', { toward: 'you', side: 35, height: 'low' })),
     { do: 'walk', who: 'you', path: [YOU_AT], speed: 1.3, async: true },
+    { do: 'sfx', id: 'crunch', at: 'you', gain: 0.6, async: true },
     { do: 'walk', who: 'jars', path: [JARS[1], JARS[2], JARS[0]], speed: 1.1, async: true },
+    { do: 'sfx', id: 'rustle', at: 'jars', gain: 0.5, async: true },
     { do: 'gesture', who: 'sorrel', name: 'sit', s: 0.2 },
     { do: 'say', who: 'bracken', text: 'Stop there. Don\'t step on the moss.' },
     cut(TALK_RING.single('you', 'mcu')),
@@ -79,6 +81,7 @@ export const FESCUE_INTRO: SceneScript = {
     { do: 'say', who: 'you', text: 'What\'s the catch?' },
     cut(TALK_RING.single('bracken', 'mcu', { height: 'low' })),
     { do: 'say', who: 'bracken', text: 'Granny Gnertrude will hear and bid. Do not let her buy it with pie.' },
+    { do: 'sfx', id: 'cloth', at: 'you', gain: 0.6, async: true },
     ...reaction('you', { toward: 'bracken', gesture: 'nod', size: 'mcu', side: -25, hold: 'pause' }),
     // Button: the reward, then the old man's last word on the car, held low.
     cut(TALK_RING.single('bracken', 'ms', { height: 'low' })),

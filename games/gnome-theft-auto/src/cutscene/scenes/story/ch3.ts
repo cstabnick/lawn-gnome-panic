@@ -2,7 +2,7 @@
 // docs/design/gnome-theft-auto/direction/scenes/salvage-raid-intro.md). The rest of chapter 3 is in ch3b.ts (the basin
 // and the cure) and ch3c.ts (the drift run and the chapter's close); every id is played by a quest in quests/chapter3.ts.
 import type { Point, SceneScript, Vec2 } from '../../script';
-import { beat, coverage, cut, reaction, shot } from '../../direct';
+import { beat, coverage, cut, pushIn, reaction, shot } from '../../direct';
 import { markOf, rideOf, up } from './kit';
 import { CH3B_SCENES } from './ch3b';
 import { CH3C_SCENES } from './ch3c';
@@ -91,10 +91,12 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     beat('beat'),
     // 3. The betrayal: the door opens and the music is already gone. The broom is still in his hand.
     cut({ kind: 'cut', pos: up(-145.2, 63.6, 0.9), look: up(-150.2, 60.2, 1.0), fov: 42 }),
+    { do: 'sfx', id: 'latch', at: 'van1', gain: 0.7, async: true },
     { do: 'exit', who: 'cam' },
     { do: 'walk', who: 'cam', path: [SR_CAM], speed: 1.1, async: true },
     { do: 'wait', s: 2.2 },
-    cut({ kind: 'cut', pos: up(-137.0, 72.0, 1.3), look: 'pip', fov: 34 }),
+    cut(pushIn('pip', 'ms', 2.4, { toward: 'cam', side: 30 })),
+    { do: 'sfx', id: 'gulp', at: 'pip', gain: 0.6, async: true },
     { do: 'say', who: 'pip', text: '...Cam?' },
     { do: 'face', who: 'tansy', at: 'cam', s: 0.4 },
     { do: 'face', who: 'cam', at: 'tansy', s: 0.5 },
@@ -121,6 +123,7 @@ export const SALVAGE_RAID_INTRO: SceneScript = {
     { do: 'face', who: 'vesper', at: 'cam', s: 0.5 },
     { do: 'face', who: 'cam', at: 'vesper', s: 0.4 },
     { do: 'hold', who: 'cam', prop: 'golden-acorn-seed-cell' },
+    { do: 'sfx', id: 'clink', at: 'cam', gain: 0.6, async: true },
     { do: 'give', from: 'cam', to: 'vesper', s: 1.4 },
     { do: 'say', who: 'vesper', text: 'Thank you, friend.' },
     ...reaction('cam', { toward: 'vesper', size: 'mcu', side: 30, hold: 'beat' }),

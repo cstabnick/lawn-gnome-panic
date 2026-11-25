@@ -156,6 +156,10 @@ import { GTA_PARDONLIN_GEAR } from './gta-pardonlin-gear';
 import { GTA_WINTER_RIDES } from './gta-winter-rides';
 import { GTA_WINTER_LODGE } from './gta-winter-lodge';
 import { GTA_WINTER_GEAR } from './gta-winter-gear';
+import { GTA_GOLF } from './gta-golf';
+import { GTA_GOLF_PLANTS } from './gta-golf-plants';
+import { GTA_GOLF_GEAR } from './gta-golf-gear';
+import { GTA_GOLF_PROPS } from './gta-golf-props';
 import { GTA_FISH_ICE } from './gta-fish-ice';
 import { GTA_DIRT_RALLY } from './gta-dirt-rally';
 import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
@@ -195,4 +199,5 @@ export const CATALOG: readonly PrefabDef[] = [
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
+  ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
 ];

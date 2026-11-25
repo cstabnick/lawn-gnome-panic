@@ -3,6 +3,7 @@
 import type { ClubId, Ctx, Lie, System } from './config';
 import { CLUBS, CLUB_ORDER, CONSUMABLES, SWING } from './config';
 import { estimateCarry } from './physics';
+import { swingStep, swingTap, type SwingEvent } from '@lawn/golf';
 import {
   cycleClub,
   distanceToPin,
@@ -255,11 +256,11 @@ export function createControls(ctx: Ctx): System {
     }
   }
 
-  function lockPower(): void {
-    const sw = state.swing;
-    sw.power = sw.marker;
-    sw.stage = 'accuracy';
-    sfx('click');
+  /** React to what the swing meter (@lawn/golf) reported: a power lock clicks, a fire takes the shot. */
+  function applySwing(ev: SwingEvent): void {
+    if (!ev) return;
+    if (ev.kind === 'power') sfx('click');
+    else if (ev.kind === 'fire') fire(ev.accuracy);
   }
 
   function fire(accuracy: number): void {
@@ -307,11 +308,10 @@ export function createControls(ctx: Ctx): System {
       sfx('tick');
       state.phase = 'swing';
       state.phaseTime = 0;
-      state.swing = { stage: 'power', marker: 0, power: 0 };
-    } else if (state.phase === 'swing' && sw.stage === 'power') {
-      lockPower();
-    } else if (state.phase === 'swing' && sw.stage === 'accuracy') {
-      fire(Math.max(-1, Math.min(1, -sw.marker / SWING.accuracyWindow)));
+      state.swing = { stage: 'idle', marker: 0, power: 0 };
+      swingTap(state.swing);
+    } else if (state.phase === 'swing' && sw.stage !== 'idle') {
+      applySwing(swingTap(sw));
     }
   }
 
@@ -539,18 +539,8 @@ export function createControls(ctx: Ctx): System {
 
       // Swing meter travel.
       if (state.phase === 'swing' && canAct(state)) {
-        const sw = state.swing;
         const scale = meterSpeedScale(state) * (tutorialOn ? TUTORIAL_SPEED : 1); // slower while a cigarillo is lit, and on the tutorial swing
-        if (sw.stage === 'power') {
-          sw.marker += (dt * scale) / (SWING.riseSeconds * (state.club === 'PT' ? SWING.puttRiseScale : 1));
-          if (sw.marker >= SWING.maxPower) {
-            sw.marker = SWING.maxPower;
-            lockPower();
-          }
-        } else if (sw.stage === 'accuracy') {
-          sw.marker -= (dt * scale * sw.power) / SWING.fallSeconds;
-          if (sw.marker <= -0.3) fire(1);
-        }
+        applySwing(swingStep(state.swing, dt, state.club, scale));
       }
 
       render();

@@ -1066,3 +1066,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** Capwood's caps glow faintly after dark (spores, not magic: gnomes argue about this). The brightest glow is the Great Ring, a fairy ring of toadstools round a clearing. Bruising a cap is a fine under Section Nine of the Warden's rules.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E14 lights Capwood at night and places the Great Ring, and the Warden's fines need a rule to cite.
+
+## R-193
+
+**Question:** How long is a yard at Hedgeworth Links, and what units does its card use?
+**Ruling:** Hedgeworth is measured in gnome yards, half a Tall-One yard (0.5 m). Every distance on its card, its signs and the pro's advice is in gnome yards, and a good drive goes about 200 of them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E15 plays Gnome Golf's real ball flight in a yard 360 by 420 m, so the course has to be measured in units a gnome can walk.
+
+## R-194
+**Question:** How many holes does Hedgeworth Links have, and why does the card say nine?
+**Ruling:** Hedgeworth Links has four holes, numbered 1, 2, 3 and 9 on the card: The Mortgage (par 4), Vesper's Patience (par 3), The Long Week (par 5, Hosepipe Pond on the dogleg) and The Ninth (par 4, by Thrift's shed and the Kicked Board). Peony numbers them so because "a nine-hole course" reads better on the mortgage papers, and everyone calls the course nine holes, including the scorecard's heading. Course par 16.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the brief's lore said nine holes; E15 built four on the land there is, and the joke keeps both.
+
+## R-195
+**Question:** How does a gnome get into Hedgeworth, what is the Members' Gate, and what happens to a ball lost in the pond?
+**Ruling:** The only public way into Hedgeworth is the Kicked Board, a loose board in the neighbour's fence on the side facing the road, which a mower or a kick breaks through and which stays broken (Thrift has stopped propping it shut). The Members' Gate beside the cart path is always locked; its plaque says MEMBERS ONLY and nobody living has the key. Balls lost in Hosepipe Pond are fetched by the pond mower, a paddling mower that is Hedgeworth's cousin of Gnome Golf's sea mower; a lost ball costs a stroke and is played again from where it was struck.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E15 builds the fence, the gate and the water hazard, and each needs one rule for how it is entered or lost.

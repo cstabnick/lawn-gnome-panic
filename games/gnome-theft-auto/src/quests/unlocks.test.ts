@@ -6,6 +6,7 @@ import { TESSIE } from '../config';
 import { GIVERS, QUESTS, questById } from './defs';
 import { SIDE_QUESTS } from './sideQuests';
 import { WINTER_QUESTS } from './winterQuests';
+import { GOLF_QUESTS } from './golfQuests';
 import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
@@ -38,10 +39,11 @@ describe('side unlock table', () => {
       ...NEWCOMER_QUESTS.map((q) => q.id),
       ...COAST_QUEST_DEFS.map((q) => q.id),
       ...WINTER_QUESTS.map((q) => q.id),
+      ...GOLF_QUESTS.map((q) => q.id),
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {
@@ -56,8 +58,8 @@ describe('side unlock table', () => {
       const m = u.questId.startsWith('nc-') ? tutorials : u.questId.startsWith('coast-') ? coast : counts;
       m.set(u.after, (m.get(u.after) ?? 0) + 1);
     }
-    // 4 until E21 moves the two winter quests onto m38/m39 (they share ch3-tundra-drift-run for now).
-    for (const n of counts.values()) expect(n).toBeLessThanOrEqual(4);
+    // 5 until E21 moves the two winter quests and The Ninth Green (E15) onto their own beats (they share ch3-tundra-drift-run for now).
+    for (const n of counts.values()) expect(n).toBeLessThanOrEqual(5);
     for (const n of tutorials.values()) expect(n).toBeLessThanOrEqual(2);
     for (const n of coast.values()) expect(n).toBeLessThanOrEqual(2);
     expect(counts.size).toBeGreaterThanOrEqual(8);

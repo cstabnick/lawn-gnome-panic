@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161]
-related: [hedgeworth-links, hedgeworth-clubhouse, the-kicked-board, basil-divot, peony-gravelrake, the-burrowfolk]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-161, games/gnome-theft-auto/src/golf/types.ts]
+related: [hedgeworth-links, hedgeworth-clubhouse, the-kicked-board, hosepipe-pond, basil-divot, peony-gravelrake, the-burrowfolk]
 ---
 
 The groundskeeper of Hedgeworth: patient, bent and wet to the knee, who talks to the grass, props the Kicked Board shut and hides moles under the ninth green.
@@ -28,7 +28,7 @@ Thrift keeps the grass because the grass is alive, and he keeps the moles becaus
 
 ## In the games
 
-Planned (batch 3). Chases the player off in quest 29 (`m29-the-kicked-board`) for "walking on wet fairway"; the giver of 48 (`m48-the-groundskeepers-secret`); evacuated ahead of the Combine's line in 52 (`m52-the-test-cut`).
+Built (batch 3, E15): watering the ninth green with his can and talking to it, between his shed door and the green. He is the giver of 48 (`m48-the-groundskeepers-secret`), chases the player off the wet fairway in 29 (`m29-the-kicked-board`), and is evacuated ahead of the Combine's line in 52 (`m52-the-test-cut`).
 
 ## Loose threads
 

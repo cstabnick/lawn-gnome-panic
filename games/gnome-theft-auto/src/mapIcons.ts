@@ -5,7 +5,7 @@ import type { Blip } from './types';
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
   | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
-  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish';
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish' | 'golf';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -40,6 +40,7 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   ski: { name: 'Snowdrop Slope (ski, sled)', color: '#3a7bd5' },
   bears: { name: 'Polar bears (very chill)', color: '#9fb8c8' },
   icefish: { name: 'Pail Pond (ice fishing)', color: '#4fb3c8' },
+  golf: { name: 'Hedgeworth Links (golf)', color: '#4caf50' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -427,6 +428,13 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       g.arc(x - 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
       g.arc(x + 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
       g.fill();
+      break;
+    }
+    case 'golf': {
+      // A flag on a pole, with a small cup of ground under it.
+      glyphRect(g, x, y, s, -0.35, -1, 0.2, 2);
+      glyphPoly(g, x, y, s, [[-0.15, -1], [0.95, -0.5], [-0.15, 0]]);
+      glyphRect(g, x, y, s, -0.9, 0.8, 1.4, 0.2);
       break;
     }
     case 'icefish': {

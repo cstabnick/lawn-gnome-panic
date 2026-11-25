@@ -107,7 +107,8 @@ describe('site registry', () => {
     expect(siteRect('campus')).toEqual({ minX: c.x - c.hw, maxX: c.x + c.hw, minZ: c.z - c.hd, maxZ: c.z + c.hd });
     expect(inSite('campus', c.x, c.z)).toBe(true);
     expect(inSite('campus', c.x + c.hw + 1, c.z)).toBe(false);
-    expect(anchorOf('golf-yard', 'breach')).toEqual({ x: -895, z: 640 });
+    // E15 moved the Kicked Board onto the yard's own east fence (golf/types.ts KICKED_BOARD).
+    expect(anchorOf('golf-yard', 'breach')).toEqual({ x: -1001, z: 640 });
     expect(() => anchorOf('golf-yard', 'nope')).toThrow();
     expect(siteById('pirate-ship').parent).toBe('ocean');
     expect(siteById('ferris-wheel').label).toBe('the Spokewheel');

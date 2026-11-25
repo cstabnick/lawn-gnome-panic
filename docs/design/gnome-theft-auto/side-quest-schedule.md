@@ -62,7 +62,7 @@ written by its constant, `TESSIE.questId`.
 | `nc-reedwatch` | Reedwatch | Newcomers' Card host (R-156) | #26 `m26-the-knot-hole` | #25 lands the player at the loch; the Club's reed hide is in sight. | `loch-moss` | 4 | existing |
 | `sq-flock-errands` | Errands for the Flock | Mother Saxifrage Wader (saxifrage) | #27 `m27-heap-of-trouble` | Saxifrage preached at the player (#25) and likes anyone who can stand still. | `waders-rest` | 4 | E15 |
 | `sq-dewdrop-2` | Hogweed Rolls Out | Hogweed Sprocket (hogweed) | #28 `m28-sibling-rivalry` | Hogweed phones after the Tattler chase (#28), having read about the Compost Heap furnace. | `underspan` | 4 | E18 |
-| `sq-hedgeworth-lost-balls` | Lost Balls | Thrift Hosepipe (thrift) | #29 `m29-the-kicked-board` | Thrift chased the player off the wet fairway at #29. | `hedgeworth` | 4 | E15 |
+| `sq-hedgeworth-lost-balls` | Lost Balls | Thrift Hosepipe (thrift) | #29 `m29-the-kicked-board` | Thrift chased the player off the wet fairway at #29. | `hedgeworth` | 4 | E15 (until E20: unlocked after `ch2-unmowed-tablet`) |
 | `race-rookie-mowdown` | Fizz Cup: Rookie Mow-Down | Lugnut Lulu (speedway) | #30 `m30-cams-big-night` | Lulu laughed at Cam at #30 and noticed the player's driving. | `speedway` | 4 | existing |
 | `sq-windfall-croft-deed` | The Croft by the Silo | Farmer Bramble (bramble) | #31 `m31-granny-cracks` | Granny told the player about her husband's silo at #31; Bramble knows who holds the deed. | `cloverfield` | 4 | E16 |
 | `nc-hangar-and-boathouse` | Hangar and Boathouse | Newcomers' Card host (R-156) | #32 `m32-driftwoods-chart` | Driftwood's chart (#32) puts a boat shed in the player's head; the Club sells sheds. | `canal` | 4 | existing |
@@ -87,16 +87,16 @@ written by its constant, `TESSIE.questId`.
 | `coast-queens-treasure` | The Queen's Treasure | Captain Samphire Bilge (samphire) | `coast-bathtub-tours` done | Bilge lets slip about the treasure at the end of the tour. | `saltbucket-shore` | 6 | E11 |
 | `sq-rootwell-lost-essay` | The Lost Essay | Dean Lovage Inkwell (lovage) | #47 `m47-hedgeworth-links` | Lovage was dodged at #45; he is sure the player is a student and wants a paper on level lines. | `rootwell` | 6 | E13 |
 | `sq-anthill-rent` | Rent for the Landlords | Professor Betony Sextant (betony) | #48 `m48-the-groundskeepers-secret` | Sextant knows the ants (#46) and the ants are late on a sugar invoice. | `rootwell` | 6 | E13 |
-| `sq-hedgeworth-pro-lesson` | A Lesson from the Pro | Basil Divot (basil) | #49 `m49-loamdeep` | Basil lost a hole to the player (#47) and wants to see how. | `hedgeworth` | 6 | E15 |
+| `sq-hedgeworth-pro-lesson` | A Lesson from the Pro | Basil Divot (basil) | #49 `m49-loamdeep` | Basil lost a hole to the player (#47) and wants to see how. | `hedgeworth` | 6 | E15 (until E21: after `ch3-kiln-resin-ice`, needs Lost Balls) |
 | `sq-loamdeep-lamps` | Lamplighters | Old Mother Tumblesoil (tumblesoil) | #50 `m50-trellisdown-tasting` | The Burrowfolk agreed to help (#49); the lamp round is next. | `loamdeep` | 6 | E17 |
-| `sq-hedgeworth-ninth-green` | The Ninth Green | Thrift Hosepipe (thrift) | #50 `m50-trellisdown-tasting` | Thrift needs the moles' tunnels shored up after #48. | `hedgeworth` | 6 | E15 |
+| `sq-hedgeworth-ninth-green` | The Ninth Green | Thrift Hosepipe (thrift) | #50 `m50-trellisdown-tasting` | Thrift needs the moles' tunnels shored up after #48. | `hedgeworth` | 6 | E15 (until E21: after `ch3-tundra-drift-run`, needs Lost Balls) |
 | `sq-trellisdown-pickers` | Pickers' Pay | Chicory Snips (chicory) | #51 `m51-the-flock-stands` | The tasting (#50) left Chicory owing the pickers a week of dew. | `trellisdown` | 6 | E15 |
-| `sq-hedgeworth-members-cup` | Members' Cup | Dame Peony Gravelrake (peony) | #52 `m52-the-test-cut` | Peony agreed to hear the crew out at #47 and runs her cup on the first of the month. | `hedgeworth` | 6 | E15 |
+| `sq-hedgeworth-members-cup` | Members' Cup | Dame Peony Gravelrake (peony) | #52 `m52-the-test-cut` | Peony agreed to hear the crew out at #47 and runs her cup on the first of the month. | `hedgeworth` | 6 | E15 (until E21: after `ch4-runway-flares`, needs the pro lesson) |
 | `sq-flock-vigil` | The Long Vigil | Mother Saxifrage Wader (saxifrage) | #53 `ch3-tundra-drift-run` | The Flock gave the test date (#51) and now keep a vigil. | `waders-rest` | 6 | E15 |
 | `race-snail-endurance` | Fizz Cup: Snail-Coach Endurance | Lugnut Lulu (speedway) | #54 `m54-the-heist-board` | After the drift run (#53) Shelldon is back in town and the Speedway reopens. | `speedway` | 6 | existing |
 | `nc-take-off` | Wings Over the Flats | Newcomers' Card host (R-156) | #20 `ch2-vespers-offer` | The Dust Flats and the airfield are open; the player must be able to fly before #46. | `dust-flats` | 4 | existing |
 | `sq-hoa-audit` | The HOA Audit | a stranger (strangers) | #55 `ch4-runway-flares` | Spans all five biomes: only once the Fells and the Dust Flats are open (#53). | `wilds` | 6 | existing |
-| `sq-hedgeworth-reseed` | Reseeding the Scar | Thrift Hosepipe (thrift) | #56 `m56-mortar-for-a-mower` | Hedgeworth keeps its mown scar (#52); Thrift wants it re-turfed. | `hedgeworth` | 6 | E15 |
+| `sq-hedgeworth-reseed` | Reseeding the Scar | Thrift Hosepipe (thrift) | #56 `m56-mortar-for-a-mower` | Hedgeworth keeps its mown scar (#52); Thrift wants it re-turfed. | `hedgeworth` | 6 | E21 (deferred: needs the W14 mown scar, not built by E15) |
 | `race-fizz-cup-final` | Fizz Cup: The Final | Lugnut Lulu (speedway) | #57 `ch4-sandpit-drop` | The runway flares (#55) lit the airfield next door to the Speedway. | `speedway` | 6 | existing |
 | `sq-underspan-scrap-run` | The Scrap Run | Hogweed Sprocket (hogweed) | #57 `ch4-sandpit-drop` | The mortar fit (#56) left the workshop short on parts. | `underspan` | 6 | E17 |
 | `nc-skyway` | Up on the Skyway | Newcomers' Card host (R-156) | #15 `ch1-founders-boot` | End of act I: the player can drive well enough for the deck (as today). | `underspan` | 3 | existing |
@@ -122,7 +122,7 @@ Every new area has at least one side quest:
 | Windfall Croft (E16) | `sq-windfall-croft-deed` |
 | Loamdeep, the Burrowfolk (E17) | `sq-burrow-post`, `sq-loamdeep-lamps` |
 | Wader's Rest (E15) | `sq-flock-errands`, `sq-flock-vigil` |
-| Hedgeworth (E15): owner, pro, groundskeeper | `sq-hedgeworth-lost-balls`, `sq-hedgeworth-pro-lesson`, `sq-hedgeworth-ninth-green`, `sq-hedgeworth-members-cup`, `sq-hedgeworth-reseed` |
+| Hedgeworth (E15): owner, pro, groundskeeper | `sq-hedgeworth-lost-balls`, `sq-hedgeworth-pro-lesson`, `sq-hedgeworth-ninth-green`, `sq-hedgeworth-members-cup`, `sq-hedgeworth-reseed` (deferred to E21). The first four are unlocked after story quests that exist today (see the rows) until E20/E21 build their rows |
 | Snowdrop Slope, sledding and polar bears (E12) | `sq-snowdrop-sled-trials`, `sq-pail-pond-lines` (both unlocked after `ch3-tundra-drift-run` until E21 builds m38/m39) |
 | Capwood (E14) | `sq-capwood-cap-count` |
 | Pinwheel Ridge (E13) | `sq-pinwheel-linemen` |

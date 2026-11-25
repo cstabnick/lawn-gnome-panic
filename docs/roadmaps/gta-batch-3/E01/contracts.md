@@ -153,7 +153,7 @@ Sizes are full width x depth (hw/hd x 2). "natural" = `flat: false`.
 | `farm-plot` | Windfall Croft | E16 | farm | (100, 535) | 80 x 60 | flat | Cloverfield Farms |
 | `vineyard` | Trellisdown Vineyard | E16 | farm | (-1140, -170) | 300 x 220 | natural | on `hill/vineyard-slope` (~14 m) |
 | `mansion` | Brassknock Manor | E16 | building | (-1150, 40) | 120 x 100 | flat | door (-1150, -10) |
-| `golf-yard` | Hedgeworth Links | E15 | venue | (-1180, 620) | 360 x 420 | flat | breach (-895, 640) = the Kicked Board, approach (-1000, 500) |
+| `golf-yard` | Hedgeworth Links | E15 | venue | (-1180, 620) | 360 x 420 | flat | breach (-1001, 640) = the Kicked Board (E15 moved it onto the yard's own east fence; was (-895, 640)), approach (-1000, 500) |
 | `ocean` | the Saltwater | E11 | water | (0, 1490) (E28; was (0, 1290)) | 3580 x 600 (E28; was 2780 x 200) | natural | land only: E11 adds the water marker, `WATER.order`/bodies and the carve; the rim raises the ground near the edge |
 | `beach` | Saltbucket Shore beach | E11 | natural | (0, 1165) | 3580 x 50 (E28; was 2780 x 50) | natural | |
 | `boardwalk` | Saltbucket Boardwalk | E11 | venue | (0, 1115) | 420 x 50 | flat | entrance (0, 1090) at the end of `coast-spur` (0, 1060) |

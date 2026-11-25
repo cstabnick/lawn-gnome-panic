@@ -78,6 +78,11 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Snowcap Rise (winterQuests.ts). Temporary: the schedule has them after m38/m39 (act III, E20/E21), which do not exist yet.
   { questId: 'sq-snowdrop-sled-trials', after: 'ch3-tundra-drift-run', why: "Gentian Bootlace's ski class is north of the Fells; unlocked once the player has been north. E21 moves it to after m38-pail-pond." },
   { questId: 'sq-pail-pond-lines', after: 'ch3-tundra-drift-run', why: "Thermos Theo's shanty is on Pail Pond, north of the Fells. E21 moves it to after m39-couch-surfing." },
+  // Hedgeworth Links (golfQuests.ts). Temporary: the schedule has them after m29/m49/m50/m52 (E20/E21 build those). Each also needs its prereq.
+  { questId: 'sq-hedgeworth-lost-balls', after: 'ch2-unmowed-tablet', why: "Thrift's course is in the west yard behind the Kicked Board; unlocked at the end of chapter 2. E20 moves it to after m29-the-kicked-board." },
+  { questId: 'sq-hedgeworth-pro-lesson', after: 'ch3-kiln-resin-ice', why: "Basil wants to see the swing of whoever came through the board (needs Lost Balls). E21 moves it to after m49-loamdeep." },
+  { questId: 'sq-hedgeworth-ninth-green', after: 'ch3-tundra-drift-run', why: "Thrift's moles under the ninth green (needs Lost Balls). E21 moves it to after m50-trellisdown-tasting." },
+  { questId: 'sq-hedgeworth-members-cup', after: 'ch4-runway-flares', why: "Peony's cup, on the first of the month (needs the pro's lesson). E21 moves it to after m52-the-test-cut." },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -127,6 +132,9 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'rutbottom-teasel': '#d8342c',
   'capwood-lulu': '#8e44ad',
   'capwood-warden': '#7fbf5a',
+  thrift: '#7bc45a',
+  basil: '#f2c230',
+  peony: '#c9a9e8',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

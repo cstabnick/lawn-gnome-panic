@@ -246,13 +246,52 @@
         "label": "Hedgeworth Links",
         "anchors": {
           "breach": {
-            "dx": 285,
+            "dx": 179,
             "dz": 20
           },
           "approach": {
             "dx": 180,
             "dz": -120
           }
+        }
+      }
+    },
+    {
+      "id": "giver/thrift",
+      "kind": "giver",
+      "x": 93,
+      "z": 611,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/basil",
+      "kind": "giver",
+      "x": 60,
+      "z": 475,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/peony",
+      "kind": "giver",
+      "x": 90,
+      "z": 462,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": 2,
+          "yaw": 3.141592653589793
         }
       }
     }

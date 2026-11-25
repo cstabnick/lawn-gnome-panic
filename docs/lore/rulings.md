@@ -894,3 +894,10 @@ as one gnome in two places.
 **Ruling:** The four bands and their roads: **Snowcap Rise** is the north band (`north-band`, `north-band-east`); **Saltbucket Shore** the south band (`south-band`, `south-band-east`, `coast-spur`); **Rootwell** the east band (`east-band`, `east-band-south`, `runway-spur`); **Trellisdown** the west band (`west-band`, `west-band-south`). The band roads join into one ring road round the old map. **Drainpipe Court** and **the Gutter Bowls** are inside **Founders' Green**. **The Underspan's** ground is beside the Unfinished Span at (580, -26). **Wader's Rest** is in Trellisdown, about 400 m west of Loch Moss, not on its shore. Slot ids in `src/sites.ts` stay as they are and carry these names as labels.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
 **Why:** E01 built the ground after E04 named the places.
+
+## R-169
+
+**Question:** Where does Turfton property come from, and how is it paid for?
+**Ruling:** Property in Turfton is bought on a loan. The First Kiln Bank's ledger (R-166) carries the Kiln-Debt balance and each property loan as separate lines: "added to the Kiln-Debt ledger" in R-166 means booked on that ledger beside the Kiln-Debt balance, never added to the balance itself. Paying off Kiln-Debt does not clear a property loan, and the reverse.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the GTA economy (E08) sells property on a loan (flat 3B, Windfall Croft) and needs one rule for where the money sits, so the Kiln-Debt story beats and the "paid off" moment keep their meaning.

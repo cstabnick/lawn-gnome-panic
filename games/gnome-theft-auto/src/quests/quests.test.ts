@@ -130,7 +130,8 @@ describe('quest step transitions', () => {
       unlock: vi.fn(),
       play: vi.fn(),
       economy: {
-        state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false }),
+        state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false, loans: [] }),
+      borrow: () => true, payLoan: () => 0, totalOwed: () => 5000,
         earn: (amt) => earned.push(amt),
         spend: () => true,
         payDebt: (amt) => { paid.push(amt); return amt; },

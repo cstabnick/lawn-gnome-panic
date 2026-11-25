@@ -78,7 +78,7 @@ export function evaluateStuntJump(
   }
   const spins = Math.floor(Math.abs(yawDelta) / (Math.PI * 1.7));
   const label = spins >= 1 ? `INSANE ${spins * 360}° STUNT BONUS` : 'INSANE STUNT BONUS';
-  const bonus = firstTime ? 150 : 40;
+  const bonus = firstTime ? 180 : 50;
   return { qualifies: true, bonus, label, firstTime };
 }
 

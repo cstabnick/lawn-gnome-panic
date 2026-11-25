@@ -25,13 +25,13 @@ interface Spot {
 }
 
 const INTERACT_RANGE = 3.6;
-const COLA_COST = 10;
+const COLA_COST = 15;
 const COLA_HEAL = 0.35;
-const FIZZ_COST = 15;
+const FIZZ_COST = 25;
 const FIZZ_DURATION_S = 15.0;
 const FIZZ_SPEED_MULT = 1.35;
 const FIZZ_JUMP_MULT = 1.28;
-const CAKE_COST = 25;
+const CAKE_COST = 40;
 
 const GNOMA_QUIPS: readonly string[] = [
   "Cooking Gnoma: 'Fresh out of the kiln-oven! Mind the glaze.'",
@@ -42,23 +42,23 @@ const GNOMA_QUIPS: readonly string[] = [
 
 const SPOTS: readonly Spot[] = [
   // Acorn-Cola vending machines (matches scatterVendingMachines in world.ts)
-  { kind: 'cola', x: -7, z: -22, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
-  { kind: 'cola', x: 7, z: -46, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
-  { kind: 'cola', x: -24, z: 7, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
-  { kind: 'cola', x: 46, z: 7, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
-  { kind: 'cola', x: -53, z: 24, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
-  { kind: 'cola', x: 67, z: 18, cost: COLA_COST, prompt: 'Buy Acorn-Cola (10 Acorns — Heal)' },
+  { kind: 'cola', x: -7, z: -22, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
+  { kind: 'cola', x: 7, z: -46, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
+  { kind: 'cola', x: -24, z: 7, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
+  { kind: 'cola', x: 46, z: 7, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
+  { kind: 'cola', x: -53, z: 24, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
+  { kind: 'cola', x: 67, z: 18, cost: COLA_COST, prompt: 'Buy Acorn-Cola (15 Acorns — Heal)' },
 
   // Dandelion Fizz vending machines (matches scatterVendingMachines in world.ts)
-  { kind: 'fizz', x: 7, z: -20, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
-  { kind: 'fizz', x: -7, z: 32, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
-  { kind: 'fizz', x: 24, z: -7, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
-  { kind: 'fizz', x: -46, z: -7, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
-  { kind: 'fizz', x: 53, z: -18, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
-  { kind: 'fizz', x: -67, z: 32, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (15 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: 7, z: -20, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: -7, z: 32, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: 24, z: -7, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: -46, z: -7, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: 53, z: -18, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
+  { kind: 'fizz', x: -67, z: 32, cost: FIZZ_COST, prompt: 'Buy Dandelion Fizz (25 Acorns — Pollen Rush)' },
 
   // Cooking Gnoma's Food Truck
-  { kind: 'cake', x: GNOMA_TRUCK.x, z: GNOMA_TRUCK.z, cost: CAKE_COST, prompt: 'Buy Acorn-Flour Cake (25 Acorns — Full Glaze)' },
+  { kind: 'cake', x: GNOMA_TRUCK.x, z: GNOMA_TRUCK.z, cost: CAKE_COST, prompt: 'Buy Acorn-Flour Cake (40 Acorns — Full Glaze)' },
 ];
 
 /**

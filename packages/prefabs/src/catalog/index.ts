@@ -126,6 +126,8 @@ import { GTA_FRINGE_KIT } from './gta-fringe-kit';
 import { GTA_FRINGE_KIT_B } from './gta-fringe-kit-b';
 import { GTA_FRINGE_YARD } from './gta-fringe-yard';
 import { GTA_HANGAR_BOATHOUSE } from './gta-hangar-boathouse';
+import { GTA_ECONOMY } from './gta-economy';
+import { GTA_ECONOMY_GEAR } from './gta-economy-gear';
 import { GTA_AIRCRAFT } from './gta-aircraft';
 import { GTA_SKY_TRAFFIC } from './gta-sky-traffic';
 import { GTA_SKYWAY_WORKS } from './gta-skyway-works';
@@ -157,4 +159,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_FRINGE_KIT, ...GTA_FRINGE_KIT_B, ...GTA_FRINGE_YARD,
   ...GNOMELOCK_GEAR,
   ...GNOME_SOULS,
+  ...GTA_ECONOMY, ...GTA_ECONOMY_GEAR,
 ];

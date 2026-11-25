@@ -26,11 +26,13 @@ describe('economy', () => {
       acorns: STARTING_ACORNS,
       debtRemaining: STARTING_DEBT,
       debtPaidOff: false,
+      loans: [],
     });
     expect(economy.state()).toEqual({
       acorns: 50,
       debtRemaining: 5000,
       debtPaidOff: false,
+      loans: [],
     });
   });
 
@@ -63,6 +65,7 @@ describe('economy', () => {
       acorns: 0,
       debtRemaining: 4950,
       debtPaidOff: false,
+      loans: [],
     });
 
     economy.earn(6000);
@@ -71,6 +74,7 @@ describe('economy', () => {
       acorns: 1050,
       debtRemaining: 0,
       debtPaidOff: true,
+      loans: [],
     });
 
     expect(economy.payDebt(100)).toBe(0);
@@ -81,11 +85,11 @@ describe('economy', () => {
 
     const first = economy.chargeHospital();
     expect(first.fee).toBe(HOSPITAL_FEE);
-    expect(first.receipt).toContain('GLAZE CLINIC: -25 Acorns');
+    expect(first.receipt).toContain(`GLAZE CLINIC: -${HOSPITAL_FEE} Acorns`);
     expect(first.receipt).toContain('KILN-SHIELD: CLAIM DENIED');
-    expect(economy.state().acorns).toBe(25);
+    expect(economy.state().acorns).toBe(STARTING_ACORNS - HOSPITAL_FEE);
 
-    economy.spend(20);
+    economy.spend(economy.state().acorns - 5);
     expect(economy.state().acorns).toBe(5);
 
     const partial = economy.chargeHospital();
@@ -117,13 +121,15 @@ describe('economy', () => {
     expect(economy.onPlayerRagdollImpact(10, 300, 300)).toBe(0);
     expect(economy.state().acorns).toBe(50);
 
-    // Inside a fraud zone at valid speed
-    expect(economy.onPlayerRagdollImpact(10, downtown.x + 5, downtown.z - 5)).toBe(80);
-    expect(economy.state().acorns).toBe(130);
+    // Inside a fraud zone at valid speed (payout is linear in speed)
+    const inZone = economy.onPlayerRagdollImpact(10, downtown.x + 5, downtown.z - 5);
+    expect(inZone).toBeGreaterThan(0);
+    expect(economy.state().acorns).toBe(STARTING_ACORNS + inZone);
 
     // Without coordinates, speed >= 4 awards payout directly
-    expect(economy.onPlayerRagdollImpact(5)).toBe(40);
-    expect(economy.state().acorns).toBe(170);
+    const noCoords = economy.onPlayerRagdollImpact(5);
+    expect(noCoords).toBe(inZone / 2);
+    expect(economy.state().acorns).toBe(STARTING_ACORNS + inZone + noCoords);
   });
 
   it('persists and restores state across storage round-trips', () => {
@@ -138,9 +144,10 @@ describe('economy', () => {
 
     const restored = createEconomy(storage);
     expect(restored.state()).toEqual({
-      acorns: 100,
+      acorns: STARTING_ACORNS + 200 - 125 - HOSPITAL_FEE,
       debtRemaining: 4875,
       debtPaidOff: false,
+      loans: [],
     });
 
     // Corrupt storage falls back cleanly to starting defaults
@@ -149,6 +156,101 @@ describe('economy', () => {
       acorns: 50,
       debtRemaining: 5000,
       debtPaidOff: false,
+      loans: [],
     });
+  });
+});
+
+describe('economy loans', () => {
+  it('borrow books a loan, adds to the same id, and rejects a non-positive amount', () => {
+    const economy = createEconomy(createMemoryStorage());
+
+    expect(economy.borrow('farm', 'Mossbank Farm loan', 300)).toBe(true);
+    expect(economy.state().loans).toEqual([
+      { id: 'farm', name: 'Mossbank Farm loan', principal: 300, remaining: 300 },
+    ]);
+    expect(economy.state().acorns).toBe(STARTING_ACORNS);
+
+    expect(economy.borrow('farm', 'Mossbank Farm loan', 100)).toBe(true);
+    expect(economy.state().loans).toEqual([
+      { id: 'farm', name: 'Mossbank Farm loan', principal: 400, remaining: 400 },
+    ]);
+
+    expect(economy.borrow('farm', 'Mossbank Farm loan', 0)).toBe(false);
+    expect(economy.borrow('farm', 'Mossbank Farm loan', -10)).toBe(false);
+    expect(economy.state().loans[0].remaining).toBe(400);
+  });
+
+  it('payLoan clamps to the wallet and the remaining amount, and removes a paid-off loan', () => {
+    const economy = createEconomy(createMemoryStorage());
+    economy.borrow('home', 'Home loan', 200);
+
+    // Wallet is 50, so only 50 can be paid.
+    expect(economy.payLoan('home', 999)).toBe(50);
+    expect(economy.state().acorns).toBe(0);
+    expect(economy.state().loans[0].remaining).toBe(150);
+
+    economy.earn(1000);
+    expect(economy.payLoan('home', 999)).toBe(150);
+    expect(economy.state().loans).toEqual([]);
+    expect(economy.state().acorns).toBe(1000 - 150);
+
+    expect(economy.payLoan('home', 10)).toBe(0);
+  });
+
+  it('payLoan returns 0 for an unknown id', () => {
+    const economy = createEconomy(createMemoryStorage());
+    economy.earn(100);
+    expect(economy.payLoan('nope', 10)).toBe(0);
+    expect(economy.state().acorns).toBe(150);
+  });
+
+  it('totalOwed is Kiln-Debt plus every open loan', () => {
+    const economy = createEconomy(createMemoryStorage());
+    expect(economy.totalOwed()).toBe(STARTING_DEBT);
+
+    economy.borrow('a', 'A loan', 300);
+    economy.borrow('b', 'B loan', 200);
+    expect(economy.totalOwed()).toBe(STARTING_DEBT + 500);
+
+    economy.earn(300);
+    economy.payLoan('a', 300);
+    expect(economy.totalOwed()).toBe(STARTING_DEBT + 200);
+  });
+
+  it('loads a stored save without loans as loans: []', () => {
+    const storage = createMemoryStorage({
+      [ECONOMY_KEY]: JSON.stringify({ acorns: 40, debtRemaining: 4000, debtPaidOff: false }),
+    });
+    const economy = createEconomy(storage);
+    expect(economy.state()).toEqual({
+      acorns: 40,
+      debtRemaining: 4000,
+      debtPaidOff: false,
+      loans: [],
+    });
+  });
+
+  it('keeps loans across a second createEconomy on the same storage', () => {
+    const storage = createMemoryStorage();
+    createEconomy(storage).borrow('farm', 'Mossbank Farm loan', 250);
+
+    const restored = createEconomy(storage);
+    expect(restored.state().loans).toEqual([
+      { id: 'farm', name: 'Mossbank Farm loan', principal: 250, remaining: 250 },
+    ]);
+    expect(restored.totalOwed()).toBe(STARTING_DEBT + 250);
+  });
+
+  it('payDebt never touches loans', () => {
+    const economy = createEconomy(createMemoryStorage());
+    economy.borrow('farm', 'Mossbank Farm loan', 300);
+    economy.earn(500);
+
+    expect(economy.payDebt(100)).toBe(100);
+    expect(economy.state().loans).toEqual([
+      { id: 'farm', name: 'Mossbank Farm loan', principal: 300, remaining: 300 },
+    ]);
+    expect(economy.state().debtRemaining).toBe(STARTING_DEBT - 100);
   });
 });

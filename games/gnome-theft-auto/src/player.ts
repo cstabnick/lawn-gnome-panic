@@ -316,7 +316,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
           p.y = floorY;
         }
         if (input.jump && p.grounded) {
-          p.vy = PLAYER.jumpSpeed;
+          p.vy = PLAYER.jumpSpeed * (p.jumpMult ?? 1);
           p.grounded = false;
         }
         if (!p.grounded) {

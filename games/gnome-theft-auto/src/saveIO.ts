@@ -28,6 +28,8 @@ export const GTA_SAVE_KEYS = [
   'gta-outskirts-v1', // outskirts/save.ts: Pebblewick (visited, counters, souvenirs, wishing well, the night knock)
   'gta-mowing-v1', // flora/rewards.ts: plants mowed (total, Lawn Service cuts, per kind)
   'gta-odd-rides-v1', // oddRides.ts: odd rides driven (Sunday Driver)
+  'gta-inventory-v1', // inventory.ts: the bag (snacks and fun items, counts)
+  'gta-ownership-v1', // ownership.ts: properties bought, Kiln-Shield policies, written-off insured vehicles
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

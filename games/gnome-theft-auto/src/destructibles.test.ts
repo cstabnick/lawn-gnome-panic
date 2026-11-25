@@ -107,14 +107,14 @@ describe('chaosBonusForStreak', () => {
 describe('interactables', () => {
   it('heals on Acorn-Cola purchase and rejects when out of Acorns', () => {
     const hud = makeMockHud();
-    const economy = makeMemoryEconomy(15);
+    const economy = makeMemoryEconomy(20);
     const fx = makeMockFx();
     const play = vi.fn<(sfx: Sfx) => void>();
     const interactables = createInteractables(hud, economy, fx, play);
 
     // Near Acorn-Cola at (-7, -22)
     const player = makeMockPlayer({ x: -7, z: -20.5, health: 0.4 });
-    expect(interactables.prompt(player)).toBe('Buy Acorn-Cola (10 Acorns — Heal)');
+    expect(interactables.prompt(player)).toBe('Buy Acorn-Cola (15 Acorns — Heal)');
     expect(interactables.interact(player)).toBe(true);
     expect(player.health).toBeCloseTo(0.75, 5);
     expect(economy.state().acorns).toBe(5);
@@ -128,14 +128,14 @@ describe('interactables', () => {
 
   it('grants 15s Pollen Rush buff from Dandelion Fizz and expires cleanly', () => {
     const hud = makeMockHud();
-    const economy = makeMemoryEconomy(30);
+    const economy = makeMemoryEconomy(40);
     const fx = makeMockFx();
     const play = vi.fn<(sfx: Sfx) => void>();
     const interactables = createInteractables(hud, economy, fx, play);
 
     // Near Dandelion Fizz at (7, -20)
     const player = makeMockPlayer({ x: 7, z: -18 });
-    expect(interactables.prompt(player)).toBe('Buy Dandelion Fizz (15 Acorns — Pollen Rush)');
+    expect(interactables.prompt(player)).toBe('Buy Dandelion Fizz (25 Acorns — Pollen Rush)');
     expect(interactables.interact(player)).toBe(true);
     expect(economy.state().acorns).toBe(15);
 
@@ -156,13 +156,13 @@ describe('interactables', () => {
 
   it('restores full health at Gnoma Food Truck and hides prompt while driving or airborne', () => {
     const hud = makeMockHud();
-    const economy = makeMemoryEconomy(50);
+    const economy = makeMemoryEconomy(65);
     const fx = makeMockFx();
     const play = vi.fn<(sfx: Sfx) => void>();
     const interactables = createInteractables(hud, economy, fx, play);
 
     const player = makeMockPlayer({ x: GNOMA_TRUCK.x + 1.5, z: GNOMA_TRUCK.z, health: 0.2 });
-    expect(interactables.prompt(player)).toBe('Buy Acorn-Flour Cake (25 Acorns — Full Glaze)');
+    expect(interactables.prompt(player)).toBe('Buy Acorn-Flour Cake (40 Acorns — Full Glaze)');
     expect(interactables.interact(player)).toBe(true);
     expect(player.health).toBe(1.0);
     expect(economy.state().acorns).toBe(25);

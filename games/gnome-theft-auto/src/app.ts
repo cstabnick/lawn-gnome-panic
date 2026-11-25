@@ -81,7 +81,7 @@ import { beginMount, doorsOf, stepMount, type MountSeq } from './mount';
 import {
   collideVehicles, createVehicle, damageVehicle, dropMulchSlick, explodeVehicle, hopLowrider, repaintVehicle,
   repairVehicle, setDamageHook, setDoorOpen, setVehicleHeadlights, stepKnock, stepVehicle, syncVehicleMesh, updateMulchSlicks, beginVehicleFrame,
-  setVehicleLook, seatWorld,
+  setVehicleLook, seatWorld, mendVehicle,
 } from './vehicles';
 import { isBoat, stepIdleBoats } from './boats';
 import { createBoatTraffic } from './boatTraffic';
@@ -134,6 +134,17 @@ import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
+// E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
+import { createOwnership, installOwnership } from './ownership';
+import { createInventory, installInventory } from './inventory';
+import { createDealers } from './dealers/runtime';
+import { dealerPrice, UNLISTED_VALUE } from './dealers/config';
+import { createInsurance } from './lockup/insurance';
+import { createLedger } from './ledger';
+import { createBag } from './bag/runtime';
+import { createPickups, pickupSpots } from './bag/pickups';
+import { setRepairHook } from './glazePanelRepair';
+import { ECON_ACH } from './econAchievements';
 import { boxesBlocked } from './lockup/safeSpot';
 import { buildEstates } from './lockup/estates';
 import { waterDepthAt } from './water';
@@ -271,7 +282,7 @@ chase.yaw = world.spawn.yaw;
 const input = createInput(canvas, ui, {
   handbrake: simActive,
   hop: () => player.vehicle?.kind === 'lowrider',
-  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen() && !gunStore.isOpen() && !modKit.isOpen() && !hunting.isOpen() && !birding.isOpen() && !fishing.isOpen() && !outskirts.isOpen() && !lockup.isOpen() && !phone.isOpen() && !craft.shop.isOpen(),
+  canLock: () => !cutscene.active && !introTour.active && !journal.isOpen() && !garages.isOpen() && !gunStore.isOpen() && !modKit.isOpen() && !hunting.isOpen() && !birding.isOpen() && !fishing.isOpen() && !outskirts.isOpen() && !lockup.isOpen() && !phone.isOpen() && !craft.shop.isOpen() && !econOpen(),
 });
 const weapons = createWeapons(scene, fx);
 weapons.attachTo(player.hand());
@@ -466,6 +477,8 @@ const garages = createGarages(ui, hud, economy, {
     refreshDriving();
     glazeAchievements(info, achievements);
   },
+  ownLook: (v) => (lockup.ownedUidOf(v) && v.look ? v.look : null),
+  keepOwnLook: (v) => lockup.ownedUidOf(v) !== null,
 });
 // Ammu-Gnation, the gun-mod store on Turfton's east edge (gunStore.ts): its walls join the world's collision boxes.
 const gunStore = createGunStore({
@@ -731,6 +744,48 @@ const lockup = createLockup({
   achievements,
 });
 
+// ---- E08: ownership (properties on a loan, Kiln-Shield cover), the bag, the dealerships, the Ledger ----
+// Economy and bag are per player: nothing here goes on the wire; a bought vehicle is shared by the Sling-Lift as before.
+const ownership = createOwnership({ economy });
+installOwnership(ownership);
+const inventory = createInventory();
+installInventory(inventory);
+const econBlocked = (): string | null => {
+  if (cutscene.active || introTour.active || stageHome) return 'Not now.';
+  if (deathT > 0) return 'You are in no state for that.';
+  return null;
+};
+const dealers = createDealers({
+  scene, ui, hud, economy, ownership, lockup, play, achievements,
+  player: () => ({ x: player.x, z: player.z, vehicle: player.vehicle }),
+  probe: {
+    ground: (x, z) => terrain.groundAt(x, z),
+    water: waterDepthAt,
+    slope: (x, z) => terrain.slopeAt(x, z),
+    blocked: lockupBoxesBlocked,
+  },
+});
+const insurance = createInsurance({
+  ui, hud, phone, economy, ownership, lockup, play, achievements, blocked: econBlocked,
+  valueOf: (rec) => ownership.boughtFor(rec.uid) ?? dealerPrice(rec.kind, rec.variant) ?? UNLISTED_VALUE,
+});
+const ledger = createLedger({ ui, hud, phone, economy, ownership, play, achievements, blocked: econBlocked });
+const bag = createBag({
+  ui, hud, phone, economy, inventory, play, achievements,
+  health: () => player.health,
+  heal: (a) => { player.health = Math.min(1, player.health + Math.max(0, a)); },
+  vehicle: () => player.vehicle,
+  patchVehicle: (v, a) => mendVehicle(v, a),
+  confetti: () => fx.confetti(player.x, player.y + 1.2, player.z),
+  blocked: econBlocked,
+});
+const snackPickups = createPickups({
+  scene, spots: pickupSpots(), groundAt: (x, z) => terrain.groundAt(x, z),
+  onPick: (id) => inventory.add(id) > 0,
+});
+setRepairHook(() => void achievements.unlock(ECON_ACH.repair));
+const econOpen = (): boolean => dealers.isOpen() || insurance.isOpen() || ledger.isOpen() || bag.isOpen();
+
 // ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
 // Seats: the mower I drive has passenger seats, and its seat book hands them out to players who ask (seats.ts). I can
 // also ride in someone else's mower; `riding` is that seat, and `askingRide` a request still waiting on the driver.
@@ -971,8 +1026,9 @@ function helmStorage(): HelmStorage | null {
 function takeWheel(v: Vehicle): void {
   v.driver = 'player';
   // The player's own Pay 'n' Glaze work shows on any vehicle of that model they drive (before the sim reads the ride height).
+  // E08: the player's own vehicles (Lock-Up uid) keep their own look; only stock vehicles wear the per-model loadout.
   const own = ownedLoadout(v.kind);
-  if (own && v.rig) setVehicleLook(v, own);
+  if (own && v.rig && !lockup.ownedUidOf(v)) setVehicleLook(v, own);
   if (simActive() && !v.spec.flies && !v.spec.boat) v.sim = createSimDrive(v);
   player.enter(v);
   input.refresh();
@@ -1513,7 +1569,7 @@ function frame(now: number): void {
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
     : birding.viewing()
       ? { ...rawInp, moveX: 0, moveY: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, camYaw: 0, camPitch: 0 }
-    : garages.isOpen() || gunStore.isOpen() || modKit.isOpen() || hunting.isOpen() || birding.isOpen() || fishing.isOpen() || outskirts.isOpen() || lockup.isOpen() || phone.isOpen()
+    : garages.isOpen() || gunStore.isOpen() || modKit.isOpen() || hunting.isOpen() || birding.isOpen() || fishing.isOpen() || outskirts.isOpen() || lockup.isOpen() || phone.isOpen() || econOpen()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, enterExit: false, boost: false }
     // The weapon wheel is up: the mouse and sticks point at guns, so no firing, looking or entering (walking still works).
     : weaponWheel.isOpen()
@@ -1544,10 +1600,18 @@ function frame(now: number): void {
   const giverDist = giverPrompt ? (quests.giverDist?.(player.x, player.z) ?? 0) : Infinity;
   const preferVehicle = !!near && nearDist <= giverDist;
   const garagePrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : garages.prompt(player);
-  const buff = interactables.update(dt, player);
+  const cakeBuff = interactables.update(dt, player);
+  const bagBuff = bag.buff();
+  const buff = {
+    speedMult: cakeBuff.speedMult * bagBuff.speedMult,
+    jumpMult: cakeBuff.jumpMult * bagBuff.jumpMult,
+    buffLabel: cakeBuff.buffLabel ?? bagBuff.label,
+  };
+  player.jumpMult = buff.jumpMult;
   const interPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : interactables.prompt(player);
   const gunPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gunStore.prompt(player);
   const lockupPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : lockup.prompt();
+  const dealerPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : dealers.prompt();
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
@@ -1560,6 +1624,7 @@ function frame(now: number): void {
     else if (giverPrompt) quests.interact(player.x, player.z);
     else if (garagePrompt?.startsWith('Tune')) garages.openTuningModal();
     else if (lockupPrompt) lockup.interact();
+    else if (dealerPrompt) dealers.interact();
     else if (gunPrompt) gunStore.interact(player);
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
@@ -1872,6 +1937,10 @@ function frame(now: number): void {
   cityDressing.update(dt, simX, simZ);
   garages.update(dt, player, watch);
   lockup.update(dt);
+  dealers.update(dt);
+  insurance.update(dt);
+  bag.update(dt);
+  snackPickups.update(dt, player.x, player.z, !player.vehicle && deathT <= 0);
   gunStore.update(dt);
   culvertCooldown = Math.max(0, culvertCooldown - dt);
   steamCooldown = Math.max(0, steamCooldown - dt);
@@ -2008,7 +2077,7 @@ function frame(now: number): void {
     vehicles, timeLabel: atmosphere?.timeLabel() ?? 'Noon', ammo: weapons.ammo,
     lookYaw: rawInp.camYaw, lookPitch: rawInp.camPitch, camYaw: chase.yaw, camPitch: chase.pitch,
     paused: cutscene.active || introTour.active || garages.isOpen() || gunStore.isOpen() || modKit.isOpen() || hunting.isOpen()
-      || lockup.isOpen() || phone.isOpen() || journal.isOpen() || weaponWheel.isOpen() || craft.shop.isOpen(),
+      || lockup.isOpen() || phone.isOpen() || journal.isOpen() || weaponWheel.isOpen() || craft.shop.isOpen() || econOpen(),
   });
   section('fishing');
   fishing.update({
@@ -2017,7 +2086,7 @@ function frame(now: number): void {
     inBoat: !!player.vehicle && isBoat(player.vehicle) && !mount, boatSpeed: player.vehicle ? Math.abs(player.vehicle.speed) : 0,
     fire: !!rawInp.fire, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
     paused: cutscene.active || introTour.active || garages.isOpen() || gunStore.isOpen() || modKit.isOpen() || hunting.isOpen()
-      || birding.isOpen() || birding.viewing() || lockup.isOpen() || phone.isOpen() || journal.isOpen() || weaponWheel.isOpen()
+      || birding.isOpen() || birding.viewing() || lockup.isOpen() || phone.isOpen() || journal.isOpen() || weaponWheel.isOpen() || econOpen()
       || craft.shop.isOpen() || deathT > 0,
   });
   {
@@ -2076,7 +2145,7 @@ function frame(now: number): void {
   section('camera');
   const mode: CameraMode = player.airborne ? 'chute' : v ? (v.spec.flies ? 'fly' : 'drive') : 'foot';
   input.setMode(mode);
-  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : lockupPrompt ? (lockupPrompt.startsWith('Buy') ? 'Buy' : 'Open') : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
+  const enterLabel = mount ? null : v ? 'Exit' : preferVehicle && near ? enterVerb(near) : giverPrompt ? 'Enter' : garagePrompt?.startsWith('Tune') ? 'Tune' : lockupPrompt ? (lockupPrompt.startsWith('Buy') ? 'Buy' : 'Open') : dealerPrompt ? 'Browse' : gunPrompt ? 'Shop' : near ? enterVerb(near) : rideTarget ? 'Ride' : null;
   input.setEnterLabel(enterLabel);
   if (v) target.set(v.x, v.y, v.z);
   else if (deathT > 0) target.set(deathTarget.x, deathTarget.y, deathTarget.z);
@@ -2137,7 +2206,13 @@ function frame(now: number): void {
     ...raceTrack.blips(),
     gunStore.blip,
     ...outskirts.blips(),
+    ...dealers.blips(),
   ];
+  // E08: the player's own vehicles out in the world (taken out or delivered), so they can find them again.
+  for (const o of lockup.outVehicles()) {
+    if (o.v === player.vehicle) continue;
+    blips.push({ x: o.v.x, z: o.v.z, color: '#ffb347', label: `Your ${o.v.spec.name}` });
+  }
   for (const veh of vehicles) {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
@@ -2173,7 +2248,7 @@ function frame(now: number): void {
     cracked: stats.cracked,
     acorns: econ.acorns,
     debt: econ.debtRemaining,
-    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? lockupPrompt ?? gunPrompt ?? huntPrompt ?? birdPrompt ?? fishPrompt ?? jobPrompt ?? townPrompt ?? portalPrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
+    prompt: preferVehicle && near ? `${enterVerb(near)} ${near.spec.name}` : giverPrompt ?? garagePrompt ?? lockupPrompt ?? dealerPrompt ?? gunPrompt ?? huntPrompt ?? birdPrompt ?? fishPrompt ?? jobPrompt ?? townPrompt ?? portalPrompt ?? interPrompt ?? (near ? `${enterVerb(near)} ${near.spec.name}` : rideTarget ? `Ride ${rideTarget.name}'s ${rideTarget.vehicle.spec.name}` : null),
     player: { x: simX, z: simZ, yaw: v ? (stageHome ? stageHome.yaw : v.yaw) : player.yaw },
     blips,
     route,

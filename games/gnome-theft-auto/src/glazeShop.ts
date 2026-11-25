@@ -20,6 +20,12 @@ export interface GlazeShopDeps {
   onPurchase(info: { kind: VehicleKind; before: Loadout; after: Loadout; spent: number }): void;
   /** Open the old handling modal (garages.ts) for this vehicle's model, from the shop's Handling tab. */
   openHandling(v: Vehicle): void;
+  /** The player's own vehicle (lockup uid, E08): its own look, which the shop edits instead of the per-model loadout.
+   *  Null / absent = a stock vehicle, dressed in the per-model loadout as before. */
+  ownLook?(v: Vehicle): Loadout | null;
+  /** A purchase on v: return true when the look was kept on the vehicle alone (an owned vehicle), so the per-model
+   *  loadout is left alone. False / absent = save it as the per-model loadout as before. */
+  keepOwnLook?(v: Vehicle, look: Loadout): boolean;
 }
 
 export interface GlazeShop {
@@ -31,7 +37,7 @@ export interface GlazeShop {
 }
 
 const STYLE_ID = 'gta-glaze-style';
-const QUICK_RESPRAY_PRICE = 50;
+const QUICK_RESPRAY_PRICE = 90;
 
 function injectStyle(): void {
   if (document.getElementById(STYLE_ID)) return;
@@ -201,6 +207,9 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
       owned: () => st.owned,
       patch,
       acorns: deps.acorns,
+      vehicle: () => st.v,
+      spend: (amount, reason) => deps.spend(amount, reason),
+      toast: (text) => hud.toast(text),
     };
   }
 
@@ -257,7 +266,7 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
 
   function open(v: Vehicle): void {
     if (current) close();
-    const owned = normalizeLoadout(ownedLoadout(v.kind) ?? v.look ?? defaultLoadout(v.tint));
+    const owned = normalizeLoadout(deps.ownLook?.(v) ?? ownedLoadout(v.kind) ?? v.look ?? defaultLoadout(v.tint));
     const panels = glazePanelsFor(v.kind);
     const st: OpenState = { v, owned, draft: normalizeLoadout(owned), panels, built: new Map(), active: 0 };
     current = st;
@@ -318,7 +327,7 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     }
     const before = st.owned;
     const changed = !sameLoadout(before, st.draft);
-    saveOwnedLoadout(st.v.kind, st.draft);
+    if (!deps.keepOwnLook?.(st.v, st.draft)) saveOwnedLoadout(st.v.kind, st.draft);
     st.owned = normalizeLoadout(st.draft);
     deps.play('door');
     hud.toast(changed ? "PAY 'N' GLAZE: New coat. Who dis?" : 'Nothing to change.');

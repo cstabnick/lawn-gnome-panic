@@ -193,6 +193,9 @@ export function createCraftShop(ui: HTMLElement, hud: Hud, deps: CraftShopDeps):
         refreshAll();
       },
       acorns: () => deps.acorns(),
+      vehicle: () => st.v,
+      spend: (amount, reason) => deps.spend(amount, reason),
+      toast: (text) => hud.toast(text),
     };
   }
 

@@ -45,14 +45,14 @@ export const JOBS: Record<JobId, JobDef> = {
     id: 'pilot', title: 'Pilot', icon: '🛩', employer: "Wally's Charters", giver: 'Wind-Sock Wally',
     blurb: 'Charters, scenic loops and cargo drops out of the Desert Airfield. Land soft.',
     depot: { x: 500, z: -80, name: "Wally's charter desk", prefab: 'charter-desk' },
-    licence: 150, vehicle: 'air', color: '#7cf0ff',
+    licence: 250, vehicle: 'air', color: '#7cf0ff',
     uniform: { achievement: 'gta-job-pilot', prefab: 'charter-pilot-cap' },
   },
   boat: {
     id: 'boat', title: 'Boat Driver', icon: '⛴', employer: 'Loch Moss Steamer Co.', giver: 'Purser Tolly',
     blurb: 'Water taxi between the docks and the Steamer loop on Loch Moss. Mind the waves.',
     depot: { x: -724, z: -548, name: 'Steamer ticket booth', prefab: 'steamer-ticket-booth' },
-    licence: 80, vehicle: 'boat', color: '#3fd2ff',
+    licence: 140, vehicle: 'boat', color: '#3fd2ff',
     uniform: { achievement: 'gta-job-ferry', prefab: 'ferryman-cap' },
   },
 };
@@ -100,12 +100,12 @@ export const JOB_TUNING = {
     /** Seconds a fare waits at the kerb (hardDue of the pickup stop). */
     patience: 75,
     /** Fare = base + perM * straight-line distance; time limit = dist / cruise + slack. */
-    base: 12, perM: 0.09, cruise: 9, slack: 25,
+    base: 14, perM: 0.11, cruise: 9, slack: 25,
     pickupRadius: 7, dropRadius: 9, maxSpeed: 2.5, dwell: 0.8,
   },
   courier: {
     /** Pay per parcel kind (before condition and time). */
-    pay: { food: 22, fragile: 30, heavy: 34, vip: 60, mail: 9 } as Record<ParcelKind, number>,
+    pay: { food: 26, fragile: 36, heavy: 40, vip: 72, mail: 11 } as Record<ParcelKind, number>,
     /** Seconds per drop leg allowed: dist / cruise + slack; food and vip are tighter (x0.75). */
     cruise: 9, slack: 20,
     dropRadius: 8, maxSpeed: 3, dwell: 1.0, loadRadius: 10, loadDwell: 2.0,
@@ -115,19 +115,19 @@ export const JOB_TUNING = {
     bikeCap: 2, defaultCap: 5,
   },
   pilot: {
-    charterBase: 45, perM: 0.08, scenicBase: 60, cargoBase: 70,
+    charterBase: 55, perM: 0.1, scenicBase: 70, cargoBase: 85,
     landRadius: 14, landSpeed: 3.5, landDwell: 1.2, gateRadius: 26, gateMinAlt: 12, gateMaxAlt: 140,
     cargoRadius: 70, cruise: 25, slack: 45,
   },
   boat: {
-    base: 18, perM: 0.1, cruise: 10, slack: 30, dockRadius: 9, maxSpeed: 2.5, dwell: 1.2,
+    base: 22, perM: 0.12, cruise: 10, slack: 30, dockRadius: 9, maxSpeed: 2.5, dwell: 1.2,
     /** The ferry loop: seconds allowed per leg (due times stack). */
-    ferryLeg: 70, ferryPay: 70,
+    ferryLeg: 70, ferryPay: 85,
   },
   /** Tips: up to this fraction of base pay at 5 stars (x perks.tipMult). */
   tipMax: 0.35,
   /** Real player fare bonus (Acorns) on top of the fare. */
-  playerFareBonus: 25,
+  playerFareBonus: 30,
   /** Celebrity: base x2, tip x2, comfort counts double. */
   celebrityMult: 2,
 } as const;

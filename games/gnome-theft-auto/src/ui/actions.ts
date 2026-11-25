@@ -16,7 +16,8 @@ export type ActionId =
   | 'boost' | 'handbrake' | 'climb' | 'descend' | 'horn' | 'banger' | 'radio'
   | 'more' | 'phone' | 'emote' | 'journal' | 'map' | 'taxi' | 'party' | 'options' | 'mute'
   | 'binoculars' | 'birdJournal' | 'huntJournal' | 'fishJournal' | 'fish' | 'fishBait'
-  | 'garage' | 'lockupStore' | 'craftShop' | 'jobAction' | 'context' | 'trainer' | 'close' | 'confirm' | 'firstPerson';
+  | 'garage' | 'lockupStore' | 'craftShop' | 'jobAction' | 'context' | 'trainer' | 'close' | 'confirm' | 'firstPerson'
+  | 'bag' | 'snack';
 
 export type TouchHome = 'cluster' | 'stick' | 'drag' | 'dock' | 'more' | 'widget' | 'options' | 'sheet' | 'minimap';
 
@@ -81,6 +82,7 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'birdJournal', label: 'Field journal', icon: '📗', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Field journal`, inMore: true },
   { id: 'huntJournal', label: 'Hunting journal', icon: '📓', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Hunting journal`, inMore: true },
   { id: 'fishJournal', label: 'Catch journal', icon: '📘', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Catch journal`, inMore: true },
+  { id: 'bag', label: 'Bag', icon: '🎒', kb: { via: 'more' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Bag`, inMore: true },
   { id: 'mute', label: 'Mute', icon: '🔇', kb: { key: 'mute' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Mute`, inMore: true },
   { id: 'firstPerson', label: 'First person view', icon: '👁', kb: { key: 'firstPerson' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} First person`, inMore: true },
   { id: 'options', label: 'Options', icon: '⚙', kb: { key: 'options' }, pad: { any: 'start' }, touch: 'more', touchText: `${M} Options`, inMore: true },
@@ -92,6 +94,7 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'lockupStore', label: 'Store at the Lock-Up', icon: '🔒', kb: { key: 'garage' }, pad: { any: 'up' }, touch: 'dock', touchText: 'the Store button', inDock: true },
   { id: 'craftShop', label: 'Wingwright’s Slipway', icon: '🛠', kb: { key: 'craftShop' }, pad: { any: 'up' }, touch: 'dock', touchText: 'the Slipway button', inDock: true },
   { id: 'fish', label: 'Fish (rod out / away)', icon: '🎣', kb: { key: 'fish' }, pad: { foot: 'east', any: 'up' }, touch: 'dock', touchText: 'the 🎣 button', inDock: true },
+  { id: 'snack', label: 'Eat a snack (quick-use)', icon: '🍎', kb: { key: 'snack' }, pad: { any: 'up' }, touch: 'dock', touchText: 'the snack button', inDock: true },
   { id: 'binoculars', label: 'Binoculars', icon: '🔭', kb: { key: 'binoculars' }, pad: { foot: 'right', any: 'up' }, touch: 'dock', touchText: 'the 🔭 button', inDock: true },
 
   // ---- Inside a widget or sheet -----------------------------------------------------------------------------------

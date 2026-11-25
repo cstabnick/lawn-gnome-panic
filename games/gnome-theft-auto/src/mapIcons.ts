@@ -4,7 +4,8 @@ import type { Blip } from './types';
 
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
-  | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
+  | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -32,6 +33,9 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   town: { name: 'Pebblewick (town)', color: '#b8743a' },
   park: { name: 'Park', color: '#3f9a4a' },
   edge: { name: 'City edge', color: '#6b4a2e' },
+  'dealer-car': { name: "Burl's Forecourt (buy vehicles)", color: '#d1495b' },
+  'dealer-boat': { name: "Driftwood's Boat Yard (buy boats)", color: '#1f8fa6' },
+  'dealer-air': { name: "Wally's Wing Lot (buy aircraft)", color: '#5b6fd1' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -370,6 +374,28 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
         g.lineTo(x + (u + 0.35) * s, y - 0.8 * s);
         g.stroke();
       }
+      break;
+    }
+    case 'dealer-car': {
+      // A price tag: a pentagon tag pointing right, with a hole near its flat end (the hole takes the badge colour).
+      glyphPoly(g, x, y, s, [[-0.9, -0.5], [0.1, -0.5], [0.9, 0], [0.1, 0.5], [-0.9, 0.5]]);
+      g.fillStyle = color;
+      g.beginPath();
+      g.arc(x - 0.5 * s, y, 0.16 * s, 0, TAU);
+      g.fill();
+      break;
+    }
+    case 'dealer-boat': {
+      // A sailboat: a triangle sail on a mast over a hull trapezoid.
+      glyphPoly(g, x, y, s, [[0, -0.95], [0, 0.05], [-0.75, 0.05]]);
+      glyphPoly(g, x, y, s, [[-0.95, 0.2], [0.95, 0.2], [0.6, 0.7], [-0.6, 0.7]]);
+      break;
+    }
+    case 'dealer-air': {
+      // A plane seen from above: a fuselage bar crossed by a wing bar, with a small tail bar.
+      glyphRect(g, x, y, s, -0.12, -1, 0.24, 2);
+      glyphRect(g, x, y, s, -1, -0.15, 2, 0.25);
+      glyphRect(g, x, y, s, -0.4, 0.7, 0.8, 0.18);
       break;
     }
   }

@@ -1,6 +1,8 @@
 // E24 workplace jobs: the chef at the Route South Acorn Diner (chef/), the mechanic at Pay 'n' Glaze (mechanic/) and the
 // comedian at Le Petit Groan in Pardonlin (comedy/). app.ts calls installWorkplaces once. Plan: docs/roadmaps/gta-batch-3/E24/.
 import type { Blip } from '../types';
+import './chef/kitchen';
+import './comedy/club';
 import { installChef } from './chef/runtime';
 import { installComedy } from './comedy/runtime';
 import { installMechanic } from './mechanic/runtime';

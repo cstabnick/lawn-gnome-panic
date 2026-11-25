@@ -1092,7 +1092,7 @@ const coast = installCoast(jobDeps);
 registerJobsTrainer(jobs, tubing);
 // E24 workplace jobs (workplaces/): chef at the Route South Acorn Diner, mechanic at Pay 'n' Glaze, comedian at Le Petit Groan.
 workplaces = installWorkplaces({
-  scene, ui, hud, economy, player, vehicles, play,
+  scene, world, ui, hud, economy, player, vehicles, play,
   unlock: (id) => void achievements.unlock(id),
   increment: (id, by) => void achievements.increment(id, by),
   blocked: jobDeps.blocked,

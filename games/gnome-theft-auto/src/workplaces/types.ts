@@ -4,10 +4,12 @@ import type * as THREE from 'three';
 import type { TimeLabel } from '../atmosphere';
 import type { ShowroomTarget } from '../camera';
 import type { Economy } from '../economy';
-import type { Blip, Hud, Player, Sfx, Vehicle } from '../types';
+import type { Blip, Hud, Player, Sfx, Vehicle, World } from '../types';
 
 export interface WorkDeps {
   scene: THREE.Scene;
+  /** The world (boxes: push new colliders here; roads, for safe spots). */
+  world: World;
   /** The shared #ui element: append your own containers, never restyle it. */
   ui: HTMLElement;
   hud: Hud;

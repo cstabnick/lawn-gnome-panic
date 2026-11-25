@@ -368,6 +368,27 @@ the talk with `frame` shots (`direct.ts`: `shot(who, size)`, `coverage(a, b)`, `
 - **Lens per shot** (`fov`): long (30-35) for faces and threat, normal (40-45) for groups and comedy, wide (52-60) for
   places and speed. The `frame` sizes pick a lens for you.
 
+### Variety without changing intent
+
+The same two-hander cut the same way three times is a flat scene. The `direct.ts` helpers vary the set-up while the
+scene's intent (who is looked at, how big, from which side) stays the same:
+
+| Helper | For |
+| --- | --- |
+| `pickAngle(seed, size, side)` | a deterministic swing and height (eye, low, high) for a size, per seed; the sign of `side` is kept |
+| `varied(who, size, seed, opts)` | `shot()` with `pickAngle` applied: an eyeline single that differs per seed but keeps the line |
+| `pushIn(who, from, s, opts)` | a slow push-in from size `from` (default one size tighter) over `s` seconds: a decision, a turn, a threat |
+| `pullOut(...)` | the reverse, one size wider: an exit, a reveal of the room, a deflation |
+| `insert(who)` | a high CU on what `who` holds or does (the hands, the thing) |
+| `cutaway(who, opts)` | a held shot of a bystander or listener (steps) to break a long exchange |
+| `coverage(...).two(size)` | the two-shot of a coverage set, for a beat both people share |
+| `vary(steps, seed)` | a pass over a step list: after three of the same `frame` set-up in a row, every second repeat gets a new angle; same seed, same result |
+
+- **Never the same set-up three times running.** The cutscene report flags `MONOTONE`. Vary size, angle or move on the
+  third.
+- **Variation never flips the side of the line.** Every helper keeps `side`; the 180-degree rule above still holds.
+- Vary the **picture**, not the **meaning**: a threat stays low, a cornered person stays high, a joke stays locked off.
+
 ---
 
 ## 6. Sound and music
@@ -393,6 +414,31 @@ the talk with `frame` shots (`direct.ts`: `shot(who, size)`, `coverage(a, b)`, `
 - **Ambience** fits the place (`street` downtown, `forest`, `wind` for the Flats and the diner, `night`, `rain`,
   `water`, `crowd` at the Speedway). Change it on the cut to a new place, so the ear tells the player they moved.
 - **Radio** stays ducked (0.25); bring Turfton FM up only when the scene is about the radio.
+- **Foley and new beds.** Batch 3 adds 22 foley sounds (`cloth`, `paper`, `pour`, `clink`, `chair`, `keys`, `zip`,
+  `bell`, `crunch`, `creak`, `thunder`, `gulp`, `tap`, `pop`, `clatter`, `latch`, `squeak`, `shovel`, `flutter`,
+  `static`, `snap`, `rustle`) and eight beds (`snow`, `shore`, `cave`, `market`, `meadow`, `storm`, `office`,
+  `garden`). **Every scene has a bed and at least two foley or sfx cues** tied to what is on screen (a bed or a stated
+  reason for silence; a chair, a cup, a page). The full sound design bible, with the per-region palette, the loudness
+  budget, weather and voices, is [../sound-design.md](../sound-design.md).
+
+---
+
+## 6a. Character intros
+
+The `{ do: 'intro', who }` step introduces a main character the way a film does: a camera-flash **freeze** on the
+frame, the `intro` stinger (a shutter snap and a flourish), and a **name / role / line card** (text from
+`cutscene/castIntros.ts`, `name`, `role` and `line` override it). It holds 3.2 s (`INTRO_SECONDS`, or `s`) and waits.
+`freeze: false` keeps the colour and skips the flash-freeze look.
+
+When to use it:
+- A main character's **first on-screen appearance in the story**. **Once per character**, ever.
+- **After** their first line or action, so we have seen them do something. **Never mid-sentence**: wait for the line to
+  end, then intro.
+- On an **mcu or ms of them** (cut to the shot first, then the intro). Not on a wide.
+- Not for the side cast's walk-ons, and not under another stinger.
+
+Outside a cutscene (a quest meets a character in the live world) call `showCharacterIntro(card)` from
+`cutscene/introCard.ts`. Sound rules: [../sound-design.md](../sound-design.md) section 7.
 
 ---
 

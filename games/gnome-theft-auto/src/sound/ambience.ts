@@ -35,11 +35,11 @@ export interface Ambience {
   update(f: AmbienceFrame): void;
 }
 
-type LayerKey = 'wind' | 'hum' | 'leaves' | 'water' | 'crowd' | 'night';
+type LayerKey = 'wind' | 'hum' | 'leaves' | 'water' | 'crowd' | 'night' | 'rain';
 type Mix = Record<LayerKey, number>;
 
-const LAYER_KEYS: LayerKey[] = ['wind', 'hum', 'leaves', 'water', 'crowd', 'night'];
-const ZERO_MIX: Mix = { wind: 0, hum: 0, leaves: 0, water: 0, crowd: 0, night: 0 };
+const LAYER_KEYS: LayerKey[] = ['wind', 'hum', 'leaves', 'water', 'crowd', 'night', 'rain'];
+const ZERO_MIX: Mix = { wind: 0, hum: 0, leaves: 0, water: 0, crowd: 0, night: 0, rain: 0 };
 
 /** Day gain table per biome (the base before night, crowd, water and airborne adjustments). */
 const DAY: Record<BiomeId, Partial<Mix>> = {
@@ -77,12 +77,63 @@ export function bedMix(
     water: 0.04 * clamp01(wet) + (base.water ?? 0),
     crowd: inDistrict ? Math.min(0.05, p * 0.006) : Math.min(0.02, p * 0.004),
     night: biome === 'city' || biome === 'tundra' ? 0 : 0.012 * n,
+    rain: 0,
   };
   if (airborne) {
     for (const k of LAYER_KEYS) m[k] = k === 'wind' ? m[k] * 1.8 : m[k] * 0.25;
   }
   return m;
 }
+
+/** Weather on top of a bed mix: rain bed and more wind in rain; snow hushes every layer but the wind. */
+export function weatherMix(m: Record<LayerKey, number>, w: WeatherState | null | undefined): Record<LayerKey, number> {
+  const out = { ...m };
+  if (!w) return out;
+  const i = clamp01(w.intensity);
+  if (w.kind === 'rain') {
+    out.rain = (i > 0.8 ? 0.075 : 0.05) * i;
+    out.wind += 0.015 * i;
+  } else if (w.kind === 'snow') {
+    for (const k of LAYER_KEYS) if (k !== 'wind') out[k] *= 1 - 0.5 * i;
+    out.wind = Math.max(out.wind, 0.03 * i);
+  } else if (w.kind === 'cloud') {
+    out.wind += 0.004;
+  }
+  return out;
+}
+
+/** Per-region tweaks for the batch-3 regions (others unchanged). */
+export function regionMix(m: Record<LayerKey, number>, region: RegionId | undefined): Record<LayerKey, number> {
+  const out = { ...m };
+  switch (region) {
+    case 'north-highlands':
+      out.wind += 0.015;
+      break;
+    case 'south-shore':
+      out.water += 0.03;
+      out.wind += 0.01;
+      break;
+    case 'east-campus':
+      out.hum = Math.max(out.hum, 0.012);
+      out.leaves += 0.008;
+      break;
+    case 'west-estates':
+      out.leaves += 0.012;
+      out.water += 0.008;
+      break;
+    case 'pardonlin':
+      out.hum = Math.max(out.hum, 0.02);
+      out.crowd = Math.max(out.crowd, 0.012);
+      break;
+    case 'the-unmown':
+      out.leaves += 0.015;
+      out.wind += 0.006;
+      break;
+  }
+  return out;
+}
+
+export type { LayerKey };
 
 /**
  * One bed layer: looping noise -> filter -> amp (optionally LFO-modulated) -> level -> the ambience bus. The filter and
@@ -172,6 +223,7 @@ function buildLayers(ctx: AudioContext, out: AudioNode): Record<LayerKey, Layer>
     water: make('lowpass', 500, 0.7, 0.25, 0.5),
     crowd: make('bandpass', 700, 1.2, 0.6, 0.5),
     night: make('highpass', 5500, 0.7, 18, 1),
+    rain: make('highpass', 1400, 0.5, 0.17, 0.25),
   };
 }
 
@@ -200,6 +252,34 @@ function pickSpot(biome: BiomeId, night: boolean, people: number, wetNear: boole
     case 'city':
       if (r < 0.3) return { id: 'horn-car', near: [35, 60], gain: 0.4 };
       return people > 3 ? { id: 'crowd-murmur' } : null;
+  }
+  return null;
+}
+
+/**
+ * A region or weather spot sound, or null to fall back to the biome's pickSpot. `r` is a random 0..1. About half the
+ * time this returns null, so the biome still speaks.
+ */
+export function pickRegionSpot(
+  region: RegionId | undefined, night: boolean, w: WeatherState | null | undefined, r: number,
+): { id: string; gain?: number; near?: [number, number] } | null {
+  if (w?.kind === 'rain' && w.intensity > 0.6 && r < 0.15) return { id: 'thunder-far' };
+  if (region === 'east-campus') return r < 0.1 ? { id: 'campus-bell', gain: 0.5, near: [80, 160] } : null;
+  if (r >= 0.5) return null;
+  const q = r * 2; // 0..1 within the "speak" half
+  switch (region) {
+    case 'south-shore':
+      return { id: q < 0.5 ? 'surf-wash' : 'buoy-bell', gain: 0.6, near: [40, 90] };
+    case 'north-highlands':
+      if (q < 1 / 3) return { id: 'snow-creak', near: [6, 15] };
+      return { id: q < 2 / 3 ? 'icicle-tink' : 'wind-gust' };
+    case 'pardonlin':
+      if (night) return null;
+      return q < 0.5 ? { id: 'cafe-clink', near: [8, 25] } : { id: 'chapel-chime', gain: 0.5, near: [80, 160] };
+    case 'the-unmown':
+      return { id: night ? 'cricket' : 'grass-hiss' };
+    case 'west-estates':
+      return { id: 'sprinkler-tick', near: [10, 30] };
   }
   return null;
 }
@@ -249,7 +329,8 @@ export function createAmbience(): Ambience {
         wet = sampleWet(f.x, f.z);
       }
 
-      const mix = silent ? ZERO_MIX : bedMix(biome, f.night, f.people, f.district !== null, wet, f.airborne);
+      const mix = silent ? ZERO_MIX
+        : regionMix(weatherMix(bedMix(biome, f.night, f.people, f.district !== null, wet, f.airborne), f.weather), f.region);
       for (const k of LAYER_KEYS) {
         const layer = layers[k];
         const target = mix[k];
@@ -265,7 +346,7 @@ export function createAmbience(): Ambience {
         layer.last = target;
         layer.level.gain.setTargetAtTime(target, now, 1.2);
       }
-      const cut = biome === 'desert' ? 300 : biome === 'tundra' ? 700 : 380;
+      const cut = f.weather?.kind === 'snow' ? 300 : biome === 'desert' ? 300 : biome === 'tundra' ? 700 : 380;
       if (cut !== windCut) {
         windCut = cut;
         layers.wind.filter.frequency.setTargetAtTime(cut, now, 1.2);
@@ -296,7 +377,8 @@ export function createAmbience(): Ambience {
       const dawn = f.timeLabel === 'Dawn' || f.timeLabel === 'Morning';
       spotTimer = (3 + Math.random() * 6) * (dawn && SPOT_BIRD_BIOMES.includes(biome) ? 0.5 : 1);
 
-      const spot = pickSpot(biome, f.night >= 0.5, f.people, wet > 0);
+      const spot = pickRegionSpot(f.region, f.night >= 0.5, f.weather, Math.random())
+        ?? pickSpot(biome, f.night >= 0.5, f.people, wet > 0);
       if (!spot || (!getBirdSounds() && BIRD_AMBIENCE_IDS.includes(spot.id))) return;
       const [lo, hi] = spot.near ?? [15, 45];
       playAt(spot.id, around(f, lo, hi), { bus: 'ambience', gain: spot.gain });

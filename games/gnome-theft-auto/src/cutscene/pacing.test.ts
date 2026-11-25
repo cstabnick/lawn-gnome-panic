@@ -10,7 +10,7 @@ import { lineTiming } from './textSpeed';
 installFakeDom();
 const g = globalThis as Record<string, unknown>;
 if (!g.window) g.window = { addEventListener: () => {}, removeEventListener: () => {} };
-const { checkPacing, countByCode, formatPacing, inBaseline, lineIndex, PACING, framing } = await import('./pacing');
+const { checkPacing, countByCode, formatPacing, formatTally, inBaseline, lineIndex, PACING, framing, tallyShots } = await import('./pacing');
 const { PACING_BASELINE } = await import('./pacing.baseline');
 const { LANES, laneOf, sceneUses } = await import('./lanes');
 const { coverage } = await import('./direct');
@@ -23,6 +23,7 @@ const all = Object.values(SCENES);
 const index = lineIndex(all);
 const results = all.map((s) => checkPacing(s, envFor(s), { kindHint: uses.get(s.id)?.kind, lines: index }));
 const byId = new Map(results.map((r) => [r.id, r]));
+const tallies = new Map(all.map((s) => [s.id, tallyShots(s)] as const));
 
 // npm sets npm_lifecycle_event to the script's name: the report prints for `npm run cutscene-report` (or CUTSCENE_REPORT=1).
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
@@ -38,10 +39,16 @@ function report(): string {
     const n = rs.reduce((k, r) => k + r.faults.length, 0);
     totals.push(`${lane.padEnd(8)} ${String(rs.length).padStart(3)} scenes  ${String(n).padStart(4)} faults  ${rs.filter((r) => inBaseline(r.id, PACING_BASELINE)).length} in baseline`);
     out.push('', `--- ${lane}: ${rs.length} scenes, ${n} faults ---`);
-    for (const r of rs) out.push(`${inBaseline(r.id, PACING_BASELINE) ? '[baseline] ' : '[directed] '}${formatPacing(r)}`);
+    for (const r of rs) {
+      out.push(`${inBaseline(r.id, PACING_BASELINE) ? '[baseline] ' : '[directed] '}${formatPacing(r)}`, formatTally(tallies.get(r.id)!));
+    }
   }
   const codes = Object.entries(countByCode(results)).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${c} ${k}`).join(', ');
-  out.push('', '=== Totals ===', ...totals, `By code: ${codes}`, '');
+  out.push('', '=== Totals ===', ...totals, `By code: ${codes}`);
+  const monotone = all.filter((s) => tallies.get(s.id)!.monotone).map((s) => s.id);
+  const thin = all.filter((s) => { const t = tallies.get(s.id)!; return t.sound.sfx + t.sound.stingers < 2; }).map((s) => s.id);
+  out.push('', '=== Variety ===', ...(monotone.length ? monotone : ['(none)']));
+  out.push('', '=== Sound ===', ...(thin.length ? thin : ['(none)']), '');
   return out.join('\n');
 }
 
@@ -176,5 +183,24 @@ describe('pacing rules', () => {
 
   it('keeps its numbers in one place', () => {
     expect(PACING.lineWordsMax).toBeGreaterThan(PACING.lineWordsTarget);
+  });
+});
+
+describe('shot tally', () => {
+  const cam = (size: 'cu' | 'ms') => ({ do: 'cam' as const, shot: { kind: 'frame' as const, who: 'a', size } });
+  it('three identical frame cams in a row are monotone', () => {
+    const t = tallyShots(room([cam('cu'), cam('cu'), cam('cu')]));
+    expect(t.longestRun).toBe(3);
+    expect(t.monotone).toBe(true);
+  });
+  it('alternating sizes are not monotone', () => {
+    const t = tallyShots(room([cam('cu'), cam('ms'), cam('cu'), cam('ms')]));
+    expect(t.monotone).toBe(false);
+    expect(t.longestRun).toBe(1);
+  });
+  it('a say with sfx counts as one sfx', () => {
+    const t = tallyShots(room([{ do: 'say', who: 'a', text: 'Hi there.', sfx: 'punch' }]));
+    expect(t.sound.sfx).toBe(1);
+    expect(formatTally(t)).toContain('sfx 1');
   });
 });

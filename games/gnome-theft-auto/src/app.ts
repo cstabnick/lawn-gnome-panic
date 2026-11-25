@@ -41,6 +41,7 @@ import { runCutsceneCheck } from './cutscene/checkStage';
 import type { LiveWorld } from './cutscene/liveArea';
 import { createQuestJournal } from './quests/journal';
 import { createRadio } from './radio/player';
+import { setRadioVoiceBusy } from './radio/radioVoice';
 import { EVENT_BULLETINS, STATIONS } from './radio/content';
 import { SPEAKER_MAX_DIST } from './radio/spatial';
 import { createQuests } from './quests/quests';
@@ -612,6 +613,8 @@ const cutscene = createCutscene(scene, ui, {
   }
 }
 const briefing = createBriefing(ui);
+// Radio hosts share the voice engine with dialogue: they keep quiet while a scene or a comms line is talking.
+setRadioVoiceBusy(() => cutscene.active || introTour.active || briefing.active);
 const quests = createQuests({
   scene, world, npcs, hud, cutscene,
   placePlayer(x, z, yaw) {

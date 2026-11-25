@@ -50,8 +50,10 @@ const BURST_CHARS = 12;
 const MAX_VOICE_LETTERS = 4;
 /** How long the portrait stays bobbed when a word starts. */
 const BOB_SECONDS = 0.09;
-const MIN_HOLD_SECONDS = 2.2;
-const WORDS_PER_SECOND = 3.5;
+const MIN_HOLD_SECONDS = 3.0;
+const WORDS_PER_SECOND = 3.0;
+/** L47: comms text stays a little longer. */
+const EXTRA_HOLD_SECONDS = 0.8;
 
 const STYLE_ID = 'gta-briefing-style';
 const STYLE = `
@@ -123,7 +125,7 @@ function isSpace(ch: string | undefined): boolean {
 
 function holdSeconds(text: string): number {
   const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(MIN_HOLD_SECONDS, words / WORDS_PER_SECOND);
+  return Math.max(MIN_HOLD_SECONDS, words / WORDS_PER_SECOND) + EXTRA_HOLD_SECONDS;
 }
 
 /** Builds the comms panel inside ui (hidden until show()). */
@@ -238,7 +240,11 @@ export function createBriefing(ui: HTMLElement): Briefing {
     const word = text.slice(picked).split(/\s/)[0];
     const caller = lines[index].caller;
     speech().stop();
-    speech().say(word, caller.voice, { maxLetters: MAX_VOICE_LETTERS, phone: mode === 'call' });
+    speech().say(word, caller.voice, {
+      maxLetters: MAX_VOICE_LETTERS,
+      phone: mode === 'call',
+      radio: mode === 'call',
+    });
     if (portraitEl) {
       portraitEl.classList.add('gb-talk');
       bobLeft = BOB_SECONDS;

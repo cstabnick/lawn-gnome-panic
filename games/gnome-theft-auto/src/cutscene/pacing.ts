@@ -5,7 +5,7 @@
 // their length. Every number lives in PACING below and is quoted in the bible. Pure: no three.js, no DOM.
 // Run: `npm run cutscene-report -w games/gnome-theft-auto` (the report), `npm test` (pacing.test.ts).
 import type {
-  ActorSample, CameraSample, PacingCode, PacingWaiver, SceneFrame, SceneKind, SceneScript, StageEnv, Timeline,
+  ActorSample, CameraSample, PacingCode, PacingWaiver, SceneFrame, SceneKind, SceneScript, ShotSize, StageEnv, Step, Timeline,
 } from './script';
 import { GNOME_HEIGHT, compile, sampleFrame } from './timeline';
 import { lineTiming, wordCount } from './textSpeed';
@@ -352,4 +352,81 @@ export function countByCode(results: readonly PacingResult[]): Record<string, nu
   const out: Record<string, number> = {};
   for (const r of results) for (const f of r.faults) out[f.code] = (out[f.code] ?? 0) + 1;
   return out;
+}
+
+export interface ShotTally {
+  id: string;
+  /** Camera steps by kind ('frame' counted by size below; 'push' counts frame shots with a push-in). */
+  moves: Record<'cut' | 'dolly' | 'orbit' | 'follow' | 'track' | 'frame' | 'push', number>;
+  sizes: Record<ShotSize, number>;
+  heights: Record<'eye' | 'low' | 'high', number>;
+  /** Longest run of consecutive cam steps with the same set-up (frame: who + size + height + side sign; others: kind). */
+  longestRun: number;
+  /** longestRun >= 3. */
+  monotone: boolean;
+  /** Sound cues: 'sfx' steps + say.sfx, 'stinger' steps + say.stinger, 'ambience' steps (+1 if the script has ambience), 'music' steps (+1 if script.music). */
+  sound: { sfx: number; stingers: number; beds: number; music: number };
+}
+
+/** Visits every step in order, nested 'parallel' tracks included. */
+function walkSteps(steps: readonly Step[], fn: (s: Step) => void): void {
+  for (const s of steps) {
+    fn(s);
+    if (s.do === 'parallel') for (const track of s.tracks) walkSteps(track, fn);
+  }
+}
+
+/** The shot and sound tally of one scene, read from its script (no compile): for the report's variety and sound lists. */
+export function tallyShots(script: SceneScript): ShotTally {
+  const t: ShotTally = {
+    id: script.id,
+    moves: { cut: 0, dolly: 0, orbit: 0, follow: 0, track: 0, frame: 0, push: 0 },
+    sizes: { cu: 0, mcu: 0, ms: 0, fs: 0, ws: 0 },
+    heights: { eye: 0, low: 0, high: 0 },
+    longestRun: 0,
+    monotone: false,
+    sound: { sfx: 0, stingers: 0, beds: script.ambience ? 1 : 0, music: script.music ? 1 : 0 },
+  };
+  let run = 0;
+  let prev = '';
+  walkSteps(script.steps, (s) => {
+    if (s.do === 'cam') {
+      const shot = s.shot;
+      t.moves[shot.kind]++;
+      let key: string = shot.kind;
+      if (shot.kind === 'frame') {
+        const h = shot.height ?? 'eye';
+        t.sizes[shot.size]++;
+        t.heights[h]++;
+        if (shot.push) t.moves.push++;
+        key = `frame:${shot.who}:${shot.size}:${h}:${Math.sign(shot.side ?? 0)}`;
+      }
+      run = key === prev ? run + 1 : 1;
+      prev = key;
+      t.longestRun = Math.max(t.longestRun, run);
+    } else if (s.do === 'sfx') t.sound.sfx++;
+    else if (s.do === 'stinger') t.sound.stingers++;
+    else if (s.do === 'ambience') t.sound.beds++;
+    else if (s.do === 'music') t.sound.music++;
+    else if (s.do === 'say') {
+      if (s.sfx) t.sound.sfx++;
+      if (s.stinger) t.sound.stingers++;
+    }
+  });
+  t.monotone = t.longestRun >= 3;
+  return t;
+}
+
+/** One line per scene, e.g. "  shots: frame 6 (cu 1 mcu 3 ms 2) dolly 1 | eye 5 low 1 | run 3 MONOTONE | sound: sfx 2 stingers 1 beds 1 music 1". */
+export function formatTally(t: ShotTally): string {
+  const sizes = (Object.keys(t.sizes) as ShotSize[]).filter((k) => t.sizes[k] > 0).map((k) => `${k} ${t.sizes[k]}`).join(' ');
+  const order: Array<'frame' | 'dolly' | 'orbit' | 'follow' | 'track' | 'cut'> = ['frame', 'dolly', 'orbit', 'follow', 'track', 'cut'];
+  const shotParts = order.filter((k) => t.moves[k] > 0)
+    .map((k) => (k === 'frame' && sizes ? `frame ${t.moves.frame} (${sizes})` : `${k} ${t.moves[k]}`));
+  if (t.moves.push > 0) shotParts.push(`push ${t.moves.push}`);
+  const heights = (Object.keys(t.heights) as Array<keyof ShotTally['heights']>).filter((k) => t.heights[k] > 0)
+    .map((k) => `${k} ${t.heights[k]}`).join(' ');
+  const run = `run ${t.longestRun}${t.monotone ? ' MONOTONE' : ''}`;
+  const sound = `sound: sfx ${t.sound.sfx} stingers ${t.sound.stingers} beds ${t.sound.beds} music ${t.sound.music}`;
+  return `  shots: ${shotParts.join(' ') || 'none'} | ${heights || 'no heights'} | ${run} | ${sound}`;
 }

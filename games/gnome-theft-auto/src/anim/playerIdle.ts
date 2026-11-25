@@ -9,7 +9,7 @@ export const IDLE_GAP = 6;
 
 const POOL: readonly AnimId[] = [
   'look-around', 'check-watch', 'pat-pockets', 'scratch-head', 'stretch', 'tap-foot', 'dust-hat', 'hands-on-hips',
-  'tie-shoe', 'count-acorns', 'idle-swagger',
+  'tie-shoe', 'count-acorns', 'idle-swagger', 'idle-weight-shift', 'idle-hat-adjust', 'idle-look-back',
 ];
 
 type Rand = () => number;
@@ -31,6 +31,7 @@ export interface IdleFidget {
 export function createIdleFidget(r: Rand = Math.random): IdleFidget {
   let t = 0;
   let next = IDLE_DELAY;
+  let last: AnimId | null = null;
   return {
     update(dt, still, biome, night) {
       if (!still) {
@@ -42,7 +43,12 @@ export function createIdleFidget(r: Rand = Math.random): IdleFidget {
       if (t < next) return null;
       t = 0;
       next = IDLE_GAP + r() * IDLE_GAP;
-      return pickFidget(biome, night, r);
+      let id = pickFidget(biome, night, r);
+      // Never the same fidget twice in a row: re-roll a few times, then step to the next pool entry.
+      for (let tries = 0; id === last && tries < 3; tries++) id = pickFidget(biome, night, r);
+      if (id === last) id = POOL[(POOL.indexOf(id) + 1) % POOL.length];
+      last = id;
+      return id;
     },
   };
 }

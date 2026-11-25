@@ -12,71 +12,109 @@ function level(info: SoundInfo, base: number): number {
   return Math.min(0.3, base * (0.6 + 0.6 * info.param));
 }
 
+// L31: footsteps sit under the world; 0.7 is about -3 dB
+const STEP_LEVEL = 0.7;
+
+/** Level for footsteps only: the step level, capped at 0.21. */
+function stepLevel(info: SoundInfo, base: number): number {
+  return Math.min(0.21, base * STEP_LEVEL * (0.6 + 0.6 * info.param));
+}
+
+/** Variety: about 45 % of steps get a softer second contact (heel then toe) a few ms after the first. */
+function heelToe(info: SoundInfo): { dt: number; second: number } {
+  if (info.rand <= 0.55) return { dt: 0, second: 0 };
+  return { dt: 0.025 + (info.rand - 0.55) * 0.044, second: 0.45 };
+}
+
+/** The softer second contact: the main burst again, 10 % higher, quieter. */
+function heelHit(
+  c: AudioContext, out: AudioNode, t: number, hh: { dt: number; second: number },
+  dur: number, type: BiquadFilterType, f0: number, f1: number, peak: number, q = 1, attack = 0.004,
+): void {
+  if (hh.second > 0) burst(c, out, t + hh.dt, dur, type, f0 * 1.1, f1 * 1.1, peak * hh.second, q, attack);
+}
+
 /** Footsteps are short, so they all end with the same tail budget. */
 const STEP_DUR = 0.16;
 
 const stepAsphalt: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.03, 'highpass', pitch(info, 2500), pitch(info, 2500), level(info, 0.2));
-  tone(c, out, 'sine', t, 0.04, pitch(info, 180), pitch(info, 120), level(info, 0.2));
-  return 0.06;
+  const hh = heelToe(info);
+  burst(c, out, t, 0.03, 'highpass', pitch(info, 2500), pitch(info, 2500), stepLevel(info, 0.2));
+  heelHit(c, out, t, hh, 0.03, 'highpass', pitch(info, 2500), pitch(info, 2500), stepLevel(info, 0.2));
+  tone(c, out, 'sine', t, 0.04, pitch(info, 180), pitch(info, 120), stepLevel(info, 0.2));
+  return Math.max(0.06, hh.dt + 0.06);
 };
 
 const stepIce: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.02, 'highpass', pitch(info, 4500), pitch(info, 4500), level(info, 0.15));
-  tone(c, out, 'sine', t, 0.03, pitch(info, 1800), pitch(info, 1800), level(info, 0.05));
+  burst(c, out, t, 0.02, 'highpass', pitch(info, 4500), pitch(info, 4500), stepLevel(info, 0.15));
+  tone(c, out, 'sine', t, 0.03, pitch(info, 1800), pitch(info, 1800), stepLevel(info, 0.05));
   return 0.06;
 };
 
 const stepSnow: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.12, 'bandpass', pitch(info, 1200), pitch(info, 700), level(info, 0.2), 2, 0.02);
+  burst(c, out, t, 0.12, 'bandpass', pitch(info, 1200), pitch(info, 700), stepLevel(info, 0.2), 2, 0.02);
   return 0.13;
 };
 
 const stepSand: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.1, 'lowpass', pitch(info, 1400), pitch(info, 1400), level(info, 0.18), 1, 0.02);
+  burst(c, out, t, 0.1, 'lowpass', pitch(info, 1400), pitch(info, 1400), stepLevel(info, 0.18), 1, 0.02);
   return 0.11;
 };
 
 const stepMud: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.12, 'lowpass', pitch(info, 600), pitch(info, 250), level(info, 0.2));
-  tone(c, out, 'sine', t, 0.12, pitch(info, 120), pitch(info, 70), level(info, 0.12));
+  burst(c, out, t, 0.12, 'lowpass', pitch(info, 600), pitch(info, 250), stepLevel(info, 0.2));
+  tone(c, out, 'sine', t, 0.12, pitch(info, 120), pitch(info, 70), stepLevel(info, 0.12));
   return 0.13;
 };
 
 const stepGrass: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.08, 'bandpass', pitch(info, 2500), pitch(info, 1600), level(info, 0.15));
-  return 0.09;
+  const hh = heelToe(info);
+  burst(c, out, t, 0.08, 'bandpass', pitch(info, 2500), pitch(info, 1600), stepLevel(info, 0.15));
+  heelHit(c, out, t, hh, 0.08, 'bandpass', pitch(info, 2500), pitch(info, 1600), stepLevel(info, 0.15));
+  return Math.max(0.09, hh.dt + 0.09);
 };
 
 const stepFarm: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.08, 'bandpass', pitch(info, 1800), pitch(info, 1100), level(info, 0.15));
+  burst(c, out, t, 0.08, 'bandpass', pitch(info, 1800), pitch(info, 1100), stepLevel(info, 0.15));
   return 0.09;
 };
 
 const stepRock: Recipe = (c, out, t, info) => {
-  tone(c, out, 'sine', t, 0.05, pitch(info, 240), pitch(info, 150), level(info, 0.2));
-  burst(c, out, t, 0.015, 'highpass', pitch(info, 3500), pitch(info, 3500), level(info, 0.08));
-  return 0.07;
+  const hh = heelToe(info);
+  tone(c, out, 'sine', t, 0.05, pitch(info, 240), pitch(info, 150), stepLevel(info, 0.2));
+  burst(c, out, t, 0.015, 'highpass', pitch(info, 3500), pitch(info, 3500), stepLevel(info, 0.08));
+  heelHit(c, out, t, hh, 0.015, 'highpass', pitch(info, 3500), pitch(info, 3500), stepLevel(info, 0.08));
+  return Math.max(0.07, hh.dt + 0.07);
 };
 
 const stepDirt: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.06, 'lowpass', pitch(info, 900), pitch(info, 900), level(info, 0.18));
-  tone(c, out, 'sine', t, 0.06, pitch(info, 140), pitch(info, 90), level(info, 0.1));
-  return 0.07;
+  const hh = heelToe(info);
+  burst(c, out, t, 0.06, 'lowpass', pitch(info, 900), pitch(info, 900), stepLevel(info, 0.18));
+  heelHit(c, out, t, hh, 0.06, 'lowpass', pitch(info, 900), pitch(info, 900), stepLevel(info, 0.18));
+  tone(c, out, 'sine', t, 0.06, pitch(info, 140), pitch(info, 90), stepLevel(info, 0.1));
+  return Math.max(0.07, hh.dt + 0.07);
 };
 
 const stepGravel: Recipe = (c, out, t, info) => {
+  const hh = heelToe(info);
   // Three tiny clicks inside 0.05 s.
   for (let i = 0; i < 3; i++) {
     burst(c, out, t + i * 0.018, 0.012, 'bandpass', pitch(info, 3000 + i * 700), pitch(info, 3000 + i * 700),
-      level(info, 0.15), 3);
+      stepLevel(info, 0.15), 3);
   }
-  return 0.07;
+  // The second contact replays the three clicks, 10 % higher, quieter.
+  if (hh.second > 0) {
+    for (let i = 0; i < 3; i++) {
+      burst(c, out, t + hh.dt + i * 0.018, 0.012, 'bandpass', pitch(info, 3000 + i * 700) * 1.1,
+        pitch(info, 3000 + i * 700) * 1.1, stepLevel(info, 0.15) * hh.second, 3);
+    }
+  }
+  return Math.max(0.07, hh.dt + 0.07);
 };
 
 const stepWater: Recipe = (c, out, t, info) => {
-  burst(c, out, t, 0.15, 'lowpass', pitch(info, 1800), pitch(info, 500), level(info, 0.2), 1, 0.03);
-  tone(c, out, 'sine', t, 0.15, pitch(info, 300), pitch(info, 180), level(info, 0.1));
+  burst(c, out, t, 0.15, 'lowpass', pitch(info, 1800), pitch(info, 500), stepLevel(info, 0.2), 1, 0.03);
+  tone(c, out, 'sine', t, 0.15, pitch(info, 300), pitch(info, 180), stepLevel(info, 0.1));
   return STEP_DUR;
 };
 

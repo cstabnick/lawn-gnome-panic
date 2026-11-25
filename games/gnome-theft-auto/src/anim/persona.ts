@@ -51,6 +51,54 @@ export function walkStyleFor(p: Persona, r: Rand = Math.random, w: AnimWorld = w
   return WALK[p];
 }
 
+/** FNV-1a (as pickFor in anim/index.ts): a stable number per townsgnome id. */
+function hashId(id: number | string): number {
+  const key = String(id);
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+export interface Gait { style: LibId | null; speedMul: number }
+
+/** A townsgnome's own gait, stable per id: plain walkers get walk-easy / walk-brisk / walk-amble / none; everyone gets
+ *  speedMul 0.9..1.12. Night still makes most walk sleepily (as walkStyleFor). */
+export function gaitFor(id: number | string, p: Persona, r: Rand = Math.random, w: AnimWorld = world): Gait {
+  const h = hashId(id);
+  const plain: readonly (LibId | null)[] = ['walk-easy', 'walk-brisk', 'walk-amble', null];
+  let style: LibId | null = p === 'plain' ? plain[h % 4] : WALK[p];
+  if (w.night > 0.7 && p !== 'nervous' && r() < 0.5) style = 'walk-sleepy';
+  return { style, speedMul: 0.9 + ((h >>> 8) % 23) / 100 };
+}
+
+/** Flee arms: 'panic' or one of run-cover-head / run-look-back / run-arms-up (null = the hands-up pose in npcs.ts). */
+export function fleeStyleFor(r: Rand = Math.random): LibId | null {
+  const roll = r();
+  if (roll < 0.4) return 'panic';
+  if (roll < 0.55) return 'run-cover-head';
+  if (roll < 0.7) return 'run-look-back';
+  if (roll < 0.85) return 'run-arms-up';
+  return null;
+}
+
+/** The startle when a horn sounds nearby. Nervous gnomes jump; spinning is rare. */
+export function startleFor(p: Persona, r: Rand = Math.random): LibId {
+  if (p === 'nervous') return pick(['jump-back', 'startle-hop'] as const, r);
+  if (r() < 0.1) return 'startle-spin';
+  return pick(['startle-horn', 'startle-hop'] as const, r);
+}
+
+/** The reaction to a nearby crash or horn from a grumpy gnome. */
+export function angerFor(r: Rand = Math.random): LibId {
+  return pick(['shake-fist', 'fist-wave-both', 'stomp-off'] as const, r);
+}
+
+/** The reaction when a vehicle or a goal goes well: spectators cheer loudest, the rest clap or cheer. */
+export function cheerFor(trait: string | undefined, r: Rand = Math.random): LibId {
+  if (trait === 'spectator') return pick(['cheer', 'cheer-jump', 'cheer-whistle'] as const, r);
+  return pick(['clap', 'cheer'] as const, r);
+}
+
 /** What a townsgnome does when it stops: by archetype, place and time. */
 export function idleFor(p: Persona, biome: BiomeId | string, r: Rand = Math.random, w: AnimWorld = world): LibId {
   const roll = r();

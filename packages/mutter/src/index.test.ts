@@ -113,4 +113,12 @@ describe('createMutter', () => {
     expect(voice.say('hello there', 88)).toBe(0);
     expect(voice.say('hello there', { hz: 88, speed: 1.4, wave: 'sine', breath: 0.3, wobble: 0.5 }, { phone: true, gain: 0.5, pan: -0.5 })).toBe(0);
   });
+
+  it('keeps the same duration for a radio line', () => {
+    expect(voice.estimate('hello there friend', { radio: true }, { hz: 88 })).toBe(voice.estimate('hello there friend', undefined, { hz: 88 }));
+  });
+
+  it('plays nothing (and does not throw) for a radio line before audio is unlocked', () => {
+    expect(voice.say('hello there', 88, { radio: true, gain: 0.5 })).toBe(0);
+  });
 });

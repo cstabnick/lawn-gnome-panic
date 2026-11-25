@@ -286,7 +286,7 @@ export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
 const dressed = (spec: Vehicle['spec']): boolean => GLAZE_KINDS.includes(spec.kind);
 
 /** The four kinds the game always tinted with the caller's colour; the other dressed kinds keep their prefab's own colours, whatever tint a caller passes (it was never drawn for them). */
-const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider', 'golf-cart'];
+const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider', 'golf-cart', 'dirt-bike'];
 
 /** The paint a dressed vehicle starts in: the tinted kinds wear the caller's tint (else the first mower tint); the rest wear their prefab's own tint, so they look exactly as before. */
 function stockPaint(spec: Vehicle['spec'], tint?: number): number {

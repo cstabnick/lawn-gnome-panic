@@ -23,6 +23,7 @@ import { SPEEDWAY_STAGES } from './stages/speedway';
 import { PEBBLEWICK_STAGES } from './stages/pebblewick';
 import { COAST_STAGES } from './stages/coast';
 import { WINTER_STAGES } from './stages/winter';
+import { DIRT_STAGES } from './stages/dirt';
 import type { CutsceneRoom } from './types';
 
 export * from './stages/kit';
@@ -246,7 +247,7 @@ export const CAST: readonly CastMember[] = [
 
 // ---- The stages ----------------------------------------------------------------------------------------------------
 
-export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES];
+export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES, ...DIRT_STAGES];
 
 export function stageById(id: string): Stage | undefined {
   return STAGES.find((s) => s.id === id);

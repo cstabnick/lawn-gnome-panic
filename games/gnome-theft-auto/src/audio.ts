@@ -432,6 +432,11 @@ export function playHorn(kind: VehicleKind, horn?: string): void {
         hornNote(c, out, 'square', t + offset, 0.05, 1200, 0.12, 3000);
       }
       return;
+    case 'dirt-bike':
+      // A short, flat two-stroke parp.
+      hornNote(c, out, 'sawtooth', t, 0.12, 660, 0.14, 1800);
+      hornNote(c, out, 'sawtooth', t + 0.14, 0.1, 600, 0.12, 1800);
+      return;
     case 'baguette-trike':
       // Bicycle bell.
       hornNote(c, out, 'sine', t, 0.12, 2100, 0.12, 5000);

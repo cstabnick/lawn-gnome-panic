@@ -213,6 +213,19 @@
           "yaw": 0
         }
       }
+    },
+    {
+      "id": "giver/capwood-warden",
+      "kind": "giver",
+      "x": 360,
+      "z": -99,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": -5,
+          "yaw": 3.141592653589793
+        }
+      }
     }
   ],
   "data": {

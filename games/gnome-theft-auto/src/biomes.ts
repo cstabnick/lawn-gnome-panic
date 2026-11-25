@@ -14,6 +14,7 @@ import { GENERATORS, LAYOUT, REGION_IDS, REGIONS, markerNum, markersOf, waterBod
 import { reservedRects } from './sites';
 import type { Box, BiomeId, DewBarrel, ParkedSpot, VehicleKind } from './types';
 import { heightAt, waterAt, withGround } from './terrain';
+import { nearTrack } from './raceTrack/tracks';
 import { addGroundToGeometry, placeOnGround } from './terrainMesh';
 import { onWaterCourse } from './water';
 
@@ -226,6 +227,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     if (Math.abs(x) <= CITY_HALF + margin && Math.abs(z) <= CITY_HALF + margin) return false;
     if (roadDist(x, z, genRoads) < ROAD_CLEAR + margin) return false;
     if (reserved.some((r) => inRect(r, x, z, margin))) return false;
+    if (nearTrack(x, z, margin + 2)) return false;
     return !boxNear(x, z, margin) && !oldFenceNear(x, z, margin);
   };
 

@@ -21,7 +21,7 @@ import { macroAt, reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
-import { applyTrackRelief } from './raceTrack/track';
+import { ALL_TRACKS, fordWaterAt } from './raceTrack/tracks';
 import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
 import { INTERIOR_FLOOR_Y, INTERIOR_MIN_X } from './interiors/space';
@@ -244,8 +244,9 @@ function buildGrid(): Float32Array {
     }
   }
 
-  // The Lost & Found Speedway (raceTrack/track.ts): rises, banked corners and jumps, raised on its flattened reserve.
-  if (opts.landforms) applyTrackRelief(g, N, H, S);
+  // The race tracks (raceTrack/tracks.ts): the Speedway and the Dirt Bowl raised on their flattened sites, the Capwood
+  // Run carved into the mountain as a graded ribbon.
+  if (opts.landforms) for (const t of ALL_TRACKS) t.applyRelief(g, N, H, S);
   rectFlatten(g, { minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
   // Water (Epic 4, water.ts): carve the river, canal, loch and sea beds into the finished ground; record bridge decks.
   if (waterCarving()) carveWater(g, N, H, S);
@@ -339,8 +340,8 @@ export function surfaceAt(x: number, z: number): SurfaceKind {
   return surfaceSpecAt(x, z, {}).kind;
 }
 
-/** Water at a point: the water surface height and the depth below it. */
-export interface WaterHit { surface: number; depth: number }
+/** Water at a point: the water surface height and the depth below it. `ford`: Cap-water in a track ford (never floods an engine). */
+export interface WaterHit { surface: number; depth: number; ford?: boolean }
 
 /**
  * Water at (x, z): the surface height and the depth from it down to the bed, or null where there is none (or while
@@ -349,7 +350,14 @@ export interface WaterHit { surface: number; depth: number }
 export function waterAt(x: number, z: number): WaterHit | null {
   if (x >= INTERIOR_MIN_X) return null; // interior pockets are dry
   const surface = waterLevelAt(x, z);
-  if (surface === null) return null;
+  if (surface === null) {
+    // A ford of Cap-water on a race track (E14, raceTrack/trackDef.ts): shallow, still, no waves.
+    if (terrainFlat()) return null;
+    const f = fordWaterAt(x, z);
+    if (!f) return null;
+    const fd = f.surface - gridHeight(x, z);
+    return fd > 0 ? { surface: f.surface, depth: fd, ford: true } : null;
+  }
   const depth = surface - (waterBedAt(x, z) ?? surface);
   // Waves (waves.ts) move the surface; depth stays the still depth so a shore never flickers dry. 0 until app ticks it.
   return depth > 0 ? { surface: surface + waveSurfaceOffset(x, z), depth } : null;

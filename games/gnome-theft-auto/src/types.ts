@@ -58,7 +58,9 @@ export type VehicleKind =
   | 'crepe-van'
   // Winter sports (E12, winter/): a tea-tray sled and a pair of skis on Snowdrop Slope; winter/runtime.ts steps them (slideRider.ts).
   | 'tea-tray-sled'
-  | 'snow-skis';
+  | 'snow-skis'
+  // Dirt country (E14): the Knobbly Dirt-Mower.
+  | 'dirt-bike';
 export type GunKind =
   | 'pistol'
   | 'smg'

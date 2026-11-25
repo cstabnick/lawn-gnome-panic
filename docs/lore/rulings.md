@@ -1038,3 +1038,31 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** There are nine in all. Five lounge on the Fells' sun deck, now signposted "BEAR DECK". Four are on Snowcap Rise: one asleep on Pail Pond's ice, one turning slowly in an inner tube on the ice, one fishing a hole from a stool, and one on the Lodge's porch bench with a mug of cocoa. Their call is a long contented yawn. They never speak, and nothing upsets them: a shot, a ram or a shove gets a shrug. Standing beside all nine earns the "Bear Hug" achievement.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E12 adds the four Snowcap bears and a sign for the Fells' five, and they must stay the calmest creatures in Turfton (R-040).
+
+## R-189
+
+**Question:** Do the Cap-water fords on the Capwood Run flood an engine?
+**Ruling:** No. Cap-water, the thick slow water that seeps out of Capwood's buried Tall-One woodpile, soaks a mower's engine only a little: enough to slow it, never enough to sputter or stall. Ordinary water elsewhere still floods (the "waterlogged mowers" ruling stands). In game: `WATERLOG.fordCap`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 puts two Cap-water fords on the Capwood Run, and the rally must drag without drowning anyone's mower.
+
+## R-190
+
+**Question:** Who is Two-Ton Teasel, and how is he related to Clary?
+**Ruling:** Two-Ton Teasel is Teasel Mudguard. His family name is Mudguard; he is Marshal Clary Mudguard's older brother, a Fizz Cup racer, and he wants a rematch on the dirt (side quest Rutbottom Heats). She has never let him win a start.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 gives Teasel a side quest at the Dirt Bowl, and the quest needs a family tie to the Marshal.
+
+## R-191
+
+**Question:** What is the Knobbly, and how does a player get one?
+**Ruling:** The Knobbly Dirt-Mower is a push-mower bike rebuilt for dirt by Rutbottom's mechanics: knobbly tyres, long forks, a number plate. It is sold at the dealer, and parked at the Dirt Bowl gate for anyone who signs Clary's clipboard (nobody checks the clipboard).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14's Knobbly Heat (`race-rutbottom-knobbly`) needs a dirt bike the player can reach without the impound.
+
+## R-192
+
+**Question:** Why do Capwood's caps glow, and what does Section Nine cover?
+**Ruling:** Capwood's caps glow faintly after dark (spores, not magic: gnomes argue about this). The brightest glow is the Great Ring, a fairy ring of toadstools round a clearing. Bruising a cap is a fine under Section Nine of the Warden's rules.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 lights Capwood at night and places the Great Ring, and the Warden's fines need a rule to cite.

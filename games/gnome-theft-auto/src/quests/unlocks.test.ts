@@ -11,6 +11,7 @@ import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { COAST_QUEST_DEFS } from './coastQuests';
 import { RACE_QUESTS } from './races';
+import { DIRT_QUESTS } from './dirtRaces';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
 import type { GiverDef, QuestDef, QuestDeps, QuestSave } from './types';
@@ -32,6 +33,7 @@ describe('side unlock table', () => {
       ...CITY_QUESTS.map((q) => q.id),
       TESSIE.questId,
       ...RACE_QUESTS.map((q) => q.id),
+      ...DIRT_QUESTS.map((q) => q.id),
       ...OUTSKIRTS_QUESTS.map((q) => q.id),
       ...NEWCOMER_QUESTS.map((q) => q.id),
       ...COAST_QUEST_DEFS.map((q) => q.id),
@@ -39,7 +41,7 @@ describe('side unlock table', () => {
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {

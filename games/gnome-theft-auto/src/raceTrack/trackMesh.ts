@@ -9,6 +9,7 @@ import { addGroundToGeometry, drapedRibbon } from '../terrainMesh';
 import {
   BARRIER_GAPS, PIT_LANE, PIT_LANE_WIDTH, TRACK, gridSlot, sampleAt, trackFrame, trackLength, trackSamples,
 } from './track';
+import type { Track } from './trackDef';
 
 type Pt = readonly [number, number];
 
@@ -210,4 +211,75 @@ export function buildTrackSurface(scene: THREE.Scene): void {
     pit.push(slab(x + h - t / 2, PIT_BOX_Z, 0, 1, h - t, 1, 0, t / 2, 0.05));
   }
   addMesh(scene, 'speedway-pit-markings', pit, mat(LAYER.marking, YELLOW));
+}
+
+/** Points `lat` metres left of a track's centre line, every 2nd sample (closed: the last point is the first again; open: ends at the last sample). */
+function trackLane(track: Track, lat: number): Pt[] {
+  const S = track.samples();
+  const pts: Pt[] = [];
+  for (let k = 0; k < S.length; k += 2) pts.push([S[k].x + S[k].nx * lat, S[k].z + S[k].nz * lat]);
+  if (track.closed) pts.push(pts[0]);
+  else if ((S.length - 1) % 2 !== 0) {
+    const e = S[S.length - 1];
+    pts.push([e.x + e.nx * lat, e.z + e.nz * lat]);
+  }
+  return pts;
+}
+
+/** Give every vertex of `g` one colour (so black and white squares can merge into one mesh). */
+function paint(g: THREE.BufferGeometry, color: number): THREE.BufferGeometry {
+  const c = new THREE.Color(color);
+  const n = g.getAttribute('position').count;
+  const arr: number[] = [];
+  for (let i = 0; i < n; i++) arr.push(c.r, c.g, c.b);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(arr, 3));
+  return g;
+}
+
+/**
+ * The flat surfaces of a dirt track (E14): `${prefix}-road` (the dirt), `${prefix}-runoff` (both sides out to the
+ * barriers), `${prefix}-line` (a chequered start line, and on an open track a finish line too) and `${prefix}-grid`
+ * (four grid boxes). Draped on the ground, on draw layers, no colliders. An open track is not joined end to start.
+ */
+export function buildDirtTrackSurface(scene: THREE.Scene, track: Track, opts: { prefix: string; road?: number; runoff?: number }): void {
+  const { prefix } = opts;
+  const width = track.def.width;
+  const half = width / 2;
+  const runoffW = track.def.barrierOffset - half;
+  // Banked dirt corners are steeper than the Speedway's, so the drape sits higher (0.06 / 0.08 m) to stay above the ground grid.
+  addMesh(scene, `${prefix}-runoff`, [1, -1].map((side) => drapedRibbon(trackLane(track, side * (half + runoffW / 2)), runoffW, 0.06)),
+    mat(LAYER.tint, opts.runoff ?? 0x6f5a3e));
+  addMesh(scene, `${prefix}-road`, [drapedRibbon(trackLane(track, 0), width, 0.08)], mat(LAYER.road, opts.road ?? 0x8a6a48));
+
+  // Chequered line(s): a 2 m band across the road, 1 m squares, black and white in one vertex-coloured mesh.
+  const squares: THREE.BufferGeometry[] = [];
+  const lineAt = (s0: number): void => {
+    for (let a = 0; a < 2; a++) {
+      for (let b = 0; b < width; b++) {
+        const l0 = -half + b, l1 = Math.min(half, l0 + 1);
+        const c = [track.frame(s0 + a, l0), track.frame(s0 + a + 1, l0), track.frame(s0 + a + 1, l1), track.frame(s0 + a, l1)]
+          .map((p): Pt => [p.x, p.z]);
+        squares.push(paint(quad(c, 0.1), (a + b) % 2 === 0 ? BLACK : WHITE));
+      }
+    }
+  };
+  lineAt(track.startS());
+  if (!track.closed) lineAt(track.finishS());
+  addMesh(scene, `${prefix}-line`, squares, flatLayer(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }), LAYER.decal));
+
+  // Grid boxes: a front bar and two side bars that stop short of it (no shared faces).
+  const lines: THREE.BufferGeometry[] = [];
+  for (let slot = 0; slot < 4; slot++) {
+    const g = track.gridSlot(slot);
+    const fx = Math.sin(g.yaw), fz = Math.cos(g.yaw);
+    const nx = -fz, nz = fx;
+    const t = LINE;
+    lines.push(slab(g.x + fx * (2 - t / 2), g.z + fz * (2 - t / 2), nx, nz, 1.3, fx, fz, t / 2, 0.12));
+    for (const side of [1, -1]) {
+      const cx = g.x + side * nx * (1.3 - t / 2) - fx * (t / 2);
+      const cz = g.z + side * nz * (1.3 - t / 2) - fz * (t / 2);
+      lines.push(slab(cx, cz, fx, fz, 1.875, nx, nz, t / 2, 0.12));
+    }
+  }
+  addMesh(scene, `${prefix}-grid`, lines, mat(LAYER.marking, WHITE));
 }

@@ -94,6 +94,8 @@ const TABLE: Record<string, EngineSoundDef> = {
   'euro-hatch': { wave: 'buzz', idleHz: 30, maxHz: 110, gears: 4, bright: 0.55, rough: 0.25, gain: 0.85 },
   'deux-pots': { wave: 'chug', idleHz: 20, maxHz: 70, gears: 4, bright: 0.4, rough: 0.6, gain: 0.95, curve: 1.05, misfire: 0.1 },
   wespa: { wave: 'buzz', idleHz: 40, maxHz: 160, gears: 3, bright: 0.85, rough: 0.45, gain: 0.9, curve: 0.85, misfire: 0.15 },
+  // Dirt country (E14): a small buzzy two-stroke, revvier and rougher than the Wespa.
+  'dirt-bike': { wave: 'buzz', idleHz: 38, maxHz: 150, gears: 3, bright: 0.8, rough: 0.55, gain: 0.9, curve: 0.8, misfire: 0.2 },
   'baguette-trike': { wave: 'buzz', idleHz: 36, maxHz: 120, gears: 2, bright: 0.7, rough: 0.6, gain: 0.85, misfire: 0.25 },
   'crepe-van': { wave: 'rumble', idleHz: 15, maxHz: 50, gears: 3, bright: 0.3, rough: 0.5, gain: 1.05, curve: 1.1 },
   'golf-cart': {

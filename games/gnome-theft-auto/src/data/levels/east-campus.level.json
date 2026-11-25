@@ -161,18 +161,18 @@
     {
       "id": "dirt-track",
       "kind": "slot",
-      "x": 0,
+      "x": 50,
       "z": -650,
       "data": {
-        "hw": 150,
-        "hd": 100,
+        "hw": 200,
+        "hd": 130,
         "kind": "venue",
         "epic": "E14",
         "flat": true,
         "label": "Rutbottom Dirt Bowl",
         "anchors": {
           "gate": {
-            "dx": -150,
+            "dx": -200,
             "dz": 0
           }
         }
@@ -291,6 +291,32 @@
         "epic": "E31",
         "flat": false,
         "label": "Rootwell Field Station"
+      }
+    },
+    {
+      "id": "giver/rutbottom-clary",
+      "kind": "giver",
+      "x": -34,
+      "z": -525,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": -5,
+          "yaw": 3.141592653589793
+        }
+      }
+    },
+    {
+      "id": "giver/rutbottom-teasel",
+      "kind": "giver",
+      "x": -126,
+      "z": -630,
+      "data": {
+        "exit": {
+          "dx": 5,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
       }
     }
   ],

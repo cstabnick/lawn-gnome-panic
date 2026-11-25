@@ -478,6 +478,12 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 26, accel: 16, turnRate: 2.9, radius: 0.8, seat: [0, 0.58, -0.16], flies: false, mass: 0.9,
     passengerSeats: [[0, 0.58, -0.72]],
   },
+  // Dirt country (E14): a push-mower bike rebuilt for the dirt. Light and quick to turn; handling.ts gives it its grip.
+  'dirt-bike': {
+    kind: 'dirt-bike', mountStyle: 'hop', name: 'Knobbly Dirt-Mower', prefab: 'dirt-mower-bike', scale: 1.6,
+    maxSpeed: 27, accel: 22, turnRate: 3.1, radius: 0.9, seat: [0, 0.58, -0.19], flies: false, mass: 1,
+    passengerSeats: [[0, 0.58, -0.75]],
+  },
   'baguette-trike': {
     kind: 'baguette-trike', mountStyle: 'hop', name: 'Baguette Trike', prefab: 'gta-baguette-trike', scale: 1.5,
     maxSpeed: 15, accel: 8, turnRate: 2.1, radius: 1.0, seat: [0, 0.6, 0.12], flies: false, mass: 1.4,

@@ -24,6 +24,11 @@ export const WATERLOG = {
   minSpeedMult: 0.4,
   /** Share of the throttle a stalled engine still gives, so a stalled mower can crawl out of the water. */
   limp: 0.2,
+  /**
+   * Cap-water fords (E14, the Capwood Run; WaterHit.ford): soaking there stops at this level, below sputterAt, so a
+   * ford slows a car (speed and throttle loss) but never makes it sputter, flood or stall.
+   */
+  fordCap: 0.3,
 } as const;
 
 /** 'soaked' rising past sputterAt, 'flooded' on stalling at 1, 'restarted' when a stalled engine dries below restartAt, 'dry' back to 0. */
@@ -39,7 +44,7 @@ export function stepWaterlog(v: Vehicle, dt: number): WaterlogEvent | null {
     const d01 = clamp((w.depth - WATERLOG.minDepth) / (WATER.stallDepth - WATERLOG.minDepth), 0, 1);
     let rate = WATERLOG.soakShallow + (WATERLOG.soakDeep - WATERLOG.soakShallow) * d01;
     if (Math.abs(v.speed) > 8) rate *= WATERLOG.splashMult;
-    wl = Math.min(1, prev + rate * dt);
+    wl = w.ford ? Math.max(prev, Math.min(WATERLOG.fordCap, prev + rate * dt)) : Math.min(1, prev + rate * dt);
   } else {
     wl = Math.max(0, prev - WATERLOG.dryPerS * dt);
   }

@@ -61,6 +61,12 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'race-lowrider-derby', after: 'ch2-unmowed-tablet', why: 'End of chapter 2: the Carburettors notice the player.' },
   { questId: 'race-snail-endurance', after: 'ch3-tundra-drift-run', why: 'After the chapter 3 drift run; Shelldon is back in town.' },
   { questId: 'race-fizz-cup-final', after: 'ch4-runway-flares', why: 'Chapter 4 is set at the airfield next door to the Speedway.' },
+  // E14 dirt country (dirtRaces.ts). The story quests E04 planned (#40/#42) do not exist yet, so each hangs on an existing beat
+  // with room under the two-per-beat cap; re-time to #42 / #40 when E21 builds them. Each also needs its prereq.
+  { questId: 'race-rutbottom-knobbly', after: 'ch2-sprinkler-gauntlet', why: 'Rootwell opens by chapter 2; a first dirt-bike heat. Re-time to #42 when E21 builds it.' },
+  { questId: 'sq-rutbottom-heats', after: 'ch4-runway-flares', why: 'The Carburettors\x27 lowriders are out of the impound by chapter 4. Re-time to #42 when E21 builds it.' },
+  { questId: 'race-capwood-open', after: 'ch4-sandpit-drop', why: 'The Fells and Capwood are well open by now. Re-time to #40 when E21 builds it.' },
+  { questId: 'sq-capwood-cap-count', after: 'ch5-even-cut', why: 'A quiet walk once the story is done. Re-time to #40 when E21 builds it.' },
   // Pebblewick's side quests (outskirtsQuests.ts): the dry water line, then the humming combine.
   { questId: 'sq-weeping-line', after: 'ch3-kiln-resin-ice', why: 'Pebblewick plots need water; the dry line is found once the player has the tundra kiln run.' },
   { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', why: 'The dunes hum at three once the spade truce has opened the eastern sand.' },
@@ -117,6 +123,10 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'pebblewick-tower': '#9fd0ff',
   gentian: '#e8f2ff',
   'theo-pond': '#7fb6e0',
+  'rutbottom-clary': '#e8c27a',
+  'rutbottom-teasel': '#d8342c',
+  'capwood-lulu': '#8e44ad',
+  'capwood-warden': '#7fbf5a',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

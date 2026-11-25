@@ -8,6 +8,7 @@ import type { Blip, GunKind, Hud, HudState, RoadNode, WatchSearch, World } from 
 import { isTyping, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
+import { ALL_TRACKS } from './raceTrack/tracks';
 import { drawSkywaysOnMap } from './highways/map';
 import { drawRoute } from './highways/routeDraw';
 import { clampView, fitScale, fitView, panBy, zoomAt, type MapView, type MapViewport } from './bigMapView';
@@ -804,6 +805,19 @@ function paintWorld(g: CanvasRenderingContext2D, world: World, s: number, ox: nu
   PIT_LANE.forEach(([x, z], i) => (i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z))));
   g.lineWidth = 5;
   g.stroke();
+  // The dirt tracks (E14), at their own width; the open ones are an open line.
+  for (const t of ALL_TRACKS) {
+    if (t.id === 'lost-and-found') continue;
+    g.beginPath();
+    t.samples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
+    if (t.closed) g.closePath();
+    g.strokeStyle = '#5b4630';
+    g.lineWidth = t.def.width + e(3);
+    g.stroke();
+    g.strokeStyle = '#9a7a52';
+    g.lineWidth = t.def.width;
+    g.stroke();
+  }
 
   // The skyways (highways/map.ts): drawn over the roads they cross. They work in pixels, so give them the pixel mapping.
   g.save();

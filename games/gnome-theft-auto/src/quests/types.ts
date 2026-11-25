@@ -8,6 +8,7 @@ import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKi
 import type { ScenePlayOptions } from '../cutscene/director';
 import type { SceneScript } from '../cutscene/script';
 import type { LiveWorld } from '../cutscene/liveArea';
+import type { TrackId } from '../raceTrack/tracks';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -168,8 +169,14 @@ export type ObjectiveDef =
   /**
    * A race at the Speedway: go to the grid, get into the race vehicle waiting in the last slot, wait for the lights, and
    * finish `laps` laps in position `mustPlace` or better. Losing puts everyone back on the grid for another go.
+   * `trackId` picks the track (absent = 'lost-and-found', the Speedway); on a track whose `closed` is false (a
+   * point-to-point run) `laps` must be 1. `timeAchievement`: unlocked when the player finishes within `mustPlace`
+   * in under `seconds` of race time.
    */
-  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number }
+  | {
+      kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number;
+      trackId?: TrackId; timeAchievement?: { seconds: number; id: string };
+    }
   // ---- The Turfton city contracts (quests/cityQuests.ts): runner in objectivesCity.ts ----
   /**
    * A run through checkpoints in order: a courier round, the Skyway job, a fly-by of Thorne Tower. The clock (`seconds`)

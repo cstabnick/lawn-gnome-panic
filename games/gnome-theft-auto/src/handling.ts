@@ -68,6 +68,13 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.7, 1.3], balance: [-0.5, 0.4], steering: [0.8, 1.4], assists: [0, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4] },
     lean: 1.4,
   },
+  // Knobbly Dirt-Mower: lighter and quicker than the push-bike, soft long-travel suspension for landings, a loose tail on tarmac
+  // (surfaces.ts scales grip per surface for every kind, so the bite on loose ground comes from quick steering and the assists).
+  'dirt-bike': {
+    stock: { acceleration: 1.1, grip: 0.9, balance: -0.15, steering: 1.25, assists: 1.0, handbrake: 1.3, stiffness: 0.75, comHeight: 1.05 },
+    ranges: { grip: [0.65, 1.3], balance: [-0.5, 0.4], steering: [0.8, 1.5], assists: [0, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4], stiffness: [0.6, 1.1] },
+    lean: 1.5,
+  },
   // The reference mower: balanced, a touch of understeer, forgiving.
   'ride-on': {
     stock: { balance: 0.1 },

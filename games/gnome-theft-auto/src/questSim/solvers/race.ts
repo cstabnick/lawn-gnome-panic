@@ -3,7 +3,7 @@
 // (ctx.drive). No cheat decides the result: the race runner counts the laps, the rivals and the places.
 import type { Vehicle } from '../../types';
 import { racingLine, steerTo } from '../../raceTrack/autopilot';
-import { gridSlot, locate } from '../../raceTrack/track';
+import { trackById } from '../../raceTrack/tracks';
 import type { ObjectiveDef } from '../../quests/types';
 import type { SimCtx, Solver } from '../types';
 import { SimFail } from '../types';
@@ -29,7 +29,7 @@ const STOPPED = 1;
 
 /** The race vehicle: kind `obj.vehicle`, quest-owned by the run, nearest its grid slot, not an NPC rival. */
 function findRaceVehicle(ctx: SimCtx, obj: RaceObj): Vehicle | null {
-  const g = gridSlot(obj.rivals.length);
+  const g = trackById(obj.trackId ?? 'lost-and-found').gridSlot(obj.rivals.length);
   let best: Vehicle | null = null;
   let bd = Infinity;
   for (const v of ctx.vehicles) {
@@ -48,7 +48,8 @@ export const raceSolver: Solver<'race'> = {
     if (!mine) throw new SimFail('bot', `race ${obj.raceId}: no ${obj.vehicle} on the grid for the run`);
     await getInto(ctx, mine, 'race grid');
 
-    const grid = gridSlot(obj.rivals.length);
+    const track = trackById(obj.trackId ?? 'lost-and-found');
+    const grid = track.gridSlot(obj.rivals.length);
     let hint = -1;
     // Attempts: a new one starts when the car leaves the grid. A lost one puts the car back on the grid, stopped (the
     // runner's holdPlayer). A car passing the grid mid-lap is moving, so it is not counted as a loss.
@@ -73,13 +74,13 @@ export const raceSolver: Solver<'race'> = {
         }
       }
 
-      const spot = locate(mine.x, mine.z, 60, hint) ?? locate(mine.x, mine.z, 400);
+      const spot = track.locate(mine.x, mine.z, 60, hint) ?? track.locate(mine.x, mine.z, 400);
       if (spot) {
         hint = spot.i;
-        const { aimS, target } = racingLine(spot.s, mine.speed, GRIPS[Math.min(losses, GRIPS.length - 1)]);
+        const { aimS, target } = racingLine(spot.s, mine.speed, GRIPS[Math.min(losses, GRIPS.length - 1)], track);
         ctx.drive({
           throttle: mine.speed < target ? 1 : mine.speed > target + 1.5 ? -1 : 0,
-          steer: steerTo(mine.x, mine.z, mine.yaw, aimS),
+          steer: steerTo(mine.x, mine.z, mine.yaw, aimS, track),
           lift: 0,
         });
       } else {

@@ -122,7 +122,7 @@ export function makeCourierRoute(c: GenCtx): Gig | null {
   if (v.flies || v.boat || !c.home) return null;
   const C = J.courier;
   const home = c.home;
-  const cap = Math.min(c.perks.capacity, v.kind === 'push-bike' ? C.bikeCap : C.defaultCap);
+  const cap = Math.min(c.perks.capacity, (v.kind === 'push-bike' || v.kind === 'dirt-bike') ? C.bikeCap : C.defaultCap);
   const n = Math.max(1, Math.min(cap, 2 + Math.floor(c.rng() * cap)));
   const maxD = c.level >= 4 ? 900 : 400;
   const spots = c.roads.filter((r) => {

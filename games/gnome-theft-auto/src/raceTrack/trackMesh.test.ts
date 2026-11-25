@@ -37,3 +37,23 @@ describe('buildTrackSurface', () => {
     expect(worst).toBeLessThan(0.2);
   });
 });
+
+describe('buildDirtTrackSurface', () => {
+  it('makes the road, run-off, line and grid meshes, all polygon-offset', async () => {
+    const { buildDirtTrackSurface } = await import('./trackMesh');
+    const { TRACKS } = await import('./tracks');
+    const s = new THREE.Scene();
+    buildDirtTrackSurface(s, TRACKS.rutbottom, { prefix: 'rutbottom' });
+    const names = s.children.filter((o): o is THREE.Mesh => o instanceof THREE.Mesh).map((m) => m.name).sort();
+    expect(names).toEqual(['rutbottom-grid', 'rutbottom-line', 'rutbottom-road', 'rutbottom-runoff']);
+    for (const m of s.children as THREE.Mesh[]) expect((m.material as THREE.Material).polygonOffset, m.name).toBe(true);
+  });
+
+  it('an open track builds without joining its ends', async () => {
+    const { buildDirtTrackSurface } = await import('./trackMesh');
+    const { TRACKS } = await import('./tracks');
+    const s = new THREE.Scene();
+    buildDirtTrackSurface(s, TRACKS['capwood-run'], { prefix: 'run' });
+    expect(s.children.map((o) => o.name).sort()).toEqual(['run-grid', 'run-line', 'run-road', 'run-runoff']);
+  });
+});

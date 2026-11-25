@@ -700,6 +700,36 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'hand', prefabId: 'speedway-fizz-cup', label: 'The Fizz Cup', exclusive: true },
   },
   {
+    id: 'gta-dirt-rookie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rut Runner', description: "Finish on the podium in Rutbottom's Knobbly Heat.",
+    reward: { slot: 'neck', prefabId: 'rutbottom-mud-bandana', label: 'Mud Bandana' },
+  },
+  {
+    id: 'gta-dirt-champion', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Berm Remembers', description: 'Beat Two-Ton Teasel in the Rutbottom Heats.',
+    reward: { slot: 'head', prefabId: 'rutbottom-knobbly-helmet', label: 'Knobbly Helmet' },
+  },
+  {
+    id: 'gta-rally-finish', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Capwood Finisher', description: 'Finish the Capwood Run.',
+    reward: { slot: 'back', prefabId: 'capwood-rally-pennant', label: 'Rally Pennant' },
+  },
+  {
+    id: 'gta-rally-gold', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Gold Through the Gills', description: 'Win the Capwood Run inside the gold time.',
+    reward: { slot: 'head', prefabId: 'capwood-cap-hat', label: 'Capwood Cap', exclusive: true },
+  },
+  {
+    id: 'gta-toadstool-trail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ring of Glow', description: 'Find the Great Ring in Capwood after dark.',
+    reward: { slot: 'back', prefabId: 'spore-cloak', label: 'Spore Cloak' },
+  },
+  {
+    id: 'gta-cap-count', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Section Nine', description: 'Count every unfined cap for Warden Stook.',
+    reward: { slot: 'hand', prefabId: 'warden-ticket-book', label: 'Ticket Book' },
+  },
+  {
     id: 'gta-dry-bone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Dry as a Bone', description: "Deliver Big Lou's VIP bowler without chipping the ride.",
     reward: { slot: 'neck', prefabId: 'vip-towel-scarf', label: 'Gnomecino VIP Towel' },

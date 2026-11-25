@@ -162,6 +162,7 @@ import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
 import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
+import { installGolf } from './golf/runtime';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -1085,6 +1086,13 @@ const winter = installWinter({
   bears: () => critters.list.filter((c) => c.kind === 'polar-bear'),
   onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
 });
+// Hedgeworth Links (E15, golf/): the neighbour's yard behind the Kicked Board, four holes of real golf (@lawn/golf), the
+// clubhouse interior, Peony, Basil and Thrift. Builds its own scenery and pushes its colliders into world.boxes.
+const golf = installGolf({
+  ...jobDeps,
+  camera,
+  onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
+});
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -1761,6 +1769,9 @@ function frame(now: number): void {
     // Fishing: the rod is out, so the gnome (and the boat) hold still; the camera still turns to aim the cast (fishing.update).
     : fishing.active()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
+    // Golf (golf/): the gnome stands over the ball; golf reads the raw input itself (aim, club, swing).
+    : golf.addressing()
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
     : birding.viewing()
       ? { ...rawInp, moveX: 0, moveY: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, camYaw: 0, camPitch: 0 }
     : garages.isOpen() || gunStore.isOpen() || modKit.isOpen() || hunting.isOpen() || birding.isOpen() || fishing.isOpen() || outskirts.isOpen() || lockup.isOpen() || phone.isOpen() || econOpen()
@@ -1809,7 +1820,7 @@ function frame(now: number): void {
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
-  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z);
+  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z);
   const townPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : outskirts.prompt(player);
   const portalPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gnomecinoDoor.prompt(Math.floor(watch.heat));
   if (inp.enterExit && !(player.airborne || player.ragdolling)) {
@@ -1823,7 +1834,7 @@ function frame(now: number): void {
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
     else if (fishPrompt) fishing.interact(player);
-    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z)) winter.interact(player.x, player.z); }
+    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z)) golf.interact(player.x, player.z); }
     else if (townPrompt) outskirts.interact(player);
     else if (portalPrompt) gnomecinoDoor.interact(Math.floor(watch.heat));
     else if (interPrompt) interactables.interact(player);
@@ -2127,6 +2138,7 @@ function frame(now: number): void {
   tubing.update(dt);
   coast.update(dt);
   winter.update(dt);
+  golf.update(dt, rawInp);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2407,6 +2419,8 @@ function frame(now: number): void {
   chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne, eye: fp ? eyePos : undefined });
   // The birding scope takes the camera to the gnome's eye; the chase camera follows its aim so the view stays when it comes down.
   const scopeAim = birding.applyCamera(dt);
+  // Golf: the address view behind the ball and the camera that follows a shot (golf/view.ts).
+  golf.applyCamera(dt);
   scopeWasUp = !!scopeAim;
   if (scopeAim) { chase.yaw = scopeAim.yaw; chase.pitch = scopeAim.pitch; }
 
@@ -2467,7 +2481,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips(), ...winter.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -2697,6 +2711,14 @@ if (winterParam === 'wool-run' || winterParam === 'tea-tray-run') {
     if (why) hud.toast(why, 3000);
   }, 1500);
 }
+// Dev / demos (E15): ?golf=1..4 starts a round of Hedgeworth Links on that hole (?golf alone: hole 1).
+if (startParams.has('golf')) {
+  setTimeout(() => {
+    const n = Number(startParams.get('golf'));
+    const why = golf.api.startRound(Number.isFinite(n) && n >= 1 && n <= 4 ? n - 1 : 0);
+    if (why) hud.toast(why, 3000);
+  }, 1500);
+}
 // Dev (E10): ?decor=room|shop|colours opens the flat's Decorate panel (with ?interior=flat-3b to see the room move).
 const decorParam = startParams.get('decor');
 if (decorParam) setTimeout(() => decor.open(decorParam === 'shop' || decorParam === 'colours' ? decorParam : 'room'), 2500);
@@ -2759,6 +2781,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     jobs, tubing, jobDeps, onlineHub: () => onlineSync?.hub,
     // Winter sports (winter/): winter.debug(), winter.api.startRun('wool-run'), winter.api.startRun('tea-tray-run').
     winter,
+    // Hedgeworth Links (golf/): golf.debug(), golf.api.startRound(0), golf.api.breakBoard().
+    golf,
     // Birding: birding.spawn(id, x, z), birding.markSeen(id), birding.species, birding.stats().
     birding,
     // Fishing: fishing.biteNow(id), fishing.catchById(id, size), fishing.grantAll(), fishing.species, fishing.stats().

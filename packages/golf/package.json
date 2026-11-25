@@ -1,0 +1,17 @@
+{
+  "name": "@lawn/golf",
+  "private": true,
+  "type": "module",
+  "description": "Golf maths shared by Gnome Golf and other games: club and lie tuning, ball physics, the three-tap swing meter, scoring names, seeded wind, hole-feature lies.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

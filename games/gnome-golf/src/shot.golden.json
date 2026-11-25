@@ -1,0 +1,431 @@
+{
+ "dr-tee-perfect": {
+  "end": [
+   "38.421840735",
+   "3.788679582",
+   "158.298428982"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "207.509050404",
+  "apex": "17.480886924",
+  "total": "212.798430748",
+  "duration": "5.133333333",
+  "points": 155,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "87dcff8ebea2383f",
+  "drop": null
+ },
+ "dr-tee-wind": {
+  "end": [
+   "283.778816471",
+   "5.195071577",
+   "-67.844403663"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "214.393529686",
+  "apex": "17.983751472",
+  "total": "219.975001445",
+  "duration": "5.133333333",
+  "points": 155,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "80dcad6ea32771b4",
+  "drop": null
+ },
+ "dr-tee-slice": {
+  "end": [
+   "314.796218937",
+   "5.522621280",
+   "-27.771412847"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "72.686262545",
+  "apex": "13.493304395",
+  "total": "72.696172493",
+  "duration": "3.266666667",
+  "points": 99,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "2131b970ca6ced82",
+  "drop": null
+ },
+ "dr-tee-over": {
+  "end": [
+   "192.436232781",
+   "5.540001537",
+   "-248.826718979"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "227.993207666",
+  "apex": "21.905852646",
+  "total": "233.171705604",
+  "duration": "5.400000000",
+  "points": 163,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "c9dd9e60aa563a4b",
+  "drop": null
+ },
+ "3w-tee-hook": {
+  "end": [
+   "-86.458708218",
+   "4.189722875",
+   "-345.520692448"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "182.334097827",
+  "apex": "16.923643475",
+  "total": "186.755280621",
+  "duration": "4.933333333",
+  "points": 149,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "57da89a97bc679c6",
+  "drop": null
+ },
+ "4h-fw": {
+  "end": [
+   "-374.251787311",
+   "4.006986154",
+   "-163.768862884"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "166.291028595",
+  "apex": "17.690040193",
+  "total": "181.040105491",
+  "duration": "5.500000000",
+  "points": 166,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "e1c32ceea78fcdd4",
+  "drop": null
+ },
+ "5i-fw-soft": {
+  "end": [
+   "-310.278057679",
+   "3.506509039",
+   "139.384331134"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "33.910874143",
+  "apex": "2.695133677",
+  "total": "35.389178079",
+  "duration": "2.066666667",
+  "points": 63,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "27264a7d67c9d580",
+  "drop": null
+ },
+ "6i-rough": {
+  "end": [
+   "-159.524259879",
+   "3.778376796",
+   "75.157702149"
+  ],
+  "endLie": "sand",
+  "holed": false,
+  "carry": "115.348098834",
+  "apex": "13.250123036",
+  "total": "115.462599486",
+  "duration": "3.633333333",
+  "points": 110,
+  "events": "bounce,roll,rest",
+  "pointsHash": "e1c7d1cdaa771ca7",
+  "drop": null
+ },
+ "7i-fw": {
+  "end": [
+   "-29.565830464",
+   "5.148221908",
+   "366.275045691"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "137.172873965",
+  "apex": "19.507297610",
+  "total": "147.144431991",
+  "duration": "5.900000000",
+  "points": 178,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "bea553f50ceefa6d",
+  "drop": null
+ },
+ "8i-rough-wind": {
+  "end": [
+   "50.969515869",
+   "4.675550432",
+   "106.650742834"
+  ],
+  "endLie": "fairway",
+  "holed": false,
+  "carry": "90.014568392",
+  "apex": "14.242913392",
+  "total": "98.530256798",
+  "duration": "5.033333333",
+  "points": 152,
+  "events": "bounce,bounce,bounce,roll,rest",
+  "pointsHash": "a5d3ac8935a412cf",
+  "drop": null
+ },
+ "9i-fw": {
+  "end": [
+   "278.409238293",
+   "4.837632767",
+   "-78.507300059"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "110.548499026",
+  "apex": "20.407778453",
+  "total": "112.849532981",
+  "duration": "4.366666667",
+  "points": 132,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "f19d6616c756729c",
+  "drop": null
+ },
+ "pw-fw-over": {
+  "end": [
+   "514.202372321",
+   "0.000000000",
+   "-243.610231715"
+  ],
+  "endLie": "water",
+  "holed": false,
+  "carry": "122.908102642",
+  "apex": "24.198265428",
+  "total": "122.908102642",
+  "duration": "4.733333333",
+  "points": 143,
+  "events": "water",
+  "pointsHash": "585e4d81df89729a",
+  "drop": [
+   "495.691649854",
+   "0.323076738",
+   "-225.780274564"
+  ]
+ },
+ "gw-fringe": {
+  "end": [
+   "152.755183117",
+   "4.409078411",
+   "-300.663545709"
+  ],
+  "endLie": "green",
+  "holed": false,
+  "carry": "14.647419637",
+  "apex": "3.165060980",
+  "total": "16.021294013",
+  "duration": "2.700000000",
+  "points": 82,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "74fad943365d5b86",
+  "drop": null
+ },
+ "sw-sand": {
+  "end": [
+   "-90.112278631",
+   "4.123468328",
+   "-359.985278172"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "57.074645277",
+  "apex": "15.965569538",
+  "total": "58.091496576",
+  "duration": "4.133333333",
+  "points": 125,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "3bd7e4d65f1b78e8",
+  "drop": null
+ },
+ "sw-sand-hook": {
+  "end": [
+   "-251.400746278",
+   "5.275519457",
+   "-219.654818687"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "60.712000660",
+  "apex": "18.821859780",
+  "total": "61.412685362",
+  "duration": "4.333333333",
+  "points": 131,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "884276c855c34dab",
+  "drop": null
+ },
+ "pw-sand": {
+  "end": [
+   "-440.587089097",
+   "5.600539073",
+   "142.736263977"
+  ],
+  "endLie": "fairway",
+  "holed": false,
+  "carry": "40.374547030",
+  "apex": "8.058432397",
+  "total": "44.008888954",
+  "duration": "3.333333333",
+  "points": 101,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "5277481812a176c4",
+  "drop": null
+ },
+ "pt-green-1": {
+  "end": [
+   "26.000000000",
+   "5.080902271",
+   "36.000000000"
+  ],
+  "endLie": "green",
+  "holed": true,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "6.576473219",
+  "duration": "1.400000000",
+  "points": 43,
+  "events": "roll,cup",
+  "pointsHash": "cd792aa44c5c42f4",
+  "drop": null
+ },
+ "pt-green-2": {
+  "end": [
+   "236.180129587",
+   "4.414168145",
+   "-49.177214661"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "13.730687524",
+  "duration": "2.066666667",
+  "points": 63,
+  "events": "roll,rest",
+  "pointsHash": "ea0fc1b9f1c8ce6f",
+  "drop": null
+ },
+ "pt-green-3": {
+  "end": [
+   "479.098768051",
+   "2.029655776",
+   "-219.006905819"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "17.313716346",
+  "duration": "2.566666667",
+  "points": 78,
+  "events": "roll,rest",
+  "pointsHash": "2b944c6df0374c72",
+  "drop": null
+ },
+ "pt-green-4": {
+  "end": [
+   "-156.647648742",
+   "4.949232898",
+   "87.671551729"
+  ],
+  "endLie": "fringe",
+  "holed": false,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "10.873109470",
+  "duration": "3.300000000",
+  "points": 100,
+  "events": "roll,rest",
+  "pointsHash": "e5112dfc289114a8",
+  "drop": null
+ },
+ "pt-fringe": {
+  "end": [
+   "-23.737424651",
+   "5.413433922",
+   "355.458325239"
+  ],
+  "endLie": "fringe",
+  "holed": false,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "23.910691231",
+  "duration": "5.033333333",
+  "points": 152,
+  "events": "roll,rest",
+  "pointsHash": "f04c2687b5f7bddc",
+  "drop": null
+ },
+ "dr-water": {
+  "end": [
+   "343.790356286",
+   "3.501099529",
+   "-201.322293821"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "86.827254033",
+  "apex": "15.093372766",
+  "total": "86.810874253",
+  "duration": "3.633333333",
+  "points": 110,
+  "events": "bounce,bounce,roll,rest",
+  "pointsHash": "f21ce4c8c12bc830",
+  "drop": null
+ },
+ "preview-dr": {
+  "end": [
+   "-99.892993748",
+   "4.471138796",
+   "-389.732605431"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "207.250734732",
+  "apex": "17.480886924",
+  "total": "207.250734732",
+  "duration": "4.433333333",
+  "points": 134,
+  "events": "",
+  "pointsHash": "a3bcc64fa1e20e39",
+  "drop": null
+ },
+ "preview-pt": {
+  "end": [
+   "-372.530347779",
+   "4.257691956",
+   "-142.807311902"
+  ],
+  "endLie": "fairway",
+  "holed": false,
+  "carry": "0.000000000",
+  "apex": "0.000000000",
+  "total": "17.850782928",
+  "duration": "3.133333333",
+  "points": 95,
+  "events": "roll,rest",
+  "pointsHash": "45be34468b463f84",
+  "drop": null
+ },
+ "preview-7i": {
+  "end": [
+   "-264.798652478",
+   "5.069856705",
+   "231.625590570"
+  ],
+  "endLie": "rough",
+  "holed": false,
+  "carry": "138.000000000",
+  "apex": "19.507297610",
+  "total": "138.000000000",
+  "duration": "4.166666667",
+  "points": 126,
+  "events": "",
+  "pointsHash": "fe5760a9e36b869b",
+  "drop": null
+ }
+}

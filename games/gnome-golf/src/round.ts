@@ -1,7 +1,8 @@
 // Round flow: holes, strokes, penalties and the phase machine. Systems read GameState and call these
 // functions; only this file changes state.phase (except controls.ts, which moves 'aim' <-> 'swing').
 import * as THREE from 'three';
-import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type Lie, type PartySpots, type Ride, type Shot, type ShotResult, type Spot } from './config';
+import { CART_SEATS, CLUB_ORDER, CONSUMABLES, CONVOY_GAP, DISC, HOLES, LIES, PARTY, ROUND, type ClubId, type DiscState, type GameMode, type GameState, type Golfer, type HoleDef, type Lie, type PartySpots, type Ride, type Shot, type Spot } from './config';
+import { playableLie as golfPlayableLie, restingSpot, scoreName, seaMowerCatch, seededWindFrom } from '@lawn/golf';
 import { setCarts, type CartObstacle } from './obstacles';
 import { distToPath, heightAt, lieAt } from './course';
 import { estimateCarry, simulateShot } from './physics';
@@ -76,36 +77,12 @@ export function defaultClub(state: GameState): ClubId {
   return clubFor(state.lie, distanceToPin(state));
 }
 
-/** Chance that a sea mower leaps out of the water and catches a ball (or gnome) that lands in it. */
-export const SEA_MOWER_CHANCE = 0.25;
-
-/**
- * Whether a sea mower catches this water shot. Decided from where it hit the water, not Math.random, so every
- * client (Together viewers, the race) sees the same thing. Cosmetic only: the penalty is the same either way.
- */
-export function seaMowerCatch(f: Pick<ShotResult, 'end' | 'endLie'>): boolean {
-  if (f.endLie !== 'water') return false;
-  const h = Math.sin(Math.round(f.end.x * 100) * 12.9898 + Math.round(f.end.z * 100) * 78.233) * 43758.5453;
-  return h - Math.floor(h) < SEA_MOWER_CHANCE;
-}
+// The sea mower chance, the water drop and the score names live in @lawn/golf (shared with other games).
+export { SEA_MOWER_CHANCE, seaMowerCatch, restingSpot, scoreName } from '@lawn/golf';
 
 /** The lie a ball at rest at (x, z) is played from: never water (a drop that ran out of steps plays from the rough). */
 export function playableLie(x: number, z: number): Lie {
-  const lie = lieAt(x, z);
-  return lie === 'water' ? 'rough' : lie;
-}
-
-/**
- * Where a finished flight leaves the ball, and the penalty strokes it costs. A water ball (pond or sea) costs one
- * stroke and goes back to where it was struck from, Super Battle Golf style (stroke and distance); any other ball
- * stays where it stopped. `from` is always dry: every ball is played from a playable lie.
- */
-export function restingSpot(
-  from: { x: number; z: number },
-  f: Pick<ShotResult, 'end' | 'endLie'>,
-): { x: number; z: number; penalty: 0 | 1 } {
-  if (f.endLie !== 'water') return { x: f.end.x, z: f.end.z, penalty: 0 };
-  return { x: from.x, z: from.z, penalty: 1 };
+  return golfPlayableLie(lieAt, x, z);
 }
 
 function randomWind(): { yaw: number; mph: number } {
@@ -114,15 +91,7 @@ function randomWind(): { yaw: number; mph: number } {
 
 /** Online: the same wind for everyone on a hole, from the round seed. */
 export function seededWind(seed: number, hole: number): { yaw: number; mph: number } {
-  let a = (seed ^ Math.imul(hole + 1, 2654435761)) >>> 0;
-  const rnd = (): number => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  return { yaw: rnd() * Math.PI * 2, mph: Math.round(rnd() * ROUND.maxWind) };
+  return seededWindFrom(seed, hole, ROUND.maxWind);
 }
 
 // ---------------------------------------------------------------------
@@ -400,14 +369,6 @@ export function flailThrow(state: GameState, at?: number): boolean {
   state.disc.flails--;
   state.disc.lastFlail = state.time;
   return true;
-}
-
-/** Score name for strokes relative to par. */
-export function scoreName(strokes: number, par: number, mode: GameMode = 'golf'): string {
-  if (strokes === 1) return mode === 'disc' ? 'ACE! Gnome in the chains!' : 'Hole in one!';
-  const d = strokes - par;
-  const names: Record<string, string> = { '-3': 'Albatross!', '-2': 'Eagle!', '-1': 'Birdie!', '0': 'Par', '1': 'Bogey', '2': 'Double bogey', '3': 'Triple bogey' };
-  return names[String(d)] ?? `+${d}`;
 }
 
 function fmtYards(y: number): string {

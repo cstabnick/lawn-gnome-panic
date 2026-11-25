@@ -7,7 +7,7 @@
 import type { Solver, SimCtx } from '../types';
 import { SimFail } from '../types';
 import { getInto, nearestVehicle, runUntil, travelTo } from '../util';
-import { readProbe } from '../../city/probes';
+import { bumpProbe, readProbe } from '../../city/probes';
 import { createFishStore } from '../../fishing/fishSave';
 import { FISH_SPECIES } from '../../fishing/species';
 import { RODS } from '../../fishing/tackle';
@@ -260,6 +260,12 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       await getInto(ctx, v, 'probe boat');
     },
   },
+  // The coast's window events (coast/probes.ts) have no window in the headless sim: the counters those listeners feed are
+  // bumped directly, so the quest side (objective, save, reward) is real but the ride, tow run and chest are not played.
+  'coast-spokewheel-rides': { fidelity: 'api', run: async () => bumpProbe('coast-spokewheel-rides') },
+  'coast-tow-gates': { fidelity: 'api', run: async () => bumpProbe('coast-tow-gates') },
+  'coast-tow-finish': { fidelity: 'api', run: async () => bumpProbe('coast-tow-finish') },
+  'coast-queen-chest': { fidelity: 'api', run: async () => bumpProbe('coast-queen-chest') },
   'party-on': {
     fidelity: 'action',
     // Headless: throws SimFail 'blocked' (no relay server); let it through.

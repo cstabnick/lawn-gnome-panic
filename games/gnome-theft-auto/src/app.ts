@@ -160,6 +160,7 @@ import { createPhone } from './phone/phone';
 import { installJobs } from './jobs/runtime';
 import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
+import { installCoast } from './coast';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -1069,6 +1070,8 @@ const jobDeps: JobsDeps = {
 };
 const jobs = installJobs(jobDeps);
 const tubing = installTubing(jobDeps);
+// E11 the coast (coast/): the Spokewheel ride, boarding the Bathtub Queen, Saltbucket's residents and sounds.
+const coast = installCoast(jobDeps);
 registerJobsTrainer(jobs, tubing);
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
@@ -1875,6 +1878,7 @@ function frame(now: number): void {
     if (v.driver === 'remote') { /* nothing to step here */ }
     else if (v === taxi.vehicle() && taxi.riding()) { /* the taxi drives itself (taxi.ts) */ }
     else if (tubing.drives(v)) tubing.stepRider(v, inp, dt);
+    else if (coast.drives(v)) coast.stepRider(v, inp, dt);
     else if (stageHome) { /* parked on the Pay 'n' Glaze stage: no driving, and no world edge to clamp it back */ }
     else if (v.sim) {
       // Keep the chassis: checkSink clears v.sim on the frame it sinks, and the telemetry read below then threw and froze the game.
@@ -2108,6 +2112,7 @@ function frame(now: number): void {
   section('jobs');
   jobs.update(dt);
   tubing.update(dt);
+  coast.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2448,7 +2453,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();

@@ -26,6 +26,8 @@ The spoon was found half-buried in the shore and hauled out by every gnome in Sa
 
 Marram's hut stands on it (her home, spine section 6); Captain Bilge gives row 44 `m44-the-bathtub-queen` from the pier. Part of the boardwalk build in E01: planned (batch 3).
 
+Built by E11 as a walkable deck from the boardwalk's east end at x 300 out to a bowl at z 1236..1254. The Bathtub Queen moors south of the bowl.
+
 ## Loose threads
 
 What the Tall One was stirring.

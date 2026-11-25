@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { WATER } from './config';
+import { COAST } from './coast/config';
 import { BODIES, COURSES, bodyLevel, bodyRadius, canalLocks, courseProfile, shorePoint, waterOn, type StillWater, type WaterCourse } from './water';
 import { registerCalmSpots, waveAmplitudeScale, waveTime } from './waves';
 import { applyWaveShader, createWaveUniforms, updateWaveUniforms } from './waveShader';
@@ -166,7 +167,9 @@ function bodyGrid(w: StillWater, level: number): Acc {
   const acc: Acc = { pos: [], uv: [], idx: [] };
   const grow = 1 + 2 / Math.min(w.a, w.b);
   const hx = w.a * grow, hz = w.b * grow;
-  const nx = Math.max(1, Math.ceil((2 * hx) / GRID_STEP)), nz = Math.max(1, Math.ceil((2 * hz) / GRID_STEP));
+  // A body may ask for a coarser grid (the Saltwater, 3580 m long: WATER.bodies[id].meshStep).
+  const step = (WATER.bodies as Record<string, { meshStep?: number }>)[w.id]?.meshStep ?? GRID_STEP;
+  const nx = Math.max(1, Math.ceil((2 * hx) / step)), nz = Math.max(1, Math.ceil((2 * hz) / step));
   const dx = (2 * hx) / nx, dz = (2 * hz) / nz;
   const x0 = w.cx - hx, z0 = w.cz - hz;
   const stride = nz + 1;
@@ -225,7 +228,8 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   if (!waterOn()) return { update() { /* no water */ } };
 
   // Canal locks are calm water (no waves over the gates).
-  registerCalmSpots(canalLocks().map((l) => ({ x: l.x, z: l.z, r: LOCK_CALM_R })));
+  // ... and so are the coast's pier end and tube launch (E11).
+  registerCalmSpots([...canalLocks().map((l) => ({ x: l.x, z: l.z, r: LOCK_CALM_R })), ...COAST.calmSpots]);
 
   const group = new THREE.Group();
   group.name = 'water';

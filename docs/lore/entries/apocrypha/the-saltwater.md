@@ -26,6 +26,8 @@ It is a sea, in every way that matters to a gnome the size of a hat. Whether it 
 
 The water of the south-shore band, reached from Saltbucket Shore. Used for rows 43 (tubing and water-skiing, new kinds `tow-ski` and `ride-passenger`, E11), 44 (boarding an HOA barge from a boat) and 64. Planned (batch 3).
 
+E11 build (Saltbucket Shore): still water `water/saltwater` runs along the whole south edge, its surface at about y -8.9, with waves 1.6 times the loch's. The Saltcut ([the-saltcut](the-saltcut.md)) joins it to the Puddle Sea. A slalom of six buoy gates and a wake ramp sit off the boardwalk, and boat traffic (HOA barges, the Bathtub Queen) moves across it.
+
 ## Loose threads
 
 What lies across it, and whether it is a Tall One's sea at all (R-158). Driftwood's chart marks the edge and then stops.

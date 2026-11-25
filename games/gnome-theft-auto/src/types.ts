@@ -45,6 +45,10 @@ export type VehicleKind =
   | 'dandelion-drifter'
   // Tubing (tubing/, docs/roadmaps/gta-sim-jobs-and-tubing.md): an inflatable tube towed behind a boat, or paddled.
   | 'tow-tube'
+  // E11 coast (tubing/ ski mode, coast/spokewheel.ts): water-skis towed behind a boat; a Spokewheel gondola the player
+  // rides as a passenger (the coast runtime moves it, nothing to steer).
+  | 'tow-ski'
+  | 'spoke-gondola'
   // European rides (E29, euroRides.ts; prefabs in packages/prefabs/src/catalog/gta-euro-fleet*.ts): small city vehicles of the
   // European yard. In town traffic now and then, mostly European inside the zone E28/E30 register with setEuroZone.
   | 'euro-hatch'

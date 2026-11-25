@@ -1,6 +1,7 @@
 // Quest sim: play one quest from its giver to CONTRACT COMPLETE through a SessionHost, one solver per objective, and
 // check what should have happened (reward once, achievement, bulletin, scenes, comms, save round trip, no errors).
 import { GIVERS, QUESTS, questById } from '../quests/defs';
+import { worldGiver } from '../quests/quests';
 import { SCENES } from '../cutscene/scenes';
 import type { QuestDef, CutsceneSpec } from '../quests/types';
 import { savesToStart } from './prereqs';
@@ -104,8 +105,9 @@ export async function runQuest(host: SessionHost, questId: string, opts: RunOpts
     layer = ctx.layer;
 
     // 2. Take it from the giver.
-    const g = GIVERS[q.giver];
-    if (!g) throw new SimFail('content', `giver ${q.giver} missing`);
+    const g0 = GIVERS[q.giver];
+    if (!g0) throw new SimFail('content', `giver ${q.giver} missing`);
+    const g = worldGiver(g0); // an interior giver is local to its room (the coast's cabin)
     status(`going to ${g.name}`);
     ctx.useCheat('instantTravel', 'teleport to the giver');
     ctx.teleport(g.x, g.z);

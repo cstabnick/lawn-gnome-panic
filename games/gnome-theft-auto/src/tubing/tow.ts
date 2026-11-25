@@ -1,7 +1,23 @@
 // Tubing: the tow physics. Pure and deterministic: the tube's next state is a function of its state, the boat's pose,
 // the rider's input, the sea and dt. Rules: tubing/types.ts TOW and the roadmap issue 1.4.
-import { TOW } from './types';
-import type { BoatPose, Sea, TubeEvent, TubeInput, TubeScore, TubeState } from './types';
+import { TOW, towTuning } from './types';
+import type { BoatPose, Sea, TowMode, TubeEvent, TubeInput, TubeScore, TubeState } from './types';
+
+/** A floating wake ramp: a rectangle (centre x, z; `length` along its forward (sin yaw, cos yaw), `width` across). */
+export interface WakeRamp { x: number; z: number; yaw: number; length: number; width: number; kick: number }
+
+/** A rider on the water crossing the ramp forwards faster than 3 m/s gets vy = kick (at least). True when it did. */
+export function rampKick(t: TubeState, r: WakeRamp): boolean {
+  if (t.fallen || t.air !== 0) return false;
+  const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
+  const dx = t.x - r.x, dz = t.z - r.z;
+  const along = dx * fx + dz * fz;
+  const across = dx * fz - dz * fx;
+  if (Math.abs(along) > r.length / 2 || Math.abs(across) > r.width / 2) return false;
+  if (t.vx * fx + t.vz * fz <= 3) return false;
+  t.vy = Math.max(t.vy, r.kick);
+  return true;
+}
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
@@ -19,25 +35,26 @@ export function hookPoint(b: BoatPose, slot: number): { x: number; z: number } {
 }
 
 /** A tube at rest on the water, rope length straight behind the hook point, facing the boat. */
-export function newTube(b: BoatPose, slot: number, sea: Sea): TubeState {
+export function newTube(b: BoatPose, slot: number, sea: Sea, mode: TowMode = 'tube'): TubeState {
   const h = hookPoint(b, slot);
   const rope = TOW.slots[slotIndex(slot)].rope;
   const x = h.x - Math.sin(b.yaw) * rope;
   const z = h.z - Math.cos(b.yaw) * rope;
   return {
-    x, y: sea.surface(x, z) + TOW.floatY, z,
-    vx: 0, vy: 0, vz: 0, yaw: b.yaw, lean: 0, air: 0, risk: 0, slot, fallen: false, hopT: 0,
+    x, y: sea.surface(x, z) + towTuning(mode).floatY, z,
+    vx: 0, vy: 0, vz: 0, yaw: b.yaw, lean: 0, air: 0, risk: 0, slot, fallen: false, hopT: 0, mode,
   };
 }
 
 /** One step (dt <= 0.05; callers sub-step longer frames). Mutates t. */
 export function stepTube(t: TubeState, b: BoatPose, inp: TubeInput, sea: Sea, dt: number): TubeEvent {
+  const T = towTuning(t.mode);
   let ev: TubeEvent = null;
   const fx = Math.sin(b.yaw), fz = Math.cos(b.yaw);
 
   // 1. Lean eases towards the input (0 while fallen).
   const leanTarget = t.fallen ? 0 : clamp(inp.lean, -1, 1);
-  const leanStep = TOW.leanRate * dt;
+  const leanStep = T.leanRate * dt;
   t.lean += clamp(leanTarget - t.lean, -leanStep, leanStep);
 
   // 2. Rope: from the tube to the hook point.
@@ -50,18 +67,18 @@ export function stepTube(t: TubeState, b: BoatPose, inp: TubeInput, sea: Sea, dt
   const px = -uz, pz = ux; // across the rope, to the rider's right
 
   // 3. On the water: the tube rides at the surface.
-  const onWater = t.y <= sea.surface(t.x, t.z) + TOW.floatY + 0.02;
+  const onWater = t.y <= sea.surface(t.x, t.z) + T.floatY + 0.02;
 
   // 4. Taut rope: spring and damping pull the tube along the rope; lean pushes it across.
   if (d > rope) {
     const bvx = fx * b.speed, bvz = fz * b.speed;
     const vrel = (bvx - t.vx) * ux + (bvz - t.vz) * uz;
-    const a = TOW.k * (d - rope) + TOW.c * vrel;
+    const a = T.k * (d - rope) + T.c * vrel;
     t.vx += ux * a * dt;
     t.vz += uz * a * dt;
     if (!t.fallen) {
-      t.vx += px * TOW.leanForce * t.lean * dt;
-      t.vz += pz * TOW.leanForce * t.lean * dt;
+      t.vx += px * T.leanForce * t.lean * dt;
+      t.vz += pz * T.leanForce * t.lean * dt;
     }
   }
 
@@ -70,30 +87,30 @@ export function stepTube(t: TubeState, b: BoatPose, inp: TubeInput, sea: Sea, dt
     const s = { x: 0, z: 0 };
     sea.slope(t.x, t.z, s);
     const rise = s.x * t.vx + s.z * t.vz;
-    if (rise > 0) t.vy = Math.max(t.vy, rise * TOW.launch);
+    if (rise > 0) t.vy = Math.max(t.vy, rise * T.launch);
     if (inp.hop && !t.fallen && t.hopT <= 0) {
-      t.vy = TOW.hopV;
-      t.hopT = TOW.hopCooldown;
+      t.vy = T.hopV;
+      t.hopT = T.hopCooldown;
     }
   }
 
   // 6. Drag (much less in the air).
-  const k = Math.exp(-TOW.drag * dt * (onWater ? 1 : 0.15));
+  const k = Math.exp(-T.drag * dt * (onWater ? 1 : 0.15));
   t.vx *= k;
   t.vz *= k;
 
   // 7. Gravity and motion.
-  t.vy -= TOW.gravity * dt;
+  t.vy -= T.gravity * dt;
   t.x += t.vx * dt;
   t.y += t.vy * dt;
   t.z += t.vz * dt;
 
   // 8. Landing on the water, or staying in the air.
-  const floor = sea.surface(t.x, t.z) + TOW.floatY;
+  const floor = sea.surface(t.x, t.z) + T.floatY;
   if (t.y <= floor) {
     if (t.air >= 0.25) {
       ev = { t: 'landed', air: t.air };
-      if (t.air >= 0.5 && Math.abs(t.lean) > 0.8 && !t.fallen) t.risk += TOW.hardLanding;
+      if (t.air >= 0.5 && Math.abs(t.lean) > 0.8 && !t.fallen) t.risk += T.hardLanding;
     }
     t.y = floor;
     t.vy = 0;
@@ -109,14 +126,14 @@ export function stepTube(t: TubeState, b: BoatPose, inp: TubeInput, sea: Sea, dt
   const side = Math.abs(t.vx * px + t.vz * pz);
   const sp = Math.hypot(t.vx, t.vz);
   let add = 0;
-  if (side > TOW.sideFast && Math.abs(t.lean) > 0.6) add += (side - TOW.sideFast) * TOW.sideRisk * dt;
-  if (sp > TOW.tooFast) add += (sp - TOW.tooFast) * TOW.fastRisk * dt;
+  if (side > T.sideFast && Math.abs(t.lean) > 0.6) add += (side - T.sideFast) * T.sideRisk * dt;
+  if (sp > T.tooFast) add += (sp - T.tooFast) * T.fastRisk * dt;
   if (add > 0) t.risk += add;
-  else t.risk = Math.max(0, t.risk - TOW.riskDrain * dt);
+  else t.risk = Math.max(0, t.risk - T.riskDrain * dt);
   if (!t.fallen && t.risk >= 1) {
     t.fallen = true;
     t.risk = 0;
-    ev = { t: 'fell', vx: t.vx, vy: t.vy + TOW.throwUp, vz: t.vz };
+    ev = { t: 'fell', vx: t.vx, vy: t.vy + T.throwUp, vz: t.vz };
   }
 
   // 11. Timers.

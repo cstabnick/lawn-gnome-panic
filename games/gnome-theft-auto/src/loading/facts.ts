@@ -29,4 +29,9 @@ export const LOADING_FACTS: readonly string[] = [
   'Pardonlin\'s gates have customs huts that stamp your hat. Turfton gnomes once thought the Fence was the end of the world.',
   'Mowers are the great machine of gnome life. Gnomes fear them, ride them, or both. Why one runs with nobody on it is a mystery.',
   'Everything in the Yard is an ordinary garden object at giant scale. The gnomes just call it something else.',
+  'The Saltwater is real. Gnomes who have not seen it call it the Big Puddle. Driftwood was right all along.',
+  'The Puddle Sea drains south through the Saltcut. Driftwood says he dug it with a teaspoon. Nobody has checked.',
+  'The Spokewheel turns once every ninety-six seconds whatever anyone does. Marram charges three acorns to sit in a teacup.',
+  'The Bathtub Queen runs pirate tours at noon and cargo at midnight. Captain Bilge asks you not to mix them up.',
+  'Long Spoon Pier is a giant spoon laid out to sea, bowl end first. Walk it slow: the bowl end sways.',
 ];

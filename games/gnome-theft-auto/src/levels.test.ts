@@ -178,7 +178,7 @@ describe('the region map', () => {
 
   it('the reserved river is one connected course from the Basin to the Puddle Sea, crossing roads only at the five bridges', () => {
     const w = waterPaths();
-    expect(w.map((p) => p.id)).toEqual(['river-ravine', 'river-upper', 'canal', 'river-farm', 'thymes']);
+    expect(w.map((p) => p.id)).toEqual(['river-ravine', 'river-upper', 'canal', 'river-farm', 'saltcut', 'thymes']);
     const byId = Object.fromEntries(w.map((p) => [p.id, p.points]));
     expect(byId['river-ravine'].at(-1)).toEqual(byId.canal[0]);
     expect(byId.canal.at(-1)).toEqual(byId['river-farm'][0]);
@@ -191,8 +191,11 @@ describe('the region map', () => {
     expect(inBody('water/loch-moss', byId['river-upper'].at(-1)!)).toBe(true);
     expect(inBody('water/loch-moss', byId['river-ravine'][0])).toBe(true);
     expect(inBody('water/puddle-sea', byId['river-farm'].at(-1)!)).toBe(true);
+    expect(inBody('water/puddle-sea', byId.saltcut[0])).toBe(true);
+    expect(inBody('water/saltwater', byId.saltcut.at(-1)!)).toBe(true);
     const bridges: string[] = [];
-    for (const p of w.filter((q) => q.id !== 'thymes')) {
+    // The Thymes (E28) and the Saltcut (E11, the Puddle Sea to the Saltwater) have their own bridges, checked in water.test.ts.
+    for (const p of w.filter((q) => q.id !== 'thymes' && q.id !== 'saltcut')) {
       for (const h of highways()) {
         for (let i = 0; i + 1 < p.points.length; i++) {
           for (let j = 0; j + 1 < h.points.length; j++) {

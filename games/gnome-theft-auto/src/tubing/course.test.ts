@@ -1,7 +1,7 @@
 // The Loch Moss buoy run: the gates sit in deep water, and the run counts gates in order.
 import { describe, expect, it } from 'vitest';
 import { waterAt } from '../terrain';
-import { BUOY_GATES, RUN_TIMEOUT_S, buoysOf, newRun, stepRun } from './course';
+import { BUOY_GATES, OCEAN_COURSE, OCEAN_GATES, RUN_TIMEOUT_S, buoysOf, courseNear, newRun, stepRun } from './course';
 import type { BuoyGate } from './course';
 
 type Pt = { x: number; z: number };
@@ -103,5 +103,33 @@ describe('the buoy course', () => {
     for (let s = 0; s < RUN_TIMEOUT_S + 5 && res !== 'reset'; s++) res = stepRun(r, 0, 0, 0, 0, 1);
     expect(res).toBe('reset');
     expect(r.next).toBe(0);
+  });
+});
+
+describe('the saltwater slalom and the course list', () => {
+  it('every buoy of the ocean gates is in water at least 1.5 m deep', () => {
+    for (const g of OCEAN_GATES) {
+      for (const b of buoysOf(g)) {
+        const hit = waterAt(b.x, b.z);
+        expect(hit, `buoy at ${b.x.toFixed(1)}, ${b.z.toFixed(1)}`).not.toBeNull();
+        expect(hit!.depth).toBeGreaterThanOrEqual(1.5);
+      }
+    }
+  });
+
+  it('courseNear picks the course by its first gate', () => {
+    expect(courseNear(-200, 1312).id).toBe('saltwater');
+    expect(courseNear(-700, -665).id).toBe('loch-moss');
+  });
+
+  it('a boat driving east along the ocean gates passes them all in order and finishes', () => {
+    const r = newRun();
+    const events: string[] = [];
+    for (const g of OCEAN_COURSE.gates) {
+      const res = stepRun(r, g.x - 10, g.z, g.x + 10, g.z, 0.05, OCEAN_COURSE.gates);
+      if (res) events.push(res);
+    }
+    expect(events).toEqual([...Array(OCEAN_GATES.length - 1).fill('gate'), 'finish']);
+    expect(r.finished).toBe(true);
   });
 });

@@ -437,6 +437,17 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 2.5, accel: 1.2, turnRate: 1.6, radius: 0.9, seat: [0, 0.32, 0], flies: false, mass: 0.6,
     boat: true, draft: 0.05,
   },
+  // E11 water-skiing (tubing/ ski mode): a pair of skis and a tow handle; towed like a tube (tubing steps it), else drifts.
+  'tow-ski': {
+    kind: 'tow-ski', mountStyle: 'hop', name: 'Water-Skis', prefab: 'water-skis', scale: 1,
+    maxSpeed: 1.5, accel: 0.8, turnRate: 1.6, radius: 0.8, seat: [0, 0.05, 0], flies: false, mass: 0.4,
+    boat: true, draft: 0.05,
+  },
+  // E11 the Spokewheel (coast/spokewheel.ts): a teacup gondola the coast runtime moves round the wheel; never driven.
+  'spoke-gondola': {
+    kind: 'spoke-gondola', mountStyle: 'hop', name: 'Spokewheel Gondola', prefab: 'spokewheel-gondola', scale: 2.2,
+    maxSpeed: 0, accel: 0, turnRate: 0, radius: 1.4, seat: [0, 0.18, 0], flies: false, mass: 1,
+  },
   // ---- European rides (E29; prefabs in packages/prefabs/src/catalog/gta-euro-fleet.ts and gta-euro-fleet-b.ts, nose +z,
   // contract in docs/roadmaps/gta-batch-3/E29/contracts.md). Seats and doors are the prefab's numbers times `scale`. ----
   'euro-hatch': {
@@ -851,7 +862,7 @@ export const WATER = {
   /** An island feature inside a loch keeps its natural ground sunk by this much (Tessie's island in Loch Moss). */
   islandSink: 3,
   /** Downstream order: each stretch is fed by the one before it, so its surface is never higher. */
-  order: ['river-upper', 'water/loch-moss', 'river-ravine', 'canal', 'river-farm', 'water/puddle-sea'],
+  order: ['river-upper', 'water/loch-moss', 'river-ravine', 'canal', 'river-farm', 'water/puddle-sea', 'saltcut', 'water/saltwater'],
   /** Rivers and the canal (water path ids): depth in the middle and the bank slope width, metres; `freeboard` overrides
    *  WATER.freeboard for that course (the canal sits deeper in its walls so its bridge can clear boats). */
   courses: {
@@ -861,12 +872,17 @@ export const WATER = {
     'river-farm': { depth: 1.8, bank: 6 },
     // E28: Pardonlin's garden rill (its own chain, not in WATER.order), a slow town river in stone-ish banks.
     thymes: { depth: 1.4, bank: 4 },
+    // E11: the Saltcut, the channel from the Puddle Sea's south shore through the dunes to the Saltwater (R-185).
+    saltcut: { depth: 2.2, bank: 6 },
   },
   /** Still water (water marker ids): depth at the middle; shelf = fraction of the radius the bed shelves over; bank, m. */
   bodies: {
     'water/loch-moss': { depth: 5, shelf: 0.35, bank: 8 },
     'water/puddle-sea': { depth: 3, shelf: 0.6, bank: 10 },
     'water/pardonlin-basin': { depth: 2.5, shelf: 0.4, bank: 6 },
+    // E11: the Saltwater, the sea along the whole south edge (coast/config.ts). Shelves over half its radius, so the
+    // beach wades in and the pier end is deep. meshStep: its surface grid is coarser than the lochs' (m).
+    'water/saltwater': { depth: 7, shelf: 0.5, bank: 14, meshStep: 6 },
   },
   /** Canal locks, as fractions of the canal's length: the only places the canal steps down. */
   canalLocks: [0.25, 0.75],

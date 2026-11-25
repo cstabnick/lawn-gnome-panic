@@ -71,10 +71,10 @@ describe('malformed records decode to null', () => {
   });
 
   it('rejects bad tow records', () => {
-    const good = encodeTow({ on: true, score: 1, gates: 1, slots: [] });
+    const good = encodeTow({ on: true, mode: 'tube', score: 1, gates: 1, slots: [] });
     expect(decodeTow(good.slice(0, 15))).toBeNull(); // length 15
     expect(decodeTow([1, 1, 0, 0, -3, 0, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0])).toBeNull(); // who < -2
-    expect(decodeTow([1, 2, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0])).toBeNull(); // on = 2
+    expect(decodeTow([1, 3, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0])).toBeNull(); // on = 3
     expect(decodeTow([1, 0, JOB_WIRE.maxPoints + 1, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0])).toBeNull();
     expect(decodeTow([1, 0, 0, JOB_WIRE.maxGates + 1, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0, TOW_EMPTY, 0, 0, 0])).toBeNull();
   });
@@ -102,6 +102,7 @@ describe('tow wire', () => {
   it('round-trips score, gates and slots', () => {
     const t = {
       on: true,
+      mode: 'tube' as const,
       score: 1234,
       gates: 5,
       slots: [
@@ -125,8 +126,21 @@ describe('tow wire', () => {
     }
   });
 
+  it('round-trips each mode in the on number', () => {
+    for (const [mode, on] of [['tube', 1], ['ski', 2]] as const) {
+      const rec = encodeTow({ on: true, mode, score: 0, gates: 0, slots: [] });
+      expect(rec[1]).toBe(on);
+      const back = decodeTow(rec)!;
+      expect(back.on).toBe(true);
+      expect(back.mode).toBe(mode);
+    }
+    const off = decodeTow(encodeTow({ on: false, mode: 'ski', score: 0, gates: 0, slots: [] }))!;
+    expect(off.on).toBe(false);
+    expect(off.mode).toBe('tube');
+  });
+
   it('encodes missing slots as empty', () => {
-    const rec = encodeTow({ on: false, score: 0, gates: 0, slots: [{ who: 9, x: 0, z: 0, yaw: 0 }] });
+    const rec = encodeTow({ on: false, mode: 'tube', score: 0, gates: 0, slots: [{ who: 9, x: 0, z: 0, yaw: 0 }] });
     expect(rec.slice(8, 12)).toEqual([TOW_EMPTY, 0, 0, 0]);
     expect(rec.slice(12, 16)).toEqual([TOW_EMPTY, 0, 0, 0]);
     expect(decodeTow(rec)!.slots[1].who).toBe(TOW_EMPTY);

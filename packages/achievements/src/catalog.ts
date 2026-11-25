@@ -892,6 +892,33 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 1000,
     reward: { slot: 'hand', prefabId: 'glaze-gold-spray-can', label: 'Gold Spray Can', exclusive: true },
   },
+  // ---- Gnome Theft Auto: Saltbucket Shore (E11 coast) ----
+  {
+    id: 'gta-salt-skier', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salt Skier', description: 'Water-ski 2000 metres on the Saltwater. Driftwood calls that "warming up".',
+    target: 2000,
+    reward: { slot: 'head', prefabId: 'ski-visor', label: 'Salt-Skier Visor' },
+  },
+  {
+    id: 'gta-wake-jumper', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Wake Jumper', description: 'Spend a full second in the air off the Saltwater wake ramp, on skis.',
+    reward: { slot: 'back', prefabId: 'life-ring-back', label: 'Life Ring' },
+  },
+  {
+    id: 'gta-full-circle', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Full Circle', description: 'Ride the Spokewheel all the way round and come down where you went up.',
+    reward: { slot: 'neck', prefabId: 'spokewheel-scarf', label: 'Spokewheel Scarf' },
+  },
+  {
+    id: 'gta-queens-treasure', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "The Queen's Treasure", description: "Find the Bathtub Queen's real treasure, not the one for the tourists.",
+    reward: { slot: 'head', prefabId: 'pirate-bandana', label: 'Pirate Bandana' },
+  },
+  {
+    id: 'gta-shiver-me-glaze', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Shiver Me Glaze', description: "Finish Captain Bilge's pirate tour without anyone looking in the hold.",
+    reward: { slot: 'head', prefabId: 'eye-patch', label: 'Toy Eye Patch' },
+  },
   // ---- Gnome Theft Auto: Ammu-Gnation (gun mods) ----
   {
     id: 'gta-bolt-on', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',

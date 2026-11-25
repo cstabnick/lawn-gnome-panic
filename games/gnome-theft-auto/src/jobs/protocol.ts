@@ -10,11 +10,12 @@
 //                record [1, parcels, seat, lookSeed, seat, lookSeed, ...] (at most 4 seats). Others seat NPC models
 //                in the owner's vehicle (remotes.vehicleOf(owner)) so passengers are seen by everyone.
 //   SYS.tow (8)  owner = a boat driver with the tow line out. One entity (id 1):
-//                record [1, on (0/1), score, gates, then per slot 0..2: who, qPos(x), qPos(z), qAngle(yaw)].
+//                record [1, on (0 off, 1 tube, 2 ski), score, gates, then per slot 0..2: who, qPos(x), qPos(z), qAngle(yaw)].
 //                who = a player id (a real rider: their own pose shows the tube), TOW_NPC (an NPC rider: drawn from
 //                this record) or TOW_EMPTY. Riders send 'hook' / 'unhook' / 'points' commands to the driver and find
 //                their slot by their own id in the record. Every client draws the ropes from the record.
 import { qAngle, qPos, uqAngle, uqPos } from '../online/protocol';
+import type { TowMode } from '../tubing/types';
 
 export { qAngle, qPos, uqAngle, uqPos };
 
@@ -164,16 +165,18 @@ export interface TowSlotWire {
 
 export interface TowWire {
   on: boolean;
+  /** What the driver's NPC riders sit on (on = 1 tube, 2 ski); read it for the HUD. 'tube' while the line is off. */
+  mode: TowMode;
   score: number;
   gates: number;
   /** Always exactly JOB_WIRE.slots entries. */
   slots: TowSlotWire[];
 }
 
-/** [1, on, score, gates, (who, qPos(x), qPos(z), qAngle(yaw)) x 3] = 16 numbers. Missing slots encode as empty. */
+/** [1, on (0 off, 1 tube, 2 ski), score, gates, (who, qPos(x), qPos(z), qAngle(yaw)) x 3] = 16 numbers. Missing slots encode as empty. */
 export function encodeTow(t: TowWire): number[] {
   const rec = [
-    1, t.on ? 1 : 0, clampInt(t.score, 0, JOB_WIRE.maxPoints), clampInt(t.gates, 0, JOB_WIRE.maxGates),
+    1, t.on ? (t.mode === 'ski' ? 2 : 1) : 0, clampInt(t.score, 0, JOB_WIRE.maxPoints), clampInt(t.gates, 0, JOB_WIRE.maxGates),
   ];
   for (let i = 0; i < JOB_WIRE.slots; i++) {
     const s = t.slots[i];
@@ -192,7 +195,7 @@ export function decodeTow(rec: readonly number[]): TowWire | null {
   const on = rec[1];
   const score = rec[2];
   const gates = rec[3];
-  if (on !== 0 && on !== 1) return null;
+  if (on < 0 || on > 2) return null; // 0 off, 1 tube (older records), 2 ski
   if (score < 0 || score > JOB_WIRE.maxPoints || gates < 0 || gates > JOB_WIRE.maxGates) return null;
   const slots: TowSlotWire[] = [];
   for (let i = 0; i < JOB_WIRE.slots; i++) {
@@ -201,5 +204,5 @@ export function decodeTow(rec: readonly number[]): TowWire | null {
     if (who < TOW_NPC) return null;
     slots.push({ who, x: uqPos(rec[o + 1]), z: uqPos(rec[o + 2]), yaw: uqAngle(rec[o + 3]) });
   }
-  return { on: on === 1, score, gates, slots };
+  return { on: on !== 0, mode: on === 2 ? 'ski' : 'tube', score, gates, slots };
 }

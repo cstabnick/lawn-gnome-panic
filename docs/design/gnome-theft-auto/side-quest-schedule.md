@@ -79,9 +79,10 @@ written by its constant, `TESSIE.questId`.
 | `sq-pinwheel-linemen` | Free the Pinwheels | Ragwort Coilspring (ragwort) | #42 `m42-rutbottom-impound` | Ragwort showed the player which pinwheels to free (#41). | `pinwheel-ridge` | 6 | E14 |
 | `race-lowrider-derby` | Fizz Cup: Low & Loud Derby | Lugnut Lulu (speedway) | #43 `m43-saltbucket-boardwalk` | The Carburettors are back on their wheels (#42). | `speedway` | 6 | existing |
 | `sq-rutbottom-heats` | Rutbottom Heats | Teasel Mudguard (teasel) | #44 `m44-the-bathtub-queen` | Teasel watched the impound race (#42) and wants a rematch on the dirt. | `rutbottom` | 6 | E14 |
-| `sq-spokewheel-gondola` | The Wobbly Gondola | Marram Teaspoon (marram) | #45 `m45-rootwell-admissions` | Marram took the player up the Spokewheel at #43. | `saltbucket-shore` | 6 | E11 |
-| `sq-boardwalk-tubing` | Tubing the Long Spoon | Driftwood (driftwood) | #45 `m45-rootwell-admissions` | Driftwood's tube hut opened at #43 and needs someone to test the course. | `saltbucket-shore` | 6 | E11 |
-| `sq-bathtub-queen-tours` | Pirate Tours, Mostly | Captain Samphire Bilge (samphire) | #46 `m46-starfall-at-the-anthill` | Bilge joined the crew (#44) and has a boat to fill. | `saltbucket-shore` | 6 | E11 |
+| `coast-spokewheel-gondola` | The Wobbly Gondola | Marram Teaspoon (marram) | #45 `m45-rootwell-admissions` | Marram took the player up the Spokewheel at #43. | `saltbucket-shore` | 6 | E11 |
+| `coast-boardwalk-tubing` | Tubing the Long Spoon | Driftwood (driftwood) | #45 `m45-rootwell-admissions` | Driftwood's tube hut opened at #43 and needs someone to test the course. | `saltbucket-shore` | 6 | E11 |
+| `coast-bathtub-tours` | Pirate Tours, Mostly | Captain Samphire Bilge (samphire) | #46 `m46-starfall-at-the-anthill` | Bilge joined the crew (#44) and has a boat to fill. | `saltbucket-shore` | 6 | E11 |
+| `coast-queens-treasure` | The Queen's Treasure | Captain Samphire Bilge (samphire) | `coast-bathtub-tours` done | Bilge lets slip about the treasure at the end of the tour. | `saltbucket-shore` | 6 | E11 |
 | `sq-rootwell-lost-essay` | The Lost Essay | Dean Lovage Inkwell (lovage) | #47 `m47-hedgeworth-links` | Lovage was dodged at #45; he is sure the player is a student and wants a paper on level lines. | `rootwell` | 6 | E13 |
 | `sq-anthill-rent` | Rent for the Landlords | Professor Betony Sextant (betony) | #48 `m48-the-groundskeepers-secret` | Sextant knows the ants (#46) and the ants are late on a sugar invoice. | `rootwell` | 6 | E13 |
 | `sq-hedgeworth-pro-lesson` | A Lesson from the Pro | Basil Divot (basil) | #49 `m49-loamdeep` | Basil lost a hole to the player (#47) and wants to see how. | `hedgeworth` | 6 | E15 |
@@ -124,7 +125,7 @@ Every new area has at least one side quest:
 | Capwood (E12) | `sq-capwood-cap-count` |
 | Pinwheel Ridge (E14) | `sq-pinwheel-linemen` |
 | Rutbottom (E14) | `sq-rutbottom-heats` |
-| Saltbucket Boardwalk, the Spokewheel, the Bathtub Queen (E11) | `sq-boardwalk-tubing`, `sq-spokewheel-gondola`, `sq-bathtub-queen-tours` |
+| Saltbucket Boardwalk, the Spokewheel, the Bathtub Queen (E11) | `coast-boardwalk-tubing`, `coast-spokewheel-gondola`, `coast-bathtub-tours` |
 | Rootwell and the Anthill (E13) | `sq-rootwell-lost-essay`, `sq-anthill-rent` |
 | Trellisdown (E15) | `sq-trellisdown-pickers` |
 | Route South Acorn Diner (chef job, E18) | `sq-chef-first-shift` |
@@ -246,7 +247,7 @@ player takes none. Every row from 1 to 70 stays at or under its cap (checked for
 | 30 | 4 | 4 | `sq-flock-errands`, `sq-dewdrop-2`, `sq-hedgeworth-lost-balls`, `race-rookie-mowdown` |
 | 35 | 3 | 4 | `nc-hangar-and-boathouse`, `sq-dewdrop-3`, `nc-party` |
 | 40 | 5 | 6 | `nc-strike-a-pose`, `sq-snowdrop-sled-trials`, `sq-pail-pond-lines`, `nc-odd-jobs`, `TESSIE.questId` |
-| 45 | 5 | 6 | `sq-pinwheel-linemen`, `race-lowrider-derby`, `sq-rutbottom-heats`, `sq-spokewheel-gondola`, `sq-boardwalk-tubing` |
+| 45 | 5 | 6 | `sq-pinwheel-linemen`, `race-lowrider-derby`, `sq-rutbottom-heats`, `coast-spokewheel-gondola`, `coast-boardwalk-tubing` |
 | 50 | 5 | 6 | `sq-rootwell-lost-essay`, `sq-anthill-rent`, `sq-hedgeworth-pro-lesson`, `sq-loamdeep-lamps`, `sq-hedgeworth-ninth-green` |
 | 55 | 5 | 6 | `sq-hedgeworth-members-cup`, `sq-flock-vigil`, `race-snail-endurance`, `nc-take-off`, `sq-hoa-audit` |
 | 60 | 5 | 6 | `race-fizz-cup-final`, `sq-underspan-scrap-run`, `nc-skyway`, `sq-weeping-line`, `sq-hum-at-three` |

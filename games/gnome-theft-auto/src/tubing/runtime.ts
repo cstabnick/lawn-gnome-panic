@@ -10,14 +10,31 @@ import { heightAt, waterAt } from '../terrain';
 import { waveSlope, waveTime } from '../waves';
 import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
 import type { Blip, InputState, Vehicle } from '../types';
-import { BUOY_GATES, FINISH_POINTS, GATE_POINTS, newRun, stepRun, type RunState } from './course';
+import { COAST, COAST_ACH } from '../coast/config';
+import {
+  FINISH_POINTS, GATE_POINTS, LOCH_COURSE, OCEAN_COURSE, courseNear, newRun, stepRun, type RunState, type TowCourse,
+} from './course';
 import { MAX_ROPES, createTubingView, type RopeSeg, type TubeView } from './view';
-import { hookPoint, newScore, newTube, scoreStep, stepTube } from './tow';
-import { TOW, type BoatPose, type Sea, type Tubing, type TubeScore, type TubeState } from './types';
+import { hookPoint, newScore, newTube, rampKick, scoreStep, stepTube } from './tow';
+import { TOW, type BoatPose, type Sea, type TowMode, type Tubing, type TubeScore, type TubeState } from './types';
 
 /** The Mossbank tube rack (rent a tube here). */
 const RACK = { x: -702, z: -548 };
 const RACK_COST = 5;
+/** The Last Tube (Driftwood's hut): two E spots 4 m apart, a tube rack and a ski rack. */
+const TUBE_SPOT = { x: COAST.lastTube.rack.x, z: COAST.lastTube.rack.z };
+const SKI_SPOT = { x: COAST.lastTube.rack.x + 4, z: COAST.lastTube.rack.z };
+const SPOT_RANGE = 1.9;
+/** Driftwood's tow: seconds a fallen rider has to get back on, laps before he calls it a day, and the way home. */
+const DW_REBOARD_S = 15;
+const DW_LAPS = 2;
+const DW_REMOVE_S = 20;
+const DW_HOME_SPEED = 18;
+const DW_LINES = {
+  start: 'Driftwood: Hold on. Do not look down. Do not look at the sharks.',
+  end: 'Driftwood: Same time tomorrow. Bring your own sharks.',
+  fall: 'Wipe-out! Swim back to your ride and climb on (15 s), or Driftwood goes home.',
+} as const;
 const RACK_MAX = 2;
 const RACK_RANGE = 15;
 const HOOK_ASK_S = 4;
@@ -35,6 +52,69 @@ export function freeSlot(slots: number[]): number {
 export function boatSpeedFrom(prevX: number, prevZ: number, x: number, z: number, yaw: number, dt: number): number {
   if (dt <= 0) return 0;
   return ((x - prevX) * Math.sin(yaw) + (z - prevZ) * Math.cos(yaw)) / dt;
+}
+
+const modeOf = (v: Vehicle): TowMode => (v.kind === 'tow-ski' ? 'ski' : 'tube');
+const isTowRide = (v: Vehicle): boolean => v.kind === 'tow-tube' || v.kind === 'tow-ski';
+
+/** A point on a closed polyline `loop` ((x, z) pairs) and the heading of the segment it is on. */
+export interface LoopPos { x: number; z: number; yaw: number; s: number }
+
+/** Total length of the closed loop, m. */
+export function loopLength(loop: readonly (readonly [number, number])[]): number {
+  let total = 0;
+  for (let i = 0; i < loop.length; i++) {
+    const a = loop[i];
+    const b = loop[(i + 1) % loop.length];
+    total += Math.hypot(b[0] - a[0], b[1] - a[1]);
+  }
+  return total;
+}
+
+/** Move `ds` metres along the closed loop from arc position `s` (wrapped into 0..length). yaw 0 faces +z. */
+export function followLoop(loop: readonly (readonly [number, number])[], s: number, ds: number): LoopPos {
+  const total = loopLength(loop);
+  if (loop.length < 2 || total <= 0) return { x: loop[0]?.[0] ?? 0, z: loop[0]?.[1] ?? 0, yaw: 0, s: 0 };
+  let t = (((s + ds) % total) + total) % total;
+  for (let i = 0; i < loop.length; i++) {
+    const a = loop[i];
+    const b = loop[(i + 1) % loop.length];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (t <= len && len > 0) {
+      const f = t / len;
+      return { x: a[0] + (b[0] - a[0]) * f, z: a[1] + (b[1] - a[1]) * f, yaw: Math.atan2(b[0] - a[0], b[1] - a[1]), s: (((s + ds) % total) + total) % total };
+    }
+    t -= len;
+  }
+  const a = loop[0];
+  return { x: a[0], z: a[1], yaw: 0, s: 0 };
+}
+
+/** Wrap an angle into -PI..PI. */
+const wrapAngle = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
+
+/** The ocean tow run, for the quest listener (E11): a gate passed or the finish, with what the rider sits on. */
+function towRunEvent(course: string, gates: number, finished: boolean, mode: TowMode): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('gta:tow-run', { detail: { course, gates, finished, mode } }));
+}
+
+/** Driftwood's tow boat (solo play). Local only: other players see my skier or tube through the normal vehicle relay, not
+ *  his boat, so a second player cannot hook onto it. */
+interface Driftwood {
+  boat: Vehicle;
+  /** Arc position on COAST.towLoop (wrapped) and metres towed in all. */
+  s: number;
+  travelled: number;
+  speed: number;
+  /** The rented tube or skis it tows, and seconds since the rider was last on them. */
+  tube: Vehicle | null;
+  fallT: number;
+  run: RunState;
+  prev: { x: number; z: number } | null;
+  /** Ending: the boat runs home and is removed after DW_REMOVE_S. */
+  ending: boolean;
+  endT: number;
 }
 
 interface Npc {
@@ -66,12 +146,20 @@ interface Ride {
   speed: number;
   lastX: number | null;
   lastZ: number;
+  /** Towed by Driftwood's local boat (host stays null). */
+  local: boolean;
+  /** Ski metres not yet reported to the waterSkier achievement, and the score.dist last seen. */
+  skiAcc: number;
+  lastDist: number;
+  /** Seconds since a wake-ramp kick (-1 = none): a ski landing 1 s or more off it unlocks wakeJump. */
+  kickAge: number;
 }
 
 const emptySlot = (): Slot => ({ who: TOW_EMPTY, npc: null, points: 0 });
 
 const newRide = (): Ride => ({
   host: null, slot: -1, state: null, score: newScore(), askT: 0, secT: 0, tenT: 0, speed: 0, lastX: null, lastZ: 0,
+  local: false, skiAcc: 0, lastDist: 0, kickAge: -1,
 });
 
 const sea: Sea = {
@@ -91,6 +179,7 @@ function slotWire(s: Slot): TowSlotWire {
 export function installTubing(deps: JobsDeps): Tubing {
   const view = createTubingView(deps.scene);
   view.buildBuoys();
+  view.buildLastTube();
   const store = sharedJobsStore();
   let link: SyncLink = deps.hub.link;
 
@@ -98,6 +187,11 @@ export function installTubing(deps: JobsDeps): Tubing {
   let towOn = false;
   const slots: Slot[] = [emptySlot(), emptySlot(), emptySlot()];
   let run: RunState = newRun();
+  /** The course this tow line runs (the nearest to the boat when the line went out), and what the NPC riders sit on. */
+  let course: TowCourse = LOCH_COURSE;
+  let towMode: TowMode = 'tube';
+  /** Driftwood's tow (solo rider at the Last Tube), or null. */
+  let dw: Driftwood | null = null;
   /** Points banked from gates and finished runs. */
   let banked = 0;
   let prevBoat: { x: number; z: number; v: Vehicle } | null = null;
@@ -134,7 +228,7 @@ export function installTubing(deps: JobsDeps): Tubing {
 
   const boatNow = (): Vehicle | null => {
     const v = deps.player.vehicle;
-    return v && v.spec.boat && v.kind !== 'tow-tube' && v.driver === 'player' ? v : null;
+    return v && v.spec.boat && !isTowRide(v) && v.driver === 'player' ? v : null;
   };
   const occupied = (): number => slots.filter((s) => s.who !== TOW_EMPTY).length;
   const teamScore = (): number => slots.reduce((a, s) => a + s.points, 0) + banked;
@@ -177,6 +271,7 @@ export function installTubing(deps: JobsDeps): Tubing {
     run = newRun();
     banked = 0;
     prevBoat = null;
+    towMode = 'tube';
     view.highlightGate(null);
   }
 
@@ -228,24 +323,32 @@ export function installTubing(deps: JobsDeps): Tubing {
       return null;
     }
     if (towOn) return null;
-    if (!boatNow()) return 'Drive a boat first.';
+    const boat = boatNow();
+    if (!boat) return 'Drive a boat first.';
     towOn = true;
     run = newRun();
     banked = 0;
-    deps.hud.toast('Tow line out. Riders hop on from the 🛟 app or swim up on a tube.');
+    towMode = 'tube';
+    course = courseNear(boat.x, boat.z);
+    deps.hud.toast(`Tow line out (${course.name}). Riders hop on from the 🛟 app or swim up on a tube or skis.`);
     return null;
   }
 
-  function addNpcRider(): string | null {
+  function addNpcRider(mode?: TowMode): string | null {
     if (!towOn) return 'Put the tow line out first.';
     const idx = freeSlot(slots.map((s) => s.who));
     if (idx < 0) return 'The tow line is full.';
     const boat = boatNow();
     if (!boat) return 'Drive a boat first.';
+    // One mode rides the whole line (it is one number on the wire): asking for the other mode switches the NPCs.
+    if (mode && mode !== towMode) {
+      towMode = mode;
+      for (const s of slots) if (s.npc) s.npc.state.mode = mode;
+    }
     slots[idx] = {
       who: TOW_NPC,
       npc: {
-        state: newTube(poseOf(boat, boat.speed), idx, sea), score: newScore(), downT: 0, seed: 500 + idx, t: 0,
+        state: newTube(poseOf(boat, boat.speed), idx, sea, towMode), score: newScore(), downT: 0, seed: 500 + idx, t: 0,
       },
       points: 0,
     };
@@ -284,6 +387,7 @@ export function installTubing(deps: JobsDeps): Tubing {
       while (left > 1e-6) {
         const h = Math.min(STEP_S, left);
         left -= h;
+        rampKick(n.state, COAST.wakeRamp);
         const ev = stepTube(n.state, pose, { lean, hop }, sea, h);
         hop = false;
         scoreStep(n.score, n.state, ev, h);
@@ -292,23 +396,27 @@ export function installTubing(deps: JobsDeps): Tubing {
       s.points = n.score.points;
       showNpc(key, {
         x: n.state.x, y: n.state.y, z: n.state.z, yaw: n.state.yaw, lean: n.state.lean,
-        riderUp: !n.state.fallen, seed: n.seed,
+        riderUp: !n.state.fallen, seed: n.seed, mode: n.state.mode,
       });
     }
 
     if (prevBoat && prevBoat.v === boat) {
-      const ev = stepRun(run, prevBoat.x, prevBoat.z, boat.x, boat.z, dt);
+      const ev = stepRun(run, prevBoat.x, prevBoat.z, boat.x, boat.z, dt, course.gates);
       if (ev === 'gate') {
         banked += GATE_POINTS;
         deps.play('stunt');
-        deps.hud.toast(`Buoy ${run.next}/${BUOY_GATES.length}`);
+        deps.hud.toast(`Buoy ${run.next}/${course.gates.length}`);
+        towRunEvent(course.id, run.next, false, towMode);
       } else if (ev === 'finish') {
         const time = run.time ?? run.t;
-        deps.hud.toast(`Buoy run: ${time.toFixed(1)} s`);
-        deps.unlock(JOB_ACHIEVEMENTS.buoyRun);
-        const st = store.get();
-        if (st.buoyBest === null || time < st.buoyBest) st.buoyBest = time;
-        store.commit();
+        deps.hud.toast(`${course.name}: ${time.toFixed(1)} s`);
+        towRunEvent(course.id, course.gates.length, true, towMode);
+        if (course === LOCH_COURSE) {
+          deps.unlock(JOB_ACHIEVEMENTS.buoyRun);
+          const st = store.get();
+          if (st.buoyBest === null || time < st.buoyBest) st.buoyBest = time;
+          store.commit();
+        }
         banked += FINISH_POINTS;
         run = newRun();
       } else if (ev === 'reset') {
@@ -316,13 +424,16 @@ export function installTubing(deps: JobsDeps): Tubing {
       }
     }
     prevBoat = { x: boat.x, z: boat.z, v: boat };
-    view.highlightGate(run.next);
+    view.highlightGate(run.next, course.gates);
   }
 
   /** Rider: attach to my slot, or give up asking, while hooked on; the points and the tubeRider achievement. */
   function tickRider(dt: number): void {
     const host = ride.host;
-    if (host === null) return;
+    if (host === null) {
+      tickLocalRider(dt);
+      return;
+    }
     const me = deps.net.myId();
     const entry = mirrors.get(host);
     const found = entry && me !== null ? entry.slots.findIndex((s) => s.who === me) : -1;
@@ -332,7 +443,7 @@ export function installTubing(deps: JobsDeps): Tubing {
       if (found >= 0) {
         const boat = deps.net.vehicleOf(host);
         if (boat && myTube) {
-          const st = newTube(poseOf(boat, 0), found, sea);
+          const st = newTube(poseOf(boat, 0), found, sea, modeOf(myTube));
           st.x = myTube.x;
           st.y = myTube.y;
           st.z = myTube.z;
@@ -378,12 +489,50 @@ export function installTubing(deps: JobsDeps): Tubing {
     }
   }
 
-  /** Sitting on a tow tube behind a boat with a free slot: ask to hook on (every 2 s). */
+  /** Riding Driftwood's tow: points, seconds and the tubeRider achievement (no wire; he is local). */
+  function tickLocalRider(dt: number): void {
+    if (!ride.local || !ride.state) return;
+    if (myTube && myTube.driver !== 'player') {
+      unhook();
+      endDriftwood();
+      return;
+    }
+    ride.secT += dt;
+    if (ride.secT >= 1) {
+      ride.secT -= 1;
+      store.get().tubeSeconds += 1;
+      ride.tenT += 1;
+      if (ride.tenT >= 10) {
+        ride.tenT = 0;
+        deps.increment(JOB_ACHIEVEMENTS.tubeRider, 10);
+        store.commit();
+      }
+    }
+  }
+
+  /** Hook my seat onto Driftwood's boat (fresh rental, or back on after a fall). */
+  function attachLocal(pv: Vehicle): void {
+    if (!dw) return;
+    const st = newTube(poseOf(dw.boat, 0), 0, sea, modeOf(pv));
+    st.x = pv.x;
+    st.y = pv.y;
+    st.z = pv.z;
+    ride = { ...newRide(), local: true, slot: 0, state: st };
+    dw.fallT = 0;
+    dw.run = newRun();
+    dw.prev = null;
+  }
+
+  /** Sitting on a tow tube or skis behind a boat with a free slot: ask to hook on (every 2 s). */
   function autoHook(dt: number): void {
     const pv = deps.player.vehicle;
-    if (!pv || pv.kind !== 'tow-tube' || pv.driver !== 'player') return;
+    if (!pv || !isTowRide(pv) || pv.driver !== 'player') return;
     myTube = pv;
-    if (ride.host !== null) return;
+    if (dw && !dw.ending && dw.tube === pv && !ride.local && ride.host === null) {
+      if (Math.hypot(dw.boat.x - pv.x, dw.boat.z - pv.z) <= TOW.hookRange) attachLocal(pv);
+      return;
+    }
+    if (ride.host !== null || ride.local) return;
     autoT -= dt;
     if (autoT > 0) return;
     autoT = AUTO_HOOK_S;
@@ -398,10 +547,10 @@ export function installTubing(deps: JobsDeps): Tubing {
   /** The rider's tube: stepped from the host's boat pose, drawn, and the fall or the snapped rope handled. */
   function stepRider(v: Vehicle, inp: InputState, dt: number): void {
     const host = ride.host;
-    const boat = host === null ? null : deps.net.vehicleOf(host);
+    const boat = ride.local ? dw?.boat ?? null : host === null ? null : deps.net.vehicleOf(host);
     const st = ride.state;
     if (!boat || !st) {
-      unhook('Your boat left.');
+      unhook(ride.local ? undefined : 'Your boat left.');
       return;
     }
     const raw = ride.lastX === null ? 0 : boatSpeedFrom(ride.lastX, ride.lastZ, boat.x, boat.z, boat.yaw, dt);
@@ -416,10 +565,30 @@ export function installTubing(deps: JobsDeps): Tubing {
     while (left > 1e-6 && !fell) {
       const h = Math.min(STEP_S, left);
       left -= h;
+      if (rampKick(st, COAST.wakeRamp)) ride.kickAge = 0;
       const ev = stepTube(st, pose, { lean: inp.moveX, hop }, sea, h);
       hop = false;
       scoreStep(ride.score, st, ev, h);
+      if (ride.kickAge >= 0) ride.kickAge += h;
+      if (ev?.t === 'landed') {
+        // Skis: 1 s or more in the air that began at the wake ramp (the kick was at most 2 s before take-off).
+        if (st.mode === 'ski' && ev.air >= 1 && ride.kickAge >= 0 && ride.kickAge - ev.air <= 2) deps.unlock(COAST_ACH.wakeJump);
+        ride.kickAge = -1;
+      } else if (ride.kickAge > 30) {
+        ride.kickAge = -1;
+      }
       if (ev?.t === 'fell') fell = ev;
+    }
+    if (st.mode === 'ski' && !st.fallen) {
+      // Towed metres on skis: every whole 10 m goes to the waterSkier achievement (target 2000).
+      ride.skiAcc += ride.score.dist - ride.lastDist;
+      ride.lastDist = ride.score.dist;
+      while (ride.skiAcc >= 10) {
+        ride.skiAcc -= 10;
+        deps.increment(COAST_ACH.waterSkier, 10);
+      }
+    } else {
+      ride.lastDist = ride.score.dist;
     }
 
     v.x = st.x;
@@ -437,7 +606,13 @@ export function installTubing(deps: JobsDeps): Tubing {
     }
     if (fell) {
       deps.throwPlayer(v, fell.vx, fell.vy, fell.vz);
-      unhook('Wipe-out! Swim back to the tube and hop on.');
+      if (ride.local && dw) {
+        // Driftwood waits for DW_REBOARD_S; climbing back onto the tube or skis hooks on again (autoHook).
+        unhook(DW_LINES.fall);
+        dw.fallT = 0;
+      } else {
+        unhook(`Wipe-out! Swim back to the ${modeOf(v) === 'ski' ? 'skis' : 'tube'} and hop on.`);
+      }
     }
   }
 
@@ -445,7 +620,7 @@ export function installTubing(deps: JobsDeps): Tubing {
   function hopOn(): string | null {
     if (!deps.net.online()) return 'Online only: ask a friend with a boat, or drive one and add NPC riders.';
     if (deps.player.vehicle) return 'Get out first.';
-    if (ride.host !== null) return 'Already on a tow line.';
+    if (ride.host !== null || ride.local) return 'Already on a tow line.';
     const hit = findBoat(deps.player.x, deps.player.z);
     if (!hit) return 'No boat with a free tow line nearby.';
     const slot = freeSlot(hit.w.slots.map((s) => s.who));
@@ -490,9 +665,159 @@ export function installTubing(deps: JobsDeps): Tubing {
     return null;
   }
 
+  /** Take the rented tube or skis out of the water (not while I sit on them). */
+  function dropRental(v: Vehicle | null): void {
+    if (v && v.driver !== 'player') removeTube(v);
+  }
+
+  /** Driftwood's tow is over: he runs home (DW_LINES.end) and the boat goes after DW_REMOVE_S. */
+  function endDriftwood(): void {
+    if (!dw || dw.ending) return;
+    dw.ending = true;
+    dw.endT = 0;
+    deps.hud.toast(DW_LINES.end);
+  }
+
+  function removeDriftwood(): void {
+    if (!dw) return;
+    removeVehicle(deps.scene, dw.boat);
+    const i = deps.vehicles.indexOf(dw.boat);
+    if (i >= 0) deps.vehicles.splice(i, 1);
+    // The tube or skis go with him unless I am still sitting on them (then they drift).
+    dropRental(dw.tube);
+    dw = null;
+    if (ride.local) unhook();
+    view.highlightGate(null);
+  }
+
+  /** Put Driftwood's boat on COAST.towLoop beside the rented tube / skis `tube`. */
+  function startDriftwood(tube: Vehicle): void {
+    if (dw) removeDriftwood();
+    const loop = COAST.towLoop;
+    const p = followLoop(loop, 0, 0);
+    const boat = createVehicle(deps.scene, 'walnut-dinghy', p.x, p.z, p.yaw);
+    boat.driver = 'npc';
+    boat.y = sea.surface(p.x, p.z) - (boat.spec.draft ?? 0.25);
+    syncVehicleMesh(boat, 0);
+    deps.vehicles.push(boat);
+    dw = {
+      boat, s: 0, travelled: 0, speed: 0, tube, fallT: 0, run: newRun(), prev: null, ending: false, endT: 0,
+    };
+    deps.hud.toast(DW_LINES.start);
+  }
+
+  /** Driftwood's boat, every frame: follows the loop while I am hooked on, waits for me after a fall, then goes home. */
+  function tickDriftwood(dt: number): void {
+    const d = dw;
+    if (!d) return;
+    const boat = d.boat;
+    if (boat.driver !== 'npc') {
+      // Someone took the wheel: he is no longer Driftwood's boat.
+      dw = null;
+      if (ride.local) unhook();
+      return;
+    }
+    const riding = ride.local && ride.state !== null;
+    const loop = COAST.towLoop;
+    if (!d.ending) {
+      if (!riding) {
+        d.fallT += dt;
+        if (d.fallT > DW_REBOARD_S) endDriftwood();
+      } else if (d.travelled >= DW_LAPS * loopLength(loop)) {
+        deps.hud.toast('Two laps. Driftwood has seen enough.');
+        endDriftwood();
+      }
+    }
+    if (!d.ending) {
+      const target = riding ? COAST.towSpeed : 0;
+      d.speed += (target - d.speed) * Math.min(1, dt * 0.8);
+      const ds = d.speed * dt;
+      d.travelled += ds;
+      const here = followLoop(loop, d.s, ds);
+      d.s = here.s;
+      boat.x = here.x;
+      boat.z = here.z;
+      // Face the way the loop is heading a few metres on (eased, so corners swing instead of snapping).
+      boat.yaw += wrapAngle(followLoop(loop, d.s, 6).yaw - boat.yaw) * Math.min(1, dt * 3);
+    } else {
+      d.endT += dt;
+      const home = COAST.lastTube.launch;
+      const dist = Math.hypot(home.x - boat.x, home.z - boat.z);
+      d.speed = Math.min(DW_HOME_SPEED, dist * 0.8);
+      if (dist > 2) {
+        const heading = Math.atan2(home.x - boat.x, home.z - boat.z);
+        boat.yaw += wrapAngle(heading - boat.yaw) * Math.min(1, dt * 3);
+        boat.x += Math.sin(boat.yaw) * d.speed * dt;
+        boat.z += Math.cos(boat.yaw) * d.speed * dt;
+      }
+      if (d.endT > DW_REMOVE_S) {
+        removeDriftwood();
+        return;
+      }
+    }
+    boat.speed = d.speed;
+    boat.y = sea.surface(boat.x, boat.z) - (boat.spec.draft ?? 0.25);
+    syncVehicleMesh(boat, dt);
+
+    // The ocean run: the boat passes the slalom gates in order (OCEAN_COURSE), the rider shares the points.
+    if (riding && !d.ending) {
+      const mode = ride.state?.mode ?? 'tube';
+      if (d.prev) {
+        const ev = stepRun(d.run, d.prev.x, d.prev.z, boat.x, boat.z, dt, OCEAN_COURSE.gates);
+        if (ev === 'gate') {
+          deps.play('stunt');
+          deps.hud.toast(`Gate ${d.run.next}/${OCEAN_COURSE.gates.length}`);
+          towRunEvent(OCEAN_COURSE.id, d.run.next, false, mode);
+        } else if (ev === 'finish') {
+          deps.hud.toast(`${OCEAN_COURSE.name}: ${(d.run.time ?? d.run.t).toFixed(1)} s`);
+          towRunEvent(OCEAN_COURSE.id, OCEAN_COURSE.gates.length, true, mode);
+          d.run = newRun();
+        } else if (ev === 'reset') {
+          deps.hud.toast('Slalom timed out.');
+        }
+      }
+      d.prev = { x: boat.x, z: boat.z };
+      if (!towOn) view.highlightGate(d.run.next, OCEAN_COURSE.gates);
+    } else {
+      d.prev = null;
+      if (!towOn) view.highlightGate(null);
+    }
+  }
+
+  /** Rent a tube or skis at the Last Tube (8 / 11 Acorns): in the water at the launch, me on it, Driftwood's tow on. */
+  function rentLastTube(kind: 'tow-tube' | 'tow-ski'): string | null {
+    if (deps.player.vehicle) return 'Get out of your vehicle first.';
+    if (ride.host !== null || ride.local) return 'Already on a tow line.';
+    const fare = kind === 'tow-ski' ? COAST.lastTube.skiFare : COAST.lastTube.tubeFare;
+    if (!deps.economy.spend(fare, kind === 'tow-ski' ? 'Ski rent' : 'Tube rent')) return 'Not enough Acorns.';
+    if (dw) removeDriftwood();
+    const l = COAST.lastTube.launch;
+    const v = createVehicle(deps.scene, kind, l.x, l.z, l.yaw ?? 0);
+    v.y = sea.surface(l.x, l.z) + (kind === 'tow-ski' ? 0.05 : TOW.floatY);
+    deps.vehicles.push(v);
+    rented.push(v);
+    if (rented.length > RACK_MAX) {
+      const old = rented.find((r) => r !== v && r.driver === 'none');
+      if (old) removeTube(old);
+    }
+    if (myTube && myTube !== v && myTube.driver === 'none') removeTube(myTube);
+    deps.seatPlayer(v);
+    myTube = v;
+    // A friend's boat with its tow line out nearby beats Driftwood: ask to hook on to it as hopOn does.
+    const hit = deps.net.online() ? findBoat(l.x, l.z) : null;
+    if (hit) {
+      ride = { ...newRide(), host: hit.owner, slot: -1 };
+      link.command(hit.owner, 1, TOW_CMD.hook);
+      deps.hud.toast('Asking to hook on to the nearby tow line.');
+    } else {
+      startDriftwood(v);
+    }
+    return null;
+  }
+
   /** Ropes from my boat and from the boats I see, and the NPC riders I see. */
   function drawRopes(): void {
-    if (!towOn && mirrors.size === 0 && lastRopes === 0) return;
+    if (!towOn && mirrors.size === 0 && lastRopes === 0 && !dw) return;
     ropeList.length = 0;
     const pushRope = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, rope: number): void => {
       if (ropeList.length >= MAX_ROPES) return;
@@ -522,6 +847,12 @@ export function installTubing(deps: JobsDeps): Tubing {
       }
     }
 
+    // Driftwood's rope to my tube or skis (only I see his boat, so only I draw this rope).
+    if (dw && ride.local && myTube) {
+      const h = hookPoint(poseOf(dw.boat, dw.speed), 0);
+      pushRope(h.x, dw.boat.y + 0.4, h.z, myTube.x, myTube.y, myTube.z, TOW.slots[0].rope);
+    }
+
     for (const [owner, w] of mirrors) {
       const boat = deps.net.vehicleOf(owner);
       if (!w.on || !boat) {
@@ -534,7 +865,7 @@ export function installTubing(deps: JobsDeps): Tubing {
         const key = owner + ':' + i;
         if (s.who === TOW_NPC) {
           const y = sea.surface(s.x, s.z) + TOW.floatY;
-          showNpc(key, { x: s.x, y, z: s.z, yaw: s.yaw, lean: 0, riderUp: true, seed: 500 + i });
+          showNpc(key, { x: s.x, y, z: s.z, yaw: s.yaw, lean: 0, riderUp: true, seed: 500 + i, mode: w.mode });
         } else {
           showNpc(key, null);
         }
@@ -557,13 +888,19 @@ export function installTubing(deps: JobsDeps): Tubing {
     let text = '';
     let risk = -1;
     if (ride.slot >= 0 && ride.state) {
-      const team = ride.host !== null ? mirrors.get(ride.host)?.score ?? 0 : 0;
-      text = `🛟 ${ride.score.points} pts · air ${ride.score.air.toFixed(1)} s · team ${team}`;
+      const icon = ride.state.mode === 'ski' ? '🎿' : '🛟';
+      if (ride.local && dw) {
+        const time = dw.run.next > 0 ? ` · ${dw.run.t.toFixed(1)} s` : '';
+        text = `${icon} ${ride.score.points} pts · air ${ride.score.air.toFixed(1)} s · gates ${dw.run.next}/${OCEAN_COURSE.gates.length}${time}`;
+      } else {
+        const team = ride.host !== null ? mirrors.get(ride.host)?.score ?? 0 : 0;
+        text = `${icon} ${ride.score.points} pts · air ${ride.score.air.toFixed(1)} s · team ${team}`;
+      }
       risk = ride.state.risk;
     } else if (towOn) {
       const n = occupied();
       const time = run.next > 0 ? `${run.t.toFixed(1)} s` : '-';
-      text = `Tow: ${n} riders · team ${teamScore()} · gates ${run.next}/${BUOY_GATES.length} · ${time}`;
+      text = `Tow: ${n} riders · team ${teamScore()} · ${course.name} ${run.next}/${course.gates.length} · ${time}`;
     }
     const show = text !== '';
     if (show !== hudShown) {
@@ -586,7 +923,7 @@ export function installTubing(deps: JobsDeps): Tubing {
       if (!towOn || !boatNow()) return;
       const boat = boatNow();
       if (!boat) return;
-      const rec = encodeTow({ on: true, score: teamScore(), gates: run.next, slots: slots.map(slotWire) });
+      const rec = encodeTow({ on: true, mode: towMode, score: teamScore(), gates: run.next, slots: slots.map(slotWire) });
       out.push({ id: 1, x: boat.x, z: boat.z, rec });
     },
 
@@ -650,7 +987,7 @@ export function installTubing(deps: JobsDeps): Tubing {
 
   return {
     drives(v: Vehicle): boolean {
-      return v === myTube && ride.host !== null && ride.slot >= 0 && ride.state !== null;
+      return v === myTube && (ride.host !== null || ride.local) && ride.slot >= 0 && ride.state !== null;
     },
 
     stepRider,
@@ -659,25 +996,40 @@ export function installTubing(deps: JobsDeps): Tubing {
       autoHook(dt);
       if (towOn) tickDriver(dt);
       tickRider(dt);
+      tickDriftwood(dt);
       drawRopes();
       view.update(dt, deps.player.x, deps.player.z);
       refreshHud();
     },
 
     blips(): Blip[] {
-      const out: Blip[] = [{ x: RACK.x, z: RACK.z, color: TUBE_COLOR, label: 'Tube rack' }];
-      if (towOn && run.next < BUOY_GATES.length) {
-        const g = BUOY_GATES[run.next];
+      const out: Blip[] = [
+        { x: RACK.x, z: RACK.z, color: TUBE_COLOR, label: 'Tube rack' },
+        { x: TUBE_SPOT.x, z: TUBE_SPOT.z, color: TUBE_COLOR, label: 'The Last Tube' },
+      ];
+      if (towOn && run.next < course.gates.length) {
+        const g = course.gates[run.next];
         out.push({ x: g.x, z: g.z, color: TUBE_COLOR, quest: 'objective', label: `Buoy ${run.next + 1}` });
+      } else if (dw && ride.local && dw.run.next < OCEAN_COURSE.gates.length) {
+        const g = OCEAN_COURSE.gates[dw.run.next];
+        out.push({ x: g.x, z: g.z, color: TUBE_COLOR, quest: 'objective', label: `Gate ${dw.run.next + 1}` });
       }
       return out;
     },
 
     prompt(x: number, z: number): string | null {
+      if (Math.hypot(x - TUBE_SPOT.x, z - TUBE_SPOT.z) <= SPOT_RANGE) return `Rent a tube (${COAST.lastTube.tubeFare} 🌰)`;
+      if (Math.hypot(x - SKI_SPOT.x, z - SKI_SPOT.z) <= SPOT_RANGE) return `Rent water-skis (${COAST.lastTube.skiFare} 🌰)`;
       return Math.hypot(x - RACK.x, z - RACK.z) <= 4 ? 'Rent a tow tube (5 🌰)' : null;
     },
 
     interact(x: number, z: number): boolean {
+      const tube = Math.hypot(x - TUBE_SPOT.x, z - TUBE_SPOT.z) <= SPOT_RANGE;
+      if (tube || Math.hypot(x - SKI_SPOT.x, z - SKI_SPOT.z) <= SPOT_RANGE) {
+        const r = rentLastTube(tube ? 'tow-tube' : 'tow-ski');
+        if (r) deps.hud.toast(r);
+        return true;
+      }
       if (Math.hypot(x - RACK.x, z - RACK.z) > 4) return false;
       const r = spawnTube();
       if (r) deps.hud.toast(r);
@@ -697,9 +1049,10 @@ export function installTubing(deps: JobsDeps): Tubing {
             slots: slots.map((s) => (s.npc ? 'npc' : s.who === TOW_EMPTY ? null : s.who)),
             score: teamScore(),
             gates: run.next,
+            course: course.id,
           }
           : null,
-        ride: ride.host === null
+        ride: ride.host === null && !ride.local
           ? null
           : {
             host: ride.host,
@@ -707,7 +1060,9 @@ export function installTubing(deps: JobsDeps): Tubing {
             points: ride.score.points,
             fallen: ride.state?.fallen ?? false,
             air: ride.score.air,
+            mode: ride.state?.mode ?? (myTube ? modeOf(myTube) : 'tube'),
           },
+        driftwood: dw !== null,
         ropes: lastRopes,
       };
     },

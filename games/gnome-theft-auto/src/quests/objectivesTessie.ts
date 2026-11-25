@@ -8,6 +8,7 @@ import { waterAt } from '../terrain';
 import { loopRoute, steerToward } from '../boatTraffic';
 import { createVehicle, removeVehicle, stepVehicle } from '../vehicles';
 import type { Blip } from '../types';
+import { trackBeam } from '../questMarkerPrefs';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
 
 const TARGET_COLOR = '#ff7a00';
@@ -71,6 +72,7 @@ function makeWaterMark(
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
   );
   beacon.position.set(x, y + 20, z);
+  trackBeam(beacon, y, 40);
   scene.add(ring, beacon);
 
   const ripples: THREE.Mesh[] = [];

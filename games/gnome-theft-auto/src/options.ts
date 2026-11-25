@@ -1,18 +1,19 @@
-// Options: no floating button. It opens from the More menu (☰ › Options), O, or Start on a pad. The panel holds the
-// Touch layout picker, a controls list for the device in use, Driving realism (the physics family every ground vehicle
-// uses: a fun extra, not a primary control), the radio, dialogue, map, sound, cloud and the Save Trainer.
-import { firstPad } from '@lawn/gamepad';
+// Options: an app on the Gnomlet tablet (gnomlet/), also opened straight away by O or Start on a pad. Its content is the
+// Options registry (optionsRegistry.ts): every module registers its own rows or sections, and this file draws them in
+// order. The built-in sections registered here: Controls (touch layout, controls list, the Steam Controller slot),
+// Dialogue and radio, Multiplayer, World (time of day), Cheats (driving realism), Save (cloud status, Save Trainer) and
+// the Profiler. View, Water waves and Sound register themselves (viewPrefs.ts, waveOptions.ts, sound/volumeUi.ts).
 import { TUNES, getTune, type Tune } from './simdrive';
 import type { TimeMode } from './atmosphere';
 import { getRadioText, setRadioText } from './radio/prefs';
 import { TEXT_SPEEDS, getTextSpeed, setTextSpeed, type TextSpeed } from './cutscene/textSpeed';
 import { KEYS } from './keys';
 import { getMapPlayers, setMapPlayers } from './mapPrefs';
-import { mountSoundOptions } from './sound/volumeUi';
+import { registerSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
-import { mountWaveOptions } from './waveOptions';
-import { mountWeatherOptions } from './weather/options';
-import { mountViewOptions } from './viewPrefs';
+import { registerWaveOptions } from './waveOptions';
+import { registerViewOptions } from './viewPrefs';
+import { registerWeatherOptions } from './weather/options';
 import {
   flushPerfUpload, isOverlayOpen, isProfiling, perfCounts, perfUploadStatus, setPerfOverlay, setProfileUpload,
 } from './perf';
@@ -20,6 +21,12 @@ import { registerAction } from './ui/actions';
 import { getTouchLayout, setTouchLayout, TOUCH_LAYOUTS, type TouchLayout } from './ui/style';
 import { controlsFor, esc } from './ui/glyphs';
 import { currentGlyphSet, onInputSourceChange } from './ui/inputSource';
+import {
+  activateOption, listOptionSections, onOptionsChange, optionDescText, optionValueText, registerOption,
+  registerOptionsSection, type OptionDef, type OptionsSectionHooks,
+} from './optionsRegistry';
+import { closeGnomlet, toggleGnomletApp } from './gnomlet/gnomlet';
+import { registerGnomletApp } from './gnomlet/registry';
 
 const LAYOUT_TEXT: Record<TouchLayout, { label: string; desc: string }> = {
   standard: { label: 'Standard', desc: 'Every button' },
@@ -27,360 +34,340 @@ const LAYOUT_TEXT: Record<TouchLayout, { label: string; desc: string }> = {
   'left-handed': { label: 'Left-handed', desc: 'Stick on the right, buttons on the left' },
 };
 
-/** Builds the settings panel. Returns the Controls slot inside it, for the Steam Controller button. */
+const GOLD = '#ffd23f';
+const DIM = 'rgba(255,255,255,.3)';
+
+export const OPTIONS_CSS = `
+#gta-options{display:flex;flex-direction:column;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;}
+#gta-options button{font:inherit;color:#fff;touch-action:manipulation;cursor:pointer;}
+#gta-options h3{margin:10px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:${GOLD};}
+#gta-options h3:first-child{margin-top:0;}
+#gta-options .gta-opt-note{font-weight:400;font-size:12px;opacity:.8;line-height:1.3;}
+#gta-options .gta-opt-sub{font-weight:700;font-size:12px;opacity:.9;margin-top:4px;}
+#gta-options .gta-opt-list{display:grid;grid-template-columns:1fr;gap:6px;}
+#gta-options .gta-opt-mode{min-height:48px;padding:6px 12px;text-align:left;border-radius:8px;border:2px solid ${DIM};background:rgba(255,255,255,.08);}
+#gta-options .gta-opt-mode small{display:block;font-weight:400;font-size:12px;opacity:.8;margin-top:1px;}
+#gta-options .gta-opt-fold summary{min-height:44px;display:flex;align-items:center;cursor:pointer;list-style:none;}
+#gta-options .gta-opt-fold summary::before{content:'▸';margin-right:6px;}
+#gta-options .gta-opt-fold[open] summary::before{content:'▾';}
+#gta-options .gta-opt-controls{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:12px;}
+#gta-options .gta-opt-slider{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:48px;box-sizing:border-box;padding:4px 12px;border-radius:8px;border:2px solid ${DIM};background:rgba(255,255,255,.05);}
+#gta-options .gta-opt-slider-top{display:flex;align-items:center;justify-content:space-between;}
+#gta-options .gta-opt-slider-top span:last-child{font-variant-numeric:tabular-nums;opacity:.9;}
+#gta-options .gta-opt-slider input[type="range"]{display:block;width:100%;height:32px;margin:0;accent-color:${GOLD};touch-action:pan-y;}
+@media (min-width:700px),(max-height:520px){#gta-options .gta-opt-list{grid-template-columns:1fr 1fr;}}
+`;
+
+function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string): HTMLElementTagNameMap[K] {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function modeButton(html: string, onClick: () => void): HTMLButtonElement {
+  const b = el('button', 'gta-opt-mode');
+  b.type = 'button';
+  b.innerHTML = html;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/** One registry row as an element, and how to repaint it. */
+function renderRow(o: OptionDef): { el: HTMLElement; paint(): void } {
+  if (o.kind === 'slider') {
+    const row = el('label', 'gta-opt-slider');
+    row.dataset.opt = o.id;
+    const top = el('div', 'gta-opt-slider-top');
+    const name = el('span', '', o.label);
+    const pct = el('span');
+    top.append(name, pct);
+    const input = el('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '100';
+    input.step = String(Math.round((o.step ?? 0.05) * 100));
+    input.setAttribute('aria-label', o.label);
+    const paint = (): void => {
+      input.value = String(Math.round(o.get() * 100));
+      pct.textContent = optionValueText(o);
+    };
+    input.addEventListener('input', () => {
+      o.set(Number(input.value) / 100);
+      pct.textContent = `${input.value}%`;
+    });
+    input.addEventListener('keydown', (e) => e.stopPropagation());
+    row.append(top, input);
+    return { el: row, paint };
+  }
+  const b = el('button', 'gta-opt-mode');
+  b.type = 'button';
+  b.dataset.opt = o.id;
+  const paint = (): void => {
+    const v = optionValueText(o);
+    const d = optionDescText(o);
+    b.innerHTML = `${esc(o.label)}${v ? `: ${esc(v)}` : ''}${d ? `<small>${esc(d)}</small>` : ''}`;
+    if (o.kind === 'toggle') b.setAttribute('aria-pressed', String(o.get()));
+  };
+  b.addEventListener('click', () => { activateOption(o); paint(); });
+  return { el: b, paint };
+}
+
+let timeMode: TimeMode = 'auto';
+
+/** Builds the Options content and registers it as the Gnomlet's Options app. Returns the Controls slot inside it, for
+ *  the Steam Controller button. */
 export function createOptions(
-  ui: HTMLElement,
+  _ui: HTMLElement,
   onPickMode: (t: Tune) => void,
   onPickTime?: (mode: TimeMode) => void,
 ): HTMLElement {
-  const style = document.createElement('style');
-  style.textContent = `
-    #gta-options{position:fixed;right:calc(env(safe-area-inset-right) + 10px);top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:6px;font:600 14px system-ui,sans-serif;color:#fff;pointer-events:none;}
-    #gta-options button{font:inherit;color:#fff;touch-action:manipulation;}
-    #gta-options .gta-opt-panel{display:none;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:rgba(20,20,20,.88);width:min(86vw,330px);max-height:calc(100dvh - env(safe-area-inset-top) - 260px);overflow-y:auto;touch-action:pan-y;pointer-events:auto;box-sizing:border-box;}
-    #gta-options .gta-opt-head{display:flex;align-items:center;justify-content:space-between;font-size:16px;}
-    #gta-options .gta-opt-close{width:44px;height:44px;margin:-8px -8px -8px 0;border:0;background:none;font-size:20px;}
-    #gta-options h3{margin:4px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#ffd23f;}
-    #gta-options .gta-opt-note{font-weight:400;font-size:12px;opacity:.8;line-height:1.3;}
-    #gta-options .gta-opt-list{display:grid;grid-template-columns:1fr;gap:6px;}
-    #gta-options .gta-opt-mode{min-height:48px;padding:6px 12px;text-align:left;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);}
-    #gta-options .gta-opt-mode small{display:block;font-weight:400;font-size:12px;opacity:.8;margin-top:1px;}
-    #gta-options .gta-opt-controls{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;font-size:12px;}
-    @media (max-height:520px){#gta-options .gta-opt-panel{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 64px);width:min(72vw,480px);max-height:calc(100dvh - env(safe-area-inset-top) - 16px);}#gta-options .gta-opt-list{grid-template-columns:1fr 1fr;}}
-  `;
-  document.head.appendChild(style);
-
-  const root = document.createElement('div');
-  root.id = 'gta-options';
-  const panel = document.createElement('div');
-  panel.className = 'gta-opt-panel';
-  // Controls holds the Steam Controller button (it only shows when one is in use).
-  panel.innerHTML = '<div class="gta-opt-head"><span>Options</span><button type="button" class="gta-opt-close" aria-label="Close options">✕</button></div>'
-    + '<h3>Controls</h3><div class="gta-opt-extras"></div>';
-  const extras = panel.querySelector<HTMLElement>('.gta-opt-extras') as HTMLElement;
-  root.append(panel);
-  ui.appendChild(root);
-
-  const buttons = new Map<string, HTMLButtonElement>();
-
-  // Touch layout: standard / minimal / left-handed (ui/style.ts). Lit by its own paint, not by mark().
-  const layoutHead = document.createElement('div');
-  layoutHead.className = 'gta-opt-note';
-  layoutHead.style.fontWeight = '700';
-  layoutHead.textContent = 'Touch layout';
-  const layoutList = document.createElement('div');
-  layoutList.className = 'gta-opt-list';
-  const layoutBtns = new Map<TouchLayout, HTMLButtonElement>();
-  for (const id of TOUCH_LAYOUTS) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'gta-opt-mode';
-    b.innerHTML = `${LAYOUT_TEXT[id].label}<small>${LAYOUT_TEXT[id].desc}</small>`;
-    b.addEventListener('click', () => { setTouchLayout(id); paintLayout(); });
-    layoutBtns.set(id, b);
-    buttons.set(`layout-${id}`, b);
-    layoutList.appendChild(b);
+  if (!document.getElementById('gta-options-style')) {
+    const style = el('style');
+    style.id = 'gta-options-style';
+    style.textContent = OPTIONS_CSS;
+    document.head.appendChild(style);
   }
-  const paintLayout = (): void => {
-    const cur = getTouchLayout();
-    layoutBtns.forEach((b, id) => { b.style.borderColor = id === cur ? '#ffd23f' : 'rgba(255,255,255,.3)'; });
-  };
-  window.addEventListener('gta:touch-layout', paintLayout);
-  paintLayout();
+  const root = el('div');
+  root.id = 'gta-options';
+  // Controls holds the Steam Controller button (it only shows when one is in use). Kept across rebuilds.
+  const extras = el('div', 'gta-opt-extras');
+  registerBuiltInOptions(extras, onPickMode, onPickTime);
 
-  // Your controls: the actions for the device in use (keyboard keys, pad glyphs, or the touch words).
-  const ctlHead = document.createElement('div');
-  ctlHead.className = 'gta-opt-note';
-  ctlHead.style.fontWeight = '700';
-  const ctlList = document.createElement('div');
-  ctlList.className = 'gta-opt-controls';
-  const paintControls = (): void => {
-    const set = currentGlyphSet();
-    const device = set === 'touch' ? 'touch' : set === 'keyboard' ? 'keyboard' : 'gamepad';
-    ctlHead.textContent = `Your controls (${device})`;
-    ctlList.innerHTML = controlsFor(set, 'all')
-      .map((r) => `<span>${esc(r.label)}</span><span>${r.html}</span>`)
-      .join('');
-  };
+  let hooks: OptionsSectionHooks[] = [];
+  let painters: (() => void)[] = [];
+  let built = false;
+  let dirty = true;
+  let shown = false;
+  let abort = new AbortController();
 
-  panel.append(layoutHead, layoutList, ctlHead, ctlList);
-  panel.insertAdjacentHTML('beforeend', '<h3>Cheats</h3><div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>');
-
-  const addGroup = (title: string, group: Tune['group']): void => {
-    const h = document.createElement('div');
-    h.className = 'gta-opt-note';
-    h.style.fontWeight = '700';
-    h.textContent = title;
-    const list = document.createElement('div');
-    list.className = 'gta-opt-list';
-    for (const t of TUNES.filter((x) => x.group === group)) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'gta-opt-mode';
-      b.innerHTML = `${t.name}<small>${t.blurb}</small>`;
-      b.addEventListener('click', () => { onPickMode(t); mark(); });
-      buttons.set(t.id, b);
-      list.appendChild(b);
+  function build(): void {
+    for (const h of hooks) h.hide?.();
+    abort.abort();
+    abort = new AbortController();
+    hooks = [];
+    painters = [];
+    root.replaceChildren();
+    for (const s of listOptionSections()) {
+      const rows = s.rows.filter((r) => (r.visible ? r.visible() : true));
+      if (!rows.length && !s.mount) continue;
+      const sec = el('section', 'gta-opt-sec');
+      sec.dataset.section = s.id;
+      sec.append(el('h3', '', s.title));
+      if (rows.length) {
+        const list = el('div', 'gta-opt-list');
+        for (const r of rows) {
+          const { el: rowEl, paint } = renderRow(r);
+          painters.push(paint);
+          if (r.watch) window.addEventListener(r.watch, paint, { signal: abort.signal });
+          list.append(rowEl);
+        }
+        sec.append(list);
+      }
+      if (s.mount) {
+        const box = el('div', 'gta-opt-custom');
+        const h = s.mount(box);
+        if (h) hooks.push(h);
+        sec.append(box);
+      }
+      root.append(sec);
     }
-    panel.append(h, list);
-  };
-  addGroup('Driving realism', 'realism');
-  addGroup('Silly handling', 'silly');
-  // Radio: the station and DJ text that floats over the screen. Off keeps the music and hides the words.
-  const radioHead = document.createElement('div');
-  radioHead.className = 'gta-opt-note';
-  radioHead.style.fontWeight = '700';
-  radioHead.textContent = 'Radio';
-  const radioList = document.createElement('div');
-  radioList.className = 'gta-opt-list';
-  const radioBtn = document.createElement('button');
-  radioBtn.type = 'button';
-  radioBtn.className = 'gta-opt-mode';
-  const paintRadio = (): void => {
-    radioBtn.innerHTML = `Radio text: ${getRadioText() ? 'on' : 'off'}<small>Station, DJ, adverts and bulletins as floating text. Off keeps the music and hides the words.</small>`;
-  };
-  paintRadio();
-  radioBtn.addEventListener('click', () => { setRadioText(!getRadioText()); paintRadio(); });
-  buttons.set('radio-text', radioBtn);
-  radioList.appendChild(radioBtn);
-  panel.append(radioHead, radioList);
-
-  // Dialogue: how fast cutscene lines type out (kept per browser).
-  const dlgHead = document.createElement('div');
-  dlgHead.className = 'gta-opt-note';
-  dlgHead.style.fontWeight = '700';
-  dlgHead.textContent = 'Dialogue';
-  const dlgList = document.createElement('div');
-  dlgList.className = 'gta-opt-list';
-  const speedBtn = document.createElement('button');
-  speedBtn.type = 'button';
-  speedBtn.className = 'gta-opt-mode';
-  const speedLabels: Record<TextSpeed, string> = { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' };
-  const paintSpeed = (): void => {
-    speedBtn.innerHTML = `Text speed: ${speedLabels[getTextSpeed()]}<small>How fast cutscene lines type out. Tap a line to finish it; tap again for the next.</small>`;
-  };
-  paintSpeed();
-  speedBtn.addEventListener('click', () => {
-    const i = TEXT_SPEEDS.indexOf(getTextSpeed());
-    setTextSpeed(TEXT_SPEEDS[(i + 1) % TEXT_SPEEDS.length]);
-    paintSpeed();
+    built = true;
+    dirty = false;
+  }
+  onOptionsChange(() => {
+    dirty = true;
+    if (shown) { build(); show(); }
   });
-  buttons.set('text-speed', speedBtn);
-  dlgList.appendChild(speedBtn);
-  panel.append(dlgHead, dlgList);
 
-  // Multiplayer: other online players on the minimap and big map. On by default; off hides them from both maps (their names still show over their heads).
-  const mpHead = document.createElement('div');
-  mpHead.className = 'gta-opt-note';
-  mpHead.style.fontWeight = '700';
-  mpHead.textContent = 'Multiplayer';
-  const mpList = document.createElement('div');
-  mpList.className = 'gta-opt-list';
-  const mapPlayersBtn = document.createElement('button');
-  mapPlayersBtn.type = 'button';
-  mapPlayersBtn.className = 'gta-opt-mode';
-  const paintMapPlayers = (): void => {
-    mapPlayersBtn.innerHTML = `Players on the map: ${getMapPlayers() ? 'on' : 'off'}<small>Other online players as dots on the minimap and big map. Off hides them from both.</small>`;
-  };
-  paintMapPlayers();
-  mapPlayersBtn.addEventListener('click', () => { setMapPlayers(!getMapPlayers()); paintMapPlayers(); });
-  buttons.set('map-players', mapPlayersBtn);
-  mpList.appendChild(mapPlayersBtn);
-  panel.append(mpHead, mpList);
+  function show(): void {
+    if (!built || dirty) build();
+    shown = true;
+    for (const p of painters) p();
+    for (const h of hooks) h.show?.();
+  }
+  function hide(): void {
+    shown = false;
+    for (const h of hooks) h.hide?.();
+  }
+
+  registerGnomletApp({
+    id: 'options',
+    label: 'Options',
+    icon: '⚙',
+    group: 'system',
+    order: 10,
+    open: (screen) => {
+      screen.append(root);
+      show();
+      return () => { hide(); root.remove(); };
+    },
+  });
+  const toggle = (): void => toggleGnomletApp('options');
+  window.addEventListener('gta:options', toggle);
+  registerAction('options', { run: toggle });
+  window.addEventListener('keydown', (e) => {
+    if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+    if (e.code === KEYS.options && !e.repeat) toggle();
+  });
+  return extras;
+}
+
+/** The sections and rows that used to be hand-built here, now registry entries (same storage keys and behaviour). */
+function registerBuiltInOptions(
+  extras: HTMLElement,
+  onPickMode: (t: Tune) => void,
+  onPickTime?: (mode: TimeMode) => void,
+): void {
+  // Controls: touch layout picker (standard / minimal / left-handed, ui/style.ts), the controls list for the device in
+  // use (keyboard keys, pad glyphs or the touch words), and the Steam Controller slot.
+  registerOptionsSection('controls', 'Controls', (box) => {
+    const layoutHead = el('div', 'gta-opt-sub', 'Touch layout');
+    const layoutList = el('div', 'gta-opt-list');
+    const layoutBtns = new Map<TouchLayout, HTMLButtonElement>();
+    const paintLayout = (): void => {
+      const cur = getTouchLayout();
+      layoutBtns.forEach((b, id) => { b.style.borderColor = id === cur ? GOLD : DIM; });
+    };
+    for (const id of TOUCH_LAYOUTS) {
+      const b = modeButton(`${LAYOUT_TEXT[id].label}<small>${LAYOUT_TEXT[id].desc}</small>`, () => { setTouchLayout(id); paintLayout(); });
+      b.dataset.opt = `layout-${id}`;
+      layoutBtns.set(id, b);
+      layoutList.append(b);
+    }
+    window.addEventListener('gta:touch-layout', paintLayout);
+    // The controls list is long: folded by default so the rest of Options is one scroll away.
+    const ctlBox = el('details', 'gta-opt-fold');
+    const ctlHead = el('summary', 'gta-opt-sub');
+    const ctlList = el('div', 'gta-opt-controls');
+    ctlBox.append(ctlHead, ctlList);
+    const paintControls = (): void => {
+      const set = currentGlyphSet();
+      const device = set === 'touch' ? 'touch' : set === 'keyboard' ? 'keyboard' : 'gamepad';
+      ctlHead.textContent = `Your controls (${device})`;
+      ctlList.innerHTML = controlsFor(set, 'all').map((r) => `<span>${esc(r.label)}</span><span>${r.html}</span>`).join('');
+    };
+    // The controls list follows the device while Options is open (a pad plugged in, a key pressed).
+    onInputSourceChange(() => { if (ctlList.isConnected) paintControls(); });
+    box.append(extras, layoutHead, layoutList, ctlBox);
+    return { show: () => { paintLayout(); paintControls(); } };
+  });
+
+  registerViewOptions();
+
+  // Dialogue and radio.
+  registerOption({
+    section: 'dialogue', id: 'radio-text', label: 'Radio text', kind: 'toggle', order: 10,
+    desc: 'Station, DJ, adverts and bulletins as floating text. Off keeps the music and hides the words.',
+    get: getRadioText, set: setRadioText,
+  });
+  const speedLabels: Record<TextSpeed, string> = { slow: 'Slow', normal: 'Normal', fast: 'Fast', instant: 'Instant' };
+  registerOption({
+    section: 'dialogue', id: 'text-speed', label: 'Text speed', kind: 'cycle', order: 20,
+    desc: 'How fast cutscene lines type out. Tap a line to finish it; tap again for the next.',
+    values: TEXT_SPEEDS.map((id) => ({ id, label: speedLabels[id] })),
+    get: getTextSpeed, set: (id) => setTextSpeed(id as TextSpeed),
+  });
+
+  // Multiplayer: other online players on the minimap and big map. On by default; off hides them from both maps.
+  registerOption({
+    section: 'online', id: 'map-players', label: 'Players on the map', kind: 'toggle', order: 10, watch: 'gta:map-players',
+    desc: 'Other online players as dots on the minimap and big map. Off hides them from both.',
+    get: getMapPlayers, set: setMapPlayers,
+  });
+
+  // World: time of day (E06 adds weather rows here), then water waves (waveOptions.ts).
   if (onPickTime) {
-    const timeHead = document.createElement('div');
-    timeHead.className = 'gta-opt-note';
-    timeHead.style.fontWeight = '700';
-    timeHead.textContent = 'Time of Day';
-    const timeList = document.createElement('div');
-    timeList.className = 'gta-opt-list';
     const modes: { id: TimeMode; label: string; desc: string }[] = [
       { id: 'auto', label: 'Auto Cycle', desc: 'Smooth 6-minute day, golden hour & neon night.' },
       { id: 'noon', label: 'Noon', desc: 'Crisp midday garden sun.' },
       { id: 'golden', label: 'Golden Hour', desc: 'Warm sunset glow across Turfton.' },
       { id: 'night', label: 'Neon Night', desc: 'Streetlamps, headlights & Greenhouse neon.' },
     ];
-    let curTime: TimeMode = 'auto';
-    const timeBtns: { id: TimeMode; el: HTMLButtonElement }[] = [];
-    const paintTime = (): void => {
-      for (const tb of timeBtns) tb.el.style.borderColor = tb.id === curTime ? '#ffd23f' : 'rgba(255,255,255,.3)';
-    };
-    for (const m of modes) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'gta-opt-mode';
-      b.innerHTML = `${m.label}<small>${m.desc}</small>`;
-      b.addEventListener('click', () => {
-        curTime = m.id;
-        onPickTime(m.id);
-        paintTime();
-      });
-      timeBtns.push({ id: m.id, el: b });
-      timeList.appendChild(b);
-    }
-    paintTime();
-    panel.append(timeHead, timeList);
+    registerOption({
+      section: 'world', id: 'time-of-day', label: 'Time of day', kind: 'cycle', order: 10,
+      desc: () => modes.find((m) => m.id === timeMode)?.desc ?? '',
+      values: modes.map((m) => ({ id: m.id, label: m.label })),
+      get: () => timeMode,
+      set: (id) => { timeMode = id as TimeMode; onPickTime(timeMode); },
+    });
   }
+  registerWaveOptions();
+  registerWeatherOptions();
+  registerSoundOptions();
 
-  // Sound: mute and the World, Ambience and Voices sliders (src/sound/volumeUi.ts).
-  mountSoundOptions(panel);
-  // View: screen shake off / low / normal, first person (src/viewPrefs.ts).
-  mountViewOptions(panel);
-  // Water waves: off / low / high (src/waveOptions.ts).
-  mountWaveOptions(panel);
-  // Weather: on / off (src/weather/options.ts; E07's options registry will take this row over).
-  mountWeatherOptions(panel);
-  // Cloud save: synced / syncing / offline (src/cloudSave.ts).
-  mountCloudStatus(panel);
-
-  // Save Trainer (src/trainer/): save export / import / reset moved there, with character, spawn, world and cutscene tools.
-  const trHeading = document.createElement('h3');
-  trHeading.textContent = 'Experimental';
-  const trList = document.createElement('div');
-  trList.className = 'gta-opt-list';
-  const trainerBtn = document.createElement('button');
-  trainerBtn.type = 'button';
-  trainerBtn.className = 'gta-opt-mode';
-  trainerBtn.innerHTML = 'Save Trainer<small>Export, import or reset your save; edit the character, spawn things, play cutscenes.'
-    + (currentGlyphSet() === 'keyboard' ? ' F9 or ` too.' : '') + '</small>';
-  trainerBtn.addEventListener('click', () => {
-    setOpen(false);
-    window.dispatchEvent(new CustomEvent('gta:trainer'));
+  // Cheats: driving realism, the physics family every ground vehicle uses (a fun extra, not a primary control).
+  registerOptionsSection('cheats', 'Cheats', (box) => {
+    box.insertAdjacentHTML('beforeend', '<div class="gta-opt-note">Just for fun. Driving realism changes how every ground vehicle handles; each still drives like itself.</div>');
+    const tuneBtns = new Map<string, HTMLButtonElement>();
+    const mark = (): void => tuneBtns.forEach((b, id) => { b.style.borderColor = id === getTune().id ? GOLD : DIM; });
+    const group = (title: string, g: Tune['group']): void => {
+      const list = el('div', 'gta-opt-list');
+      for (const t of TUNES.filter((x) => x.group === g)) {
+        const b = modeButton(`${t.name}<small>${t.blurb}</small>`, () => { onPickMode(t); mark(); });
+        b.dataset.opt = t.id;
+        tuneBtns.set(t.id, b);
+        list.append(b);
+      }
+      box.append(el('div', 'gta-opt-sub', title), list);
+    };
+    group('Driving realism', 'realism');
+    group('Silly handling', 'silly');
+    return { show: mark };
   });
-  buttons.set('trainer', trainerBtn);
-  trList.append(trainerBtn);
-  panel.append(trHeading, trList);
+
+  // Save: cloud status (cloudSave.ts), then the Save Trainer (src/trainer/: export, import or reset the save, edit the
+  // character, spawn things, play cutscenes).
+  registerOptionsSection('save', 'Save', (box) => { mountCloudStatus(box); });
+  registerOption({
+    section: 'save', id: 'trainer', label: 'Save Trainer', kind: 'button', order: 10,
+    desc: () => 'Export, import or reset your save; edit the character, spawn things, play cutscenes.'
+      + (currentGlyphSet() === 'keyboard' ? ' F9 or ` too.' : ''),
+    run: () => { closeGnomlet(); window.dispatchEvent(new CustomEvent('gta:trainer')); },
+  });
 
   // Profiler: toggle hitch profiling + upload, live perf overlay, and manual flush.
-  const profHeading = document.createElement('h3');
-  profHeading.textContent = 'Profiler';
-  const profList = document.createElement('div');
-  profList.className = 'gta-opt-list';
-  const profBtn = document.createElement('button');
-  profBtn.type = 'button';
-  profBtn.className = 'gta-opt-mode';
-  const overlayBtn = document.createElement('button');
-  overlayBtn.type = 'button';
-  overlayBtn.className = 'gta-opt-mode';
-  const uploadNowBtn = document.createElement('button');
-  uploadNowBtn.type = 'button';
-  uploadNowBtn.className = 'gta-opt-mode';
-  uploadNowBtn.innerHTML = 'Upload now<small>Flush queued hitch and frame-health reports immediately.</small>';
-  const profNote = document.createElement('div');
-  profNote.className = 'gta-opt-note';
-
-  const paintProfiler = (): void => {
-    const on = isProfiling();
-    const ov = isOverlayOpen();
-    profBtn.style.borderColor = on ? '#ffd23f' : 'rgba(255,255,255,.3)';
-    profBtn.innerHTML = `${on ? 'Profiling & Upload: ON' : 'Profile & Upload: OFF'}<small>Record hitches &gt;${perfCounts().thresholdMs} ms and 5 s frame samples; kept across reloads.</small>`;
-    overlayBtn.style.borderColor = ov ? '#ffd23f' : 'rgba(255,255,255,.3)';
-    overlayBtn.innerHTML = `${ov ? 'Perf Overlay: ON' : 'Perf Overlay: OFF'}<small>Show live FPS, CPU/GPU ms, draw calls and slowest systems.</small>`;
-    uploadNowBtn.style.display = on ? 'block' : 'none';
-    if (!on) {
-      profNote.textContent = 'Off (or open with ?profile=upload). View reports at /admin/profiler/.';
-      return;
+  registerOptionsSection('dev', 'Profiler', (box) => {
+    const list = el('div', 'gta-opt-list');
+    const profNote = el('div', 'gta-opt-note');
+    let timer = 0;
+    const profBtn = modeButton('', () => {
+      const next = !isProfiling();
+      setProfileUpload(next);
+      if (next && !isOverlayOpen()) setPerfOverlay(true);
+      paint();
+    });
+    profBtn.dataset.opt = 'profiler-toggle';
+    const overlayBtn = modeButton('', () => { setPerfOverlay(!isOverlayOpen()); paint(); });
+    overlayBtn.dataset.opt = 'profiler-overlay';
+    const uploadNowBtn = modeButton('Upload now<small>Flush queued hitch and frame-health reports immediately.</small>', () => {
+      flushPerfUpload();
+      paint();
+    });
+    uploadNowBtn.dataset.opt = 'profiler-flush';
+    function paint(): void {
+      const on = isProfiling();
+      const ov = isOverlayOpen();
+      profBtn.style.borderColor = on ? GOLD : DIM;
+      profBtn.innerHTML = `${on ? 'Profiling & Upload: ON' : 'Profile & Upload: OFF'}<small>Record hitches &gt;${perfCounts().thresholdMs} ms and 5 s frame samples; kept across reloads.</small>`;
+      overlayBtn.style.borderColor = ov ? GOLD : DIM;
+      overlayBtn.innerHTML = `${ov ? 'Perf Overlay: ON' : 'Perf Overlay: OFF'}<small>Show live FPS, CPU/GPU ms, draw calls and slowest systems.</small>`;
+      uploadNowBtn.style.display = on ? 'block' : 'none';
+      if (!on) {
+        profNote.textContent = 'Off (or open with ?profile=upload). View reports at /admin/profiler/.';
+        return;
+      }
+      const c = perfCounts();
+      const u = perfUploadStatus();
+      if (!u) profNote.textContent = `Recording: ${c.reports} hitches, ${c.samples} samples · starting upload...`;
+      else if (u.state === 'unavailable' || u.state === 'error') profNote.textContent = `${c.reports} hitches, ${c.samples} samples · upload error: ${u.lastError}`;
+      else profNote.textContent = `${c.reports} hitches, ${c.samples} samples · ${u.sent} sent, ${u.queued} queued`;
     }
-    const c = perfCounts();
-    const u = perfUploadStatus();
-    if (!u) {
-      profNote.textContent = `Recording: ${c.reports} hitches, ${c.samples} samples · starting upload...`;
-      return;
-    }
-    if (u.state === 'unavailable' || u.state === 'error') {
-      profNote.textContent = `${c.reports} hitches, ${c.samples} samples · upload error: ${u.lastError}`;
-      return;
-    }
-    profNote.textContent = `${c.reports} hitches, ${c.samples} samples · ${u.sent} sent, ${u.queued} queued`;
-  };
-
-  profBtn.addEventListener('click', () => {
-    const next = !isProfiling();
-    setProfileUpload(next);
-    if (next && !isOverlayOpen()) setPerfOverlay(true);
-    paintProfiler();
+    list.append(profBtn, overlayBtn, uploadNowBtn);
+    box.append(list, profNote);
+    return {
+      show: () => { paint(); window.clearInterval(timer); timer = window.setInterval(paint, 1000); },
+      hide: () => window.clearInterval(timer),
+    };
   });
-  overlayBtn.addEventListener('click', () => {
-    setPerfOverlay(!isOverlayOpen());
-    paintProfiler();
-  });
-  uploadNowBtn.addEventListener('click', () => {
-    flushPerfUpload();
-    paintProfiler();
-  });
-  buttons.set('profiler-toggle', profBtn);
-  buttons.set('profiler-overlay', overlayBtn);
-  buttons.set('profiler-flush', uploadNowBtn);
-  profList.append(profBtn, overlayBtn, uploadNowBtn);
-  panel.append(profHeading, profList, profNote);
-  paintProfiler();
-
-  // The tune buttons get the gold border of the picked tune; the touch layout buttons paint themselves (paintLayout).
-  const mark = (): void => buttons.forEach((b, id) => {
-    if (id.startsWith('layout-') || id.startsWith('profiler-')) return;
-    b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)';
-  });
-
-  // Gamepad: while open the panel owns the pad (input.ts reads body[data-options]); D-pad or stick picks, A selects, B / Start close.
-  const ids = [...buttons.keys()];
-  let focus = 0;
-  let isOpen = false;
-  let padPrev: boolean[] = [];
-  // The focus ring is for the pad; with a mouse or touch it only gets in the way.
-  const showFocus = (): void => buttons.forEach((b, id) => { b.style.outline = id === ids[focus] && firstPad() ? '3px solid #7cf0ff' : 'none'; });
-  function pollPad(): void {
-    if (!isOpen) return;
-    const p = firstPad();
-    if (p) {
-      const down = p.buttons.map((b) => b.pressed);
-      const y = p.axes[1] ?? 0;
-      const up = down[12] || y < -0.6;
-      const dn = down[13] || y > 0.6;
-      const wasUp = padPrev[12] || padPrev[100];
-      const wasDn = padPrev[13] || padPrev[101];
-      down[100] = y < -0.6;
-      down[101] = y > 0.6;
-      if (up && !wasUp) { focus = (focus + ids.length - 1) % ids.length; showFocus(); }
-      if (dn && !wasDn) { focus = (focus + 1) % ids.length; showFocus(); }
-      if (down[0] && !padPrev[0]) buttons.get(ids[focus])?.click();
-      if ((down[1] && !padPrev[1]) || (down[9] && !padPrev[9])) { setOpen(false); return; }
-      padPrev = down;
-    }
-    requestAnimationFrame(pollPad);
-  }
-  let profTimer = 0;
-  function setOpen(open: boolean): void {
-    isOpen = open;
-    panel.style.display = open ? 'flex' : 'none';
-    document.body.dataset.options = open ? 'open' : '';
-    window.clearInterval(profTimer);
-    if (open) {
-      if (document.pointerLockElement) document.exitPointerLock();
-      paintLayout();
-      paintControls();
-      paintProfiler();
-      profTimer = window.setInterval(paintProfiler, 1000);
-      focus = Math.max(0, ids.indexOf(getTune().id));
-      showFocus();
-      // Buttons already held when it opened (the Start press itself) must not count as new presses.
-      const p = firstPad();
-      padPrev = p ? p.buttons.map((b) => b.pressed) : [];
-      requestAnimationFrame(pollPad);
-    }
-  }
-  const toggle = (): void => setOpen(!isOpen);
-  window.addEventListener('gta:options', toggle);
-  registerAction('options', { run: toggle });
-  // The controls list follows the device while the panel is open (a pad plugged in, a key pressed).
-  onInputSourceChange(() => { if (isOpen) paintControls(); });
-  // Keep touches and clicks on the panel from starting the stick, camera drag or pointer lock underneath, and let it scroll.
-  root.addEventListener('pointerdown', (e) => e.stopPropagation());
-  panel.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-  panel.querySelector('.gta-opt-close')?.addEventListener('click', () => setOpen(false));
-  window.addEventListener('keydown', (e) => {
-    if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
-    if (e.code === KEYS.options && !e.repeat) toggle();
-  });
-  mark();
-  return extras;
 }

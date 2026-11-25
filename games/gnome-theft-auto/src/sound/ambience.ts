@@ -1,6 +1,7 @@
 // Region ambience beds (city hum, forest, tundra wind, desert, farmland, water, crowds) and their spot sounds.
 // Beds are fixed looping noise layers, built once into the ambience bus and cross-faded by target gain. Spot sounds
 // are one-shot positional plays on the ambience bus, fired on random timers by biome and time of day.
+import { BIRD_AMBIENCE_IDS, getBirdSounds } from '../birdPrefs';
 import { waterAt } from '../terrain';
 import type { BiomeId } from '../types';
 import { getAmbienceOverride, busOut, playAt } from './bus';
@@ -290,7 +291,7 @@ export function createAmbience(): Ambience {
       spotTimer = (3 + Math.random() * 6) * (dawn && SPOT_BIRD_BIOMES.includes(biome) ? 0.5 : 1);
 
       const spot = pickSpot(biome, f.night >= 0.5, f.people, wet > 0);
-      if (!spot) return;
+      if (!spot || (!getBirdSounds() && BIRD_AMBIENCE_IDS.includes(spot.id))) return;
       const [lo, hi] = spot.near ?? [15, 45];
       playAt(spot.id, around(f, lo, hi), { bus: 'ambience', gain: spot.gain });
     },

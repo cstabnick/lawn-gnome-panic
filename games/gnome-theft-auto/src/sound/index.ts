@@ -20,7 +20,7 @@ export {
   setAmbienceOverride, setAmbienceVolume, setListener, setWorldVolume, soundStats, unduck, type PlayOpts,
 } from './bus';
 export { ALL_SOUNDS, type Recipe, type SoundInfo, type WorldSoundId } from './ids';
-export { mountSoundOptions } from './volumeUi';
+export { registerSoundOptions } from './volumeUi';
 
 export interface WorldSoundFrame {
   dt: number;

@@ -254,6 +254,26 @@ export const COSMETICS_HEAD_B: PrefabDef[] = [
     ],
   },
   {
+    id: 'hedge-hopper-cap', name: 'Hedge-Hopper Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['hedge', 'hopper', 'cap', 'hat', 'leaf', 'leafy', 'bird', 'flap', 'gnomlet', 'head', 'reward'], emoji: [],
+    about: 'Flappy Gnome: a little leafy cap with a tiny bird perched on top. Achievement reward for Flappy Gnome.',
+    examine: [
+      'A small cap of overlapping leaves, dark and light, with a tiny round bird perched on the crown.',
+      'Saying of the Hedge: the gap is always a little smaller than the gnome, and a little bigger than the excuse.',
+      'Tip: do not tap faster than the bird flaps. It has opinions about tempo.',
+      'Joke: the bird has never once moved. It is the only thing in the garden that has stayed this calm near a hedge.',
+      'The leaves are trimmed square on the left and round on the right, because the hedge never could decide.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.15], at: [0, 0.07, 0], scale: [1, 0.55, 1], c: 'leaf-dark', seg: 10 },
+      { s: 'ball', d: [0.05], at: [0.07, 0.11, 0.03], c: 'leaf', seg: 6 },
+      { s: 'ball', d: [0.05], at: [-0.06, 0.12, -0.03], c: 'leaf', seg: 6 },
+      { s: 'ball', d: [0.06], at: [0, 0.15, 0], c: 'white', seg: 8 },
+      { s: 'ball', d: [0.035], at: [0, 0.2, 0.03], c: 'white', seg: 8 },
+      { s: 'cone', d: [0.012, 0.03], at: [0, 0.2, 0.07], rot: [90, 0, 0], c: 'gold', seg: 5 },
+    ],
+  },
+  {
     id: 'hoa-traffic-hat', name: 'HOA Traffic Hat', category: 'armor', uses: ['wear-head'],
     tags: ['hat', 'traffic', 'warden', 'hoa', 'whistle', 'stripes', 'peak', 'head', 'reward', 'pardonlin'], emoji: [],
     about: 'A tall warden\'s hat in white and HOA green stripes, with a peak and a little brass whistle on a cord, for the traffic gnomes of Pardonlin.',

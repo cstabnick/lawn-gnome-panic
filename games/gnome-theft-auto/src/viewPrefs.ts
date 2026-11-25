@@ -1,6 +1,7 @@
 // View options, kept per browser: how much the screen shakes (off / low / normal) and whether the camera starts in first
 // person. Changing either fires `gta:view-prefs`. The values are read once and kept, so per-frame code never touches storage.
-// mountViewOptions adds the two rows to the Options panel (options.ts).
+// registerViewOptions adds the two rows to the Options registry (optionsRegistry.ts).
+import { registerOption } from './optionsRegistry';
 
 export type ShakeLevel = 'off' | 'low' | 'normal';
 export const SHAKE_LEVELS: readonly ShakeLevel[] = ['off', 'low', 'normal'];
@@ -44,34 +45,19 @@ export function setFirstPersonPref(on: boolean): void {
 
 const LABEL: Record<ShakeLevel, string> = { off: 'Off', low: 'Low', normal: 'Normal' };
 
-/** Adds the "View" rows (screen shake, first person) to the Options panel. */
-export function mountViewOptions(panel: HTMLElement): void {
-  const head = document.createElement('div');
-  head.className = 'gta-opt-note';
-  head.style.fontWeight = '700';
-  head.textContent = 'View';
-  const list = document.createElement('div');
-  list.className = 'gta-opt-list';
-
-  const shakeBtn = document.createElement('button');
-  shakeBtn.type = 'button';
-  shakeBtn.className = 'gta-opt-mode';
-  shakeBtn.dataset.opt = 'shake';
-  const fpBtn = document.createElement('button');
-  fpBtn.type = 'button';
-  fpBtn.className = 'gta-opt-mode';
-  fpBtn.dataset.opt = 'first-person';
-
-  const paint = (): void => {
-    shakeBtn.innerHTML = `Screen shake: ${LABEL[shake]}<small>How much crashes, blasts and landings shake the camera.</small>`;
-    fpBtn.innerHTML = `First person: ${firstPerson ? 'on' : 'off'}<small>See through your gnome's eyes, on foot and driving. V or the eye button switches it too.</small>`;
-  };
-  shakeBtn.addEventListener('click', () => {
-    setShakeLevel(SHAKE_LEVELS[(SHAKE_LEVELS.indexOf(shake) + 1) % SHAKE_LEVELS.length]);
+/** Registers the "View" rows (screen shake, first person) with the Options registry (options.ts renders them). */
+export function registerViewOptions(): void {
+  registerOption({
+    section: 'view', id: 'shake', label: 'Screen shake', kind: 'cycle', order: 10, watch: 'gta:view-prefs',
+    desc: 'How much crashes, blasts and landings shake the camera.',
+    values: SHAKE_LEVELS.map((id) => ({ id, label: LABEL[id] })),
+    get: () => shake,
+    set: (id) => setShakeLevel(id as ShakeLevel),
   });
-  fpBtn.addEventListener('click', () => setFirstPersonPref(!firstPerson));
-  window.addEventListener('gta:view-prefs', paint);
-  paint();
-  list.append(shakeBtn, fpBtn);
-  panel.append(head, list);
+  registerOption({
+    section: 'view', id: 'first-person', label: 'First person', kind: 'toggle', order: 20, watch: 'gta:view-prefs',
+    desc: "See through your gnome's eyes, on foot and driving. V or the eye button switches it too.",
+    get: () => firstPerson,
+    set: setFirstPersonPref,
+  });
 }

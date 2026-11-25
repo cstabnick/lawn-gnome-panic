@@ -1,6 +1,7 @@
 // Weather option (E06): 'Weather: on / off' in the Options panel, saved in localStorage, and ?weather=. A URL value is
-// not saved. The Options row copies the Water waves pattern (src/waveOptions.ts).
+// not saved. The Options row is registered like Water waves (src/waveOptions.ts).
 import { forceWeather, isWeatherEnabled, setWeatherEnabled } from './index';
+import { registerOption } from '../optionsRegistry';
 import { WEATHER_KINDS, type WeatherKind } from './types';
 
 export interface WeatherParam {
@@ -55,27 +56,15 @@ export function initWeatherOptions(search: string): void {
   if (p?.force) forceWeather(p.force.kind, p.force.intensity, true);
 }
 
-/** Add the 'Weather' row to the Options panel (options.ts). */
-export function mountWeatherOptions(panel: HTMLElement): void {
-  const head = document.createElement('div');
-  head.className = 'gta-opt-note';
-  head.style.fontWeight = '700';
-  head.textContent = 'Weather';
-  const list = document.createElement('div');
-  list.className = 'gta-opt-list';
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'gta-opt-mode';
-  const paint = (): void => {
-    btn.innerHTML = `Weather: ${isWeatherEnabled() ? 'on' : 'off'}<small>Rain, snow, mist and clouds. Off clears the sky and saves a little battery.</small>`;
-  };
-  paint();
-  btn.addEventListener('click', () => {
-    const next = !isWeatherEnabled();
-    setWeatherEnabled(next);
-    saveWeatherEnabled(next);
-    paint();
+/** Register the 'Weather' row in the Options registry (E07, src/optionsRegistry.ts). */
+export function registerWeatherOptions(): void {
+  registerOption({
+    section: 'world', id: 'weather', label: 'Weather', kind: 'toggle', order: 65,
+    desc: 'Rain, snow, mist and clouds. Off clears the sky and saves a little battery.',
+    get: isWeatherEnabled,
+    set: (on) => {
+      setWeatherEnabled(on);
+      saveWeatherEnabled(on);
+    },
   });
-  list.appendChild(btn);
-  panel.append(head, list);
 }

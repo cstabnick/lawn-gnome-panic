@@ -28,7 +28,7 @@ Tumblesoil decides when Loamdeep helps. Her answer to every request is the same 
 
 ## In the games
 
-Planned (batch 3). Thanks the player at the door in quest 24 (`m24-the-burrow-door`); the giver of 49 (`m49-loamdeep`); calls in 60 (`m60-the-moles-dig`); also in 52 (`m52-the-test-cut`), 64 (`m64-all-hats`) and 70 (`ch5-even-cut`).
+Planned (batch 3). Thanks the player at the door in quest 24 (`m24-the-burrow-door`); the giver of 49 (`m49-loamdeep`); calls in 60 (`m60-the-moles-dig`); also in 52 (`m52-the-test-cut`), 64 (`m64-all-hats`) and 70 (`ch5-even-cut`). E17: sits in the Mother's Hall in Loamdeep and gives `sq-loamdeep-lamps`, then `sq-loamdeep-under-chorus`.
 
 ## Loose threads
 

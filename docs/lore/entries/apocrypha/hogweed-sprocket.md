@@ -21,7 +21,7 @@ The leader of the Underspanners: a radical inventor with welding goggles pushed 
 
 ## In the games
 
-Planned (batch 3). Home: a workshop-hammock in the Underspan (site:skyway-society, acknowledged). Work: the Underspan workshops. First main quest 10 (`m10-under-the-span`; plants the Dewdrop and the Whirligig), also #33, #56 (fits the Crop Duster's door mortar) and #64 `m64-all-hats`.
+Planned (batch 3). Home: a workshop-hammock in the Underspan (site:skyway-society, acknowledged). Work: the Underspan workshops. First main quest 10 (`m10-under-the-span`; plants the Dewdrop and the Whirligig), also #33, #56 (fits the Crop Duster's door mortar) and #64 `m64-all-hats`. E17: gives `sq-underspan-verticality` and `sq-underspan-scrap-run` from beside his workshop, and owns the Updraft (`the-updraft`).
 
 ## Loose threads
 

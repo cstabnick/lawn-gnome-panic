@@ -1410,6 +1410,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: "The Groundskeeper's Secret", description: 'Pat down every molehill on the ninth green before Basil sees them.', target: 4,
     reward: { slot: 'head', prefabId: 'hosepipe-cap', label: 'Hosepipe Cap' },
   },
+  // ---- Gnome Theft Auto: E17 underground societies (ids in games/gnome-theft-auto/src/societies/config.ts SOCIETY_ACH) ----
+  {
+    id: 'gta-honest-dirt', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Honest Dirt', description: 'Finish your first mole job in Loamdeep.',
+    reward: { slot: 'back', prefabId: 'post-satchel', label: 'Post Satchel' },
+  },
+  {
+    id: 'gta-every-hall', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Hall Thanks You', description: 'Finish all four kinds of mole job: roots, lamps, post and digging.', target: 4,
+    reward: { slot: 'head', prefabId: 'loamdeep-lamp-cap', label: 'Loamdeep Lamp Cap' },
+  },
+  {
+    id: 'gta-seat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Seat', description: 'Be in the Under-Chorus when DJ Moleman plays.',
+    reward: { slot: 'neck', prefabId: 'subsoil-headphones', label: 'Subsoil Headphones' },
+  },
+  {
+    id: 'gta-unauthorised-verticality', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Unauthorised Verticality', description: "Ride the Underspan's Updraft up onto the Roost.",
+    reward: { slot: 'head', prefabId: 'underspan-goggles', label: 'Underspan Goggles' },
+  },
+  {
+    id: 'gta-birds-of-a-feather', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Birds of a Feather', description: 'Join the Flock of the One Leg.',
+    reward: { slot: 'head', prefabId: 'flock-hood', label: 'Flock Hood' },
+  },
+  {
+    id: 'gta-sat-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sat Down', description: "Sit down at the Flock's Long Vigil. They forgive you. It is a Tuesday.",
+    reward: { slot: 'hand', prefabId: 'reed-tea-cup', label: 'Reed Tea Cup' },
+  },
   // ---- Gnome Theft Auto E24: jobs II (chef, mechanic, comedy stage; games/gnome-theft-auto/src/jobs/workDefs.ts) ----
   {
     id: 'gta-job-chef', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',

@@ -34,6 +34,7 @@ export const WORLD_SOUNDS = [
 export const REGION_SOUNDS = [
   'surf-wash', 'buoy-bell', 'snow-creak', 'icicle-tink', 'cafe-clink', 'chapel-chime', 'grass-hiss', 'thunder-far',
   'campus-bell', 'sprinkler-tick', 'turbine-whoosh', 'ant-skitter', 'telescope-whirr',
+  'weld-crackle', 'pedal-whirr', 'reed-rustle', 'flock-hum', 'soil-crumble', 'lamp-whoomp', 'mole-squeak', 'burrow-drip',
 ] as const;
 
 export type VehicleSoundId = (typeof VEHICLE_SOUNDS)[number];

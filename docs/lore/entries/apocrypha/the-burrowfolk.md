@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: []
 sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-164]
-related: [loamdeep, the-burrow-door, old-mother-tumblesoil, nubbin, dj-moleman, subsoil-radio, mole-clans, mossy-wood]
+related: [mole-jobs, old-tamp, mistress-delve, mister-sift, auntie-crumb, pim-and-pod, loamdeep, the-burrow-door, old-mother-tumblesoil, nubbin, dj-moleman, subsoil-radio, mole-clans, mossy-wood]
 ---
 
 Small, gentle, formal moles who live in Loamdeep. Gnomes call them root-eaters and Tall Ones blame them for every lump in a lawn. Both are wrong. They do not wear hats.
@@ -26,8 +26,10 @@ The Burrowfolk eat grubs, and the grubs eat the roots; their tunnels keep a lawn
 
 ## In the games
 
-Planned (batch 3). Met in quests 24 (`m24-the-burrow-door`) and 49 (`m49-loamdeep`); sheltered in 48 (`m48-the-groundskeepers-secret`); diggers in 60 (`m60-the-moles-dig`). W13 (after quest 49) puts moles in Turfton.
+E17 builds their halls and jobs (`loamdeep`, `mole-jobs`). Met in quests 24 (`m24-the-burrow-door`) and 49 (`m49-loamdeep`); sheltered in 48 (`m48-the-groundskeepers-secret`); diggers in 60 (`m60-the-moles-dig`). W13 (after quest 49) puts moles in Turfton.
 
 ## Loose threads
+
+Whether they are the Fescue `mole-clans` under another name is left a maybe, on purpose.
 
 Whether they fled Fescue's shaking, and what they were running from.

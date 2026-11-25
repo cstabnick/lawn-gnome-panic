@@ -251,7 +251,7 @@ export const SOCIETY_CAST = {
 /** Achievement ids (packages/achievements/src/catalog.ts, block "E17 underground societies"). */
 export const SOCIETY_ACH = {
   honestDirt: 'gta-honest-dirt',             // finish your first mole job          -> back  post-satchel
-  everyHall: 'gta-every-hall',               // finish all four kinds of mole job   -> head  mole-crown
+  everyHall: 'gta-every-hall',               // finish all four kinds of mole job   -> head  loamdeep-lamp-cap
   seat: 'gta-seat',                          // be in the Under-Chorus when Moleman plays -> neck subsoil-headphones
   verticality: 'gta-unauthorised-verticality', // ride the Updraft onto the Roost    -> head  underspan-goggles
   birdsOfAFeather: 'gta-birds-of-a-feather', // join the Flock (finish Errands for the Flock) -> head flock-hood

@@ -27,7 +27,7 @@ export const DANCE_IDS = ['dance-jig', 'dance-robot', 'dance-disco', 'dance-flai
 /** Standing about, sitting and sleeping: what an idle townsgnome does between walks. */
 export const IDLE_IDS = [
   'look-around', 'stretch', 'yawn', 'scratch-head', 'tap-foot', 'hands-on-hips', 'cross-arms', 'sit-ground', 'sleep',
-  'lean-back', 'think',
+  'lean-back', 'think', 'one-leg',
 ] as const;
 /** Reactions: fear, pain, falls. */
 export const REACT_IDS = ['cower', 'panic', 'stumble', 'hurt', 'knockdown', 'get-up', 'dizzy', 'flinch'] as const;

@@ -1154,3 +1154,33 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** R-021 applies to them as to every creature: nothing dies. A creature that is knocked over or run into tumbles, gets up and carries on, with the usual indignation.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** keeps the preserve's animals within the no-gore rule.
+
+## R-207
+**Question:** What are the Burrowfolk like, and who gets them wrong?
+**Ruling:** The Burrowfolk are small (about knee-high to a gnome), gentle and misread. Gnomes treat them as pests and the Tall Ones blame them for lumps; neither is at home in Loamdeep. Moles wear no hats, except DJ Moleman's antenna hat. They say "if it pleases you" and mean it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds Loamdeep and needs one consistent mole.
+
+## R-208
+**Question:** How is Loamdeep laid out, and what do the moles pay?
+**Ruling:** Loamdeep is one big hall-and-tunnel interior under the Burrow Door, with six halls: the Mother's Hall, Rootway Hall, Lamplight Hall, Postern Hall, Hearth Hall and Under-Chorus Hall. The mole jobs (Root Run, Lamplighter, Post Sorting, Dig a Nook) pay in Acorns that the Burrowfolk find in the soil.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 needs the halls and the pay fixed for the jobs and quests.
+
+## R-209
+**Question:** What does DJ Moleman look like in Gnome Theft Auto, and does he ever visit Loamdeep?
+**Ruling:** A mole in no costume: an antenna with a trilby on top, headphones round his neck. After the quest `sq-loamdeep-under-chorus` he comes up the Long Tunnel from his own burrow and plays the Under-Chorus, so the family's wish that he would visit comes true. His transmitter stays unexplained.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 puts Moleman on screen for the first time and needs his look and his visit settled.
+
+## R-210
+**Question:** How is Wader's Rest laid out?
+**Ruling:** The Standing Lady faces west on her sand mound; the big tent faces her across the ritual circle. Everything in the camp is grey, because pink is for her only, so her likeness on the shrine inside the tent is white. Nobody turns their back on her to eat.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds the camp and needs one layout and one colour rule.
+
+## R-211
+**Question:** Where does the Underspan stop, and what is the Roost?
+**Ruling:** The Underspan stays inside its site beside the Unfinished Span and never goes under the deck. The Roost, a scaffold deck above it, is the only way "up", and it is not allowed (the HOA cites it as "unauthorised verticality"). The Chute is the way back down.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds the Underspan and its Updraft and needs its limits fixed.

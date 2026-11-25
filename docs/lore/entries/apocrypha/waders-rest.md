@@ -26,7 +26,7 @@ The camp sits on a firm gravel spit, which is why the reeds there are tall and t
 
 ## In the games
 
-Planned (batch 3). The cult-camp site in the Loch Moss area, with the big tent of Mother Saxifrage Wader at its centre and the Standing Lady on a sand mound before it. Quests 25 (`m25-one-leg-to-stand-on`) and 51 (`m51-the-flock-stands`) are set here.
+Planned (batch 3). The cult-camp site in the Loch Moss area, with the big tent of Mother Saxifrage Wader at its centre and the Standing Lady on a sand mound before it. Quests 25 (`m25-one-leg-to-stand-on`) and 51 (`m51-the-flock-stands`) are set here. E17 builds the camp: the ritual circle, the big tent, grey washing, the tea urn and the rota board. Quests `sq-flock-errands` and `sq-flock-vigil`; achievements "Birds of a Feather" and "Sat Down" (`gta-birds-of-a-feather`, `gta-sat-down`).
 
 ## Loose threads
 

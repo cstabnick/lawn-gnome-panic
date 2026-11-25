@@ -26,7 +26,7 @@ Their rules, as kept: one leg at every sermon; no sitting on Tuesdays; pink is f
 
 ## In the games
 
-Planned (batch 3). Wader's Rest in the Loch Moss area. Quest 25 (`m25-one-leg-to-stand-on`) has the player stand through a sermon; 51 (`m51-the-flock-stands`) moves the Flock and their flamingo out of the Combine's path; 70 (`ch5-even-cut`) may show them on the final day.
+Planned (batch 3). Wader's Rest in the Loch Moss area. Quest 25 (`m25-one-leg-to-stand-on`) has the player stand through a sermon; 51 (`m51-the-flock-stands`) moves the Flock and their flamingo out of the Combine's path; 70 (`ch5-even-cut`) may show them on the final day. E17: Sedge, Bulrush, Plover, Godwit and Pipit (`sister-sedge`, `brother-bulrush`, `sister-plover`, `brother-godwit`, `novice-pipit`) are the camp; `sq-flock-errands` joins the Flock and `sq-flock-vigil` is `the-long-vigil`.
 
 ## Loose threads
 

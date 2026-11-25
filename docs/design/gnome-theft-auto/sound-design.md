@@ -120,6 +120,8 @@ Each place is a part of a region above. The row says what makes it sound like it
 
 Cellars, tunnels and Loamdeep (E17) use the `cave` bed; offices and clinics use `office`.
 
+E17 societies: the Underspan's arc welder (`weld-crackle`) and bicycle dynamo (`pedal-whirr`); Wader's Rest's reed wind (`reed-rustle`) and the Flock's two-note hum (`flock-hum`); Loamdeep's spade (`soil-crumble`), lamp catching (`lamp-whoomp`), a polite mole squeak (`mole-squeak`) and a cave drip (`burrow-drip`). All are `REGION_SOUNDS`, procedural, short and quiet.
+
 ---
 
 ## 4. Weather

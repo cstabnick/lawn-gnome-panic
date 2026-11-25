@@ -25,7 +25,7 @@ The union poured the Span; the Underspanners moved in when it stopped. They bear
 
 ## In the games
 
-Planned (batch 3). Leader Hogweed Sprocket. #10 `m10-under-the-span`, #33 `m33-the-bench-lock`, #56 `m56-mortar-for-a-mower`, #64 `m64-all-hats` p2 "By Air". They build the Dewdrop.
+Planned (batch 3). Leader Hogweed Sprocket. #10 `m10-under-the-span`, #33 `m33-the-bench-lock`, #56 `m56-mortar-for-a-mower`, #64 `m64-all-hats` p2 "By Air". They build the Dewdrop. E17: Teasel, Burdock, Vetch and Nettle (`teasel-gimbal`, `burdock-flywheel`, `vetch-cantilever`, `nettle-rivet`) work the yard, and the quests are `sq-underspan-verticality` and `sq-underspan-scrap-run`.
 
 ## Loose threads
 

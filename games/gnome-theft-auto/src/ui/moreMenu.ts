@@ -27,7 +27,7 @@ const LONG_PRESS_MS = 500;
 const MOVE_SLOP_PX = 10;
 const STICK_DEAD = 0.6;
 
-const CSS = `
+export const MORE_CSS = `
 #gta-more-btn{position:fixed;right:calc(env(safe-area-inset-right) + 10px);
 top:calc(env(safe-area-inset-top) + max(18px,4vw) + var(--gta-map,128px) + 8px);z-index:30;width:44px;height:44px;}
 #gta-more-pins{position:fixed;right:calc(env(safe-area-inset-right) + 158px);
@@ -36,7 +36,7 @@ flex-direction:row-reverse;gap:8px;pointer-events:none;}
 #gta-more-pins .gta-btn{width:44px;height:44px;}
 body[data-touch-layout="minimal"] #gta-more-pins{display:none}
 body.gta-in-scene #gta-more-btn, body.gta-in-scene #gta-more-pins{display:none!important}
-#gta-more{position:fixed;inset:0;z-index:44;display:none;align-items:center;justify-content:center;
+#gta-more{position:fixed;inset:0;z-index:44;display:none;align-items:center;justify-content:center;pointer-events:auto;
 background:rgba(0,0,0,.45);box-sizing:border-box;
 padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 16px);}
 #gta-more .gta-more-card{box-sizing:border-box;width:min(92vw,520px);
@@ -64,7 +64,7 @@ function injectCss(): void {
   if (document.getElementById('gta-more-style')) return;
   const s = document.createElement('style');
   s.id = 'gta-more-style';
-  s.textContent = CSS;
+  s.textContent = MORE_CSS;
   document.head.append(s);
 }
 

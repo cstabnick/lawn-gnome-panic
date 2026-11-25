@@ -1,6 +1,6 @@
 # Dead Grid
 
-A WebAssembly-core post-apocalyptic society simulator inspired by *DayZ*. Thousands of survivors and zombies roam, scavenge, infect, build settlements, fortify walls, and raid across a `512 × 512` grid world.
+A WebAssembly-core post-apocalyptic society simulator sandbox inspired by *DayZ*. Up to `262,144` (256k) humans, zombies, and wild animals roam, scavenge, hunt, play Prisoner's Dilemma resource encounters, form small groups or fortified societies, and battle across `512×512`, `768×768`, or `1024×1024` topographic worlds.
 
 ## Commands
 
@@ -13,15 +13,16 @@ npm test -w games/dead-grid           # Run Vitest simulation tests
 
 ## Controls
 
-- **Pan**: Drag (mouse or 1-finger touch), or `WASD` / Arrow keys
+- **Pan**: Drag (with `Inspect` tool) or Right-Drag anytime, or `WASD` / Arrow keys
+- **Paint**: Select `+Zombies`, `+Humans`, `+Animals`, `Airdrop`, or `Clear` and click-drag across the map
 - **Zoom**: Mouse wheel (zooms toward cursor) or 2-finger pinch
-- **Inspect / Brush**: Click or tap on the grid (uses active tool from the Experiment Lab)
-- **Time Warp**: `Space` (Pause/Resume), `1`–`5` (speed presets `⏸`, `1x`, `5x`, `15x`, `40x`)
+- **Time Warp**: `Space` (Pause/Resume), `0.1x` / `0.25x` / `0.5x` slow-mo, `1`–`4` (`1x`, `5x`, `15x`, `40x`)
 - **Recenter**: `R` or `H`
 
-## Architecture
+## Features
 
-- `assembly/sim.ts`: AssemblyScript WASM kernel (`64` pages / `4 MB` fixed linear memory) holding the `512 × 512` terrain, loot, faction claim, and scent/noise layers, a `128 × 128` spatial hash, up to `32,768` SoA agents, `16` dynamic factions/settlements, and a `512 × 512` RGBA framebuffer.
-- `src/sim/bridge.ts`: TypeScript host wrapper, scenario presets, and inspection helpers.
-- `src/render/viewport.ts`: Hybrid Canvas2D renderer (WASM macro pixel blitting when zoomed out, crisp viewport-culled agent + grid rendering when zoomed in).
-- `src/ui/hud.ts`: Experiment Lab drawer (presets, live rule sliders, overlays, intervention brushes, world generator), telemetry sparkline & event log, and tile/agent inspector.
+- **256k Agent WASM Kernel** (`assembly/sim.ts`): Zero-heap-allocation fixed linear memory (`25 MB` / `400` pages) supporting `512×512`, `768×768`, and `1024×1024` grids and `262,144` SoA agents.
+- **Topography & Water Styles**: Multi-octave fBm + ridged elevation with 4 water generators (`Coastal Mainland`, `River Valleys`, `Archipelago`, `Arid Basin`) and a `Topography` contour overlay.
+- **3 Species & Social Tiers**: Humans (solo, small roving groups, or up to 32 fortified societies), Zombies (Walkers, Runners, Pack Alphas forming hordes), and Wild Animals (Deer, Wolves, Boars).
+- **Real Inventory, Personalities & Prisoner's Dilemma**: Humans carry food, water, gear, meds, and materials, and negotiate daily resource encounters using Cooperation, Bravery, Greed, Trust, and Reputation.
+- **Historical Graphs & Scenario Sandbox**: Interactive multi-tab analytics modal (`Populations`, `Social Tiers`, `Prisoner's Dilemma`, `Inventory Avg`) plus local scenario saving and JSON export/import.

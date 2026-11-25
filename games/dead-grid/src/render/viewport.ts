@@ -1,7 +1,5 @@
 import {
   DeadGridSim,
-  GRID_H,
-  GRID_W,
   MAX_FACTIONS,
   TIER_NAMES,
   type FactionInfo,
@@ -10,7 +8,8 @@ import {
 
 export interface ViewportCallbacks {
   onTap: (wx: number, wy: number) => void;
-  onBrushStroke?: (wx: number, wy: number) => void;
+  onBrushStroke: (wx: number, wy: number) => void;
+  isBrushActive: () => boolean;
 }
 
 export class Viewport {
@@ -18,10 +17,12 @@ export class Viewport {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly offscreen: HTMLCanvasElement;
   private readonly offCtx: CanvasRenderingContext2D;
-  private readonly imgData: ImageData;
+  private imgData: ImageData;
 
-  cx = GRID_W / 2;
-  cy = GRID_H / 2;
+  gridW = 512;
+  gridH = 512;
+  cx = 256;
+  cy = 256;
   zoom = 1.6;
   overlay: OverlayMode = 0;
   selectedAgent = -1;
@@ -31,7 +32,9 @@ export class Viewport {
 
   private readonly keys = new Set<string>();
   private readonly pointers = new Map<number, { x: number; y: number }>();
+  private dragMode: 'none' | 'pan' | 'paint' = 'none';
   private dragStart: { x: number; y: number; cx: number; cy: number; moved: boolean } | null = null;
+  private lastPaintPos: { x: number; y: number } | null = null;
   private pinchStart: { dist: number; zoom: number; midX: number; midY: number } | null = null;
 
   constructor(
@@ -44,25 +47,35 @@ export class Viewport {
     this.ctx = ctx;
 
     this.offscreen = document.createElement('canvas');
-    this.offscreen.width = GRID_W;
-    this.offscreen.height = GRID_H;
+    this.offscreen.width = this.gridW;
+    this.offscreen.height = this.gridH;
     const offCtx = this.offscreen.getContext('2d', { alpha: false });
     if (!offCtx) throw new Error('Offscreen 2D context unavailable');
     this.offCtx = offCtx;
-    this.imgData = offCtx.createImageData(GRID_W, GRID_H);
+    this.imgData = offCtx.createImageData(this.gridW, this.gridH);
 
     this.resize();
     this.fitWorld();
     this.bindEvents();
   }
 
+  syncWorldSize(w: number, h: number): void {
+    if (this.gridW === w && this.gridH === h) return;
+    this.gridW = w;
+    this.gridH = h;
+    this.offscreen.width = w;
+    this.offscreen.height = h;
+    this.imgData = this.offCtx.createImageData(w, h);
+    this.fitWorld();
+  }
+
   fitWorld(): void {
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
     const minDim = Math.min(w, h);
-    this.cx = GRID_W / 2;
-    this.cy = GRID_H / 2;
-    this.zoom = Math.max(0.8, Math.min(4, (minDim * 0.92) / GRID_W));
+    this.cx = this.gridW / 2;
+    this.cy = this.gridH / 2;
+    this.zoom = Math.max(0.4, Math.min(4, (minDim * 0.92) / this.gridW));
   }
 
   resize(): void {
@@ -93,7 +106,7 @@ export class Viewport {
 
   zoomAt(sx: number, sy: number, factor: number): void {
     const before = this.screenToWorld(sx, sy);
-    this.zoom = Math.max(0.6, Math.min(36, this.zoom * factor));
+    this.zoom = Math.max(0.35, Math.min(36, this.zoom * factor));
     const after = this.screenToWorld(sx, sy);
     this.cx += before.x - after.x;
     this.cy += before.y - after.y;
@@ -101,12 +114,12 @@ export class Viewport {
   }
 
   private clampCamera(): void {
-    this.cx = Math.max(-40, Math.min(GRID_W + 40, this.cx));
-    this.cy = Math.max(-40, Math.min(GRID_H + 40, this.cy));
+    this.cx = Math.max(-60, Math.min(this.gridW + 60, this.cx));
+    this.cy = Math.max(-60, Math.min(this.gridH + 60, this.cy));
   }
 
   stepKeyboardPan(dtSec: number): void {
-    const panSpd = (360 / this.zoom) * dtSec;
+    const panSpd = (420 / this.zoom) * dtSec;
     if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) this.cy -= panSpd;
     if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) this.cy += panSpd;
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) this.cx -= panSpd;
@@ -115,6 +128,10 @@ export class Viewport {
   }
 
   render(sim: DeadGridSim, factions: FactionInfo[]): void {
+    if (sim.gridW !== this.gridW || sim.gridH !== this.gridH) {
+      this.syncWorldSize(sim.gridW, sim.gridH);
+    }
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = this.canvas.clientWidth || window.innerWidth;
     const h = this.canvas.clientHeight || window.innerHeight;
@@ -136,14 +153,13 @@ export class Viewport {
     ctx.imageSmoothingEnabled = false;
     const left = w / 2 - this.cx * this.zoom;
     const top = h / 2 - this.cy * this.zoom;
-    ctx.drawImage(this.offscreen, left, top, GRID_W * this.zoom, GRID_H * this.zoom);
+    ctx.drawImage(this.offscreen, left, top, this.gridW * this.zoom, this.gridH * this.zoom);
 
-    // Subtle grid lines when zoomed in closely
     if (this.zoom >= 10) {
       const startX = Math.max(0, Math.floor(this.cx - w / (2 * this.zoom)));
-      const endX = Math.min(GRID_W, Math.ceil(this.cx + w / (2 * this.zoom)));
+      const endX = Math.min(this.gridW, Math.ceil(this.cx + w / (2 * this.zoom)));
       const startY = Math.max(0, Math.floor(this.cy - h / (2 * this.zoom)));
-      const endY = Math.min(GRID_H, Math.ceil(this.cy + h / (2 * this.zoom)));
+      const endY = Math.min(this.gridH, Math.ceil(this.cy + h / (2 * this.zoom)));
 
       ctx.strokeStyle = 'rgba(255,255,255,0.06)';
       ctx.lineWidth = 1;
@@ -161,7 +177,6 @@ export class Viewport {
       ctx.stroke();
     }
 
-    // Crisp micro-zoom agent rendering
     if (!macroMode) {
       const minX = this.cx - w / (2 * this.zoom) - 2;
       const maxX = this.cx + w / (2 * this.zoom) + 2;
@@ -183,23 +198,33 @@ export class Viewport {
         const sx = left + ax * this.zoom;
         const sy = top + ay * this.zoom;
         if (k === 2) {
-          ctx.fillStyle = '#e5534b';
+          // Zombie
+          ctx.fillStyle = sim.agSubkind[i] === 2 ? '#e83890' : '#e5534b';
           ctx.beginPath();
-          ctx.arc(sx, sy, radius * 0.9, 0, Math.PI * 2);
+          ctx.arc(sx, sy, radius * (sim.agSubkind[i] === 2 ? 1.1 : 0.9), 0, Math.PI * 2);
+          ctx.fill();
+        } else if (k === 3) {
+          // Wild animal
+          ctx.fillStyle = sim.agSubkind[i] === 1 ? '#d8a890' : '#e0b852';
+          ctx.beginPath();
+          ctx.arc(sx, sy, radius * 0.85, 0, Math.PI * 2);
           ctx.fill();
         } else {
+          // Human
           const inf = sim.agInfection[i] > 0;
-          const f = sim.agFaction[i];
+          const soc = sim.agSocial[i];
+          const grp = sim.agGroup[i];
           ctx.fillStyle = inf
             ? '#d6d63f'
-            : f < MAX_FACTIONS
-              ? (facColorMap.get(f) ?? '#f0f6fc')
-              : '#f0f6fc';
+            : soc === 2 && grp < MAX_FACTIONS
+              ? (facColorMap.get(grp) ?? '#f0f6fc')
+              : soc === 1
+                ? '#a8d8ff'
+                : '#f0f6fc';
           ctx.beginPath();
           ctx.arc(sx, sy, radius, 0, Math.PI * 2);
           ctx.fill();
-
-          if (sim.agGear[i] >= 35) {
+          if (sim.agInvGear[i] >= 35) {
             ctx.strokeStyle = '#0d1117';
             ctx.lineWidth = 1.2;
             ctx.stroke();
@@ -208,7 +233,7 @@ export class Viewport {
       }
     }
 
-    // Settlement badges & labels
+    // Settlement markers
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const f of factions) {
@@ -242,7 +267,6 @@ export class Viewport {
       }
     }
 
-    // Selected agent or tile reticle
     if (this.selectedAgent >= 0 && sim.agKind[this.selectedAgent] !== 0) {
       const sp = this.worldToScreen(sim.agX[this.selectedAgent], sim.agY[this.selectedAgent]);
       ctx.strokeStyle = '#ffd33d';
@@ -258,10 +282,9 @@ export class Viewport {
       ctx.strokeRect(sp.x - sz / 2, sp.y - sz / 2, sz, sz);
     }
 
-    // Brush preview ring
     if (this.brushRadius > 0 && this.hoverWorld) {
       const hp = this.worldToScreen(this.hoverWorld.x, this.hoverWorld.y);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -281,6 +304,8 @@ export class Viewport {
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
 
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
@@ -291,15 +316,27 @@ export class Viewport {
       this.canvas.setPointerCapture(e.pointerId);
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (this.pointers.size === 1) {
-        this.dragStart = {
-          x: e.clientX,
-          y: e.clientY,
-          cx: this.cx,
-          cy: this.cy,
-          moved: false,
-        };
+        const rightBtn = e.button === 2;
+        if (!rightBtn && this.cb.isBrushActive()) {
+          this.dragMode = 'paint';
+          const w = this.screenToWorld(e.clientX, e.clientY);
+          this.lastPaintPos = w;
+          if (w.x >= 0 && w.x < this.gridW && w.y >= 0 && w.y < this.gridH) {
+            this.cb.onBrushStroke(w.x, w.y);
+          }
+        } else {
+          this.dragMode = 'pan';
+          this.dragStart = {
+            x: e.clientX,
+            y: e.clientY,
+            cx: this.cx,
+            cy: this.cy,
+            moved: false,
+          };
+        }
         this.pinchStart = null;
       } else if (this.pointers.size === 2) {
+        this.dragMode = 'pan';
         const pts = [...this.pointers.values()];
         const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
         this.pinchStart = {
@@ -323,11 +360,23 @@ export class Viewport {
         const midX = (pts[0].x + pts[1].x) / 2;
         const midY = (pts[0].y + pts[1].y) / 2;
         const before = this.screenToWorld(this.pinchStart.midX, this.pinchStart.midY);
-        this.zoom = Math.max(0.6, Math.min(36, this.pinchStart.zoom * (dist / this.pinchStart.dist)));
+        this.zoom = Math.max(0.35, Math.min(36, this.pinchStart.zoom * (dist / this.pinchStart.dist)));
         const after = this.screenToWorld(midX, midY);
         this.cx += before.x - after.x;
         this.cy += before.y - after.y;
         this.clampCamera();
+        return;
+      }
+
+      if (this.pointers.size === 1 && this.dragMode === 'paint') {
+        const w = this.hoverWorld;
+        if (
+          w.x >= 0 && w.x < this.gridW && w.y >= 0 && w.y < this.gridH &&
+          (!this.lastPaintPos || Math.hypot(w.x - this.lastPaintPos.x, w.y - this.lastPaintPos.y) >= 3)
+        ) {
+          this.lastPaintPos = w;
+          this.cb.onBrushStroke(w.x, w.y);
+        }
         return;
       }
 
@@ -344,13 +393,17 @@ export class Viewport {
     });
 
     const onUp = (e: PointerEvent) => {
-      const wasTap = this.pointers.size === 1 && this.dragStart && !this.dragStart.moved;
+      const wasTap = this.pointers.size === 1 && this.dragMode === 'pan' && this.dragStart && !this.dragStart.moved;
       this.pointers.delete(e.pointerId);
       if (this.pointers.size < 2) this.pinchStart = null;
-      if (this.pointers.size === 0) this.dragStart = null;
+      if (this.pointers.size === 0) {
+        this.dragStart = null;
+        this.dragMode = 'none';
+        this.lastPaintPos = null;
+      }
       if (wasTap) {
         const w = this.screenToWorld(e.clientX, e.clientY);
-        if (w.x >= 0 && w.x < GRID_W && w.y >= 0 && w.y < GRID_H) {
+        if (w.x >= 0 && w.x < this.gridW && w.y >= 0 && w.y < this.gridH) {
           this.cb.onTap(w.x, w.y);
         }
       }

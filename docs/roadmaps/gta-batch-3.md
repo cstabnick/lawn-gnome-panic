@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14. Running: E13, E15, E24. Next: E25, E31, then wave 6 (E16, E17, E19, E26), E18, E20–E22. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14, E15, E24. Running: E13, E25, E31. Next: wave 6 (E16, E17, E19, E26), E18, E20–E22. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -41,7 +41,7 @@ with deferred items listed).
 | E12 | Winter sports | Content | 4 | E01, E06 | merged | epic/E12-winter | see log | Snowdrop Slope snow paint (JS + Wasm), tea-tray sled + skis (`src/winter/slideRider.ts`), rope tow, Wool Run + Tea-Tray Run with bests, Hot Cocoa, Snowdrop app; ice fishing at Pail Pond (4 species); 4 more chill bears + BEAR DECK; 25 prefabs, 5 achievements, 2 side quests (temporarily after `ch3-tundra-drift-run`; E21 moves them to m38/m39), R-186..R-188 (renumbered); fixed: ground vehicle chassis froze mesh+rider; runs are 15–20 s (slope ~280 m); demo GIFs saved in the session scratchpad `demos/` (winter-ski-run.gif, winter-sled-run.gif) for upload; `sq-capwood-cap-count` left for E14 |
 | E13 | Campus and skyline | Content | 5 | E01, E05 | running | epic/E13-campus | | |
 | E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | merged | epic/E14-dirt | see log | **TrackDef registry** `raceTrack/tracks.ts` (+ `defs/`) for E26; Rutbottom Dirt Bowl 1.22 km banked circuit + `dirt-bike` Knobbly Dirt-Mower (dealer 650); Capwood ~140 toadstools + Great Ring; Capwood Run 2.73 km rally (shorter than the 3–4 km asked: small mountain) with fords capped at `WATERLOG.fordCap` 0.3; 4 quests (unlocks temporarily after ch2/ch4/ch5 quests — E21 re-times to #40/#42), 6 achievements, R-189..R-192 (renumbered); deferred: rally free-roam timer, mixed-kind races, glaze for the Knobbly, demo GIF |
-| E15 | Golf course | Content | 5 | E01, E05 | running | epic/E15-golf | | |
+| E15 | Golf course | Content | 5 | E01, E05 | merged | epic/E15-golf | a2d6abde | Hedgeworth Links: Kicked Board (breaks, saved), 4 holes numbered 1,2,3,9 (par 16), drive-through hedge arches, real golf (swing meter, clubs, lies, scorecard, golf cam, touch), clubhouse interior, Peony/Basil/Thrift + 4 side quests (temporarily after existing story quests), 6 achievements, 32 prefabs; new package **@lawn/golf** (Gnome Golf re-exports it; 25-shot golden test unchanged); shared `golf-flagstick` flag moved off the pole; R-193..R-195 (renumbered); deferred: reseed quest (needs E21's mown scar), online balls; hedges ~2.8 m thick; phone: hole strip overlaps weather chip |
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | planned | | | |
 | E17 | Underground societies | Content | 6 | E01, E05, E04 | planned | | | |
 | E19 | Courts and skate park | Content | 6 | E01 | planned | | | |
@@ -50,21 +50,24 @@ with deferred items listed).
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
 | E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | merged | epic/E23-quests | 5d56c186 | pinned quest rides + checkpoint auto-retry; `npm run quest-fuzz` (10 disruptions, 0 open bugs on seeds 1-2); sim 57/58 (nc-party needs relay); HOA: 1-hat cap on shooting steps, delayed arrival, LOS cooling, search circle + evade meter (not checked at 390x844) | | |
-| E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | running | epic/E24-jobs2 |  |  |
-| E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
+| E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | merged | epic/E24-jobs2 | see log | workplace jobs (`src/workplaces/`, `finishShift` + shift card reusable by E25): Chef at the Acorn Diner (8 dishes, touch steps, rushes, dishes heal), Mechanic at Pay 'n' Glaze (16 briefs, client mode, scored), Comedy at Le Petit Groan in Pardonlin (5 awful sets, Double Down, tomatoes); 9 achievements; R-196..R-198 (renumbered); no shift played to the end in a browser; deferred: Gnoma guest lesson, `sq-chef-first-shift`, client driving off; comedy crowd mostly off camera |
+| E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | running | epic/E25-jobs3 |  |  |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | merged | epic/E27-physics | see log | little bushes (mowable, <= 1.8 m) flatten, hedges/trees solid; `src/skim.ts` water skimming >= 13 m/s on >= 0.6 m water; traffic tests deterministic (game-time crash limiter, warden clock reset, seeded RNG) — two full suites green in a row after merge; known rare real jam in 'pull out' on 3/16 seeds (traffic code, not fixed); lore R-179 (renumbered); skim never driven in a browser |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | merged | epic/E30-pardonlin | see log | 4 districts (Old Town, Teacup Row & Quays, Left Bank, Jardin & Basin), 33 vignettes, 400+ signs, 22 residents, Radio Adagio 96.1 (13 pieces, Maestro Ottavio Lento), Café Pardon + radio foyer/studio, 4 town activities, 5 achievements, screens in E30/; rulings renumbered R-182..R-184; at merge: Left Bank allotment beds lost their colliders (E27 made them mowable), duplicate import fixed; open: Left Bank 848 buildings — check low-end phones; deferred: story quests with residents (E20–E22), tram, online town state |
-| E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | planned | | | |
+| E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | running | epic/E31-living |  |  |
 
 ## Cross-cutting cleanup (do in E22 or a small fix epic)
 
 - Done (F1, merged 16046042): 40 wearables' `wear` mounts fixed; `npm test -w packages/gnome` green. Neck items (e.g.
   house-key-necklace hangs low, windsock-quiver shrunk to 0.68) were not eyeballed on a gnome: check in the equip lab.
-- `traffic.test.ts` "NPC drivers can be cracked out of their car > a bullet at the driver head hits them" failed 2 of
-  5 file runs alone (flaky); the corner test recovered after E12. Look at it in the finish epic.
+- `traffic.test.ts`: "a bullet at the driver head hits them..." and "a lane-following car ... 90 degree corner" fail
+  under full-suite load and pass alone (3/3 after the E24 merge). Make them load-independent (F2).
+- `AGENT_INDEX.md`'s Gnome Theft Auto row was built by splicing each epic's insertion and has garbled fragments in
+  places (e.g. "E28 d`)", "contracts.m 7:"); rewrite the row cleanly from the epics' contracts docs (F2 or E22).
+- After merging an epic that adds a workspace package (e.g. @lawn/golf), run `npm install` at the root before building.
 
 ## Engine work (built first, others build on it)
 

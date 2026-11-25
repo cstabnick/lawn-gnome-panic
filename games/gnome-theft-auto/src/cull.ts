@@ -30,6 +30,7 @@
 //   prefer buildStaticCells over one buildStaticPrefabs call for scenery spread over a region.
 import * as THREE from 'three';
 import { buildStaticPrefabs, type StaticBatchOptions, type StaticPrefabPlacement } from '@lawn/prefabs';
+import { CULL_CLASS_INDEX, CULL_CLASS_ORDER, getGtaKernelRuntime, type GtaKernelRuntime } from './wasm/gtaWasm';
 
 export type CullClass = 'tiny' | 'detail' | 'prop' | 'gnome' | 'vehicle' | 'tree' | 'building' | 'cell' | 'landmark';
 
@@ -90,9 +91,55 @@ interface Entry {
   casting: boolean;
   /** Small parts drawn (near). */
   near: boolean;
+  /** Slot in Wasm SIMD culler buffer (0..8191, or -1 if overflowed). */
+  slot: number;
 }
 
+const MAX_WASM_CULL_SLOTS = 8192;
 const entries: Entry[] = [];
+const movingEntries: Entry[] = [];
+const slotToEntry: (Entry | null)[] = [];
+const freeSlots: number[] = [];
+let maxSlotUsed = 0;
+let overflowedWasmSlots = 0;
+let cullRuntimeInited: GtaKernelRuntime | null = null;
+
+function ensureCullWasmReady(): GtaKernelRuntime | null {
+  const rt = getGtaKernelRuntime();
+  if (!rt) return null;
+  if (cullRuntimeInited !== rt) {
+    cullRuntimeInited = rt;
+    const limBase = rt.ex.getCullLimPtr() >>> 2;
+    for (let i = 0; i < CULL_CLASS_ORDER.length; i++) {
+      const cls = CULL_CLASS_ORDER[i];
+      const lim = CULL_DIST[cls];
+      const det = DETAIL_DIST[cls] ?? Infinity;
+      const p = limBase + i * 4;
+      rt.f32[p] = lim.draw === Infinity ? 1e30 : lim.draw;
+      rt.f32[p + 1] = lim.shadow === Infinity ? 1e30 : lim.shadow;
+      rt.f32[p + 2] = det === Infinity ? 1e30 : det;
+      rt.f32[p + 3] = 0;
+    }
+    const actBase = rt.ex.getCullActivePtr();
+    rt.u8.fill(0, actBase, actBase + MAX_WASM_CULL_SLOTS);
+    const xBase = rt.ex.getCullXPtr() >>> 2;
+    const zBase = rt.ex.getCullZPtr() >>> 2;
+    const rBase = rt.ex.getCullRPtr() >>> 2;
+    const clsBase = rt.ex.getCullClsPtr();
+    const stBase = rt.ex.getCullStatePtr();
+    for (const e of entries) {
+      if (e.slot < 0) continue;
+      rt.f32[xBase + e.slot] = e.x;
+      rt.f32[zBase + e.slot] = e.z;
+      rt.f32[rBase + e.slot] = e.r;
+      rt.u8[clsBase + e.slot] = CULL_CLASS_INDEX[e.cls];
+      rt.u8[stBase + e.slot] = (e.shown ? 1 : 0) | (e.casting ? 2 : 0) | (e.near ? 4 : 0);
+      rt.u8[actBase + e.slot] = 1;
+    }
+  }
+  return rt;
+}
+
 const byObj = new Map<THREE.Object3D, Entry>();
 const box = new THREE.Box3();
 const v = new THREE.Vector3();
@@ -200,6 +247,8 @@ export function registerCull(obj: THREE.Object3D, cls: CullClass, opts: CullOpti
   const old = byObj.get(obj);
   if (old) {
     old.cls = cls;
+    const rt = ensureCullWasmReady();
+    if (rt && old.slot >= 0) rt.u8[rt.ex.getCullClsPtr() + old.slot] = CULL_CLASS_INDEX[cls];
     full = true;
     return;
   }
@@ -210,13 +259,34 @@ export function registerCull(obj: THREE.Object3D, cls: CullClass, opts: CullOpti
   obj.getWorldPosition(v);
   // A moving object is tracked by its origin, so its radius covers its bounds as seen from the origin.
   const r = opts.radius ?? (b ? (opts.moves ? Math.hypot(b[0] - v.x, b[1] - v.z) + b[2] : b[2]) : 0);
+  let slot = -1;
+  if (freeSlots.length > 0) {
+    slot = freeSlots.pop()!;
+  } else if (maxSlotUsed < MAX_WASM_CULL_SLOTS) {
+    slot = maxSlotUsed++;
+  } else {
+    overflowedWasmSlots++;
+  }
   const e: Entry = {
     obj, cls, x: b && !opts.moves ? b[0] : v.x, z: b && !opts.moves ? b[1] : v.z, r, owned: !!opts.owned, moves: !!opts.moves,
-    drawn, casters, details, shown: true, casting: true, near: true,
+    drawn, casters, details, shown: true, casting: true, near: true, slot,
   };
   collect(e);
   if (!e.owned) makePrunable(obj);
   entries.push(e);
+  if (e.moves) movingEntries.push(e);
+  if (slot >= 0) {
+    slotToEntry[slot] = e;
+    const rt = ensureCullWasmReady();
+    if (rt) {
+      rt.f32[(rt.ex.getCullXPtr() >>> 2) + slot] = e.x;
+      rt.f32[(rt.ex.getCullZPtr() >>> 2) + slot] = e.z;
+      rt.f32[(rt.ex.getCullRPtr() >>> 2) + slot] = e.r;
+      rt.u8[rt.ex.getCullClsPtr() + slot] = CULL_CLASS_INDEX[cls];
+      rt.u8[rt.ex.getCullStatePtr() + slot] = 7; // shown=1, casting=1, near=1
+      rt.u8[rt.ex.getCullActivePtr() + slot] = 1;
+    }
+  }
   byObj.set(obj, e);
   full = true;
 }
@@ -256,6 +326,17 @@ export function unregisterCull(obj: THREE.Object3D): void {
   if (!e) return;
   byObj.delete(obj);
   entries.splice(entries.indexOf(e), 1);
+  if (e.moves) {
+    const mi = movingEntries.indexOf(e);
+    if (mi >= 0) movingEntries.splice(mi, 1);
+  }
+  if (e.slot >= 0) {
+    slotToEntry[e.slot] = null;
+    freeSlots.push(e.slot);
+    if (cullRuntimeInited) cullRuntimeInited.u8[cullRuntimeInited.ex.getCullActivePtr() + e.slot] = 0;
+  } else {
+    overflowedWasmSlots = Math.max(0, overflowedWasmSlots - 1);
+  }
   if (e.moves) collect(e);
   setNear(e, true);
   setShown(e, true);
@@ -295,14 +376,7 @@ export function cullDecision(cls: CullClass, d: number, view = 1, shadow = 1): {
   return { show, cast: show && d <= lim.shadow * shadow, near: d <= (DETAIL_DIST[cls] ?? Infinity) * view };
 }
 
-function apply(e: Entry, cx: number, cz: number): void {
-  if (e.moves) {
-    e.obj.getWorldPosition(v);
-    e.x = v.x;
-    e.z = v.z;
-  }
-  const d = Math.max(0, Math.hypot(e.x - cx, e.z - cz) - e.r);
-  const { show, cast, near } = cullDecision(e.cls, d, scale, shadowScale);
+function applyDecision(e: Entry, show: boolean, cast: boolean, near: boolean): void {
   if (e.moves && (show !== e.shown || cast !== e.casting || near !== e.near)) {
     // Parts added since the last look (a rider, a load) join; at range the small ones among them leave layer 0 too.
     collect(e);
@@ -316,12 +390,49 @@ function apply(e: Entry, cx: number, cz: number): void {
   }
 }
 
-/** Once per frame, with the camera's position: re-checks a quarter of the objects (all of them after cullAll). */
+function apply(e: Entry, cx: number, cz: number): void {
+  if (e.moves) {
+    e.obj.getWorldPosition(v);
+    e.x = v.x;
+    e.z = v.z;
+  }
+  const d = Math.max(0, Math.hypot(e.x - cx, e.z - cz) - e.r);
+  const { show, cast, near } = cullDecision(e.cls, d, scale, shadowScale);
+  applyDecision(e, show, cast, near);
+}
+
+/** Once per frame, with the camera's position: checks 100% of objects via Wasm SIMD (or a quarter in JS fallback). */
 export function updateCull(cx: number, cz: number): void {
   const n = entries.length;
   if (n === 0) return;
   // The render that follows is the cull pass (ended by the scene's onAfterRender, see attachCullPass).
   pass = true;
+
+  const rt = overflowedWasmSlots === 0 ? ensureCullWasmReady() : null;
+  if (rt && maxSlotUsed > 0) {
+    const xBase = rt.ex.getCullXPtr() >>> 2;
+    const zBase = rt.ex.getCullZPtr() >>> 2;
+    for (let i = 0; i < movingEntries.length; i++) {
+      const m = movingEntries[i];
+      m.obj.getWorldPosition(v);
+      m.x = v.x;
+      m.z = v.z;
+      rt.f32[xBase + m.slot] = v.x;
+      rt.f32[zBase + m.slot] = v.z;
+    }
+    const changed = rt.ex.updateCullWasm(maxSlotUsed, cx, cz, scale, shadowScale);
+    const outBase = rt.ex.getCullOutPtr() >>> 2;
+    for (let i = 0; i < changed; i++) {
+      const packed = rt.u32[outBase + i];
+      const slot = packed >>> 3;
+      const e = slotToEntry[slot];
+      if (!e) continue;
+      applyDecision(e, (packed & 1) !== 0, (packed & 2) !== 0, (packed & 4) !== 0);
+    }
+    full = false;
+    return;
+  }
+
   if (full) {
     for (const e of entries) apply(e, cx, cz);
     full = false;

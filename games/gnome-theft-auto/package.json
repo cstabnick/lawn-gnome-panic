@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "bench:wasm": "node scripts/bench-wasm.mjs",
     "mp-audit": "vitest run --config vitest.slow.config.ts",
     "cutscene-report": "vitest run src/cutscene/pacing.test.ts",
     "quest-sim": "node ../../tools/quest-sim.mjs --headless",
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@types/three": "0.187.0",
+    "assemblyscript": "0.28.20",
     "typescript": "7.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.0"

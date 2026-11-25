@@ -321,6 +321,16 @@ export function regionAt(x: number, z: number): RegionId {
   return k >= 0 ? REGION_PRIORITY[k] : regionAtExact(x, z);
 }
 
+/** Fast lookup when the entire 16 m raster cell containing (x, z) lies inside a single region; null along region seams. */
+export function uniformRegionAt(x: number, z: number): RegionId | null {
+  const i = Math.floor((x + LAYOUT.worldHalf) / REGION_CELL);
+  const j = Math.floor((z + LAYOUT.worldHalf) / REGION_CELL);
+  if (i < 0 || j < 0 || i >= RASTER_N || j >= RASTER_N) return null;
+  raster ??= buildRaster();
+  const k = raster[j * RASTER_N + i];
+  return k >= 0 ? REGION_PRIORITY[k] : null;
+}
+
 /** The biome id (data.region) of the region at (x, z). */
 export function biomeAtPoint(x: number, z: number): RegionBiome {
   return REGIONS[regionAt(x, z)].data.region;

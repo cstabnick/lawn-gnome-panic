@@ -4,10 +4,13 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { TERRAIN, WORLD_HALF } from './config';
-import { REGIONS, regionAt, type RegionBiome } from './levels';
+import { PAINT_KINDS } from './landforms';
+import { REGIONS, REGION_IDS, regionAt, uniformRegionAt, type RegionBiome, type RegionId } from './levels';
 import { GRID_N, heightAt, heightGrid, normalAt, terrainFlat } from './terrain';
-import { paintedGroundAt } from './terrainPaint';
+import { PAINT_GROUND, paintGridBytes } from './terrainPaint';
 import { TILE, groundTexture, planarUv, type GroundKind } from './textures';
+import { bridges } from './water';
+import { wasmBuildChunkPosNormals, wasmSyncChunkGridAndBridges } from './wasm/gtaWasm';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const tmpN = new THREE.Vector3();
@@ -161,57 +164,113 @@ export function buildTerrainChunks(scene: THREE.Scene): TerrainChunks | null {
     return m;
   };
   const chunks: { mesh: THREE.Mesh; cx: number; cz: number }[] = [];
+  const wasmRt = wasmSyncChunkGridAndBridges(g, bridges());
+  const paintBytes = paintGridBytes();
+  const C = N - 1;
+  const paintToGround: (GroundKind | undefined)[] = [undefined, ...PAINT_KINDS.map((k) => PAINT_GROUND[k])];
+  const regionGround = Object.fromEntries(REGION_IDS.map((id) => [id, GROUND_KIND[REGIONS[id].data.region]])) as Record<RegionId, GroundKind>;
+
   const n = new THREE.Vector3();
   for (let cj = 0; cj < chunksPerSide; cj++) {
     for (let ci = 0; ci < chunksPerSide; ci++) {
       const i0 = ci * per, j0 = cj * per;
       const i1 = Math.min(N - 1, i0 + per), j1 = Math.min(N - 1, j0 + per);
       const w = i1 - i0 + 1;
-      const pos = new Float32Array(w * (j1 - j0 + 1) * 3);
-      const nrm = new Float32Array(pos.length);
-      for (let j = j0; j <= j1; j++) {
+
+      // Check flatness directly on g before building vertex/normal buffers so flat quad chunks skip 4,225 normalAt calls.
+      const baseY = g[j0 * N + i0];
+      let level = true;
+      outer: for (let j = j0; j <= j1; j++) {
+        const row = j * N;
         for (let i = i0; i <= i1; i++) {
-          const k = ((j - j0) * w + (i - i0)) * 3;
-          const x = -H + i * S, z = -H + j * S;
-          pos[k] = x; pos[k + 1] = g[j * N + i]; pos[k + 2] = z;
-          const nn = normalAt(x, z);
-          n.set(nn.x, nn.y, nn.z);
-          nrm[k] = n.x; nrm[k + 1] = n.y; nrm[k + 2] = n.z;
+          if (g[row + i] !== baseY) {
+            level = false;
+            break outer;
+          }
         }
       }
+
       // Two triangles per cell, split along (i, j)-(i+1, j+1) like heightAt, wound to face up; grouped by ground kind.
       const byKind = new Map<GroundKind, number[]>();
+      let lastKind: GroundKind | null = null;
+      let lastList: number[] | null = null;
       for (let j = j0; j < j1; j++) {
+        const z = -H + (j + 0.5) * S;
+        const pRow = j * C;
         for (let i = i0; i < i1; i++) {
           const a = (j - j0) * w + (i - i0), b = a + 1, d = a + w, c = d + 1;
-          const x = -H + (i + 0.5) * S, z = -H + (j + 0.5) * S;
-          // Triangle (a, c, b) holds the cell's (+x, -z) half, (a, d, c) its (-x, +z) half.
-          // The cell's paint (terrainPaint.ts) when it has one, else the region's own ground.
-          const painted = paintedGroundAt(x, z);
-          const k1 = painted ?? GROUND_KIND[REGIONS[regionAt(x + S / 6, z - S / 6)].data.region];
-          const k2 = painted ?? GROUND_KIND[REGIONS[regionAt(x - S / 6, z + S / 6)].data.region];
-          let l1 = byKind.get(k1); if (!l1) byKind.set(k1, (l1 = []));
-          l1.push(a, c, b);
-          let l2 = byKind.get(k2); if (!l2) byKind.set(k2, (l2 = []));
-          l2.push(a, d, c);
+          const pv = paintBytes ? paintBytes[pRow + i] : 0;
+          let k1: GroundKind;
+          let k2: GroundKind;
+          if (pv !== 0) {
+            k1 = k2 = paintToGround[pv]!;
+          } else {
+            const x = -H + (i + 0.5) * S;
+            const uReg = uniformRegionAt(x, z);
+            if (uReg !== null) {
+              k1 = k2 = regionGround[uReg];
+            } else {
+              k1 = regionGround[regionAt(x + S / 6, z - S / 6)];
+              k2 = regionGround[regionAt(x - S / 6, z + S / 6)];
+            }
+          }
+          if (k1 === k2) {
+            let list: number[];
+            if (k1 === lastKind) {
+              list = lastList!;
+            } else {
+              let found = byKind.get(k1);
+              if (!found) byKind.set(k1, (found = []));
+              lastKind = k1;
+              lastList = list = found;
+            }
+            list.push(a, c, b, a, d, c);
+          } else {
+            let l1 = byKind.get(k1); if (!l1) byKind.set(k1, (l1 = []));
+            l1.push(a, c, b);
+            let l2 = byKind.get(k2); if (!l2) byKind.set(k2, (l2 = []));
+            l2.push(a, d, c);
+            lastKind = k2;
+            lastList = l2;
+          }
         }
       }
       // A chunk that is dead level and one ground kind (Turfton, flat sites, land with no relief yet) is one quad: same
       // look, a thousandth of the triangles. Its border vertices all share that height, so the seams with its neighbours
       // still match.
-      let level = true;
-      for (let k = 4; k < pos.length && level; k += 3) level = pos[k] === pos[1];
       const quad = level && byKind.size === 1;
+      let pos: Float32Array | null = null;
+      let nrm: Float32Array | null = null;
+      if (!quad) {
+        if (wasmRt) {
+          const bufs = wasmBuildChunkPosNormals(wasmRt, i0, i1, j0, j1);
+          pos = bufs.pos;
+          nrm = bufs.nrm;
+        } else {
+          pos = new Float32Array(w * (j1 - j0 + 1) * 3);
+          nrm = new Float32Array(pos.length);
+          for (let j = j0; j <= j1; j++) {
+            for (let i = i0; i <= i1; i++) {
+              const k = ((j - j0) * w + (i - i0)) * 3;
+              const x = -H + i * S, z = -H + j * S;
+              pos[k] = x; pos[k + 1] = g[j * N + i]; pos[k + 2] = z;
+              const nn = normalAt(x, z);
+              n.set(nn.x, nn.y, nn.z);
+              nrm[k] = n.x; nrm[k + 1] = n.y; nrm[k + 2] = n.z;
+            }
+          }
+        }
+      }
       for (const [kind, index] of byKind) {
         const geo = new THREE.BufferGeometry();
         if (quad) {
-          const x0 = -H + i0 * S, x1 = -H + i1 * S, z0 = -H + j0 * S, z1 = -H + j1 * S, y = pos[1];
+          const x0 = -H + i0 * S, x1 = -H + i1 * S, z0 = -H + j0 * S, z1 = -H + j1 * S, y = baseY;
           geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([x0, y, z0, x1, y, z0, x1, y, z1, x0, y, z1]), 3));
           geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]), 3));
           geo.setIndex([0, 2, 1, 0, 3, 2]);
         } else {
-          geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-          geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+          geo.setAttribute('position', new THREE.BufferAttribute(pos!, 3));
+          geo.setAttribute('normal', new THREE.BufferAttribute(nrm!, 3));
           geo.setIndex(index);
         }
         planarUv(geo, TILE[kind]);
@@ -220,6 +279,7 @@ export function buildTerrainChunks(scene: THREE.Scene): TerrainChunks | null {
         const mesh = new THREE.Mesh(geo, matOf(kind));
         mesh.receiveShadow = true;
         mesh.matrixAutoUpdate = false;
+        mesh.updateMatrix();
         group.add(mesh);
         chunks.push({ mesh, cx: -H + (i0 + i1) / 2 * S, cz: -H + (j0 + j1) / 2 * S });
       }
@@ -227,10 +287,15 @@ export function buildTerrainChunks(scene: THREE.Scene): TerrainChunks | null {
   }
   scene.add(group);
   const reach = TERRAIN.chunkViewDistance + TERRAIN.chunk * 0.71;
+  const reachSq = reach * reach;
   return {
     group,
     update(x, z) {
-      for (const c of chunks) c.mesh.visible = Math.hypot(c.cx - x, c.cz - z) <= reach;
+      for (let i = 0; i < chunks.length; i++) {
+        const c = chunks[i];
+        const dx = c.cx - x, dz = c.cz - z;
+        c.mesh.visible = dx * dx + dz * dz <= reachSq;
+      }
     },
   };
 }

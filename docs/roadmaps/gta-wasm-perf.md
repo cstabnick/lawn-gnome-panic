@@ -5,9 +5,21 @@ with `wasm32` `simd128`) where pure numerical grids/buffers dominate, paired wit
 where JS/WebGL object traversal dominates—structured as low-conflict, isolated epics that can land cleanly once active
 GTA feature work settles.
 
-> **Status:** Plan only in this PR (no files under `games/gnome-theft-auto/` modified while parallel GTA feature work
-> is in flight). Proven patterns from `docs/roadmaps/gnomomia-wasm-perf.md` (`asc --runtime stub -O3 --enable simd` +
-> base64 module for Vite/Vitest + async `WebAssembly.instantiate` at boot) carry straight over.
+> **Status:** Epics 1 & 2 shipped (`assembly/kernel.ts`, `src/wasm/gtaWasm.ts`, `packages/prefabs/src/batch.ts`,
+> `src/landforms/fields.ts`, `src/terrain.ts`, `src/terrainPaint.ts`, `src/terrainMesh.ts`, `src/cull.ts`).
+> Compact mobile-friendly linear memory (`13.25 MB` / `212` pages), async `initGtaWasm()` at boot (`?wasm=0` fallback),
+> and zero diffs against `layout.golden.json`.
+
+## Measured before vs after (`npm run bench:wasm -w games/gnome-theft-auto`)
+
+| Workload | Before (JS) | After (Wasm + Packer) | Speedup |
+|---|---:|---:|---:|
+| **`fields` (`451² × 4`) + `heightGrid` (`901²`)** | 843.4 ms | **268.0 ms** | **3.1x** |
+| **`terrainPaint` surface raster (`900²`)** | 158.0 ms | **33.6 ms** | **4.7x** |
+| **`buildTerrainChunks` (`15×15` chunks, bridge-aware normals + UV)** | 322.7 ms | **163.9 ms** | **2.0x** |
+| **`buildStaticPrefabs` (`2,000` props, `@lawn/prefabs`)** | 105.9 ms | **49.2 ms** | **2.2x** |
+| **`updateCull` (`100` frames × `3,000` entries)** | 4.4 ms *(checked 25%/frame)* | **4.2 ms *(checks 100%/frame via `f32x4` SIMD)*** | **~4.2x per-entry** *(zero 4-frame lag)* |
+| **Cold mobile boot to playable mower (`390x844 @2x`, `4x` CPU throttle)** | 12.98 s (`?wasm=0`) | **9.68 s** | **-3.30 s (-25.4%)** |
 
 ## Grounded baseline (from `gta-performance-pass-2.md`, 4x mobile CPU, 390x844 @2x)
 

@@ -171,6 +171,8 @@ function backgroundAt(x: number, z: number): number {
 
 /** The macro relief at (x, z), metres, masked (terrain.ts adds it to the natural height). */
 export function macroAt(x: number, z: number): number {
+  const m = macroMaskAt(x, z);
+  if (m <= 0) return 0;
   // Features overlap by taking the higher, so two hills merge into one massif instead of stacking.
   let top = 0;
   for (let i = 0; i < LANDSCAPE.features.length; i++) {
@@ -179,7 +181,5 @@ export function macroAt(x: number, z: number): number {
     top = Math.max(top, featureHeightAt(LANDSCAPE.features[i], x, z, i));
   }
   const h = backgroundAt(x, z) + top;
-  if (h === 0) return 0;
-  const m = macroMaskAt(x, z);
-  return m > 0 ? h * m : 0;
+  return h === 0 ? 0 : h * m;
 }

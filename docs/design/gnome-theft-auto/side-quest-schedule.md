@@ -42,7 +42,7 @@ written by its constant, `TESSIE.questId`.
 | `nc-wheel-and-kit` | The Wheel and the Kit | Newcomers' Card host (R-156) | #3 `first-contract` | Don Compost's first contract hands out guns; the Club follows with the wheel and the Pocket Kit. | `wilds` | 3 | existing |
 | `sq-hyssop-stairwell` | The Stairwell Committee | Hyssop Doormat (hyssop) | #5 `m05-sweepers-wages` | Hyssop met the player on move-in day (#2) and has now written up the flat block's rules. | `downtown` | 3 | E10 |
 | `sq-snail-rigging` | Snail-Racing Rigging | Shelldon (strangers-shelldon) | #6 `ch1-two-coat-tail` | The player has met Tansy, Cam and the Watch; Shelldon's alley is a block from Side-Valve. | `downtown` | 3 | existing |
-| `sq-levelright-night-shift` | Night Shift at Levelright | Chard Levelright (chard) | #7 `m07-even-estates` | Chard met the player at the fringe site (#7) and is short of hands that will not talk to the Tattler. | `turfton-fringe` | 3 | E16 |
+| `sq-levelright-night-shift` | Night Shift at Levelright | Chard Levelright (chard) | #7 `m07-even-estates` (for now `ch1-two-coat-tail`; E20 re-times it) | Chard met the player at the fringe site (#7) and is short of hands that will not talk to the Tattler. | `turfton-fringe` | 3 | E16 |
 | `sq-big-lou-embargo` | Big Lou's Dry-Hat Embargo | Big Lou (strangers-gnomecino) | #9 `m09-where-asphalt-sleeps` | The player has tailed and fought by #6; Lou's embargo is already on, and the Mulch Club comes up in #11. | `downtown` | 3 | existing |
 | `sq-dewdrop-1` | The Rolling Prototype | Hogweed Sprocket (hogweed) | #10 `m10-under-the-span` | The player met Hogweed under the Unfinished Span (#10) as the Dewdrop rolled past. | `underspan` | 3 | E18 |
 | `nc-bent-pin` | The Bent Pin | Newcomers' Card host (R-156) | #11 `m11-the-dons-cigars` | #11 takes the player to New Puddle Marina; the Club's fishing host keeps a bait stall on the canal bank. | `canal` | 3 | existing |
@@ -64,7 +64,7 @@ written by its constant, `TESSIE.questId`.
 | `sq-dewdrop-2` | Hogweed Rolls Out | Hogweed Sprocket (hogweed) | #28 `m28-sibling-rivalry` | Hogweed phones after the Tattler chase (#28), having read about the Compost Heap furnace. | `underspan` | 4 | E18 |
 | `sq-hedgeworth-lost-balls` | Lost Balls | Thrift Hosepipe (thrift) | #29 `m29-the-kicked-board` | Thrift chased the player off the wet fairway at #29. | `hedgeworth` | 4 | E15 (until E20: unlocked after `ch2-unmowed-tablet`) |
 | `race-rookie-mowdown` | Fizz Cup: Rookie Mow-Down | Lugnut Lulu (speedway) | #30 `m30-cams-big-night` | Lulu laughed at Cam at #30 and noticed the player's driving. | `speedway` | 4 | existing |
-| `sq-windfall-croft-deed` | The Croft by the Silo | Farmer Bramble (bramble) | #31 `m31-granny-cracks` | Granny told the player about her husband's silo at #31; Bramble knows who holds the deed. | `cloverfield` | 4 | E16 |
+| `sq-windfall-croft-deed` | The Croft by the Silo | Farmer Bramble (bramble) | #31 `m31-granny-cracks` (for now `ch2-sprinkler-gauntlet`; E20 re-times it) | Granny told the player about her husband's silo at #31; Bramble knows who holds the deed. | `cloverfield` | 4 | E16 |
 | `nc-hangar-and-boathouse` | Hangar and Boathouse | Newcomers' Card host (R-156) | #32 `m32-driftwoods-chart` | Driftwood's chart (#32) puts a boat shed in the player's head; the Club sells sheds. | `canal` | 4 | existing |
 | `sq-dewdrop-3` | Dewdrop | Hogweed Sprocket (hogweed) | #33 `m33-the-bench-lock` | Hogweed built the bench lock (#33) and is out of excuses not to finish the ball. | `underspan` | 4 | E18 |
 | `nc-party` | Throw a Party (online) | Newcomers' Card host (R-156) | #34 `m34-forty-seven-wrenches` | Tansy's party for the rezoned Green (#34) is the cue; optional and online only. | `downtown` | 4 | existing |
@@ -117,9 +117,9 @@ Every new area has at least one side quest:
 |---|---|
 | Saucer Court and the flat (E10) | `sq-hyssop-stairwell` |
 | Drainpipe Court, the Gutter Bowls (E19) | `sq-court-regulars`, `sq-gutter-bowls-sessions` |
-| Thorne Even-Estates sites (E16) | `sq-levelright-night-shift` |
+| Thorne Even-Estates sites (E16) | `sq-levelright-night-shift` (unlocked after `ch1-two-coat-tail` until E20 builds m07) |
 | the Underspan (E17), the Dewdrop (E18) | `sq-underspan-scrap-run`, `sq-dewdrop-1`, `sq-dewdrop-2`, `sq-dewdrop-3` |
-| Windfall Croft (E16) | `sq-windfall-croft-deed` |
+| Windfall Croft (E16) | `sq-windfall-croft-deed` (unlocked after `ch2-sprinkler-gauntlet` until E20 builds m31) |
 | Loamdeep, the Burrowfolk (E17) | `sq-burrow-post`, `sq-loamdeep-lamps` |
 | Wader's Rest (E15) | `sq-flock-errands`, `sq-flock-vigil` |
 | Hedgeworth (E15): owner, pro, groundskeeper | `sq-hedgeworth-lost-balls`, `sq-hedgeworth-pro-lesson`, `sq-hedgeworth-ninth-green`, `sq-hedgeworth-members-cup`, `sq-hedgeworth-reseed` (deferred to E21). The first four are unlocked after story quests that exist today (see the rows) until E20/E21 build their rows |

@@ -9,7 +9,8 @@ import type { Pt, SkyBehaviourDef, SkyBehaviourId, SkyWaypoint } from './types';
 export const DROP_ZONES: readonly Pt[] = [{ x: -60, z: 330 }, { x: 120, z: 430 }, { x: -200, z: 260 }];
 
 /** Where the air ambulance stops to collect a patient. */
-export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 200, z: 320 }, { x: -150, z: -295 }];
+// The second stop sits just east of Even-Estates Plot 2 (E16 construction-2 covers x 170..220, z 300..350).
+export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 230, z: 336 }, { x: -150, z: -295 }];
 
 export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
   {

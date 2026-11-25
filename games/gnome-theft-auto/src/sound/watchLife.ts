@@ -55,6 +55,10 @@ const CRITTER_CALL: Record<CritterKind, CritterSoundId> = {
   crab: 'critter-thud',
   butterfly: 'cricket',
   dragonfly: 'cricket',
+  deer: 'deer-bark',
+  stag: 'deer-bark',
+  fawn: 'deer-bark',
+  goat: 'goat-bleat',
 };
 
 /** The call a critter makes (alarmed or calm). */

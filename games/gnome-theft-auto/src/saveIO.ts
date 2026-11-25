@@ -37,6 +37,9 @@ export const GTA_SAVE_KEYS = [
   'gta-winter-v1', // winter/save.ts: Snowdrop Slope best times, runs, sled owned, ice catches, bears hugged (E12)
   'gta-golf-v1', // golf/save.ts: Hedgeworth Links board, holes, rounds, bests, aces, lost balls, molehills (E15)
   'gta-rootwell-v1', // campus/achievements.ts: Rootwell University doors visited (E13 First Class Honours)
+  'gta-farm-v1', // farm/runtime.ts: Windfall Croft's beds, oak, crate, chosen seed, counters (E16)
+  'gta-country-v1', // country/achievements.ts: estate sites, hunter camps and deer seen, the manor door (E16)
+  'gta-camp-loot-v1', // country/campsBuild.ts: when each hunter camp's tin was last emptied (E16)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

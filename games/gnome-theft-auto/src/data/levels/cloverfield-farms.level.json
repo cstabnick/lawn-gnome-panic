@@ -591,6 +591,19 @@
         "flat": true,
         "label": "home-09"
       }
+    },
+    {
+      "id": "giver/bramble",
+      "kind": "giver",
+      "x": 57,
+      "z": 145,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
     }
   ],
   "data": {

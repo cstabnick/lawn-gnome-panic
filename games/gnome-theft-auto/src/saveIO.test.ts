@@ -46,6 +46,9 @@ describe('saveIO', () => {
       'gta-winter-v1': JSON.stringify({ v: 1, best: { 'wool-run': 31.5 }, runs: { 'wool-run': 2 } }),
       'gta-golf-v1': JSON.stringify({ v: 1, boardBroken: true, holesPlayed: 4, parHoles: 2, rounds: 1, best: [4, null, null, 5], bestRound: 19, aces: 0, ballsFound: ['lb-1'], molehills: [] }),
       'gta-rootwell-v1': JSON.stringify({ v: 1, doors: ['long-shelf'] }),
+      'gta-farm-v1': JSON.stringify({ v: 1, savedAt: 1, beds: [], seed: 'radish' }),
+      'gta-country-v1': JSON.stringify({ v: 1, sites: ['construction-1'], camps: [], deer: 0, mansion: false }),
+      'gta-camp-loot-v1': JSON.stringify({ 'camp-west-1': 1 }),
       'unrelated-key': 'keep-me',
     });
 

@@ -36,6 +36,7 @@ import { buildWickets } from './pardonlin/wickets';
 import { buildPardonlinTown } from './pardonlin/town';
 import { buildCoast } from './coast';
 import { buildRootwell } from './campus';
+import { buildCountryside } from './country';
 import { buildUnmownGate } from './unmownGate';
 import { buildLivingWorld } from './living/build';
 import { livingParked } from './living/parked';
@@ -1110,6 +1111,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildRootwell(scene, boxes);
   // ---- E31: the living world (living/build.ts): the Unmown preserve, the band hamlets, the High Tarn, roadside life ----
   buildLivingWorld(scene, boxes);
+  // ---- E16: the countryside (country/): Even-Estates sites, Trellisdown Vineyard, Brassknock Manor, Windfall Croft, camps --
+  buildCountryside(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

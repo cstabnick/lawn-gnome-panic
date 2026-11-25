@@ -14,7 +14,9 @@ import type { Fx, Sfx, Vehicle, World } from './types';
 
 export type CritterKind = 'cow' | 'sheep' | 'pig' | 'hen' | 'squirrel' | 'polar-bear' | 'bee'
   // E31 (living world): small wild animals for the Unmown and the outer bands (no deer: E16 owns those).
-  | 'hare' | 'hedgehog' | 'fox' | 'frog' | 'duck' | 'crab' | 'butterfly' | 'dragonfly';
+  | 'hare' | 'hedgehog' | 'fox' | 'frog' | 'duck' | 'crab' | 'butterfly' | 'dragonfly'
+  // E16 (critters/countryside.ts): red deer (hind, stag, fawn) and hill goats.
+  | 'deer' | 'stag' | 'fawn' | 'goat';
 
 export interface CritterSpec {
   /** @lawn/prefabs id of the body. Named pivots the runtime animates when present: body, head, tail, leg-0..leg-3, wing-0, wing-1. */
@@ -65,6 +67,11 @@ export const CRITTER_SPECS: Record<CritterKind, CritterSpec> = {
   crab: { prefab: 'critter-crab', scale: 1, radius: 0.2, height: 0.15, walk: 0.9, run: 3.5, turn: 5, scareFoot: 2.5, scareVehicle: 6, puff: 0xd0502a, downTime: 1.2 },
   butterfly: { prefab: 'critter-butterfly', scale: 1, radius: 0.15, height: 0.2, walk: 1.2, run: 3.5, turn: 8, scareFoot: 0, scareVehicle: 0, puff: 0xf2a0d0, downTime: 0.8, flyHeight: 1.1 },
   dragonfly: { prefab: 'critter-dragonfly', scale: 1, radius: 0.15, height: 0.15, walk: 2.5, run: 7, turn: 9, scareFoot: 0, scareVehicle: 0, puff: 0x3ab0c8, downTime: 0.8, flyHeight: 0.8 },
+  // E16: deer graze in herds and bolt early (a gnome on foot at 14, a vehicle at 30); goats only mind what is very close.
+  deer: { prefab: 'deer-hind', scale: 1, radius: 0.7, height: 1.6, walk: 1.1, run: 9, turn: 3, scareFoot: 14, scareVehicle: 30, puff: 0xa8743f, downTime: 2.5 },
+  stag: { prefab: 'deer-stag', scale: 1, radius: 0.8, height: 2.3, walk: 1.0, run: 9.5, turn: 2.6, scareFoot: 12, scareVehicle: 30, puff: 0x8a5a2b, downTime: 2.8 },
+  fawn: { prefab: 'deer-fawn', scale: 1, radius: 0.45, height: 1.0, walk: 1.3, run: 8, turn: 4, scareFoot: 14, scareVehicle: 30, puff: 0xc89060, downTime: 2 },
+  goat: { prefab: 'goat', scale: 1, radius: 0.55, height: 1.1, walk: 0.9, run: 5, turn: 3.5, scareFoot: 3, scareVehicle: 12, puff: 0xeeeae0, downTime: 2 },
 };
 
 // ---- Critters ---------------------------------------------------------------------------------------------------
@@ -133,6 +140,8 @@ export interface CritterCtx {
   world: World;
   /** 0 day .. 1 night (atmosphere.nightFactor()). */
   night: number;
+  /** Rounds in the player's held gun's magazine: a drop since last frame means a shot went off (deer bolt). */
+  ammo?: number;
 }
 
 /** Ids passed to CritterDeps.event. app.ts sends each to Turfton FM (only if radio/content.ts has a bulletin for it). */

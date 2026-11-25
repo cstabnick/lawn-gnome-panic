@@ -182,6 +182,15 @@ import { GTA_JOBS3_FLEET } from './gta-jobs3-fleet';
 import { GTA_BIN_ROUND } from './gta-bin-round';
 import { GTA_FIRE_BRIGADE } from './gta-fire-brigade';
 import { GTA_GNOMAZON } from './gta-gnomazon';
+import { GTA_COUNTRY_DEER } from './gta-country-deer';
+import { GTA_COUNTRY_CROPS } from './gta-country-crops';
+import { GTA_COUNTRY_CROPS_B } from './gta-country-crops-b';
+import { GTA_COUNTRY_CROFT } from './gta-country-croft';
+import { GTA_COUNTRY_SITE } from './gta-country-site';
+import { GTA_COUNTRY_VINEYARD } from './gta-country-vineyard';
+import { GTA_COUNTRY_MANOR } from './gta-country-manor';
+import { GTA_COUNTRY_CAMP } from './gta-country-camp';
+import { GTA_COUNTRY_GEAR } from './gta-country-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -223,4 +232,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,
   ...GTA_PRESERVE_KIT, ...GTA_PRESERVE_TRAIL, ...GTA_LIVING_CRITTERS, ...GTA_LIVING_RIDES, ...GTA_LIVING_GEAR, ...GTA_HAMLET_KIT,
   ...GTA_JOBS3_FLEET, ...GTA_BIN_ROUND, ...GTA_FIRE_BRIGADE, ...GTA_GNOMAZON,
+  ...GTA_COUNTRY_DEER, ...GTA_COUNTRY_CROPS, ...GTA_COUNTRY_CROPS_B, ...GTA_COUNTRY_CROFT, ...GTA_COUNTRY_SITE, ...GTA_COUNTRY_VINEYARD, ...GTA_COUNTRY_MANOR, ...GTA_COUNTRY_CAMP, ...GTA_COUNTRY_GEAR,
 ];

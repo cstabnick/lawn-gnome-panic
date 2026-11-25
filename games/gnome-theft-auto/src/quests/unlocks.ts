@@ -86,6 +86,9 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Rootwell (rootwellQuests.ts). Temporary: the schedule has them after m47/m48 (acts II-IV, E20-E22), which do not exist yet.
   { questId: 'sq-rootwell-lost-essay', after: 'ch4-spade-truce', why: 'Rootwell is past the Dust Flats, open once the spade truce has opened the eastern sand. E21 moves it to after m47-hedgeworth-links.' },
   { questId: 'sq-anthill-rent', after: 'ch4-spade-truce', why: "The ants' rent is late once the eastern sand is open. E21 moves it to after m48-the-groundskeepers-secret." },
+  // Countryside (countryQuests.ts). Temporary: the schedule has them after m07/m31 (acts I-II, E20), which do not exist yet.
+  { questId: 'sq-levelright-night-shift', after: 'ch1-two-coat-tail', why: 'The tail goes past the fringe site where Chard is short of hands. E20 re-times it to after m07-even-estates.' },
+  { questId: 'sq-windfall-croft-deed', after: 'ch2-sprinkler-gauntlet', why: 'The player meets the Cloverfield farmers in chapter 2; Bramble knows the deed. E20 re-times it to after m31-granny-cracks.' },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -140,6 +143,8 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   peony: '#c9a9e8',
   lovage: '#c9a227',
   betony: '#8fa8ff',
+  chard: '#d9c8a5',
+  bramble: '#8fb339',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

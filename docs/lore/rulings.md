@@ -1173,3 +1173,34 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** A parody parcel company with one fulfilment centre, FC-1. Its manager-bots are earnest, not sinister. Associates are paid per parcel, with no tips.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E25's warehouse job needs a company that satirises warehouse work without being cruel.
+
+## R-210
+
+**Question:** Where are the Thorne Even-Estates sites as built, and what is on each?
+**Ruling:** Three Levelright sites stand at the edge of Turfton: Plot 1 at (-295, -120) on the west fringe by Mossy Wood (Chard's caravan is here, and the night-shift side quest starts at its gate), Plot 2 at (195, 325) on the south-east fringe by Route South, and Plot 3 at (1050, 250) out in Rootwell. Each has pale-blue-and-beige hoardings with the gate facing the nearest road, a row of identical empty beige show-homes (three; four at Plot 3), one half-built house of mushroom-stem girders in scaffolding, a bucket crane (Levelright's tower crane lifts with a garden bucket) painted "Level Is Kind", a materials yard, a site caravan and crews in acorn-cap hard hats walking a loop. The show-homes are identical and empty on purpose: the sites are built to be seen, a house a day, and nobody moves in. This replaces the older "north-west, south-east and south fringe" and "built by E01" wording.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds the sites, and their places, count and contents need one answer.
+
+## R-211
+**Question:** How are Trellisdown Vineyard and Brassknock Manor laid out as built, and is Chicory a he or a she?
+**Ruling:** The vineyard covers the hill at (-1140, -170), x -1290..-990, z -280..-60: rows run east-west with a path up the middle, the gate is on the south edge at (-1140, -61) facing vineyard-lane, Chicory's lodge is just inside at (-1172, -78), the press-house stands at (-1105, -95) with the first vine on its west wall, frost-pots stand among the rows and the crooked row is at z -205, east of the path. The manor lies across vineyard-lane to the south, x -1210..-1090, z -10..90: gate on the north wall at (-1150, -9), a gravel drive and a fountain, then the house (46 x 18 m, centre (-1150, 31)) facing north so its raised terrace looks over the vines. It has seven chimneys and a front door with the great brass knocker, which nobody answers. The way in is the back door on the south side, into the tasting hall, where Footman Pell stands. A row of rooms is shut and the ledger room is locked. Gardens lie behind. Chicory Snips is "he" everywhere; the vineyard entry's one "she" was a slip.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds both places, which replaces the rough coordinates in the old entries, and the pronoun needed settling.
+
+## R-212
+**Question:** What are the red deer and hill goats, and are they pests or quarry?
+**Ruling:** Both, and it is one animal. Herds of red deer (a stag, hinds and a fawn) graze the empty country of Trellisdown, Snowcap Rise, Loch Moss, Cloverfield and Rootwell, and bolt from gnomes, mowers and gunshots. Hill goats do the same on Snowcap Rise and the Fells' north flank. The Trellisdown Red Deer is also a Tuft & Tally quarry west of the vineyard (tuft: red-deer winter tuft; keepsake: a shed antler tine). A knocked-over deer gets up offended and leaves. Nothing dies (R-021, R-049).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 puts herds in the countryside and the Lodge already lists a deer quarry; they must be the same animals.
+
+## R-213
+**Question:** How does a gnome buy Windfall Croft, what grows there, and why does an oak that drops acorns not break Turfton's money?
+**Ruling:** The croft (x 60..140, z 505..565 in Cloverfield, gate on the west side by the south road) is bought at the For Sale board or in the Ledger app for 2,200 Acorns: 300 down, and the rest as a loan from the First Kiln Bank beside the Kiln-Debt (R-169), 10% on top. It has eight beds (radishes, carrots, cabbages, pumpkins), a seed rack, a stall by the gate, a run-down farmhouse and barn, and an orchard on the south wall whose apples keep rolling over it. An oak planted on the oak spot takes about forty minutes to grow and then gives a shake of acorns every ten minutes. Acorns from your own tree are honest acorns: nobody mints them. The HOA has a form for it, which nobody has found. Farmer Bramble knows who holds the deed (side quest `sq-windfall-croft-deed`).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds the farm, and a tree that makes the currency needed an in-world answer.
+
+## R-214
+**Question:** Who owns the hunters' camps in the empty country, and why is there a tin of acorns at each?
+**Ruling:** About 26 small camps stand in the empty country of every outer region: tents, shared camps round a fire, shacks, deer stands, duck blinds on loch and coast shores and tuft-drying racks, some with a hunter asleep by the fire. They belong to Tuft & Tally licence holders (Hazel Mattock's lodge, R-141). By custom each leaves a tin of acorns or a snack for the next walker, and fills it again later. Nobody takes the tin for more than one pass, and nobody has been told to.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 scatters camps across the map, and who they belong to and why they give things away needed one answer.

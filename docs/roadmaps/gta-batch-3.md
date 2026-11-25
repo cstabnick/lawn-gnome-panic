@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Running: E14, FIX-1 (gnome gear fit). Next: E13, E15, then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: merged E10, E30, E11, E12. Running: E14, E13, FIX-1 (gnome gear fit). Next: E15, then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -39,7 +39,7 @@ with deferred items listed).
 | E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | merged | epic/E10-homes | see log | quest `m02-roof-on-credit` (bank loan → Flat 3B; `first-contract` prereq left to E20); Decorate floor-plan editor (touch), furniture shop, sleep spot, Home app, `gta-home-v1`; `homes/data.ts` home+work per character (`homeOf`/`workOf`, `registerHome` for area epics); Saucer Court rebuilt; 7 homes built (2 walk-in), taxi/courier destinations, map pins after first visit; R-180/R-181; deferred: home-08..12, homes on area sites (their epics call `registerHome`); Saucer wings 14 m tall |
 | E11 | Coast and boardwalk | Content | 4 | E01 | merged | epic/E11-coast | see log | the Saltwater + Saltcut channel (Loch Moss → open sea), boardwalk, Long Spoon Pier, Spokewheel ride, water-ski mode + slalom + ramp (Last Tube rentals, Driftwood tows), Bathtub Queen (moored, cabin interior), 4 coast quests, 5 achievements, 22 prefabs, R-185 (renumbered); not hand-played; skier rides seated; Driftwood's boat local only; wheel legs lack colliders |
 | E12 | Winter sports | Content | 4 | E01, E06 | merged | epic/E12-winter | see log | Snowdrop Slope snow paint (JS + Wasm), tea-tray sled + skis (`src/winter/slideRider.ts`), rope tow, Wool Run + Tea-Tray Run with bests, Hot Cocoa, Snowdrop app; ice fishing at Pail Pond (4 species); 4 more chill bears + BEAR DECK; 25 prefabs, 5 achievements, 2 side quests (temporarily after `ch3-tundra-drift-run`; E21 moves them to m38/m39), R-186..R-188 (renumbered); fixed: ground vehicle chassis froze mesh+rider; runs are 15–20 s (slope ~280 m); demo GIFs saved in the session scratchpad `demos/` (winter-ski-run.gif, winter-sled-run.gif) for upload; `sq-capwood-cap-count` left for E14 |
-| E13 | Campus and skyline | Content | 5 | E01, E05 | planned | | | |
+| E13 | Campus and skyline | Content | 5 | E01, E05 | running | epic/E13-campus | | |
 | E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | running | epic/E14-dirt | | |
 | E15 | Golf course | Content | 5 | E01, E05 | planned | | | |
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | planned | | | |

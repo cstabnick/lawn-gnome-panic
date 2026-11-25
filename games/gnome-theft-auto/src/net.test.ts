@@ -43,7 +43,8 @@ describe('parseMsg', () => {
   it('reads radio and banger messages and rejects out-of-range values', () => {
     expect(parseMsg({ k: 'radio', st: 0 })).toEqual({ k: 'radio', st: 0 });
     expect(parseMsg({ k: 'radio', st: -1 })).toEqual({ k: 'radio', st: -1 });
-    expect(parseMsg({ k: 'radio', st: 4 })).toBeNull();
+    expect(parseMsg({ k: 'radio', st: 4 })).toEqual({ k: 'radio', st: 4 });
+    expect(parseMsg({ k: 'radio', st: 5 })).toBeNull();
     expect(parseMsg({ k: 'radio', st: -2 })).toBeNull();
 
     expect(parseMsg({ k: 'banger', st: 2, song: 5 })).toEqual({ k: 'banger', st: 2, song: 5 });

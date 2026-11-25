@@ -5,12 +5,13 @@
 
 import type { Place } from '../config';
 import { RADIO_SONGS } from './music/songs';
+import { ADAGIO_STATION } from './adagioStation';
 
 /** A station's playlist: the titles and artists of its songs (the music itself is songs/<station>.ts). */
-const playlist = (id: 'blade' | 'fpr' | 'beats'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
+const playlist =(id: 'blade' | 'fpr' | 'beats' | 'adagio'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
 
-export type StationId = 'blade' | 'fpr' | 'beats' | 'under';
-export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground';
+export type StationId = 'blade' | 'fpr' | 'beats' | 'under' | 'adagio';
+export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground' | 'classical';
 
 /** One line of talk, a caller's exchange or a bulletin: who is speaking (shown as a label) and what they say. */
 export interface Line {
@@ -208,6 +209,8 @@ export const STATIONS: readonly Station[] = [
       { who: 'SHELLDON "No-Trail" MUCILAGE (on the line)', text: 'I\'m leaving a message in your tunnel on a snail. — MOLEMAN: Shelldon, the tunnel is eleven miles long. — SHELLDON: He has a good sense of time.' },
     ],
   },
+  // ---- E30: Pardonlin's classical station (radio/adagioStation.ts) ----
+  ADAGIO_STATION,
 ];
 
 /** Shared commercials, played in any station's ad break (after its own). */

@@ -12,7 +12,7 @@ import type { StationId } from './radio/content';
 import type { VehicleKind } from './types';
 
 /** Append only: a station's index is its code on the wire, so existing indices must never move. */
-export const STATION_CODES: readonly StationId[] = ['blade', 'fpr', 'beats', 'under'];
+export const STATION_CODES: readonly StationId[] = ['blade', 'fpr', 'beats', 'under', 'adagio'];
 
 /** Append only: a vehicle's index is its code on the wire, so existing indices must never move. */
 export const VEHICLE_CODES: readonly VehicleKind[] = [

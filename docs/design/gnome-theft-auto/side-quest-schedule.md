@@ -134,6 +134,11 @@ Placeholder ids are E04's; E10 to E19 should each take the rows above as their s
 The only side quest with no epic named is `sq-fort-fence` (Mending the Fort Fence): a small act IV filler for Fort
 Sandpit; drop it if no epic has room.
 
+**Pardonlin's town activities (E30) are not side quests.** Queued for Nothing (the Grand Platz queue), the Baguette
+Round (Brigitte Levain), Portrait of a Croissant (Odile Easelby) and the Flâneur walk live in
+`games/gnome-theft-auto/src/pardonlin/activities.ts`: each has its own spot in town, never appears in the journal and
+never counts toward the offer caps above. A later epic that turns one into a QuestDef adds a row here.
+
 ## 2. Hobby intros (L66)
 
 Each hobby intro is a Newcomers' Card quest (giver `newcomers-club`) that the story walks the player into:

@@ -989,3 +989,24 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** **Gnome & Garden Furnishings** sells it: a flat-pack firm that delivers to Saucer Court, "stairs extra, free". Nothing they sell is ever assembled, and the instructions are a single diagram of a gnome looking worried. No other brand or entry covered furniture sellers.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E10 lets the player furnish Flat 3B and the catalogue needs a seller.
+
+## R-182
+
+**Question:** What is Pardonlin's satire, and how far does it go?
+**Ruling:** Pardonlin is a gentle Paris, London and Berlin mash: cafés and boulevards, queues and rain-or-shine drizzle, bureaucratic calm and bicycles. No real city, brand, composer or nationality is ever named; the Continentals are the Continentals. The joke is always affectionate and never mean: they are polite, proud, unhurried and quietly absurd. Its four seasons are queues, long lunches, strikes and bread (the Baguette Round marks the morning, the lunch marks the day, a strike marks the week, and nobody is sure when a queue began). Pardonlin's entries (the Bean Tower, the Grand Platz, the Unknown Pigeon, Teacup Row, Café Pardon, the Beetle Market, the Jardin, the Little Gardens, Basin Quay and their residents) are apocrypha, draft, and fair game to extend in this voice.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E30 builds Pardonlin as a town, and a dozen writers need one rule for how far the satire goes.
+
+## R-183
+
+**Question:** Is Pardonlin an HOA town, and who enforces its rules?
+**Ruling:** No. The Continentals have rules, but they are older and politer than the HOA's, and nobody enforces them. A rule in Pardonlin is a thing that is "not done"; breaking it earns a sigh, not a fine. There are no wardens in Pardonlin's own lanes: Lupin Pardoux on Pardonlin High Street is the HOA's, lent to the Continentals (R-176), and they think his hat is short. The Jardin's clipped parterre is not the Even Cut either: it is a pattern held by its head gardener, and the HOA has no say in it. The Wickets stamp the hat and send the gnome on.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** a town of clipped hedges and queues invites a reading as an HOA enclave, and Pardonlin's difference from Turfton is the joke.
+
+## R-184
+
+**Question:** Where is Radio Adagio on the dial, and who can hear it?
+**Ruling:** **Radio Adagio** (96.1, classical, from the Opera Hall on the Left Bank, id `radio-adagio`) is a bonus station: it is not on the dial of every car radio in the Yard, and it is not heard by tuning to it from afar. It is heard in and near Pardonlin on foot (from the Opera Hall horn speaker, the café gramophones, the bandstand and the Beetle Market's stall radio), and on any car radio while the car is in or near Pardonlin. Leave the region and the signal fades. Its conductor, Maestro Ottavio Lento (id `ottavio-lento`), is its only on-air voice. No real composers or pieces are named.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the station should feel like a place's own sound, not a fourth genre every driver always has.

@@ -148,6 +148,8 @@ import { GTA_EURO_FLEET } from './gta-euro-fleet';
 import { GTA_EURO_FLEET_B } from './gta-euro-fleet-b';
 import { GTA_EURO_GEAR } from './gta-euro-gear';
 import { GTA_HOMES } from './gta-homes';
+import { GTA_PARDONLIN_PROPS } from './gta-pardonlin-props';
+import { GTA_PARDONLIN_GEAR } from './gta-pardonlin-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -179,5 +181,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_CONTINENTAL_KIT,
   ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
-  ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES,
+  ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES, ...GTA_PARDONLIN_PROPS, ...GTA_PARDONLIN_GEAR,
 ];

@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Theo]
-sources: [docs/design/gnome-theft-auto/world-lore.md]
-related: [frostbite-fells, frozen-birdbath-basin]
+sources: [docs/design/gnome-theft-auto/world-lore.md, docs/lore/rulings.md#r-183]
+related: [frostbite-fells, frozen-birdbath-basin, pail-pond]
 ---
 
 Quiet Frostbite Fells roadside fixture standing beside a burning barrel of pine-cones on the `north` highway bend, pouring endless steaming acorn-broth.
@@ -23,6 +23,10 @@ Theo's barrel has burned through three winters without going out, and his batter
 ## What gnomes say
 
 "Theo's acorn-broth is the only thing keeping half the Carburettors from shattering before midnight."
+
+## In the games
+
+On Snowcap Rise (batch 3, E12) he fishes Pail Pond from a red shanty on the ice, thermos in hand, and lends a Bent-Pin Twig Rod to anyone without one. Side quest "Lines on Pail Pond" (R-187).
 
 ## Loose threads
 

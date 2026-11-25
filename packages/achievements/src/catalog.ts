@@ -1294,6 +1294,31 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Flappy Gnome', description: 'Score 10 in Gnomey Bird on the Gnomlet.',
     reward: { slot: 'head', prefabId: 'hedge-hopper-cap', label: 'Hedge-Hopper Cap' },
   },
+  {
+    id: 'gta-tea-tray-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tea-Tray Run', description: 'Ride a tea tray down the Tea-Tray Run on Snowdrop Slope, start line to finish.',
+    reward: { slot: 'head', prefabId: 'bobble-beanie', label: 'Bobble Beanie' },
+  },
+  {
+    id: 'gta-first-tracks', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Tracks', description: 'Ski the Wool Run on Snowdrop Slope from the start hut to the finish banner.',
+    reward: { slot: 'head', prefabId: 'ear-flap-hat', label: 'Ear-Flap Hat' },
+  },
+  {
+    id: 'gta-black-diamond', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Black Diamond', description: 'A clean Wool Run (every gate) in 18 seconds or less.',
+    reward: { slot: 'back', prefabId: 'crossed-skis-pack', label: 'Crossed Skis' },
+  },
+  {
+    id: 'gta-ice-station', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ice Station', description: 'Land 3 fish through holes in the ice.', target: 3,
+    reward: { slot: 'neck', prefabId: 'woolly-sock-scarf', label: 'Woolly Sock Scarf' },
+  },
+  {
+    id: 'gta-bear-hug', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bear Hug', description: 'Stand beside 9 different polar bears. They will not mind. They will barely notice.', target: 9,
+    reward: { slot: 'hand', prefabId: 'cocoa-mug', label: 'Cocoa Mug' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

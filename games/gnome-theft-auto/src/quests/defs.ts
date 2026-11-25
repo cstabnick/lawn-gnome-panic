@@ -13,6 +13,7 @@ import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { TESSIE_QUEST } from './tessieQuest';
+import { WINTER_QUESTS } from './winterQuests';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -185,6 +186,23 @@ export const GIVERS: Record<string, GiverDef> = {
     letter: '!',
   },
   ...COAST_GIVERS,
+  // Snowcap Rise's side quests (winterQuests.ts): the ski class and the pond shanty.
+  gentian: {
+    id: 'gentian',
+    name: 'The Woolly Sock Lodge',
+    label: 'Talk to Gentian Bootlace',
+    ...placed('gentian'),
+    room: 'street',
+    letter: '!',
+  },
+  'theo-pond': {
+    id: 'theo-pond',
+    name: 'Pail Pond',
+    label: 'Talk to Thermos Theo',
+    ...placed('theo-pond'),
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -202,6 +220,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...NEWCOMER_QUESTS,
   TESSIE_QUEST,
   ...RACE_QUESTS,
+  ...WINTER_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

@@ -153,6 +153,10 @@ import { GTA_EURO_GEAR } from './gta-euro-gear';
 import { GTA_HOMES } from './gta-homes';
 import { GTA_PARDONLIN_PROPS } from './gta-pardonlin-props';
 import { GTA_PARDONLIN_GEAR } from './gta-pardonlin-gear';
+import { GTA_WINTER_RIDES } from './gta-winter-rides';
+import { GTA_WINTER_LODGE } from './gta-winter-lodge';
+import { GTA_WINTER_GEAR } from './gta-winter-gear';
+import { GTA_FISH_ICE } from './gta-fish-ice';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -186,4 +190,6 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
   ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES, ...GTA_PARDONLIN_PROPS, ...GTA_PARDONLIN_GEAR,
   ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
+
+  ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
 ];

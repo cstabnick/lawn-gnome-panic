@@ -1133,7 +1133,21 @@ function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, height: f64, rDis
     return 12; // meadow
   }
   if (reg == 7) {
-    // north-highlands
+    // north-highlands: Pail Pond ice (pond, kind 6) and Snowdrop Slope snow (snowfield, kind 11) first (E12)
+    for (let k = 0; k < fCount; k++) {
+      const fp = LF_FEAT_PTR + <usize>((fStart + k) * 48);
+      const kind = <i32>load<f64>(fp);
+      const r = load<f64>(fp + 8);
+      const ptStart = <i32>load<f64>(fp + 24);
+      const ptCount = <i32>load<f64>(fp + 32);
+      if (ptCount <= 0) continue;
+      if (kind == 6) {
+        const p0 = LF_PTS_PTR + (<usize>ptStart << 4);
+        if (hypot2(x - load<f64>(p0), z - load<f64>(p0 + 8)) < r) return 5; // ice
+      } else if (kind == 11) {
+        if (distToPts(LF_PTS_PTR, ptStart, ptCount, x, z) < r) return 6; // snow
+      }
+    }
     if (height > 32.0) return 6; // snow
     if (slope > 0.3) return 3; // gravel
     return 12; // meadow

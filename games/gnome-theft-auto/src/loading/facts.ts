@@ -34,4 +34,6 @@ export const LOADING_FACTS: readonly string[] = [
   'The Spokewheel turns once every ninety-six seconds whatever anyone does. Marram charges three acorns to sit in a teacup.',
   'The Bathtub Queen runs pirate tours at noon and cargo at midnight. Captain Bilge asks you not to mix them up.',
   'Long Spoon Pier is a giant spoon laid out to sea, bowl end first. Walk it slow: the bowl end sways.',
+  'The Bootlace Tow is knotted bootlaces on cotton reels. Gnomes sled down on Tall-One tea trays and call them rose shields.',
+  'Pail Pond is a Tall-One pail frozen over. The handle sticks out of the ice, and nobody knows what it is for.',
 ];

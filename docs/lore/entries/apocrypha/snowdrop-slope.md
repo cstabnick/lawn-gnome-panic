@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The Ski Hill]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
-related: [snowcap-rise, woolly-sock-lodge, gentian-bootlace, thermos-theo, hoa]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-182]
+related: [snowcap-rise, woolly-sock-lodge, gentian-bootlace, thermos-theo, hoa, bootlace-tow, wool-run, tea-tray-run]
 ---
 
 The ski hill of Snowcap Rise: a long white slope with a rope tow, a sledding run and a row of striped flags. Gentian Bootlace teaches there, and the Woolly Sock Lodge sits at the foot.
@@ -21,7 +21,7 @@ The ski hill of Snowcap Rise: a long white slope with a rope tow, a sledding run
 
 ## In the games
 
-Planned (batch 3): E01 site ski-hill at (-350, -1120), with the new `ski-run` kind from E12 (fallback `checkpoints`). Quest row 37 (m37-snowdrop-slope): Thermos Theo sends the crew up, and they ski or sled down the slope to lose the HOA salt-plows.
+Built (batch 3, E12): a snow slope from about 60 m at its north top down to its foot beside the Woolly Sock Lodge (E01 site ski-hill). The Bootlace Tow pulls riders up the east side, the Wool Run is the ski slalom, and the Tea-Tray Run is the sled lane down the west side. A piste map at the foot shows both runs. Falls are tumbles: nobody cracks on snow (R-186). Quest row 37 (m37-snowdrop-slope): Thermos Theo sends the crew up, and they ski or sled down the slope to lose the HOA salt-plows.
 
 ## Loose threads
 

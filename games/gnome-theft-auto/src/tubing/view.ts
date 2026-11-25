@@ -274,7 +274,7 @@ export function createTubingView(scene: THREE.Scene): TubingView {
       sign.rotation.y = Math.PI;
       scene.add(sign);
       registerCull(sign, 'prop');
-      const skiRack = buildPrefab('ski-rack', { lights: false });
+      const skiRack = buildPrefab('water-ski-rack', { lights: false });
       skiRack.position.set(lt.rack.x + 4, heightAt(lt.rack.x + 4, lt.rack.z - 1), lt.rack.z - 1);
       skiRack.rotation.y = Math.PI;
       scene.add(skiRack);

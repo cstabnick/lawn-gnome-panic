@@ -383,7 +383,7 @@ export function createPlayer(scene: THREE.Scene, look: GnomeLook): Player {
       state.facing = v.yaw;
       state.grounded = true;
       state.jumpsUsed = 0;
-      state.sitting = true;
+      state.sitting = !v.spec.stand;
       model.update(state, dt);
       // Ground vehicles: the rider rides the chassis (its roll and pitch over bumps and in corners) and leans on top of it, about the seat.
       // Aircraft too: a pilot sitting upright in a banked plane poked out of the cockpit and could not reach the yoke (driverHands.ts).

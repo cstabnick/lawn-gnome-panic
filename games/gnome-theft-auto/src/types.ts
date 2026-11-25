@@ -55,7 +55,10 @@ export type VehicleKind =
   | 'deux-pots'
   | 'wespa'
   | 'baguette-trike'
-  | 'crepe-van';
+  | 'crepe-van'
+  // Winter sports (E12, winter/): a tea-tray sled and a pair of skis on Snowdrop Slope; winter/runtime.ts steps them (slideRider.ts).
+  | 'tea-tray-sled'
+  | 'snow-skis';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -203,6 +206,8 @@ export interface VehicleSpec {
   mountStyle?: MountStyle;
   /** A boat (boats.ts stepBoat drives it, it floats on waterAt). */
   boat?: boolean;
+  /** The rider stands instead of sitting (skis, E12): player.ts draws the gnome upright at the seat. */
+  stand?: boolean;
   /** Boats: how deep the hull sits below the water surface, metres (the prefab's y = 0 is the keel). */
   draft?: number;
   /** Aircraft on the air-and-sea handling model (craft/flight.ts stepAir): its regime and numbers. flies is true too. The
@@ -722,7 +727,9 @@ export interface Blip {
   kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
     | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
     | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
-    | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home';
+    | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home'
+    // Winter sports (E12, winter/): Snowdrop Slope + the Woolly Sock Lodge, the Bear Deck, Pail Pond ice fishing.
+    | 'ski' | 'bears' | 'icefish';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

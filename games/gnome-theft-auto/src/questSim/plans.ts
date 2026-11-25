@@ -39,6 +39,8 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'coast-boardwalk-tubing': { suite: 'side', expect: 'pass' },
   'coast-bathtub-tours': { suite: 'side', expect: 'pass' },
   'coast-queens-treasure': { suite: 'side', expect: 'pass' },
+  'sq-snowdrop-sled-trials': { suite: 'side', expect: 'pass' },
+  'sq-pail-pond-lines': { suite: 'side', expect: 'pass' },
   'city-kerbside-rounds': { suite: 'city', expect: 'pass' },
   'city-impound-run': { suite: 'city', expect: 'pass' },
   'city-glow-band-express': { suite: 'city', expect: 'pass' }, // E23: driveTo no longer skips a route aim behind it

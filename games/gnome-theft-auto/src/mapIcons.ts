@@ -5,7 +5,7 @@ import type { Blip } from './types';
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
   | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
-  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home';
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -37,6 +37,9 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   'dealer-boat': { name: "Driftwood's Boat Yard (buy boats)", color: '#1f8fa6' },
   'dealer-air': { name: "Wally's Wing Lot (buy aircraft)", color: '#5b6fd1' },
   home: { name: 'Homes (visited)', color: '#c97b4a' },
+  ski: { name: 'Snowdrop Slope (ski, sled)', color: '#3a7bd5' },
+  bears: { name: 'Polar bears (very chill)', color: '#9fb8c8' },
+  icefish: { name: 'Pail Pond (ice fishing)', color: '#4fb3c8' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -405,6 +408,31 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       glyphRect(g, x, y, s, -0.7, -0.1, 1.4, 1);
       g.fillStyle = color;
       glyphRect(g, x, y, s, -0.18, 0.2, 0.36, 0.7);
+      break;
+    }
+    case 'ski': {
+      // Two crossed skis.
+      g.beginPath();
+      g.moveTo(x - 0.8 * s, y - 0.9 * s);
+      g.lineTo(x + 0.8 * s, y + 0.9 * s);
+      g.moveTo(x + 0.8 * s, y - 0.9 * s);
+      g.lineTo(x - 0.8 * s, y + 0.9 * s);
+      g.stroke();
+      break;
+    }
+    case 'bears': {
+      // A bear's face: a round head with two round ears.
+      g.beginPath();
+      g.arc(x, y + 0.15 * s, 0.65 * s, 0, TAU);
+      g.arc(x - 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
+      g.arc(x + 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
+      g.fill();
+      break;
+    }
+    case 'icefish': {
+      // A fish over a round hole.
+      glyphPoly(g, x, y, s, [[-0.9, 0], [0.3, -0.5], [0.3, 0.5]]);
+      glyphPoly(g, x, y, s, [[0.3, 0], [0.9, -0.45], [0.9, 0.45]]);
       break;
     }
   }

@@ -187,6 +187,32 @@
         "flat": false,
         "label": "the High Tarn"
       }
+    },
+    {
+      "id": "giver/gentian",
+      "kind": "giver",
+      "x": -430,
+      "z": 143,
+      "data": {
+        "exit": {
+          "dx": 3,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/theo-pond",
+      "kind": "giver",
+      "x": -608,
+      "z": 106,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 2,
+          "yaw": 0
+        }
+      }
     }
   ],
   "data": {
@@ -230,7 +256,35 @@
           "crags": 5,
           "cragScale": 90
         }
-      }
+      },
+      "features": [
+        {
+          "id": "pond/pail-pond",
+          "kind": "pond",
+          "points": [
+            [
+              -640,
+              90
+            ]
+          ],
+          "r": 62
+        },
+        {
+          "id": "snowfield/snowdrop-slope",
+          "kind": "snowfield",
+          "points": [
+            [
+              -350,
+              -150
+            ],
+            [
+              -350,
+              152
+            ]
+          ],
+          "r": 108
+        }
+      ]
     }
   }
 }

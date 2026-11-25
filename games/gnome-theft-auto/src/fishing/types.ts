@@ -7,7 +7,7 @@ import type { RegionId } from '../levels';
 export type { TimeLabel, RegionId };
 
 /** The kind of water a bobber sits on (waterKind.ts fishWaterAt). */
-export type FishWater = 'loch' | 'river' | 'canal' | 'sea';
+export type FishWater = 'loch' | 'river' | 'canal' | 'sea' | 'ice';
 export type FishRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
 /** Weather as fishing sees it: src/weather/ (pick.ts weatherAt maps it, with Frostbite snow and loch dawn mist). */
 export type FishWeather = 'clear' | 'mist' | 'rain' | 'snow';
@@ -179,6 +179,8 @@ export interface SimEnv {
   origin: { x: number; y: number; z: number; yaw: number };
   /** The water surface height at (x, z), or null on land. */
   water(x: number, z: number): number | null;
+  /** An ice hole in reach: the cast drops straight into it (winter ice fishing). */
+  snap?(): { x: number; z: number; surface: number } | null;
   /** Seconds to wait for the next bite at the bobber (pick.ts biteDelay). */
   biteDelay(): number;
   /** Who bites now at the bobber (pick.ts pickFish + rollSize), or null for nobody. Called once per bite. */

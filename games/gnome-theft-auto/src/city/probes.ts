@@ -8,6 +8,7 @@
 import { createHuntStore } from '../hunting/huntSave';
 import { createBirdStore } from '../birding/birdSave';
 import { createFishStore } from '../fishing/fishSave';
+import { createWinterStore } from '../winter/save';
 import { jobStats } from '../jobs/career';
 
 export type ProbeFn = () => number;
@@ -36,6 +37,11 @@ const SAVED: Readonly<Record<string, ProbeFn>> = {
   'fish-caught': () => withStore(() => createFishStore(storage() ?? undefined).data().caught) ?? 0,
   'fish-sold': () => withStore(() => createFishStore(storage() ?? undefined).data().sold) ?? 0,
   'fish-derby': () => ((withStore(() => createFishStore(storage() ?? undefined).data().derbyBest) ?? 0) > 0 ? 1 : 0),
+  // Winter sports (winter/save.ts): gta-winter-v1.
+  'winter-sled-runs': () => withStore(() => createWinterStore(storage() ?? undefined).data().runs['tea-tray-run'] ?? 0) ?? 0,
+  'winter-ski-runs': () => withStore(() => createWinterStore(storage() ?? undefined).data().runs['wool-run'] ?? 0) ?? 0,
+  'ice-holes': () => withStore(() => createWinterStore(storage() ?? undefined).data().holes) ?? 0,
+  'ice-catches': () => withStore(() => createWinterStore(storage() ?? undefined).data().iceCatches) ?? 0,
   // Sim jobs (jobs/, docs/roadmaps/gta-sim-jobs-and-tubing.md): their own live stats getter.
   'job-gigs': () => withStore(() => { const j = jobStats(); return j.taxiFares + j.parcels + j.flights + j.boatTrips + j.ferryLoops; }) ?? 0,
   'job-taxi': () => withStore(() => jobStats().taxiFares) ?? 0,

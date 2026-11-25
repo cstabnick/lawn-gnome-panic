@@ -4,10 +4,38 @@ import { BODIES, COURSES, bodyRadius } from '../water';
 import { waterAt } from '../terrain';
 import type { FishWater } from './types';
 
-/** The water surface height at (x, z), or null on land. */
+/** A hole drilled through pond ice (winter/iceFishing.ts): centre, the water level inside it (y) and its radius. */
+export interface IceHole { x: number; z: number; y: number; r: number }
+
+let iceHoles: (() => readonly IceHole[]) | null = null;
+
+/** How close (metres from the rim) a gnome must stand to fish an ice hole. */
+export const ICE_REACH = 3;
+
+/** winter/iceFishing.ts registers where its holes are (null clears). Frozen ponds are painted ground, not water: a hole is
+ *  the only "water" on them, and its kind is 'ice'. */
+export function setIceHoleSource(fn: (() => readonly IceHole[]) | null): void {
+  iceHoles = fn;
+}
+
+/** The nearest ice hole whose rim is within `reach` metres of (x, z), or null. */
+export function iceHoleNear(x: number, z: number, reach: number): IceHole | null {
+  if (!iceHoles) return null;
+  let best: IceHole | null = null;
+  let bd = Infinity;
+  for (const h of iceHoles()) {
+    const d = Math.hypot(x - h.x, z - h.z) - h.r;
+    if (d <= reach && d < bd) { bd = d; best = h; }
+  }
+  return best;
+}
+
+/** The water surface height at (x, z), or null on land. Inside an ice hole: the hole's water level. */
 export function waterSurface(x: number, z: number): number | null {
   const w = waterAt(x, z);
-  return w ? w.surface : null;
+  if (w) return w.surface;
+  const h = iceHoleNear(x, z, 0);
+  return h ? h.y : null;
 }
 
 function segDist(x: number, z: number, ax: number, az: number, bx: number, bz: number): number {
@@ -19,7 +47,7 @@ function segDist(x: number, z: number, ax: number, az: number, bx: number, bz: n
 
 /** The kind of water at (x, z), or null where there is none. Lochs and seas first, then the nearest course. */
 export function fishWaterAt(x: number, z: number): FishWater | null {
-  if (!waterAt(x, z)) return null;
+  if (!waterAt(x, z)) return iceHoleNear(x, z, 0) ? 'ice' : null;
   for (const b of BODIES) {
     if (bodyRadius(b, x, z) <= 1.05) return b.id.includes('loch') ? 'loch' : 'sea';
   }
@@ -38,7 +66,8 @@ export function fishWaterAt(x: number, z: number): FishWater | null {
 
 /** True when any water lies within r of (x, z): samples 8 directions at r/2 and r (16 waterAt calls). */
 export function nearWater(x: number, z: number, r: number): boolean {
-  if (waterAt(x, z)) return true;
+  // An ice hole counts only up close (ICE_REACH): the line drops straight down the hole (sim.ts SimEnv.snap).
+  if (waterAt(x, z) || iceHoleNear(x, z, Math.min(r, ICE_REACH))) return true;
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2;
     const s = Math.sin(a), c = Math.cos(a);

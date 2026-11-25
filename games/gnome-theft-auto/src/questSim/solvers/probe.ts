@@ -23,6 +23,7 @@ import { HOPPER_FARE } from '../../outskirts/bus';
 import { CRAFT_PAINT_PRICE } from '../../craft/craftPanels';
 import { LOCKUP } from '../../lockup/config';
 import { SIDE_VALVE } from '../../config';
+import { createWinterStore } from '../../winter/save';
 
 export type ProbeFidelity = 'api' | 'action' | 'economy' | 'vehicle';
 
@@ -213,6 +214,35 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       if (hunt.bagCount() === 0) hunt.recordComb(SPECIES[0], false, 10);
       const { acorns } = hunt.sellAll();
       if (acorns > 0) ctx.economy.earn(acorns, 'Tuft & Tally Lodge');
+      await ctx.step();
+    },
+  },
+  'winter-sled-runs': {
+    fidelity: 'api',
+    async run(ctx) {
+      // One Tea-Tray Run finish, clean, booked the way the run's finish line books it.
+      createWinterStore(store()).recordRun('tea-tray-run', 30, true);
+      await ctx.step();
+    },
+  },
+  'winter-ski-runs': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordRun('wool-run', 30, true);
+      await ctx.step();
+    },
+  },
+  'ice-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordHole();
+      await ctx.step();
+    },
+  },
+  'ice-catches': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordIceCatch();
       await ctx.step();
     },
   },

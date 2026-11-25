@@ -51,6 +51,9 @@ const TABLE: Record<string, EngineSoundDef> = {
   'tow-tube': { silent: true, gain: 0 },
   'tow-ski': { silent: true, gain: 0 },
   'spoke-gondola': { silent: true, gain: 0 },
+  // Winter sports (winter/): gravity only.
+  'tea-tray-sled': { silent: true, gain: 0 },
+  'snow-skis': { silent: true, gain: 0 },
   tessie: { silent: true, gain: 0 },
 
   // Mowers.

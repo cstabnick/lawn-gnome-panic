@@ -28,9 +28,9 @@ import { createSpotView } from './spotView';
 import { BAITS } from './tackle';
 import {
   FISH, FISH_ACHIEVEMENTS, SHOP,
-  type FishEvent, type FishPhase, type FishSpecies, type SimEnv, type SimInput, type TimeLabel,
+  type FishEvent, type FishPhase, type FishSpecies, type FishWater, type SimEnv, type SimInput, type TimeLabel,
 } from './types';
-import { fishWaterAt, nearWater, waterSurface } from './waterKind';
+import { ICE_REACH, fishWaterAt, iceHoleNear, nearWater, waterSurface } from './waterKind';
 
 export interface FishingDeps {
   scene: THREE.Scene;
@@ -43,6 +43,8 @@ export interface FishingDeps {
   increment(id: string, by?: number): void;
   /** Storage for the save (tests); default localStorage. */
   storage?: Pick<Storage, 'getItem' | 'setItem'>;
+  /** A fish was landed (after the journal recorded it) on `water` (winter/runtime.ts counts 'ice' catches). */
+  onCatch?(water: FishWater, speciesId: string): void;
 }
 
 /** What app.ts hands fishing each frame. */
@@ -94,6 +96,8 @@ export interface Fishing {
   biteNow(id: string): boolean;
   /** Debug trainer: every rod and plenty of bait. */
   grantAll(): void;
+  /** Lend the Bent-Pin Twig Rod for free when the player owns no rod (Pail Pond's shanty). True when one was given. */
+  lendRod(): boolean;
   stats(): { phase: FishPhase; species: number; cards: number; derby: boolean; tip: [number, number, number]; bob: [number, number] };
   /** Online (online/actSync.ts): the rod and line as other players should see them, or null while the rod is away. */
   wire(): { rod: string; phase: FishPhase; charge: number; bobber: { x: number; y: number; z: number } | null } | null;
@@ -141,6 +145,10 @@ export function createFishing(deps: FishingDeps): Fishing {
     bait: BAITS[0],
     origin: { x: 0, y: 0, z: 0, yaw: 0 },
     water: waterSurface,
+    snap: () => {
+      const h = iceHoleNear(px, pz, ICE_REACH);
+      return h ? { x: h.x, z: h.z, surface: h.y } : null;
+    },
     biteDelay: () => biteDelay(env.bait, spotAt(s.bobX, s.bobZ) !== null, rnd),
     pick() {
       const water = fishWaterAt(s.bobX, s.bobZ);
@@ -220,6 +228,8 @@ export function createFishing(deps: FishingDeps): Fishing {
 
   function land(fish: FishSpecies, size: number): void {
     const res = store.recordCatch(fish, size);
+    const water = fishWaterAt(s.bobX, s.bobZ);
+    if (water) deps.onCatch?.(water, fish.id);
     store.useBait();
     env.bait = store.bait();
     deps.unlock(FISH_ACHIEVEMENTS.firstBite);
@@ -434,6 +444,12 @@ export function createFishing(deps: FishingDeps): Fishing {
     grantAll() {
       store.grantAll();
       shopUi.refresh();
+    },
+    lendRod() {
+      if (store.hasRod()) return false;
+      const ok = store.buyRod('twig', () => true);
+      if (ok) shopUi.refresh();
+      return ok;
     },
     stats: () => ({
       phase: s.phase, species: store.speciesCaught(), cards: store.data().cards.length, derby: derby !== null,

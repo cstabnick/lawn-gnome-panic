@@ -1,0 +1,16 @@
+# E12 screenshot pass
+
+Taken 2026-11-25 with headless Edge (swiftshader) against the dev server, `?offline&no-intro` plus `&at=x,z,yaw` or
+`&winter=wool-run|tea-tray-run`, 960x540 and 390x844. Images in [screens/](screens/). No console errors (smoke OK at the
+lodge, Pail Pond and the Wool Run start). Demo GIFs (`demos/winter-ski-run.json`, `demos/winter-sled-run.json`) were
+recorded locally to `demos/out/` (gitignored) and show the run clock, gates and speed; uploading them to the PR is the
+orchestrator's step.
+
+| Area | Spots (screens/) | What it shows | Storytelling (a vignettes / b signs / c resident / d ambience) |
+|---|---|---|---|
+| Snowdrop Slope + the Woolly Sock Lodge | `slope-1-lodge` (porch), `slope-2-gates` (upper gates), `slope-3-tow-base`; riding: `ride-skis-start`, `phone-sled-start` (390x844) | log lodge with the giant sock over the door, ski rack, tea-tray stack, cocoa hatch, piste map; blue/red slalom gates down the snow, the rope tow line with pylons and moving cotton-reel handles; the gnome standing on skis / sitting in a tea tray | (a) half-built snowman with a ski stuck in it and a flattened LEARNERS sign; a tea tray jammed in a hay bale at the run-out; the sock rack with one huge Tall-One sock and a crate under it; a knocked-over flag with ski tracks curving round it; lost-mittens heap. (b) "SNOWDROP SLOPE / GRADIENT: YES", "THE BOOTLACE TOW / HOLD ON. LET GO. IN THAT ORDER.", "THE WOOL RUN / SIX GATES. NO EXCUSES.", "BOOTS ON THE RACK. TROUBLES IN THE STOVE.", "THE TEA-TRAY RUN / ROSE SIDE UP", "LOST & FOUND (MOSTLY LEFT)". (c) Gentian Bootlace teaching two learners the snowplough. (d) Snowcap ambience (snow creak, icicle tink, wind); snow from E06 when it falls |
+| Pail Pond | `pond-1-shanty`, `pond-2-handle`, `pond-3-bears` | the frozen pail with its galvanized rim, Theo's red shanty and two more, the pail's handle arcing out of the ice, the "Drill a hole in the ice" prompt | (a) a ring of stools round an old hole with an empty sardine tin and one stool tipped over; a rod frozen upright in an abandoned hole with a frosted thermos; bear paw prints in and out of the dark shanty; a "THIS BIG" measuring board. (b) "PAIL POND / THIN ICE: NONE / THICK ICE: ALL OF IT", "HOA NOTICE / ICE HOLES MUST BE ROUND", "DO NOT FEED THE BEARS (THEY HAVE SARDINES)", "THEO'S / BACK IN FIVE (SINCE TUESDAY)", "GONE FISHING / BACK NEVER". (c) Thermos Theo jigging a line on his stool. (d) Snowcap ambience; ice-hole drilling |
+| Polar bear hangouts | `bears-1-deck` (Fells sun deck), `bears-2-lodge-mug`, `bears-3-tube` | five bears in deck chairs behind the new BEAR DECK sign; a bear on the lodge bench with a mug; a bear turning slowly in an inner tube on the ice; one asleep on the ice; one fishing a hole from a stool | (a) each bear's pose is the vignette (nap, tube, fishing, cocoa). (b) "BEAR DECK / Please do not wake the bears. / They are not asleep.", "SUNSCREEN: FACTOR 50. ATTITUDE: FACTOR 100." (c) the bears themselves, never hostile, shrug when shot. (d) the bear call is now a slow contented yawn |
+
+Notes: the ski camera sits a little far back at speed; gates are small from a distance (they read well up close). The
+mug bear's cup is a scaled prefab and is easy to miss at 960x540.

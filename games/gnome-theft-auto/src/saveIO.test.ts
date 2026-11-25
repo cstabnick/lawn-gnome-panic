@@ -43,6 +43,7 @@ describe('saveIO', () => {
       'gta-gnomeybird-v1': JSON.stringify({ best: 7 }),
       'gta-home-v1': JSON.stringify({ v: 1, items: [], stored: { bed: 1 }, wall: 'cream', floor: 'oak' }),
       'gta-homes-visited-v1': JSON.stringify(['juniper']),
+      'gta-winter-v1': JSON.stringify({ v: 1, best: { 'wool-run': 31.5 }, runs: { 'wool-run': 2 } }),
       'unrelated-key': 'keep-me',
     });
 

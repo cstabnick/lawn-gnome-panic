@@ -209,7 +209,7 @@ export const GTA_COAST_KIT: readonly PrefabDef[] = [
     ],
   },
   {
-    id: 'ski-rack', name: 'Ski Rack', category: 'prop', uses: ['place'],
+    id: 'water-ski-rack', name: 'Water-Ski Rack', category: 'prop', uses: ['place'],
     tags: ['ski', 'skis', 'rack', 'water', 'tow', 'handle', 'board', 'chalk', 'beach', 'saltbucket', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: a wooden ski rack with four upright water-skis (two red, two yellow), two tow handles on a bar and a chalk board on top.',
     examine: [

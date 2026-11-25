@@ -69,6 +69,9 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'coast-boardwalk-tubing', after: COAST_UNLOCK_AFTER, why: "Driftwood's new slalom on the Saltwater; he has moved south from the Loch." },
   { questId: 'coast-bathtub-tours', after: 'ch4-sandpit-drop', why: "Captain Bilge's tours: late game, a relaxed run along the shore." },
   { questId: 'coast-queens-treasure', after: 'ch4-sandpit-drop', why: "Bilge's chart; its prereq (Pirate Tours, Mostly) does the rest." },
+  // Snowcap Rise (winterQuests.ts). Temporary: the schedule has them after m38/m39 (act III, E20/E21), which do not exist yet.
+  { questId: 'sq-snowdrop-sled-trials', after: 'ch3-tundra-drift-run', why: "Gentian Bootlace's ski class is north of the Fells; unlocked once the player has been north. E21 moves it to after m38-pail-pond." },
+  { questId: 'sq-pail-pond-lines', after: 'ch3-tundra-drift-run', why: "Thermos Theo's shanty is on Pail Pond, north of the Fells. E21 moves it to after m39-couch-surfing." },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -112,6 +115,8 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'newcomers-club': '#f2c200',
   'pebblewick-plots': '#e0a050',
   'pebblewick-tower': '#9fd0ff',
+  gentian: '#e8f2ff',
+  'theo-pond': '#7fb6e0',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

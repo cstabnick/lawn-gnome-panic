@@ -73,10 +73,12 @@ export const CRITTER_RECIPES: RecipeTable<CritterSoundId> = {
   },
 
   bear: (c, out, t, info) => {
+    // A slow contented yawn: a soft voice rises a little, glides down an octave, then a breathy tail.
     const p = pitch(info);
-    const dur = 1.1;
-    voiced(c, out, 'sawtooth', t, dur, 70 * p, 55 * p, loud(info, 0.3), 9, 0.08, 400, 0.05);
-    burst(c, out, t, dur, 'lowpass', 300, 200, loud(info, 0.12), 1, 0.1);
+    const dur = 1.4;
+    tone(c, out, 'triangle', t, 0.5, 110 * p, 140 * p, loud(info, 0.16), 0.15);
+    tone(c, out, 'triangle', t + 0.5, 0.9, 140 * p, 60 * p, loud(info, 0.18), 0.04);
+    burst(c, out, t + 0.6, 0.8, 'lowpass', 500, 250, loud(info, 0.08), 1, 0.1);
     return dur;
   },
 

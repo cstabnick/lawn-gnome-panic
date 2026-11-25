@@ -69,7 +69,7 @@ export const ACTIONS: readonly ActionDef[] = [
   { id: 'horn', label: 'Horn', icon: '📯', kb: { key: 'horn' }, pad: { drive: 'l3' }, touch: 'cluster', touchText: 'Horn' },
   { id: 'banger', label: 'Share the radio banger', icon: '🔥', kb: { key: 'banger' }, pad: { drive: 'east', fly: 'east' }, touch: 'cluster', touchText: '🔥' },
   { id: 'radio', label: 'Radio dial', icon: '📻', kb: { key: 'radio' }, pad: { drive: 'right', fly: 'right' }, touch: 'cluster', touchText: 'Radio' },
-  { id: 'more', label: 'More menu', icon: '☰', kb: { key: 'more' }, pad: { any: 'select' }, touch: 'cluster', touchText: '☰' },
+  { id: 'more', label: 'Gnomlet (tablet)', icon: '☰', kb: { key: 'more' }, pad: { any: 'select' }, touch: 'cluster', touchText: '☰' },
 
   // ---- The More menu ----------------------------------------------------------------------------------------------
   { id: 'phone', label: 'Phone', icon: '📱', kb: { key: 'phone' }, pad: { any: 'more' }, touch: 'more', touchText: `${M} Phone`, inMore: true },

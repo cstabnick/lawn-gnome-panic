@@ -39,6 +39,8 @@ describe('saveIO', () => {
       'gta-odd-rides-v1': JSON.stringify(['pot-rod']),
       'gta-inventory-v1': JSON.stringify({ v: 1, items: { 'seed-cake': 2 }, quick: 'seed-cake' }),
       'gta-ownership-v1': JSON.stringify({ v: 1, properties: [], policies: {}, wrecks: [], bought: {} }),
+      'gta-position-v1': JSON.stringify({ v: 1, x: 12, z: -40, yaw: 1.2, t: 1 }),
+      'gta-gnomeybird-v1': JSON.stringify({ best: 7 }),
       'unrelated-key': 'keep-me',
     });
 

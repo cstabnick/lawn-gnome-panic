@@ -172,7 +172,9 @@ import { installInputSource } from './ui/inputSource';
 import { ensureButtonStyle, getTouchLayout } from './ui/style';
 import { ensureGlyphStyle } from './ui/glyphs';
 import { createDock } from './ui/dock';
-import { createMoreMenu } from './ui/moreMenu';
+import { createGnomlet } from './gnomlet/gnomlet';
+import { registerGnomeyBird } from './gnomlet/apps/gnomeyBird';
+import { hideLoading } from './loading/loader';
 import { bandAchievement } from './bandAchievements';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map): quality.ts starts them on 'medium'.
@@ -189,7 +191,8 @@ ensureButtonStyle();
 ensureGlyphStyle();
 document.body.dataset.touchLayout = getTouchLayout();
 createDock(ui);
-createMoreMenu(ui);
+createGnomlet(ui);
+registerGnomeyBird();
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.shadowMap.enabled = true;
@@ -1576,7 +1579,10 @@ function cutsceneSkyFrame(dt: number, live: LiveWorld | null): void {
   });
 }
 
+let loaderGone = false;
 function frame(now: number): void {
+  // The loading screen (index.html, loading/) goes once the first frame has been drawn.
+  if (!loaderGone) { loaderGone = true; requestAnimationFrame(() => hideLoading()); }
   beginFrame();
   beginVehicleFrame();
   quality.update(now - last);

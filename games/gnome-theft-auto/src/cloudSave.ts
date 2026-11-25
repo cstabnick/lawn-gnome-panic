@@ -81,6 +81,15 @@ function bestLaps(a: string, b: string): string {
   return JSON.stringify({ best: sorted });
 }
 
+/** Gnomey Bird `{ best }`: the higher best score of the two devices. */
+function bestGnomeyBird(a: string, b: string): string {
+  const best = (s: string): number => {
+    const v = (parse(s) as { best?: unknown } | null)?.best;
+    return typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+  };
+  return JSON.stringify({ best: Math.max(best(a), best(b)) });
+}
+
 /** Quests merged both ways round give the same quests; sort ids so the text is the same too. */
 function quests(a: string, b: string): string {
   const merged = parseSavesJson(mergeQuestSaves(a, b));
@@ -116,11 +125,13 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-odd-rides-v1': unionArrays, // oddRides.ts: the odd rides driven only grow
   'gta-inventory-v1': null, // inventory.ts: one current bag; the newer side wins
   'gta-ownership-v1': null, // ownership.ts: properties, policies and wrecks; the newer side wins (pairs with gta-economy-v1 loans)
+  'gta-position-v1': null, // positionSave.ts: the last place stood; the newer side wins
+  'gta-gnomeybird-v1': bestGnomeyBird, // gnomlet/apps/gnomeyBird.ts: the higher best score wins
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory
  *  copy in a save module must not drop what another device added mid-session). */
-const GROWS = new Set<GtaSaveKey>(['gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1', 'gta-outskirts-v1', 'gta-mowing-v1', 'gta-odd-rides-v1']);
+const GROWS = new Set<GtaSaveKey>(['gta-gnomeybird-v1', 'gta-collectibles-v1', 'gta-stunts-v1', 'gta-speedway-laps-v1', 'gta-boats-helmed-v1', 'gta-intro-seen-v1', 'gta-birding-v1', 'gta-sky-v1', 'gta-outskirts-v1', 'gta-mowing-v1', 'gta-odd-rides-v1']);
 
 function newer(a: BundleEntry, b: BundleEntry): BundleEntry {
   if (a.t !== b.t) return a.t > b.t ? a : b;
@@ -354,8 +365,6 @@ export function cloudStatusText(s: CloudStatus = cloudStatus(), signedIn = cloud
 
 /** Adds the Cloud save heading and its live status line to the Options panel. */
 export function mountCloudStatus(panel: HTMLElement): void {
-  const head = document.createElement('h3');
-  head.textContent = 'Cloud save';
   const line = document.createElement('div');
   line.className = 'gta-opt-note';
   line.id = 'gta-cloud-status';
@@ -365,7 +374,7 @@ export function mountCloudStatus(panel: HTMLElement): void {
   };
   paint(cloudStatus());
   onCloudStatus(paint);
-  panel.append(head, line);
+  panel.append(line);
 }
 
 /** Replaces some deps and resets the slot, status and hook. For tests only. */

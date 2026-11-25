@@ -30,6 +30,8 @@ export const GTA_SAVE_KEYS = [
   'gta-odd-rides-v1', // oddRides.ts: odd rides driven (Sunday Driver)
   'gta-inventory-v1', // inventory.ts: the bag (snacks and fun items, counts)
   'gta-ownership-v1', // ownership.ts: properties bought, Kiln-Shield policies, written-off insured vehicles
+  'gta-position-v1', // positionSave.ts: where the player last stood (restored on the next start, E07 L70)
+  'gta-gnomeybird-v1', // gnomlet/apps/gnomeyBird.ts: Gnomey Bird best score
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

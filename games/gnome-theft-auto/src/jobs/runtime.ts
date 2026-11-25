@@ -40,7 +40,7 @@ export function vehicleOk(job: JobId, spec: VehicleSpec, kind: VehicleKind): boo
     case 'taxi': return !spec.flies && !boat && passengerCount(spec) >= 1;
     case 'courier': return !spec.flies && !boat;
     case 'pilot': return spec.flies;
-    case 'boat': return boat && kind !== 'tow-tube';
+    case 'boat': return boat && kind !== 'tow-tube' && kind !== 'tow-ski';
   }
 }
 

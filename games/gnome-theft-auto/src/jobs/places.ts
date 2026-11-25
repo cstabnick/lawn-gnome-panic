@@ -45,6 +45,9 @@ export const WATER_STOPS: readonly Place[] = [
   { id: 'puddle-marina-west', name: 'Puddle Marina West', x: 612, z: 798, area: 'sea' },
   { id: 'puddle-marina-east', name: 'Puddle Marina East', x: 652, z: 798, area: 'sea' },
   { id: 'puddle-bay', name: 'Puddle Bay', x: 630, z: 830, area: 'sea' },
+  { id: 'long-spoon-pier', name: 'Long Spoon Pier', x: 318, z: 1245, area: 'sea' },
+  { id: 'the-last-tube', name: 'The Last Tube', x: 150, z: 1232, area: 'sea' },
+  { id: 'saltcut-mouth', name: 'The Saltcut', x: 745, z: 1230, area: 'sea' },
 ];
 
 /** The Steamer loop on Loch Moss, in order (ids from WATER_STOPS). */

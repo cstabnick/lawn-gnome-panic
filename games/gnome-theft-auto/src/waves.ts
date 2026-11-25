@@ -57,7 +57,7 @@ export const WAVES = {
   /** Sea state gain. */
   seaGain: { calm: 0.35, breezy: 1, blustery: 1.75 } as Record<SeaState, number>,
   /** Per still body (water marker id), else 1. */
-  bodyGain: { 'water/loch-moss': 1, 'water/puddle-sea': 1.35 } as Record<string, number>,
+  bodyGain: { 'water/loch-moss': 1, 'water/puddle-sea': 1.35, 'water/saltwater': 1.6 } as Record<string, number>,
   /** Rivers and the canal (anywhere wet that is not a still body). */
   courseGain: 0.05,
   /** Waves fade to nothing over this many metres in from a shore, and around an island. */

@@ -6,9 +6,12 @@ import type { GnomeModel } from '@lawn/gnome';
 import { createAnimator, type Animator } from '../anim/animator';
 import { gnomeState, makeGnome } from '../gnomes';
 import { registerCull } from '../cull';
-import { waterAt } from '../terrain';
+import { heightAt, waterAt } from '../terrain';
+import { COAST } from '../coast/config';
+import { coastSign } from '../coast/sign';
 import { lookFromSeed } from '../jobs/visuals';
-import { BUOY_GATES, buoysOf } from './course';
+import { BUOY_GATES, TOW_COURSES, buoysOf, type BuoyGate } from './course';
+import type { TowMode } from './types';
 
 /** One rope: from the boat's hook (a) to the tube (b); `rope` = its length (slack sags). */
 export interface RopeSeg {
@@ -26,6 +29,8 @@ export interface TubeView {
   riderUp: boolean;
   /** Look seed for the NPC gnome. */
   seed: number;
+  /** Skis instead of a tube (the rider stands). Default tube. */
+  mode?: TowMode;
 }
 
 export const MAX_ROPES = 9;
@@ -36,10 +41,12 @@ export interface TubingView {
   ropes(list: readonly RopeSeg[]): void;
   /** Show, move or (null) remove the NPC tube under `key` (e.g. 'me:0', '12:2'). */
   npcTube(key: string, v: TubeView | null): void;
-  /** Place the buoy-run buoys (course.ts BUOY_GATES) once. */
+  /** Place the buoys of every tow course (course.ts TOW_COURSES) and the Saltwater wake ramp, once. */
   buildBuoys(): void;
-  /** A marker on gate i (null hides it). */
-  highlightGate(i: number | null): void;
+  /** The Last Tube: the beach hut, its sign and the ski rack (once). */
+  buildLastTube(): void;
+  /** A marker on gate i of the given course (null hides it). */
+  highlightGate(i: number | null, gates?: readonly BuoyGate[]): void;
   /** Animate NPC riders; hide things farther than 300 m from the camera. */
   update(dt: number, camX: number, camZ: number): void;
 }
@@ -48,6 +55,8 @@ export interface TubingView {
 const ROPE_POINTS = 10;
 /** The seated gnome's height in its tube group (the tube's seat). */
 const SEAT_Y = 0.32;
+/** A skier stands on the skis: the gnome's height in the group. */
+const SKI_Y = 0.08;
 /** Things farther than this from the camera are hidden or skipped (m). */
 const FAR_M = 300;
 /** Seconds a cheer lasts, and the gap between cheers (s, from the key's seed). */
@@ -70,6 +79,8 @@ interface NpcEntry {
   key: string | null;
   group: THREE.Group;
   tube: THREE.Object3D;
+  skis: THREE.Object3D;
+  mode: TowMode;
   gnome: GnomeModel | null;
   seed: number;
   animator: Animator;
@@ -115,6 +126,7 @@ export function createTubingView(scene: THREE.Scene): TubingView {
   // Buoys and the gate marker: shared geometry and materials.
   const buoys: BuoyView[] = [];
   let buoysBuilt = false;
+  let lastTubeBuilt = false;
   let frame = 0;
   // Unit-radius ring, scaled per gate to gate.width / 2 in highlightGate.
   const markerGeo = new THREE.TorusGeometry(1, 0.15, 8, 32);
@@ -130,9 +142,12 @@ export function createTubingView(scene: THREE.Scene): TubingView {
     group.visible = false;
     const tube = buildPrefab('tow-tube');
     group.add(tube);
+    const skis = buildPrefab('water-skis');
+    skis.visible = false;
+    group.add(skis);
     scene.add(group);
     return {
-      key: null, group, tube, gnome: null, seed: -1, animator: createAnimator(), riderUp: true,
+      key: null, group, tube, skis, mode: 'tube', gnome: null, seed: -1, animator: createAnimator(), riderUp: true,
       rng: 1, cheerIn: CHEER_GAP_MIN, cheerLeft: 0,
     };
   }
@@ -145,7 +160,7 @@ export function createTubingView(scene: THREE.Scene): TubingView {
     }
     e.gnome = makeGnome(e.group, lookFromSeed(seed));
     e.seed = seed;
-    e.animator.play('tube-ride', { loop: true });
+    if (e.mode === 'tube') e.animator.play('tube-ride', { loop: true });
   }
 
   function release(e: NpcEntry): void {
@@ -202,6 +217,16 @@ export function createTubingView(scene: THREE.Scene): TubingView {
         e.cheerIn = CHEER_GAP_MIN + nextRand(e) * CHEER_GAP_SPAN;
         e.cheerLeft = 0;
       }
+      const mode: TowMode = v.mode ?? 'tube';
+      if (e.mode !== mode) {
+        e.mode = mode;
+        e.tube.visible = mode === 'tube';
+        e.skis.visible = mode === 'ski';
+        if (e.gnome) {
+          if (mode === 'ski') e.animator.cancel(e.gnome);
+          else e.animator.play('tube-ride', { loop: true });
+        }
+      }
       setGnome(e, v.seed);
       e.group.position.set(v.x, v.y, v.z);
       e.group.rotation.set(0, v.yaw, -v.lean * 0.35);
@@ -213,19 +238,51 @@ export function createTubingView(scene: THREE.Scene): TubingView {
     buildBuoys() {
       if (buoysBuilt) return;
       buoysBuilt = true;
-      for (const g of BUOY_GATES) {
-        for (const p of buoysOf(g)) {
-          const obj = buildPrefab('tow-buoy');
-          obj.position.set(p.x, waterAt(p.x, p.z)?.surface ?? 0, p.z);
-          scene.add(obj);
-          registerCull(obj, 'prop', { moves: true });
-          buoys.push({ obj, x: p.x, z: p.z });
+      for (const c of TOW_COURSES) {
+        for (const g of c.gates) {
+          for (const p of buoysOf(g)) {
+            const obj = buildPrefab('tow-buoy');
+            obj.position.set(p.x, waterAt(p.x, p.z)?.surface ?? 0, p.z);
+            scene.add(obj);
+            registerCull(obj, 'prop', { moves: true });
+            buoys.push({ obj, x: p.x, z: p.z });
+          }
         }
       }
+      // The Saltwater wake ramp, floating at the water surface (the prefab rises towards +z; scale 5 = 6 x 4 m).
+      const r = COAST.wakeRamp;
+      const ramp = buildPrefab('wake-ramp', { scale: 5, lights: false });
+      ramp.position.set(r.x, waterAt(r.x, r.z)?.surface ?? 0, r.z);
+      ramp.rotation.y = r.yaw;
+      scene.add(ramp);
+      registerCull(ramp, 'prop', { moves: true });
+      buoys.push({ obj: ramp, x: r.x, z: r.z });
     },
 
-    highlightGate(i) {
-      const g = i === null ? undefined : BUOY_GATES[i];
+    buildLastTube() {
+      if (lastTubeBuilt) return;
+      lastTubeBuilt = true;
+      const lt = COAST.lastTube;
+      const hut = buildPrefab('beach-hut', { scale: 2.2, lights: false });
+      hut.position.set(lt.hut.x, heightAt(lt.hut.x, lt.hut.z), lt.hut.z);
+      hut.rotation.y = lt.hut.yaw ?? 0;
+      scene.add(hut);
+      registerCull(hut, 'prop');
+      // The sign stands left of the tube rack, facing north (the boardwalk side, where customers come from).
+      const sign = coastSign('THE LAST TUBE\nTubes 8 · Skis 11\nDriftwood tows. Driftwood is not sorry.', { w: 3.6, h: 1.5, post: 0.9 });
+      sign.position.set(lt.rack.x - 3, heightAt(lt.rack.x - 3, lt.rack.z), lt.rack.z);
+      sign.rotation.y = Math.PI;
+      scene.add(sign);
+      registerCull(sign, 'prop');
+      const skiRack = buildPrefab('ski-rack', { lights: false });
+      skiRack.position.set(lt.rack.x + 4, heightAt(lt.rack.x + 4, lt.rack.z - 1), lt.rack.z - 1);
+      skiRack.rotation.y = Math.PI;
+      scene.add(skiRack);
+      registerCull(skiRack, 'prop');
+    },
+
+    highlightGate(i, gates = BUOY_GATES) {
+      const g = i === null ? undefined : gates[i];
       if (!g) {
         marker.visible = false;
         return;
@@ -251,6 +308,10 @@ export function createTubingView(scene: THREE.Scene): TubingView {
         const near = Math.hypot(e.group.position.x - camX, e.group.position.z - camZ) <= FAR_M;
         e.group.visible = near;
         if (!near || !e.riderUp || !e.gnome) continue;
+        if (e.mode === 'ski') {
+          e.gnome.update(gnomeState(0, SKI_Y, 0, 0, 0, false), dt);
+          continue;
+        }
         e.cheerIn -= dt;
         if (e.cheerLeft > 0) {
           e.cheerLeft -= dt;

@@ -5,6 +5,7 @@ import type { ObjectiveDef } from '../../quests/types';
 import type { Finding, Solver, SimCtx } from '../types';
 import { SimFail } from '../types';
 import { runUntil, travelTo } from '../util';
+import { interiorToWorld } from '../../interiors/registry';
 
 /** Crack targets are shot from this far or closer (the water gun's reach). */
 const SHOOT_RANGE = 40;
@@ -67,11 +68,13 @@ export const crackSolver: Solver<'crack'> = {
 export const visitSolver: Solver<'visit'> = {
   kind: 'visit',
   async solve(obj, ctx, o) {
-    await travelTo(ctx, obj.at[0], obj.at[1], `visit ${obj.hint}`);
+    // An interior visit (the coast's cabin) is local to its room: the sim teleports there like to any spot.
+    const [ax, az] = obj.interior ? interiorToWorld(obj.interior, obj.at[0], obj.at[1]) : obj.at;
+    await travelTo(ctx, ax, az, `visit ${obj.hint}`);
     let insideSince: number | null = null;
     await runUntil(ctx, { questId: o.questId, step: o.step, budget: o.budget, what: `visit ${obj.hint}` }, () => {
       // An arrival scene ends by itself in the harness; the step completes when it does.
-      const inside = Math.hypot(ctx.player.x - obj.at[0], ctx.player.z - obj.at[1]) <= obj.radius;
+      const inside = Math.hypot(ctx.player.x - ax, ctx.player.z - az) <= obj.radius;
       if (!inside) { insideSince = null; return; }
       if (insideSince === null) insideSince = ctx.now();
       if (ctx.now() - insideSince >= INSIDE_LIMIT) {
@@ -80,7 +83,7 @@ export const visitSolver: Solver<'visit'> = {
     });
   },
   check(obj, world, questId, step) {
-    return spotFinding(questId, step, world, `visit ${obj.hint}`, obj.at[0], obj.at[1]);
+    return obj.interior ? [] : spotFinding(questId, step, world, `visit ${obj.hint}`, obj.at[0], obj.at[1]);
   },
 };
 

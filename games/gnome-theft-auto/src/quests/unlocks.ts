@@ -9,6 +9,7 @@
 // ch1-founders-boot, ch2-dew-run, ch2-sprinkler-gauntlet, ch2-vespers-offer, ch2-unmowed-tablet, ch3-salvage-raid,
 // ch3-kiln-resin-ice, ch3-tundra-drift-run, ch4-runway-flares, ch4-sandpit-drop, ch4-spade-truce, ch5-even-cut.
 import { TESSIE } from '../config';
+import { COAST_UNLOCK_AFTER } from '../coast/config';
 import type { QuestSave } from './types';
 
 export interface SideUnlock {
@@ -63,6 +64,11 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Pebblewick's side quests (outskirtsQuests.ts): the dry water line, then the humming combine.
   { questId: 'sq-weeping-line', after: 'ch3-kiln-resin-ice', why: 'Pebblewick plots need water; the dry line is found once the player has the tundra kiln run.' },
   { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', why: 'The dunes hum at three once the spade truce has opened the eastern sand.' },
+  // Saltbucket Shore's coast quests (coastQuests.ts): the spur to the sea opens with the airfield chapter.
+  { questId: 'coast-spokewheel-gondola', after: COAST_UNLOCK_AFTER, why: "Marram's gondola wobbles; the coast spur is open once the runway is lit." },
+  { questId: 'coast-boardwalk-tubing', after: COAST_UNLOCK_AFTER, why: "Driftwood's new slalom on the Saltwater; he has moved south from the Loch." },
+  { questId: 'coast-bathtub-tours', after: 'ch4-sandpit-drop', why: "Captain Bilge's tours: late game, a relaxed run along the shore." },
+  { questId: 'coast-queens-treasure', after: 'ch4-sandpit-drop', why: "Bilge's chart; its prereq (Pirate Tours, Mostly) does the rest." },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));

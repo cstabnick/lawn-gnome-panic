@@ -25,6 +25,7 @@ export const VEHICLE_CODES: readonly VehicleKind[] = [
   'hedge-hopper', 'sycamore-copter', 'dandelion-drifter',
   'tow-tube',
   'euro-hatch', 'deux-pots', 'wespa', 'baguette-trike', 'crepe-van',
+  'tow-ski', 'spoke-gondola',
 ];
 
 /** A passenger's seat in someone else's vehicle: the driver's player id and the seat (1.. , see seats.ts). */

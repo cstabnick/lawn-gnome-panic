@@ -26,6 +26,8 @@ The wheel turns on its own hub and is pushed round by a gnome in a treadmill und
 
 Ridden in row 43 `m43-saltbucket-boardwalk` as the new kind `ride-passenger` (E11) to spot HOA barges at sea. Built by E01 and the south-shore area epic: planned (batch 3).
 
+Rideable as a passenger in E11: one turn every 96 seconds, 12 teacup gondolas, fare 3 acorns. Side quest `coast-spokewheel-gondola`.
+
 ## Loose threads
 
 Whose bicycle it was, and why only the one wheel.

@@ -7,6 +7,7 @@ import { CHAPTER_4_QUESTS } from './chapter4';
 import { CHAPTER_5_QUESTS } from './chapter5';
 import { SIDE_QUESTS } from './sideQuests';
 import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
+import { COAST_GIVERS, COAST_QUEST_DEFS } from './coastQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
@@ -182,6 +183,7 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  ...COAST_GIVERS,
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -192,6 +194,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...CHAPTER_5_QUESTS,
   ...SIDE_QUESTS,
   ...OUTSKIRTS_QUESTS,
+  ...COAST_QUEST_DEFS,
   ...CITY_QUESTS,
   ...NEWCOMER_QUESTS,
   TESSIE_QUEST,

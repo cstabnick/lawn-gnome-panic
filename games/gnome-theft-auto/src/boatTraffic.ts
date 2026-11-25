@@ -33,6 +33,11 @@ const STUCK_T = 6;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
+/** The sightseeing loop offshore of the boardwalk (E11): clear of the slalom (z ~1300) and the ship. */
+export const SEA_LOOP: { x: number; z: number }[] = [
+  { x: -600, z: 1450 }, { x: -200, z: 1380 }, { x: 400, z: 1420 }, { x: 900, z: 1480 }, { x: 400, z: 1560 }, { x: -300, z: 1560 },
+];
+
 /** Loop points closer than this many island radii to an island are moved to this distance, on the loch-centre side. */
 const ISLAND_CLEAR = 1.9;
 
@@ -141,6 +146,8 @@ export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world
     npcRoute('clog-cruiser', pingPong(lochToSea), 0.7, true),
     npcRoute('walnut-dinghy', pingPong(seaToLoch), 0.6, true),
     npcRoute('walnut-dinghy', pingPong(upper).reverse(), 0.5, true),
+    npcRoute('clog-cruiser', pingPong(waterwayRoute(['saltcut'], { from: { x: 690, z: 860 }, to: { x: 300, z: 1300 } })), 0.6, true),
+    npcRoute('gravy-boat', SEA_LOOP, 0.7),
   ];
   // A route with no water to follow (the dry world) is skipped.
   const routes = allRoutes.filter((r) => r.route.length > 0);

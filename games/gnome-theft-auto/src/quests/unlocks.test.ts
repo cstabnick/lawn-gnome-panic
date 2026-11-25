@@ -8,6 +8,7 @@ import { SIDE_QUESTS } from './sideQuests';
 import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
+import { COAST_QUEST_DEFS } from './coastQuests';
 import { RACE_QUESTS } from './races';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
@@ -32,24 +33,28 @@ describe('side unlock table', () => {
       ...RACE_QUESTS.map((q) => q.id),
       ...OUTSKIRTS_QUESTS.map((q) => q.id),
       ...NEWCOMER_QUESTS.map((q) => q.id),
+      ...COAST_QUEST_DEFS.map((q) => q.id),
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {
     // The Newcomers' Card tutorials (nc-*) are short teaching jobs: counted on their own, at most 2 per beat too.
     const counts = new Map<string, number>();
     const tutorials = new Map<string, number>();
+    const coast = new Map<string, number>();
     for (const u of SIDE_UNLOCKS) {
       const after = QUESTS.find((q) => q.id === u.after);
       expect(after?.chapter, u.after).toBeDefined();
-      const m = u.questId.startsWith('nc-') ? tutorials : counts;
+      // The coast quests (coast-*) are one more family, also at most 2 per beat.
+      const m = u.questId.startsWith('nc-') ? tutorials : u.questId.startsWith('coast-') ? coast : counts;
       m.set(u.after, (m.get(u.after) ?? 0) + 1);
     }
     for (const n of counts.values()) expect(n).toBeLessThanOrEqual(2);
     for (const n of tutorials.values()) expect(n).toBeLessThanOrEqual(2);
+    for (const n of coast.values()) expect(n).toBeLessThanOrEqual(2);
     expect(counts.size).toBeGreaterThanOrEqual(8);
   });
 

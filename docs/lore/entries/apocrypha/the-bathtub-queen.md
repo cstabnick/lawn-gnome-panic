@@ -26,6 +26,8 @@ She began life as a bath toy, with a bath. How she got from the bath to the sea 
 
 Row 44 `m44-the-bathtub-queen` (board an HOA barge, deliver its cargo, the Combine's spare blades, to her), W11 (she flies the crew's colours) and row 64 `m64-all-hats` (p1 By Water: brought up the canal). The pirate-ship site (E01): planned (batch 3).
 
+Built by E11: moored at (300, 1268) at the end of Long Spoon Pier, with a walkable deck and a captain's cabin interior. Side quests `coast-bathtub-tours` and `coast-queens-treasure`.
+
 ## Loose threads
 
 How a Tall-One bath toy went to sea. Samphire gives three versions and they do not match.

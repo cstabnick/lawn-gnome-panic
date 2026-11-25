@@ -115,6 +115,9 @@ import { GTA_FISH_C } from './gta-fish-c';
 import { GTA_FISH_TACKLE } from './gta-fish-tackle';
 import { GTA_FISH_GEAR } from './gta-fish-gear';
 import { GTA_JOBS } from './gta-jobs';
+import { GTA_COAST } from './gta-coast';
+import { GTA_COAST_KIT } from './gta-coast-kit';
+import { GTA_COAST_GEAR } from './gta-coast-gear';
 import { GTA_JOBS_GEAR } from './gta-jobs-gear';
 import { GTA_PEBBLEWICK } from './gta-pebblewick';
 import { GTA_PEBBLEWICK_B } from './gta-pebblewick-b';
@@ -179,4 +182,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
   ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR,
+  ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
 ];

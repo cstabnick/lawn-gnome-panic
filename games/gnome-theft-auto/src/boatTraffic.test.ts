@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { resetTerrainOptions, waterAt } from './terrain';
-import { loopRoute, patrolSpawn, pingPong, steerToward, waterwayRoute } from './boatTraffic';
-import { courseProfile, onWaterCourse } from './water';
+import { SEA_LOOP, loopRoute, patrolSpawn, pingPong, steerToward, waterwayRoute } from './boatTraffic';
+import { courseProfile, onWaterCourse, waterDepthAt } from './water';
 
 // Browser-only audio (it touches `window` on load); the pure helpers here do not play sound.
 vi.mock('./audio', () => ({ play: () => undefined }));
@@ -15,6 +15,19 @@ describe('boat traffic: loop routes', () => {
     for (const p of pts) {
       expect(waterAt(p.x, p.z)?.depth ?? 0).toBeGreaterThan(1);
     }
+  });
+});
+
+describe('boat traffic: the Saltwater routes (E11)', () => {
+  it('keeps every sea-loop point at least 3 m deep', () => {
+    for (const p of SEA_LOOP) expect(waterDepthAt(p.x, p.z), `${p.x},${p.z}`).toBeGreaterThanOrEqual(3);
+  });
+
+  it('runs the Saltcut as a non-empty route, every point on water', () => {
+    waterAt(0, 0);
+    const pts = waterwayRoute(['saltcut']);
+    expect(pts.length).toBeGreaterThan(0);
+    for (const p of pts) expect(waterDepthAt(p.x, p.z), `${p.x},${p.z}`).toBeGreaterThan(0.5);
   });
 });
 

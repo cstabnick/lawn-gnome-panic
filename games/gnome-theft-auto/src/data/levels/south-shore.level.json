@@ -99,6 +99,33 @@
         ]
       ],
       "width": 10
+    },
+    {
+      "id": "saltcut",
+      "kind": "water",
+      "points": [
+        [
+          700,
+          -268
+        ],
+        [
+          715,
+          -200
+        ],
+        [
+          735,
+          -120
+        ],
+        [
+          745,
+          -40
+        ],
+        [
+          745,
+          55
+        ]
+      ],
+      "width": 14
     }
   ],
   "props": [],
@@ -179,6 +206,16 @@
         "flat": false,
         "parent": "ocean",
         "label": "the Bathtub Queen"
+      }
+    },
+    {
+      "id": "water/saltwater",
+      "kind": "water",
+      "x": 0,
+      "z": 340,
+      "data": {
+        "w": 3580,
+        "d": 600
       }
     }
   ],

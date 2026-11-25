@@ -74,7 +74,9 @@ describe('site registry', () => {
         }
       }
       for (const m of reservedRects().filter((q) => q.source === 'reserve')) expect(overlap(r, m), `${s.id} x ${m.id}`).toBe(false);
-      for (const w of waterBodies()) expect(overlap(r, w), `${s.id} x ${w.id}`).toBe(false);
+      // A water site (E11's the Saltwater) holds its own sea, and so do the sites inside it (the Bathtub Queen).
+      const wet = s.kind === 'water' || (s.parent !== undefined && SITES.find((q) => q.id === s.parent)?.kind === 'water');
+      if (!wet) for (const w of waterBodies()) expect(overlap(r, w), `${s.id} x ${w.id}`).toBe(false);
     }
   });
 

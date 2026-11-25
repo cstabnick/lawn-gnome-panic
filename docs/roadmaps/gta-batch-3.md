@@ -13,8 +13,8 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged so far: E01–E17, E19, E23–E25, E27–E31, F1 (+ main). Running: E26 (street racing), E32 (nine holes), E33
-(mountain routes). Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
+Merged so far: E01–E17, E19, E23–E31, F1 (+ main). Running: E32 (nine holes), E33 (mountain routes), E18
+(activities, side-quest pacing). Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
 then R1 (editorial review). Leads run in worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`;
 if a session ends mid-lead, resume the lead (or start a new one told to continue from its worktree), then merge with
 `bash tools/batch-merge.sh`, `tools/renumber-rulings.py`, `tools/merge-hunks.py` (see the process doc).
@@ -44,14 +44,14 @@ with deferred items listed).
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | merged | epic/E16-country | see log | 3 Even-Estates building sites, Trellisdown Vineyard + Brassknock Manor (tasting-hall interior), 6 deer herds + 2 goat flocks (+ hunting quarry), Windfall Croft farm (loan, 4 crops, oak acorns, Farm app, offline growth capped 2 h), 26 hunter camps; 2 side quests (temp unlocks; E20 → #7/#31), 6 achievements, 70 prefabs, R-210..R-214 (renumbered); deferred: hoardings timing W02/W17, manor ledger room; no camps in Fells/Mossy Wood; vines thin from afar |
 | E17 | Underground societies | Content | 6 | E01, E05, E04 | merged | epic/E17-societies | see log | `src/societies/`: the Underspan (Hogweed Sprocket, workshop + Updraft to the Roost), Wader's Rest (Flock of the One Leg, flamingo, big tent, sermon), Loamdeep (6 underground halls, 4 mole jobs, DJ Moleman + Under-Chorus); 7 side quests (temp unlocks; E20/E21 move them), 6 achievements, ~61 prefabs, save `gta-societies-v1`, R-218..R-222 (renumbered); deferred: world changes W06/W13 (Burrow Door lantern, moles on the surface); hold games use Space/touch, not E |
 | E19 | Courts and skate park | Content | 6 | E01 | merged | epic/E19-courts | see log | Drainpipe Court 2v2 pickup basketball on GJAM's sim (+ shootaround), the Gutter Bowls (half-pipe, bowl, street), `skateboard` vehicle kind with GTA controller scored by Aether Board tricks, 4 skate lines; packages **@lawn/jam**, **@lawn/trickboard** (both source games' goldens unchanged); 2 side quests (temp after `ch1-founders-boot`; E20 → after #14/#15), 6 achievements, R-215..R-217 (renumbered); local only online (board relays); landscape court buttons may overlap |
-| E18 | Activities and side-quest pacing | Content | 7 | E04, E05, E08 | planned | | | |
+| E18 | Activities and side-quest pacing | Content | 7 | E04, E05, E08 | running | epic/E18-activities |  |  |
 | E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
 | E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | merged | epic/E23-quests | 5d56c186 | pinned quest rides + checkpoint auto-retry; `npm run quest-fuzz` (10 disruptions, 0 open bugs on seeds 1-2); sim 57/58 (nc-party needs relay); HOA: 1-hat cap on shooting steps, delayed arrival, LOS cooling, search circle + evade meter (not checked at 390x844) | | |
 | E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | merged | epic/E24-jobs2 | see log | workplace jobs (`src/workplaces/`, `finishShift` + shift card reusable by E25): Chef at the Acorn Diner (8 dishes, touch steps, rushes, dishes heal), Mechanic at Pay 'n' Glaze (16 briefs, client mode, scored), Comedy at Le Petit Groan in Pardonlin (5 awful sets, Double Down, tomatoes); 9 achievements; R-196..R-198 (renumbered); no shift played to the end in a browser; deferred: Gnoma guest lesson, `sq-chef-first-shift`, client driving off; comedy crowd mostly off camera |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | merged | epic/E25-jobs3 | see log | Bin crew (Bin Depot, Mags Wheelie, `bin-lorry`, lift minigame, `?binround`), Firefighter (Fire Station No. 1, Chief Pumpwell, `fire-engine`, hose + hydrants + ladder rescues, `?firecall`), reusable fire system `src/fire/` (`?firedemo`), Gnomazon FC-1 packing minigame with KPI-9 (`?gnomazonshift`); 9 achievements; R-207..R-209 (renumbered); fires per player; Gnomazon party slice in backlog; fire station house prefab has no back wall; no shift played to the end |
-| E26 | Street racing and race modes | Content | 6 | E14 | running | epic/E26-streetrace |  |  |
+| E26 | Street racing and race modes | Content | 6 | E14 | merged | epic/E26-streetrace | see log | 5 street routes (Kerb Row, Skyway Sprint, Ring Road Run, La Boucle, Saltbucket Dash), 3 meets, 5 `sr-*` quests vs Sable Throttlewick, pickup races with wagers, time trials + ghosts on every track, online player races (`tools/gta-race-e2e.mjs`), Race Club app, rivals avoid traffic; R-223..R-225 (renumbered); `sr-kerb-row` moved to ch1-tax-break-in at merge; deferred: spectating, AI in online races, E20 m05 scene at `MEETS['skyway-foot']`; regenerating `environments.md` drops a hand-written landscape section |
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | merged | epic/E27-physics | see log | little bushes (mowable, <= 1.8 m) flatten, hedges/trees solid; `src/skim.ts` water skimming >= 13 m/s on >= 0.6 m water; traffic tests deterministic (game-time crash limiter, warden clock reset, seeded RNG) — two full suites green in a row after merge; known rare real jam in 'pull out' on 3/16 seeds (traffic code, not fixed); lore R-179 (renumbered); skim never driven in a browser |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
@@ -71,6 +71,13 @@ with deferred items listed).
 - `AGENT_INDEX.md`'s Gnome Theft Auto row was built by splicing each epic's insertion and has garbled fragments in
   places (e.g. "E28 d`)", "contracts.m 7:"); rewrite the row cleanly from the epics' contracts docs (F2 or E22).
 - After merging an epic that adds a workspace package (e.g. @lawn/golf), run `npm install` at the root before building.
+
+## Side-quest load (for E18)
+
+After E26 there are about 80 side quests, tutorials and races unlocking off 17 story beats; most area epics placed
+theirs on existing chapter quests as a stop-gap. E18 owns the pacing rework (L67): the schedule in
+`docs/design/gnome-theft-auto/side-quest-schedule.md`, the journal "Later" shelf, the open-offer cap, and re-timing
+every temporary unlock it can before E20 builds the new story rows (E20/E21 then move the rest onto their rows).
 
 ## Engine work (built first, others build on it)
 

@@ -100,7 +100,7 @@ let wasmDisabled = false;
 let staticUploaded = false;
 
 const LF_KIND_CODE: Record<string, number> = {
-  calm: 1, mesa: 2, canyon: 3, crag: 4, glacier: 5, pond: 6, terrace: 7, pen: 8, island: 9, hill: 10, snowfield: 11,
+  calm: 1, mesa: 2, canyon: 3, crag: 4, glacier: 5, pond: 6, terrace: 7, pen: 8, island: 9, hill: 10, snowfield: 11, anthill: 13,
 };
 
 function innerEdges(id: RegionId): [number, number, number, number][] {
@@ -316,7 +316,7 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
     f64[p + 4] = minZ;
     f64[p + 5] = maxZ;
     f64[p + 6] = (t.width || TERRAIN.trailWidth) / 2;
-    f64[p + 7] = 0;
+    f64[p + 7] = t.id === 'trail/anthill-road' ? 1 : 0; // 1 = does not erode the macro relief (E13, see macro.ts)
   }
 
   // Macro features

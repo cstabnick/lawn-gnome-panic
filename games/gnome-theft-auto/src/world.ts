@@ -35,6 +35,7 @@ import { buildRoundaboutIslands } from './roundaboutIslands';
 import { buildWickets } from './pardonlin/wickets';
 import { buildPardonlinTown } from './pardonlin/town';
 import { buildCoast } from './coast';
+import { buildRootwell } from './campus';
 import { buildUnmownGate } from './unmownGate';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
@@ -1103,6 +1104,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildPardonlinTown(scene, boxes);
   // ---- E11: Saltbucket Shore's coast (coast/): the boardwalk, Long Spoon Pier, the Bathtub Queen ------------------------
   buildCoast(scene, boxes);
+  // ---- E13: Rootwell (campus/): the university, the Anthill Observatory, Rootwell Field, Pinwheel Ridge ------------------
+  buildRootwell(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

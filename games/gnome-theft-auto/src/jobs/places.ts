@@ -3,7 +3,7 @@
 import { AIRFIELD, AMPHITHEATER, BASE, CLAY_MART, GNOMECINO, HOSPITAL, SIDE_VALVE, THORNE_TOWER } from '../config';
 import { homeLandPlaces } from '../homes/data';
 
-export type PlaceArea = 'city' | 'outskirts' | 'loch' | 'sea' | 'canal' | 'desert' | 'farm' | 'forest' | 'fells';
+export type PlaceArea = 'city' | 'outskirts' | 'loch' | 'sea' | 'canal' | 'desert' | 'farm' | 'forest' | 'fells' | 'campus';
 
 export interface Place {
   id: string;
@@ -34,6 +34,8 @@ export const LAND_PLACES: readonly Place[] = [
   { id: 'desert-airfield-gate', name: 'Desert Airfield gate', x: AIRFIELD.x - 40, z: AIRFIELD.z, area: 'desert' },
   { id: 'loch-moss-dock-road', name: 'Loch Moss dock road', x: -722, z: -545, area: 'loch' },
   { id: 'reedwatch-hide', name: 'Reedwatch Hide', x: -630, z: -540, area: 'loch' },
+  { id: 'rootwell-gate', name: 'Rootwell University gate', x: 960, z: -200, area: 'campus' },
+  { id: 'rootwell-field-gate', name: 'Rootwell Field', x: 1185, z: 582, area: 'campus' },
   // built homes (E10): the acknowledged ones with a front door
   ...homeLandPlaces(),
 ];
@@ -63,6 +65,7 @@ export const AIR_PADS: readonly Place[] = [
   { id: 'mossbank-green', name: 'Mossbank Green', x: -705, z: -535, area: 'loch' },
   { id: 'pebblewick-field', name: 'Pebblewick Field', x: 745, z: 70, area: 'outskirts' },
   { id: 'turfton-park-lawn', name: 'Turfton Park Lawn', x: -70, z: -60, area: 'city' },
+  { id: 'rootwell-field-pad', name: 'Rootwell Field Pad', x: 1245, z: 640, area: 'campus' },
 ];
 
 /** Landmarks a scenic flight passes over (sky gates). */
@@ -73,6 +76,8 @@ export const SKY_SIGHTS: readonly Place[] = [
   { id: 'sight-pebblewick', name: 'Pebblewick', x: 655, z: 105, area: 'outskirts' },
   { id: 'sight-fort-sandpit', name: 'Fort Sandpit', x: (BASE.minX + BASE.maxX) / 2, z: (BASE.minZ + BASE.maxZ) / 2, area: 'desert' },
   { id: 'sight-birdbath-basin', name: 'Birdbath Basin', x: 0, z: -350, area: 'fells' },
+  { id: 'sight-anthill', name: 'The Anthill Observatory', x: 1258, z: 158, area: 'campus' },
+  { id: 'sight-pinwheel-ridge', name: 'Pinwheel Ridge', x: 850, z: -1200, area: 'campus' },
 ];
 
 /** Cargo drop zones (open ground). */

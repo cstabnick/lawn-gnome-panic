@@ -162,6 +162,7 @@ import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
 import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
+import { installRootwell } from './campus';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -181,7 +182,7 @@ import { ensureRideNear } from './quests/ensureRide';
 import { enterLabelFor } from './ui/enterLabel';
 import { buildEstates } from './lockup/estates';
 import { waterDepthAt } from './water';
-import { SPAWN as FLEET_NEAR, WORLD_HALF } from './config';
+import { ROOTWELL_AIRFIELD, SPAWN as FLEET_NEAR, WORLD_HALF } from './config';
 import { readPosition, validatePosition, writePosition, type SavedPosition } from './positionSave';
 import { interiorById } from './interiors/registry';
 import { mountSteamConnect } from '@lawn/gamepad';
@@ -781,6 +782,8 @@ for (const { plan, ...spot } of parkedPlans) {
   vehicles.push(pv);
 }
 for (const s of world.airfield.planeSpots) vehicles.push(createVehicle(scene, 'plane', s.x, s.z, s.yaw));
+// E13: Rootwell Field's apron (Crop Dusters, a Hedge-Hopper and a Sycamore Copter; campus/types.ts ROOTWELL_FIELD).
+for (const s of ROOTWELL_AIRFIELD.planeSpots) vehicles.push(createVehicle(scene, s.kind, s.x, s.z, s.yaw));
 const whirligig = createVehicle(scene, 'whirligig', world.base.padX, world.base.padZ, Math.PI);
 vehicles.push(whirligig);
 // Air and sea (craft/): the Hedge-Hopper, Sycamore Copter and Dandelion Drifter at the airfield, and the Wingwright's Slipway.
@@ -1085,6 +1088,9 @@ const winter = installWinter({
   bears: () => critters.list.filter((c) => c.kind === 'polar-bear'),
   onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
 });
+// Rootwell (E13, campus/): campus life, the Anthill Observatory, Rootwell Field, Pinwheel Ridge's turning pinwheels and
+// their achievements. The static scenery is built by world.ts (buildRootwell).
+const rootwell = installRootwell(jobDeps);
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -2127,6 +2133,7 @@ function frame(now: number): void {
   tubing.update(dt);
   coast.update(dt);
   winter.update(dt);
+  rootwell.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2467,7 +2474,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips(), ...winter.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...rootwell.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();

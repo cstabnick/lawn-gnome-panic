@@ -14,6 +14,7 @@ import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
+import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -203,6 +204,23 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // Rootwell's side quests (rootwellQuests.ts): the Dean's lodge and the Anthill observatory.
+  lovage: {
+    id: 'lovage',
+    name: "The Dean's lodge",
+    label: 'Talk to Dean Inkwell',
+    ...placed('lovage'),
+    room: 'street',
+    letter: '!',
+  },
+  betony: {
+    id: 'betony',
+    name: 'The Anthill Observatory',
+    label: 'Talk to Professor Sextant',
+    ...placed('betony'),
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -221,6 +239,7 @@ export const QUESTS: readonly QuestDef[] = [
   TESSIE_QUEST,
   ...RACE_QUESTS,
   ...WINTER_QUESTS,
+  ...ROOTWELL_QUESTS_DEFS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

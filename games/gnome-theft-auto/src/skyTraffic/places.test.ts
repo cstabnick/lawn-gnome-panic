@@ -1,6 +1,6 @@
 import '../questSim/globals';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AIRFIELD } from '../config';
+import { AIRFIELD, ROOTWELL_AIRFIELD } from '../config';
 import { GNOMECINO_DOOR } from '../portal/gnomecinoDoor';
 import { pushOutOfBoxes } from '../collide';
 import { deckContactsAt } from '../highways/deck';
@@ -51,6 +51,11 @@ describe('sky-traffic places are on legal ground', () => {
 
   it('airfield-circuit parking (r 3)', () => {
     const p = { x: AIRFIELD.x + PARKING_OFFSET.x, z: AIRFIELD.z + PARKING_OFFSET.z };
+    expect(problems(sim, p.x, p.z, 3), `parking at ${fmt(p)}`).toEqual([]);
+  });
+
+  it('rootwell-circuit parking (r 3)', () => {
+    const p = { x: 1250, z: 545 };
     expect(problems(sim, p.x, p.z, 3), `parking at ${fmt(p)}`).toEqual([]);
   });
 

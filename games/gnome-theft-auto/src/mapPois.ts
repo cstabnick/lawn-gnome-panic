@@ -11,6 +11,7 @@ import { skywayDefs } from './highways/deck';
 import { kindOf, SKYWAY_SITES } from './highways/skyways';
 import { landmarkPlaces } from './towers';
 import { TOWN } from './outskirts/town';
+import { CAMPUS, OBSERVATORY, ROOTWELL_FIELD } from './campus/types';
 import { PARKS } from './parks/blocks';
 import { EDGE_LABELS, EDGE_NAMES, type EdgeId } from './fringe/belt';
 import type { Blip } from './types';
@@ -71,6 +72,11 @@ export function placeBlips(): Blip[] {
     at('skyway', -1555, -30, 'The Hatwheel'),
     at('skyway', -950, -30, 'Trellis Cross'),
     at('skyway', 940, 40, 'The Anthill Ring'),
+    // Rootwell (E13): the university, the Anthill Observatory, Rootwell Field (kind 'airfield') and Pinwheel Ridge.
+    at('campus', CAMPUS.quadCentre.x, CAMPUS.quadCentre.z, 'Rootwell University'),
+    at('observatory', OBSERVATORY.dome.x, OBSERVATORY.dome.z, 'The Anthill Observatory'),
+    at('airfield', ROOTWELL_FIELD.runway.x, ROOTWELL_FIELD.runway.z, 'Rootwell Field'),
+    at('windfarm', 850, -1200, 'Pinwheel Ridge'),
   ];
 }
 

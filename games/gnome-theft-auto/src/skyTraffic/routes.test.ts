@@ -72,9 +72,9 @@ describe('skyWriterRoute', () => {
 });
 
 describe('SKY_BEHAVIOURS', () => {
-  it('has 10 entries with unique ids', () => {
-    expect(SKY_BEHAVIOURS).toHaveLength(10);
-    expect(new Set(SKY_BEHAVIOURS.map((b) => b.id)).size).toBe(10);
+  it('has 11 entries with unique ids', () => {
+    expect(SKY_BEHAVIOURS).toHaveLength(11);
+    expect(new Set(SKY_BEHAVIOURS.map((b) => b.id)).size).toBe(11);
   });
 
   it('every route is non-empty with finite numbers', () => {

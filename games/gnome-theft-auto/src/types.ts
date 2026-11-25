@@ -729,7 +729,7 @@ export interface Blip {
     | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
     | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home'
     // Winter sports (E12, winter/): Snowdrop Slope + the Woolly Sock Lodge, the Bear Deck, Pail Pond ice fishing.
-    | 'ski' | 'bears' | 'icefish';
+    | 'ski' | 'bears' | 'icefish' | 'campus' | 'observatory' | 'windfarm';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */

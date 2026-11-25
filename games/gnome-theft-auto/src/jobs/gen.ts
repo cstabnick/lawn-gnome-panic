@@ -194,8 +194,15 @@ export function makePilotGig(c: GenCtx, kind: GigKind): Gig | null {
   if (kind === 'charter') {
     if (v.fixedWing) {
       const sight = pick(SKY_SIGHTS, c);
-      stops = [stand, gateStop(sight), airfield()];
-      title = 'Charter to Airfield';
+      // drawn after the existing pick so the seeded sequence before it is unchanged
+      if (c.rng() < 0.4) {
+        // a visiting professor: down on the Rootwell Field runway, then home
+        stops = [stand, landStop('rootwell-field', 'Rootwell Field runway', 1300, 600, P.landRadius * 2), airfield()];
+        title = 'Charter to Rootwell Field';
+      } else {
+        stops = [stand, gateStop(sight), airfield()];
+        title = 'Charter to Airfield';
+      }
     } else {
       const pad = pick(AIR_PADS.slice(1), c);
       stops = [stand, landStop(pad.id, pad.name, pad.x, pad.z, P.landRadius)];

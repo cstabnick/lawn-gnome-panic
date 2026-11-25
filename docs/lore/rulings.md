@@ -1038,3 +1038,31 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** There are nine in all. Five lounge on the Fells' sun deck, now signposted "BEAR DECK". Four are on Snowcap Rise: one asleep on Pail Pond's ice, one turning slowly in an inner tube on the ice, one fishing a hole from a stool, and one on the Lodge's porch bench with a mug of cocoa. Their call is a long contented yawn. They never speak, and nothing upsets them: a shot, a ram or a shove gets a shrug. Standing beside all nine earns the "Bear Hug" achievement.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E12 adds the four Snowcap bears and a sign for the Fells' five, and they must stay the calmest creatures in Turfton (R-040).
+
+## R-189
+
+**Question:** How is Rootwell University laid out as built, and what can a gnome enter?
+**Ruling:** The twelve buildings stand round a quad lawn, with the founder's statue at its centre: a bronze gnome holding out a plumb bob. North: the Long Shelf (library) and Plumbob Hall (flat roof with a helipad; a plumb bob hangs under the clock tower's arch). South: Tilth Hall (lectures; its roof can be walked, by stairs from inside) and the Crucible Block (labs). East: the Trencher (refectory; the sugar store is behind it), the Cold Frame Club and the Cloche (glasshouse). Further out: Bedstraw House, Bodger's Shed, the Heap Barn, Wicket Lodge on the drive, the Clod (a small pitch between two grandstands) and the Dean's lodge, which faces the quad. The Long Shelf, the Crucible Block and Tilth Hall can be entered; the rest are looked at. Students walk the quad and the university bell rings. Everything is built at gnome scale from stone, clay brick and slate.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the campus, and the layout, the statue and which doors open need one answer.
+
+## R-190
+
+**Question:** What is the Anthill as built, who lives in it, and what is Dean's Leap?
+**Ruling:** The Anthill is a 45 m mound with earth-coloured flanks and a flattened summit under a gravel forecourt, with the Anthill Observatory on top. A dirt road spirals up from the east-band road. Three round wooden ant doors stand at the foot (north, east, south). The ants are only ever seen singly or in lines, each carrying a sugar cube, and they never speak; a shut door means the rent is late. **Dean's Leap** is a wedge ramp on the north rim of the summit that throws a car north toward the campus. Nobody remembers who cut it; the Dean says it was a wheelchair ramp for a very ambitious professor. Landing it earns "Not Termites".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the mound, its doors and the ramp, and the ants must stay silent landlords (R-159).
+
+## R-191
+
+**Question:** What is Rootwell Field as built, and how can there be four aircraft when the department has one working plane?
+**Ruling:** The Field has a 420 m north-south runway with edge lights lit at night, an apron, a pad, a hangar, the "very small tower" (a brick stalk with a glazed cab) and an orange-and-white windsock. On the apron stand two Crop Dusters, a Hedge-Hopper and a Sycamore Copter. The department owns one airworthy plane on paper, the Hedge-Hopper; the other three are "on loan from Wally" and are the four students' coursework, which Wally would like back. The Hedge-Hopper flies circuits from the Field ("Rootwell Aeronautics Circuit"), and Wally's Charters sometimes fly a visiting professor in. Landing on the runway earns "Touch and Go".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 puts four aircraft on the apron against the older "one working plane and four students" joke, which should survive.
+
+## R-192
+
+**Question:** How is Pinwheel Ridge built: how many pinwheels, what colours, and who lives there?
+**Ruling:** Ten giant garden pinwheels, numbered 1 to 10 from west to east, stand 30 m apart along the crest, coloured red, yellow and blue in turn. Each is on a white-and-red mast with a ladder and always turns, facing south. Ragwort Coilspring keeps a control hut on the north flank below the crest, with a substation beside it, and a gravel service track runs up from the north-band-east road. They power lamps and neon, never engines (R-160). Flying along the ridge between them earns "Windfall".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the ridge and its count, order and colours need to be fixed for the quests and the achievement.

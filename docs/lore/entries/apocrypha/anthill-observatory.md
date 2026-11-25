@@ -7,8 +7,8 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159]
-related: [the-anthill, rootwell-university, betony-sextant, lovage-inkwell, hoa]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-159, docs/lore/rulings.md#r-190]
+related: [deans-leap, the-anthill, rootwell-university, betony-sextant, lovage-inkwell, hoa]
 ---
 
 The observatory on the flat summit of the Anthill, where Professor Betony Sextant surveyed the stars for a perfectly level line. The HOA has taken its lens for the Grand Combine's guidance.
@@ -24,7 +24,7 @@ Sextant's survey of a level line was meant for the stars. Vesper Thorne's people
 
 ## In the games
 
-Row 46 `m46-starfall-at-the-anthill` p3 The Lens (crack the HOA technicians, take the lens); row 45 sends the player to it. Sextant's staff room is here. Site observatory-mound, built by E01: planned (batch 3).
+Row 46 `m46-starfall-at-the-anthill` p3 The Lens (crack the HOA technicians, take the lens); row 45 sends the player to it. Sextant's staff room is here. Built by E13 at (1258, 158) on the gravel forecourt of the flattened summit (R-190): a white dome with a slit, 18 m across, door facing west. It can be entered (interior `anthill-observatory`): the great brass telescope, and Professor Betony Sextant's desk.
 
 ## Loose threads
 

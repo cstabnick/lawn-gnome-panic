@@ -1,7 +1,7 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/prefabs';
-import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH, ROOTWELL_AIRFIELD } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
 import type { Blip, GunKind, Hud, HudState, RoadNode, WatchSearch, World } from './types';
@@ -819,24 +819,25 @@ function paintWorld(g: CanvasRenderingContext2D, world: World, s: number, ox: nu
   g.lineWidth = e(2);
   g.strokeRect(...rect(b.minX, b.maxX, b.minZ, b.maxZ));
 
-  // Runway: forward = (sin yaw, cos yaw), width across it.
-  const a = world.airfield;
-  const fx = Math.sin(a.yaw);
-  const fz = Math.cos(a.yaw);
-  const sx = Math.cos(a.yaw);
-  const sz = -Math.sin(a.yaw);
-  const hl = a.length / 2;
-  const hw = a.width / 2;
-  poly(
-    [
-      [a.x + fx * hl + sx * hw, a.z + fz * hl + sz * hw],
-      [a.x + fx * hl - sx * hw, a.z + fz * hl - sz * hw],
-      [a.x - fx * hl - sx * hw, a.z - fz * hl - sz * hw],
-      [a.x - fx * hl + sx * hw, a.z - fz * hl + sz * hw],
-    ],
-    MAP.runway,
-    { color: MAP.runwayEdge, width: 1.5 },
-  );
+  // Runways (desert strip and Rootwell Field): forward = (sin yaw, cos yaw), width across it.
+  for (const a of [world.airfield, ROOTWELL_AIRFIELD]) {
+    const fx = Math.sin(a.yaw);
+    const fz = Math.cos(a.yaw);
+    const sx = Math.cos(a.yaw);
+    const sz = -Math.sin(a.yaw);
+    const hl = a.length / 2;
+    const hw = a.width / 2;
+    poly(
+      [
+        [a.x + fx * hl + sx * hw, a.z + fz * hl + sz * hw],
+        [a.x + fx * hl - sx * hw, a.z + fz * hl - sz * hw],
+        [a.x - fx * hl - sx * hw, a.z - fz * hl - sz * hw],
+        [a.x - fx * hl + sx * hw, a.z - fz * hl + sz * hw],
+      ],
+      MAP.runway,
+      { color: MAP.runwayEdge, width: 1.5 },
+    );
+  }
 
   // Buildings and walls: a light fill with a dark edge, so they stand out from the ground around them.
   g.fillStyle = hexColor(MAP.building);

@@ -157,6 +157,12 @@ import { GTA_WINTER_RIDES } from './gta-winter-rides';
 import { GTA_WINTER_LODGE } from './gta-winter-lodge';
 import { GTA_WINTER_GEAR } from './gta-winter-gear';
 import { GTA_FISH_ICE } from './gta-fish-ice';
+import { GTA_CAMPUS_HALLS } from './gta-campus-halls';
+import { GTA_CAMPUS_BUILDINGS } from './gta-campus-buildings';
+import { GTA_ANTHILL_FIELD } from './gta-anthill-field';
+import { GTA_PINWHEEL_CAMPUS_PROPS } from './gta-pinwheel-campus-props';
+import { GTA_CAMPUS_PROPS } from './gta-campus-props';
+import { GTA_CAMPUS_GEAR } from './gta-campus-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -192,4 +198,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
+  ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,
 ];

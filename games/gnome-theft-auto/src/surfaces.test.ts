@@ -36,6 +36,13 @@ describe('surfaceAt', () => {
     expect(surfaceAt(480, -110, mockWorld).kind).toBe('asphalt');
   });
 
+  it('returns asphalt on Rootwell Field runway, not beside it', () => {
+    // Rootwell Field runs north-south at x 1300, z 370..830 (config ROOTWELL_AIRFIELD).
+    expect(surfaceAt(1300, 600, {}).kind).toBe('asphalt');
+    expect(surfaceAt(1300, 780, {}).kind).toBe('asphalt');
+    expect(surfaceAt(1340, 600, {}).kind).not.toBe('asphalt');
+  });
+
   it('returns ice on the Frozen Birdbath Basin', () => {
     const s = surfaceAt(4, -346, mockWorld);
     expect(s.kind).toBe('ice');

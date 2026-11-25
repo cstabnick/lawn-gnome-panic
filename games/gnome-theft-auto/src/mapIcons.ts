@@ -5,7 +5,7 @@ import type { Blip } from './types';
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
   | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
-  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish';
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish' | 'campus' | 'observatory' | 'windfarm';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -40,6 +40,9 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   ski: { name: 'Snowdrop Slope (ski, sled)', color: '#3a7bd5' },
   bears: { name: 'Polar bears (very chill)', color: '#9fb8c8' },
   icefish: { name: 'Pail Pond (ice fishing)', color: '#4fb3c8' },
+  campus: { name: 'Rootwell University', color: '#8b1e2b' },
+  observatory: { name: 'Observatory', color: '#2b3f7a' },
+  windfarm: { name: 'Pinwheel Ridge', color: '#e0a21b' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -433,6 +436,34 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       // A fish over a round hole.
       glyphPoly(g, x, y, s, [[-0.9, 0], [0.3, -0.5], [0.3, 0.5]]);
       glyphPoly(g, x, y, s, [[0.3, 0], [0.9, -0.45], [0.9, 0.45]]);
+      break;
+    }
+    case 'campus': {
+      // A mortarboard: a flat diamond cap with a tassel line hanging off one corner.
+      glyphPoly(g, x, y, s, [[0, -0.7], [1, -0.15], [0, 0.4], [-1, -0.15]]);
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, 0.55, -0.1, 0.12, 0.8);
+      g.fillStyle = WHITE;
+      glyphRect(g, x, y, s, 0.5, 0.7, 0.22, 0.2);
+      break;
+    }
+    case 'observatory': {
+      // A half-dome with a slit across it, on a base line.
+      g.beginPath();
+      g.arc(x, y + 0.3 * s, 0.9 * s, Math.PI, 0);
+      g.fill();
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, -0.1, -0.8, 0.2, 0.9);
+      g.fillStyle = WHITE;
+      glyphRect(g, x, y, s, -1, 0.4, 2, 0.22);
+      break;
+    }
+    case 'windfarm': {
+      // A four-vane garden pinwheel: four white triangles turning round the centre.
+      glyphPoly(g, x, y, s, [[0, 0], [0, -0.85], [0.6, -0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [0.85, 0], [0.6, 0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [0, 0.85], [-0.6, 0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [-0.85, 0], [-0.6, -0.6]]);
       break;
     }
   }

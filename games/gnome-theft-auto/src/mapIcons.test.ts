@@ -39,7 +39,8 @@ describe('placeBlips', () => {
     // At least these 32; other features add more (one line each in mapPois.ts).
     expect(blips.length).toBeGreaterThanOrEqual(32);
     expect(new Set(blips.map((b) => b.label)).size).toBe(blips.length);
-    const repeats = new Set<string>(['onramp', 'works', 'skyway', 'park', 'edge', 'town']);
+    // 'airfield' repeats: the Airfield and Rootwell Field (E13) share the airfield icon.
+    const repeats = new Set<string>(['onramp', 'works', 'skyway', 'park', 'edge', 'town', 'airfield']);
     const counts = new Map<string, number>();
     for (const b of blips) counts.set(b.kind as string, (counts.get(b.kind as string) ?? 0) + 1);
     for (const [kind, n] of counts) if (!repeats.has(kind)) expect(n).toBe(1);

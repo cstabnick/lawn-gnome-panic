@@ -35,6 +35,7 @@ export const GTA_SAVE_KEYS = [
   'gta-home-v1', // home/layout.ts: Flat 3B furniture layout, stored pieces, wall and floor colours (E10)
   'gta-homes-visited-v1', // homes/visits.ts: character homes the player has stood at (E10 House Call)
   'gta-winter-v1', // winter/save.ts: Snowdrop Slope best times, runs, sled owned, ice catches, bears hugged (E12)
+  'gta-rootwell-v1', // campus/achievements.ts: Rootwell University doors visited (E13 First Class Honours)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

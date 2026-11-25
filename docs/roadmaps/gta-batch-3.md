@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit). Running: E14, E13, E15. Next: then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14. Running: E13, E15, E24. Next: then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -40,7 +40,7 @@ with deferred items listed).
 | E11 | Coast and boardwalk | Content | 4 | E01 | merged | epic/E11-coast | see log | the Saltwater + Saltcut channel (Loch Moss → open sea), boardwalk, Long Spoon Pier, Spokewheel ride, water-ski mode + slalom + ramp (Last Tube rentals, Driftwood tows), Bathtub Queen (moored, cabin interior), 4 coast quests, 5 achievements, 22 prefabs, R-185 (renumbered); not hand-played; skier rides seated; Driftwood's boat local only; wheel legs lack colliders |
 | E12 | Winter sports | Content | 4 | E01, E06 | merged | epic/E12-winter | see log | Snowdrop Slope snow paint (JS + Wasm), tea-tray sled + skis (`src/winter/slideRider.ts`), rope tow, Wool Run + Tea-Tray Run with bests, Hot Cocoa, Snowdrop app; ice fishing at Pail Pond (4 species); 4 more chill bears + BEAR DECK; 25 prefabs, 5 achievements, 2 side quests (temporarily after `ch3-tundra-drift-run`; E21 moves them to m38/m39), R-186..R-188 (renumbered); fixed: ground vehicle chassis froze mesh+rider; runs are 15–20 s (slope ~280 m); demo GIFs saved in the session scratchpad `demos/` (winter-ski-run.gif, winter-sled-run.gif) for upload; `sq-capwood-cap-count` left for E14 |
 | E13 | Campus and skyline | Content | 5 | E01, E05 | running | epic/E13-campus | | |
-| E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | running | epic/E14-dirt | | |
+| E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | merged | epic/E14-dirt | see log | **TrackDef registry** `raceTrack/tracks.ts` (+ `defs/`) for E26; Rutbottom Dirt Bowl 1.22 km banked circuit + `dirt-bike` Knobbly Dirt-Mower (dealer 650); Capwood ~140 toadstools + Great Ring; Capwood Run 2.73 km rally (shorter than the 3–4 km asked: small mountain) with fords capped at `WATERLOG.fordCap` 0.3; 4 quests (unlocks temporarily after ch2/ch4/ch5 quests — E21 re-times to #40/#42), 6 achievements, R-189..R-192 (renumbered); deferred: rally free-roam timer, mixed-kind races, glaze for the Knobbly, demo GIF |
 | E15 | Golf course | Content | 5 | E01, E05 | running | epic/E15-golf | | |
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | planned | | | |
 | E17 | Underground societies | Content | 6 | E01, E05, E04 | planned | | | |
@@ -50,7 +50,7 @@ with deferred items listed).
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
 | E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | merged | epic/E23-quests | 5d56c186 | pinned quest rides + checkpoint auto-retry; `npm run quest-fuzz` (10 disruptions, 0 open bugs on seeds 1-2); sim 57/58 (nc-party needs relay); HOA: 1-hat cap on shooting steps, delayed arrival, LOS cooling, search circle + evade meter (not checked at 390x844) | | |
-| E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
+| E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | running | epic/E24-jobs2 |  |  |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | merged | epic/E27-physics | see log | little bushes (mowable, <= 1.8 m) flatten, hedges/trees solid; `src/skim.ts` water skimming >= 13 m/s on >= 0.6 m water; traffic tests deterministic (game-time crash limiter, warden clock reset, seeded RNG) — two full suites green in a row after merge; known rare real jam in 'pull out' on 3/16 seeds (traffic code, not fixed); lore R-179 (renumbered); skim never driven in a browser |

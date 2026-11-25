@@ -210,17 +210,19 @@ function isNearRoadLine(x: number, z: number, margin: number): boolean {
   return false;
 }
 
+/** The 14 smashable kerb hydrants downtown (E25: the fire engine refills at any of them). */
+export const HYDRANT_SPOTS: readonly (readonly [number, number])[] = [
+  [-5.8, -14], [5.8, -32], [-5.8, 22], [5.8, 44],
+  [-65.8, -18], [65.8, 18], [-65.8, 42], [65.8, -42],
+  [-14, -5.8], [26, 5.8], [-38, 5.8], [48, -5.8],
+  [-98, -65.8], [98, 65.8],
+];
+
 function buildPlacements(): PropPlacement[] {
   const list: PropPlacement[] = [];
 
   // 1. Hydrants (14) — downtown & inner city kerbsides
-  const hydrantCoords: [number, number][] = [
-    [-5.8, -14], [5.8, -32], [-5.8, 22], [5.8, 44],
-    [-65.8, -18], [65.8, 18], [-65.8, 42], [65.8, -42],
-    [-14, -5.8], [26, 5.8], [-38, 5.8], [48, -5.8],
-    [-98, -65.8], [98, 65.8],
-  ];
-  for (const [x, z] of hydrantCoords) list.push({ kind: 'hydrant', x, z, yaw: 0 });
+  for (const [x, z] of HYDRANT_SPOTS) list.push({ kind: 'hydrant', x, z, yaw: 0 });
 
   // 2. Mailboxes (14) — sidewalks along Turfton streets
   const mailboxCoords: [number, number][] = [

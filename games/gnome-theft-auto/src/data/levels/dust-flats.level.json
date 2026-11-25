@@ -905,6 +905,37 @@
         "flat": true,
         "label": "home-12"
       }
+    },
+    {
+      "id": "gnomazon-fc",
+      "kind": "slot",
+      "x": -150,
+      "z": 90,
+      "data": {
+        "hw": 35,
+        "hd": 18,
+        "kind": "building",
+        "epic": "E25",
+        "flat": true,
+        "label": "Gnomazon Fulfilment Centre FC-1",
+        "anchors": {
+          "door": {
+            "dx": 33,
+            "dz": -6,
+            "yaw": 1.5708
+          },
+          "dock": {
+            "dx": 30,
+            "dz": 10,
+            "yaw": 1.5708
+          },
+          "lot": {
+            "dx": 24,
+            "dz": -14,
+            "yaw": 1.5708
+          }
+        }
+      }
     }
   ],
   "data": {

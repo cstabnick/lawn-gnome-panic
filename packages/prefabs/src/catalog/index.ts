@@ -166,6 +166,10 @@ import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
 import { GTA_DINER } from './gta-diner';
 import { GTA_MECHANIC } from './gta-mechanic';
 import { GTA_COMEDY } from './gta-comedy';
+import { GTA_JOBS3_FLEET } from './gta-jobs3-fleet';
+import { GTA_BIN_ROUND } from './gta-bin-round';
+import { GTA_FIRE_BRIGADE } from './gta-fire-brigade';
+import { GTA_GNOMAZON } from './gta-gnomazon';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -204,4 +208,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
+  ...GTA_JOBS3_FLEET, ...GTA_BIN_ROUND, ...GTA_FIRE_BRIGADE, ...GTA_GNOMAZON,
 ];

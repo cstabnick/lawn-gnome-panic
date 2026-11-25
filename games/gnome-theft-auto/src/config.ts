@@ -497,6 +497,23 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 19, accel: 8, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
     // No passenger seats: an enclosed cab with a griddle where the second seat would be.
   },
+  // ---- E25 work vehicles (prefabs in packages/prefabs/src/catalog/gta-jobs3-fleet.ts, nose +z). Seats and doors are
+  // the prefab's numbers times `scale`. Heavy and slow on purpose; the jobs spawn them at the depot / the station. ----
+  'bin-lorry': {
+    kind: 'bin-lorry', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.9, 0.95, 1.1] },
+      { side: 'right', pivot: 'door-right', at: [-0.9, 0.95, 1.1] },
+    ], name: 'Bin Lorry', prefab: 'gta-bin-lorry', scale: 1.8,
+    maxSpeed: 18, accel: 8, turnRate: 1.6, radius: 2.0, seat: [0.3, 0.85, 1.0], flies: false, mass: 5,
+    // No passenger seats: the second seat is full of bin bags that did not fit.
+  },
+  'fire-engine': {
+    kind: 'fire-engine', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.9, 0.95, 1.1] },
+      { side: 'right', pivot: 'door-right', at: [-0.9, 0.95, 1.1] },
+    ], name: 'Watering-Can Pumper', prefab: 'gta-fire-engine', scale: 1.8,
+    maxSpeed: 25, accel: 11, turnRate: 1.8, radius: 2.0, seat: [0.3, 0.85, 1.0], flies: false, mass: 4.8,
+  },
 };
 
 /**

@@ -710,6 +710,78 @@
         "flat": true,
         "label": "home-11"
       }
+    },
+    {
+      "id": "bin-depot",
+      "kind": "slot",
+      "x": 160,
+      "z": -97,
+      "data": {
+        "hw": 24,
+        "hd": 14,
+        "kind": "building",
+        "epic": "E25",
+        "flat": true,
+        "label": "Turfton Bin Depot",
+        "anchors": {
+          "gate": {
+            "dx": 22,
+            "dz": 8,
+            "yaw": 1.5708
+          },
+          "lorry": {
+            "dx": 10,
+            "dz": 4,
+            "yaw": 1.5708
+          },
+          "office": {
+            "dx": -14,
+            "dz": -6,
+            "yaw": 0
+          },
+          "tip": {
+            "dx": -10,
+            "dz": 13,
+            "yaw": 3.1416
+          }
+        }
+      }
+    },
+    {
+      "id": "fire-station",
+      "kind": "slot",
+      "x": 155,
+      "z": 135,
+      "data": {
+        "hw": 28,
+        "hd": 14,
+        "kind": "building",
+        "epic": "E25",
+        "flat": true,
+        "label": "Turfton Fire Station No. 1",
+        "anchors": {
+          "apron": {
+            "dx": 24,
+            "dz": 0,
+            "yaw": 1.5708
+          },
+          "engine": {
+            "dx": 18,
+            "dz": 0,
+            "yaw": 1.5708
+          },
+          "door": {
+            "dx": 10,
+            "dz": -12,
+            "yaw": 3.1416
+          },
+          "yard": {
+            "dx": -18,
+            "dz": 4,
+            "yaw": 0
+          }
+        }
+      }
     }
   ],
   "data": {

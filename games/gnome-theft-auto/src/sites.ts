@@ -41,6 +41,8 @@ export const SITE_IDS = [
   // The Unmown (the nature preserve) and the pushed-out bands, filled by E31
   'unmown-ranger-station', 'unmown-wetland', 'unmown-meadow', 'unmown-old-wood', 'unmown-hide-1', 'unmown-hide-2',
   'unmown-hide-3', 'rootwell-field-station', 'snowcap-high-tarn',
+  // E25 jobs III: the bin depot by the Compost Heap, Fire Station No. 1 (Mossy Wood edge), the Gnomazon warehouse (Dust Flats)
+  'bin-depot', 'fire-station', 'gnomazon-fc',
 ] as const;
 export type SiteId = (typeof SITE_IDS)[number];
 

@@ -1425,6 +1425,52 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Double Down', description: 'Double down five times in one set.',
     reward: { slot: 'hand', prefabId: 'squeaky-rubber-chicken', label: 'Squeaky Rubber Chicken' },
   },
+  // ---- Gnome Theft Auto E25 jobs III (workplaces/garbage, firefighter, gnomazon) ----
+  {
+    id: 'gta-job-bin-day', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bin Day', description: 'Empty 50 bins on the Turfton bin round.', target: 50,
+    reward: { slot: 'head', prefabId: 'bin-crew-cap', label: 'Bin Crew Cap' },
+  },
+  {
+    id: 'gta-job-not-a-drop', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Not a Drop', description: 'Finish a bin round of 8 bins or more without spilling one.',
+    reward: { slot: 'hand', prefabId: 'golden-bin-lid', label: 'Golden Bin Lid' },
+  },
+  {
+    id: 'gta-job-kerb-appeal', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Kerb Appeal', description: 'Set 25 bins back down perfectly neat.', target: 25,
+    reward: { slot: 'back', prefabId: 'bin-bag-backpack', label: 'Bin-Bag Backpack' },
+  },
+  {
+    id: 'gta-job-hose-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hose Gnome', description: 'Put out 20 fires for Fire Station No. 1.', target: 20,
+    reward: { slot: 'head', prefabId: 'brass-fire-helmet', label: 'Brass Fire Helmet' },
+  },
+  {
+    id: 'gta-job-ladder-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ladder Gnome', description: 'Bring 5 stranded gnomes (or cats) down the ladder.', target: 5,
+    reward: { slot: 'neck', prefabId: 'ladder-rescue-medal', label: 'Ladder Rescue Medal' },
+  },
+  {
+    id: 'gta-job-barbecue-season', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Barbecue Season', description: 'Put out a burning bin, a shed, a barbecue and a toadstool.', target: 4,
+    reward: { slot: 'hand', prefabId: 'brass-hose-nozzle', label: 'Brass Hose Nozzle' },
+  },
+  {
+    id: 'gta-job-fulfilled', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fulfilled', description: 'Pack 100 parcels at Gnomazon FC-1.', target: 100,
+    reward: { slot: 'neck', prefabId: 'gnomazon-lanyard', label: 'Gnomazon Lanyard' },
+  },
+  {
+    id: 'gta-job-beat-the-bot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Beat the Bot', description: 'Beat the quota on a Gnomazon shift with every box the right size.',
+    reward: { slot: 'hand', prefabId: 'gnomazon-scanner', label: 'Gnomazon Scanner' },
+  },
+  {
+    id: 'gta-job-time-off-task', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Time Off Task', description: 'Stand still at your packing station for 20 seconds while Kippy watches.',
+    reward: { slot: 'head', prefabId: 'cardboard-box-hat', label: 'Cardboard Box Hat' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

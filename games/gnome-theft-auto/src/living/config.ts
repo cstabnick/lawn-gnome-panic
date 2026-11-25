@@ -59,8 +59,8 @@ export const UNMOWN_HIDES = [
   { id: 'unmown-hide-2', name: 'Meadow Hide', x: -560, z: -1490, yaw: Math.PI },        // looks north over the Long Meadow
   { id: 'unmown-hide-3', name: 'Wood Hide', x: -1700, z: -1330, yaw: Math.PI },         // looks north into Oldroot Wood
 ] as const;
-/** Standing within this many metres of a hide's centre counts as being inside it. */
-export const HIDE_INSIDE_R = 3;
+/** Standing within this many metres of a hide's centre (inside, or at its back door) counts as a visit. */
+export const HIDE_INSIDE_R = 4.5;
 
 /**
  * Reedmere: the marsh (water/reedmere: still water x -1260..-1040, z -1705..-1605, about 0.7 m deep) and the raised

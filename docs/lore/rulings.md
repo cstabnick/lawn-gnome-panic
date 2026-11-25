@@ -1104,3 +1104,27 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** Le Petit Groan's audience grades rather than laughs. Heckling is a recognised art. Tomatoes are thrown underarm only, by custom.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E24's comedy job needs a room that reacts without ever laughing.
+
+## R-199
+**Question:** Who enforces the Unmown's rules, and what can the HOA do there?
+**Ruling:** Nobody. The Unmown's rules (no mowing, no thinking about mowing, hats off to the herons) are kept by politeness alone; the rangers ask, they never fine or arrest. The HOA may visit on Tuesdays but may not enjoy it, and may look but not measure: an inspector in the preserve is "off duty" with a personal ruler. Hats the HOA leaves behind go in the lost-hat box at the Ranger Station.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E31's Unmown station, rangers and Mr. Pettigrew needed one rule for how the preserve is policed.
+
+## R-200
+**Question:** Who settled Espalier End, Mittenholt and Dunelow, and what makes them gnome places?
+**Ruling:** The outer hamlets were settled by gnomes who left Turfton for quieter lawns. Each keeps one odd custom (Espalier End its topiary judging, Mittenholt its left mittens, Dunelow its gull-judged sandcastles), a timetable that does not commit, and the same sign, "Twinned with nowhere, by request". Buses, in all three, exist in principle.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E31's three hamlets and the High Tarn needed a shared origin and a running joke.
+
+## R-201
+**Question:** Do the new E31 birds count toward the life list?
+**Ruling:** Yes. The Reedmere Bittern, Marsh Harrier, Meadow Cuckoo, Thymes Kingfisher, Pond Mallard, Shore Cormorant, Snowcap Eagle and High Tarn Diver are ordinary species of the birding life list, ticked the same way as any other, and the Unmown checklist reads the same list. The Fresh Feathers achievement counts five of them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the birds had to be either list birds or a separate system; one list is simpler.
+
+## R-202
+**Question:** What happens when a gnome bumps the new small wildlife (hare, hedgehog, fox, frog, dragonfly)?
+**Ruling:** R-021 applies to them as to every creature: nothing dies. A creature that is knocked over or run into tumbles, gets up and carries on, with the usual indignation.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** keeps the preserve's animals within the no-gore rule.

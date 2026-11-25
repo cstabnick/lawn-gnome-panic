@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { buildStaticCells } from '../cull';
+import { plantKind } from '../flora/kinds';
 import { HIGHWAYS } from '../config';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
@@ -75,12 +76,18 @@ export function clearOfBoxes(b: Box, boxes: readonly Box[], gap = 0.3): boolean 
 export function placePieces(scene: THREE.Scene, boxes: Box[], pieces: readonly Piece[], name: string): Piece[] {
   const placed: Piece[] = [];
   const batch = [];
-  for (const p of pieces) {
+  // Solid pieces first, so a loose piece (a flower bed, a mowable plant) never ends up under a collider: the mowing
+  // guard (flora/world.test.ts) forbids a box standing on a mowable plant.
+  const solidFirst = [...pieces.filter((p) => p.solid), ...pieces.filter((p) => !p.solid)];
+  for (const p of solidFirst) {
     if (!getPrefab(p.id)) continue;
     if (p.solid) {
       const b = pieceBox(p);
       if (!b || !clearOfBoxes(b, boxes)) continue;
       boxes.push(b);
+    } else if (plantKind(p.id)) {
+      const y = groundY(p);
+      if (boxes.some((o) => p.x >= o.minX && p.x <= o.maxX && p.z >= o.minZ && p.z <= o.maxZ && o.h < y + 2.5)) continue;
     }
     placed.push(p);
     batch.push({

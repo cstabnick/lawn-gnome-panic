@@ -11,7 +11,9 @@ import { themeAt } from './regionThemes';
 import type { Box } from './types';
 
 installFakeDom();
-const { planSettlements } = await import('./settlements');
+import { HAMLETS, HIGH_TARN } from './living/config';
+import { reservedRects } from './sites';
+const { planSettlements, BAND_SETTLEMENTS } = await import('./settlements');
 
 const keepOut = [...stageKeepOut()];
 const a = planSettlements(keepOut);
@@ -80,6 +82,19 @@ describe('outer-region settlements plan', () => {
     }
   });
 
+  it('leaves the default plan unchanged by the band options', () => {
+    expect(a.houses.length).toBe(54);
+    expect(a.placements.length).toBe(611);
+    expect(a.boxes.length).toBe(485);
+    expect(JSON.stringify(a.houses.slice(0, 5))).toBe(JSON.stringify([
+      { x: 418.0179933349856, z: 91, region: 'dust-flats' },
+      { x: 418.0179933349856, z: 49, region: 'dust-flats' },
+      { x: 400.0179933349856, z: 91, region: 'dust-flats' },
+      { x: -402.4692632416175, z: 21.028988724088347, region: 'mossy-wood' },
+      { x: -419.9318282442335, z: 16.663347473434353, region: 'mossy-wood' },
+    ]));
+  });
+
   it('puts every house id in its region theme (a blended neighbour theme is allowed)', () => {
     for (const p of a.placements) {
       const house = a.houses.find((h) => h.x === p.x && h.z === p.z);
@@ -88,6 +103,28 @@ describe('outer-region settlements plan', () => {
       const blended = themeAt(p.x, p.z, 0).houses;
       expect(own.includes(p.id) || blended.includes(p.id), `${p.id} at ${p.x}, ${p.z}`).toBe(true);
       expect(house.region).toBe(regionAt(p.x, p.z));
+    }
+  });
+});
+
+describe('band settlements plan', () => {
+  const bands = planSettlements([], BAND_SETTLEMENTS);
+
+  it('has 25 to 70 houses in the three band regions, beyond 900 m', () => {
+    expect(bands.houses.length).toBeGreaterThanOrEqual(25);
+    expect(bands.houses.length).toBeLessThanOrEqual(70);
+    for (const h of bands.houses) {
+      expect(['west-estates', 'north-highlands', 'south-shore']).toContain(h.region);
+      expect(Math.max(Math.abs(h.x), Math.abs(h.z))).toBeGreaterThan(900);
+    }
+  });
+
+  it('keeps off the hamlets, the High Tarn and the reserved rects', () => {
+    for (const h of bands.houses) {
+      for (const p of [...HAMLETS, HIGH_TARN]) expect(Math.hypot(h.x - p.x, h.z - p.z)).toBeGreaterThan(p.r + 30);
+      for (const r of reservedRects()) {
+        expect(h.x >= r.minX && h.x <= r.maxX && h.z >= r.minZ && h.z <= r.maxZ, `reserve at ${h.x}, ${h.z}`).toBe(false);
+      }
     }
   });
 });

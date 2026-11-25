@@ -31,6 +31,8 @@ defineInterior({
     buildHallsEast(kit);
     buildMoleFolk(kit);
     buildJobSpots(kit);
+    // The Long Tunnel down to DJ Moleman's own burrow (he comes back up it once, for the Under-Chorus).
+    kit.stairsTo(LOAMDEEP.spots.longTunnel[0], LOAMDEEP.spots.longTunnel[1], SOCIETY_INTERIORS.moleman, 'Go down the Long Tunnel');
     if (fromLongTunnel) {
       fromLongTunnel = false;
       const [x, z] = LOAMDEEP.spots.longTunnelArrive;

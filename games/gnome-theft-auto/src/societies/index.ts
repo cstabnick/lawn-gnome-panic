@@ -19,6 +19,7 @@ import './loamdeep/interior';
 import './loamdeep/moleman';
 import { updateMoleFolk } from './loamdeep/folk';
 import { installLoamdeep } from './loamdeep/runtime';
+import { installBurrowSurface } from './loamdeep/surface';
 import { installSocietyAchievements } from './achievements';
 
 export * from './config';
@@ -53,7 +54,7 @@ function registerSocietyProbes(): void {
 export function installSocieties(deps: SocietyDeps): Societies {
   registerSocietyProbes();
   const parts: SocietyPart[] = [
-    installUnderspanLife(deps), installFlockLife(deps), installSermon(deps), installLoamdeep(deps), installSocietyAchievements(deps),
+    installUnderspanLife(deps), installFlockLife(deps), installSermon(deps), installLoamdeep(deps), installBurrowSurface(deps), installSocietyAchievements(deps),
   ];
   let t = 0;
   return {

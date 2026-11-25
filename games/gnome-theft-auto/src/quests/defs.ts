@@ -17,6 +17,9 @@ import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
 import { GOLF_QUESTS } from './golfQuests';
 import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
+import { LOAMDEEP_QUESTS } from './loamdeepQuests';
+import { SOCIETY_QUEST_DEFS } from './societyQuests';
+import { BURROW_DOOR, LOAMDEEP, SOCIETY_INTERIORS, UNDERSPAN, WADERS_REST } from '../societies/config';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -281,6 +284,48 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // E17 societies (loamdeepQuests.ts, societyQuests.ts): places from societies/config.ts.
+  nubbin: {
+    id: 'nubbin',
+    name: 'The Burrow Door',
+    label: 'Talk to Nubbin',
+    x: BURROW_DOOR.nubbin.x + 1.2,
+    z: BURROW_DOOR.nubbin.z,
+    exit: { x: BURROW_DOOR.nubbin.x + 2.5, z: BURROW_DOOR.nubbin.z, yaw: Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
+  tumblesoil: {
+    id: 'tumblesoil',
+    name: "The Mother's Hall, Loamdeep",
+    label: 'Talk to Old Mother Tumblesoil',
+    x: LOAMDEEP.spots.tumblesoilFront[0],
+    z: LOAMDEEP.spots.tumblesoilFront[1],
+    exit: { x: LOAMDEEP.spots.tumblesoilFront[0], z: LOAMDEEP.spots.tumblesoilFront[1] + 1.5, yaw: Math.PI },
+    room: 'street',
+    letter: '!',
+    interior: SOCIETY_INTERIORS.loamdeep,
+  },
+  hogweed: {
+    id: 'hogweed',
+    name: 'The Underspan',
+    label: 'Talk to Hogweed Sprocket',
+    x: UNDERSPAN.hogweed.x - 1.2,
+    z: UNDERSPAN.hogweed.z,
+    exit: { x: UNDERSPAN.hogweed.x - 2.5, z: UNDERSPAN.hogweed.z, yaw: -Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
+  saxifrage: {
+    id: 'saxifrage',
+    name: "Wader's Rest",
+    label: 'Talk to Mother Saxifrage',
+    x: WADERS_REST.saxifrage.x - 1.2,
+    z: WADERS_REST.saxifrage.z,
+    exit: { x: WADERS_REST.saxifrage.x - 2.5, z: WADERS_REST.saxifrage.z, yaw: -Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -302,6 +347,8 @@ export const QUESTS: readonly QuestDef[] = [
   ...DIRT_QUESTS,
   ...GOLF_QUESTS,
   ...ROOTWELL_QUESTS_DEFS,
+  ...LOAMDEEP_QUESTS,
+  ...SOCIETY_QUEST_DEFS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

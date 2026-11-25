@@ -168,6 +168,7 @@ import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
 import { installGolf } from './golf/runtime';
 import { installRootwell } from './campus';
+import { installSocieties, type Societies } from './societies';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -915,8 +916,10 @@ const snackPickups = createPickups({
 });
 setRepairHook(() => void achievements.unlock(ECON_ACH.repair));
 let workplaces: Workplaces | null = null;
+// E17 societies (societies/): installed further down; their full-screen games (post sorting, digging, the sermon) hold controls too.
+let societies: Societies | null = null;
 // E24 workplaces (chef, mechanic, comedy) count as an open shop: controls held while their UI or stage is up.
-const econOpen = (): boolean => dealers.isOpen() || insurance.isOpen() || ledger.isOpen() || bag.isOpen() || !!workplaces?.isOpen();
+const econOpen = (): boolean => dealers.isOpen() || insurance.isOpen() || ledger.isOpen() || bag.isOpen() || !!workplaces?.isOpen() || !!societies?.isOpen();
 
 // ---- Online free roam: other players' gnomes and mowers; our bullets hurt them, theirs hurt us. ----
 // Seats: the mower I drive has passenger seats, and its seat book hands them out to players who ask (seats.ts). I can
@@ -1134,6 +1137,8 @@ const golf = installGolf({
 // Rootwell (E13, campus/): campus life, the Anthill Observatory, Rootwell Field, Pinwheel Ridge's turning pinwheels and
 // their achievements. The static scenery is built by world.ts (buildRootwell).
 const rootwell = installRootwell(jobDeps);
+// E17 (societies/): the Underspan, Wader's Rest and Loamdeep (mole jobs, DJ Moleman). Static scenery: world.ts buildSocieties.
+societies = installSocieties({ ...jobDeps, teleport: (x, z, yaw) => { player.respawn(x, z, yaw); chase.yaw = yaw; } });
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -2185,6 +2190,7 @@ function frame(now: number): void {
   winter.update(dt);
   golf.update(dt, rawInp);
   rootwell.update(dt);
+  societies?.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2501,6 +2507,8 @@ function frame(now: number): void {
       const ts = nearestTownSpeaker(player.x, player.z, SPEAKER_MAX_DIST);
       if (ts) bestSpeaker = { x: ts.x, y: ts.y + heightAt(ts.x, ts.z), z: ts.z, station: 'adagio' };
     }
+    // E17: Loamdeep's dug-in speakers play Subsoil Radio while DJ Moleman is at the Under-Chorus decks.
+    if (!bestSpeaker) bestSpeaker = societies?.speaker(player.x, player.z) ?? null;
     radio.setListener({ x: player.x, y: player.y, z: player.z, yaw: chase.yaw }, bestSpeaker);
     if (bestSpeaker?.station === 'adagio') adagioHeard += dt;
   } else if (radio.station === 'adagio') adagioHeard += dt;
@@ -2531,7 +2539,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...rootwell.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...rootwell.blips(), ...(societies?.blips() ?? []));
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();

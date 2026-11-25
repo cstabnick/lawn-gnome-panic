@@ -37,6 +37,7 @@ export const GTA_SAVE_KEYS = [
   'gta-winter-v1', // winter/save.ts: Snowdrop Slope best times, runs, sled owned, ice catches, bears hugged (E12)
   'gta-golf-v1', // golf/save.ts: Hedgeworth Links board, holes, rounds, bests, aces, lost balls, molehills (E15)
   'gta-rootwell-v1', // campus/achievements.ts: Rootwell University doors visited (E13 First Class Honours)
+  'gta-societies-v1', // societies/save.ts: mole job shifts and bests, DJ Moleman's visit, Updraft rides, sermons stood (E17)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

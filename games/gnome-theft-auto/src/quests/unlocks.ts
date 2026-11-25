@@ -86,6 +86,14 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Rootwell (rootwellQuests.ts). Temporary: the schedule has them after m47/m48 (acts II-IV, E20-E22), which do not exist yet.
   { questId: 'sq-rootwell-lost-essay', after: 'ch4-spade-truce', why: 'Rootwell is past the Dust Flats, open once the spade truce has opened the eastern sand. E21 moves it to after m47-hedgeworth-links.' },
   { questId: 'sq-anthill-rent', after: 'ch4-spade-truce', why: "The ants' rent is late once the eastern sand is open. E21 moves it to after m48-the-groundskeepers-secret." },
+  // E17 societies (loamdeepQuests.ts, societyQuests.ts). Temporary beats until E20/E21 build m10, m24, m25, m27, m49, m50, m53, m57.
+  { questId: 'sq-underspan-verticality', after: 'ch1-founders-boot', why: 'Hogweed under the Unfinished Span; the player can drive the Skyway by now. E20 moves it to after m10-under-the-span.' },
+  { questId: 'sq-burrow-post', after: 'ch2-unmowed-tablet', why: 'Nubbin at the Burrow Door. E20 moves it to after m25-one-leg-to-stand-on (he met the player in m24).' },
+  { questId: 'sq-flock-errands', after: 'ch2-unmowed-tablet', why: "The Flock at Wader's Rest. E20 moves it to after m27-heap-of-trouble (Saxifrage preached at the player in m25)." },
+  { questId: 'sq-loamdeep-lamps', after: 'ch3-kiln-resin-ice', why: 'Tumblesoil, once the post is sorted (prereq sq-burrow-post). E21 moves it to after m50-trellisdown-tasting.' },
+  { questId: 'sq-loamdeep-under-chorus', after: 'ch3-kiln-resin-ice', why: 'The lamps are lit (prereq sq-loamdeep-lamps); now the Under-Chorus wants its DJ. E21 keeps it after m50.' },
+  { questId: 'sq-flock-vigil', after: 'ch3-tundra-drift-run', why: 'The Flock keep a vigil (prereq sq-flock-errands); the schedule row is #53 ch3-tundra-drift-run.' },
+  { questId: 'sq-underspan-scrap-run', after: 'ch4-sandpit-drop', why: 'The workshop is short on parts (prereq sq-underspan-verticality); the schedule row is #57 ch4-sandpit-drop.' },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));

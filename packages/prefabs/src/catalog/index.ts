@@ -178,6 +178,12 @@ import { GTA_LIVING_CRITTERS } from './gta-living-critters';
 import { GTA_LIVING_RIDES } from './gta-living-rides';
 import { GTA_LIVING_GEAR } from './gta-living-gear';
 import { GTA_HAMLET_KIT } from './gta-hamlet-kit';
+import { GTA_MOLES } from './gta-moles';
+import { GTA_LOAMDEEP } from './gta-loamdeep';
+import { GTA_LOAMDEEP_HOME } from './gta-loamdeep-home';
+import { GTA_UNDERSPAN } from './gta-underspan';
+import { GTA_FLOCK } from './gta-flock';
+import { GTA_SOCIETIES_GEAR } from './gta-societies-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -218,4 +224,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
   ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,
   ...GTA_PRESERVE_KIT, ...GTA_PRESERVE_TRAIL, ...GTA_LIVING_CRITTERS, ...GTA_LIVING_RIDES, ...GTA_LIVING_GEAR, ...GTA_HAMLET_KIT,
+  ...GTA_MOLES, ...GTA_LOAMDEEP, ...GTA_LOAMDEEP_HOME, ...GTA_UNDERSPAN, ...GTA_FLOCK, ...GTA_SOCIETIES_GEAR,
 ];

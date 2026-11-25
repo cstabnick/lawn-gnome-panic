@@ -5,7 +5,7 @@ import type { Blip } from './types';
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
   | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
-  | 'dealer-car' | 'dealer-boat' | 'dealer-air';
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -36,6 +36,7 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   'dealer-car': { name: "Burl's Forecourt (buy vehicles)", color: '#d1495b' },
   'dealer-boat': { name: "Driftwood's Boat Yard (buy boats)", color: '#1f8fa6' },
   'dealer-air': { name: "Wally's Wing Lot (buy aircraft)", color: '#5b6fd1' },
+  home: { name: 'Homes (visited)', color: '#c97b4a' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -396,6 +397,14 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
       glyphRect(g, x, y, s, -0.12, -1, 0.24, 2);
       glyphRect(g, x, y, s, -1, -0.15, 2, 0.25);
       glyphRect(g, x, y, s, -0.4, 0.7, 0.8, 0.18);
+      break;
+    }
+    case 'home': {
+      // A little house: a square body under a triangle roof, with a door.
+      glyphPoly(g, x, y, s, [[0, -1], [1, -0.1], [-1, -0.1]]);
+      glyphRect(g, x, y, s, -0.7, -0.1, 1.4, 1);
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, -0.18, 0.2, 0.36, 0.7);
       break;
     }
   }

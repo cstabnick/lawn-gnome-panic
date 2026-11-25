@@ -41,6 +41,8 @@ describe('saveIO', () => {
       'gta-ownership-v1': JSON.stringify({ v: 1, properties: [], policies: {}, wrecks: [], bought: {} }),
       'gta-position-v1': JSON.stringify({ v: 1, x: 12, z: -40, yaw: 1.2, t: 1 }),
       'gta-gnomeybird-v1': JSON.stringify({ best: 7 }),
+      'gta-home-v1': JSON.stringify({ v: 1, items: [], stored: { bed: 1 }, wall: 'cream', floor: 'oak' }),
+      'gta-homes-visited-v1': JSON.stringify(['juniper']),
       'unrelated-key': 'keep-me',
     });
 

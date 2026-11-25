@@ -5,6 +5,7 @@ import type { QuestPlan } from './types';
 
 export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'prologue-fresh-kiln': { suite: 'story', expect: 'pass' },
+  'm02-roof-on-credit': { suite: 'story', expect: 'pass' },
   'first-contract': { suite: 'story', expect: 'pass' },
   'ch1-mowers-keepers': { suite: 'story', expect: 'pass' },
   'ch1-two-coat-tail': { suite: 'story', expect: 'pass' },

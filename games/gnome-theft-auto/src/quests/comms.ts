@@ -98,7 +98,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['juniper', 'Vesper runs the HOA. My brother Reginald measures lawns for him.'],
     ),
     2: call(['juniper', 'You were seen. Deal with his guards. Keep the camera dry.']),
-    3: call(['juniper', 'City Hall. The side door. Reginald uses the front.']),
+    3: call(['juniper', 'Post him a copy, his own letterbox. Let him find out at breakfast.']),
+    4: call(['juniper', 'City Hall. The side door. Reginald uses the front.']),
   },
   'ch1-tax-break-in': {
     0: brief(

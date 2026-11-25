@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Reginald Vance, Quarter-Inch]
 sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/society.md, docs/lore/entries/apocrypha/cress-caliper.md]
-related: [hoa, juniper-vance, cress-caliper, vesper-thorne]
+related: [townhouse-404, hoa, juniper-vance, cress-caliper, vesper-thorne]
 ---
 
 Obsessive HOA Chief Turf-Auditor who patrols Turfton at three in the morning with a laser level, brass pocket-calipers, and a laminated copy of Municipal Code §404-B.

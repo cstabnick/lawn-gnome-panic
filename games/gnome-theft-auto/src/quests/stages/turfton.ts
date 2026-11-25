@@ -104,7 +104,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     built: 'dressed',
     room: 'side-valve',
     givers: ['side-valve'],
-    usedBy: ['prologue-fresh-kiln', 'ch1-mowers-keepers', 'ch1-tax-break-in', 'ch1-founders-boot', 'ch3-salvage-raid', 'sq-mulch-pyramid', 'sq-big-lou-embargo'],
+    usedBy: ['prologue-fresh-kiln', 'm02-roof-on-credit', 'ch1-mowers-keepers', 'ch1-tax-break-in', 'ch1-founders-boot', 'ch3-salvage-raid', 'sq-mulch-pyramid', 'sq-big-lou-embargo'],
     look: 'An open-fronted repair bay in a grey concrete block at the back of the apron, a workbench under a tarp, a smoking orange Zero-Turn parked nose to the bay, a cracked yard of mown stripes and a rolled hose reel.',
     sounds: 'A zero-turn idling and coughing, a radio on the bench, a wind-up mower being tested, pigeons on the gutter.',
     marks: [
@@ -208,7 +208,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     time: 'night',
     built: 'dressed',
     givers: ['strangers'],
-    usedBy: ['sq-grid-truthers', 'sq-hoa-audit', 'sq-mulch-pyramid', 'sq-snail-rigging', 'prologue-fresh-kiln', 'ch1-two-coat-tail', 'ch3-salvage-raid', 'ch5-even-cut', 'city-kerbside-rounds'],
+    usedBy: ['sq-grid-truthers', 'sq-hoa-audit', 'sq-mulch-pyramid', 'sq-snail-rigging', 'prologue-fresh-kiln', 'm02-roof-on-credit', 'ch1-two-coat-tail', 'ch3-salvage-raid', 'ch5-even-cut', 'city-kerbside-rounds'],
     look: 'A corner grocer in old brick with a neon window of Bodega & Sons on the east face, a folding survey table on the pavement, a crate with a sleeping cat, push-bikes chained by the wall and a mulch-spreader at the kerb.',
     sounds: 'The neon buzz of the window sign, a broom on the step, a cat purring, a sales pitch for Miracle Mulch.',
     marks: [

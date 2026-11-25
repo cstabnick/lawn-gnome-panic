@@ -975,3 +975,17 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** Nothing in R-050 or R-140 is undone: a mower that is slow in deep water still conks out and sinks. But a mower that hits deep water fast, off a jump or flat out, skips across it like a flat stone, bouncing and throwing spray, for as long as its speed lasts; once it slows it sinks as before. Gnomes call it "skipping", and the Skipping-Stone Pendant is the proof that you did it on purpose. Small bushes, rose bushes, flowering bushes and allotment beds give way under a mower and grow back (the mowing rules); hedgerows, hedge arches, topiary and trees do not. Flattening six big shrubs in a row is "shrub bowling", and the Shrub Disguise is what the gardeners who saw it wear afterwards so you cannot find them.
 **Applies to:** gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** L113 and L114 ask for bushes to be run over and for driving over water on jumps; the water rule needs a footing that keeps sinking as the end of every skim.
+
+## R-180
+
+**Question:** Where does everybody live, and who can visit?
+**Ruling:** Every named gnome has a home. Some are known places, with a door, a plate and a lit window; some are never shown (a cot, a back room) and stay unacknowledged. Homes are private: in the online game nobody visits another player's flat, because each player's Flat 3B is their own. Gnomes put their names on plates, not on maps, so a home only goes on the player's map once they have stood at its door.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Epic E10 (homes) builds a dozen doors and needs one rule for what is shown, what is private and what the map knows.
+
+## R-181
+
+**Question:** Who sells the furniture for Flat 3B?
+**Ruling:** **Gnome & Garden Furnishings** sells it: a flat-pack firm that delivers to Saucer Court, "stairs extra, free". Nothing they sell is ever assembled, and the instructions are a single diagram of a gnome looking worried. No other brand or entry covered furniture sellers.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E10 lets the player furnish Flat 3B and the catalogue needs a seller.

@@ -21,6 +21,8 @@ export interface PropertyDef {
   interest?: number;
   /** One line for the Ledger app. */
   blurb?: string;
+  /** E10: when set, the Ledger shows this line instead of a Buy button (the property is bought somewhere else, e.g. a quest at the bank counter). */
+  buyHint?: string;
 }
 
 /** Kiln-Shield vehicle cover (decisions in docs/roadmaps/gta-batch-3/E08-economy-ownership-inventory.md, not re-asked). */

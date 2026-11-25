@@ -8,7 +8,7 @@ export {
 } from './registry';
 export { ROOFTOPS, addRooftop, rooftopById, rooftopSurfaceBelow, rooftopAt, landingPads } from './rooftops';
 export {
-  createInteriors, enterInterior, leaveInterior, currentInterior, onInteriorChange, type Interiors, type InteriorDeps,
+  createInteriors, enterInterior, leaveInterior, currentInterior, onInteriorChange, refreshInterior, currentInteriorGroup, type Interiors, type InteriorDeps,
 } from './runtime';
 export { buildRooftops } from './rooftopsBuild';
 export { createRoofLife, type RoofLife } from './roofLife';

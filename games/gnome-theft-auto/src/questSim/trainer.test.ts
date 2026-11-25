@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { chapterRuns } from './trainer';
 
 describe('chapterRuns', () => {
-  it('chapter 1 has six story runs, starting with the prologue', () => {
+  it('chapter 1 has seven story runs, starting with the prologue', () => {
     const runs = chapterRuns(1);
-    expect(runs).toHaveLength(6);
+    expect(runs).toHaveLength(7);
     expect(runs[0].questId).toBe('prologue-fresh-kiln');
   });
 

@@ -976,6 +976,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
         continue;
       }
       if (cx === 150 && cz === -90) { planGardenBlock(block, rnd, () => true); continue; }
+      // Saucer Court (E10, site 'saucer-court'): the player's low block of flats round the saucer courtyard, built by
+      // homes/saucerCourt.ts. No tower here, but draw the numbers placeTowers would have, so later blocks stay the same.
+      if (cx === 30 && cz === 90) { placeTowers(block, true); continue; }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
       // Park blocks (parks/blocks.ts) are laid out later by src/parks/; the garden is still planned (and thrown away) so
       // every later block draws the same random numbers as before.

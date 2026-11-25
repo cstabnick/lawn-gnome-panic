@@ -35,6 +35,10 @@ export interface Interiors {
   /** Every frame, after atmosphere.update (re-applies the indoor light while inside). */
   update(dt: number): void;
   onChange(cb: (id: string | null) => void): () => void;
+  /** E10: rebuild the current room in place (a changed furniture layout): new meshes and colliders, the player stays put. */
+  refresh(): void;
+  /** E10: the current room's group (its children are in local coordinates), or null outside. */
+  group(): THREE.Group | null;
 }
 
 let active: Interiors | null = null;
@@ -52,7 +56,8 @@ export function createInteriors(deps: InteriorDeps): Interiors {
   let group: THREE.Group | null = null;
   let windows: THREE.Mesh[] = [];
   let removers: (() => void)[] = [];
-  const boxed = new Set<string>();
+  /** The collider boxes each interior pushed into world.boxes (replaced on every build, so a changed layout collides). */
+  const boxed = new Map<string, World['boxes']>();
   let phase: 'idle' | 'out' | 'in' = 'idle';
   let fadeT = 0;
   let swap: (() => void) | null = null;
@@ -83,7 +88,7 @@ export function createInteriors(deps: InteriorDeps): Interiors {
     swap = fn;
   };
 
-  const doEnter = (id: string): void => {
+  const doEnter = (id: string, stay = false): void => {
     const p = interiorById(id);
     if (!p) return;
     const { def, origin } = p;
@@ -93,22 +98,45 @@ export function createInteriors(deps: InteriorDeps): Interiors {
     deps.scene.add(kit.group);
     group = kit.group;
     windows = build.windows;
-    if (!boxed.has(id)) {
-      boxed.add(id);
-      for (const b of build.boxes) {
-        deps.world.boxes.push({ ...b, minX: b.minX + origin.x, maxX: b.maxX + origin.x, minZ: b.minZ + origin.z, maxZ: b.maxZ + origin.z });
+    const old = boxed.get(id);
+    if (old) {
+      for (const b of old) {
+        const i = deps.world.boxes.indexOf(b);
+        if (i >= 0) deps.world.boxes.splice(i, 1);
       }
     }
+    const mine: World['boxes'] = build.boxes.map((b) => ({ ...b, minX: b.minX + origin.x, maxX: b.maxX + origin.x, minZ: b.minZ + origin.z, maxZ: b.maxZ + origin.z }));
+    for (const b of mine) deps.world.boxes.push(b);
+    boxed.set(id, mine);
     for (const s of build.spots) {
       removers.push(addInteractSpot({ x: origin.x + s.x, z: origin.z + s.z, prompt: s.prompt, run: () => { s.run(); return true; } }));
     }
-    const sp = build.spawn ?? { x: 0, z: 0, yaw: 0 };
-    deps.teleport(origin.x + sp.x, origin.z + sp.z, sp.yaw);
+    if (!stay) {
+      const sp = build.spawn ?? { x: 0, z: 0, yaw: 0 };
+      deps.teleport(origin.x + sp.x, origin.z + sp.z, sp.yaw);
+    }
     setAmbienceOverride(def.ambience ?? 'silent');
     current = id;
+    if (stay) return;
     def.onEnter?.();
     deps.unlock('gta-home-sweet-hovel');
     emitInteriorChange(id);
+  };
+
+  /** Tear the current room down and build it again where it is (no fade, no teleport, no change events). */
+  const refresh = (): void => {
+    const id = current;
+    if (id === null || phase === 'out') return;
+    for (const r of removers) r();
+    removers = [];
+    if (group) {
+      deps.scene.remove(group);
+      disposeGroup(group);
+    }
+    group = null;
+    windows = [];
+    current = null;
+    doEnter(id, true);
   };
 
   const enter = (id: string): boolean => {
@@ -199,6 +227,8 @@ export function createInteriors(deps: InteriorDeps): Interiors {
       }
     },
     onChange: onInteriorChange,
+    refresh,
+    group: () => group,
   };
   active = it;
   onInteriorDefined((p) => {
@@ -212,6 +242,10 @@ export function createInteriors(deps: InteriorDeps): Interiors {
 export function enterInterior(id: string): boolean { return active?.enter(id) ?? false; }
 export function leaveInterior(to?: { x: number; y: number; z: number; yaw: number }): void { active?.leave(to); }
 export function currentInterior(): string | null { return active?.current() ?? null; }
+/** E10: rebuild the current interior in place (meshes, colliders, spots), e.g. after its furniture layout changed. */
+export function refreshInterior(): void { active?.refresh(); }
+/** E10: the current interior's room group (children in local coordinates), or null outside. */
+export function currentInteriorGroup(): THREE.Group | null { return active?.group() ?? null; }
 export function onInteriorChange(cb: (id: string | null) => void): () => void {
   changeListeners.push(cb);
   return () => {

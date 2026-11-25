@@ -8,7 +8,7 @@ status: canon
 games: [gnome-theft-auto]
 aliases: [Sorrel]
 sources: [docs/design/gnome-theft-auto/story.md, games/gnome-theft-auto/src/radio/content.ts, docs/roadmaps/gta-environments.md, games/gnome-theft-auto/src/quests/stages.ts]
-related: [turfton-fm, dock-hoewright, cress-caliper, shelldon-mucilage, ferals, gnorwins-ledger, stopping-stone, hat-watch]
+related: [sorrels-cottage, turfton-fm, dock-hoewright, cress-caliper, shelldon-mucilage, ferals, gnorwins-ledger, stopping-stone, hat-watch]
 ---
 
 The host of 88.7 Fescue Public Radio, the only station in Turfton that tells its listeners to be careful. A Fescue

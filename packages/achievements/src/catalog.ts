@@ -1208,6 +1208,26 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'back', prefabId: 'rooftop-pigeon-pack', label: 'Rooftop Pigeon' },
   },
   {
+    id: 'gta-home-sweet-loan', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Home Sweet Loan', description: 'Sign for Flat 3B at the First Kiln Bank.',
+    reward: { slot: 'neck', prefabId: 'house-key-necklace', label: 'House Key' },
+  },
+  {
+    id: 'gta-interior-decorator', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Interior Decorator', description: 'Place 10 pieces of furniture in your flat.', target: 10,
+    reward: { slot: 'hand', prefabId: 'feather-duster', label: 'Feather Duster' },
+  },
+  {
+    id: 'gta-forty-winks', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Forty Winks', description: 'Sleep in your own bed at Saucer Court.',
+    reward: { slot: 'head', prefabId: 'nightcap', label: 'Nightcap' },
+  },
+  {
+    id: 'gta-house-call', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'House Call', description: 'Stand at the front doors of 6 different Turfton homes.', target: 6,
+    reward: { slot: 'back', prefabId: 'rolled-doormat-pack', label: 'Rolled Doormat' },
+  },
+  {
     id: 'gta-band-pardonlin', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Mind the Wicket', description: 'Pass through the Wicket into Pardonlin, the riverside town past Trellisdown.',
     reward: { slot: 'head', prefabId: 'pardonlin-beret', label: 'Pardonlin Beret' },

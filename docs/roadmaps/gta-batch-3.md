@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main). Running: E03 (bugs), E05 (interiors), E28 (world II). Next as slots free: E29, E23, E27, then E06, E07, E09. New epics E23-E31 (session 2 requests) write their own brief first.
+Merged: E04, E02, E01, E08 (+ main), E03. Running: E23 (quest robustness), E05 (interiors), E28 (world II). Next as slots free: E29, E23, E27, then E06, E07, E09. New epics E23-E31 (session 2 requests) write their own brief first.
 
 ## Tracking
 
@@ -25,7 +25,7 @@ with deferred items listed).
 | E01 | World expansion and site plan | Engine | 1 | – | merged | epic/E01-world | 242187e3 | worldHalf 1400, four bands (Snowcap Rise N, Saltbucket Shore S, Rootwell E, Trellisdown W), `src/sites.ts` 43 slots, POS_BOUND 1450, Founders' Green + Double Pot; R-168 records placement differences vs the spine; the Wasm kernel (from main) is fixed-size for worldHalf 900, so it is switched off above that (`KERNEL_MAX_WORLD_HALF`) until E28 resizes it |
 | E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | merged | epic/E02-vehicles | 9fe85adb | all 12 items; canal raft collider left to E03 (expected-fail case in canalCruise.test.ts); first-person on F5; traffic.test "keep moving" flaky under full-suite load (passes alone); contracts: Box.shape round, SIM_AIR, createNpcChassis, chase.setFirstPerson, traffic.crackDriver |
 | E04 | Story bible and world writing | Story (docs) | 1 | – | merged | epic/E04-story | c9a94025 | names final (see E04/spine.md); new objective types needed (golf-hole, jam-game, skate-line, ski-run, tow-ski, ride-passenger, dig, interior-visit) each with a fallback; E18 builds the journal 'Later' shelf; rulings R-158..R-167 taken |
-| E03 | Bugs and quest reliability sweep | Fix | 2 | – | running | epic/E03-bugs | | |
+| E03 | Bugs and quest reliability sweep | Fix | 2 | – | merged | epic/E03-bugs | 20977fd6 | all 13 items + L96, L97, L100; quest sim 55/58 (city-glow-band-express timed gates, city-skyway-robbery deck ramp: bot limits for E23; nc-party needs relay); L88 fix in deploy/nginx.conf takes effect on next deploy; no real-device run | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | running | epic/E05-interiors | | |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | merged | epic/E08-economy | b5bbef96 | loans sit **beside** Kiln-Debt (R-169), not inside it (E10 must follow); `DEALER_SITES` are fallback spots, move to E01 sites; deferred: 3D showroom, per-vehicle boat/aircraft looks, glaze/Pebblewick/hunting/taxi price tables, real-phone pass | | |
 | E06 | Sky, weather and time | Engine | 3 | – | planned | | | |
@@ -44,7 +44,7 @@ with deferred items listed).
 | E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
-| E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | planned | | | |
+| E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | running | epic/E23-quests | | |
 | E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |

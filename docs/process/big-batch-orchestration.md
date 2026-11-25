@@ -89,5 +89,9 @@ Source items: L03, L17, ... (verbatim text of each)
 - Lead worktrees on Windows can commit CRLF line endings, which turns a small change into a whole-file diff and
   conflicts. After `git merge --no-ff`, for every changed file that has CRs where the batch branch's version had none,
   strip them (`sed -i 's/\r$//'`), `git add` it, then commit the merge. Tell leads to keep LF.
+- `tools/batch-merge.sh <branch> <msg-file>` does the merge, the CRLF clean-up and lists conflicts. The usual
+  conflicts are the long GTA row in `AGENT_INDEX.md` (splice the incoming insertion into the current row), `layout.golden.json`
+  (take either side, then regenerate with `UPDATE_GOLDEN=1 npx vitest run src/layout.golden.test.ts`) and import
+  lists (keep both).
 - Timing-sensitive tests (e.g. GTA's `traffic.test.ts` "keep moving") can fail under a loaded full-suite run; rerun the
   single file before treating it as a regression.

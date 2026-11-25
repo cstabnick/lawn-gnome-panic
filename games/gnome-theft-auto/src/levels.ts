@@ -27,16 +27,20 @@ import northHighlandsJson from './data/levels/north-highlands.level.json';
 import southShoreJson from './data/levels/south-shore.level.json';
 import eastCampusJson from './data/levels/east-campus.level.json';
 import westEstatesJson from './data/levels/west-estates.level.json';
+import pardonlinJson from './data/levels/pardonlin.level.json';
+import theUnmownJson from './data/levels/the-unmown.level.json';
 
 /** Same strings as BiomeId in types.ts (declared here so this file imports nothing from the game). */
 export type RegionBiome =
-  | 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate';
+  | 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate'
+  | 'continental' | 'preserve';
 export type RegionId =
   | 'turfton' | 'dust-flats' | 'mossy-wood' | 'frostbite-fells' | 'cloverfield-farms' | 'loch-moss' | 'tallgrass-commons'
-  | 'north-highlands' | 'south-shore' | 'east-campus' | 'west-estates';
+  | 'north-highlands' | 'south-shore' | 'east-campus' | 'west-estates' | 'pardonlin' | 'the-unmown';
 /** Every biome id, in BiomeId order. */
 export const REGION_BIOMES: readonly RegionBiome[] = [
   'city', 'desert', 'forest', 'tundra', 'farmland', 'loch', 'parkland', 'highland', 'coast', 'campus', 'estate',
+  'continental', 'preserve',
 ];
 /** Same strings as SurfaceKind in surfaces.ts. */
 export type RegionSurface = 'asphalt' | 'ice' | 'snow' | 'sand' | 'mud' | 'grass' | 'farm';
@@ -150,6 +154,8 @@ export const GENERATORS: Record<RegionId, { id: string; version: number }> = {
   'south-shore': { id: 'gta-coast-scatter', version: 1 },
   'east-campus': { id: 'gta-campus-scatter', version: 1 },
   'west-estates': { id: 'gta-estate-scatter', version: 1 },
+  pardonlin: { id: 'gta-continental-scatter', version: 1 },
+  'the-unmown': { id: 'gta-preserve-scatter', version: 1 },
 };
 
 export const LAYOUT = layoutJson as unknown as GtaLayout;
@@ -167,6 +173,8 @@ export const REGION_DOCS: Record<RegionId, GtaRegionDoc> = {
   'south-shore': southShoreJson as unknown as GtaRegionDoc,
   'east-campus': eastCampusJson as unknown as GtaRegionDoc,
   'west-estates': westEstatesJson as unknown as GtaRegionDoc,
+  pardonlin: pardonlinJson as unknown as GtaRegionDoc,
+  'the-unmown': theUnmownJson as unknown as GtaRegionDoc,
 };
 
 /** Region ids in build order (LAYOUT.regions order). */
@@ -267,6 +275,8 @@ export const REGION_PRIORITY: readonly RegionId[] = [
   'turfton', 'dust-flats', 'mossy-wood', 'frostbite-fells', 'cloverfield-farms', 'loch-moss', 'tallgrass-commons',
   // The batch-3 bands round the old 1800 x 1800 square: their inner edges meet the old regions' outer edges, which win.
   'north-highlands', 'south-shore', 'east-campus', 'west-estates',
+  // E28, the second expansion: the next yard west (Pardonlin) and the preserve in the north-west corner (the Unmown).
+  'pardonlin', 'the-unmown',
 ];
 const EDGE_EPS = 1e-9;
 

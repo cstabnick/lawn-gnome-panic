@@ -6,10 +6,11 @@
 //   4. Chunk vertex position + bridge-aware central-difference normal generation (terrainMesh.ts)
 //   5. Full-scene f32x4 SIMD distance/shadow/detail culler returning only changed slot deltas (cull.ts)
 
-// ---- Compact fixed linear-memory layout (212 pages = 13.25 MB, pre-allocated so JS views never detach) --------------
+// ---- Linear-memory layout: small fixed tables below 0x0AC000, then size-dependent buffers (configureLayout grows
+// memory once at startup; the host re-creates its typed-array views afterwards) ----------------------------------------
 // 0x000000 .. 0x008000 : Wasm stack (32 KB)
 const CFG_PTR: usize           = 0x008000; // 64 * f64 (512 B)
-const REG_RASTER_PTR: usize    = 0x008200; // up to 128 * 128 i8 (16 KB -> 0x00C200)
+// 0x008200 .. 0x00C200 : unused (the region raster moved to the size-dependent area)
 const REG_ORIGINS_PTR: usize   = 0x00C200; // 16 * 2 * f64 (256 B -> 0x00C300)
 const REG_POLY_META_PTR: usize = 0x00C300; // 16 * 2 * i32 (128 B -> 0x00C400)
 const REG_POLY_PTS_PTR: usize  = 0x00C400; // 512 * 2 * f64 (8 KB -> 0x00E400)
@@ -46,20 +47,46 @@ const CULL_STATE_PTR: usize    = 0x09E200; // 8192 * u8 = 8 KB -> 0x0A0200
 const CULL_ACTIVE_PTR: usize   = 0x0A0200; // 8192 * u8 = 8 KB -> 0x0A2200
 const CULL_OUT_PTR: usize      = 0x0A2200; // 8192 * u32 = 32 KB -> 0x0AA200
 
-// Persistent 451x451 distance fields (each 0xC8000 = 800 KB)
-const FIELD_RIVER_PTR: usize   = 0x0AC000; // -> 0x174000
-const FIELD_WATER_PTR: usize   = 0x174000; // -> 0x23C000
-const FIELD_BORDER_PTR: usize  = 0x23C000; // -> 0x304000
-const FIELD_ROAD_PTR: usize    = 0x304000; // -> 0x3CC000
+// Size-dependent buffers (region raster, the four distance fields, height grid, scratch A/B, chunk buffers) start at
+// DYN_BASE and are laid out by configureLayout() from the world's grid sizes; it grows memory to fit.
+const DYN_BASE: usize          = 0x0AC000;
+let REG_RASTER_PTR: usize      = 0;  // rasterN * rasterN i8
+let FIELD_RIVER_PTR: usize     = 0;  // fieldN * fieldN f32 each
+let FIELD_WATER_PTR: usize     = 0;
+let FIELD_BORDER_PTR: usize    = 0;
+let FIELD_ROAD_PTR: usize      = 0;
+let HEIGHT_GRID_PTR: usize     = 0;  // gridN * gridN f32
+let SCRATCH_A_PTR: usize       = 0;  // bestW (gridN^2 f32) | paintGrid ((gridN-1)^2 u8) | chunkPos
+let SCRATCH_B_PTR: usize       = 0;  // target (gridN^2 f32)
+let CHUNK_POS_PTR: usize       = 0;  // 65 * 65 * 3 * f32 = 50.7 KB (inside scratch A)
+let CHUNK_NRM_PTR: usize       = 0;  // 65 * 65 * 3 * f32 = 50.7 KB (inside scratch A)
 
-// Persistent 901x901 height grid (0x320000 = 3.125 MB)
-const HEIGHT_GRID_PTR: usize   = 0x3CC000; // -> 0x6EC000
+@inline function align16(v: usize): usize { return (v + 15) & ~15; }
 
-// Shared scratch region (0x6EC000 .. 0xD2C000 = 6.25 MB)
-const SCRATCH_A_PTR: usize     = 0x6EC000; // bestW (3.125 MB) | paintGrid (810 KB) | chunkPos (64 KB)
-const SCRATCH_B_PTR: usize     = 0xA0C000; // target (3.125 MB) -> ends at 0xD2C000 (< 212 pages)
-const CHUNK_POS_PTR: usize     = 0x6EC000; // 65 * 65 * 3 * f32 = 50.7 KB
-const CHUNK_NRM_PTR: usize     = 0x6FC000; // 65 * 65 * 3 * f32 = 50.7 KB
+/** Lays the size-dependent buffers out after the fixed tables, grows memory to fit, returns the total bytes used. */
+export function configureLayout(rRasterN: i32, fN: i32, gN: i32): i32 {
+  let p = DYN_BASE;
+  REG_RASTER_PTR = p;
+  p = align16(p + <usize>rRasterN * <usize>rRasterN);
+  const fieldBytes = align16(<usize>fN * <usize>fN * 4);
+  FIELD_RIVER_PTR = p; p += fieldBytes;
+  FIELD_WATER_PTR = p; p += fieldBytes;
+  FIELD_BORDER_PTR = p; p += fieldBytes;
+  FIELD_ROAD_PTR = p; p += fieldBytes;
+  const gridBytes = align16(<usize>gN * <usize>gN * 4);
+  HEIGHT_GRID_PTR = p; p += gridBytes;
+  SCRATCH_A_PTR = p; p += gridBytes;
+  SCRATCH_B_PTR = p; p += gridBytes;
+  CHUNK_POS_PTR = SCRATCH_A_PTR;
+  CHUNK_NRM_PTR = SCRATCH_A_PTR + 0x10000;
+  const needPages = <i32>((p + 0xFFFF) >>> 16);
+  const havePages = memory.size();
+  if (needPages > havePages) {
+    if (memory.grow(needPages - havePages) < 0) return -1;
+  }
+  fieldsBuilt = 0;
+  return <i32>p;
+}
 
 // ---- Counts & cached scalars ----------------------------------------------------------------------------------------
 let regionCount: i32 = 7;
@@ -730,12 +757,58 @@ function evalRegionRelief(reg: i32, x: f64, z: f64): f64 {
     return swell + mounds + hill;
   }
 
+  if (reg == 7) {
+    // north-highlands: swell, crags, swellScale, cragScale
+    const swellScale = load<f64>(pp + 8);
+    const cragScale = load<f64>(pp + 24);
+    const swell = load<f64>(pp) * fbmStd(x / swellScale, z / swellScale, 61, 3);
+    const rg = ridged(x / cragScale, z / cragScale, 63, 2) - 0.4;
+    const crags = load<f64>(pp + 16) * (0.0 > rg ? 0.0 : rg) * smoothstep(10.0, 50.0, roadDistAt(x, z));
+    return swell + crags;
+  }
+
+  if (reg == 8) {
+    // south-shore: dunes, duneScale, swell, swellScale
+    const duneScale = load<f64>(pp + 8);
+    const swellScale = load<f64>(pp + 24);
+    const dunes = load<f64>(pp) * fbmStd(x / duneScale, z / duneScale, 71, 2);
+    const swell = load<f64>(pp + 16) * fbmStd(x / swellScale, z / swellScale, 73, 2);
+    return dunes + swell;
+  }
+
+  if (reg == 9) {
+    // east-campus: swell, swellScale
+    const s = load<f64>(pp + 8);
+    return load<f64>(pp) * fbmStd(x / s, z / s, 81, 2);
+  }
+
+  if (reg == 10) {
+    // west-estates: swell, swellScale
+    const s = load<f64>(pp + 8);
+    return load<f64>(pp) * fbmStd(x / s, z / s, 91, 3);
+  }
+
+  if (reg == 11) {
+    // pardonlin: swell, swellScale
+    const s = load<f64>(pp + 8);
+    return load<f64>(pp) * fbmStd(x / s, z / s, 101, 2);
+  }
+
+  if (reg == 12) {
+    // the-unmown: swell, swellScale, hummocks, hummockScale
+    const swellScale = load<f64>(pp + 8);
+    const hummockScale = load<f64>(pp + 24);
+    const swell = load<f64>(pp) * fbmStd(x / swellScale, z / swellScale, 111, 3);
+    const hummocks = load<f64>(pp + 16) * fbmStd(x / hummockScale, z / hummockScale, 113, 2);
+    return swell + hummocks;
+  }
+
   return 0.0;
 }
 
 function reliefAt(x: f64, z: f64): f64 {
   const reg = regionAtIdx(x, z);
-  if (reg <= 0 || reg > 6) return 0.0;
+  if (reg <= 0 || reg > 12) return 0.0;
   const m = reliefMaskAt(x, z);
   return m > 0.0 ? m * evalRegionRelief(reg, x, z) : 0.0;
 }
@@ -974,7 +1047,7 @@ export function buildBaseHeightGrid(amplitude: f64, useLandforms: i32): i32 {
 // ---- 3. Surface paint grid (900x900 u8, matching src/terrainPaint.ts) -----------------------------------------------
 // Paint IDs (PAINT_KINDS index + 1):
 // 1=rock, 2=dirt, 3=gravel, 4=mud, 5=ice, 6=snow, 7=sand, 8=grass, 9=farm, 10=forest, 11=moss, 12=meadow
-function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, rDist: f64, wDist: f64): u8 {
+function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, height: f64, rDist: f64, wDist: f64): u8 {
   const pp = LF_PARAMS_PTR + (<usize>reg << 7);
   const rmp = LF_REG_META_PTR + (<usize>reg << 3);
   const fStart = load<i32>(rmp);
@@ -1059,6 +1132,21 @@ function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, rDist: f64, wDist
     }
     return 12; // meadow
   }
+  if (reg == 7) {
+    // north-highlands
+    if (height > 32.0) return 6; // snow
+    if (slope > 0.3) return 3; // gravel
+    return 12; // meadow
+  }
+  if (reg == 8) return z > 1130.0 ? 7 : 8; // south-shore: sand beach, grass inland
+  if (reg == 9) return 8; // east-campus: grass
+  if (reg == 10) return fbmStd(x / 120.0, z / 120.0, 93, 2) > 0.25 ? 12 : 8; // west-estates
+  if (reg == 11) return fbmStd(x / 90.0, z / 90.0, 103, 2) > 0.35 ? 12 : 8; // pardonlin
+  if (reg == 12) {
+    // the-unmown
+    if (slope > 0.35) return 2; // dirt
+    return fbmStd(x / 150.0, z / 150.0, 115, 2) > 0.45 ? 11 : 12; // moss : meadow
+  }
   return 0;
 }
 
@@ -1129,7 +1217,7 @@ export function buildPaintGrid(): i32 {
       }
       const rDist = riverDistAt(x, z);
       const wDist = waterDistAt(x, z);
-      const own = evalRegionPaint(reg, x, z, slope, rDist, wDist);
+      const own = evalRegionPaint(reg, x, z, slope, (h00 + h10 + h01 + h11) / 4.0, rDist, wDist);
       if (own != 0) store<u8>(SCRATCH_A_PTR + <usize>idx, own);
       else if (rDist < mudReach) store<u8>(SCRATCH_A_PTR + <usize>idx, 4); // mud
     }

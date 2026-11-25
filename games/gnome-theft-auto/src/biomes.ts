@@ -173,8 +173,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   let sock: THREE.Object3D | null = null;
   /** Zones scenery stays out of (fort, airfield, villages, yards, fields, landmarks), grown where they need clearance. */
   const reserved: Rect[] = [];
-  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm' | 'highland' | 'coast' | 'campus' | 'estate', Batch> = {
-    desert: [], forest: [], tundra: [], farm: [], highland: [], coast: [], campus: [], estate: [],
+  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm' | 'highland' | 'coast' | 'campus' | 'estate' | 'continental' | 'preserve', Batch> = {
+    desert: [], forest: [], tundra: [], farm: [], highland: [], coast: [], campus: [], estate: [], continental: [], preserve: [],
   };
 
   // Box lookup: a grid of cells, so clearance checks do not scan every box.
@@ -469,6 +469,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   const batchByName: Record<string, Batch> = {
     'desert-scenery': batches.desert, 'forest-scenery': batches.forest, 'tundra-scenery': batches.tundra, 'farm-scenery': batches.farm,
     'highland-scenery': batches.highland, 'coast-scenery': batches.coast, 'campus-scenery': batches.campus, 'estate-scenery': batches.estate,
+    'continental-scenery': batches.continental, 'preserve-scenery': batches.preserve,
   };
   /** A hand-placed prefab from a region document. x, z is the prefab's origin (not its footprint centre). */
   const placeProp = (region: Region, p: GtaProp): void => {
@@ -1298,23 +1299,23 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   {
     const Hl = batches.highland;
     startBand('north-highlands');
-    for (let i = 0; i < 160; i++) treeAt(Hl, rnd() < 0.6 ? 'cone-pine' : 'snow-pine', 'highland', uni(0.8, 1.2));
-    for (let i = 0; i < 40; i++) scatter(Hl, 'garden-rock', 'highland', fit('garden-rock', uni(1.5, 3.5)), true);
-    for (let i = 0; i < 12; i++) scatter(Hl, 'stone-cairn', 'highland', uni(0.9, 1.3), true);
+    for (let i = 0; i < 352; i++) treeAt(Hl, rnd() < 0.6 ? 'cone-pine' : 'snow-pine', 'highland', uni(0.8, 1.2));
+    for (let i = 0; i < 88; i++) scatter(Hl, 'garden-rock', 'highland', fit('garden-rock', uni(1.5, 3.5)), true);
+    for (let i = 0; i < 26; i++) scatter(Hl, 'stone-cairn', 'highland', uni(0.9, 1.3), true);
   }
   {
     const C = batches.coast;
     const ok = (p: Pt): boolean => p.z < 1140;
     startBand('south-shore');
-    for (let i = 0; i < 70; i++) treeAt(C, 'palm-tree', 'coast', uni(0.9, 1.2), ok);
-    for (let i = 0; i < 30; i++) scatter(C, 'garden-rock', 'coast', fit('garden-rock', uni(1.2, 2.5)), true, anywhere, ok);
-    for (let i = 0; i < 40; i++) scatter(C, 'round-bush', 'coast', uni(0.7, 1.1), false, anywhere, ok);
+    for (let i = 0; i < 126; i++) treeAt(C, 'palm-tree', 'coast', uni(0.9, 1.2), ok);
+    for (let i = 0; i < 54; i++) scatter(C, 'garden-rock', 'coast', fit('garden-rock', uni(1.2, 2.5)), true, anywhere, ok);
+    for (let i = 0; i < 72; i++) scatter(C, 'round-bush', 'coast', uni(0.7, 1.1), false, anywhere, ok);
   }
   {
     const Cp = batches.campus;
     startBand('east-campus');
-    for (let i = 0; i < 140; i++) treeAt(Cp, 'broadleaf-tree', 'campus', uni(0.9, 1.3));
-    for (let i = 0; i < 50; i++) scatter(Cp, 'round-bush', 'campus', uni(0.8, 1.2), false);
+    for (let i = 0; i < 294; i++) treeAt(Cp, 'broadleaf-tree', 'campus', uni(0.9, 1.3));
+    for (let i = 0; i < 105; i++) scatter(Cp, 'round-bush', 'campus', uni(0.8, 1.2), false);
   }
   {
     const Es = batches.estate;
@@ -1322,6 +1323,36 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     for (let i = 0; i < 140; i++) treeAt(Es, 'broadleaf-tree', 'estate', uni(0.9, 1.4));
     for (let i = 0; i < 30; i++) scatter(Es, 'topiary-cone', 'estate', uni(0.9, 1.2), true);
     for (let i = 0; i < 40; i++) scatter(Es, 'round-bush', 'estate', uni(0.8, 1.2), false);
+  }
+  {
+    // Pardonlin is a town: trees, box balls and topiary only in the Jardin and the south, or along the quays (30 m of the Thymes).
+    const Pc = batches.continental;
+    const town = (p: Pt): boolean => p.z < -460 || p.z > 470 || Math.abs(p.x + 1612) < 30;
+    startBand('pardonlin');
+    for (let i = 0; i < 120; i++) treeAt(Pc, 'broadleaf-tree', 'continental', uni(0.8, 1.1), town);
+    for (let i = 0; i < 80; i++) scatter(Pc, 'boxwood-ball', 'continental', uni(0.8, 1.1), true, anywhere, town);
+    for (let i = 0; i < 40; i++) scatter(Pc, 'topiary-cone', 'continental', uni(0.9, 1.2), true, anywhere, town);
+    for (let i = 0; i < 30; i++) scatter(Pc, 'flower-bed', 'continental', uni(0.9, 1.2), false, anywhere, town);
+  }
+  {
+    // The Unmown: a wild preserve. Half the broadleaves stand in clumps (a centre, then 4-6 within 25 m of it).
+    const Pr = batches.preserve;
+    startBand('the-unmown');
+    for (let i = 0; i < 50; i++) {
+      const c = treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3));
+      if (!c) continue;
+      const near = (q: Pt): boolean => Math.hypot(q.x - c.x, q.z - c.z) < 25;
+      const n = 4 + Math.floor(rnd() * 3);
+      for (let k = 0; k < n; k++) treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3), near);
+    }
+    for (let i = 0; i < 250; i++) treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3));
+    for (let i = 0; i < 120; i++) treeAt(Pr, 'cone-pine', 'preserve', uni(0.85, 1.2));
+    for (let i = 0; i < 300; i++) scatter(Pr, 'round-bush', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 250; i++) scatter(Pr, 'wildflower-patch', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 250; i++) scatter(Pr, 'ornamental-grass', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 80; i++) scatter(Pr, 'fern-clump', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 60; i++) scatter(Pr, 'fallen-log', 'preserve', 2 * uni(0.9, 1.1), true);
+    for (let i = 0; i < 40; i++) scatter(Pr, 'garden-rock', 'preserve', fit('garden-rock', uni(1.5, 2.5)), true);
   }
 
   rnd = noRandom;
@@ -1339,6 +1370,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     ['coast-scenery', batches.coast],
     ['campus-scenery', batches.campus],
     ['estate-scenery', batches.estate],
+    ['continental-scenery', batches.continental],
+    ['preserve-scenery', batches.preserve],
   ];
   for (const [name, batch] of groups) {
     // One batch per cell (cull.ts), not per region: a region-wide mesh is never culled and is drawn twice from anywhere.

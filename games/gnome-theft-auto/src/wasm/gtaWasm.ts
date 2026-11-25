@@ -5,9 +5,10 @@ import { base64ToBytes, type Stamp } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, TERRAIN, WORLD_HALF } from '../config';
 import landscapeJson from '../data/landscape.json';
 import {
-  LAYOUT, REGION_CELL, REGION_DOCS, REGION_IDS, REGION_PRIORITY, REGIONS, highways, markerNum, markersOf, regionAtExact,
+  LAYOUT, REGION_CELL, REGION_DOCS, REGION_IDS, REGION_PRIORITY, REGIONS, highways, regionAtExact,
   trails, waterBodies, waterPaths, type RegionId,
 } from '../levels';
+import { reservedRects } from '../sites';
 import type { BridgeSpan } from '../water';
 import { KERNEL_WASM_BASE64 } from './kernelBytes';
 
@@ -21,6 +22,7 @@ export const CULL_CLASS_INDEX: Record<(typeof CULL_CLASS_ORDER)[number], number>
 
 interface KernelExports extends WebAssembly.Exports {
   memory: WebAssembly.Memory;
+  configureLayout(rasterN: number, fieldN: number, gridN: number): number;
   getCfgPtr(): number;
   getRegRasterPtr(): number;
   getRegOriginsPtr(): number;
@@ -95,10 +97,6 @@ export interface GtaKernelRuntime {
 let runtime: GtaKernelRuntime | null = null;
 let initPromise: Promise<void> | null = null;
 let wasmDisabled = false;
-/** The kernel's fixed memory map (assembly/kernel.ts) is laid out for a world of at most this half-size. Larger
- *  worlds (batch-3 expansion: worldHalf 1400) use the JS path until the kernel's layout is resized. */
-export const KERNEL_MAX_WORLD_HALF = 900;
-const kernelFitsWorld = (): boolean => LAYOUT.worldHalf <= KERNEL_MAX_WORLD_HALF;
 let staticUploaded = false;
 
 const LF_KIND_CODE: Record<string, number> = {
@@ -118,8 +116,14 @@ function innerEdges(id: RegionId): [number, number, number, number][] {
   return out;
 }
 
+function capCount(n: number, max: number, what: string): number {
+  if (n > max) throw new Error(`gta wasm: ${n} ${what} exceed the kernel table (${max})`);
+  return n;
+}
+
 function writeSegs(f64: Float64Array, baseIdx: number, segs: readonly [number, number, number, number, number][], maxSegs: number): number {
-  const n = Math.min(segs.length, maxSegs);
+  if (segs.length > maxSegs) throw new Error(`gta wasm: ${segs.length} segments exceed the kernel table (${maxSegs})`);
+  const n = segs.length;
   for (let i = 0; i < n; i++) {
     const [ax, az, bx, bz, off] = segs[i];
     const p = baseIdx + i * 9;
@@ -139,7 +143,7 @@ function writeSegs(f64: Float64Array, baseIdx: number, segs: readonly [number, n
 function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   if (staticUploaded) return;
   staticUploaded = true;
-  const { ex, i8, i32, f64 } = rt;
+  const { ex } = rt;
 
   const landscape = landscapeJson as unknown as {
     params: Record<string, number>;
@@ -149,6 +153,11 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   const MN = Math.round((2 * WORLD_HALF) / 4) + 1;
   const GN = Math.round((2 * WORLD_HALF) / TERRAIN.step) + 1;
   const RASTER_N = Math.ceil((2 * LAYOUT.worldHalf) / REGION_CELL);
+
+  // Lay the size-dependent buffers out for this world. Growing memory detaches the old views: rebuild them.
+  if (ex.configureLayout(RASTER_N, MN, GN) < 0) throw new Error('gta wasm: could not grow memory for the world');
+  refreshViews(rt);
+  const { i8, i32, f64 } = rt;
 
   const cfg = ex.getCfgPtr() >>> 3;
   f64[cfg] = WORLD_HALF;
@@ -242,7 +251,7 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
 
   const bodies = waterBodies();
   const wbBase = ex.getWaterBodiesPtr() >>> 3;
-  const wbCount = Math.min(bodies.length, 64);
+  const wbCount = capCount(bodies.length, 64, 'water bodies');
   for (let i = 0; i < wbCount; i++) {
     const b = bodies[i];
     f64[wbBase + i * 4] = b.minX;
@@ -258,11 +267,8 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   const hz = Math.abs(Math.cos(AIRFIELD.yaw)) * AIRFIELD.length / 2 + Math.abs(Math.sin(AIRFIELD.yaw)) * AIRFIELD.width / 2;
   macroSites.push({ minX: AIRFIELD.x - hx, maxX: AIRFIELD.x + hx, minZ: AIRFIELD.z - hz, maxZ: AIRFIELD.z + hz });
   for (const p of AIRFIELD.planeSpots) macroSites.push({ minX: p.x - 8, maxX: p.x + 8, minZ: p.z - 8, maxZ: p.z + 8 });
-  for (const m of markersOf('reserve')) {
-    const hw = markerNum(m, 'hw');
-    const hd = markerNum(m, 'hd');
-    macroSites.push({ minX: m.x - hw, maxX: m.x + hw, minZ: m.z - hd, maxZ: m.z + hd });
-  }
+  // Reserve markers and flat slots: exactly what landforms/macro.ts keeps the macro relief off.
+  for (const r of reservedRects({ flatOnly: true })) macroSites.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ });
   for (const id of REGION_IDS) {
     const o = LAYOUT.regions.find((r) => r.id === id)!.origin;
     for (const f of REGION_DOCS[id].data.terrain?.features ?? []) {
@@ -273,7 +279,7 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
     }
   }
   const msBase = ex.getMacroSitesPtr() >>> 3;
-  const msCount = Math.min(macroSites.length, 256);
+  const msCount = capCount(macroSites.length, 256, 'macro sites');
   for (let i = 0; i < msCount; i++) {
     const s = macroSites[i];
     f64[msBase + i * 4] = s.minX;
@@ -287,13 +293,13 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   const trMeta = ex.getTrailMetaPtr() >>> 3;
   const trPts = ex.getTrailPtsPtr() >>> 3;
   let trPtCursor = 0;
-  const trCount = Math.min(trList.length, 128);
+  const trCount = capCount(trList.length, 128, 'trails');
   for (let i = 0; i < trCount; i++) {
     const t = trList[i];
     const start = trPtCursor;
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (const [px, pz] of t.points) {
-      if (trPtCursor >= 2048) break;
+      if (trPtCursor >= 2048) throw new Error('gta wasm: too many trail points');
       f64[trPts + trPtCursor * 2] = px;
       f64[trPts + trPtCursor * 2 + 1] = pz;
       trPtCursor++;
@@ -318,13 +324,13 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   const mfBase = ex.getMacroFeatPtr() >>> 3;
   const mfPts = ex.getMacroPtsPtr() >>> 3;
   let mfPtCursor = 0;
-  const mfCount = Math.min(mfList.length, 128);
+  const mfCount = capCount(mfList.length, 128, 'macro features');
   for (let i = 0; i < mfCount; i++) {
     const f = mfList[i];
     const start = mfPtCursor;
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (const [px, pz] of f.points) {
-      if (mfPtCursor >= 1024) break;
+      if (mfPtCursor >= 1024) throw new Error('gta wasm: too many macro points');
       f64[mfPts + mfPtCursor * 2] = px;
       f64[mfPts + mfPtCursor * 2 + 1] = pz;
       mfPtCursor++;
@@ -375,15 +381,27 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
       f64.set([P.cx ?? -700, P.cz ?? -680, P.wall ?? 16, P.wallStart ?? 30, P.wallWidth ?? 18, P.moor ?? 5, P.moorScale ?? 150, P.shore ?? 14], pb);
     } else if (id === 'tallgrass-commons') {
       f64.set([P.swell ?? 2, P.swellScale ?? 260, P.mounds ?? 3, P.moundScale ?? 70], pb);
+    } else if (id === 'north-highlands') {
+      f64.set([P.swell ?? 4, P.swellScale ?? 240, P.crags ?? 5, P.cragScale ?? 90], pb);
+    } else if (id === 'south-shore') {
+      f64.set([P.dunes ?? 2.5, P.duneScale ?? 70, P.swell ?? 2, P.swellScale ?? 300], pb);
+    } else if (id === 'east-campus') {
+      f64.set([P.swell ?? 2.5, P.swellScale ?? 260], pb);
+    } else if (id === 'west-estates') {
+      f64.set([P.swell ?? 3, P.swellScale ?? 220], pb);
+    } else if (id === 'pardonlin') {
+      f64.set([P.swell ?? 1.5, P.swellScale ?? 260], pb);
+    } else if (id === 'the-unmown') {
+      f64.set([P.swell ?? 3, P.swellScale ?? 200, P.hummocks ?? 1.2, P.hummockScale ?? 40], pb);
     }
 
     const fStart = lfFeatCursor;
     for (const f of docT?.features ?? []) {
-      if (lfFeatCursor >= 256) break;
+      if (lfFeatCursor >= 256) throw new Error('gta wasm: too many landform features');
       const code = LF_KIND_CODE[f.kind] ?? 0;
       const pStart = lfPtCursor;
       for (const [lx, lz] of f.points) {
-        if (lfPtCursor >= 2048) break;
+        if (lfPtCursor >= 2048) throw new Error('gta wasm: too many landform points');
         f64[lffPts + lfPtCursor * 2] = lx + o.x;
         f64[lffPts + lfPtCursor * 2 + 1] = lz + o.z;
         lfPtCursor++;
@@ -426,18 +444,21 @@ function ensureStaticWorldUploaded(rt: GtaKernelRuntime): void {
   ex.setStaticCounts(REGION_PRIORITY.length, RASTER_N, rvCount, rdCount, wbCount, msCount, trCount, mfCount);
 }
 
+/** Re-creates the typed-array views over the current linear memory (growing memory detaches the old ones). */
+function refreshViews(rt: GtaKernelRuntime): void {
+  const buf = rt.ex.memory.buffer;
+  rt.u8 = new Uint8Array(buf);
+  rt.i8 = new Int8Array(buf);
+  rt.i32 = new Int32Array(buf);
+  rt.u32 = new Uint32Array(buf);
+  rt.f32 = new Float32Array(buf);
+  rt.f64 = new Float64Array(buf);
+}
+
 function setupRuntime(instance: WebAssembly.Instance): GtaKernelRuntime {
   const ex = instance.exports as KernelExports;
-  const buf = ex.memory.buffer;
-  const rt: GtaKernelRuntime = {
-    ex,
-    u8: new Uint8Array(buf),
-    i8: new Int8Array(buf),
-    i32: new Int32Array(buf),
-    u32: new Uint32Array(buf),
-    f32: new Float32Array(buf),
-    f64: new Float64Array(buf),
-  };
+  const rt = { ex } as GtaKernelRuntime;
+  refreshViews(rt);
   runtime = rt;
   staticUploaded = false;
   return rt;
@@ -446,10 +467,6 @@ function setupRuntime(instance: WebAssembly.Instance): GtaKernelRuntime {
 /** Pre-compiles and instantiates GTA's Wasm kernel asynchronously at browser startup. */
 export async function initGtaWasm(): Promise<void> {
   if (runtime) return;
-  if (!kernelFitsWorld()) {
-    wasmDisabled = true;
-    return;
-  }
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('wasm') === '0') {
     wasmDisabled = true;
     return;
@@ -466,18 +483,37 @@ export async function initGtaWasm(): Promise<void> {
 
 /** Returns the active GTA Wasm runtime (instantiating synchronously in Node/Workers if needed). */
 export function getGtaKernelRuntime(): GtaKernelRuntime | null {
-  if (wasmDisabled || !kernelFitsWorld()) return null;
-  if (runtime) return runtime;
-  const g = globalThis as { process?: { versions?: { node?: string } } };
-  const isNode = !!g.process?.versions?.node;
-  const isWorker = 'WorkerGlobalScope' in globalThis;
-  if (isNode || isWorker) {
-    const bytes = base64ToBytes(KERNEL_WASM_BASE64);
-    const mod = new WebAssembly.Module(bytes as BufferSource);
-    setupRuntime(new WebAssembly.Instance(mod, {}));
-    return runtime;
+  if (wasmDisabled) return null;
+  if (!runtime) {
+    const g = globalThis as { process?: { versions?: { node?: string } } };
+    const isNode = !!g.process?.versions?.node;
+    const isWorker = 'WorkerGlobalScope' in globalThis;
+    if (!isNode && !isWorker) return null;
+    try {
+      const bytes = base64ToBytes(KERNEL_WASM_BASE64);
+      const mod = new WebAssembly.Module(bytes as BufferSource);
+      setupRuntime(new WebAssembly.Instance(mod, {}));
+    } catch {
+      disableKernel();
+      return null;
+    }
   }
-  return null;
+  // Upload the static world once (lays the memory out first). Any failure means the JS path.
+  if (!staticUploaded) {
+    try {
+      ensureStaticWorldUploaded(runtime!);
+    } catch {
+      disableKernel();
+      return null;
+    }
+  }
+  return runtime;
+}
+
+function disableKernel(): void {
+  wasmDisabled = true;
+  runtime = null;
+  staticUploaded = false;
 }
 
 // ---- High-level GTA Terrain / Paint / Mesh / Culler API -------------------------------------------------------------
@@ -540,7 +576,7 @@ function uploadStampsOnly(rt: GtaKernelRuntime, stamps: readonly Stamp[]): void 
 
 export function wasmNaturalHeightAt(x: number, z: number, amplitude: number, landforms: boolean, stamps: readonly Stamp[]): number | null {
   const rt = getGtaKernelRuntime();
-  if (!rt) return null;
+  if (!rt || stamps.length > 256) return null;
   ensureStaticWorldUploaded(rt);
   uploadStampsOnly(rt, stamps);
   return rt.ex.naturalHeightAtWasm(x, z, amplitude, landforms ? 1 : 0);
@@ -556,6 +592,8 @@ export function wasmBuildBaseHeightGrid(
   const rt = getGtaKernelRuntime();
   if (!rt) return null;
   ensureStaticWorldUploaded(rt);
+  // Anything the kernel's tables cannot hold goes to the JS path (never a silently truncated grid).
+  if (stamps.length > 256 || flatSites.length > 256 || flatPaths.reduce((n, hw) => n + Math.max(0, hw.points.length - 1), 0) > 2048) return null;
   const { ex, f64, f32 } = rt;
 
   // Stamps
@@ -624,7 +662,7 @@ let syncedBridgesRef: readonly BridgeSpan[] | null = null;
 
 export function wasmSyncChunkGridAndBridges(finishedGrid: Float32Array, bridgeSpans: readonly BridgeSpan[]): GtaKernelRuntime | null {
   const rt = getGtaKernelRuntime();
-  if (!rt) return null;
+  if (!rt || bridgeSpans.length > 128) return null;
   ensureStaticWorldUploaded(rt);
   ensureFinishedGridSynced(rt, finishedGrid);
   if (syncedBridgesRef !== bridgeSpans) {

@@ -8,6 +8,7 @@ branch="$1"; msg="$2"
 git merge --no-ff --no-commit "$branch" >/dev/null 2>&1
 for f in $(git diff --cached --name-only HEAD 2>/dev/null) $(git diff --name-only --diff-filter=U); do
   [ -f "$f" ] || continue
+  grep -Iq . "$f" || continue   # skip binary files (images): never strip bytes from them
   [ "$(tr -cd '\r' < "$f" | wc -c)" -gt 0 ] || continue
   [ "$(git show HEAD:"$f" 2>/dev/null | tr -cd '\r' | wc -c)" -eq 0 ] || continue
   sed -i 's/\r$//' "$f"

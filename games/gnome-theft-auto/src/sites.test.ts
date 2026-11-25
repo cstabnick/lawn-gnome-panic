@@ -90,6 +90,8 @@ describe('site registry', () => {
       E16: ['vineyard', 'mansion', 'farm-plot', 'construction-1', 'construction-2', 'construction-3'],
       E17: ['skyway-under', 'cult-camp', 'mole-entrance'],
       E19: ['basketball-court', 'skate-park'],
+      E30: ['pl-landmark', 'pl-grand-place', 'pl-cafe-row', 'pl-radio-station', 'pl-market', 'pl-jardin', 'pl-harbour'],
+      E31: ['unmown-ranger-station', 'unmown-wetland', 'unmown-meadow', 'unmown-hide-1', 'rootwell-field-station'],
     };
     for (const [epic, ids] of Object.entries(want)) {
       const have = sitesByEpic(epic).map((s) => s.id);
@@ -119,8 +121,8 @@ describe('site registry', () => {
 });
 
 describe('map extent and off-map space', () => {
-  it('the map is 2800 square and the net believes every point of it', () => {
-    expect(WORLD_HALF).toBe(1400);
+  it('the map is 3600 square and the net believes every point of it', () => {
+    expect(WORLD_HALF).toBe(1800);
     expect(MAP_EXTENT).toBe(WORLD_HALF);
     expect(POS_BOUND).toBeGreaterThan(WORLD_HALF);
   });

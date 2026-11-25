@@ -41,7 +41,7 @@ describe('outer-region settlements plan', () => {
 
   it('has at least 3 houses in every region of the old 1800 square except Turfton', () => {
     // The batch-3 bands (E01) are filled by their own epics; settlements there are not promised.
-    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates'];
+    const BANDS = ['north-highlands', 'south-shore', 'east-campus', 'west-estates', 'pardonlin', 'the-unmown'];
     for (const id of REGION_IDS) {
       if (id === 'turfton' || BANDS.includes(id)) continue;
       expect(a.houses.filter((h) => h.region === id).length, id).toBeGreaterThanOrEqual(3);

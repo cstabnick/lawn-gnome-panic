@@ -30,6 +30,10 @@ import { buildSettlements } from './settlements';
 import { stageKeepOut } from './stageClear';
 import { introScript } from './cutscene/intro';
 import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, VendingSpot, World } from './types';
+import { applyRoundabouts } from './roundabouts';
+import { buildRoundaboutIslands } from './roundaboutIslands';
+import { buildWickets } from './pardonlin/wickets';
+import { buildUnmownGate } from './unmownGate';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -695,7 +699,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   scene.add(base);
     const regionKind: Record<BiomeId, GroundKind> = {
       desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass', loch: 'moss', parkland: 'meadow',
-      highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass',
+      highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass', continental: 'grass', preserve: 'meadow',
     };
     // Each region's border is a simple (possibly L-shaped) polygon; the borders tile the world square without overlap.
     for (const id of REGION_IDS) {
@@ -735,7 +739,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   for (const hw of HIGHWAYS) {
     if (terrain) {
       // Hills: one ribbon draped on the ground per highway (mitred joins instead of round caps), dashes lifted onto it.
-      roadGeos.push(drapedRibbon(hw.points, ROAD_WIDTH, 0.02));
+      roadGeos.push(drapedRibbon(hw.points, hw.width, 0.02));
       for (let k = 0; k + 1 < hw.points.length; k++) {
         const [ax, az] = hw.points[k];
         const [bx, bz] = hw.points[k + 1];
@@ -751,12 +755,12 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     }
     for (const [x, z] of hw.points) {
       // Round cap at every vertex so the corners look joined.
-      roadGeos.push(new THREE.CircleGeometry(HALF_ROAD, 16).rotateX(-Math.PI / 2).translate(x, 0.02, z));
+      roadGeos.push(new THREE.CircleGeometry(hw.width / 2, 16).rotateX(-Math.PI / 2).translate(x, 0.02, z));
     }
     for (let k = 0; k + 1 < hw.points.length; k++) {
       const [ax, az] = hw.points[k];
       const [bx, bz] = hw.points[k + 1];
-      bar(roadGeos, ax, az, bx, bz, ROAD_WIDTH, 0.02);
+      bar(roadGeos, ax, az, bx, bz, hw.width, 0.02);
       const len = Math.hypot(bx - ax, bz - az);
       const ux = (bx - ax) / len, uz = (bz - az) / len;
       for (let t = 0; t + 3 <= len; t += 6) {
@@ -814,6 +818,9 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       }
     }
   }
+
+  // Roundabouts (roundabouts.ts): ring nodes marked, ring links one-way.
+  applyRoundabouts(nodes);
 
   // ---- Blocks: towers downtown, garden-object buildings elsewhere, and the park --------------------------------------
 
@@ -1083,6 +1090,10 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   const water = buildWaterMeshes(scene);
   const waterworks = buildWaterworks(scene, boxes);
   placeBillboards(scene, boxes);
+  // ---- E28: the Wickets into Pardonlin, the roundabout islands, the Unmown's gate ----------------------------------------
+  buildWickets(scene, boxes);
+  buildRoundaboutIslands(scene, boxes);
+  buildUnmownGate(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

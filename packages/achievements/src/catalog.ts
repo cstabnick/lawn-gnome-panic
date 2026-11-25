@@ -1181,6 +1181,26 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Rooftop Run', description: 'Stand on 5 different rooftops.', target: 5,
     reward: { slot: 'back', prefabId: 'rooftop-pigeon-pack', label: 'Rooftop Pigeon' },
   },
+  {
+    id: 'gta-band-pardonlin', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mind the Wicket', description: 'Pass through the Wicket into Pardonlin, the riverside town past Trellisdown.',
+    reward: { slot: 'head', prefabId: 'pardonlin-beret', label: 'Pardonlin Beret' },
+  },
+  {
+    id: 'gta-band-unmown', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Left Unmown', description: 'Walk or drive into the Unmown, the preserve no one has mown in living memory.',
+    reward: { slot: 'head', prefabId: 'meadow-crown', label: 'Meadow Crown' },
+  },
+  {
+    id: 'gta-roundabout-lap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Round and Round', description: 'Go all the way round a roundabout without taking the exit.',
+    reward: { slot: 'neck', prefabId: 'roundabout-rosette', label: 'Roundabout Rosette' },
+  },
+  {
+    id: 'gta-hat-wave', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Waved Through', description: 'Wait at a traffic warden\'s line until you are waved through.',
+    reward: { slot: 'head', prefabId: 'hoa-traffic-hat', label: 'HOA Traffic Hat' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

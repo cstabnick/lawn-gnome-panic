@@ -44,7 +44,8 @@ describe('mowable plants in the built world', () => {
 
   it('takes their colliders out of world.boxes', () => {
     expect(removed).toBeGreaterThanOrEqual(200);
-    expect(removed).toBeLessThanOrEqual(260);
+    // E28 grew the map (Pardonlin's box balls and the bigger bands): more mowable plants with colliders.
+    expect(removed).toBeLessThanOrEqual(400);
     expect(boxes.length).toBe(before - removed);
   });
 

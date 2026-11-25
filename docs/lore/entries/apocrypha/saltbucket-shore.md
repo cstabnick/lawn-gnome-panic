@@ -28,6 +28,8 @@ The south band of the map (code region `south-shore`, x -1400 to 1400, z 900 to 
 
 Quest rows 32 `m32-driftwoods-chart` (planted from the dune line), 43 `m43-saltbucket-boardwalk`, 44 `m44-the-bathtub-queen`, 64 `m64-all-hats` (By Water) use the region tag `saltbucket-shore`.
 
+Since the second expansion the Saltwater runs the whole south strip, and the band covers it end to end (R-177).
+
 ## Look and motifs
 
 - Motifs: dunes and marram grass; weathered picket fences; palms; bright beach huts.

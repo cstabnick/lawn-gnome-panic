@@ -55,7 +55,8 @@ export type GunKind =
   | 'dandelion-grenade'
   | 'trip-mine';
 /** loch = Loch Moss (north-west corner), parkland = Tallgrass Commons (south-west corner). Same strings as levels.ts RegionBiome. */
-export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate';
+export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate'
+  | 'continental' | 'preserve';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
 /**
@@ -82,6 +83,11 @@ export interface RoadNode {
   /** Set on a node on an elevated deck: that skyway's id (highways/roads.ts). Unset = a ground node. Its height is
    *  nodeY(n) (deck top or land); use nearestRoadNode / roadY there rather than a 2D search and heightAt. */
   deck?: string;
+  /** Set on a node on a roundabout ring (roundabouts.ts): the ring's road path id. */
+  ring?: string;
+  /** Neighbour ids this node may not be driven to (a one-way ring link the wrong way; roundabouts.ts canDrive). The
+   *  link itself stays in `links` both ways (drawing, segment lists); only driving and route search skip it. */
+  noDrive?: number[];
 }
 export interface RoadGraph {
   nodes: RoadNode[];

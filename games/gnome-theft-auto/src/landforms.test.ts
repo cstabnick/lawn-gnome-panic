@@ -42,6 +42,8 @@ const PROMISED_PAINT: Partial<Record<Exclude<RegionId, 'turfton'>, PaintKind[]>>
   'south-shore': ['sand', 'grass'],
   'east-campus': ['grass'],
   'west-estates': ['grass', 'meadow'],
+  pardonlin: ['grass', 'meadow'],
+  'the-unmown': ['meadow', 'moss'],
 };
 
 /** Points of a region on a `step` grid. */

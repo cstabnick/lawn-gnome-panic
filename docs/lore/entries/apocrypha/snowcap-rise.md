@@ -29,6 +29,8 @@ The north band of the map (code region `north-highlands`, x -1400 to 1400, z -14
 
 Quest rows 37 (m37-snowdrop-slope) and 38 (m38-pail-pond) use the region tag `snowcap-rise`; row 27 (m27-heap-of-trouble) ends with a convoy vanishing toward it. It is act III's northern base.
 
+Since the second expansion the band reaches the north edge, where the High Tarn sits (R-177).
+
 ## Look and motifs
 
 - Motifs: bare high ground above the Fells; drystone walls; cairns; wind-bent pines; slate bothies.

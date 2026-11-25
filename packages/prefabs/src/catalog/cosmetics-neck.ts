@@ -284,4 +284,21 @@ export const COSMETICS_NECK: PrefabDef[] = [
       { s: 'ball', d: [0.01], at: [0, 0.035, 0.18], c: 'brass', seg: 6 },
     ],
   },
+  {
+    id: 'roundabout-rosette', name: 'Roundabout Rosette', category: 'trinket', uses: ['wear-neck'],
+    tags: ['rosette', 'arrow', 'roundabout', 'ring', 'badge', 'neck', 'pardonlin', 'reward', 'continental'], emoji: [],
+    about: 'A round red rosette on a pin with a white arc ring and an arrow going anticlockwise, the badge of a driver who has been all the way round.',
+    examine: [
+      'A round red rosette with a white ring round its edge, and a small arrow on the ring pointing anticlockwise.',
+      'Saying: go all the way round the roundabout once, and you will never again take the first exit you see.',
+      'Tip: keep the arrow pointing the way you came. Anticlockwise is the only direction a roundabout forgives.',
+      'Joke: the rosette is awarded for going all the way round, which is a longer journey than most gnomes admit.',
+      'Pinned to the chest, it looks very proud, and it has never once been given a reason to be.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.06, 0.06, 0.02], at: [0, 0.07, 0.15], rot: [90, 0, 0], c: 'red', seg: 12 },   // rosette disc
+      { s: 'ring', d: [0.045, 0.01, 270], at: [0, 0.07, 0.17], c: 'white', seg: 10 },              // arrow ring
+      { s: 'cone', d: [0.03, 0.05], at: [0, 0.115, 0.17], rot: [0, 0, 90], c: 'white', seg: 6 },  // arrowhead, anticlockwise
+    ],
+  },
 ];

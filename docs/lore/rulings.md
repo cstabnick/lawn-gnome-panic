@@ -915,3 +915,45 @@ as one gnome in two places.
 **Ruling:** Every flat downtown tower roof is walkable behind a waist-high parapet. The tunnel-roof slab between the Double Pot's two halves is the **Thorne Helipad**, Thorne Lawn & Order's pad, reached by copter or by the sales floor's lift. Towers with a helipad crown (the Pigeon-Drop Depot among them) take a copter too. Roofs are reached only by air or by a lift: gnomes do not climb.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** L75 asked to land on buildings and run around.
+
+## R-172
+
+**Question:** What is Pardonlin, who lives there, and how do the Wickets work?
+**Ruling:** **Pardonlin** is another Tall One's garden west of Trellisdown, laid out as a continental formal garden: gravel walks, box-hedge parterres, clipped limes, terracotta pots and a long ornamental rill. Its gnomes are **the Continentals**, polite to a fault ("pardon" is the town's name and its first word), who take long lunches, have strong opinions on bread, queue for everything, cycle everywhere and have a dozen ways to say "it is not done". Districts: the old town on the east bank, the Left Bank on the west, **the Jardin** (the formal garden to the north), the Little Gardens (allotments) and **Pardonlin Basin** with **Basin Quay** to the south. The old perimeter fence still stands between Trellisdown and Pardonlin; where the three roads cross it, the Continentals took out fence panels and hung proper gates, each with a customs hut that stamps a visitor's hat: **the Grand Wicket** (on Vineyard Lane, z -30), **the North Wicket** (z -500) and **the Harbour Wicket** (z 1000). Turfton gnomes once thought the fence was the end of the world; the Continentals think the same of theirs. What lies beyond Pardonlin's own west fence stays a loose thread. Reserved for later, to be named but not yet built: **the Bean Tower** (a giant Tall-One bean-pole wigwam, the town's landmark), **the Grand Platz** (main square), **Teacup Row** (cafe street), **Radio Adagio** (the classical-music station) and **the Beetle Market**.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion adds a formal-garden town west of Trellisdown; a satirical continental mash with no real cities or nationalities by name.
+
+## R-173
+
+**Question:** What is the Thymes, and how do its bridges and source work?
+**Ruling:** **The Thymes** is the Tall One's garden rill: a slow green river running north to south through Pardonlin into Pardonlin Basin. It rises at a garden tap at the north end of the Jardin, called **the Source**. Its bridges, from north to south, are **Pont Nord**, **Pont Neuf**, **Pont Sud** and **the Basin Bridge**.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion needs a river through the town, with a named source and bridges for the player to find.
+
+## R-174
+
+**Question:** What is the Unmown, and why did the Tall One stop mowing it?
+**Ruling:** **The Unmown** is the north-west corner the Tall One stopped mowing years ago, now a nature preserve kept by rangers from **the Unmown Ranger Station**. It holds the waist-high meadow (**the Long Meadow**), reed beds (**Reedmere**), old trees (**Oldroot Wood**) and three bird hides. Gnomes find it frightening and wonderful at once: a place no mower goes. The HOA hates it, since it is the opposite of the Even Cut. A rusting mower the grass swallowed sits at the entrance. Why the Tall One stopped mowing stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion's wild north-west corner needs a home, and a place the HOA cannot mow gives the Even Cut something to argue with.
+
+## R-175
+
+**Question:** What are roundabouts doing in Turfton, and how do gnomes drive them?
+**Ruling:** The Continentals brought roundabouts to the Tall One's lawn; Turfton built two on its ring road: **Trellis Cross** and **the Anthill Ring**. Traffic goes round anticlockwise. Gnomes who have never used one go round three times. Pardonlin's own are **the Hatwheel** (six roads, the great roundabout) and **Place du Pot** (the small one).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** roundabouts are the one foreign import the Continentals have given Turfton's ring road, and the anticlockwise joke is the gag.
+
+## R-176
+
+**Question:** Who are the gnomes in tall striped hats who stand in the middle of busy crossings?
+**Ruling:** **The traffic-hat wardens** are HOA wardens in tall striped hats who stand on a podium in the middle of a busy crossing and wave one road through while holding the other with a stop/go paddle. Named wardens: **Sedge Pennyroyal** (Turfton, the hospital crossing), **Burnet Gatepost** (by the Mulch Club), **Agrimony Kerb** (the south crossing) and **Lupin Pardoux** (Pardonlin High Street, on loan from the Continentals, who think the HOA's hats are too short). They are not Hat Watch: the wardens never chase anyone, and the Hat Watch never directs traffic.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion's roundabouts and busy crossings need someone to direct traffic, and the HOA's hats need a second use.
+
+## R-177
+
+**Question:** Where do the second expansion's places stand, and what happens to the bands at the edge?
+**Ruling:** **Pardonlin** is x -1800 to -1400, z -900 to 1100, west of Trellisdown. **The Unmown** is in the north-west, at x -1800 to -200, z -1800 to -1400, plus x -1800 to -1400, z -1400 to -900. The bands are pushed out to the edge: **Snowcap Rise** reaches the north edge (the High Tarn), **Rootwell** reaches the east edge (Rootwell Field Station), and **Saltbucket Shore** (the Saltwater) runs the whole south strip. The world is now 3600 m across, with the perimeter fence at 1795. The map's old edge stays a loose thread, and R-168 still names the band roads.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion moves the edges of the world out, and the entries need one place to read where things are.

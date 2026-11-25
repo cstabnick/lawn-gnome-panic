@@ -28,6 +28,8 @@ The east band of the map (code region `east-campus`, x 900 to 1400, z -900 to 90
 
 Rows 45 `m45-rootwell-admissions`, 46 `m46-starfall-at-the-anthill`, 70 (finale call) use the region tag `rootwell`. E13 builds the twelve buildings from this list: planned (batch 3).
 
+Since the second expansion the band reaches the east edge, where Rootwell Field Station stands (R-177).
+
 ## Look and motifs
 
 - Motifs: mown lawns; clipped hedges; iron railings round old learned halls.

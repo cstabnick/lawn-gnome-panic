@@ -338,6 +338,17 @@ const BIOME_PROFILES: Record<BiomeId, BiomeAtmosphereProfile> = {
     moteColorDay: 0xfff0c8, moteColorNight: 0xd8d0a0, moteOpacityDay: 0.45, moteOpacityNight: 0.4, moteSize: 0.26,
     vx: 0.8, vy: 0.3, vz: 0.4, swirl: 0.9,
   },
+  // E28: Pardonlin (a soft, slightly hazy continental afternoon) and the Unmown (pollen-heavy meadow air).
+  continental: {
+    skyTint: 0xd8c8b0, skyWeight: 0.14, fogTint: 0xd6d0c4, fogWeight: 0.2, fogNearMult: 0.95, fogFarMult: 0.95,
+    moteColorDay: 0xfff4e0, moteColorNight: 0xd0c8f0, moteOpacityDay: 0.3, moteOpacityNight: 0.35, moteSize: 0.22,
+    vx: 0.4, vy: 0.2, vz: 0.3, swirl: 0.6,
+  },
+  preserve: {
+    skyTint: 0xc8e0a8, skyWeight: 0.16, fogTint: 0xcfe2b8, fogWeight: 0.22, fogNearMult: 0.94, fogFarMult: 0.95,
+    moteColorDay: 0xfff8b0, moteColorNight: 0xc8f0a0, moteOpacityDay: 0.6, moteOpacityNight: 0.5, moteSize: 0.28,
+    vx: 0.9, vy: 0.4, vz: 0.5, swirl: 1.2,
+  },
 };
 
 export function wrapPhase(phase: number): number {

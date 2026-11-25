@@ -14,8 +14,10 @@ const byPrefab = (id: string) => plan.works.filter((w) => w.prefab === id);
 
 describe('waterworksPlan', () => {
   it('has the expected counts', () => {
+    // Four arches on the old river. Low bridges (E03) where deck-to-bed is shallow: the canal and the four over the
+    // Thymes in Pardonlin (E28).
     expect(byPrefab('arch-road-bridge')).toHaveLength(4);
-    expect(byPrefab('canal-road-bridge')).toHaveLength(1);
+    expect(byPrefab('canal-road-bridge')).toHaveLength(5);
     expect(byPrefab('road-bridge')).toHaveLength(0);
     expect(byPrefab('canal-lock-gate')).toHaveLength(2);
     expect(byPrefab('loch-weir')).toHaveLength(2);

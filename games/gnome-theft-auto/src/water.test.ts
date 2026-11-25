@@ -62,7 +62,8 @@ describe('water on the shipped ground', () => {
   it('bridges every road crossing at the road height; boats see the river under the deck', () => {
     const list = bridges();
     expect(list.map((b) => `${b.course} x ${b.road}`).sort()).toEqual(
-      ['canal x south', 'river-farm x ring-se', 'river-ravine x ring-sw', 'river-ravine x west', 'river-upper x ring-nw'],
+      ['canal x south', 'river-farm x ring-se', 'river-ravine x ring-sw', 'river-ravine x west', 'river-upper x ring-nw',
+        'thymes x pl-pont-neuf', 'thymes x pl-pont-nord', 'thymes x pl-pont-sud', 'thymes x pl-quai-bassin'],
     );
     for (const b of list) {
       expect(bridgeDeckAt(b.x, b.z)).toBe(b.deck);
@@ -78,7 +79,7 @@ describe('water on the shipped ground', () => {
     for (const b of bridges()) {
       const surface = waterAt(b.x, b.z)!.surface;
       const clearance = WATER.bridgeClearance[b.course] ?? WATER.bridgeClearance.default;
-      expect(b.deck - surface, b.id).toBeGreaterThanOrEqual(clearance - 1e-6);
+      expect(b.deck - surface, b.id).toBeGreaterThanOrEqual(clearance - 1e-4); // float32 grid heights
       const s = Math.sin(b.yaw), c = Math.cos(b.yaw);
       const at = (a: number): number => heightAt(b.x + s * a, b.z + c * a);
       const end = b.length / 2;

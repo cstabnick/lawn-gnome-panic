@@ -69,8 +69,14 @@ export const BIOME_GROUND: Record<BiomeId, number> = Object.fromEntries(
  * every 40 units along a leg; polylines that share an exact vertex share its node. A highway that starts at a city
  * grid crossing, e.g. [180, 0] or [0, -180], joins the grid there.
  */
-export interface Highway { id: string; points: [number, number][] }
-export const HIGHWAYS: readonly Highway[] = highways().map((h) => ({ id: h.id, points: h.points }));
+export interface Highway {
+  id: string;
+  points: [number, number][];
+  /** Paved width (the path's `width`, ROAD_WIDTH unless narrower: Pardonlin's lanes are 7). Drawing and the terrain
+   *  flatten use it; keep-out checks may keep using ROAD_WIDTH (wider is safe). */
+  width: number;
+}
+export const HIGHWAYS: readonly Highway[] = highways().map((h) => ({ id: h.id, points: h.points, width: h.width }));
 
 /** Fort Sandpit sits in the desert. The gate is a gap in the north wall (z = maxZ), on the fort-gate highway. */
 const fort = marker('site', 'fort-sandpit');
@@ -816,11 +822,14 @@ export const WATER = {
     'river-ravine': { depth: 2.0, bank: 5 },
     canal: { depth: 0.85, bank: 1.5, freeboard: 1.6 },
     'river-farm': { depth: 1.8, bank: 6 },
+    // E28: Pardonlin's garden rill (its own chain, not in WATER.order), a slow town river in stone-ish banks.
+    thymes: { depth: 1.4, bank: 4 },
   },
   /** Still water (water marker ids): depth at the middle; shelf = fraction of the radius the bed shelves over; bank, m. */
   bodies: {
     'water/loch-moss': { depth: 5, shelf: 0.35, bank: 8 },
     'water/puddle-sea': { depth: 3, shelf: 0.6, bank: 10 },
+    'water/pardonlin-basin': { depth: 2.5, shelf: 0.4, bank: 6 },
   },
   /** Canal locks, as fractions of the canal's length: the only places the canal steps down. */
   canalLocks: [0.25, 0.75],
@@ -830,7 +839,7 @@ export const WATER = {
   deckRise: 0.15,
   /** Road bridges are raised so boats pass under: the deck top stands at least this far above the water, metres. Per
    *  course id, else `default`. */
-  bridgeClearance: { default: 3.4, canal: 2.2 } as Record<string, number>,
+  bridgeClearance: { default: 3.4, canal: 2.2, thymes: 1.6 } as Record<string, number>,
   /** The earth ramps (embankments along the road) up to a raised bridge climb at this grade (rise over run). */
   bridgeGrade: 0.1,
   /** A stretch higher than the water it flows into is lowered over its last metres at this slope (m per m), so a boat

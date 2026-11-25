@@ -21,6 +21,8 @@ import { assignNpcChassis, npcChassisOf, stepNpcCar } from './npcChassis';
 import { rollCivilianMods } from './civilianMods';
 import { heightAt } from './terrain';
 import { nearestRoadNode, roadY } from './highways/roads';
+import { canDrive, onRing, ringById, type Roundabout } from './roundabouts';
+import { directorAt, directorSpeedCap, nowSeconds } from './trafficDirectors';
 import {
   createGhost, hiddenFromAll, lanePose, laneT, pickSpot, placeGhost, simGraph, stepGhosts, targetPopulation,
   type Ghost, type Spot, type Viewer,
@@ -210,6 +212,8 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     for (const l of best.links) {
       const m = nodeOf(l);
       if (!m) continue;
+      // One-way ring links (roundabouts.ts): drive m -> best when best is ahead, best -> m otherwise.
+      if (ahead ? !canDrive(m, best.id) : !canDrive(best, l)) continue;
       const d = segmentDir(best, m);
       const dot = ahead ? -(d.x * fx + d.z * fz) : d.x * fx + d.z * fz;
       if (dot > pickDot) { pickDot = dot; pickId = l; }
@@ -227,10 +231,28 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     d.next = leg.next;
   }
 
+  /** The roundabout a driver is driving round (its segment runs between two nodes of the same ring), or null. */
+  function ringOf(d: Driver): Roundabout | null {
+    const a = nodeOf(d.from), b = nodeOf(d.to);
+    if (!a?.ring || a.ring !== b?.ring) return null;
+    return ringById(a.ring);
+  }
+
+  /** The roundabout a driver is about to drive onto (its segment ends on a ring it is not on, within 18 m), or null. */
+  function enteringRing(v: Vehicle, d: Driver): Roundabout | null {
+    const a = nodeOf(d.from), b = nodeOf(d.to);
+    if (!b?.ring || a?.ring === b.ring) return null;
+    if (Math.hypot(b.x - v.x, b.z - v.z) > 18) return null;
+    return ringById(b.ring);
+  }
+
   /** The nearest thing ahead in the lane that a driver must brake for, or null. `passing` ignores stopped vehicles. */
-  function blockerAhead(v: Vehicle, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, playerY: number, passing: boolean): Blocker | null {
+  function blockerAhead(v: Vehicle, vehicles: Vehicle[], onFoot: boolean, playerX: number, playerZ: number, playerY: number, passing: boolean, d?: Driver): Blocker | null {
     const sinY = Math.sin(v.yaw);
     const cosY = Math.cos(v.yaw);
+    // Roundabouts (roundabouts.ts): the ring this car is about to enter, and the ring it is already on.
+    const entering = d ? enteringRing(v, d) : null;
+    const ringOn = d ? ringOf(d) : null;
     let best: Blocker | null = null;
     let bestFwd = Infinity;
     const consider = (ox: number, oz: number, radius: number, along: number, still: boolean, parkedKerb = false): void => {
@@ -260,13 +282,31 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
       const along = o.speed * (Math.sin(o.yaw) * sinY + Math.cos(o.yaw) * cosY);
       consider(o.x, o.z, o.spec.radius, along, Math.abs(o.speed) < STILL_SPEED, o.driver === 'none');
     }
-    if (best || v.speed < 1) return best;
+    if (best) return best;
+    // About to enter a roundabout: give way to any car already on the ring coming round toward the entry.
+    if (entering) {
+      const to = nodeOf(d!.to)!;
+      const entryAng = Math.atan2(to.z - entering.z, to.x - entering.x);
+      for (const o of vehicles) {
+        if (o === v || Math.abs(o.speed) < STILL_SPEED) continue;
+        if (Math.abs(o.x - entering.x) > 60 || Math.abs(o.z - entering.z) > 60) continue;
+        if (!onRing(entering, o.x, o.z, 0.5)) continue;
+        // Ring traffic runs with the island on its left: its angle round the centre falls over time, so a car coming
+        // toward the entry is at a larger angle (up to ~80 degrees round), or right at it.
+        let gap = Math.atan2(o.z - entering.z, o.x - entering.x) - entryAng;
+        gap = Math.atan2(Math.sin(gap), Math.cos(gap));
+        if (gap > -0.25 && gap < 1.4) return { still: false, side: 0 };
+      }
+    }
+    if (v.speed < 1) return null;
     // Crossing traffic (a junction, a car pulling out): give way when our paths meet within YIELD_SECONDS and the other car
     // is further into the crossing than we are. Without this, cars T-bone each other at every junction and drive on dented.
     for (const o of vehicles) {
       if (o === v || Math.abs(o.speed) < STILL_SPEED) continue;
       if (Math.abs(o.x - v.x) > FAR_SKIP || Math.abs(o.z - v.z) > FAR_SKIP) continue;
       if (Math.abs(o.y - v.y) > LEVEL_GAP) continue;
+      // On a roundabout ring we have the right of way over anyone not on it (they give way above).
+      if (ringOn && !onRing(ringOn, o.x, o.z, 0.5)) continue;
       const ox = Math.sin(o.yaw);
       const oz = Math.cos(o.yaw);
       if (Math.abs(ox * sinY + oz * cosY) > CROSS_COS) continue; // same way or head-on: the lane checks handle those
@@ -378,7 +418,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     // ---- What is ahead -----------------------------------------------------------------------------------------------
     const passing = d.passT > 0;
     if (passing) d.passT -= dt;
-    const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, playerY, passing);
+    const blocker = blockerAhead(v, vehicles, onFoot, playerX, playerZ, playerY, passing, d);
     if (blocker) {
       d.blockedT += dt;
       // Stopped behind a blocker past patience: pull out toward the road center to pass.
@@ -411,8 +451,13 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
     }
     if (Math.abs(diff) > 0.6) target = Math.min(target, corner);
     if (passing) target = Math.min(target, 0.4 * v.spec.maxSpeed);
+    // A traffic-hat warden holding this road (trafficDirectors.ts): ease to a stop at the line, then wait for the wave.
+    const warden = directorAt(toNode.x, toNode.z);
+    const held = warden !== null && directorSpeedCap(warden, nowSeconds(), dir.x, dir.z, remaining) < target;
+    if (held) target = directorSpeedCap(warden, nowSeconds(), dir.x, dir.z, remaining);
 
     let throttle = clamp((target - v.speed) * 0.8, -1, 1);
+    if (held && target < 0.5) throttle = npcChassisOf(v) ? clamp(-v.speed * STOP_GAIN, -1, 0) : v.speed > 0 ? -1 : 0;
     if (blocker) {
       // On the sim chassis a full brake near a standstill rolls the car backwards, which un-blocks it and it drives on again
       // (a chatter that never trips the wedge logic): brake in proportion to speed there, so it stops dead instead.
@@ -422,7 +467,7 @@ export function createTraffic(scene: THREE.Scene, world: World, onToast?: (text:
 
     // ---- Progress watch: wedged on something? -------------------------------------------------------------------------
     // Waiting briefly behind a blocker is fine, but if blocked too long (> 4.5s) let wedgedT advance so we reverse/re-route.
-    if (blocker && !passing && d.blockedT < 4.5) {
+    if (held || (blocker && !passing && d.blockedT < 4.5)) {
       d.watchT = 0;
       d.watchX = v.x;
       d.watchZ = v.z;

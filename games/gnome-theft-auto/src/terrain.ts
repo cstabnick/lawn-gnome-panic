@@ -167,7 +167,10 @@ function buildGrid(): Float32Array {
   const clampI = (v: number): number => Math.max(0, Math.min(N - 1, v));
   const roadInner = ROAD_WIDTH / 2 + TERRAIN.roadShoulder;
   const flatPaths = [
-    ...HIGHWAYS.map((hw) => ({ points: hw.points, inner: roadInner, outer: roadInner + TERRAIN.roadFade })),
+    ...HIGHWAYS.map((hw) => {
+      const inner = roadInner - (ROAD_WIDTH - hw.width) / 2;
+      return { points: hw.points, inner, outer: inner + TERRAIN.roadFade };
+    }),
     ...(opts.landforms ? trails() : []).map((t) => {
       const inner = (t.width || TERRAIN.trailWidth) / 2 + 1;
       return { points: t.points, inner, outer: inner + TERRAIN.trailFade };

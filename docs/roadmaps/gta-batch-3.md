@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Running: E29 (European kit), E06 (weather), E07 (map, options, Gnomlet). Next: E27, E09, then wave 4 (E10, E11, E12, E30).
+Merged: E04, E02, E01, E08 (+ main), E03, E23, E05, E28. Also merged: E06. Running: E29 (European kit), E07 (map, options, Gnomlet), E27 (bushes, water skim, flaky tests). Next: E09, then wave 4 (E10, E11, E12, E30).
 
 ## Tracking
 
@@ -28,7 +28,7 @@ with deferred items listed).
 | E03 | Bugs and quest reliability sweep | Fix | 2 | – | merged | epic/E03-bugs | 20977fd6 | all 13 items + L96, L97, L100; quest sim 55/58 (city-glow-band-express timed gates, city-skyway-robbery deck ramp: bot limits for E23; nc-party needs relay); L88 fix in deploy/nginx.conf takes effect on next deploy; no real-device run | | |
 | E05 | Interiors and rooftops | Engine | 2 | E01 | merged | epic/E05-interiors | b7646a33 | `src/interiors/` (`defineInterior`, rooms off-map x>=5000, up to 600x600 m cells for E17), quest `interior` gate; showcase: Bodega & Sons, Mulch Club lobby, Flat 3B shell (E10 fills it), Thorne Even-Estates sales floor + lift; walkable tower roofs + Thorne Helipad, aircraft land on roofs (live copter landing not yet flown); deferred: weapons away indoors, saving 'inside', shared rooms online, roof clutter colliders |
 | E08 | Economy, ownership and inventory | Engine | 2 | – | merged | epic/E08-economy | b5bbef96 | loans sit **beside** Kiln-Debt (R-169), not inside it (E10 must follow); `DEALER_SITES` are fallback spots, move to E01 sites; deferred: 3D showroom, per-vehicle boat/aircraft looks, glaze/Pebblewick/hunting/taxi price tables, real-phone pass | | |
-| E06 | Sky, weather and time | Engine | 3 | – | running | epic/E06 | | |
+| E06 | Sky, weather and time | Engine | 3 | – | merged | epic/E06-weather | dde5c9e4 | `src/weather/` (clear/cloud/mist/rain/snow by region climate, per-tier budgets, Options row, deterministic per browser, not relayed); cutscene time-lapse (badge + sky race, never changes world time; `advanceWorldTime` for deliberate changes); staggered headlights, fewer particles, wandering flocks, intermittent planes, events 160 s / street 45-90 s; R-178; deferred: rain sound (E09), puddles/snow cover, synced clock; density not checked in a real browser |
 | E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | running | epic/E07 | | |
 | E09 | Sound, voice, animation and direction | Polish | 3 | – | planned | | | |
 | E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | planned | | | |
@@ -48,7 +48,7 @@ with deferred items listed).
 | E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
 | E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
 | E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
-| E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | planned | | | |
+| E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | running | epic/E27-physics |  |  |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | running | epic/E29-eurokit | | |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | planned | | | |

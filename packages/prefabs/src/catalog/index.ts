@@ -133,6 +133,17 @@ import { GTA_SKY_TRAFFIC } from './gta-sky-traffic';
 import { GTA_SKYWAY_WORKS } from './gta-skyway-works';
 import { GNOMELOCK_GEAR } from './gnomelock';
 import { GNOME_SOULS } from './gnome-souls';
+import { GTA_EURO_BUILDINGS_A } from './gta-euro-buildings-a';
+import { GTA_EURO_BUILDINGS_B } from './gta-euro-buildings-b';
+import { GTA_EURO_BUILDINGS_C } from './gta-euro-buildings-c';
+import { GTA_EURO_BUILDINGS_D } from './gta-euro-buildings-d';
+import { GTA_EURO_STREET } from './gta-euro-street';
+import { GTA_EURO_STREET_B } from './gta-euro-street-b';
+import { GTA_EURO_GARDEN } from './gta-euro-garden';
+import { GTA_EURO_GARDEN_B } from './gta-euro-garden-b';
+import { GTA_EURO_FLEET } from './gta-euro-fleet';
+import { GTA_EURO_FLEET_B } from './gta-euro-fleet-b';
+import { GTA_EURO_GEAR } from './gta-euro-gear';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -160,4 +171,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GNOMELOCK_GEAR,
   ...GNOME_SOULS,
   ...GTA_ECONOMY, ...GTA_ECONOMY_GEAR,
+  ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
+  ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
+  ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR,
 ];

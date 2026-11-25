@@ -74,7 +74,7 @@ export function createIntroTour(
 
     startIfFirstTime(params: URLSearchParams) {
       if (params.has('mount') || params.has('herd') || params.has('pileup') || params.has('no-intro')
-        || params.has('cutscene') || params.has('cutscenecheck')) return;
+        || params.has('eurokit') || params.has('cutscene') || params.has('cutscenecheck')) return;
       try {
         if (localStorage.getItem(SEEN_KEY) === '1') return;
       } catch {

@@ -76,11 +76,14 @@ const BARROW_BARS: Vec3 = [0, 0.6, 0.12];
 const GOLF_WHEEL: Vec3 = [0.32, 1.07, 0.04];
 const HOPPER_YOKE: Vec3 = [0, 1.15, 0.08];
 const SYCAMORE_YOKE: Vec3 = [0.35, 1.0, 0.5];
+const DEUX_POTS_WHEEL: Vec3 = [0.16, 0.6, -0.02];
+const WESPA_BARS: Vec3 = [0, 0.62, 0];
+const TRIKE_BARS: Vec3 = [0, 0.66, 0.2];
 
 /**
  * Every vehicle kind's control. A kind left out keeps its hands in the lap, for a reason:
  * - walnut-dinghy, gravy-boat: rowed and paddled (anim/rideAuto.ts plays boat-row / boat-paddle), nothing to steer by hand;
- * - snail-coach, hoa-van, taxi: closed cabs, the driver's hands are not seen;
+ * - snail-coach, hoa-van, taxi, euro-hatch, crepe-van: closed cabs, the driver's hands are not seen;
  * - tessie: a turtle, ridden.
  */
 export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>> = {
@@ -171,6 +174,21 @@ export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>
   'sycamore-copter': {
     control: 'yoke', pivot: 'steer', grips: pair(SYCAMORE_YOKE, 0.15), axis: FACING, lock: 0.6,
     variant: { dropParts: [], wheelAt: SYCAMORE_YOKE, columnBase: [0.35, 0.85, 0.85], addParts: yoke(SYCAMORE_YOKE, 0.3, 0.03) },
+  },
+  // Deux-Pots: the steering ring (group steer) comes back over the bench, where the driver's hands reach it.
+  'deux-pots': {
+    control: 'wheel', pivot: 'steer', grips: pair(DEUX_POTS_WHEEL, 0.08), axis: ringAxis(120),
+    variant: { dropParts: [], wheelAt: DEUX_POTS_WHEEL },
+  },
+  // Wespa: the handlebar (group steer) comes back 0.16 towards the saddle.
+  wespa: {
+    control: 'handlebar', pivot: 'steer', grips: pair(WESPA_BARS, 0.2),
+    variant: { dropParts: [], wheelAt: WESPA_BARS },
+  },
+  // Baguette Trike: its handlebar (group steer) comes back towards the saddle, held at both ends.
+  'baguette-trike': {
+    control: 'handlebar', pivot: 'steer', grips: pair(TRIKE_BARS, 0.21),
+    variant: { dropParts: [], wheelAt: TRIKE_BARS },
   },
   // Dandelion Drifter: a balloon does not steer; the pilot holds the front of the basket rim (r 0.7, y 0.85).
   'dandelion-drifter': { control: 'rim', pivot: null, grips: [[0.25, 0.85, 0.654], [-0.25, 0.85, 0.654]] },

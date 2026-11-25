@@ -417,6 +417,39 @@ export function playHorn(kind: VehicleKind, horn?: string): void {
       hornNote(c, out, 'square', t, 0.09, 920, 0.14, 2200);
       hornNote(c, out, 'square', t + 0.1, 0.11, 680, 0.14, 2200);
       return;
+    case 'euro-hatch':
+      // Two-note meep-meep.
+      hornNote(c, out, 'square', t, 0.08, 880, 0.14, 2400);
+      hornNote(c, out, 'square', t + 0.12, 0.08, 880, 0.14, 2400);
+      return;
+    case 'deux-pots':
+      // One long nasal note.
+      hornNote(c, out, 'sawtooth', t, 0.35, 420, 0.15, 1400);
+      return;
+    case 'wespa':
+      // Three fast high beeps.
+      for (const offset of [0, 0.08, 0.16]) {
+        hornNote(c, out, 'square', t + offset, 0.05, 1200, 0.12, 3000);
+      }
+      return;
+    case 'baguette-trike':
+      // Bicycle bell.
+      hornNote(c, out, 'sine', t, 0.12, 2100, 0.12, 5000);
+      hornNote(c, out, 'sine', t + 0.12, 0.12, 2600, 0.12, 5000);
+      return;
+    case 'crepe-van': {
+      // Jaunty four-note tune.
+      const tune: readonly [number, number][] = [
+        [0, 523.25],
+        [0.1, 659.25],
+        [0.2, 783.99],
+        [0.3, 659.25],
+      ];
+      for (const [at, f] of tune) {
+        hornNote(c, out, 'sawtooth', t + at, 0.1, f, 0.14, 2000);
+      }
+      return;
+    }
     case 'lowrider': {
       // 4-note musical honk.
       const notes: readonly [number, number, number][] = [

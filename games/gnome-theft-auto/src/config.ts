@@ -431,6 +431,39 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 2.5, accel: 1.2, turnRate: 1.6, radius: 0.9, seat: [0, 0.32, 0], flies: false, mass: 0.6,
     boat: true, draft: 0.05,
   },
+  // ---- European rides (E29; prefabs in packages/prefabs/src/catalog/gta-euro-fleet.ts and gta-euro-fleet-b.ts, nose +z,
+  // contract in docs/roadmaps/gta-batch-3/E29/contracts.md). Seats and doors are the prefab's numbers times `scale`. ----
+  'euro-hatch': {
+    kind: 'euro-hatch', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.64, 0.58, 0] },
+      { side: 'right', pivot: 'door-right', at: [-0.64, 0.58, 0] },
+    ], name: 'Petit Pois', prefab: 'gta-euro-hatch', scale: 1.8,
+    maxSpeed: 24, accel: 13, turnRate: 2.4, radius: 1.1, seat: [0.27, 0.4, -0.14], flies: false, mass: 2.2,
+    passengerSeats: [[-0.27, 0.4, -0.14]],
+  },
+  'deux-pots': {
+    kind: 'deux-pots', mountStyle: 'hop', name: 'Deux-Pots', prefab: 'gta-deux-pots', scale: 1.7,
+    maxSpeed: 20, accel: 9, turnRate: 2.0, radius: 1.2, seat: [0.27, 0.41, -0.2], flies: false, mass: 2,
+    passengerSeats: [[-0.27, 0.41, -0.2], [0, 0.41, -0.75]],
+  },
+  wespa: {
+    kind: 'wespa', mountStyle: 'hop', name: 'Wespa', prefab: 'gta-wespa', scale: 1.6,
+    maxSpeed: 26, accel: 16, turnRate: 2.9, radius: 0.8, seat: [0, 0.58, -0.16], flies: false, mass: 0.9,
+    passengerSeats: [[0, 0.58, -0.72]],
+  },
+  'baguette-trike': {
+    kind: 'baguette-trike', mountStyle: 'hop', name: 'Baguette Trike', prefab: 'gta-baguette-trike', scale: 1.5,
+    maxSpeed: 15, accel: 8, turnRate: 2.1, radius: 1.0, seat: [0, 0.6, 0.12], flies: false, mass: 1.4,
+    passengerSeats: [[0, 0.45, -0.52]],
+  },
+  'crepe-van': {
+    kind: 'crepe-van', mountStyle: 'door', openTop: false, doors: [
+      { side: 'left', pivot: 'door-left', at: [0.8, 0.76, 0.81] },
+      { side: 'right', pivot: 'door-right', at: [-0.8, 0.76, 0.81] },
+    ], name: 'Crepe Van', prefab: 'gta-crepe-van', scale: 1.8,
+    maxSpeed: 19, accel: 8, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
+    // No passenger seats: an enclosed cab with a griddle where the second seat would be.
+  },
 };
 
 /**
@@ -575,6 +608,10 @@ export const TRAFFIC = {
   ghostGap: 8,
   /** Odd rides (pot-rod, lawn-roller, teacup-trundler, barrow-buggy): chance a new car is one of them. */
   oddRideChance: 0.1,
+  /** European rides (euroRides.ts EURO_RIDES): chance a new car inside the European zone (setEuroZone) is one of them, and the
+   *  smaller chance a new car in town is one (so they are about before E30 builds their town). */
+  euroZoneChance: 0.7,
+  euroTownChance: 0.05,
 } as const;
 
 /**

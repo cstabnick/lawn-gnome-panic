@@ -128,6 +128,8 @@ export interface ErrandWorld {
 /** Kinds that never take a `far` errand: push-bikes, the bus, and the odd rides (too slow for the highways). */
 const TOWN_ONLY: ReadonlySet<VehicleKind> = new Set<VehicleKind>([
   'push-bike', 'snail-coach', 'pot-rod', 'lawn-roller', 'teacup-trundler', 'barrow-buggy',
+  // European rides (E29): city cars, kept to town errands.
+  'deux-pots', 'wespa', 'baguette-trike', 'crepe-van',
 ]);
 
 /** A place behind the driver is this much less likely to be picked as its next errand (places ahead keep their weight). */

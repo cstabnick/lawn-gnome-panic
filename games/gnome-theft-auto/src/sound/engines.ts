@@ -84,6 +84,13 @@ const TABLE: Record<string, EngineSoundDef> = {
   'lawn-roller': { wave: 'chug', idleHz: 10, maxHz: 22, gears: 0, bright: 0.2, rough: 0.8, gain: 1.1, curve: 1.2 },
   'teacup-trundler': { wave: 'buzz', idleHz: 34, maxHz: 80, gears: 0, bright: 0.6, rough: 0.2, gain: 0.75, curve: 0.9 },
   'barrow-buggy': { wave: 'buzz', idleHz: 30, maxHz: 95, gears: 0, bright: 0.55, rough: 0.55, gain: 0.85, curve: 0.8, misfire: 0.3 },
+
+  // European rides.
+  'euro-hatch': { wave: 'buzz', idleHz: 30, maxHz: 110, gears: 4, bright: 0.55, rough: 0.25, gain: 0.85 },
+  'deux-pots': { wave: 'chug', idleHz: 20, maxHz: 70, gears: 4, bright: 0.4, rough: 0.6, gain: 0.95, curve: 1.05, misfire: 0.1 },
+  wespa: { wave: 'buzz', idleHz: 40, maxHz: 160, gears: 3, bright: 0.85, rough: 0.45, gain: 0.9, curve: 0.85, misfire: 0.15 },
+  'baguette-trike': { wave: 'buzz', idleHz: 36, maxHz: 120, gears: 2, bright: 0.7, rough: 0.6, gain: 0.85, misfire: 0.25 },
+  'crepe-van': { wave: 'rumble', idleHz: 15, maxHz: 50, gears: 3, bright: 0.3, rough: 0.5, gain: 1.05, curve: 1.1 },
   'golf-cart': {
     wave: 'electric', idleHz: 25, maxHz: 95, gears: 0, bright: 0.25, rough: 0.02, gain: 0.75,
     whine: 0.55, whineRatio: 7, idleLevel: 0.2, noise: 0.1,

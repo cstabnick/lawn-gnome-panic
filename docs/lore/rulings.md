@@ -1066,3 +1066,24 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** Capwood's caps glow faintly after dark (spores, not magic: gnomes argue about this). The brightest glow is the Great Ring, a fairy ring of toadstools round a clearing. Bruising a cap is a fine under Section Nine of the Warden's rules.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E14 lights Capwood at night and places the Great Ring, and the Warden's fines need a rule to cite.
+
+## R-193
+
+**Question:** What does the Acorn Diner serve, and why is the stew "grub-free"?
+**Ruling:** The diner serves eight dishes (see `acorn-diner-menu`). The stew is grub-free: it is, and nobody asks. The capitals in "Grub-Free Root Stew" are a reassurance, not a joke.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's chef job needs a fixed menu, and the stew's name invites a gag the diner never makes.
+
+## R-194
+
+**Question:** Who customises client mowers at Pay 'n' Glaze, and how are they paid?
+**Ruling:** A mechanic does it, paid per car by the shop. The client pays for parts, within the budget on their work order. The "Signature Series" loyalty re-stamp still applies to every job.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's mechanic job needs to say where the pay and the parts money come from.
+
+## R-195
+
+**Question:** How does comedy work in Pardonlin?
+**Ruling:** Le Petit Groan's audience grades rather than laughs. Heckling is a recognised art. Tomatoes are thrown underarm only, by custom.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's comedy job needs a room that reacts without ever laughing.

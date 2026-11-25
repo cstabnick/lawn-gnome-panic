@@ -19,3 +19,5 @@ A roadside diner on the east side of the South Highway, just south of the canal 
 
 ## In the games
 Stage `south-highway-diner` (chapter 2, "Order Over Chaos"). Players see Frank at the counter, his sign across the road, and Vesper Thorne's outdoor booth, where she holds her "casual" meetings.
+
+The kitchen is a walk-in interior (`acorn-diner-kitchen`), entered from the west front; the chef job (E24) works there. The menu is in `acorn-diner-menu`.

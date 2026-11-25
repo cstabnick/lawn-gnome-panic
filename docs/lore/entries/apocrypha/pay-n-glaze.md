@@ -30,6 +30,8 @@ Since the new management, Pay 'n' Glaze sells more than a coat: sprays, wheels, 
 
 - A second station sits in the pit lane of the Lost & Found Speedway, the same bays and the same five-second coat, on
   the Tall Ones' pan (`raceTrack/track.ts`, `SPEEDWAY_GLAZE`).
+- The mechanic job (E24): at the Turfton lot, Chrome-Knuckle Cass hands out client work orders (a brief and a parts
+  budget); the player glazes the mower and the client rates it. See `pay-n-glaze-work-orders` and R-194.
 
 ## Loose threads
 

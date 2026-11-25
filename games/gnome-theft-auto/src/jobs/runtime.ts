@@ -19,7 +19,8 @@ import { surgeFor } from './surge';
 import { createJobHud } from './hud';
 import type { JobHudView } from './hud';
 import { createJobBoard } from './board';
-import type { BoardActions, BoardRow, BoardView } from './board';
+import type { BoardActions, BoardRow, BoardView, WorkRow } from './board';
+import { WORK_JOBS, workPerkLines, workTitle } from './workDefs';
 import { createJobVisuals } from './visuals';
 import type { JobVisuals, SeatMood } from './visuals';
 import { createCabSync } from './cabSync';
@@ -29,8 +30,8 @@ import type { PaxSync } from './paxSync';
 import { callKey } from './cabCalls';
 import type { SeenCall } from './cabCalls';
 import {
-  JOB_IDS, type Blip, type Gig, type GigKind, type GigState, type JobId, type JobPerks, type JobsDebug,
-  type JobsDeps, type Jobs, type ParcelKind, type Sample, type Surge, type Vehicle, type VehicleKind,
+  JOB_IDS, WORK_JOB_IDS, type Blip, type Gig, type GigKind, type GigState, type JobId, type JobPerks, type JobsDebug,
+  type JobsDeps, type Jobs, type ParcelKind, type Sample, type Surge, type Vehicle, type VehicleKind, type WorkJobId,
 } from './types';
 
 /** Can `job` work in this vehicle? Taxi: a ground car with a spare seat. Courier: any ground vehicle. Pilot: aircraft. Boat: boats. */
@@ -105,6 +106,8 @@ export function installJobs(deps: JobsDeps): Jobs {
   let outT = 0;
   let chatterT = 0;
   let boardT = 0;
+  // The workplace the HUD route points at ("Show me" on the board), or null.
+  let workRoute: WorkJobId | null = null;
   let faresDone = 0;
   let seated: [number, number][] = [];
   let shown: ParcelKind[] = [];
@@ -512,8 +515,20 @@ export function installJobs(deps: JobsDeps): Jobs {
         label: `${c.call.name} -> ${placeById(c.call.dest)?.name ?? c.call.dest}, ${Math.round(Math.hypot(c.call.x - p.x, c.call.z - p.z))} m`,
       }))
       : [];
+    const work: WorkRow[] = WORK_JOB_IDS.map((job) => {
+      const def = WORK_JOBS[job];
+      const rec = store.get().work[job];
+      const prog = levelProgress(rec.xp);
+      return {
+        job, title: def.title, icon: def.icon, employer: def.employer, blurb: def.blurb,
+        level: prog.level, levelTitle: workTitle(job, prog.level), xpInto: prog.into, xpNeed: prog.need,
+        done: rec.done, earned: rec.earned, perks: workPerkLines(job, prog.level),
+        place: def.place.name, routed: workRoute === job,
+      };
+    });
     return {
       rows,
+      work,
       cab: {
         phase: rider.phase,
         driver: rider.driver !== null ? nameOf(rider.driver) : null,
@@ -556,6 +571,15 @@ export function installJobs(deps: JobsDeps): Jobs {
     takeCall: (key) => {
       const why = takeKey(key);
       if (why) toast(why);
+    },
+    routeWork: (job) => {
+      workRoute = job;
+      toast(`Route set: ${WORK_JOBS[job].place.name}`);
+      board.refresh(boardView());
+    },
+    clearRoute: () => {
+      workRoute = null;
+      board.refresh(boardView());
     },
   };
   const board = createJobBoard(deps.ui, actions);
@@ -609,7 +633,7 @@ export function installJobs(deps: JobsDeps): Jobs {
   // ---- Wiring for the phone and the world ----
   deps.phone.addApp({
     id: 'jobs', label: 'Jobs', icon: '💼',
-    detail: () => (duty ? 'On duty: ' + JOBS[duty].title : 'Taxi, courier, pilot, boat'),
+    detail: () => (duty ? 'On duty: ' + JOBS[duty].title : 'Taxi, courier, pilot, boat, chef, mechanic, comedian'),
     run: openBoard,
   });
   hud.onAction(() => {
@@ -629,6 +653,14 @@ export function installJobs(deps: JobsDeps): Jobs {
   function update(dt: number): void {
     const p = pos();
     cab.tick(p.x, p.z);
+    // Drop the workplace route once the player is there (on foot or driving).
+    if (workRoute) {
+      const place = WORK_JOBS[workRoute].place;
+      if (Math.hypot(place.x - p.x, place.z - p.z) <= 12) {
+        workRoute = null;
+        if (board.isOpen()) board.refresh(boardView());
+      }
+    }
     if (!duty || !dutyVehicle) {
       visuals.update(dt, p.x, p.z);
       return;
@@ -693,12 +725,19 @@ export function installJobs(deps: JobsDeps): Jobs {
     update,
     waypoint() {
       const g = gig;
-      if (!g || !duty || g.idx >= g.gig.stops.length) return null;
-      const stop = g.gig.stops[g.idx];
-      return {
-        x: stop.x, z: stop.z, color: JOBS[duty].color, label: stop.name,
-        direct: duty === 'pilot' || duty === 'boat',
-      };
+      if (g && duty && g.idx < g.gig.stops.length) {
+        const stop = g.gig.stops[g.idx];
+        return {
+          x: stop.x, z: stop.z, color: JOBS[duty].color, label: stop.name,
+          direct: duty === 'pilot' || duty === 'boat',
+        };
+      }
+      // No gig stop: the workplace route from the board ("Show me").
+      if (workRoute) {
+        const def = WORK_JOBS[workRoute];
+        return { x: def.place.x, z: def.place.z, color: def.color, label: def.place.name, direct: false };
+      }
+      return null;
     },
     blips() {
       const out: Blip[] = [];

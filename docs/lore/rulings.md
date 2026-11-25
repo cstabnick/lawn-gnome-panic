@@ -968,3 +968,10 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** Gnome Theft Auto's weather (batch 3, E06) needs toast lines and achievements that fit the setting, and the Fells'
 "It is frost glaze, not snow" joke has to survive real snowfall.
+
+## R-179
+
+**Question:** Gnome Theft Auto's mowers can now skip across deep water when they hit it fast, and run straight through small bushes and rose beds. R-050 and R-140 say deep water sinks a mower. What changes?
+**Ruling:** Nothing in R-050 or R-140 is undone: a mower that is slow in deep water still conks out and sinks. But a mower that hits deep water fast, off a jump or flat out, skips across it like a flat stone, bouncing and throwing spray, for as long as its speed lasts; once it slows it sinks as before. Gnomes call it "skipping", and the Skipping-Stone Pendant is the proof that you did it on purpose. Small bushes, rose bushes, flowering bushes and allotment beds give way under a mower and grow back (the mowing rules); hedgerows, hedge arches, topiary and trees do not. Flattening six big shrubs in a row is "shrub bowling", and the Shrub Disguise is what the gardeners who saw it wear afterwards so you cannot find them.
+**Applies to:** gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L113 and L114 ask for bushes to be run over and for driving over water on jumps; the water rule needs a footing that keeps sinking as the end of every skim.

@@ -114,6 +114,7 @@ import { crackAchievements, modFitAchievements, shotAchievements } from './gunAc
 import { buildWorld } from './world';
 import { beginPlantHarvest } from './flora/harvest';
 import { createFlora } from './flora/runtime';
+import { createPhysicsAchievements } from './physicsAchievements';
 import { setTowerNight } from './towers';
 import { createWorldDetails } from './worldDetails';
 import { createDirectorViews } from './trafficDirectorsView';
@@ -406,10 +407,13 @@ const destructibles = createDestructibles(scene, world, fx, play, (amt, reason) 
 const vending = createVending(scene, world.vending ?? [], fx, play, (_brand, by) => {
   if (by.driver === 'player') void achievements.unlock('gta-cola-jackpot');
 });
+// E27: Skipping Stone (skim far across deep water, skim.ts) and Shrub Bowling (flatten big shrubs in a row).
+const physicsAch = createPhysicsAchievements({ unlock: (id) => void achievements.unlock(id) });
 // Mowable plants (flora/runtime.ts): vehicles mow small bushes, beds and grass instead of hitting them; they regrow.
 const flora = createFlora({
   scene, world, ui, shake: (a) => chase.shake?.(a), toast: (t, ms) => hud.toast(t, ms),
   increment: (id, by) => void achievements.increment(id, by), earn: (amt, reason) => economy.earn(amt, reason),
+  onPlayerMow: (_id, size) => physicsAch.plantFlattened(size, performance.now() / 1000),
 });
 const remoteMowers: Vehicle[] = [];
 let remoteMowersT = 0;
@@ -1838,6 +1842,14 @@ function frame(now: number): void {
       if (driftT > 1) { driftT = -1e9; void achievements.unlock('gta-drifter'); }
     }
     else stepVehicle(v, { throttle: fleet.throttle(v, inp.moveY), steer: inp.moveX, lift: inp.lift }, dt, world);
+    // Skimming over deep water (skim.ts, E27): spray and a splash on touching down and on every hop; the length counts
+    // toward Skipping Stone when it ends.
+    const skimEv = v.skim?.event;
+    if (skimEv === 'start' || skimEv === 'bounce') {
+      fx.waterJet?.(v.x, (terrain.waterAt(v.x, v.z)?.surface ?? v.y) + 0.1, v.z);
+      play('splash');
+      chase.shake?.(skimEv === 'start' ? 0.2 : 0.08);
+    } else if (skimEv === 'end' && v.driver === 'player') physicsAch.skimEnded(v.skim!.dist);
     if (v.sunk && v.driver === 'player') {
       // Drove into deep water: the mower conks out and sinks (swim.ts); the gnome bobs up beside it.
       hud.toast(`${v.spec.name} conked out and sank. It will turn up again later.`);

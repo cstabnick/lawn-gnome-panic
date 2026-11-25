@@ -10,6 +10,7 @@ import {
 } from './handling';
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
 import { groundAt, terrainFlat, terrainProbe } from './terrain';
+import { hopVelocity, SKIM, skimSurfaceAt, stepSkim } from './skim';
 import { CRASH_MIN, CRASH_SCALE, damageVehicle, knockParts } from './vehicles';
 import { DEBRIS } from './debris';
 import { notifySaveChanged } from './saveHook';
@@ -96,10 +97,18 @@ export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight 
  */
 const PLACE_LIFT = 1.5;
 let placeCap: number | null = null;
+/** On while a chassis is skimming (or fast enough to start): deep water is a flat ground the wheels can ride on (skim.ts). */
+let skimPlane = false;
 const GUARDED_PROBE: GroundProbe = {
   cast(origin, dir, maxDist) {
     const o = placeCap !== null && origin.y > placeCap ? { x: origin.x, y: placeCap, z: origin.z } : origin;
-    return terrainProbe().cast(o, dir, maxDist);
+    const hit = terrainProbe().cast(o, dir, maxDist);
+    if (!skimPlane || dir.y > -1e-6) return hit;
+    const surface = skimSurfaceAt(o.x, o.z);
+    if (surface === null || o.y < surface) return hit;
+    const t = (surface - o.y) / dir.y;
+    if (t > maxDist || (hit && hit.distance <= t)) return hit;
+    return { distance: t, normal: { x: 0, y: 1, z: 0 }, point: { x: o.x + dir.x * t, y: surface, z: o.z + dir.z * t } };
   },
 };
 /** ctrl.place at (x, groundY, z), with the ground search kept to the level of groundY. */
@@ -135,6 +144,7 @@ function writePose(v: Vehicle, sd: SimDrive): void {
   v.x = sd.px;
   v.z = sd.pz;
   v.y = groundAt(v.x, v.z, sd.py);
+  if (v.skim?.active) v.y = Math.max(v.y, skimSurfaceAt(v.x, v.z) ?? v.y);
   v.yaw = qYaw(p.quat);
   v.speed = sd.ctrl.telemetry.forwardSpeed;
   sd.lastX = v.x;
@@ -214,8 +224,25 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
   }
 
   const x0 = body.pos.x, z0 = body.pos.z;
-  sd.ctrl.update(dt, input);
+  const hSpeed = Math.hypot(body.vel.x, body.vel.z);
+  const skimIn = !v.spec.flies && !v.spec.boat && !v.sunk && !v.exploded;
+  const wasSkimming = skimIn && !!v.skim?.active;
+  skimPlane = skimIn && (wasSkimming || hSpeed >= SKIM.enterSpeed);
+  try {
+    sd.ctrl.update(dt, wasSkimming ? { ...input, throttle: 0, steer: input.steer * SKIM.steer } : input);
+  } finally { skimPlane = false; }
   applyAir(sd, dt);
+  if (skimIn) {
+    const moved = Math.hypot(body.pos.x - x0, body.pos.z - z0);
+    if (stepSkim(v, hSpeed, body.pos.y - sd.ctrl.rideHeight, moved, dt)) {
+      const drag = SKIM.dragPerS ** dt;
+      body.vel.x *= drag; body.vel.z *= drag;
+      if (v.skim?.event === 'bounce') {
+        body.vel.y += hopVelocity(hSpeed);
+        body.vel.x *= SKIM.hopKeep; body.vel.z *= SKIM.hopKeep;
+      }
+    }
+  }
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).

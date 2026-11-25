@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { buildPrefab, getPrefab, type StaticPrefabPlacement, type Swatch } from '@lawn/prefabs';
 import { buildStaticCells } from '../cull';
+import { addMowablePlants } from '../flora/harvest';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import { FENCE_RUNS, TOWN_PIECES } from './town';
@@ -134,9 +135,9 @@ export function planTown(): TownPlan {
 export function buildTown(scene: THREE.Scene): TownBuild {
   const plan = planTown();
   if (plan.missing.length) console.warn(`Pebblewick: missing prefabs: ${plan.missing.join(', ')}`);
-  if (plan.placements.length) {
-    scene.add(buildStaticCells(plan.placements, { lights: false, name: 'pebblewick', cls: 'building' }));
-  }
+  // Mowable plants go to flora; only what flora hands back is batched here.
+  const rest = addMowablePlants(plan.placements);
+  if (rest.length) scene.add(buildStaticCells(rest, { lights: false, name: 'pebblewick', cls: 'building' }));
   if (plan.landmarks.length) {
     scene.add(buildStaticCells(plan.landmarks, { lights: false, name: 'pebblewick-landmarks', cls: 'landmark' }));
   }

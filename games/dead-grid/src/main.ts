@@ -8,6 +8,7 @@ import {
   type SimParams,
 } from './sim/bridge';
 import { Hud, type HistorySample } from './ui/hud';
+import { OptimizerModal } from './ui/optimizerModal';
 
 declare global {
   interface Window {
@@ -124,6 +125,23 @@ async function main(): Promise<void> {
     },
     onRecenter() {
       viewport.fitWorld();
+    },
+    onOpenOptimizer() {
+      optimizerModal.open();
+    },
+  });
+
+  const optimizerModal = new OptimizerModal(ui, {
+    getCurrentParams: () => ({ ...params }),
+    getCurrentSeed: () => seed,
+    onApplyBest(bestParams) {
+      params = { ...bestParams };
+      hud.syncParams(params);
+      history.length = 0;
+      lastHistoryTick = -100;
+      tickAccum = 0;
+      sim.reset(seed, params);
+      viewport.syncWorldSize(sim.gridW, sim.gridH);
     },
   });
 

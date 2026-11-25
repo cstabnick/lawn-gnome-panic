@@ -59,6 +59,7 @@ export interface HudCallbacks {
   onOverlayChange: (overlay: OverlayMode) => void;
   onBrushChange: (brush: BrushTool, radius: number, count: number) => void;
   onRecenter: () => void;
+  onOpenOptimizer: () => void;
 }
 
 const SPEED_OPTIONS = [
@@ -168,11 +169,12 @@ export class Hud {
         this.drawHistoricalGraph(this.lastHistory);
       }
     });
+    const optBtn = this.makeToggleBtn('Lab ML', () => this.cb.onOpenOptimizer());
     const fitBtn = this.makeToggleBtn('Fit', () => this.cb.onRecenter());
     const helpBtn = this.makeToggleBtn('?', () => {
       this.helpModal.classList.toggle('open');
     });
-    controls.append(labToggle, telToggle, graphsBtn, fitBtn, helpBtn);
+    controls.append(labToggle, telToggle, graphsBtn, optBtn, fitBtn, helpBtn);
 
     // ---- Experiment Lab Drawer ----
     this.labDrawer = document.createElement('div');

@@ -54,6 +54,8 @@ async function main(): Promise<void> {
       sim.brushClear(wx, wy, brushRadius);
     } else if (activeBrush === 'wildfire') {
       sim.disasterWildfire(wx, wy, brushRadius);
+    } else if (activeBrush === 'extinguish') {
+      sim.brushExtinguish(wx, wy, brushRadius);
     } else if (activeBrush === 'flood') {
       sim.disasterFlood(wx, wy, brushRadius);
     } else if (activeBrush === 'quake') {
@@ -249,6 +251,11 @@ async function main(): Promise<void> {
         farmsBuilt: stats.farmsBuilt,
         terraforms: stats.terraforms,
         disasters: stats.disasters,
+        avgAdaptTrust: stats.avgAdaptTrust,
+        stratCoop: stats.stratCoop,
+        stratRecip: stats.stratRecip,
+        stratDefect: stats.stratDefect,
+        activeFires: stats.activeFires,
       });
       if (history.length > 1000) history.shift();
       priceHistory.push({

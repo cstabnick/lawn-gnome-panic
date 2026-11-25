@@ -49,6 +49,11 @@ export interface HistorySample {
   farmsBuilt: number;
   terraforms: number;
   disasters: number;
+  avgAdaptTrust: number;
+  stratCoop: number;
+  stratRecip: number;
+  stratDefect: number;
+  activeFires: number;
 }
 
 export interface HudCallbacks {
@@ -74,7 +79,7 @@ const SPEED_OPTIONS = [
   { label: '40x', speed: 40, paused: false, title: '40x Speed (4)' },
 ];
 
-type GraphTab = 'populations' | 'social' | 'pd' | 'resources' | 'nations';
+type GraphTab = 'populations' | 'social' | 'pd' | 'genetics' | 'resources' | 'nations';
 
 export class Hud {
   private readonly root: HTMLDivElement;
@@ -251,6 +256,7 @@ export class Hud {
       ['populations', 'Populations'],
       ['social', 'Social Tiers'],
       ['pd', "Prisoner's Dilemma"],
+      ['genetics', 'Genetics & Trust'],
       ['resources', 'Inventory Avg'],
       ['nations', 'Nations & Roads'],
     ];
@@ -426,6 +432,7 @@ export class Hud {
       ['airdrop', 'Airdrop'],
       ['clear', 'Clear'],
       ['wildfire', '🔥 Fire'],
+      ['extinguish', '💧 Extinguish'],
       ['flood', '🌊 Flood'],
       ['quake', '🌋 Quake'],
       ['plague', '☣ Plague'],
@@ -480,6 +487,8 @@ export class Hud {
     this.addSlider(d, 'roadBuildCost', 'Road Cost', 0.25, 2.5, 0.05, (v) => `${v.toFixed(2)}x`);
     this.addSlider(d, 'waterFlowRate', 'Water Flow', 0, 2.0, 0.05, (v) => `${v.toFixed(2)}x`);
     this.addSlider(d, 'disasterRate', 'Disaster Rate', 0, 2.0, 0.05, (v) => `${v.toFixed(2)}x`);
+    this.addSlider(d, 'fireSpreadRate', 'Fire Spread', 0, 1.5, 0.05, (v) => `${v.toFixed(2)}x`);
+    this.addSlider(d, 'geneticMutationRate', 'Gene Mutation', 0, 0.5, 0.02, (v) => `${Math.round(v * 100)}%`);
     this.addSlider(d, 'zombieMigration', 'Edge Migration', 0, 1.5, 0.1, (v) => `${v.toFixed(1)}x`);
 
     // World Generator
@@ -789,10 +798,12 @@ export class Hud {
         `<div>State: <b>${agent.stateName}</b> · Social: <b>${agent.socialName}${agent.socialName === 'Small Group' ? ` #${agent.groupId}` : ''}</b> · HP: <b>${agent.hp}</b></div>`,
       );
       if (agent.kind === 'human') {
+        const adaptStr = agent.adaptTrust >= 0 ? `+${agent.adaptTrust}` : `${agent.adaptTrust}`;
         lines.push(
           `<div>Demands: Hunger <b>${agent.hunger}</b> · Thirst <b>${agent.thirst}</b> · Inf <b>${agent.infection > 0 ? `${Math.round((agent.infection / 250) * 100)}%` : '0%'}</b></div>`,
           `<div>Inv: Food <b>${agent.food}</b> · Water <b>${agent.water}</b> · Gear <b>${agent.gear}</b> · Meds <b>${agent.meds}</b> · Mats <b>${agent.mats}</b></div>`,
           `<div>Personality: Coop <b>${agent.coop}</b> · Brave <b>${agent.brave}</b> · Greed <b>${agent.greed}</b> · Trust <b>${agent.trust}</b> · Rep <b>${agent.rep}</b></div>`,
+          `<div>PD Strategy: <b>${agent.strategyName}</b> · Adapt Trust: <b>${adaptStr}</b> · Betrayals: <b>${agent.recentBetrayals}</b></div>`,
           `<div>Society: <b style="color:${f ? f.colorCss : '#8b949e'}">${f ? f.name : 'None'}</b>${rep ? ` · Republic: <b style="color:${rep.colorCss}">${rep.name}</b>` : ''}</div>`,
         );
       }
@@ -883,6 +894,12 @@ export class Hud {
         { label: 'Defections', color: '#e5534b', pick: (s) => s.pdDefects },
         { label: 'Mutual Coops', color: '#539bf5', pick: (s) => s.pdMutualCoop },
         { label: 'Betrayals', color: '#d6d63f', pick: (s) => s.pdBetrayals },
+      ],
+      genetics: [
+        { label: 'Altruist / Gen-TFT', color: '#57ab5a', pick: (s) => s.stratCoop },
+        { label: 'Reciprocal (TFT/Pavlov)', color: '#539bf5', pick: (s) => s.stratRecip },
+        { label: 'Hawk (Grudger/Opp)', color: '#e5534b', pick: (s) => s.stratDefect },
+        { label: 'Active Fires', color: '#ff8c42', pick: (s) => s.activeFires },
       ],
       resources: [
         { label: 'Avg Food', color: '#57ab5a', pick: (s) => s.avgFood },

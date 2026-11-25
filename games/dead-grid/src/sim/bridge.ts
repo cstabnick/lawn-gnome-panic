@@ -16,6 +16,7 @@ export type BrushTool =
   | 'airdrop'
   | 'clear'
   | 'wildfire'
+  | 'extinguish'
   | 'flood'
   | 'quake'
   | 'plague'
@@ -117,6 +118,14 @@ export const AGENT_STATES = [
 
 export const ETHOS_NAMES = ['Cooperative', 'Fortress', 'Raider'] as const;
 export const TIER_NAMES = ['Ruins', 'Camp', 'Outpost', 'Safe Zone', 'Fortress'] as const;
+export const PD_STRATEGY_NAMES = [
+  'Tit-for-Tat',
+  'Generous TFT',
+  'Pavlov',
+  'Grudger',
+  'Opportunist',
+  'Altruist',
+] as const;
 
 const SETTLEMENT_PREFIXES = [
   'Elektro', 'Cherno', 'Berezino', 'Stary', 'Novy', 'Zeleno', 'Kamysh', 'Solnich',
@@ -168,6 +177,8 @@ export interface SimParams {
   roadBuildCost: number;
   waterFlowRate: number;
   disasterRate: number;
+  fireSpreadRate: number;
+  geneticMutationRate: number;
   initialHumans: number;
   initialZombies: number;
   initialAnimals: number;
@@ -194,6 +205,8 @@ export const DEFAULT_PARAMS: SimParams = {
   roadBuildCost: 1.0,
   waterFlowRate: 0.65,
   disasterRate: 0.25,
+  fireSpreadRate: 0.45,
+  geneticMutationRate: 0.15,
   initialHumans: 3000,
   initialZombies: 14000,
   initialAnimals: 2500,
@@ -431,6 +444,11 @@ export interface SimStats {
   avgPriceWater: number;
   avgPriceGear: number;
   avgPriceMats: number;
+  avgAdaptTrust: number;
+  stratCoop: number;
+  stratRecip: number;
+  stratDefect: number;
+  activeFires: number;
 }
 
 export interface FactionInfo {
@@ -516,6 +534,9 @@ export interface AgentInspection {
   trust: number;
   infection: number;
   age: number;
+  strategyName: string;
+  adaptTrust: number;
+  recentBetrayals: number;
 }
 
 interface SimWasmExports extends WebAssembly.Exports {
@@ -534,6 +555,7 @@ interface SimWasmExports extends WebAssembly.Exports {
   getRoadCondPtr(): number;
   getWaterDepthPtr(): number;
   getFireHeatPtr(): number;
+  getBurnCooldownPtr(): number;
 
   getRepActivePtr(): number;
   getRepCapitalPtr(): number;
@@ -583,6 +605,9 @@ interface SimWasmExports extends WebAssembly.Exports {
   getAgAgePtr(): number;
   getAgXPtr(): number;
   getAgYPtr(): number;
+  getAgPdStrategyPtr(): number;
+  getAgPdMemPtr(): number;
+  getAgAdaptTrustPtr(): number;
 
   generateWorld(seed: number, size: number, waterStyle: number): void;
   stepTicks(count: number): void;
@@ -593,6 +618,7 @@ interface SimWasmExports extends WebAssembly.Exports {
   brushAirdrop(cx: number, cy: number, radius: number): void;
   brushClear(cx: number, cy: number, radius: number): void;
   disasterWildfire(cx: number, cy: number, radius: number): void;
+  brushExtinguish(cx: number, cy: number, radius: number): void;
   disasterFlood(cx: number, cy: number, radius: number): void;
   disasterQuake(cx: number, cy: number, radius: number): void;
   disasterPlague(cx: number, cy: number, radius: number): void;
@@ -631,6 +657,7 @@ export class DeadGridSim {
   readonly roadCond: Uint8Array;
   readonly waterDepth: Uint8Array;
   readonly fireHeat: Uint8Array;
+  readonly burnCooldown: Uint8Array;
   private readonly frameRgbaFull: Uint8ClampedArray;
 
   private readonly repActive: Uint8Array;
@@ -681,6 +708,9 @@ export class DeadGridSim {
   readonly agAge: Uint16Array;
   readonly agX: Float32Array;
   readonly agY: Float32Array;
+  readonly agPdStrategy: Uint8Array;
+  readonly agPdMem: Uint8Array;
+  readonly agAdaptTrust: Int8Array;
 
   seed = 1337;
   gridW = 512;
@@ -693,7 +723,7 @@ export class DeadGridSim {
     const buf = ex.memory.buffer;
 
     this.cfgView = new Float32Array(buf, ex.getCfgPtr(), 64);
-    this.statsView = new Int32Array(buf, ex.getStatsPtr(), 40);
+    this.statsView = new Int32Array(buf, ex.getStatsPtr(), 48);
     this.eventsView = new Int32Array(buf, ex.getEventsPtr(), MAX_EVENTS * 4);
 
     const maxGridN = 1024 * 1024;
@@ -707,6 +737,7 @@ export class DeadGridSim {
     this.roadCond = new Uint8Array(buf, ex.getRoadCondPtr(), maxGridN);
     this.waterDepth = new Uint8Array(buf, ex.getWaterDepthPtr(), maxGridN);
     this.fireHeat = new Uint8Array(buf, ex.getFireHeatPtr(), maxGridN);
+    this.burnCooldown = new Uint8Array(buf, ex.getBurnCooldownPtr(), maxGridN);
     this.frameRgbaFull = new Uint8ClampedArray(buf, ex.getFrameRgbaPtr(), maxGridN * 4);
 
     this.repActive = new Uint8Array(buf, ex.getRepActivePtr(), MAX_REPUBLICS);
@@ -757,6 +788,9 @@ export class DeadGridSim {
     this.agAge = new Uint16Array(buf, ex.getAgAgePtr(), MAX_AGENTS);
     this.agX = new Float32Array(buf, ex.getAgXPtr(), MAX_AGENTS);
     this.agY = new Float32Array(buf, ex.getAgYPtr(), MAX_AGENTS);
+    this.agPdStrategy = new Uint8Array(buf, ex.getAgPdStrategyPtr(), MAX_AGENTS);
+    this.agPdMem = new Uint8Array(buf, ex.getAgPdMemPtr(), MAX_AGENTS);
+    this.agAdaptTrust = new Int8Array(buf, ex.getAgAdaptTrustPtr(), MAX_AGENTS);
   }
 
   get frameRgba(): Uint8ClampedArray {
@@ -784,6 +818,8 @@ export class DeadGridSim {
     this.cfgView[17] = p.roadBuildCost;
     this.cfgView[18] = p.waterFlowRate;
     this.cfgView[19] = p.disasterRate;
+    this.cfgView[20] = p.fireSpreadRate;
+    this.cfgView[21] = p.geneticMutationRate;
     this.applyLootTable(p.lootTable ?? DEFAULT_LOOT_TABLE);
   }
 
@@ -837,6 +873,10 @@ export class DeadGridSim {
 
   disasterWildfire(cx: number, cy: number, radius = 14): void {
     this.ex.disasterWildfire(cx | 0, cy | 0, radius | 0);
+  }
+
+  brushExtinguish(cx: number, cy: number, radius = 14): void {
+    this.ex.brushExtinguish(cx | 0, cy | 0, radius | 0);
   }
 
   disasterFlood(cx: number, cy: number, radius = 14): void {
@@ -903,6 +943,11 @@ export class DeadGridSim {
       avgPriceWater: s[35] / 100,
       avgPriceGear: s[36] / 100,
       avgPriceMats: s[37] / 100,
+      avgAdaptTrust: s[38] / 10,
+      stratCoop: s[39],
+      stratRecip: s[40],
+      stratDefect: s[41],
+      activeFires: s[42],
     };
   }
 
@@ -1051,6 +1096,9 @@ export class DeadGridSim {
       trust: (p >> 12) & 15,
       infection: this.agInfection[idx],
       age: this.agAge[idx],
+      strategyName: k === 1 ? (PD_STRATEGY_NAMES[this.agPdStrategy[idx]] ?? 'Tit-for-Tat') : 'N/A',
+      adaptTrust: this.agAdaptTrust[idx],
+      recentBetrayals: (this.agPdMem[idx] >> 3) & 7,
     };
   }
 }

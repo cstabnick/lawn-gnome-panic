@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Running: E14, E13, FIX-1 (gnome gear fit). Next: E15, then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit). Running: E14, E13, E15. Next: then E24, E25, E31. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -41,7 +41,7 @@ with deferred items listed).
 | E12 | Winter sports | Content | 4 | E01, E06 | merged | epic/E12-winter | see log | Snowdrop Slope snow paint (JS + Wasm), tea-tray sled + skis (`src/winter/slideRider.ts`), rope tow, Wool Run + Tea-Tray Run with bests, Hot Cocoa, Snowdrop app; ice fishing at Pail Pond (4 species); 4 more chill bears + BEAR DECK; 25 prefabs, 5 achievements, 2 side quests (temporarily after `ch3-tundra-drift-run`; E21 moves them to m38/m39), R-186..R-188 (renumbered); fixed: ground vehicle chassis froze mesh+rider; runs are 15–20 s (slope ~280 m); demo GIFs saved in the session scratchpad `demos/` (winter-ski-run.gif, winter-sled-run.gif) for upload; `sq-capwood-cap-count` left for E14 |
 | E13 | Campus and skyline | Content | 5 | E01, E05 | running | epic/E13-campus | | |
 | E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | running | epic/E14-dirt | | |
-| E15 | Golf course | Content | 5 | E01, E05 | planned | | | |
+| E15 | Golf course | Content | 5 | E01, E05 | running | epic/E15-golf | | |
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | planned | | | |
 | E17 | Underground societies | Content | 6 | E01, E05, E04 | planned | | | |
 | E19 | Courts and skate park | Content | 6 | E01 | planned | | | |
@@ -61,12 +61,10 @@ with deferred items listed).
 
 ## Cross-cutting cleanup (do in E22 or a small fix epic)
 
-- `npm test -w packages/gnome` fails 38 gear-fit checks ("does not trail behind", "stays outside the head and face",
-  "stands upright", "back gear stays clear of the back of the head"). Some items predate batch 3 (feather-duster,
-  box-camera), many are batch-3 rewards (frost-glaze-muffler, flaneur-cravat, daily-baguette, house-key-necklace...).
-  Fix their `wear` mounts in `packages/prefabs` so the suite is green before the PR merges.
-- `traffic.test.ts` "lane-following car ... 90 degree corner on every preset" failed alone on simcade after the E10/E30/E11
-  merges and passes again after the E12 merge (its chassis fix); FIX-1 re-checks it.
+- Done (F1, merged 16046042): 40 wearables' `wear` mounts fixed; `npm test -w packages/gnome` green. Neck items (e.g.
+  house-key-necklace hangs low, windsock-quiver shrunk to 0.68) were not eyeballed on a gnome: check in the equip lab.
+- `traffic.test.ts` "NPC drivers can be cracked out of their car > a bullet at the driver head hits them" failed 2 of
+  5 file runs alone (flaky); the corner test recovered after E12. Look at it in the finish epic.
 
 ## Engine work (built first, others build on it)
 

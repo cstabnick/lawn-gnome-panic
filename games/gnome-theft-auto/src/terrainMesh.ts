@@ -130,6 +130,7 @@ export function drapedRibbon(points: readonly (readonly [number, number])[], wid
 /** Texture kind of each biome's ground (same as world.ts's flat ground). */
 export const GROUND_KIND: Record<RegionBiome, GroundKind> = {
   desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass', loch: 'moss', parkland: 'meadow',
+  highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass',
 };
 
 export interface TerrainChunks {

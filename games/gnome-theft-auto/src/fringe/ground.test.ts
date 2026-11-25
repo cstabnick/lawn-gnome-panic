@@ -28,8 +28,9 @@ describe('fringe ground', () => {
     const tracks = planTracks(site, plan);
     planEdgeGreen(site, plan);
 
-    // Tracks: 8..40, each at least 20 m long, starting 6-8 m off a highway centre line, with a real ribbon.
-    expect(tracks.length).toBeGreaterThanOrEqual(8);
+    // Tracks: 6..40 (8 before batch 3's site slots took some fringe ground), each at least 20 m long, starting 6-8 m
+    // off a highway centre line, with a real ribbon.
+    expect(tracks.length).toBeGreaterThanOrEqual(6);
     expect(tracks.length).toBeLessThanOrEqual(40);
     for (const t of tracks) {
       let len = 0;

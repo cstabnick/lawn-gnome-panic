@@ -272,6 +272,8 @@ const DRY_DARK = [120, 40, 20];
 const DRY_LIGHT = [214, 140, 80];
 const MAP_RANGE = 150;            // the minimap shows this far from the player, each way
 const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
+/** Longest side of the map background picture, px (a phone-sized texture); the world is drawn scaled to fit. */
+const MAP_BG_MAX_PX = 2048;
 const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
@@ -293,6 +295,7 @@ const MAP = {
   city: 0x4a5560, desert: 0xe9bd62, forest: 0x1d5a33, tundra: 0xd3e9f5, farmland: 0x9ccb3c,
   road: 0x23272e, roadEdge: 0xfff1c2, sand: 0xf3dc98, wall: 0x3b2f14, runway: 0x23272e, runwayEdge: 0xffffff,
   building: 0x9aa6b4, outline: 0x0c0f13, loch: 0x3f7f6a, parkland: 0xb6e05a, water: 0x3d8fd6,
+  highland: 0x8fa77a, coast: 0xeedc9e, campus: 0x7fbf5e, estate: 0x5e9e4a,
 } as const;
 const OUTLINE = hexColor(MAP.outline);
 const PIN = '#ffd23f';
@@ -611,11 +614,13 @@ function drawHillshade(g: CanvasRenderingContext2D, H: number, W: number): void 
 function buildBackground(world: World): HTMLCanvasElement {
   const H = world.half;
   const W = 2 * H;
+  const k = Math.min(1, MAP_BG_MAX_PX / W);
   const c = document.createElement('canvas');
-  c.width = W;
-  c.height = W;
+  c.width = Math.round(W * k);
+  c.height = c.width;
   const g = c.getContext('2d');
   if (!g) return c;
+  g.scale(k, k); // draw in world units; the canvas holds the scaled picture
   // Mirrored in x so the picture agrees with the 3D view: facing north (+z), east (-x) is on the right.
   const X = (x: number) => H - x;
   const Y = (z: number) => H - z;
@@ -891,6 +896,7 @@ export function createHud(ui: HTMLElement): Hud {
   let size = 0;
   let mapDpr = 1;
   let bgCanvas: HTMLCanvasElement | null = null;
+  let bgHalf = 0; // the world half the background picture covers
   // The minimap is redrawn every 2nd frame (about 30 Hz): it was 2 % of a phone's frame.
   let mapFrame = 0;
 
@@ -917,21 +923,22 @@ export function createHud(ui: HTMLElement): Hud {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, dev, dev);
     if (bgCanvas) {
-      const H = bgCanvas.width / 2;
+      const H = bgHalf;
+      const picPx = bgCanvas.width / (2 * H); // picture px per world unit
       const k = dev / MAP_VIEW; // device pixels per world unit
-      // Window in background pixels (1 px per unit): left edge, top edge. The picture is mirrored in x, so the window
-      // starts at the player's mirrored column.
+      // Window in world units: left edge, top edge. The picture is mirrored in x, so the window starts at the
+      // player's mirrored column.
       const bx0 = H - px0 - MAP_RANGE;
       const by0 = H - pz0 - MAP_RANGE;
       g.fillStyle = MAP_BLANK;
       g.fillRect(0, 0, dev, dev);
       const cx0 = Math.max(bx0, 0);
       const cy0 = Math.max(by0, 0);
-      const cx1 = Math.min(bx0 + MAP_VIEW, bgCanvas.width);
-      const cy1 = Math.min(by0 + MAP_VIEW, bgCanvas.height);
+      const cx1 = Math.min(bx0 + MAP_VIEW, 2 * H);
+      const cy1 = Math.min(by0 + MAP_VIEW, 2 * H);
       if (cx1 > cx0 && cy1 > cy0) {
         g.drawImage(
-          bgCanvas, cx0, cy0, cx1 - cx0, cy1 - cy0,
+          bgCanvas, cx0 * picPx, cy0 * picPx, (cx1 - cx0) * picPx, (cy1 - cy0) * picPx,
           (cx0 - bx0) * k, (cy0 - by0) * k, (cx1 - cx0) * k, (cy1 - cy0) * k,
         );
       }
@@ -1049,7 +1056,7 @@ export function createHud(ui: HTMLElement): Hud {
     }
     const g = bigCanvas.getContext('2d');
     if (!g) return;
-    const W = bgCanvas.width;
+    const W = 2 * bgHalf; // world units across the picture
     const k = px / W; // CSS pixels per world unit
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = true;
@@ -1198,6 +1205,7 @@ export function createHud(ui: HTMLElement): Hud {
   return {
     setWorld(world: World) {
       bgCanvas = buildBackground(world);
+      bgHalf = world.half;
     },
     set(s: HudState) {
       if (s.heat !== last.heat) {

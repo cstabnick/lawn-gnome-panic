@@ -21,7 +21,7 @@ The public skate park in Downtown Turfton, made from old Tall-One roof gutters: 
 
 ## In the games
 
-Planned (batch 3). #9 `m09-where-asphalt-sleeps`: Asphalt the cat is found at the Bowls; skate one line to get the bottlecap back. Fennel Gripwax lives under its deck. The park stands at about (-150,-90); epic E01 builds it.
+Planned (batch 3). #9 `m09-where-asphalt-sleeps`: Asphalt the cat is found at the Bowls; skate one line to get the bottlecap back. Fennel Gripwax lives under its deck. The park stands at (-30, 90), inside Founders' Green; epic E01 builds it.
 
 ## Loose threads
 

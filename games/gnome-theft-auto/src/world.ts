@@ -22,6 +22,8 @@ import { placeBillboards } from './brands';
 import { buildDistrictDressing } from './districts';
 import { buildGardenBlocks, planGardenBlock, type GardenPlacement } from './landscaping';
 import { isParkBlock } from './parks/blocks';
+import { reservedRects } from './sites';
+import { MEGA_BLOCK, buildMegaBlock } from './city/megaBlock';
 import { buildTowers, type TowerSpec } from './towers';
 import { buildScenery } from './scenery';
 import { buildSettlements } from './settlements';
@@ -93,6 +95,14 @@ function subtract(segs: Seg[], cuts: Seg[]): Seg[] {
 
 /** The body of every crossing road, along a road's own direction (sidewalks and centre lines stop there). */
 const crossCuts = (): Seg[] => ROAD_LINES.map((w): Seg => [w - HALF_ROAD, w + HALF_ROAD]);
+
+/**
+ * True when the stretch of road `axis`/`v` around `mid` (a segment between two crossings) is a park promenade: the
+ * streets joining Founders' Green's three blocks, x = -60 for z 0..60 and z = 60 for x -60..0.
+ */
+function isPromenade(axis: Axis, v: number, mid: number): boolean {
+  return (axis === 'vert' && v === -60 && mid > 0 && mid < 60) || (axis === 'horz' && v === 60 && mid > -60 && mid < 0);
+}
 
 function strip(into: THREE.BufferGeometry[], axis: Axis, v: number, off: number, width: number, a: number, b: number, y: number): void {
   const g = axis === 'vert' ? new THREE.PlaneGeometry(width, b - a) : new THREE.PlaneGeometry(b - a, width);
@@ -685,6 +695,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   scene.add(base);
     const regionKind: Record<BiomeId, GroundKind> = {
       desert: 'sand', forest: 'forest', tundra: 'snow', farmland: 'farm', city: 'grass', loch: 'moss', parkland: 'meadow',
+      highland: 'meadow', coast: 'sand', campus: 'grass', estate: 'grass',
     };
     // Each region's border is a simple (possibly L-shaped) polygon; the borders tile the world square without overlap.
     for (const id of REGION_IDS) {
@@ -703,14 +714,20 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   const roadGeos: THREE.BufferGeometry[] = [];
   const sidewalkGeos: THREE.BufferGeometry[] = [];
   const lineGeos: THREE.BufferGeometry[] = [];
+  /** The park promenade (L92): road surface and sidewalks of the park streets, light paving (still roads to drive on). */
+  const promenadeGeos: THREE.BufferGeometry[] = [];
   for (const axis of ['vert', 'horz'] as Axis[]) {
     for (const v of ROAD_LINES) {
       const clear = subtract([CITY_SEG], crossCuts());
       strip(roadGeos, axis, v, 0, ROAD_WIDTH, -CITY_HALF, CITY_HALF, 0.02);
+      // The promenade paves the road surface once; its sidewalks stay ordinary sidewalks (no coplanar overlap at the
+      // corners where it meets the crossing sidewalks).
+      for (const [a, b] of clear) if (isPromenade(axis, v, (a + b) / 2)) strip(promenadeGeos, axis, v, 0, ROAD_WIDTH, a, b, 0.025);
       for (const side of [-1, 1]) {
         for (const [a, b] of clear) strip(sidewalkGeos, axis, v, side * SIDE_OFF, SIDEWALK_WIDTH, a, b, 0.03);
       }
       for (const [a, b] of clear) {
+        if (isPromenade(axis, v, (a + b) / 2)) continue;
         for (let t = a; t + 3 <= b; t += 6) strip(lineGeos, axis, v, 0, 0.25, t, t + 3, 0.04);
       }
     }
@@ -751,6 +768,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     merged(roadGeos, COLORS.road, LAYER.road, 'asphalt'),
     merged(sidewalkGeos, COLORS.sidewalk, LAYER.edge, 'pavement'),
     merged(lineGeos, COLORS.roadLine, LAYER.marking),
+    merged(promenadeGeos, 0xdcd3bd, LAYER.edge),
   ]) {
     if (mesh) scene.add(mesh);
   }
@@ -833,17 +851,21 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   }
   const gardenBlocked = (r: Rect): boolean =>
     boxes.some((b) => overlap(r, b, GAP)) || nearHighway(r, HW_MARGIN) || stageRects.some((b) => overlap(r, b, GAP))
-    || laterProps.some((b) => overlap(r, b, GAP));
+    || laterProps.some((b) => overlap(r, b, GAP))
+    || siteRects.some((b) => overlap(r, b, GAP));
+  /** Gardens keep out of every reserved site inside the city (home sites, courts, the Double Pot...). */
+  const siteRects = reservedRects().filter((s) => Math.abs((s.minX + s.maxX) / 2) <= CITY_HALF && Math.abs((s.minZ + s.maxZ) / 2) <= CITY_HALF);
   /** Downtown towers as placed (src/towers/ styles and builds them after the block loop). */
   const towerSpecs: TowerSpec[] = [];
   /**
    * One tower: its collider now, its look later (buildTowers). The three rnd() rolls are kept, in this order, so every
    * later random draw (gardens) stays as it was; they now seed the tower's style.
    */
-  const addTower = (tx: number, tz: number, w: number, d: number, h: number, block: { x: number; z: number; slot: number; count: number; capped: boolean }): void => {
-    const pal = Math.floor(rnd() * 4);
-    const stepped = rnd() < 0.35;
-    const roofRoll = rnd();
+  const addTower = (tx: number, tz: number, w: number, d: number, h: number, block: { x: number; z: number; slot: number; count: number; capped: boolean }, rolls?: readonly [number, number, number]): void => {
+    // `rolls` (the mega block) fixes the style seeds without drawing, so the random stream stays as it was.
+    const pal = rolls ? rolls[0] : Math.floor(rnd() * 4);
+    const stepped = rolls ? rolls[1] < 0.35 : rnd() < 0.35;
+    const roofRoll = rolls ? rolls[2] : rnd();
     towerSpecs.push({
       x: tx, z: tz, w, d, h, blockX: block.x, blockZ: block.z, slot: block.slot, count: block.count,
       pal, stepped, roofRoll, capped: block.capped,
@@ -851,7 +873,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
     boxes.push({ minX: tx - w / 2, maxX: tx + w / 2, minZ: tz - d / 2, maxZ: tz + d / 2, h });
   };
   /** 1 or 2 towers in a downtown block: one centred, or two side by side in the block's two halves. */
-  const placeTowers = (block: Rect): void => {
+  const placeTowers = (block: Rect, dry = false): void => {
     const bw = block.maxX - block.minX, bd = block.maxZ - block.minZ;
     const cx = (block.minX + block.maxX) / 2, cz = (block.minZ + block.maxZ) / 2;
     const n = 1 + Math.floor(rnd() * 2);
@@ -872,7 +894,10 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       for (const c of introPath) {
         if (Math.abs(c[0] - tx) < tw / 2 + 4 && Math.abs(c[2] - cz) < td / 2 + 4) th = Math.min(th, c[1] - 6);
       }
-      if (!onStage() && th >= BUILDINGS.towerMinHeight * 0.5) addTower(tx, cz, tw, td, th, { x: cx, z: cz, slot: k, count: n, capped: th < h });
+      if (!onStage() && th >= BUILDINGS.towerMinHeight * 0.5) {
+        if (dry) { rnd(); rnd(); rnd(); continue; }
+        addTower(tx, cz, tw, td, th, { x: cx, z: cz, slot: k, count: n, capped: th < h });
+      }
     }
   };
 
@@ -930,6 +955,20 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
         buildPatioHeights(scene, boxes);
         continue;
       }
+      // Founders' Green (L92): the park blocks get no towers, but draw the numbers placeTowers would have.
+      if (isParkBlock(cx, cz) && Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block, true); continue; }
+      // The Double Pot (L92): blocks (90, -90) and (150, -90) are one 2x1 tower over street x = 120.
+      if (cx === 90 && cz === -90) {
+        placeTowers(block, true);
+        let mh = Math.min(BUILDINGS.towerMaxHeight, BUILDINGS.towerMinHeight + 0.6 * (BUILDINGS.towerMaxHeight - BUILDINGS.towerMinHeight));
+        for (const c of introPath) {
+          if (c[0] > MEGA_BLOCK.west.minX - 4 && c[0] < MEGA_BLOCK.east.maxX + 4 && Math.abs(c[2] + 90) < 25) mh = Math.min(mh, c[1] - 6);
+        }
+        const capped = mh < BUILDINGS.towerMinHeight;
+        buildMegaBlock(scene, (tx, tz, w, d, h, slot) => addTower(tx, tz, w, d, h, { x: cx, z: cz, slot, count: 2, capped }, [slot, 0.5, 0.3]), Math.max(mh, BUILDINGS.towerMinHeight * 0.5));
+        continue;
+      }
+      if (cx === 150 && cz === -90) { planGardenBlock(block, rnd, () => true); continue; }
       if (Math.hypot(cx, cz) <= BUILDINGS.downtownRadius) { placeTowers(block); continue; }
       // Park blocks (parks/blocks.ts) are laid out later by src/parks/; the garden is still planned (and thrown away) so
       // every later block draws the same random numbers as before.
@@ -958,7 +997,7 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
       for (const side of [-1, 1]) {
         for (let k = 0; k < 18; k++) {
           const t = -212.5 + 25 * k;
-          if (!inSegs(t, clear)) continue;
+          if (!inSegs(t, clear) || isPromenade(axis, v, t)) continue;
           const off = v + side * (HALF_ROAD + SIDEWALK_WIDTH);
           const x = axis === 'vert' ? off : t;
           const z = axis === 'vert' ? t : off;

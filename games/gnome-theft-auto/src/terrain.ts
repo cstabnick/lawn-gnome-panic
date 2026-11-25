@@ -15,7 +15,8 @@
 import { applyStamps, smoothstep, type Stamp } from '@lawn/level';
 import { flatGround, type GroundHit, type GroundProbe, type Vec3 } from '@lawn/vehicle';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, ROAD_WIDTH, TERRAIN, WORLD_HALF } from './config';
-import { LAYOUT, REGION_DOCS, REGION_IDS, markerNum, markersOf, trails } from './levels';
+import { LAYOUT, REGION_DOCS, REGION_IDS, trails } from './levels';
+import { reservedRects } from './sites';
 import { macroAt, reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
@@ -150,10 +151,11 @@ function flatSites(): FlatSite[] {
     minZ: Math.min(AIRFIELD.z - hz, Math.min(...pz) - 8), maxZ: Math.max(AIRFIELD.z + hz, Math.max(...pz) + 8),
     target: null,
   });
-  for (const m of markersOf('reserve')) {
-    const hw = markerNum(m, 'hw');
-    const hd = markerNum(m, 'hd');
-    sites.push({ minX: m.x - hw, maxX: m.x + hw, minZ: m.z - hd, maxZ: m.z + hd, target: null });
+  // Every flat slot (sites.ts), then every `reserve` marker: a reserve is levelled last, so a nearby slot's blend never
+  // tilts it.
+  const rects = reservedRects({ flatOnly: true });
+  for (const r of [...rects.filter((q) => q.source === 'slot'), ...rects.filter((q) => q.source === 'reserve')]) {
+    sites.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ, target: null });
   }
   return sites;
 }

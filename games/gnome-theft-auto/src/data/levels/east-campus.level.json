@@ -1,0 +1,243 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "east-campus",
+  "name": "Rootwell",
+  "bounds": {
+    "w": 500,
+    "d": 1800
+  },
+  "base": {
+    "id": "gta-campus-scatter",
+    "version": 1,
+    "seed": 1103,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "east-band",
+      "kind": "road",
+      "points": [
+        [
+          -280,
+          50
+        ],
+        [
+          -210,
+          40
+        ],
+        [
+          -200,
+          -400
+        ],
+        [
+          -200,
+          -850
+        ],
+        [
+          -90,
+          -1100
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "east-band-south",
+      "kind": "road",
+      "points": [
+        [
+          -210,
+          40
+        ],
+        [
+          -200,
+          400
+        ],
+        [
+          -200,
+          960
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "runway-spur",
+      "kind": "road",
+      "points": [
+        [
+          -200,
+          400
+        ],
+        [
+          -70,
+          560
+        ],
+        [
+          30,
+          580
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "dirt-track",
+      "kind": "slot",
+      "x": 0,
+      "z": -650,
+      "data": {
+        "hw": 150,
+        "hd": 100,
+        "kind": "venue",
+        "epic": "E14",
+        "flat": true,
+        "label": "Rutbottom Dirt Bowl",
+        "anchors": {
+          "gate": {
+            "dx": -150,
+            "dz": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "campus",
+      "kind": "slot",
+      "x": -10,
+      "z": -200,
+      "data": {
+        "hw": 160,
+        "hd": 150,
+        "kind": "venue",
+        "epic": "E13",
+        "flat": true,
+        "label": "Rootwell University",
+        "anchors": {
+          "gate": {
+            "dx": -160,
+            "dz": 0,
+            "yaw": 1.5708
+          }
+        }
+      }
+    },
+    {
+      "id": "observatory-mound",
+      "kind": "slot",
+      "x": 90,
+      "z": 150,
+      "data": {
+        "hw": 120,
+        "hd": 120,
+        "kind": "natural",
+        "epic": "E13",
+        "flat": false,
+        "label": "the Anthill",
+        "anchors": {
+          "summit": {
+            "dx": 0,
+            "dz": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "runway-2",
+      "kind": "slot",
+      "x": 140,
+      "z": 600,
+      "data": {
+        "hw": 90,
+        "hd": 230,
+        "kind": "airfield",
+        "epic": "E13",
+        "flat": true,
+        "label": "Rootwell Field",
+        "anchors": {
+          "runway": {
+            "dx": 10,
+            "dz": 0,
+            "yaw": 0
+          },
+          "apron": {
+            "dx": -55,
+            "dz": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "aircraft-dealer",
+      "kind": "slot",
+      "x": 0,
+      "z": 640,
+      "data": {
+        "hw": 35,
+        "hd": 30,
+        "kind": "dealer",
+        "epic": "E08",
+        "flat": true,
+        "label": "aircraft dealership",
+        "anchors": {
+          "door": {
+            "dx": 0,
+            "dz": -30,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "construction-3",
+      "kind": "slot",
+      "x": -100,
+      "z": 250,
+      "data": {
+        "hw": 30,
+        "hd": 30,
+        "kind": "construction",
+        "epic": "E16",
+        "flat": true,
+        "label": "Thorne Even-Estates (site 3)"
+      }
+    }
+  ],
+  "data": {
+    "region": "campus",
+    "ground": 7315541,
+    "surface": "grass",
+    "batch": "campus-scenery",
+    "border": [
+      [
+        -250,
+        -900
+      ],
+      [
+        250,
+        -900
+      ],
+      [
+        250,
+        900
+      ],
+      [
+        -250,
+        900
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-campus-relief",
+        "version": 1,
+        "params": {
+          "swell": 2.5,
+          "swellScale": 260
+        }
+      }
+    }
+  }
+}

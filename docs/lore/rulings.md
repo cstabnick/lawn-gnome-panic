@@ -887,3 +887,10 @@ as one gnome in two places.
 **Ruling:** Four acts: I Fresh Glaze (Turfton, 1-15), II Turf & Dew (farms, woods and first reaches, 16-35), III Cold Clay, Far Edges (36-53), IV Sandpit Protocol / The Even Cut (54-70). The Grand Combine is built in four parts at the edges of the map: the cutting deck (tested on Hedgeworth Links), the guidance or "Even Line" (computed at the Anthill Observatory), the power (taken from Pinwheel Ridge) and the money (Countess Brassknock). The Golden Acorn is still its ignition core. The finale keeps both endings; Vesper is stopped, not shattered. The outline is `docs/design/gnome-theft-auto/story-outline.md`.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
 **Why:** the user asked for 70 main quests with more character development and quests that explore the whole world.
+
+## R-168
+
+**Question:** Where exactly do the batch-3 places stand, and where does the ground differ from the story plan (E04 spine)?
+**Ruling:** The four bands and their roads: **Snowcap Rise** is the north band (`north-band`, `north-band-east`); **Saltbucket Shore** the south band (`south-band`, `south-band-east`, `coast-spur`); **Rootwell** the east band (`east-band`, `east-band-south`, `runway-spur`); **Trellisdown** the west band (`west-band`, `west-band-south`). The band roads join into one ring road round the old map. **Drainpipe Court** and **the Gutter Bowls** are inside **Founders' Green**. **The Underspan's** ground is beside the Unfinished Span at (580, -26). **Wader's Rest** is in Trellisdown, about 400 m west of Loch Moss, not on its shore. Slot ids in `src/sites.ts` stay as they are and carry these names as labels.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** E01 built the ground after E04 named the places.

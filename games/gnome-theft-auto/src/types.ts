@@ -55,7 +55,7 @@ export type GunKind =
   | 'dandelion-grenade'
   | 'trip-mine';
 /** loch = Loch Moss (north-west corner), parkland = Tallgrass Commons (south-west corner). Same strings as levels.ts RegionBiome. */
-export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland';
+export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
 /**

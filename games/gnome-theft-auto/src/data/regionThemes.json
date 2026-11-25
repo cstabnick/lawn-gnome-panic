@@ -62,6 +62,34 @@
       "planting": ["wildflower-patch", "ornamental-grass"], "border": "wildflower-patch", "paving": "paver-drive",
       "signature": ["bee-skep", "wildflower-patch"], "houses": ["toadstool-cottage", "gnome-cottage"], "yard": ["bee-skep", "mailbox"],
       "trees": ["broadleaf-tree"]
+    },
+    "north-highlands": {
+      "name": "Snowcap Rise", "motif": "Bare high ground above the Fells: drystone walls, cairns, wind-bent pines, slate bothies.",
+      "palette": { "walls": ["stone", "slate"], "roofs": ["slate"], "flowers": ["sapphire"] },
+      "roadside": "wall", "hedge": null, "wall": "dry-stone-wall", "fence": "dry-stone-wall",
+      "planting": ["ornamental-grass"], "border": "dry-stone-wall", "paving": "paver-drive",
+      "signature": ["stone-cairn"], "houses": ["snow-cottage"], "yard": ["stone-cairn", "mailbox"], "trees": ["cone-pine", "snow-pine"]
+    },
+    "south-shore": {
+      "name": "Saltbucket Shore", "motif": "Dunes and marram grass, weathered picket fences, palms, bright beach huts.",
+      "palette": { "walls": ["paper", "bone"], "roofs": ["red", "sapphire"], "flowers": ["pink"] },
+      "roadside": "fence", "hedge": null, "wall": null, "fence": "picket-fence",
+      "planting": ["ornamental-grass"], "border": "garden-rock", "paving": "paver-drive",
+      "signature": ["palm-tree"], "houses": ["gnome-cottage"], "yard": ["mailbox"], "trees": ["palm-tree"]
+    },
+    "east-campus": {
+      "name": "Rootwell", "motif": "Mown lawns, clipped hedges and iron railings round old learned halls.",
+      "palette": { "walls": ["stone", "clay"], "roofs": ["slate"], "flowers": ["red"] },
+      "roadside": "hedge", "hedge": "hedgerow", "wall": null, "fence": "civic-railing",
+      "planting": ["boxwood-ball", "flower-bed"], "border": "garden-border", "paving": "paver-drive",
+      "signature": ["stone-planter"], "houses": [], "yard": ["mailbox"], "trees": ["broadleaf-tree"]
+    },
+    "west-estates": {
+      "name": "Trellisdown", "motif": "Old money: long clipped hedges, topiary, gravel drives and rose beds behind the neighbour's fence.",
+      "palette": { "walls": ["paper", "bone"], "roofs": ["slate"], "flowers": ["pink", "red"] },
+      "roadside": "hedge", "hedge": "hedgerow", "wall": null, "fence": "civic-railing",
+      "planting": ["topiary-cone", "boxwood-ball", "flower-bed"], "border": "garden-border", "paving": "paver-drive",
+      "signature": ["topiary-cone"], "houses": [], "yard": ["mailbox"], "trees": ["broadleaf-tree"]
     }
   }
 }

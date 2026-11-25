@@ -16,7 +16,8 @@
       "half": 600,
       "fence": 595,
       "roads": 10,
-      "outerSeed": 1414213562
+      "outerSeed": 1414213562,
+      "outerHalf": 900
     }
   },
   "stamps": [
@@ -508,6 +509,87 @@
       "data": {
         "w": 400,
         "d": 120
+      }
+    },
+    {
+      "id": "car-dealer",
+      "kind": "slot",
+      "x": 35,
+      "z": -80,
+      "data": {
+        "hw": 30,
+        "hd": 22.5,
+        "kind": "dealer",
+        "epic": "E08",
+        "flat": true,
+        "label": "car dealership",
+        "anchors": {
+          "door": {
+            "dx": -30,
+            "dz": 0,
+            "yaw": -1.5708
+          },
+          "lot": {
+            "dx": 5,
+            "dz": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "farm-plot",
+      "kind": "slot",
+      "x": 100,
+      "z": 135,
+      "data": {
+        "hw": 40,
+        "hd": 30,
+        "kind": "farm",
+        "epic": "E16",
+        "flat": true,
+        "label": "Windfall Croft"
+      }
+    },
+    {
+      "id": "construction-2",
+      "kind": "slot",
+      "x": 195,
+      "z": -75,
+      "data": {
+        "hw": 25,
+        "hd": 25,
+        "kind": "construction",
+        "epic": "E16",
+        "flat": true,
+        "label": "Thorne Even-Estates (site 2)"
+      }
+    },
+    {
+      "id": "home-07",
+      "kind": "slot",
+      "x": 45,
+      "z": -140,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-07"
+      }
+    },
+    {
+      "id": "home-09",
+      "kind": "slot",
+      "x": 80,
+      "z": 245,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-09"
       }
     }
   ],

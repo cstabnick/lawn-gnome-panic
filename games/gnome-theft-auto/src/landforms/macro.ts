@@ -11,7 +11,8 @@
 // Pure: no three.js, no DOM.
 import landscapeJson from '../data/landscape.json';
 import { AIRFIELD, BASE, CITY_HALF, WORLD_HALF } from '../config';
-import { REGION_DOCS, REGION_IDS, LAYOUT, markerNum, markersOf, trails } from '../levels';
+import { REGION_DOCS, REGION_IDS, LAYOUT, trails } from '../levels';
+import { reservedRects } from '../sites';
 import { roadDistAt, waterDistAt } from './fields';
 import { distToPolyline, fbm, nearestOnPolyline, ridged, smoothstep } from './noise';
 
@@ -65,10 +66,8 @@ function keepFlat(): Rect[] {
   const hz = Math.abs(Math.cos(AIRFIELD.yaw)) * AIRFIELD.length / 2 + Math.abs(Math.sin(AIRFIELD.yaw)) * AIRFIELD.width / 2;
   out.push({ minX: AIRFIELD.x - hx, maxX: AIRFIELD.x + hx, minZ: AIRFIELD.z - hz, maxZ: AIRFIELD.z + hz });
   for (const p of AIRFIELD.planeSpots) out.push({ minX: p.x - 8, maxX: p.x + 8, minZ: p.z - 8, maxZ: p.z + 8 });
-  for (const m of markersOf('reserve')) {
-    const hw = markerNum(m, 'hw'), hd = markerNum(m, 'hd');
-    out.push({ minX: m.x - hw, maxX: m.x + hw, minZ: m.z - hd, maxZ: m.z + hd });
-  }
+  // Reserve markers and flat slots (sites.ts); a slot with natural ground (flat: false) keeps its hills.
+  for (const r of reservedRects({ flatOnly: true })) out.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ });
   for (const id of REGION_IDS) {
     const o = LAYOUT.regions.find((r) => r.id === id)!.origin;
     for (const f of REGION_DOCS[id].data.terrain?.features ?? []) {

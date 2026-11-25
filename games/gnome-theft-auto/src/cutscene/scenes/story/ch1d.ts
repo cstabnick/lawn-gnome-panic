@@ -160,7 +160,7 @@ export const FOUNDERS_BOOT_OUTRO: SceneScript = {
     // Reginald arrives in his van with the bent calipers.
     { do: 'spawn', id: 'van' },
     { do: 'spawn', id: 'reginald' },
-    { do: 'cam', shot: { kind: 'track', pos: up(128, -108, 3), who: 'van', fov: 50 } },
+    { do: 'cam', shot: { kind: 'track', pos: up(122, -125, 3), who: 'van', fov: 50 } },
     { do: 'drive', vehicle: 'van', path: [[110, -117.5], [150, -117.5], [150, -124]], speed: 9 },
     { do: 'exit', who: 'reginald' },
     cut(shot('reginald', 'ms', { toward: 'vesper', side: 20 })),

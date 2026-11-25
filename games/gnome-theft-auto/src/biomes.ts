@@ -11,6 +11,7 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, COLORS, HIGHWAYS, ROAD_WIDTH, WORLD_HALF, biomeAt, type Highway } from './config';
 import { GENERATORS, LAYOUT, REGION_IDS, REGIONS, markerNum, markersOf, waterBodies, waterPaths, type GtaProp, type Region, type RegionId, type WorldMarker } from './levels';
+import { reservedRects } from './sites';
 import type { Box, BiomeId, DewBarrel, ParkedSpot, VehicleKind } from './types';
 import { heightAt, waterAt, withGround } from './terrain';
 import { addGroundToGeometry, placeOnGround } from './terrainMesh';
@@ -172,7 +173,9 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   let sock: THREE.Object3D | null = null;
   /** Zones scenery stays out of (fort, airfield, villages, yards, fields, landmarks), grown where they need clearance. */
   const reserved: Rect[] = [];
-  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm', Batch> = { desert: [], forest: [], tundra: [], farm: [] };
+  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm' | 'highland' | 'coast' | 'campus' | 'estate', Batch> = {
+    desert: [], forest: [], tundra: [], farm: [], highland: [], coast: [], campus: [], estate: [],
+  };
 
   // Box lookup: a grid of cells, so clearance checks do not scan every box.
   const grid = new Map<string, Box[]>();
@@ -373,7 +376,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   };
   reserved.push(growRect(apron, GROW));
   // Outer-biome landmark zones: reserved upfront so villages, ponds, farms and random clutter never spawn inside them.
-  for (const m of markersOf('reserve')) reserved.push(rectOf(m.x, m.z, markerNum(m, 'hw'), markerNum(m, 'hd')));
+  // Every reserve marker and every slot (sites.ts): later epics' ground stays clear.
+  for (const r of reservedRects()) reserved.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ });
 
   // ============================================================================================================
   // Fort Sandpit (desert)
@@ -464,6 +468,7 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
 
   const batchByName: Record<string, Batch> = {
     'desert-scenery': batches.desert, 'forest-scenery': batches.forest, 'tundra-scenery': batches.tundra, 'farm-scenery': batches.farm,
+    'highland-scenery': batches.highland, 'coast-scenery': batches.coast, 'campus-scenery': batches.campus, 'estate-scenery': batches.estate,
   };
   /** A hand-placed prefab from a region document. x, z is the prefab's origin (not its footprint centre). */
   const placeProp = (region: Region, p: GtaProp): void => {
@@ -979,9 +984,25 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     oldFence = Number(base.params.fence);
     genRoads = HIGHWAYS.slice(0, Number(base.params.roads));
   };
-  /** Starts a region's outer-ring pass: the whole world as it is now, and a PRNG stream of its own (base.params.outerSeed). */
-  const startOuter = (id: RegionId): void => {
+  /** Starts a batch-3 band's scatter (E01): the whole 2800 map, every highway, a PRNG stream from the document's seed. */
+  const startBand = (id: RegionId): void => {
+    const base = REGIONS[id].base;
+    const want = GENERATORS[id];
+    if (base.id !== want.id || base.version !== want.version) {
+      throw new Error(`biomes: ${id} wants generator ${base.id} v${base.version}; this code is ${want.id} v${want.version}`);
+    }
+    rnd = mulberry32(base.seed ?? 0);
     half = H;
+    oldFence = null;
+    genRoads = HIGHWAYS;
+  };
+  /**
+   * Starts a region's outer-ring pass: the world as it was when the pass was written (base.params.outerHalf, 900: the
+   * 1800 x 1800 map, so the batch-3 bands round it do not change what it draws), and a PRNG stream of its own
+   * (base.params.outerSeed).
+   */
+  const startOuter = (id: RegionId): void => {
+    half = Number(REGIONS[id].base.params.outerHalf ?? H);
     oldFence = null;
     genRoads = HIGHWAYS;
     rnd = mulberry32(Number(REGIONS[id].base.params.outerSeed));
@@ -1269,6 +1290,38 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     outerRing(id);
   }
 
+  // ============================================================================================================
+  // Batch 3 bands (E01): a light scatter per band, each on its own PRNG stream, after every earlier generator.
+  // ============================================================================================================
+  {
+    const Hl = batches.highland;
+    startBand('north-highlands');
+    for (let i = 0; i < 160; i++) treeAt(Hl, rnd() < 0.6 ? 'cone-pine' : 'snow-pine', 'highland', uni(0.8, 1.2));
+    for (let i = 0; i < 40; i++) scatter(Hl, 'garden-rock', 'highland', fit('garden-rock', uni(1.5, 3.5)), true);
+    for (let i = 0; i < 12; i++) scatter(Hl, 'stone-cairn', 'highland', uni(0.9, 1.3), true);
+  }
+  {
+    const C = batches.coast;
+    const ok = (p: Pt): boolean => p.z < 1140;
+    startBand('south-shore');
+    for (let i = 0; i < 70; i++) treeAt(C, 'palm-tree', 'coast', uni(0.9, 1.2), ok);
+    for (let i = 0; i < 30; i++) scatter(C, 'garden-rock', 'coast', fit('garden-rock', uni(1.2, 2.5)), true, anywhere, ok);
+    for (let i = 0; i < 40; i++) scatter(C, 'round-bush', 'coast', uni(0.7, 1.1), false, anywhere, ok);
+  }
+  {
+    const Cp = batches.campus;
+    startBand('east-campus');
+    for (let i = 0; i < 140; i++) treeAt(Cp, 'broadleaf-tree', 'campus', uni(0.9, 1.3));
+    for (let i = 0; i < 50; i++) scatter(Cp, 'round-bush', 'campus', uni(0.8, 1.2), false);
+  }
+  {
+    const Es = batches.estate;
+    startBand('west-estates');
+    for (let i = 0; i < 140; i++) treeAt(Es, 'broadleaf-tree', 'estate', uni(0.9, 1.4));
+    for (let i = 0; i < 30; i++) scatter(Es, 'topiary-cone', 'estate', uni(0.9, 1.2), true);
+    for (let i = 0; i < 40; i++) scatter(Es, 'round-bush', 'estate', uni(0.8, 1.2), false);
+  }
+
   rnd = noRandom;
   half = H;
 
@@ -1280,6 +1333,10 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     ['forest-scenery', batches.forest],
     ['tundra-scenery', batches.tundra],
     ['farm-scenery', batches.farm],
+    ['highland-scenery', batches.highland],
+    ['coast-scenery', batches.coast],
+    ['campus-scenery', batches.campus],
+    ['estate-scenery', batches.estate],
   ];
   for (const [name, batch] of groups) {
     // One batch per cell (cull.ts), not per region: a region-wide mesh is never culled and is drawn twice from anywhere.

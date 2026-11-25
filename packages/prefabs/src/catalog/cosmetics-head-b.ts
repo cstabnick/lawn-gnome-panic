@@ -161,4 +161,57 @@ export const COSMETICS_HEAD_B: PrefabDef[] = [
       { s: 'cone', d: [0.016, 0.09], at: [-0.114, 0.064, 0.037], c: 'bone', seg: 5 },
     ],
   },
+  {
+    id: 'snowcap-tuque', name: 'Snowcap Tuque', category: 'armor', uses: ['wear-head'],
+    tags: ['wool', 'knit', 'hat', 'tuque', 'snow', 'highland', 'snowcap', 'head', 'reward'], emoji: [],
+    about: 'A thick rolled-brim knitted hat in red and white bands with a fat bobble, for the cold of Snowcap Rise.',
+    examine: [
+      'A knitted hat with a rolled brim, red and white bands round the crown and a fat white bobble on top.',
+      'Saying: past the last cairn it is all Rise. Wear two hats, and make one of them this one.',
+      'Tip: pull the brim down over the ears before the wind finds them; the wind on the Rise always finds them.',
+      'Joke: the bobble has been up Snowdrop Slope more times than the rope tow.',
+      'Knitted from the wool of a sheep nobody on the Rise admits to owning.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.135], at: [0, 0.075, 0], scale: [1, 0.75, 1], c: 'red', seg: 10 },
+      { s: 'ring', d: [0.135, 0.018], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'wool', seg: 12 },
+      { s: 'ring', d: [0.12, 0.008], at: [0, 0.09, 0], rot: [90, 0, 0], c: 'white', seg: 12 },
+      { s: 'ball', d: [0.035], at: [0, 0.18, 0], c: 'white', seg: 8 },
+    ],
+  },
+  {
+    id: 'saltbucket-boater', name: 'Saltbucket Boater', category: 'armor', uses: ['wear-head'],
+    tags: ['straw', 'boater', 'hat', 'seaside', 'beach', 'saltbucket', 'shore', 'head', 'reward'], emoji: [],
+    about: 'A flat-topped straw boater with a sapphire band, the summer hat of Saltbucket Shore.',
+    examine: [
+      'A flat-topped straw boater with a stiff wide brim and a sapphire ribbon band round the crown.',
+      'Saying: a gnome in a boater has seen the Saltwater, and will tell you about it.',
+      'Tip: hold the brim on the pier; Long Spoon Pier has taken more boaters than the sea has.',
+      'Joke: the band is blue so the gulls think it is sky, and the gulls are still thinking about it.',
+      'The straw is pressed flat with a hot flat-iron; the dent in the side is from the Spokewheel.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.15, 0.15, 0.012], at: [0, 0.01, 0], c: 'straw', seg: 14 },
+      { s: 'cyl', d: [0.1, 0.1, 0.06], at: [0, 0.046, 0], c: 'straw', seg: 12 },
+      { s: 'cyl', d: [0.102, 0.102, 0.016], at: [0, 0.03, 0], c: 'sapphire', seg: 12 },
+    ],
+  },
+  {
+    id: 'rootwell-mortarboard', name: 'Rootwell Mortarboard', category: 'armor', uses: ['wear-head'],
+    tags: ['mortarboard', 'cap', 'hat', 'university', 'scholar', 'rootwell', 'campus', 'head', 'reward'], emoji: [],
+    about: 'A square black mortarboard with a gold tassel, as worn by Rootwell University on degree day.',
+    examine: [
+      'A black skull cap with a flat square board on top and a gold tassel hanging from the button.',
+      'Saying: the tassel goes left after the degree, and right again the moment the dean is not looking.',
+      'Tip: never throw it in the air under the Anthill; the ants keep what lands.',
+      'Joke: the board is square so a gnome can balance a cup of tea on it during long lectures.',
+      'Every Rootwell graduate gets one, and every Rootwell graduate claims theirs is the original.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.12], at: [0, 0.05, 0], scale: [1, 0.55, 1], c: 'black', seg: 10 },
+      { s: 'box', d: [0.26, 0.012, 0.26], at: [0, 0.11, 0], rot: [0, 45, 0], c: 'black' },
+      { s: 'ball', d: [0.012], at: [0, 0.12, 0], c: 'gold', seg: 6 },
+      { s: 'box', d: [0.008, 0.07, 0.008], at: [0.08, 0.08, 0.08], c: 'gold' },
+    ],
+  },
 ];

@@ -16,7 +16,8 @@
       "half": 600,
       "fence": 595,
       "roads": 10,
-      "outerSeed": 1618033988
+      "outerSeed": 1618033988,
+      "outerHalf": 900
     }
   },
   "stamps": [],
@@ -286,6 +287,53 @@
           "dz": 6,
           "yaw": 0
         }
+      }
+    },
+    {
+      "id": "rally-route",
+      "kind": "slot",
+      "x": 90,
+      "z": -360,
+      "data": {
+        "hw": 20,
+        "hd": 15,
+        "kind": "corridor",
+        "epic": "E14",
+        "flat": true,
+        "label": "the Capwood Run",
+        "anchors": {
+          "start": {
+            "dx": 0,
+            "dz": 0,
+            "yaw": 3.14159
+          },
+          "summit": {
+            "dx": 210,
+            "dz": -140
+          },
+          "forest": {
+            "dx": 160,
+            "dz": -420
+          },
+          "finish": {
+            "dx": 60,
+            "dz": -540
+          }
+        }
+      }
+    },
+    {
+      "id": "home-08",
+      "kind": "slot",
+      "x": -60,
+      "z": -200,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-08"
       }
     }
   ],

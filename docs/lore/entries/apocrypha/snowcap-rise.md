@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The High North]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, games/gnome-theft-auto/src/data/levels/north-highlands.level.json, games/gnome-theft-auto/src/sites.ts]
 related: [frostbite-fells, snowdrop-slope, pail-pond, capwood, pinwheel-ridge, thermos-theo, ash-shovel-ernie]
 ---
 
@@ -25,7 +25,15 @@ The Rise is the Fells' older, quieter neighbour. The wind is steady there, the g
 
 ## In the games
 
-Planned (batch 3): the north-highlands band (z -1400 to -900), built by E01 and dressed by the area epics. Quest rows 37 (m37-snowdrop-slope) and 38 (m38-pail-pond) use the region tag `snowcap-rise`; row 27 (m27-heap-of-trouble) ends with a convoy vanishing toward it. It is act III's northern base.
+The north band of the map (code region `north-highlands`, x -1400 to 1400, z -1400 to -900), built by E01. Roads: `north-band` runs on from the north highway at (20, -870) west to (-950, -950), and `north-band-east` runs east along the top edge to Pinwheel Ridge's end. Snowdrop Slope (-350, -1150) is 220 x 300 m on a mountain peaking about 65 m near (-350, -1340). Pail Pond (-640, -1060) is 180 x 140 m. Capwood (250, -1180) is 300 x 200 m on the Fells mountain's north side. Pinwheel Ridge (850, -1200) is 300 x 90 m on a ridge. The Capwood Run starts at a paddock (90, -760) in Frostbite Fells and finishes near (150, -1300).
+
+Quest rows 37 (m37-snowdrop-slope) and 38 (m38-pail-pond) use the region tag `snowcap-rise`; row 27 (m27-heap-of-trouble) ends with a convoy vanishing toward it. It is act III's northern base.
+
+## Look and motifs
+
+- Motifs: bare high ground above the Fells; drystone walls; cairns; wind-bent pines; slate bothies.
+- Palette: stone and slate walls, slate roofs, sapphire flowers.
+- In the game: theme `north-highlands` in `src/data/regionThemes.json`.
 
 ## Loose threads
 

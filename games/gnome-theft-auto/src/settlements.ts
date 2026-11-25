@@ -6,7 +6,8 @@ import { buildPrefab, type StaticPrefabPlacement, type Swatch } from '@lawn/pref
 import { buildStaticCells } from './cull';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, PLACES, ROAD_WIDTH, SPAWN, type Highway } from './config';
-import { REGION_IDS, markerNum, markersOf, regionAt } from './levels';
+import { REGION_IDS, regionAt } from './levels';
+import { reservedRects } from './sites';
 import type { Box } from './types';
 import { heightAt } from './terrain';
 import { onWaterCourse } from './water';
@@ -133,10 +134,8 @@ function highwayGap(x: number, z: number, skip?: string): number {
 /** Keep-out rectangles of the reserved flat sites: every reserve marker, the fort and the airfield. */
 function reserveRects(): Rect[] {
   const out: Rect[] = [];
-  for (const m of markersOf('reserve')) {
-    const hw = markerNum(m, 'hw'), hd = markerNum(m, 'hd');
-    out.push({ minX: m.x - hw, maxX: m.x + hw, minZ: m.z - hd, maxZ: m.z + hd });
-  }
+  // Every reserve marker and every slot (sites.ts).
+  for (const r of reservedRects()) out.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ });
   out.push({ minX: BASE.minX, maxX: BASE.maxX, minZ: BASE.minZ, maxZ: BASE.maxZ });
   // The airfield: the runway (along x) and the parked planes, as one rectangle.
   const pts: Pt[] = [

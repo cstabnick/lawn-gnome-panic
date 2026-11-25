@@ -64,6 +64,46 @@
           "yaw": 3.14159
         }
       }
+    },
+    {
+      "id": "boat-dealer",
+      "kind": "slot",
+      "x": -40,
+      "z": 70,
+      "data": {
+        "hw": 25,
+        "hd": 15,
+        "kind": "dealer",
+        "epic": "E08",
+        "flat": true,
+        "label": "boat dealership",
+        "anchors": {
+          "door": {
+            "dx": 0,
+            "dz": 15,
+            "yaw": 0
+          },
+          "slip": {
+            "dx": 0,
+            "dz": -30,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "home-10",
+      "kind": "slot",
+      "x": -150,
+      "z": 220,
+      "data": {
+        "hw": 12,
+        "hd": 12,
+        "kind": "home",
+        "epic": "E10",
+        "flat": true,
+        "label": "home-10"
+      }
     }
   ],
   "data": {

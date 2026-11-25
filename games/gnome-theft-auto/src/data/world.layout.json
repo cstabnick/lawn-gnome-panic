@@ -1,8 +1,8 @@
 {
   "format": "gta-layout",
   "version": 1,
-  "worldHalf": 900,
-  "fenceEdge": 895,
+  "worldHalf": 1400,
+  "fenceEdge": 1395,
   "regions": [
     {
       "id": "turfton",
@@ -52,6 +52,34 @@
         "x": -600,
         "z": 600
       }
+    },
+    {
+      "id": "north-highlands",
+      "origin": {
+        "x": 0,
+        "z": -1150
+      }
+    },
+    {
+      "id": "south-shore",
+      "origin": {
+        "x": 0,
+        "z": 1150
+      }
+    },
+    {
+      "id": "east-campus",
+      "origin": {
+        "x": 1150,
+        "z": 0
+      }
+    },
+    {
+      "id": "west-estates",
+      "origin": {
+        "x": -1150,
+        "z": 0
+      }
     }
   ],
   "highways": [
@@ -70,6 +98,16 @@
     "north-outer",
     "south-outer",
     "loch-spur",
-    "commons-spur"
+    "commons-spur",
+    "north-band",
+    "north-band-east",
+    "east-band",
+    "east-band-south",
+    "runway-spur",
+    "south-band",
+    "south-band-east",
+    "coast-spur",
+    "west-band",
+    "west-band-south"
   ]
 }

@@ -1125,6 +1125,26 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Pulled Over', description: 'Crack 10 gnomes while they are driving.', target: 10,
     reward: { slot: 'head', prefabId: 'pulled-over-cap', label: 'Pulled-Over Cap' },
   },
+  {
+    id: 'gta-band-highlands', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Above the Fells', description: 'Climb past Frostbite Fells to Snowcap Rise.',
+    reward: { slot: 'head', prefabId: 'snowcap-tuque', label: 'Snowcap Tuque' },
+  },
+  {
+    id: 'gta-band-shore', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salt on the Glaze', description: 'Drive south until the garden ends in sand at Saltbucket Shore.',
+    reward: { slot: 'head', prefabId: 'saltbucket-boater', label: 'Saltbucket Boater' },
+  },
+  {
+    id: 'gta-band-campus', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mature Student', description: 'Find Rootwell University past the Dust Flats.',
+    reward: { slot: 'head', prefabId: 'rootwell-mortarboard', label: 'Rootwell Mortarboard' },
+  },
+  {
+    id: 'gta-band-estates', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Hedge', description: 'Slip past the hedges into Trellisdown, west of Mossy Wood.',
+    reward: { slot: 'neck', prefabId: 'trellisdown-cravat', label: 'Trellisdown Cravat' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

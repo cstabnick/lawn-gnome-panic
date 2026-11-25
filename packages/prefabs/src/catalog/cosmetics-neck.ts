@@ -266,4 +266,22 @@ export const COSMETICS_NECK: PrefabDef[] = [
       { s: 'box', d: [0.07, 0.006, 0.004], at: [0, 0.1, 0.168], c: 'leather-dark' },              // lashing
     ],
   },
+  {
+    id: 'trellisdown-cravat', name: 'Trellisdown Cravat', category: 'trinket', uses: ['wear-neck'],
+    tags: ['cravat', 'silk', 'old-money', 'estate', 'trellisdown', 'pink', 'neck', 'reward'], emoji: [],
+    about: 'A puffed pink silk cravat with a brass pin, as worn on the terraces of Trellisdown.',
+    examine: [
+      'A puffed pink silk cravat tied high at the throat and held with a small brass pin.',
+      'Saying: in Trellisdown a cravat is not worn, it is displayed.',
+      'Tip: tie it before the grape-dew is poured; nobody ties a good knot after.',
+      'Joke: the pin is solid brass, which is the only solid thing anyone in Brassknock Manor has said all year.',
+      'Old money keeps its cravats in a drawer of their own, folded by somebody else.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.19, 0.025], at: [0, 0.03, -0.04], rot: [90, 0, 0], c: 'pink', seg: 12 },
+      { s: 'ball', d: [0.05], at: [0, 0.03, 0.15], scale: [1.2, 1, 0.6], c: 'pink', seg: 8 },
+      { s: 'box', d: [0.05, 0.07, 0.015], at: [0, 0.035, 0.16], c: 'pink' },
+      { s: 'ball', d: [0.01], at: [0, 0.035, 0.18], c: 'brass', seg: 6 },
+    ],
+  },
 ];

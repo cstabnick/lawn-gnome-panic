@@ -154,6 +154,7 @@ import { ensureButtonStyle, getTouchLayout } from './ui/style';
 import { ensureGlyphStyle } from './ui/glyphs';
 import { createDock } from './ui/dock';
 import { createMoreMenu } from './ui/moreMenu';
+import { bandAchievement } from './bandAchievements';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map): quality.ts starts them on 'medium'.
 const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -1737,6 +1738,7 @@ function frame(now: number): void {
       visitedBiomes.add(biome);
       void achievements.increment('gta-explorer');
     }
+    const bandId = bandAchievement(biome); if (bandId) void achievements.unlock(bandId);
   }
 
   // Everyone else.

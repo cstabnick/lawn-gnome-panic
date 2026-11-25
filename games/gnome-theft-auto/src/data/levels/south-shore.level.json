@@ -1,0 +1,202 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "south-shore",
+  "name": "Saltbucket Shore",
+  "bounds": {
+    "w": 2800,
+    "d": 500
+  },
+  "base": {
+    "id": "gta-coast-scatter",
+    "version": 1,
+    "seed": 1102,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "south-band",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -280
+        ],
+        [
+          0,
+          -190
+        ],
+        [
+          -300,
+          -150
+        ],
+        [
+          -700,
+          -140
+        ],
+        [
+          -950,
+          -160
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "south-band-east",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -190
+        ],
+        [
+          400,
+          -150
+        ],
+        [
+          800,
+          -150
+        ],
+        [
+          950,
+          -190
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "coast-spur",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -190
+        ],
+        [
+          0,
+          -90
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "ocean",
+      "kind": "slot",
+      "x": 0,
+      "z": 140,
+      "data": {
+        "hw": 1390,
+        "hd": 100,
+        "kind": "water",
+        "epic": "E11",
+        "flat": false,
+        "label": "the Saltwater"
+      }
+    },
+    {
+      "id": "beach",
+      "kind": "slot",
+      "x": 0,
+      "z": 15,
+      "data": {
+        "hw": 1390,
+        "hd": 25,
+        "kind": "natural",
+        "epic": "E11",
+        "flat": false,
+        "label": "Saltbucket Shore beach"
+      }
+    },
+    {
+      "id": "boardwalk",
+      "kind": "slot",
+      "x": 0,
+      "z": -35,
+      "data": {
+        "hw": 210,
+        "hd": 25,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": true,
+        "label": "Saltbucket Boardwalk",
+        "anchors": {
+          "entrance": {
+            "dx": 0,
+            "dz": -25,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "ferris-wheel",
+      "kind": "slot",
+      "x": -260,
+      "z": -50,
+      "data": {
+        "hw": 30,
+        "hd": 30,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": true,
+        "label": "the Spokewheel"
+      }
+    },
+    {
+      "id": "pirate-ship",
+      "kind": "slot",
+      "x": 300,
+      "z": 130,
+      "data": {
+        "hw": 40,
+        "hd": 25,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": false,
+        "parent": "ocean",
+        "label": "the Bathtub Queen"
+      }
+    }
+  ],
+  "data": {
+    "region": "coast",
+    "ground": 14271887,
+    "surface": "sand",
+    "batch": "coast-scenery",
+    "border": [
+      [
+        -1400,
+        -250
+      ],
+      [
+        1400,
+        -250
+      ],
+      [
+        1400,
+        250
+      ],
+      [
+        -1400,
+        250
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-coast-relief",
+        "version": 1,
+        "params": {
+          "dunes": 2.5,
+          "duneScale": 70,
+          "swell": 2,
+          "swellScale": 300
+        }
+      }
+    }
+  }
+}

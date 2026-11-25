@@ -21,7 +21,7 @@ The public basketball court in Downtown Turfton. The hoop is bolted to a drainpi
 
 ## In the games
 
-Planned (batch 3). #14 `m14-drainpipe-court`: Pip owes Cardoon Trowelly his toolbox; a jam-game to 7, then Pip on the bench says why he left Fescue. The court stands at about (-90,-150); epic E01 builds it.
+Planned (batch 3). #14 `m14-drainpipe-court`: Pip owes Cardoon Trowelly his toolbox; a jam-game to 7, then Pip on the bench says why he left Fescue. The court stands at (-90, 30), inside Founders' Green; epic E01 builds it.
 
 ## Loose threads
 

@@ -12,7 +12,7 @@ sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-163]
 related: [flock-of-the-one-leg, the-standing-lady, saxifrage-wader, loch-moss, driftwood-castaway, mossy-wood]
 ---
 
-A reedy camp on the shore near Loch Moss, at about (-1130, -640), where the Flock of the One Leg keep their tents, their rota and their pink plastic flamingo. It smells of mud and good intentions.
+A reedy camp in Trellisdown, about 400 m west of Loch Moss (not on its shore), at about (-1130, -640), where the Flock of the One Leg keep their tents, their rota and their pink plastic flamingo. It smells of mud and good intentions.
 
 ## What gnomes say
 

@@ -95,6 +95,10 @@ export interface GtaKernelRuntime {
 let runtime: GtaKernelRuntime | null = null;
 let initPromise: Promise<void> | null = null;
 let wasmDisabled = false;
+/** The kernel's fixed memory map (assembly/kernel.ts) is laid out for a world of at most this half-size. Larger
+ *  worlds (batch-3 expansion: worldHalf 1400) use the JS path until the kernel's layout is resized. */
+export const KERNEL_MAX_WORLD_HALF = 900;
+const kernelFitsWorld = (): boolean => LAYOUT.worldHalf <= KERNEL_MAX_WORLD_HALF;
 let staticUploaded = false;
 
 const LF_KIND_CODE: Record<string, number> = {
@@ -442,6 +446,10 @@ function setupRuntime(instance: WebAssembly.Instance): GtaKernelRuntime {
 /** Pre-compiles and instantiates GTA's Wasm kernel asynchronously at browser startup. */
 export async function initGtaWasm(): Promise<void> {
   if (runtime) return;
+  if (!kernelFitsWorld()) {
+    wasmDisabled = true;
+    return;
+  }
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('wasm') === '0') {
     wasmDisabled = true;
     return;
@@ -458,7 +466,7 @@ export async function initGtaWasm(): Promise<void> {
 
 /** Returns the active GTA Wasm runtime (instantiating synchronously in Node/Workers if needed). */
 export function getGtaKernelRuntime(): GtaKernelRuntime | null {
-  if (wasmDisabled) return null;
+  if (wasmDisabled || !kernelFitsWorld()) return null;
   if (runtime) return runtime;
   const g = globalThis as { process?: { versions?: { node?: string } } };
   const isNode = !!g.process?.versions?.node;

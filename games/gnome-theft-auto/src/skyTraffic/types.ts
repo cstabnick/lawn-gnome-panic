@@ -121,6 +121,9 @@ export interface SkyBehaviourDef {
   radius: number;
   /** Seconds before it may fly again after it left or was released. */
   cooldown: number;
+  /** L20: once it appears it stays up for onFor seconds, then leaves and is away for offFor seconds ([min, max], rolled
+   *  each time). Absent: as before (back after `cooldown`). Forced spawns (trainer, ?sky=) ignore it. */
+  presence?: { onFor: readonly [number, number]; offFor: readonly [number, number] };
   /** Higher spawns first when slots are short. */
   priority: number;
   /** 'loop': the route repeats from index 0. 'rebuild': route(ctx) is called again for each lap (orbits round the

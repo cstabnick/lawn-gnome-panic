@@ -73,6 +73,7 @@ import { GTA_WILD_LIFE } from './gta-wild-life';
 import { GTA_TESSIE } from './gta-tessie';
 import { GTA_TESSIE_GEAR } from './gta-tessie-gear';
 import { GTA_WILD_GEAR } from './gta-wild-gear';
+import { GTA_WEATHER_GEAR } from './gta-weather-gear';
 import { DAYG } from './dayg';
 import { DAYG_BASE } from './dayg-base';
 import { DAYG_BASE_ITEMS } from './dayg-base-items';
@@ -144,6 +145,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_LANDSCAPING, ...GTA_TOWERS, ...GTA_HOUSES, ...GTA_REGION_MOTIFS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
+  ...GTA_WEATHER_GEAR,
   ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR, ...DAYG_BUILDINGS, ...DAYG_STORY_PROPS,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,

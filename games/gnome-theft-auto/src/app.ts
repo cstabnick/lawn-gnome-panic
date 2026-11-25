@@ -4,7 +4,12 @@ import { createGnomeModel, getMyGnome } from '@lawn/gnome';
 import { createAchievementTracker } from '@lawn/achievements';
 import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
 import { createWorldSound, playAt, soundStats } from './sound';
-import { createAtmosphere } from './atmosphere';
+import { createAtmosphere, TIME_LAPSE } from './atmosphere';
+import { forceWeather, getWeather, isWeatherEnabled, onWeather, updateWeather, weatherAt, weatherRegion } from './weather';
+import { WEATHER_LINES, WEATHER_LOOK } from './weather/config';
+import { createWeatherView } from './weather/render';
+import { initWeatherOptions } from './weather/options';
+import { createWeatherAchievements } from './weather/achievements';
 import { createChaseCamera } from './camera';
 import { createCasings } from './casings';
 import { KEYS, isTyping } from './keys';
@@ -156,7 +161,7 @@ import { ensureRideNear } from './quests/ensureRide';
 import { enterLabelFor } from './ui/enterLabel';
 import { buildEstates } from './lockup/estates';
 import { waterDepthAt } from './water';
-import { SPAWN as FLEET_NEAR } from './config';
+import { SPAWN as FLEET_NEAR, WORLD_HALF } from './config';
 import { mountSteamConnect } from '@lawn/gamepad';
 import { defaultLoadout, encodeLoadout, isStockLoadout, normalizeLoadout, type Loadout } from '@lawn/glaze';
 import { ownedLoadout } from './glazeStore';
@@ -356,6 +361,34 @@ const atmosphere = world.sun && world.hemi ? createAtmosphere(scene, world.sun, 
   const t = new URLSearchParams(location.search).get('time');
   if (atmosphere && (t === 'noon' || t === 'golden' || t === 'night')) atmosphere.setMode(t);
 }
+// Weather (src/weather/, E06): scheduled by wall-clock and region (the same for everyone online), drawn round the camera,
+// dims the sky through the atmosphere. Options > Weather (or ?weather=off) hides it; ?weather=rain|snow|... forces a kind.
+initWeatherOptions(location.search);
+const weatherView = createWeatherView(scene);
+const weatherAch = createWeatherAchievements(achievements);
+/** When each kind's toast last showed (performance.now ms): at most one per kind every few minutes. */
+const weatherToldAt = new Map<string, number>();
+onWeather((w) => {
+  if (!isWeatherEnabled() || (w.kind === 'clear' && !weatherToldAt.size)) return;
+  const now = performance.now();
+  if (now - (weatherToldAt.get(w.kind) ?? -Infinity) < 240_000) return;
+  weatherToldAt.set(w.kind, now);
+  const lines = WEATHER_LINES[w.kind];
+  hud.toast(lines[Math.floor(Math.random() * lines.length)], 3500);
+});
+/**
+ * One weather frame round (x, z): fade toward the schedule, dim the sky, draw the drops. Hidden while weather is off or
+ * the camera is off the map (interiors at x >= 5000, cutscene rooms at 3000).
+ */
+function weatherFrame(dt: number, x: number, z: number, exposed: boolean): void {
+  const w = updateWeather(dt, x, z);
+  const on = isWeatherEnabled();
+  const look = WEATHER_LOOK[w.kind];
+  const onMap = Math.abs(camera.position.x) < WORLD_HALF + 200 && Math.abs(camera.position.z) < WORLD_HALF + 200;
+  atmosphere?.setWeatherLook(on && onMap ? look.overcast * w.intensity : 0, on && onMap ? look.mist * w.intensity : 0);
+  weatherView.update(dt, camera, w, { night: atmosphere?.nightFactor() ?? 0, tier: quality.tier, visible: on && onMap });
+  weatherAch.update({ dt, weather: w, enabled: on, exposed: exposed && onMap });
+}
 const stunts = createStunts(scene, hud, economy, fx, play);
 const highways = createHighways({
   toast: (t, ms) => hud.toast(t, ms), unlock: (id) => void achievements.unlock(id),
@@ -549,20 +582,15 @@ const cutscene = createCutscene(scene, ui, {
   placePlayer(x, z, yaw) {
     if (!player.vehicle) { player.respawn(x, z, yaw); chase.yaw = yaw; }
   },
-  // A scene's `sky`: hold that time of day (settled under the fade-in), and put the old mode back afterwards.
+  // A scene's `sky` (L11): the drawn sky time-lapses forward to that hour while the scene's first shot holds (the
+  // director waits the returned seconds), then holds it; at the end it scrubs back to world time. World time never moves.
   setSky(mode) {
-    if (!atmosphere) return;
-    if (mode) {
-      sceneSkyBefore ??= atmosphere.getMode();
-      atmosphere.setMode(mode);
-      for (let i = 0; i < 6; i++) atmosphere.update(0.25, camera.position.x, camera.position.z, biome);
-    } else if (sceneSkyBefore) {
-      atmosphere.setMode(sceneSkyBefore);
-      sceneSkyBefore = null;
-    }
+    if (!atmosphere) return 0;
+    if (mode) return atmosphere.timeLapseTo(mode, TIME_LAPSE.inSeconds).seconds;
+    atmosphere.releaseLapse(TIME_LAPSE.outSeconds);
+    return 0;
   },
 });
-let sceneSkyBefore: ReturnType<NonNullable<typeof atmosphere>['getMode']> | null = null;
 // ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
 {
   const raceId = RACE_IDS[Number(new URLSearchParams(location.search).get('race')) - 1];
@@ -1535,6 +1563,7 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   ambientGnomes.update(dt, 1e6, 1e6);
   const liveBiome = world.biomeAt(cx, cz);
   atmosphere?.update(dt, cx, cz, liveBiome, false);
+  weatherFrame(dt, cx, cz, false);
   const nightF = atmosphere?.nightFactor() ?? 0;
   setTowerNight(nightF);
   critterTime += dt;
@@ -1551,7 +1580,7 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
     critters: critters.list, npcs: npcs.list, biome: liveBiome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
     district: districtAt(cx, cz), eventKind: null, cutscene: true, shopOpen: false,
   });
-  setVehicleHeadlights(ambient, nightF > 0.35, null);
+  setVehicleHeadlights(ambient, nightF, null);
   world.update(dt, cx, cz, nightF);
   fx.update(dt);
   remotes.update(dt);
@@ -1566,6 +1595,9 @@ function cutsceneSkyFrame(dt: number, live: LiveWorld | null): void {
   if (!live) {
     sky.update(dt, camera.position.x, camera.position.y, camera.position.z, null, false);
     critterTime += dt;
+    // The world clock stands still under a plain scene, but the drawn sky still runs (a time-lapse, weather).
+    atmosphere?.render(dt, camera.position.x, camera.position.z, world.biomeAt(camera.position.x, camera.position.z));
+    weatherFrame(dt, camera.position.x, camera.position.z, false);
   }
   for (const v of sky.aircraft()) syncVehicleMesh(v, dt);
   birding.update({
@@ -2137,6 +2169,7 @@ function frame(now: number): void {
 
   section('atmosphere');
   atmosphere?.update(dt, simX, simZ, biome, player.airborne || !!v?.spec.flies);
+  weatherFrame(dt, simX, simZ, !interiorHome && !stageHome);
   const nightF = atmosphere?.nightFactor() ?? 0;
   setTowerNight(nightF);
   interiors.update(dt);
@@ -2193,7 +2226,7 @@ function frame(now: number): void {
     shopOpen: garages.isOpen(),
   });
   section('world');
-  setVehicleHeadlights(vehicles, nightF > 0.35, lightsPreview ? showroomVehicle : null);
+  setVehicleHeadlights(vehicles, nightF, lightsPreview ? showroomVehicle : null);
   world.update(dt, simX, simZ, nightF);
   section('boats');
   stepIdleBoats(vehicles, dt, world);
@@ -2553,6 +2586,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     fishing,
     // Sky traffic (skyTraffic/): sky.spawn('banner-tow'), sky.list(), sky.clear().
     sky,
+    // Weather (weather/, E06): weather.force('rain', 0.8, true), weather.force(null), weather.get(), weather.at('pardonlin').
+    weather: { force: forceWeather, get: getWeather, at: weatherAt, region: weatherRegion, enabled: isWeatherEnabled },
     // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },

@@ -37,8 +37,8 @@ export interface DirectorHooks {
   resetVehicle?(v: Vehicle): void;
   /** World stages: a `player: true` actor that ends the scene on foot leaves the real player there. */
   placePlayer?(x: number, z: number, yaw: number): void;
-  /** World stages with `sky`: hold the sky at that time of day; null puts the old sky back. */
-  setSky?(mode: 'noon' | 'golden' | 'night' | null): void;
+  /** World stages with `sky`: time-lapse the sky to that hour; returns the seconds the director holds the first shot while it runs (0 or nothing: no hold). null scrubs the sky back to world time. */
+  setSky?(mode: 'noon' | 'golden' | 'night' | null): number | void;
 }
 
 export interface ScenePlayOptions {
@@ -88,6 +88,8 @@ interface Playing {
   clock: number;
   lastFired: number;
   pendingJump: number | null;
+  /** Seconds of first-shot hold left while the sky time-lapses (the clock does not run). */
+  holdT: number;
   subtitles: Subtitles;
   subShown: boolean;
   savedBg: THREE.Scene['background'];
@@ -127,9 +129,12 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   skipBtn.type = 'button';
   skipBtn.textContent = 'Skip ▶▶';
   skipBtn.style.cssText = 'position:absolute;top:max(14px,calc(env(safe-area-inset-top) + 8px));right:max(14px,env(safe-area-inset-right));min-width:96px;min-height:44px;padding:8px 16px;border-radius:999px;border:2px solid rgba(255,255,255,.65);background:rgba(0,0,0,.55);color:#fff;font:700 14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;display:none;';
+  const timeEl = document.createElement('div');
+  timeEl.textContent = '⏩ Time passes…';
+  timeEl.style.cssText = 'position:absolute;top:calc(11vh + 12px);left:50%;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font:600 14px system-ui,sans-serif;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s;';
   const fadeEl = document.createElement('div');
   fadeEl.style.cssText = 'position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;';
-  overlay.append(bar(true), bar(false), titleEl, captionEl, skipBtn, fadeEl);
+  overlay.append(bar(true), bar(false), titleEl, captionEl, skipBtn, timeEl, fadeEl);
   ui.appendChild(overlay);
 
   let phase: Phase = 'off';
@@ -275,6 +280,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     c.subtitles.destroy();
     if (world) hooks.setPlayerVisible?.(true);
     if (world && c.script.sky) hooks.setSky?.(null);
+    timeEl.style.opacity = '0';
     hooks.setUiVisible(true);
 
     cur = null;
@@ -286,7 +292,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   // ---- Public ---------------------------------------------------------------------------------------------------------
 
   function tap(): void {
-    if (!cur || (phase !== 'in' && phase !== 'play')) return;
+    if (!cur || (phase !== 'in' && phase !== 'play') || cur.holdT > 0) return;
     const say = cur.lastFrame.say;
     if (!say) return;
     const ts = cur.tl.steps[say.step];
@@ -305,6 +311,8 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     voice.stop();
     cur.subtitles.hide();
     cur.subShown = false;
+    cur.holdT = 0;
+    timeEl.style.opacity = '0';
     phase = 'out';
     phaseT = 0;
   }
@@ -354,7 +362,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         actors: new Map(), vehicles: new Map(), props: new Map(), mounts: new Map(),
         fired: new Set(), lastSayOrder: -1,
         lastFrame: sampleFrame(tl, 0, env),
-        clock: 0, lastFired: 0, pendingJump: null,
+        clock: 0, lastFired: 0, pendingJump: null, holdT: 0,
         subtitles, subShown: false,
         savedBg: scene.background, savedFog: scene.fog,
         lightsSaved: [], savedFov: null, camStep: -2, camPos: new THREE.Vector3(),
@@ -414,7 +422,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       if (script.ambience) cue.ambience(script.ambience);
       cue.radio(script.radio ?? 0.25);
       if (!room) hooks.setPlayerVisible?.(false);
-      if (!room && script.sky) hooks.setSky?.(script.sky);
+      if (!room && script.sky) { const s = hooks.setSky?.(script.sky); c.holdT = typeof s === 'number' && s > 0 ? s : 0; }
 
       cur = c;
       phase = 'in';
@@ -443,21 +451,31 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
 
       // Clock: runs through 'in' and 'play'; a tap or skip jumps it; mount sequences hold it.
       if (phase === 'in' || phase === 'play') {
-        let next = c.pendingJump ?? c.clock + dt;
-        c.pendingJump = null;
-        next = gate(c, Math.max(c.clock, next));
-        const finished = next >= c.tl.duration;
-        if (finished) next = c.tl.duration;
-        // Steps at exactly the end still fire (the range is open at the top).
-        fireRange(c, c.lastFired, finished ? c.tl.duration + 1e-6 : next, camera);
-        c.lastFired = next;
-        c.clock = next;
-        if (finished) {
-          phase = 'out';
-          phaseT = 0;
-        } else if (phase === 'in' && phaseT >= fadeIn) {
-          phase = 'play';
-          phaseT = 0;
+        if (c.holdT > 0) {
+          // The sky is time-lapsing: the clock stays at the start of the scene; only the fade-in goes on.
+          c.holdT = Math.max(0, c.holdT - dt);
+          c.pendingJump = null;
+          if (phase === 'in' && phaseT >= fadeIn) {
+            phase = 'play';
+            phaseT = 0;
+          }
+        } else {
+          let next = c.pendingJump ?? c.clock + dt;
+          c.pendingJump = null;
+          next = gate(c, Math.max(c.clock, next));
+          const finished = next >= c.tl.duration;
+          if (finished) next = c.tl.duration;
+          // Steps at exactly the end still fire (the range is open at the top).
+          fireRange(c, c.lastFired, finished ? c.tl.duration + 1e-6 : next, camera);
+          c.lastFired = next;
+          c.clock = next;
+          if (finished) {
+            phase = 'out';
+            phaseT = 0;
+          } else if (phase === 'in' && phaseT >= fadeIn) {
+            phase = 'play';
+            phaseT = 0;
+          }
         }
       }
 
@@ -570,6 +588,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       if (phase === 'in') phaseFade = 1 - phaseT / fadeIn;
       else if (phase === 'out') phaseFade = phaseT / fadeOut;
       fadeEl.style.opacity = String(clamp(Math.max(frame.fade, phaseFade), 0, 1));
+      timeEl.style.opacity = c.holdT > 0 ? '1' : '0';
       skipBtn.style.display = c.skippable && !frame.say && (phase === 'in' || phase === 'play') ? 'block' : 'none';
 
       if (phase === 'out' && phaseT >= fadeOut) finish(c, camera);

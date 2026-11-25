@@ -49,7 +49,7 @@ function makeHarness() {
 
 describe('worldEvents rotation & rewards', () => {
   it('rotates through all six public events cleanly', () => {
-    expect(EVENT_INTERVAL).toBe(110);
+    expect(EVENT_INTERVAL).toBe(160);
     expect(EVENT_ROTATION).toEqual([
       'dew-convoy',
       'drift-trial',

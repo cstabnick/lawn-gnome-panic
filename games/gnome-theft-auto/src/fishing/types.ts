@@ -9,8 +9,8 @@ export type { TimeLabel, RegionId };
 /** The kind of water a bobber sits on (waterKind.ts fishWaterAt). */
 export type FishWater = 'loch' | 'river' | 'canal' | 'sea';
 export type FishRarity = 'common' | 'uncommon' | 'rare' | 'mythic';
-/** Turfton has no real weather: pick.ts weatherAt derives it from region and time (Frostbite snow, loch dawn mist). */
-export type FishWeather = 'clear' | 'mist' | 'snow';
+/** Weather as fishing sees it: src/weather/ (pick.ts weatherAt maps it, with Frostbite snow and loch dawn mist). */
+export type FishWeather = 'clear' | 'mist' | 'rain' | 'snow';
 /** How a hooked fish fights (FIGHT below). */
 export type FightStyle = 'steady' | 'darter' | 'thrasher' | 'sulker' | 'runner';
 

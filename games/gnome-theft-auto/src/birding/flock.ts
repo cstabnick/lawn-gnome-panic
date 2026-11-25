@@ -151,6 +151,7 @@ export function createFlock(
   return {
     id, species, members, mode, modeT: modeTime(mode, env), x, y, z, heading, tx: x, ty: y, tz: z,
     targetKind: perchKind, homeX: x, homeZ: z, callT: species.callEvery[0] + env.rnd() * span, sinceFlush: 999, acc: 0,
+    wanderT: 0, wanderYaw: 0, wanderAlt: 0, circleR: 1, circleDir: 1,
   };
 }
 
@@ -163,6 +164,7 @@ export function sendFlock(f: Flock, x: number, y: number, z: number, kind: Perch
   f.tz = z;
   f.targetKind = kind;
   f.modeT = 0; // flying: 0 = landing perches not assigned yet (see stepFlying)
+  f.wanderT = 0; // rolls a new wander on the first flying step
 }
 
 /** Make the flock circle round (cx, cz) high up for a while (soarers, sky flocks). */
@@ -173,6 +175,8 @@ export function circleFlock(f: Flock, cx: number, cz: number, env: FlockEnv): vo
   f.tz = cz;
   f.ty = env.ground(cx, cz) + f.species.altitude * (1.2 + env.rnd() * 0.8);
   f.modeT = 20 + env.rnd() * 20;
+  f.circleR = 0.7 + env.rnd() * 0.9;
+  f.circleDir = env.rnd() < 0.5 ? 1 : -1;
 }
 
 /** Scare the flock away from (fromX, fromZ). */
@@ -296,7 +300,15 @@ function stepFlying(f: Flock, frame: FlockFrame, env: FlockEnv): void {
   const dx = f.tx - f.x;
   const dz = f.tz - f.z;
   const dH = Math.hypot(dx, dz);
-  if (dH > 0.01) f.heading += clamp(wrap(Math.atan2(dx, dz) - f.heading), -2.5 * dt, 2.5 * dt);
+  // wander: re-roll a heading offset and an altitude offset every few seconds; faded out near the target
+  f.wanderT -= dt;
+  if (f.wanderT <= 0) {
+    f.wanderT = 2 + env.rnd() * 3;
+    f.wanderYaw = (env.rnd() - 0.5) * 1.2;
+    f.wanderAlt = (env.rnd() - 0.5) * 0.8 * sp.altitude;
+  }
+  const fade = clamp((dH - 20) / 40, 0, 1);
+  if (dH > 0.01) f.heading += clamp(wrap(Math.atan2(dx, dz) + f.wanderYaw * fade - f.heading), -2.5 * dt, 2.5 * dt);
   const h = f.heading;
   const ch = Math.cos(h);
   const sh = Math.sin(h);
@@ -309,7 +321,7 @@ function stepFlying(f: Flock, frame: FlockFrame, env: FlockEnv): void {
   const w = env.water(f.x, f.z);
   const base = w !== null && w > g ? w : g;
   const near = dH < 20;
-  const wantY = near ? f.ty + 1.5 : base + sp.altitude;
+  const wantY = near ? f.ty + 1.5 : base + sp.altitude + f.wanderAlt * fade;
   const oldY = f.y;
   f.y += clamp(wantY - f.y, -2 * dt, 2 * dt);
   if (!near && f.y < g + 0.5) f.y = g + 0.5;
@@ -363,7 +375,7 @@ function stepCircling(f: Flock, frame: FlockFrame, env: FlockEnv): void {
   const dt = frame.dt;
   const t = frame.time;
   const hover = sp.flight === 'hover';
-  const R = hover ? 0 : 8 + sp.size * 12;
+  const R = hover ? 0 : (8 + sp.size * 12) * f.circleR;
   if (hover) {
     // hangs over the spot with a slow turn and a small bob
     f.x = f.tx;
@@ -371,12 +383,17 @@ function stepCircling(f: Flock, frame: FlockFrame, env: FlockEnv): void {
     f.y = f.ty + 0.3 * Math.sin(t * 1.5);
     f.heading = wrap(f.heading + 0.4 * dt);
   } else {
+    // the centre drifts slowly
+    f.tx += Math.cos(t * 0.07 + f.id) * 1.2 * dt;
+    f.tz += Math.sin(t * 0.05 + f.id * 1.7) * 1.2 * dt;
     const r0 = Math.hypot(f.x - f.tx, f.z - f.tz);
-    const a = Math.atan2(f.z - f.tz, f.x - f.tx) + (sp.speed / R) * dt;
+    const a = Math.atan2(f.z - f.tz, f.x - f.tx) + f.circleDir * (sp.speed / R) * dt;
     const r = r0 + (R - r0) * (1 - Math.exp(-1.5 * dt));
     f.x = f.tx + Math.cos(a) * r;
     f.z = f.tz + Math.sin(a) * r;
-    f.heading = Math.atan2(-Math.sin(a), Math.cos(a));
+    f.heading = f.circleDir === 1
+      ? Math.atan2(-Math.sin(a), Math.cos(a))
+      : Math.atan2(Math.sin(a), -Math.cos(a));
     const wantY = f.ty + Math.sin(t * 0.4 + f.id) * 2;
     f.y += clamp(wantY - f.y, -4 * dt, 4 * dt);
   }

@@ -9,6 +9,7 @@ import type { Vehicle, VehicleKind, World } from '../types';
 import { createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
 import { stepNpcCar } from '../npcChassis';
 import { SPEEDWAY } from './track';
+import { isStreetTrack } from './tracks';
 import type { Track } from './trackDef';
 
 export interface Rival {
@@ -32,6 +33,8 @@ export interface RivalCtx {
   playerDist: number;
   /** Seconds since the start. */
   time: number;
+  /** Vehicles to steer round and brake for (the game's `vehicles`); left out: no avoidance. */
+  others?: readonly Vehicle[];
 }
 
 /** Private per-rival driving state (kept outside the Rival so its shape stays the contract). */
@@ -55,6 +58,14 @@ interface DriverState {
   anchorX: number;
   anchorZ: number;
   anchorT: number;
+  /** Avoidance: side of the line (+1 / -1) chosen, until when (st.t), and the smoothed lateral shift in metres. */
+  avoidSide: number;
+  avoidUntil: number;
+  avoidLat: number;
+  /** Seconds the speed has stayed under 1.5 m/s (street stuck detection). */
+  slowT: number;
+  /** Smoothed lateral aim (line + weave, or the avoidance side). */
+  curLat?: number;
 }
 
 const states = new WeakMap<Rival, DriverState>();
@@ -95,6 +106,11 @@ function stateOf(r: Rival): DriverState {
       anchorX: r.v.x,
       anchorZ: r.v.z,
       anchorT: 0,
+      avoidSide: 0,
+      avoidUntil: 0,
+      avoidLat: 0,
+      slowT: 0,
+      curLat: undefined,
     };
     states.set(r, st);
   }
@@ -136,12 +152,24 @@ function anchorAt(r: Rival, st: DriverState): void {
 }
 
 /** Put the rival back on the centre line at its race distance, facing along the track, at a crawl. */
-function backOnLine(r: Rival, st: DriverState): void {
-  const p = r.track.frame(distToS(r.track, r.dist), 0);
+function backOnLine(r: Rival, st: DriverState, others?: readonly Vehicle[], skip = 0): void {
+  if (skip > 0 && isStreetTrack(r.track.id)) r.dist += skip;
+  let along = distToS(r.track, r.dist);
+  let p = r.track.frame(along, 0);
+  if (others && isStreetTrack(r.track.id)) {
+    for (let k = 0; k < 3; k++) {
+      if (!others.some((o) => o !== r.v && !o.exploded && Math.hypot(o.x - p.x, o.z - p.z) < 4)) break;
+      along += 12;
+      r.dist += 12;
+      p = r.track.frame(r.track.closed ? distToS(r.track, along) : along, 0);
+    }
+  }
   r.v.x = p.x;
   r.v.z = p.z;
   r.v.yaw = p.yaw;
   r.v.speed = 5;
+  st.avoidLat = 0;
+  st.slowT = 0;
   syncVehicleMesh(r.v, 0);
   anchorAt(r, st);
 }
@@ -237,7 +265,7 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
     v.exploded = false;
     v.driver = 'npc';
     seatRider(v, st.look);
-    backOnLine(r, st);
+    backOnLine(r, st, ctx.others);
     return;
   }
 
@@ -247,7 +275,7 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   // Where am I.
   const spot = track.locate(v.x, v.z, 60, r.hint);
   if (!spot || Math.abs(spot.lat) > track.def.barrierOffset + 3) {
-    backOnLine(r, st);
+    backOnLine(r, st, ctx.others);
     return;
   }
   r.hint = spot.i;
@@ -284,7 +312,49 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   // Aim: a point ahead on the line, with a slow weave so the pack spreads out.
   const weave = st.weaveAmp * Math.sin((2 * Math.PI * st.t) / st.weavePeriod + st.weavePhase);
   const ahead = 6 + Math.abs(v.speed) * 0.55;
-  const aim = track.frame(spot.s + ahead, def.line + weave);
+
+  // Traffic: the nearest vehicle in a corridor ahead; swing to the other side of it and match its speed when close.
+  let blockSpeed = Infinity;
+  if (ctx.others) {
+    const fx = Math.sin(v.yaw);
+    const fz = Math.cos(v.yaw);
+    const reach = 8 + Math.abs(v.speed) * 1.2;
+    const half = st.avoidSide !== 0 && st.t < st.avoidUntil ? 3.6 : 2.2;
+    let best: Vehicle | null = null;
+    let bestF = Infinity;
+    for (const o of ctx.others) {
+      if (o === v || o.exploded) continue;
+      const dx = o.x - v.x;
+      const dz = o.z - v.z;
+      const f = dx * fx + dz * fz;
+      if (f < 0 || f > reach || f >= bestF) continue;
+      if (Math.abs(dx * fz - dz * fx) > half) continue;
+      best = o;
+      bestF = f;
+    }
+    if (best) {
+      if (st.t >= st.avoidUntil || st.avoidSide === 0) {
+        const bl = track.locate(best.x, best.z, 60)?.lat ?? 0;
+        const own = def.line + weave;
+        st.avoidSide = bl > own ? -1 : bl < own ? 1 : weave >= 0 ? 1 : -1;
+        const lim = track.def.barrierOffset - 1.5;
+        if (Math.abs(Math.max(-lim, Math.min(lim, bl + st.avoidSide * 3.2)) - bl) < 2.4) st.avoidSide = -st.avoidSide;
+      }
+      st.avoidUntil = st.t + 1;
+      if (bestF < 10) blockSpeed = best.speed * Math.cos(best.yaw - v.yaw) + 2;
+      {
+        const bl = track.locate(best.x, best.z, 60)?.lat ?? 0;
+        const lim = track.def.barrierOffset - 1.5;
+        st.avoidLat = Math.max(-lim, Math.min(lim, bl + st.avoidSide * 3.2));
+      }
+    }
+  }
+  const baseLat = def.line + weave;
+  const active = st.avoidSide !== 0 && st.t < st.avoidUntil;
+  const wantLat = active ? st.avoidLat : baseLat;
+  st.curLat = (st.curLat ?? baseLat) + (wantLat - (st.curLat ?? baseLat)) * Math.min(1, dt / 0.5 * 2);
+  if (!active) st.avoidSide = 0;
+  const aim = track.frame(spot.s + ahead, st.curLat);
   const steer = Math.max(-1, Math.min(1, -angleDiff(Math.atan2(aim.x - v.x, aim.z - v.z), v.yaw) * 2.4));
 
   // Speed: the pace on the straights, cut for the corners ahead, then the rubber band and any mistake.
@@ -294,6 +364,7 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   else if (gap < -60) target *= 1.06;
   target = Math.min(target, v.spec.maxSpeed * 1.06);
   if (st.mistakeT > 0) target *= 1.1;
+  target = Math.min(target, Math.max(0, blockSpeed));
 
   let throttle = 0.3;
   if (v.speed < target - 0.5) throttle = 1;
@@ -302,13 +373,16 @@ export function driveRival(r: Rival, dt: number, world: World, ctx: RivalCtx): v
   stepNpcCar(v, { throttle, steer, lift: 0 }, dt, world);
   syncVehicleMesh(v, dt);
 
-  // Stuck: moved less than 0.5 m in 2.5 s.
-  if (Math.hypot(v.x - st.anchorX, v.z - st.anchorZ) >= 0.5) {
+  // Stuck: moved less than 0.5 m in 2.5 s (street routes: also under 1.5 m/s for 4 s).
+  st.slowT = Math.abs(v.speed) < 1.5 ? st.slowT + dt : 0;
+  if (isStreetTrack(track.id) && st.slowT > 4) {
+    backOnLine(r, st, ctx.others, 8);
+  } else if (Math.hypot(v.x - st.anchorX, v.z - st.anchorZ) >= 0.5) {
     st.anchorX = v.x;
     st.anchorZ = v.z;
     st.anchorT = st.t;
   } else if (st.t - st.anchorT > 2.5) {
-    backOnLine(r, st);
+    backOnLine(r, st, ctx.others, 8);
   }
 }
 

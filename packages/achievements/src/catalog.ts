@@ -720,6 +720,36 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'head', prefabId: 'capwood-cap-hat', label: 'Capwood Cap', exclusive: true },
   },
   {
+    id: 'gta-street-first', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Kerb Appeal', description: 'Finish on the podium in your first street race on Kerb Row.',
+    reward: { slot: 'neck', prefabId: 'street-flag-bandana', label: 'Chequered Bandana' },
+  },
+  {
+    id: 'gta-street-night', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Midnight Oil', description: 'Win the Skyway Sprint after dark.',
+    reward: { slot: 'head', prefabId: 'skyway-night-goggles', label: 'Skyway Night Goggles' },
+  },
+  {
+    id: 'gta-street-champion', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'King of the Kerb', description: 'Win the Ring Road Run and end the street-racing season.',
+    reward: { slot: 'back', prefabId: 'kerb-king-cape', label: "Kerb King's Cape" },
+  },
+  {
+    id: 'gta-street-wager', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Acorns on the Line', description: 'Win 300 Acorns from the street-race bookies.', target: 300,
+    reward: { slot: 'hand', prefabId: 'bookie-chalk-slate', label: "Bookie's Slate" },
+  },
+  {
+    id: 'gta-time-trial', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Against the Clock', description: 'Set a time-trial time on all five street routes.', target: 5,
+    reward: { slot: 'head', prefabId: 'stopwatch-cap', label: 'Stopwatch Cap' },
+  },
+  {
+    id: 'gta-online-race', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Lap of Honour', description: 'Win an online race against another player.',
+    reward: { slot: 'neck', prefabId: 'lap-of-honour-laurel', label: 'Lap of Honour Laurel' },
+  },
+  {
     id: 'gta-toadstool-trail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Ring of Glow', description: 'Find the Great Ring in Capwood after dark.',
     reward: { slot: 'back', prefabId: 'spore-cloak', label: 'Spore Cloak' },

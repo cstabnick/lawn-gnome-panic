@@ -176,6 +176,10 @@ export type ObjectiveDef =
   | {
       kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number;
       trackId?: TrackId; timeAchievement?: { seconds: number; id: string };
+      /** E26: hold the sky at night from the grid to the result (the old sky mode comes back at cleanup). */
+      night?: boolean;
+      /** E26: a closed-road event: traffic is kept off the route while the race runs, cones mark the route's gates. */
+      closedRoad?: boolean;
     }
   // ---- The Turfton city contracts (quests/cityQuests.ts): runner in objectivesCity.ts ----
   /**

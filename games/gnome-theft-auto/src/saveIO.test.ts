@@ -49,6 +49,7 @@ describe('saveIO', () => {
       'gta-farm-v1': JSON.stringify({ v: 1, savedAt: 1, beds: [], seed: 'radish' }),
       'gta-country-v1': JSON.stringify({ v: 1, sites: ['construction-1'], camps: [], deer: 0, mansion: false }),
       'gta-camp-loot-v1': JSON.stringify({ 'camp-west-1': 1 }),
+      'gta-racing-v1': JSON.stringify({ v: 1, best: { 'lost-and-found': 48.2 }, runs: { 'lost-and-found': 3 }, pickupWins: 1, onlineWins: 0, wagerWon: 40 }),
       'unrelated-key': 'keep-me',
     });
 

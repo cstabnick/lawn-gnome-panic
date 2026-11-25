@@ -163,6 +163,7 @@ import { GTA_GOLF_PROPS } from './gta-golf-props';
 import { GTA_FISH_ICE } from './gta-fish-ice';
 import { GTA_DIRT_RALLY } from './gta-dirt-rally';
 import { GTA_DIRT_RALLY_GEAR } from './gta-dirt-rally-gear';
+import { GTA_STREET_RACE_GEAR } from './gta-street-race-gear';
 import { GTA_DINER } from './gta-diner';
 import { GTA_MECHANIC } from './gta-mechanic';
 import { GTA_COMEDY } from './gta-comedy';
@@ -226,7 +227,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
-  ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR,
+  ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR, ...GTA_STREET_RACE_GEAR,
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
   ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,

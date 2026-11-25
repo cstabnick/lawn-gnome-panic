@@ -1,0 +1,81 @@
+// E26 street races: the three meets' organisers (streetRace/meets.ts) and the spots they give the street quests from.
+// Quests: streetRaces.ts. Conventions and types: ../stages.ts, ./kit.ts.
+import { cam, mark, type Stage } from './kit';
+
+export const STREET_STAGES: readonly Stage[] = [
+  {
+    id: 'street-skyway-foot',
+    name: 'The Skyway Foot, the organiser\'s pitch',
+    region: 'mossy-wood',
+    center: [-292.7, -64.2],
+    radius: 10,
+    facing: 0.52,
+    time: 'night',
+    built: 'new',
+    givers: ['street-skyway-foot'],
+    usedBy: ['sr-kerb-row', 'sr-skyway-midnight', 'sr-ring-road'],
+    look: 'Open ground under the west foot of the Skyway, a clipboard on a folding table, a hand-lettered start board and a chalk grid on the tarmac.',
+    sounds: 'Engines idling under the ramp, a radio playing the wrong station, Ratchet tapping a pen on the table.',
+    marks: [
+      mark('ratchet', [-292.7, -64.2], [-292.7, -58.2], 'stand', 'behind the clipboard table, arms folded'),
+      mark('player', [-290.7, -60.7], [-292.7, -64.2], 'stand', 'walks up from the grid side'),
+    ],
+    cameras: [
+      cam('foot', [-289.2, 1.6, -58.1], [-292.7, 1.5, -64.2], 'from the grid onto Ratchet at the table'),
+    ],
+    walks: [],
+    vehicles: [],
+    paths: [],
+    set: [],
+  },
+  {
+    id: 'street-pardonlin',
+    name: 'Quai de la Boucle, the closed road',
+    region: 'pardonlin',
+    center: [-1727.9, -92.8],
+    radius: 10,
+    facing: 1.5,
+    time: 'day',
+    built: 'new',
+    givers: ['street-pardonlin'],
+    usedBy: ['sr-boucle'],
+    look: 'A closed stretch of paving with cones counted in a row, geraniums in iron tubs, a trestle table under a striped awning.',
+    sounds: 'A small brass bell, a car door closing politely, the Commissaire tapping a form on the table.',
+    marks: [
+      mark('aurelie', [-1727.9, -92.8], [-1721.9, -92.8], 'stand', 'at the trestle table with a form and a stamp'),
+      mark('player', [-1723.9, -92.5], [-1727.9, -92.8], 'stand', 'walks in past the cones'),
+    ],
+    cameras: [
+      cam('quai', [-1721.9, 1.6, -92.3], [-1727.9, 1.5, -92.8], 'from the closed road onto the Commissaire at the table'),
+    ],
+    walks: [],
+    vehicles: [],
+    paths: [],
+    set: [],
+  },
+  {
+    id: 'street-saltbucket',
+    name: 'The Saltbucket Lay-By, the sand pitch',
+    region: 'east-campus',
+    center: [979, 141.4],
+    radius: 10,
+    facing: -1.54,
+    time: 'day',
+    built: 'new',
+    givers: ['street-saltbucket'],
+    usedBy: ['sr-saltbucket-dash'],
+    look: 'A sandy lay-by off the coast road, a snack van with its hatch up, a drift of sand across the tarmac and a grubby start flag.',
+    sounds: 'Gulls on the roof, a fryer spitting, Dune reading the rules off a napkin.',
+    marks: [
+      mark('dune', [979, 141.4], [972, 141.4], 'stand', 'leaning on the snack van hatch'),
+      mark('player', [975, 141.5], [979, 141.4], 'stand', 'walks in off the coast road'),
+    ],
+    cameras: [
+      cam('lay-by', [972, 1.6, 141.6], [979, 1.5, 141.4], 'from the coast road onto Dune at the van'),
+    ],
+    walks: [],
+    vehicles: [],
+    paths: [],
+    set: [],
+  },
+];

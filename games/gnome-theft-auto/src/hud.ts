@@ -807,7 +807,7 @@ function paintWorld(g: CanvasRenderingContext2D, world: World, s: number, ox: nu
   g.stroke();
   // The dirt tracks (E14), at their own width; the open ones are an open line.
   for (const t of ALL_TRACKS) {
-    if (t.id === 'lost-and-found') continue;
+    if (t.id === 'lost-and-found' || t.def.relief === 'none') continue;
     g.beginPath();
     t.samples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
     if (t.closed) g.closePath();

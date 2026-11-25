@@ -62,8 +62,12 @@ export interface TrackDef {
    * - 'raise': the track sits on flattened ground and the road is raised by lift/bank/jumps (the Speedway, the Dirt Bowl).
    * - 'ribbon': the road is carved into natural ground: its height follows the land, smoothed over `smooth` m and limited
    *   to `maxGrade`, plus lift/bank/jumps/whoops/ford dips; cut and fill blend back over `fade` (the Capwood Run).
+   * - 'none' (E26 street routes): the route runs over the existing roads and skyway decks. The terrain is left alone,
+   *   the registry (tracks.ts) neither reports its surface nor keeps scenery off it, and the map does not draw it.
+   *   roadTopAt() is then only the lift (base 0): take heights on a street route from the game's ground (terrain
+   *   heightAt, skyway decks), never from the track. Keep lift, bank, jumps, whoops and fords empty.
    */
-  relief: 'raise' | 'ribbon';
+  relief: 'raise' | 'ribbon' | 'none';
   /** ribbon: the steepest the road may climb or fall (rise over run). Default 0.22. */
   maxGrade?: number;
   /** ribbon: the window (m) the land height is averaged over along the line. Default 30. */
@@ -499,6 +503,7 @@ export function createTrack(def: TrackDef): Track {
   };
 
   const applyRelief = (g: Float32Array, N: number, H: number, S: number): void => {
+    if (def.relief === 'none') return;
     const smp = samples();
     const inner = half + def.shoulder;
     const reach = inner + def.fade;

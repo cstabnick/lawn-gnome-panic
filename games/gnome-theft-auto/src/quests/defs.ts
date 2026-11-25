@@ -13,6 +13,7 @@ import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
 import { DIRT_QUESTS } from './dirtRaces';
+import { STREET_QUESTS } from './streetRaces';
 import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
 import { GOLF_QUESTS } from './golfQuests';
@@ -216,6 +217,31 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: 'R',
   },
+  // E26 street races (streetRaces.ts): the three meets' organisers (streetRace/meets.ts, cast.ts).
+  'street-skyway-foot': {
+    id: 'street-skyway-foot',
+    name: 'The Skyway Foot (Ratchet Gaskin)',
+    label: 'Talk to Ratchet Gaskin',
+    ...placed('street-skyway-foot'),
+    room: 'street',
+    letter: 'S',
+  },
+  'street-pardonlin': {
+    id: 'street-pardonlin',
+    name: 'Quai de la Boucle (Commissaire Aurelie Fonce)',
+    label: 'Talk to Commissaire Aurelie Fonce',
+    ...placed('street-pardonlin'),
+    room: 'street',
+    letter: 'P',
+  },
+  'street-saltbucket': {
+    id: 'street-saltbucket',
+    name: 'The Saltbucket Lay-By (Dune Gritstone)',
+    label: 'Talk to Dune Gritstone',
+    ...placed('street-saltbucket'),
+    room: 'street',
+    letter: 'D',
+  },
   'rutbottom-teasel': {
     id: 'rutbottom-teasel',
     name: 'Rutbottom Pits (Two-Ton Teasel)',
@@ -318,6 +344,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...RACE_QUESTS,
   ...WINTER_QUESTS,
   ...DIRT_QUESTS,
+  ...STREET_QUESTS,
   ...GOLF_QUESTS,
   ...ROOTWELL_QUESTS_DEFS,
   ...COUNTRY_QUESTS_DEFS,

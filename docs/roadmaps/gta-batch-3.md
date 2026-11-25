@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: resumed E30, E10, E11; E10 merged; E12 started. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -36,9 +36,9 @@ with deferred items listed).
 | E06 | Sky, weather and time | Engine | 3 | – | merged | epic/E06-weather | dde5c9e4 | `src/weather/` (clear/cloud/mist/rain/snow by region climate, per-tier budgets, Options row, deterministic per browser, not relayed); cutscene time-lapse (badge + sky race, never changes world time; `advanceWorldTime` for deliberate changes); staggered headlights, fewer particles, wandering flocks, intermittent planes, events 160 s / street 45-90 s; R-178; deferred: rain sound (E09), puddles/snow cover, synced clock; density not checked in a real browser |
 | E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | merged | epic/E07-ui | see log | Gnomlet tablet replaces More menu + phone (`registerGnomletApp`, `phone.addApp` shim; Tab/View/P open it, O/Start → Options); Gnomey Bird + Flappy Gnome achievement; Options/More tap bug fixed (pointer-events under #ui); big map zoom/pan/pinch; options registry `registerOption` (E06 weather row migrated at merge); bird toggles; low quest beams + option; position save `gta-position-v1`; loading screen; phone-sized comms; smoke checks should use `gta-gnomlet`, not `gta-options`; deferred: 3D buildings on the big map; open: telescope button over big map, soft minimap on hi-DPI, no real touch device |
 | E09 | Sound, voice, animation and direction | Polish | 3 | – | merged | epic/E09-sound | see log | sound bible `docs/design/gnome-theft-auto/sound-design.md`; quieter steps; cutscene beds + foley everywhere; radio/comms in own voice via mutter `radio` filter + Radio voice option; 15 anim variants; shot-variety helpers + report flags (0 faults); **intro cards** `{ do: 'intro', who }` / `showCharacterIntro` for 28 cast (E20 places them); deferred: mount/aim/jump variants (mount.ts, gnome package); open: intro card covers top HUD on 390 px portrait outside cutscenes; nothing listened to in a real browser |
-| E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | running | epic/E10-homes |  |  |
+| E10 | Homes and downtown life | Content | 4 | E01, E04, E05, E08 | merged | epic/E10-homes | see log | quest `m02-roof-on-credit` (bank loan → Flat 3B; `first-contract` prereq left to E20); Decorate floor-plan editor (touch), furniture shop, sleep spot, Home app, `gta-home-v1`; `homes/data.ts` home+work per character (`homeOf`/`workOf`, `registerHome` for area epics); Saucer Court rebuilt; 7 homes built (2 walk-in), taxi/courier destinations, map pins after first visit; R-180/R-181; deferred: home-08..12, homes on area sites (their epics call `registerHome`); Saucer wings 14 m tall |
 | E11 | Coast and boardwalk | Content | 4 | E01 | running | epic/E11-coast |  |  |
-| E12 | Winter sports | Content | 4 | E01, E06 | planned | | | |
+| E12 | Winter sports | Content | 4 | E01, E06 | running | epic/E12-winter |  |  |
 | E13 | Campus and skyline | Content | 5 | E01, E05 | planned | | | |
 | E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | planned | | | |
 | E15 | Golf course | Content | 5 | E01, E05 | planned | | | |

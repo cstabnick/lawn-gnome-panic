@@ -8,6 +8,8 @@ import { SIDE_QUESTS } from './sideQuests';
 import { WINTER_QUESTS } from './winterQuests';
 import { GOLF_QUESTS } from './golfQuests';
 import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
+import { LOAMDEEP_QUESTS } from './loamdeepQuests';
+import { SOCIETY_QUEST_DEFS } from './societyQuests';
 import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
@@ -42,10 +44,12 @@ describe('side unlock table', () => {
       ...WINTER_QUESTS.map((q) => q.id),
       ...GOLF_QUESTS.map((q) => q.id),
       ...ROOTWELL_QUESTS_DEFS.map((q) => q.id),
+      ...LOAMDEEP_QUESTS.map((q) => q.id),
+      ...SOCIETY_QUEST_DEFS.map((q) => q.id),
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length + LOAMDEEP_QUESTS.length + SOCIETY_QUEST_DEFS.length);
   });
 
   it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {

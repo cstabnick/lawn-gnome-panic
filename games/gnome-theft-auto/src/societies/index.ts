@@ -4,9 +4,7 @@
 // Contracts: ./config.ts and docs/roadmaps/gta-batch-3/E17/contracts.md.
 import type * as THREE from 'three';
 import type { Blip, Box } from '../types';
-import { registerProbe } from '../city/probes';
-import { MOLE_JOB_IDS, SOCIETY_PROBES, type SocietyDeps, type SocietyPart } from './config';
-import { loadSocietySave } from './save';
+import type { SocietyDeps, SocietyPart } from './config';
 import { buildUnderspan } from './underspan/build';
 import './underspan/workshop';
 import { installUnderspanLife } from './underspan/life';
@@ -40,19 +38,8 @@ export interface Societies {
   speaker(x: number, z: number): { x: number; y: number; z: number; station: 'under' } | null;
 }
 
-/** Quest probes read from the societies save (a running total each). */
-function registerSocietyProbes(): void {
-  const jobProbe = { roots: SOCIETY_PROBES.moleRoots, lamps: SOCIETY_PROBES.moleLamps, post: SOCIETY_PROBES.molePost, dig: SOCIETY_PROBES.moleDig } as const;
-  for (const id of MOLE_JOB_IDS) registerProbe(jobProbe[id], () => loadSocietySave().moleJobs[id]);
-  registerProbe(SOCIETY_PROBES.moleAny, () => { const j = loadSocietySave().moleJobs; return j.roots + j.lamps + j.post + j.dig; });
-  registerProbe(SOCIETY_PROBES.molemanMet, () => loadSocietySave().molemanMet);
-  registerProbe(SOCIETY_PROBES.updraft, () => loadSocietySave().updraftRides);
-  registerProbe(SOCIETY_PROBES.sermon, () => loadSocietySave().sermonsStood);
-}
-
-/** The living parts. Install once, after the jobs runtime. */
+/** The living parts. Install once, after the jobs runtime. Quest probes (SOCIETY_PROBES) are read from the save in city/probes.ts. */
 export function installSocieties(deps: SocietyDeps): Societies {
-  registerSocietyProbes();
   const parts: SocietyPart[] = [
     installUnderspanLife(deps), installFlockLife(deps), installSermon(deps), installLoamdeep(deps), installBurrowSurface(deps), installSocietyAchievements(deps),
   ];

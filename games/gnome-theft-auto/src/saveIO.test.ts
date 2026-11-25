@@ -46,6 +46,7 @@ describe('saveIO', () => {
       'gta-winter-v1': JSON.stringify({ v: 1, best: { 'wool-run': 31.5 }, runs: { 'wool-run': 2 } }),
       'gta-golf-v1': JSON.stringify({ v: 1, boardBroken: true, holesPlayed: 4, parHoles: 2, rounds: 1, best: [4, null, null, 5], bestRound: 19, aces: 0, ballsFound: ['lb-1'], molehills: [] }),
       'gta-rootwell-v1': JSON.stringify({ v: 1, doors: ['long-shelf'] }),
+      'gta-societies-v1': JSON.stringify({ v: 1, moleJobs: { roots: 1, lamps: 0, post: 0, dig: 0 }, moleBest: { roots: 3, lamps: 0, post: 0, dig: 0 }, molemanVisits: false, molemanMet: 0, updraftRides: 1, sermonsStood: 0 }),
       'unrelated-key': 'keep-me',
     });
 

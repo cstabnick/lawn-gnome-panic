@@ -49,7 +49,7 @@ describe('placeBlips', () => {
     expect(counts.get('skyway')).toBe(5); // 2 + the Hatwheel, Trellis Cross and the Anthill Ring (E28)
     expect(counts.get('park')).toBe(10); // the 6 parks + Founders' Green (one blip for its two added blocks) + 3 E28 (Unmown, ranger station, basin)
     expect(counts.get('edge')).toBe(7); // 4 city edges + 3 E28 wickets
-    expect(counts.get('town')).toBe(2); // Pebblewick + Pardonlin (E28)
+    expect(counts.get('town')).toBe(4); // Pebblewick + Pardonlin (E28) + the Underspan and Wader's Rest (E17)
     for (const b of blips) {
       expect(isPlace(b)).toBe(true);
       expect(b.color).toBe(PLACE_STYLE[b.kind as PlaceKind].color);

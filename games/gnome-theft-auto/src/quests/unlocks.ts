@@ -92,7 +92,7 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-flock-errands', after: 'ch2-unmowed-tablet', why: "The Flock at Wader's Rest. E20 moves it to after m27-heap-of-trouble (Saxifrage preached at the player in m25)." },
   { questId: 'sq-loamdeep-lamps', after: 'ch3-kiln-resin-ice', why: 'Tumblesoil, once the post is sorted (prereq sq-burrow-post). E21 moves it to after m50-trellisdown-tasting.' },
   { questId: 'sq-loamdeep-under-chorus', after: 'ch3-kiln-resin-ice', why: 'The lamps are lit (prereq sq-loamdeep-lamps); now the Under-Chorus wants its DJ. E21 keeps it after m50.' },
-  { questId: 'sq-flock-vigil', after: 'ch3-tundra-drift-run', why: 'The Flock keep a vigil (prereq sq-flock-errands); the schedule row is #53 ch3-tundra-drift-run.' },
+  { questId: 'sq-flock-vigil', after: 'ch4-runway-flares', why: 'The Flock keep a vigil (prereq sq-flock-errands). The schedule row is #53 ch3-tundra-drift-run, which already has five unlocks; E21 moves it there.' },
   { questId: 'sq-underspan-scrap-run', after: 'ch4-sandpit-drop', why: 'The workshop is short on parts (prereq sq-underspan-verticality); the schedule row is #57 ch4-sandpit-drop.' },
 ];
 

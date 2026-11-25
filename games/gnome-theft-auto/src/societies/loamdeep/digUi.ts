@@ -1,4 +1,4 @@
-// Dig a Nook (E17 issue J3): a full-screen hold-and-release game. Hold DIG (or Space / E) and let go while the soil
+// Dig a Nook (E17 issue J3): a full-screen hold-and-release game. Hold DIG (or Space) and let go while the soil
 // meter sits in the green band for a tidy nook. Too early is shallow; holding to the top is a soft, funny collapse.
 // DOM only, appended to `ui`. Nothing touches `document` at import time.
 
@@ -279,14 +279,14 @@ export function openDigGame(ui: HTMLElement, opts: DigOpts): void {
       quit();
       return;
     }
-    if (e.code === 'Space' || e.code === 'KeyE') {
+    if (e.code === 'Space') {
       e.preventDefault();
       if (!e.repeat) startHold();
     }
   }
 
   function onKeyUp(e: KeyboardEvent): void {
-    if (e.code === 'Space' || e.code === 'KeyE') {
+    if (e.code === 'Space') {
       e.preventDefault();
       endHold();
     }

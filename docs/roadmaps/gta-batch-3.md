@@ -56,8 +56,17 @@ with deferred items listed).
 | E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | merged | epic/E27-physics | see log | little bushes (mowable, <= 1.8 m) flatten, hedges/trees solid; `src/skim.ts` water skimming >= 13 m/s on >= 0.6 m water; traffic tests deterministic (game-time crash limiter, warden clock reset, seeded RNG) — two full suites green in a row after merge; known rare real jam in 'pull out' on 3/16 seeds (traffic code, not fixed); lore R-179 (renumbered); skim never driven in a browser |
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
-| E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | running | epic/E30-pardonlin |  |  |
+| E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | merged | epic/E30-pardonlin | see log | 4 districts (Old Town, Teacup Row & Quays, Left Bank, Jardin & Basin), 33 vignettes, 400+ signs, 22 residents, Radio Adagio 96.1 (13 pieces, Maestro Ottavio Lento), Café Pardon + radio foyer/studio, 4 town activities, 5 achievements, screens in E30/; rulings renumbered R-182..R-184; at merge: Left Bank allotment beds lost their colliders (E27 made them mowable), duplicate import fixed; open: Left Bank 848 buildings — check low-end phones; deferred: story quests with residents (E20–E22), tram, online town state |
 | E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | planned | | | |
+
+## Cross-cutting cleanup (do in E22 or a small fix epic)
+
+- `npm test -w packages/gnome` fails 38 gear-fit checks ("does not trail behind", "stays outside the head and face",
+  "stands upright", "back gear stays clear of the back of the head"). Some items predate batch 3 (feather-duster,
+  box-camera), many are batch-3 rewards (frost-glaze-muffler, flaneur-cravat, daily-baguette, house-key-necklace...).
+  Fix their `wear` mounts in `packages/prefabs` so the suite is green before the PR merges.
+- `traffic.test.ts` "lane-following car ... 90 degree corner on every preset" still failed once under full-suite load
+  after E27; recheck.
 
 ## Engine work (built first, others build on it)
 

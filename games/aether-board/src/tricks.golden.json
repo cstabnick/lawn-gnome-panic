@@ -1,0 +1,1078 @@
+{
+ "stick": [
+  {
+   "step": 36,
+   "kind": "pop",
+   "trick": "ollie",
+   "power": 0.7
+  },
+  {
+   "step": 108,
+   "kind": "pop",
+   "trick": "kickflip",
+   "power": 0.7
+  },
+  {
+   "step": 180,
+   "kind": "pop",
+   "trick": "heelflip",
+   "power": 0.7
+  },
+  {
+   "step": 252,
+   "kind": "pop",
+   "trick": "popShove",
+   "power": 0.7
+  },
+  {
+   "step": 324,
+   "kind": "pop",
+   "trick": "fsShove",
+   "power": 0.7
+  },
+  {
+   "step": 402,
+   "kind": "pop",
+   "trick": "varialKick",
+   "power": 0.7
+  },
+  {
+   "step": 480,
+   "kind": "pop",
+   "trick": "varialHeel",
+   "power": 0.7
+  },
+  {
+   "step": 558,
+   "kind": "pop",
+   "trick": "treFlip",
+   "power": 0.7
+  },
+  {
+   "step": 636,
+   "kind": "pop",
+   "trick": "hardflip",
+   "power": 0.7
+  },
+  {
+   "step": 708,
+   "kind": "pop",
+   "trick": "impossible",
+   "power": 0.7
+  },
+  {
+   "step": 780,
+   "kind": "pop",
+   "trick": "doubleKick",
+   "power": 0.7
+  },
+  {
+   "step": 852,
+   "kind": "pop",
+   "trick": "doubleHeel",
+   "power": 0.7
+  },
+  {
+   "step": 924,
+   "kind": "pop",
+   "trick": "threeShove",
+   "power": 0.7
+  },
+  {
+   "step": 996,
+   "kind": "pop",
+   "trick": "fsThreeShove",
+   "power": 0.7
+  },
+  {
+   "step": 1074,
+   "kind": "pop",
+   "trick": "nightmare",
+   "power": 0.7
+  },
+  {
+   "step": 1152,
+   "kind": "pop",
+   "trick": "laserFlip",
+   "power": 0.7
+  },
+  {
+   "step": 1230,
+   "kind": "pop",
+   "trick": "doubleTre",
+   "power": 0.7
+  },
+  {
+   "step": 1308,
+   "kind": "pop",
+   "trick": "inwardHeel",
+   "power": 0.7
+  },
+  {
+   "step": 1380,
+   "kind": "pop",
+   "trick": "impossible",
+   "power": 0.7
+  },
+  {
+   "step": 1452,
+   "kind": "pop",
+   "trick": "doubleKick",
+   "power": 0.7
+  },
+  {
+   "step": 1524,
+   "kind": "pop",
+   "trick": "doubleHeel",
+   "power": 0.7
+  },
+  {
+   "step": 1596,
+   "kind": "pop",
+   "trick": "threeShove",
+   "power": 0.7
+  },
+  {
+   "step": 1668,
+   "kind": "pop",
+   "trick": "fsThreeShove",
+   "power": 0.7
+  },
+  {
+   "step": 1746,
+   "kind": "pop",
+   "trick": "nightmare",
+   "power": 0.7
+  },
+  {
+   "step": 1824,
+   "kind": "pop",
+   "trick": "laserFlip",
+   "power": 0.7
+  },
+  {
+   "step": 1902,
+   "kind": "pop",
+   "trick": "doubleTre",
+   "power": 0.7
+  },
+  {
+   "step": 1980,
+   "kind": "pop",
+   "trick": "inwardHeel",
+   "power": 0.7
+  },
+  {
+   "step": 2052,
+   "kind": "pop",
+   "trick": "ollie",
+   "power": 0.7
+  },
+  {
+   "step": 2124,
+   "kind": "pop",
+   "trick": "kickflip",
+   "power": 0.7
+  },
+  {
+   "step": 2196,
+   "kind": "pop",
+   "trick": "heelflip",
+   "power": 0.7
+  },
+  {
+   "step": 2268,
+   "kind": "pop",
+   "trick": "popShove",
+   "power": 0.7
+  },
+  {
+   "step": 2340,
+   "kind": "pop",
+   "trick": "fsShove",
+   "power": 0.7
+  },
+  {
+   "step": 2418,
+   "kind": "pop",
+   "trick": "varialKick",
+   "power": 0.7
+  },
+  {
+   "step": 2496,
+   "kind": "pop",
+   "trick": "varialHeel",
+   "power": 0.7
+  },
+  {
+   "step": 2574,
+   "kind": "pop",
+   "trick": "treFlip",
+   "power": 0.7
+  },
+  {
+   "step": 2652,
+   "kind": "pop",
+   "trick": "hardflip",
+   "power": 0.7
+  },
+  {
+   "step": 2712,
+   "kind": "pop",
+   "trick": "ollie",
+   "power": 0.45
+  },
+  {
+   "step": 2844,
+   "kind": "air",
+   "trick": "kickflip"
+  },
+  {
+   "step": 2886,
+   "kind": "air",
+   "trick": "heelflip"
+  },
+  {
+   "step": 2928,
+   "kind": "air",
+   "trick": "varialKick"
+  },
+  {
+   "step": 2970,
+   "kind": "air",
+   "trick": "varialHeel"
+  },
+  {
+   "step": 3012,
+   "kind": "air",
+   "trick": "impossible"
+  },
+  {
+   "step": 3054,
+   "kind": "air",
+   "trick": "popShove"
+  },
+  {
+   "step": 3096,
+   "kind": "air",
+   "trick": "treFlip"
+  },
+  {
+   "step": 3138,
+   "kind": "air",
+   "trick": "hardflip"
+  },
+  {
+   "step": 3616,
+   "kind": "pop",
+   "trick": "ollie",
+   "power": 0.7
+  },
+  {
+   "step": 3766,
+   "kind": "pop",
+   "trick": "hardflip",
+   "power": 0.8333333333333333
+  },
+  {
+   "step": 3859,
+   "kind": "pop",
+   "trick": "treFlip",
+   "power": 0.8333333333333333
+  },
+  {
+   "step": 3951,
+   "kind": "pop",
+   "trick": "varialHeel",
+   "power": 0.8833333333333333
+  },
+  {
+   "step": 3999,
+   "trail": [
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0.7071067811865475,
+     "y": 0.7071067811865476
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    },
+    {
+     "x": 0,
+     "y": 0
+    }
+   ]
+  }
+ ],
+ "combo": [
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie"
+   ],
+   "points": 50,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip"
+   ],
+   "points": 170,
+   "mult": 2,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip"
+   ],
+   "points": 170,
+   "mult": 2,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip"
+   ],
+   "points": 170,
+   "mult": 2,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip",
+    "Melon 0.6s"
+   ],
+   "points": 360,
+   "mult": 3,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip",
+    "Melon 0.6s",
+    "BS 540",
+    "Perfect",
+    "Close Call",
+    "Big Air"
+   ],
+   "points": 1310,
+   "mult": 7,
+   "linkLeft": 0,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [
+    "Ollie",
+    "Kickflip",
+    "Melon 0.6s",
+    "BS 540",
+    "Perfect",
+    "Close Call",
+    "Big Air"
+   ],
+   "points": 1310,
+   "mult": 7,
+   "linkLeft": 0.9000000000000017,
+   "total": 0,
+   "best": 0,
+   "last": null
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "360 Flip"
+   ],
+   "points": 300,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "360 Flip",
+    "Double 360 Flip"
+   ],
+   "points": 720,
+   "mult": 2,
+   "linkLeft": 0,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "360 Flip",
+    "Double 360 Flip",
+    "FS 360 switch",
+    "Double Frontflip"
+   ],
+   "points": 1770,
+   "mult": 4,
+   "linkLeft": 1.4,
+   "total": 9170,
+   "best": 9170,
+   "last": {
+    "text": "Ollie + Kickflip + Melon 0.6s + BS 540 + Perfect + Close Call + Big Air",
+    "points": 9170,
+    "t": 1.4083333333333308,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip"
+   ],
+   "points": 500,
+   "mult": 2,
+   "linkLeft": 1.4,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip"
+   ],
+   "points": 500,
+   "mult": 2,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in"
+   ],
+   "points": 600,
+   "mult": 3,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s"
+   ],
+   "points": 792,
+   "mult": 4,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s"
+   ],
+   "points": 984,
+   "mult": 5,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s",
+    "Nosegrind 0.7s"
+   ],
+   "points": 1239,
+   "mult": 6,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s",
+    "Nosegrind 0.7s"
+   ],
+   "points": 1239,
+   "mult": 6,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s",
+    "Nosegrind 0.7s"
+   ],
+   "points": 1239,
+   "mult": 6,
+   "linkLeft": 1.3166666666666669,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s",
+    "Nosegrind 0.7s",
+    "Nose Manual 1.2s"
+   ],
+   "points": 1487,
+   "mult": 7,
+   "linkLeft": 1.4,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "BS 180",
+    "Backflip",
+    "BS 180 in",
+    "Ley-line 50-50 0.8s",
+    "Boardslide 0.4s",
+    "Nosegrind 0.7s",
+    "Nose Manual 1.2s"
+   ],
+   "points": 1487,
+   "mult": 7,
+   "linkLeft": 0.5666666666666695,
+   "total": 16250,
+   "best": 9170,
+   "last": {
+    "text": "360 Flip + Double 360 Flip + FS 360 switch + Double Frontflip",
+    "points": 7080,
+    "t": 3.1583333333333248,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "Heelflip"
+   ],
+   "points": 120,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BS 180 + Backflip + BS 180 in + Ley-line 50-50 0.8s + Boardslide 0.4s + Nosegri…",
+    "points": 10409,
+    "t": 6.158333333333429,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 120,
+    "t": 8.083333333333515,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 120,
+    "t": 8.083333333333515,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 120,
+    "t": 8.083333333333515,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [
+    "Impossible"
+   ],
+   "points": 220,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 120,
+    "t": 8.083333333333515,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "LOST IN THE AETHER",
+    "points": 220,
+    "t": 8.500000000000158,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "LOST IN THE AETHER",
+    "points": 220,
+    "t": 8.500000000000158,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 26659,
+   "best": 10409,
+   "last": {
+    "text": "LOST IN THE AETHER",
+    "points": 220,
+    "t": 8.500000000000158,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 27659,
+   "best": 10409,
+   "last": {
+    "text": "Aether Warp",
+    "points": 1000,
+    "t": 8.500000000000158,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [
+    "Nightmare Flip"
+   ],
+   "points": 340,
+   "mult": 1,
+   "linkLeft": 0,
+   "total": 27659,
+   "best": 10409,
+   "last": {
+    "text": "Aether Warp",
+    "points": 1000,
+    "t": 8.500000000000158,
+    "kind": "landed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 27659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 340,
+    "t": 8.500000000000158,
+    "kind": "bailed"
+   }
+  },
+  {
+   "lines": [],
+   "points": 0,
+   "mult": 0,
+   "linkLeft": 0,
+   "total": 27659,
+   "best": 10409,
+   "last": {
+    "text": "BAILED",
+    "points": 340,
+    "t": 8.500000000000158,
+    "kind": "bailed"
+   }
+  }
+ ]
+}

@@ -16,6 +16,7 @@ import { DIRT_QUESTS } from './dirtRaces';
 import { TESSIE_QUEST } from './tessieQuest';
 import { WINTER_QUESTS } from './winterQuests';
 import { GOLF_QUESTS } from './golfQuests';
+import { SPORTS_QUESTS } from './sportsQuests';
 import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
 import type { GiverDef, QuestDef } from './types';
 
@@ -264,6 +265,23 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // Founders' Green's side quests (sportsQuests.ts): Drainpipe Court and the Gutter Bowls.
+  cardoon: {
+    id: 'cardoon',
+    name: 'Drainpipe Court',
+    label: 'Talk to Swish Trowelly',
+    ...placed('cardoon'),
+    room: 'street',
+    letter: '!',
+  },
+  fennel: {
+    id: 'fennel',
+    name: 'The Gutter Bowls',
+    label: 'Talk to Fennel Gripwax',
+    ...placed('fennel'),
+    room: 'street',
+    letter: '!',
+  },
   // Rootwell's side quests (rootwellQuests.ts): the Dean's lodge and the Anthill observatory.
   lovage: {
     id: 'lovage',
@@ -301,6 +319,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...WINTER_QUESTS,
   ...DIRT_QUESTS,
   ...GOLF_QUESTS,
+  ...SPORTS_QUESTS,
   ...ROOTWELL_QUESTS_DEFS,
 ];
 

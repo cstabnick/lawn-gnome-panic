@@ -47,6 +47,14 @@ export const CAST_INTROS: Readonly<Record<string, CharacterIntro>> = {
   mabel: { name: 'Mabel Kerbstone', role: 'Turfton Taxi driver.', line: 'Hop in, dear. Knows every fare\'s business and sells none of it.', accent: 0xf2c200 },
   'mayor mulch': { name: 'Mayor Barnaby "Two-Coat" Mulch', role: 'Mayor of Turfton.', line: 'Wants to be on the winning side. Waves at cameras that are not there.', accent: 0xffd23f },
   'turncoat cam': { name: 'Turncoat Cam', role: 'Side-Valve sweeper.', line: 'Broom always in hand, eyes on the bay, never on the person talking.', accent: 0xffd23f },
+  // Founders' Green regulars (sports/types.ts SPORTS_CAST).
+  cardoon: { name: 'Cardoon "Swish" Trowelly', role: 'Drainpipe Court regular.', line: 'Wins bets for a living. Gives the stake back if you ask properly.', accent: 0xe0702a },
+  lintel: { name: 'Lintel Crossover', role: 'Swish\'s partner.', line: 'All fakes, no shot. Somehow it works.', accent: 0x6a3fa0 },
+  pansy: { name: 'Pansy Rebound', role: 'Your teammate.', line: 'Gets every rebound. Gives every rebound back to you, grudgingly.', accent: 0x2f8f5a },
+  benchley: { name: 'Old Burdock Benchley', role: 'Keeps the score.', line: 'His bench is older than the court. So are his opinions.', accent: 0x5a5a5a },
+  fennel: { name: 'Fennel Gripwax', role: 'Gutter Bowls skater.', line: 'Lives under the deck. Feeds the strays. Keeps a list of lines.', accent: 0x3a7ac0 },
+  moss: { name: 'Moss Squeegee', role: 'Dries the bowls.', line: 'A bowl is a roof on the ground. Roofs need looking after.', accent: 0x4a7a3a },
+  pebble: { name: 'Pebble Nollie', role: 'Films everything.', line: 'Has never stood on a board. Has seen every trick.', accent: 0xf07aa0 },
 };
 
 const titleCase = (s: string): string => s.replace(/\b\w/g, (m) => m.toUpperCase());

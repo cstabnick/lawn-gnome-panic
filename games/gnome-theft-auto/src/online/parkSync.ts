@@ -63,7 +63,7 @@ export const PARK_STATE = { parked: 0, driven: 1, wreck: 2, gone: 3 } as const;
 export type ParkState = (typeof PARK_STATE)[keyof typeof PARK_STATE];
 
 /** Kinds that never go through the ledger: the tubing system relays tubes, Tessie is a creature of the loch. */
-const UNTRACKED: readonly VehicleKind[] = ['tow-tube', 'tessie', 'tow-ski', 'spoke-gondola', 'tea-tray-sled', 'snow-skis'];
+const UNTRACKED: readonly VehicleKind[] = ['tow-tube', 'tessie', 'tow-ski', 'spoke-gondola', 'tea-tray-sled', 'snow-skis', 'skateboard'];
 
 /** Stable vids live below this; dynamic ones at and above it. */
 export const DYNAMIC_BASE = 0x40000000;

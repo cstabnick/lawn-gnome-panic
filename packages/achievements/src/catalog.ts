@@ -1528,6 +1528,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Time Off Task', description: 'Stand still at your packing station for 20 seconds while Kippy watches.',
     reward: { slot: 'head', prefabId: 'cardboard-box-hat', label: 'Cardboard Box Hat' },
   },
+  // ---- Gnome Theft Auto E19: Founders' Green courts and skate park (games/gnome-theft-auto/src/court, src/skate; rewards in packages/prefabs/src/catalog/gta-sports-gear.ts) ----
+  {
+    id: 'gta-drainpipe-dunk', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Down the Drainpipe', description: 'Dunk in a pickup game at Drainpipe Court.',
+    reward: { slot: 'head', prefabId: 'drainpipe-sweatband', label: 'Drainpipe Sweatband' },
+  },
+  {
+    id: 'gta-drainpipe-three', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bring a Spare', description: 'Make a three at Drainpipe Court.',
+    reward: { slot: 'hand', prefabId: 'spare-basketball', label: 'Spare Basketball' },
+  },
+  {
+    id: 'gta-drainpipe-win', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nobody Owns the Court', description: 'Win a pickup game at Drainpipe Court.',
+    reward: { slot: 'neck', prefabId: 'swish-net-scarf', label: 'Swish Net Scarf' },
+  },
+  {
+    id: 'gta-first-ollie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Both Wheels Off', description: 'Land an ollie on a skateboard.',
+    reward: { slot: 'head', prefabId: 'gutter-skate-helmet', label: 'Gutter Skate Helmet' },
+  },
+  {
+    id: 'gta-five-trick-combo', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Five in the Gutter', description: 'Land a combo of five tricks or more.',
+    reward: { slot: 'back', prefabId: 'gutter-deck-sling', label: 'Deck Sling' },
+  },
+  {
+    id: 'gta-full-rail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'End to End', description: 'Grind a rail from one end to the other.',
+    reward: { slot: 'neck', prefabId: 'skate-tool-lanyard', label: 'Skate Tool Lanyard' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

@@ -28,6 +28,8 @@ import { createGolfStore } from '../../golf/save';
 import { golfApi } from '../../golf/runtime';
 import { defineClubhouseInterior } from '../../golf/clubhouse';
 import { LOST_BALLS, MOLEHILLS } from '../../golf/types';
+import { createSportsStore } from '../../sports/save';
+import { SKATE_LINES } from '../../skate/types';
 
 export type ProbeFidelity = 'api' | 'action' | 'economy' | 'vehicle';
 
@@ -302,6 +304,47 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       await ctx.step();
     },
   },
+  // Founders' Green (sports/): the save's own store, the calls a shootaround, a pickup game, the Board Library and a line make.
+  'jam-shoot-makes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordShootMake();
+      await ctx.step();
+    },
+  },
+  'jam-wins': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordGame({ won: true, margin: 2, threes: 0, dunks: 0, swish: false });
+      await ctx.step();
+    },
+  },
+  'jam-swish-beaten': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordGame({ won: true, margin: 2, threes: 0, dunks: 0, swish: true });
+      await ctx.step();
+    },
+  },
+  'skate-board-owned': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).setBoardOwned();
+      await ctx.step();
+    },
+  },
+  ...Object.fromEntries(
+    SKATE_LINES.map((l): [string, ProbeAction] => [
+      `skate-line-${l.id}`,
+      {
+        fidelity: 'api',
+        async run(ctx) {
+          createSportsStore(store()).recordLine(l.id, 20);
+          await ctx.step();
+        },
+      },
+    ]),
+  ),
   [`spend:Pebblewick Hopper`]: {
     fidelity: 'economy',
     async run(ctx) {

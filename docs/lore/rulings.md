@@ -1173,3 +1173,21 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** A parody parcel company with one fulfilment centre, FC-1. Its manager-bots are earnest, not sinister. Associates are paid per parcel, with no tips.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E25's warehouse job needs a company that satirises warehouse work without being cruel.
+
+## R-210
+**Question:** How big is Drainpipe Court?
+**Ruling:** It plays by Gnomerena rules (GBA GJAM: two on two, twos and threes, turbo, shoves) on a court sized for street gnomes: the Gnomerena's court and hoop scaled by four fifths, so the rim is 2.44 m for a 1 m gnome (the Gnomerena's gnomes are a quarter bigger). Both hoops are drainpipe hoops with no net. Pickup games go to 11; a grudge match goes to 7.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the game reuses GBA GJAM's simulation and keeps its proportions.
+
+## R-211
+**Question:** What is a skateboard in Turfton?
+**Ruling:** A wooden deck on four wheels, ridden standing, on anything paved; grass stops it. It is slower than any mower and has no place in traffic law (the Hat Watch pretends it is not there, as at Kilnside Rec's old skate corner, which stays). Spare boards live in the Board Library at the Gutter Bowls: take one, leave one.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the board is ridable anywhere without becoming a vehicle class.
+
+## R-212
+**Question:** Are skate tricks the same in Turfton as in the Aether?
+**Ruling:** The names and the scoring of tricks (ollie, kickflip, grabs, grinds, combos) are the same everywhere gnomes ride boards. Nothing else connects the Gutter Bowls to the Aether or its Splash-Back Skaters.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Gnome Theft Auto shares Aether Board's trick tables and scoring.

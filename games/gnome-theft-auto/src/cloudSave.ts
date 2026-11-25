@@ -17,6 +17,7 @@ import { mergeBirdSaves } from './birding/birdSave';
 import { mergeOutskirtsSaves } from './outskirts/save';
 import { mergeMowSave } from './flora/rewards';
 import { mergeGolfSave } from './golf/save';
+import { mergeSportsSave } from './sports/save';
 import { mergeQuestSaves, parseSavesJson } from './quests/questSave';
 import { GTA_SAVE_KEYS, type GtaSaveKey } from './saveIO';
 import { setSaveChangedListener } from './saveHook';
@@ -132,6 +133,7 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-homes-visited-v1': unionArrays, // homes/visits.ts: home ids visited only grow
   'gta-winter-v1': null, // winter/save.ts: best times, run counts, ice catches; the newer side wins
   'gta-golf-v1': mergeGolfSave, // golf/save.ts: counts and bests merge, the board stays broken, ids union
+  'gta-sports-v1': mergeSportsSave, // sports/save.ts: counts and bests merge, the board stays owned, line ids union
   'gta-rootwell-v1': null, // campus/achievements.ts: campus doors visited; the newer side wins
 };
 

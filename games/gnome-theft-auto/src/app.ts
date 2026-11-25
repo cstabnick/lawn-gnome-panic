@@ -167,6 +167,8 @@ import { installTubing } from './tubing/runtime';
 import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
 import { installGolf } from './golf/runtime';
+import { installCourt } from './court/runtime';
+import { installSkate } from './skate/runtime';
 import { installRootwell } from './campus';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
@@ -1133,6 +1135,17 @@ const golf = installGolf({
   camera,
   onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
 });
+// Founders' Green sports (E19): Drainpipe Court (court/: pickup basketball on @lawn/jam, the shootaround) and the Gutter
+// Bowls (skate/: the skate park, the skateboard ridden anywhere, tricks and combos on @lawn/trickboard, lines).
+const court = installCourt({
+  ...jobDeps,
+  camera,
+  onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
+});
+const skate = installSkate({
+  ...jobDeps,
+  onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
+});
 // Rootwell (E13, campus/): campus life, the Anthill Observatory, Rootwell Field, Pinwheel Ridge's turning pinwheels and
 // their achievements. The static scenery is built by world.ts (buildRootwell).
 const rootwell = installRootwell(jobDeps);
@@ -1816,6 +1829,12 @@ function frame(now: number): void {
     : fishing.active()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
     // Golf (golf/): the gnome stands over the ball; golf reads the raw input itself (aim, club, swing).
+    // A pickup game at Drainpipe Court: court reads the raw input itself (move, shoot, pass, turbo, fake).
+    : court.inputMode() === 'game'
+      ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
+    // Shootaround (ball in hand) or riding a skateboard: fire and aim are the shot / flip and grab, never a gun.
+    : court.inputMode() === 'shootaround' || skate.riding()
+      ? { ...rawInp, fire: false, aim: false, reload: false, switchGun: false }
     : golf.addressing()
       ? { ...rawInp, moveX: 0, moveY: 0, lift: 0, jump: false, fire: false, aim: false, reload: false, switchGun: false, enterExit: false, boost: false }
     : birding.viewing()
@@ -1866,7 +1885,7 @@ function frame(now: number): void {
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
-  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z);
+  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z) ?? golf.prompt(player.x, player.z) ?? court.prompt(player.x, player.z) ?? skate.prompt(player.x, player.z);
   const townPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : outskirts.prompt(player);
   const portalPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gnomecinoDoor.prompt(Math.floor(watch.heat));
   if (inp.enterExit && !(player.airborne || player.ragdolling)) {
@@ -1880,7 +1899,7 @@ function frame(now: number): void {
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
     else if (fishPrompt) fishing.interact(player);
-    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z)) golf.interact(player.x, player.z); }
+    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z) && !winter.interact(player.x, player.z) && !golf.interact(player.x, player.z) && !court.interact(player.x, player.z)) skate.interact(player.x, player.z); }
     else if (townPrompt) outskirts.interact(player);
     else if (portalPrompt) gnomecinoDoor.interact(Math.floor(watch.heat));
     else if (interPrompt) interactables.interact(player);
@@ -1949,6 +1968,7 @@ function frame(now: number): void {
     else if (tubing.drives(v)) tubing.stepRider(v, inp, dt);
     else if (coast.drives(v)) coast.stepRider(v, inp, dt);
     else if (winter.drives(v)) winter.stepRider(v, inp, dt);
+    else if (skate.drives(v)) skate.stepRider(v, inp, dt, rawInp);
     else if (stageHome) { /* parked on the Pay 'n' Glaze stage: no driving, and no world edge to clamp it back */ }
     else if (v.sim) {
       // Keep the chassis: checkSink clears v.sim on the frame it sinks, and the telemetry read below then threw and froze the game.
@@ -2186,6 +2206,8 @@ function frame(now: number): void {
   coast.update(dt);
   winter.update(dt);
   golf.update(dt, rawInp);
+  court.update(dt, rawInp);
+  skate.update(dt, rawInp);
   rootwell.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
@@ -2471,6 +2493,8 @@ function frame(now: number): void {
   const scopeAim = birding.applyCamera(dt);
   // Golf: the address view behind the ball and the camera that follows a shot (golf/view.ts).
   golf.applyCamera(dt);
+  // Drainpipe Court: the broadcast camera during a pickup game (court/view.ts).
+  court.applyCamera(dt);
   scopeWasUp = !!scopeAim;
   if (scopeAim) { chase.yaw = scopeAim.yaw; chase.pitch = scopeAim.pitch; }
 
@@ -2533,7 +2557,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...rootwell.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...(workplaces?.blips() ?? []), ...tubing.blips(), ...coast.blips(), ...winter.blips(), ...golf.blips(), ...court.blips(), ...skate.blips(), ...rootwell.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -2771,6 +2795,23 @@ if (startParams.has('golf')) {
     if (why) hud.toast(why, 3000);
   }, 1500);
 }
+// Dev / demos (E19): ?court=game|swish|shoot starts a pickup game (or against Swish, or a shootaround) at Drainpipe Court;
+// ?skate=board|<line id> puts the player on a board at the Gutter Bowls (at that line's start).
+if (startParams.has('court')) {
+  setTimeout(() => {
+    const c = startParams.get('court');
+    const why = c === 'shoot' ? court.api.startShootaround() : court.api.startGame({ opponents: c === 'swish' ? 'swish' : 'regulars' });
+    if (why) hud.toast(why, 3000);
+  }, 1500);
+}
+if (startParams.has('skate')) {
+  setTimeout(() => {
+    const k = startParams.get('skate') ?? '';
+    const line = k === 'first-push' || k === 'bowl-line' || k === 'long-gutter-line' || k === 'asphalt-line' ? k : null;
+    if (line) { const why = skate.api.startLine(line); if (why) hud.toast(why, 3000); }
+    else { player.respawn(-22, 72, 0); skate.api.giveBoard(); const why = skate.api.dropBoard(); if (why) hud.toast(why, 3000); }
+  }, 1500);
+}
 // Dev (E10): ?decor=room|shop|colours opens the flat's Decorate panel (with ?interior=flat-3b to see the room move).
 const decorParam = startParams.get('decor');
 if (decorParam) setTimeout(() => decor.open(decorParam === 'shop' || decorParam === 'colours' ? decorParam : 'room'), 2500);
@@ -2835,6 +2876,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     winter,
     // Hedgeworth Links (golf/): golf.debug(), golf.api.startRound(0), golf.api.breakBoard().
     golf,
+    // Founders' Green (court/, skate/): court.debug(), court.api.startGame(), skate.debug(), skate.api.startLine('first-push').
+    court,
+    skate,
     // Birding: birding.spawn(id, x, z), birding.markSeen(id), birding.species, birding.stats().
     birding,
     // Fishing: fishing.biteNow(id), fishing.catchById(id, size), fishing.grantAll(), fishing.species, fishing.stats().

@@ -282,6 +282,32 @@
       }
     },
     {
+      "id": "giver/cardoon",
+      "kind": "giver",
+      "x": -84.5,
+      "z": 31.5,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/fennel",
+      "kind": "giver",
+      "x": -47,
+      "z": 93.5,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
       "id": "basketball-court",
       "kind": "slot",
       "x": -90,

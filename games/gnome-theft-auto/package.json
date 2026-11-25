@@ -27,6 +27,7 @@
     "@lawn/glaze": "*",
     "@lawn/gnome": "*",
     "@lawn/golf": "*",
+    "@lawn/jam": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
@@ -36,6 +37,7 @@
     "@lawn/portal": "*",
     "@lawn/prefabs": "*",
     "@lawn/profiler": "*",
+    "@lawn/trickboard": "*",
     "@lawn/vehicle": "*",
     "sam-js": "^0.3.1",
     "three": "0.187.0"

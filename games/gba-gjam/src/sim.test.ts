@@ -215,7 +215,7 @@ describe('GBA GJAM mechanics', () => {
 describe('side fairness', () => {
   it('mirror matches between identical bots do not favour the home side', async () => {
     const { simulateMatch } = await import('./ai/eval');
-    const { createShoveHoundBot } = await import('./ai/bots');
+    const { createShoveHoundBot } = await import('@lawn/jam');
     const bot = { id: 'sh', name: 'sh', create: () => createShoveHoundBot() };
     let home = 0;
     let away = 0;

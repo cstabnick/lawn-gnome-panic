@@ -92,6 +92,7 @@ import { buildLockupMarking } from './lockup/marking';
 import { createHighways } from './highways/system';
 import { createRaceTrack } from './raceTrack';
 import { createDirtCountry } from './dirtCountry';
+import { createMountainRoutes } from './mountainRoutes';
 import { autopilotInput } from './raceTrack/autopilot';
 import { questSimInput } from './questSim/input';
 import { RACE_IDS } from './quests/races';
@@ -473,6 +474,13 @@ const dirtCountry = createDirtCountry(scene, world, {
   toast: (t, ms) => hud.toast(t, ms ?? 3500),
   unlock: (id) => void achievements.unlock(id),
   increment: (id, by) => void achievements.increment(id, by),
+});
+// E33: the mountain routes over the Hatbrim and through the Highland Spine (mountainRoutes/).
+const mountainRoutes = createMountainRoutes(scene, world, {
+  toast: (t, ms) => hud.toast(t, ms ?? 3500),
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  vehicleKind: () => player.vehicle?.kind ?? null,
 });
 // Wildlife (critters.ts, src/critters/*): local to this browser. Events go out on Turfton FM when a bulletin exists for them.
 const critters = createCritters(scene, world, {
@@ -2382,6 +2390,7 @@ function frame(now: number): void {
   section('speedway');
   raceTrack.update(dt, v && !stageHome ? v : null, simX, simZ, nightF);
   dirtCountry.update(dt, simX, simZ, nightF);
+  mountainRoutes.update(dt, simX, simZ, nightF);
   critterTime += dt;
   const footSpeed = v || dt <= 0 ? 0 : Math.hypot(player.x - lastFootX, player.z - lastFootZ) / dt;
   lastFootX = player.x;
@@ -2555,6 +2564,7 @@ function frame(now: number): void {
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
     ...raceTrack.blips(),
     ...dirtCountry.blips(),
+    ...mountainRoutes.blips(),
     gunStore.blip,
     ...outskirts.blips(),
     ...dealers.blips(),

@@ -7,6 +7,8 @@ import type { SurfaceKind } from '../surfaces';
 import { CAPWOOD_RUN } from './defs/capwoodRun';
 import { RUTBOTTOM } from './defs/rutbottom';
 import { SPEEDWAY } from './track';
+import { ALL_ROUTES } from '../mountainRoutes/routes';
+import { padSurfaceAt } from '../mountainRoutes/pads';
 import { createTrack, type FordHit, type Track } from './trackDef';
 
 export const TRACK_IDS = ['lost-and-found', 'rutbottom', 'capwood-run'] as const;
@@ -21,6 +23,12 @@ export const TRACKS: Readonly<Record<TrackId, Track>> = {
 /** Every track, in registry order. */
 export const ALL_TRACKS: readonly Track[] = TRACK_IDS.map((id) => TRACKS[id]);
 
+/**
+ * Every Track that shapes the ground: the race tracks, then E33's mountain routes (mountainRoutes/routes.ts, not races).
+ * terrain.ts applies their relief in this order; surfaces, fords and scatter keep-out read all of them.
+ */
+export const GROUND_TRACKS: readonly Track[] = [...ALL_TRACKS, ...ALL_ROUTES];
+
 /** The track with this id (throws on an unknown id). */
 export function trackById(id: string): Track {
   const t = (TRACKS as Record<string, Track>)[id];
@@ -30,16 +38,17 @@ export function trackById(id: string): Track {
 
 /** The surface of whichever track's road is at (x, z), or null off every track road. */
 export function trackSurfaceAt(x: number, z: number): SurfaceKind | null {
-  for (const t of ALL_TRACKS) {
+  for (const t of GROUND_TRACKS) {
     const s = t.surfaceAt(x, z);
     if (s) return s;
   }
-  return null;
+  // E33: a pad beside a mountain route (lay-by, café terrace, lookout).
+  return padSurfaceAt(x, z);
 }
 
 /** Ford water (Cap-water) at (x, z) on any track, or null. */
 export function fordWaterAt(x: number, z: number): FordHit | null {
-  for (const t of ALL_TRACKS) {
+  for (const t of GROUND_TRACKS) {
     const f = t.fordAt(x, z);
     if (f) return f;
   }
@@ -51,7 +60,7 @@ export function fordWaterAt(x: number, z: number): FordHit | null {
  * clutter off the roads, chiefly the Capwood Run, which crosses open country outside any rectangular slot.
  */
 export function nearTrack(x: number, z: number, margin = 0): boolean {
-  for (const t of ALL_TRACKS) {
+  for (const t of GROUND_TRACKS) {
     const b = t.bounds();
     if (x < b.minX - margin || x > b.maxX + margin || z < b.minZ - margin || z > b.maxZ + margin) continue;
     const reach = t.def.barrierOffset + margin;

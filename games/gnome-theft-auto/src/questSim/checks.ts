@@ -136,7 +136,8 @@ export function staticFindings(q: QuestDef, world: World): Finding[] {
   const scenes = new Set([...expectedScenes(q, 'A'), ...expectedScenes(q, 'B')]);
   for (const id of scenes) if (!SCENES[id]) add('scene-missing', `scene ${id} is not in SCENES`);
   q.objectives.forEach((o, step) => {
-    if (o.kind !== 'race') return;
+    // Only the Speedway has a podium scene (quests/objectivesRace.ts); the dirt tracks (E14) go straight to the toast.
+    if (o.kind !== 'race' || (o.trackId ?? 'lost-and-found') !== 'lost-and-found') return;
     const id = `race-${o.raceId}-podium`;
     if (!SCENES[id]) add('scene-missing', `scene ${id} is not in SCENES`, step);
   });

@@ -11,6 +11,7 @@ import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
+import { DIRT_QUESTS } from './dirtRaces';
 import { TESSIE_QUEST } from './tessieQuest';
 import type { GiverDef, QuestDef } from './types';
 
@@ -183,6 +184,39 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // E14 dirt country (dirtRaces.ts): the Rutbottom Dirt Bowl, the Capwood Run paddock and Capwood's warden.
+  'rutbottom-clary': {
+    id: 'rutbottom-clary',
+    name: 'Rutbottom Dirt Bowl (Clary Mudguard)',
+    label: 'Talk to Marshal Clary Mudguard',
+    ...placed('rutbottom-clary'),
+    room: 'street',
+    letter: 'R',
+  },
+  'rutbottom-teasel': {
+    id: 'rutbottom-teasel',
+    name: 'Rutbottom Pits (Two-Ton Teasel)',
+    label: 'Talk to Two-Ton Teasel',
+    ...placed('rutbottom-teasel'),
+    room: 'street',
+    letter: 'T',
+  },
+  'capwood-lulu': {
+    id: 'capwood-lulu',
+    name: 'Capwood Run Paddock (Lugnut Lulu)',
+    label: 'Talk to Lugnut Lulu',
+    ...placed('capwood-lulu'),
+    room: 'street',
+    letter: 'L',
+  },
+  'capwood-warden': {
+    id: 'capwood-warden',
+    name: 'Capwood (Warden Stook)',
+    label: 'Talk to Warden Chanterelle Stook',
+    ...placed('capwood-warden'),
+    room: 'street',
+    letter: 'W',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -199,6 +233,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...NEWCOMER_QUESTS,
   TESSIE_QUEST,
   ...RACE_QUESTS,
+  ...DIRT_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

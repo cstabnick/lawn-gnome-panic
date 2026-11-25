@@ -335,6 +335,19 @@
         "flat": true,
         "label": "home-08"
       }
+    },
+    {
+      "id": "giver/capwood-lulu",
+      "kind": "giver",
+      "x": 80,
+      "z": -358,
+      "data": {
+        "exit": {
+          "dx": -5,
+          "dz": 0,
+          "yaw": -1.5707963267948966
+        }
+      }
     }
   ],
   "data": {

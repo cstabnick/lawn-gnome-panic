@@ -26,3 +26,18 @@ Issues: [issues/](issues/).
 ## Log
 
 - E14-1: done by the lead. Placeholder track defs already pass the generic registry test (`tracks.test.ts`).
+- E14-2: 7/7 done (4 Sonnet, 3 Haiku). Rutbottom 1.22 km (6 banked corners, Berm bank 4, two jumps, three whoops
+  sections); Capwood Run 2.73 km (brief asked 3-4 km: the mountain is small, the grade cap and the clearances set the
+  length), max grade 0.249, cut/fill under 6 m, fords the Gill Ford and Spore Splash. Golden regenerated (29 fewer
+  scenery boxes on the route).
+- E14-3: 4/4 done (Sonnet). Lead fixes: Teasel and Lulu residents at their giver spots; dirt-track drape lifted (runoff
+  buried on the Berm, grid boxes under the road: z-fight scan); Capwood glow and Great Ring halos night-only, spores
+  smaller. Quest unlock beats moved by the worker to satisfy the "2 side quests per beat" test (see contracts.md).
+- E14-4: build, full tests (traffic flakes under load pass alone), prefabs, achievements, lore, smoke at the bowl and in
+  Capwood, zfight at bowl/Capwood/paddock (no E14 pairs), screenshot pass [screens.md](screens.md).
+
+## Deferred
+
+- Free-roam timer on the Capwood Run (only the bowl has one); rally rivals on mixed vehicle kinds ("anything goes" is
+  lowriders); the Knobbly on Pay 'n' Glaze (no rig); a demo GIF (needs the media MCP at PR time); night screenshots;
+  re-timing the four side quests to story rows #40/#42 (E21).

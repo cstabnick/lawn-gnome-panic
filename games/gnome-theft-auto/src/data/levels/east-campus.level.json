@@ -292,6 +292,32 @@
         "flat": false,
         "label": "Rootwell Field Station"
       }
+    },
+    {
+      "id": "giver/rutbottom-clary",
+      "kind": "giver",
+      "x": -34,
+      "z": -525,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": -5,
+          "yaw": 3.141592653589793
+        }
+      }
+    },
+    {
+      "id": "giver/rutbottom-teasel",
+      "kind": "giver",
+      "x": -126,
+      "z": -630,
+      "data": {
+        "exit": {
+          "dx": 5,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
     }
   ],
   "data": {

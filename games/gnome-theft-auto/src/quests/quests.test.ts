@@ -197,7 +197,7 @@ describe('quest step transitions', () => {
 
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(56); // + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials
+    expect(QUESTS.length).toBe(60); // + the 4 E14 dirt quests; + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);

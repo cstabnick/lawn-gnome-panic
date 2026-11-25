@@ -246,9 +246,10 @@ export function buildDirtTrackSurface(scene: THREE.Scene, track: Track, opts: { 
   const width = track.def.width;
   const half = width / 2;
   const runoffW = track.def.barrierOffset - half;
-  addMesh(scene, `${prefix}-runoff`, [1, -1].map((side) => drapedRibbon(trackLane(track, side * (half + runoffW / 2)), runoffW, 0.015)),
+  // Banked dirt corners are steeper than the Speedway's, so the drape sits higher (0.06 / 0.08 m) to stay above the ground grid.
+  addMesh(scene, `${prefix}-runoff`, [1, -1].map((side) => drapedRibbon(trackLane(track, side * (half + runoffW / 2)), runoffW, 0.06)),
     mat(LAYER.tint, opts.runoff ?? 0x6f5a3e));
-  addMesh(scene, `${prefix}-road`, [drapedRibbon(trackLane(track, 0), width, 0.03)], mat(LAYER.road, opts.road ?? 0x8a6a48));
+  addMesh(scene, `${prefix}-road`, [drapedRibbon(trackLane(track, 0), width, 0.08)], mat(LAYER.road, opts.road ?? 0x8a6a48));
 
   // Chequered line(s): a 2 m band across the road, 1 m squares, black and white in one vertex-coloured mesh.
   const squares: THREE.BufferGeometry[] = [];
@@ -273,11 +274,11 @@ export function buildDirtTrackSurface(scene: THREE.Scene, track: Track, opts: { 
     const fx = Math.sin(g.yaw), fz = Math.cos(g.yaw);
     const nx = -fz, nz = fx;
     const t = LINE;
-    lines.push(slab(g.x + fx * (2 - t / 2), g.z + fz * (2 - t / 2), nx, nz, 1.3, fx, fz, t / 2, 0.05));
+    lines.push(slab(g.x + fx * (2 - t / 2), g.z + fz * (2 - t / 2), nx, nz, 1.3, fx, fz, t / 2, 0.12));
     for (const side of [1, -1]) {
       const cx = g.x + side * nx * (1.3 - t / 2) - fx * (t / 2);
       const cz = g.z + side * nz * (1.3 - t / 2) - fz * (t / 2);
-      lines.push(slab(cx, cz, fx, fz, 1.875, nx, nz, t / 2, 0.05));
+      lines.push(slab(cx, cz, fx, fz, 1.875, nx, nz, t / 2, 0.12));
     }
   }
   addMesh(scene, `${prefix}-grid`, lines, mat(LAYER.marking, WHITE));

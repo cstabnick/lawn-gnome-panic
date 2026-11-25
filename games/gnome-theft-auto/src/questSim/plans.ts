@@ -64,4 +64,8 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'race-lowrider-derby': { suite: 'races', expect: 'pass' },
   'race-snail-endurance': { suite: 'races', expect: 'pass' },
   'race-fizz-cup-final': { suite: 'races', expect: 'pass' },
+  'race-rutbottom-knobbly': { suite: 'races', expect: 'pass' },
+  'sq-rutbottom-heats': { suite: 'races', expect: 'pass' },
+  'race-capwood-open': { suite: 'races', expect: 'pass' },
+  'sq-capwood-cap-count': { suite: 'side', expect: 'pass' },
 };

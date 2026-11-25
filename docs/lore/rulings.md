@@ -1085,3 +1085,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The only public way into Hedgeworth is the Kicked Board, a loose board in the neighbour's fence on the side facing the road, which a mower or a kick breaks through and which stays broken (Thrift has stopped propping it shut). The Members' Gate beside the cart path is always locked; its plaque says MEMBERS ONLY and nobody living has the key. Balls lost in Hosepipe Pond are fetched by the pond mower, a paddling mower that is Hedgeworth's cousin of Gnome Golf's sea mower; a lost ball costs a stroke and is played again from where it was struck.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E15 builds the fence, the gate and the water hazard, and each needs one rule for how it is entered or lost.
+
+## R-196
+
+**Question:** What does the Acorn Diner serve, and why is the stew "grub-free"?
+**Ruling:** The diner serves eight dishes (see `acorn-diner-menu`). The stew is grub-free: it is, and nobody asks. The capitals in "Grub-Free Root Stew" are a reassurance, not a joke.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's chef job needs a fixed menu, and the stew's name invites a gag the diner never makes.
+
+## R-197
+**Question:** Who customises client mowers at Pay 'n' Glaze, and how are they paid?
+**Ruling:** A mechanic does it, paid per car by the shop. The client pays for parts, within the budget on their work order. The "Signature Series" loyalty re-stamp still applies to every job.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's mechanic job needs to say where the pay and the parts money come from.
+
+## R-198
+**Question:** How does comedy work in Pardonlin?
+**Ruling:** Le Petit Groan's audience grades rather than laughs. Heckling is a recognised art. Tomatoes are thrown underarm only, by custom.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's comedy job needs a room that reacts without ever laughing.

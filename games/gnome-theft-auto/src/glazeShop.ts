@@ -2,6 +2,7 @@
 import { defaultLoadout, loadoutCost, loadoutCostLines, normalizeLoadout, sameLoadout, type Loadout } from '@lawn/glaze';
 import { GLAZE_CSS, type Panel, type PanelCtx } from './glazeUi';
 import { glazePanelsFor } from './glazePanels';
+import { clientOrderFor, type ClientOrder } from './glazeClient';
 import { ownedLoadout, saveOwnedLoadout } from './glazeStore';
 import type { Hud, Sfx, Vehicle, VehicleKind } from './types';
 
@@ -37,14 +38,30 @@ export interface GlazeShop {
 }
 
 const STYLE_ID = 'gta-glaze-style';
+const CLIENT_STYLE_ID = 'gta-glaze-client-css';
 const QUICK_RESPRAY_PRICE = 90;
 
+// Client mode (a mechanic work order): a pink WORK ORDER ribbon on the head.
+const CLIENT_CSS = `
+.gz-frame.gz-client .gz-head { box-shadow: inset 0 -3px 0 #ff5fa2; }
+.gz-frame.gz-client .gz-title::after {
+  content: 'WORK ORDER'; margin-left: 8px; padding: 2px 6px; border-radius: 4px; vertical-align: middle;
+  font-size: 10px; letter-spacing: 0.06em; background: #ff5fa2; color: #fff;
+}`;
+
 function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = GLAZE_CSS;
-  document.head.appendChild(style);
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = GLAZE_CSS;
+    document.head.appendChild(style);
+  }
+  if (!document.getElementById(CLIENT_STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = CLIENT_STYLE_ID;
+    style.textContent = CLIENT_CSS;
+    document.head.appendChild(style);
+  }
 }
 
 export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps): GlazeShop {
@@ -138,6 +155,10 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     panels: Panel[];
     built: Map<string, { el: HTMLElement; panel: Panel }>;
     active: number;
+    /** Set in client mode (a work order); null for the player's own shopping. */
+    client: ClientOrder | null;
+    /** Client mode: the look was handed back (so close() does not cancel the order). */
+    handed: boolean;
   }
   let current: OpenState | null = null;
 
@@ -174,13 +195,20 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
   function refreshPrice(): void {
     if (!current) return;
     const cost = loadoutCost(current.owned, current.draft);
-    priceEl.textContent = `Total ${cost} 🌰 (you have ${deps.acorns()})`;
+    const order = current.client;
+    if (order) {
+      const over = cost > order.budget ? ' · OVER BUDGET' : '';
+      priceEl.textContent = `Parts ${cost} 🌰 of ${order.budget} 🌰 budget${over}`;
+    } else {
+      priceEl.textContent = `Total ${cost} 🌰 (you have ${deps.acorns()})`;
+    }
     const lines = loadoutCostLines(current.owned, current.draft);
     priceLines.textContent = lines.length === 0
       ? 'Nothing to pay for yet.'
       : lines.map((l) => `${l.label} ${l.price} 🌰`).join(' · ');
     priceWrap.title = lines.map((l) => `${l.label}: ${l.price} 🌰`).join('\n');
-    buyBtn.disabled = cost === 0 || cost > deps.acorns();
+    // Client mode: handing back is always allowed (it just scores badly).
+    buyBtn.disabled = order ? false : cost === 0 || cost > deps.acorns();
   }
 
   function refreshPanels(): void {
@@ -264,12 +292,29 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     showPanel((st.active + step + n) % n);
   }
 
+  /** Client mode swaps the head text and buttons; the normal shop restores them (the shop is reused). */
+  function applyClientChrome(order: ClientOrder | null): void {
+    frame.classList.toggle('gz-client', !!order);
+    title.textContent = order ? 'Work order: ' + order.title : "Pay 'n' Glaze";
+    slogan.textContent = order ? '"' + order.brief + '"' : 'New Coat. Who Dis?';
+    quickBtn.style.display = order ? 'none' : '';
+    handlingBtn.style.display = order ? 'none' : '';
+    buyBtn.textContent = order ? 'Hand back the keys' : 'Buy';
+  }
+
   function open(v: Vehicle): void {
     if (current) close();
-    const owned = normalizeLoadout(deps.ownLook?.(v) ?? ownedLoadout(v.kind) ?? v.look ?? defaultLoadout(v.tint));
-    const panels = glazePanelsFor(v.kind);
-    const st: OpenState = { v, owned, draft: normalizeLoadout(owned), panels, built: new Map(), active: 0 };
+    const order = clientOrderFor(v);
+    const owned = order
+      ? normalizeLoadout(order.start)
+      : normalizeLoadout(deps.ownLook?.(v) ?? ownedLoadout(v.kind) ?? v.look ?? defaultLoadout(v.tint));
+    // Client mode: no Repair tab (players do not pay for repairs on a client's car).
+    const panels = glazePanelsFor(v.kind).filter((p) => !order || p.id !== 'repair');
+    const st: OpenState = {
+      v, owned, draft: normalizeLoadout(owned), panels, built: new Map(), active: 0, client: order, handed: false,
+    };
     current = st;
+    applyClientChrome(order);
     bodyEl.innerHTML = '';
     buildTabs(panels);
     deps.setLook(v, st.draft);
@@ -291,6 +336,8 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     bodyEl.innerHTML = '';
     current = null;
     deps.showroom(null);
+    // Closed without handing back: the job stays open.
+    if (st.client && !st.handed) st.client.cancel?.();
   }
 
   closeBtn.addEventListener('click', () => close());
@@ -316,6 +363,17 @@ export function createGlazeShop(ui: HTMLElement, hud: Hud, deps: GlazeShopDeps):
     const st = current;
     if (!st) return;
     const cost = loadoutCost(st.owned, st.draft);
+    const order = st.client;
+    if (order) {
+      // Hand back the keys: the new look stays on the car, nothing is charged or saved as the player's loadout.
+      const look = normalizeLoadout(st.draft);
+      st.owned = look;
+      st.handed = true;
+      deps.play('door');
+      close();
+      order.finish(look, cost);
+      return;
+    }
     if (cost <= 0) {
       refreshPrice();
       return;

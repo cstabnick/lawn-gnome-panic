@@ -104,7 +104,12 @@ const SHOWROOM_SPIN = 0.35;
 const SHOWROOM_SPIN_PAUSE = 3;
 const SHOWROOM_SMOOTHING = 7;
 
-export interface ShowroomTarget { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number }
+export interface ShowroomTarget {
+  x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number;
+  /** E24: a locked view (no auto-spin, drag ignored): the camera sits at this yaw (and `fixedPitch`, default the showroom pitch). */
+  fixedYaw?: number;
+  fixedPitch?: number;
+}
 
 export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera {
   const chase: ChaseCamera = {
@@ -341,12 +346,18 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
 
   /** One frame of the showroom orbit: drag steers it (and pauses the auto-spin), else it turns slowly on its own. */
   const stepShowroom = (dt: number, input: InputState, t: ShowroomTarget): void => {
-    if (input.camYaw !== 0 || input.camPitch !== 0) roomSinceDrag = 0;
+    if (t.fixedYaw !== undefined) {
+      chase.yaw = t.fixedYaw;
+      chase.pitch = t.fixedPitch ?? SHOWROOM_PITCH;
+      roomSinceDrag = 0;
+    } else if (input.camYaw !== 0 || input.camPitch !== 0) roomSinceDrag = 0;
     else roomSinceDrag += dt;
-    chase.yaw += input.camYaw;
-    chase.pitch = clamp(chase.pitch + input.camPitch, PITCH_MIN, PITCH_MAX);
-    if (roomSinceDrag > SHOWROOM_SPIN_PAUSE) chase.yaw += SHOWROOM_SPIN * dt;
-    if (roomSinceDrag > PITCH_RETURN_AFTER) {
+    if (t.fixedYaw === undefined) {
+      chase.yaw += input.camYaw;
+      chase.pitch = clamp(chase.pitch + input.camPitch, PITCH_MIN, PITCH_MAX);
+    }
+    if (t.fixedYaw === undefined && roomSinceDrag > SHOWROOM_SPIN_PAUSE) chase.yaw += SHOWROOM_SPIN * dt;
+    if (t.fixedYaw === undefined && roomSinceDrag > PITCH_RETURN_AFTER) {
       const diff = SHOWROOM_PITCH - chase.pitch;
       chase.pitch += clamp(diff, -PITCH_RETURN_RATE * dt, PITCH_RETURN_RATE * dt);
     }

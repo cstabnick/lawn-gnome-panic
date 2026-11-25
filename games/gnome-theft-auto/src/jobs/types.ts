@@ -16,6 +16,10 @@ import type { Hub } from '../online/hub';
 export type JobId = 'taxi' | 'courier' | 'pilot' | 'boat';
 export const JOB_IDS: readonly JobId[] = ['taxi', 'courier', 'pilot', 'boat'];
 
+/** Workplace jobs (E24, src/workplaces/): worked on foot at a place, not in a vehicle. Same XP levels and career save. */
+export type WorkJobId = 'chef' | 'mechanic' | 'comedy';
+export const WORK_JOB_IDS: readonly WorkJobId[] = ['chef', 'mechanic', 'comedy'];
+
 /** A fare's or passenger's temperament: changes what they mind and how they tip. */
 export type Personality = 'plain' | 'hurry' | 'nervous' | 'chatty' | 'celebrity';
 export const PERSONALITIES: readonly Personality[] = ['plain', 'hurry', 'nervous', 'chatty', 'celebrity'];
@@ -249,6 +253,28 @@ export interface JobsSave {
   towedMax: number;
   /** Buoy run best time, seconds, or null. */
   buoyBest: number | null;
+  /** E24 workplace jobs: one career record each (same shape and XP levels as the vehicle jobs). */
+  work: Record<WorkJobId, JobRecord>;
+  /** E24 workplace counters. */
+  workStats: WorkStats;
+}
+
+/** E24 counters (career.ts recordShift adds WorkExtra into these). */
+export interface WorkStats {
+  /** Chef: dishes served. */
+  dishes: number;
+  /** Chef: five-star tickets. */
+  fiveStarDishes: number;
+  /** Mechanic: client cars handed back. */
+  cars: number;
+  /** Mechanic: cars rated five stars. */
+  perfectCars: number;
+  /** Comedy: sets performed to the end. */
+  sets: number;
+  /** Comedy: tomatoes taken on stage. */
+  tomatoes: number;
+  /** Comedy: times the player pressed Double Down. */
+  doubleDowns: number;
 }
 
 /** Objective-friendly counters for quests (jobs.stats(), career.ts jobStats()). */
@@ -264,6 +290,11 @@ export interface JobStats {
   earned: number;
   levels: Record<JobId, number>;
   onDuty: JobId | null;
+  /** E24 workplace jobs. */
+  workLevels: Record<WorkJobId, number>;
+  dishes: number;
+  cars: number;
+  sets: number;
 }
 
 // ---- Runtime wiring (app.ts builds one JobsDeps; jobs/runtime.ts and tubing/runtime.ts both take it) ----

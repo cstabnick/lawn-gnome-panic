@@ -21,7 +21,7 @@ Cook and owner of the Route South Acorn Diner and the employer for the chef job.
 
 ## In the games
 
-Planned (batch 3). Home: the room above the Route South Acorn Diner (acknowledged). Work: the diner kitchen. First main quest 13 (`m13-diner-on-route-south`: pays Tansy's debt with a meal; the lunch rush); last 20 (`ch2-vespers-offer`, silent behind the counter). The chef job is built by epic E18.
+Planned (batch 3). Home: the room above the Route South Acorn Diner (acknowledged). Work: the diner kitchen. First main quest 13 (`m13-diner-on-route-south`: pays Tansy's debt with a meal; the lunch rush); last 20 (`ch2-vespers-offer`, silent behind the counter). The chef job is built by epic E24 (not E18): Sage runs the pass in the diner kitchen, and the player works shifts from the "Work a shift" spot, rising from Dishwasher to Head Cook. The menu is in `acorn-diner-menu`.
 
 ## Loose threads
 

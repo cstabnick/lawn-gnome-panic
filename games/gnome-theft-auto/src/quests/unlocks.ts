@@ -92,6 +92,14 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Countryside (countryQuests.ts). Temporary: the schedule has them after m07/m31 (acts I-II, E20), which do not exist yet.
   { questId: 'sq-levelright-night-shift', after: 'ch1-two-coat-tail', why: 'The tail goes past the fringe site where Chard is short of hands. E20 re-times it to after m07-even-estates.' },
   { questId: 'sq-windfall-croft-deed', after: 'ch2-sprinkler-gauntlet', why: 'The player meets the Cloverfield farmers in chapter 2; Bramble knows the deed. E20 re-times it to after m31-granny-cracks.' },
+  // E17 societies (loamdeepQuests.ts, societyQuests.ts). Temporary beats until E20/E21 build m10, m24, m25, m27, m49, m50, m53, m57.
+  { questId: 'sq-underspan-verticality', after: 'ch1-founders-boot', why: 'Hogweed under the Unfinished Span; the player can drive the Skyway by now. E20 moves it to after m10-under-the-span.' },
+  { questId: 'sq-burrow-post', after: 'ch2-unmowed-tablet', why: 'Nubbin at the Burrow Door. E20 moves it to after m25-one-leg-to-stand-on (he met the player in m24).' },
+  { questId: 'sq-flock-errands', after: 'ch2-unmowed-tablet', why: "The Flock at Wader's Rest. E20 moves it to after m27-heap-of-trouble (Saxifrage preached at the player in m25)." },
+  { questId: 'sq-loamdeep-lamps', after: 'ch3-kiln-resin-ice', why: 'Tumblesoil, once the post is sorted (prereq sq-burrow-post). E21 moves it to after m50-trellisdown-tasting.' },
+  { questId: 'sq-loamdeep-under-chorus', after: 'ch3-kiln-resin-ice', why: 'The lamps are lit (prereq sq-loamdeep-lamps); now the Under-Chorus wants its DJ. E21 keeps it after m50.' },
+  { questId: 'sq-flock-vigil', after: 'ch4-runway-flares', why: 'The Flock keep a vigil (prereq sq-flock-errands). The schedule row is #53 ch3-tundra-drift-run, which already has five unlocks; E21 moves it there.' },
+  { questId: 'sq-underspan-scrap-run', after: 'ch4-sandpit-drop', why: 'The workshop is short on parts (prereq sq-underspan-verticality); the schedule row is #57 ch4-sandpit-drop.' },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));

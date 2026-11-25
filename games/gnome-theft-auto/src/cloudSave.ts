@@ -18,6 +18,7 @@ import { mergeOutskirtsSaves } from './outskirts/save';
 import { mergeMowSave } from './flora/rewards';
 import { mergeGolfSave } from './golf/save';
 import { mergeSportsSave } from './sports/save';
+import { mergeSocietySave } from './societies/save';
 import { mergeQuestSaves, parseSavesJson } from './quests/questSave';
 import { GTA_SAVE_KEYS, type GtaSaveKey } from './saveIO';
 import { setSaveChangedListener } from './saveHook';
@@ -138,6 +139,7 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-farm-v1': null, // farm/runtime.ts: one croft; the newer side (later savedAt) wins
   'gta-country-v1': null, // country/achievements.ts: visits and seen deer; the newer side wins
   'gta-camp-loot-v1': null, // country/campsBuild.ts: camp tin times; the newer side wins
+  'gta-societies-v1': mergeSocietySave, // societies/save.ts: counts and bests take the larger side (E17)
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory

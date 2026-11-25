@@ -12,6 +12,7 @@ import { kindOf, SKYWAY_SITES } from './highways/skyways';
 import { landmarkPlaces } from './towers';
 import { TOWN } from './outskirts/town';
 import { CAMPUS, OBSERVATORY, ROOTWELL_FIELD } from './campus/types';
+import { BURROW_DOOR, UNDERSPAN, WADERS_REST } from './societies/config';
 import { PARKS } from './parks/blocks';
 import { EDGE_LABELS, EDGE_NAMES, type EdgeId } from './fringe/belt';
 import type { Blip } from './types';
@@ -77,6 +78,10 @@ export function placeBlips(): Blip[] {
     at('observatory', OBSERVATORY.dome.x, OBSERVATORY.dome.z, 'The Anthill Observatory'),
     at('airfield', ROOTWELL_FIELD.runway.x, ROOTWELL_FIELD.runway.z, 'Rootwell Field'),
     at('windfarm', 850, -1200, 'Pinwheel Ridge'),
+    // E17 societies (societies/config.ts): kinds reuse existing ones.
+    at('town', UNDERSPAN.hogweed.x, UNDERSPAN.hogweed.z, 'The Underspan'),
+    at('town', WADERS_REST.centre.x, WADERS_REST.centre.z, "Wader's Rest"),
+    at('home', BURROW_DOOR.door.x, BURROW_DOOR.door.z, 'The Burrow Door (Loamdeep)'),
   ];
 }
 

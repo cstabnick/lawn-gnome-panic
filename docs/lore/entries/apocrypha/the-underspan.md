@@ -21,7 +21,7 @@ The shade beside the Skyway's Unfinished Span, where the Underspanners live and 
 
 ## In the games
 
-Planned (batch 3). Region tag `underspan`. #5 `m05-sweepers-wages` (the night meet on the Skyway above), #10 `m10-under-the-span`, #33 `m33-the-bench-lock`, #56 `m56-mortar-for-a-mower`. Home of Hogweed Sprocket and the Dewdrop's workshop. Epic E01 builds it as the skyway-society site.
+Planned (batch 3). Region tag `underspan`. #5 `m05-sweepers-wages` (the night meet on the Skyway above), #10 `m10-under-the-span`, #33 `m33-the-bench-lock`, #56 `m56-mortar-for-a-mower`. Home of Hogweed Sprocket and the Dewdrop's workshop. Epic E01 builds it as the skyway-society site. E17 builds it: Hogweed's workshop, the Updraft and the Roost (`sq-underspan-verticality`), the scrap heap (`sq-underspan-scrap-run`) and the manifesto wall. Achievement: "Unauthorised Verticality" (`gta-unauthorised-verticality`).
 
 ## Loose threads
 

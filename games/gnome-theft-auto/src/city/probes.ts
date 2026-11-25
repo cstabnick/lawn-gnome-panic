@@ -11,6 +11,8 @@ import { createFishStore } from '../fishing/fishSave';
 import { createWinterStore } from '../winter/save';
 import { createGolfStore } from '../golf/save';
 import { GOLF_PROBES } from '../golf/types';
+import { SOCIETY_PROBES } from '../societies/config';
+import { loadSocietySave } from '../societies/save';
 import { jobStats } from '../jobs/career';
 import { createSportsStore } from '../sports/save';
 import { COURT_PROBES } from '../court/types';
@@ -75,6 +77,15 @@ const SAVED: Readonly<Record<string, ProbeFn>> = {
   [SKATE_PROBES.lines]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.linesDone) ?? 0,
   [SKATE_PROBES.fullRails]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.fullRails) ?? 0,
   ...SKATE_LINE_PROBES,
+  // E17 societies (societies/save.ts): gta-societies-v1.
+  [SOCIETY_PROBES.moleRoots]: () => withStore(() => loadSocietySave(storage()).moleJobs.roots) ?? 0,
+  [SOCIETY_PROBES.moleLamps]: () => withStore(() => loadSocietySave(storage()).moleJobs.lamps) ?? 0,
+  [SOCIETY_PROBES.molePost]: () => withStore(() => loadSocietySave(storage()).moleJobs.post) ?? 0,
+  [SOCIETY_PROBES.moleDig]: () => withStore(() => loadSocietySave(storage()).moleJobs.dig) ?? 0,
+  [SOCIETY_PROBES.moleAny]: () => withStore(() => { const j = loadSocietySave(storage()).moleJobs; return j.roots + j.lamps + j.post + j.dig; }) ?? 0,
+  [SOCIETY_PROBES.molemanMet]: () => withStore(() => loadSocietySave(storage()).molemanMet) ?? 0,
+  [SOCIETY_PROBES.updraft]: () => withStore(() => loadSocietySave(storage()).updraftRides) ?? 0,
+  [SOCIETY_PROBES.sermon]: () => withStore(() => loadSocietySave(storage()).sermonsStood) ?? 0,
   // Sim jobs (jobs/, docs/roadmaps/gta-sim-jobs-and-tubing.md): their own live stats getter.
   'job-gigs': () => withStore(() => { const j = jobStats(); return j.taxiFares + j.parcels + j.flights + j.boatTrips + j.ferryLoops; }) ?? 0,
   'job-taxi': () => withStore(() => jobStats().taxiFares) ?? 0,

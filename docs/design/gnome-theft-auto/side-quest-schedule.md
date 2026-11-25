@@ -60,7 +60,7 @@ written by its constant, `TESSIE.questId`.
 | `sq-fescue-fugitive` | The Fescue Fugitive | Elder Bracken (unmowed-hollow) | #24 `m24-the-burrow-door` | The Cracked Tablet (#23) opened the Hollow. | `mossy-wood` | 4 | existing |
 | `sq-burrow-post` | Sorting the Post | Nubbin (nubbin) | #25 `m25-one-leg-to-stand-on` | Nubbin met the player at the Burrow Door (#24). | `loamdeep` | 4 | E17 |
 | `nc-reedwatch` | Reedwatch | Newcomers' Card host (R-156) | #26 `m26-the-knot-hole` | #25 lands the player at the loch; the Club's reed hide is in sight. | `loch-moss` | 4 | existing |
-| `sq-flock-errands` | Errands for the Flock | Mother Saxifrage Wader (saxifrage) | #27 `m27-heap-of-trouble` | Saxifrage preached at the player (#25) and likes anyone who can stand still. | `waders-rest` | 4 | E15 |
+| `sq-flock-errands` | Errands for the Flock | Mother Saxifrage Wader (saxifrage) | #27 `m27-heap-of-trouble` | Saxifrage preached at the player (#25) and likes anyone who can stand still. | `waders-rest` | 4 | E17 |
 | `sq-dewdrop-2` | Hogweed Rolls Out | Hogweed Sprocket (hogweed) | #28 `m28-sibling-rivalry` | Hogweed phones after the Tattler chase (#28), having read about the Compost Heap furnace. | `underspan` | 4 | E18 |
 | `sq-hedgeworth-lost-balls` | Lost Balls | Thrift Hosepipe (thrift) | #29 `m29-the-kicked-board` | Thrift chased the player off the wet fairway at #29. | `hedgeworth` | 4 | E15 (until E20: unlocked after `ch2-unmowed-tablet`) |
 | `race-rookie-mowdown` | Fizz Cup: Rookie Mow-Down | Lugnut Lulu (speedway) | #30 `m30-cams-big-night` | Lulu laughed at Cam at #30 and noticed the player's driving. | `speedway` | 4 | existing |
@@ -92,7 +92,7 @@ written by its constant, `TESSIE.questId`.
 | `sq-hedgeworth-ninth-green` | The Ninth Green | Thrift Hosepipe (thrift) | #50 `m50-trellisdown-tasting` | Thrift needs the moles' tunnels shored up after #48. | `hedgeworth` | 6 | E15 (until E21: after `ch3-tundra-drift-run`, needs Lost Balls) |
 | `sq-trellisdown-pickers` | Pickers' Pay | Chicory Snips (chicory) | #51 `m51-the-flock-stands` | The tasting (#50) left Chicory owing the pickers a week of dew. | `trellisdown` | 6 | E15 |
 | `sq-hedgeworth-members-cup` | Members' Cup | Dame Peony Gravelrake (peony) | #52 `m52-the-test-cut` | Peony agreed to hear the crew out at #47 and runs her cup on the first of the month. | `hedgeworth` | 6 | E15 (until E21: after `ch4-runway-flares`, needs the pro lesson) |
-| `sq-flock-vigil` | The Long Vigil | Mother Saxifrage Wader (saxifrage) | #53 `ch3-tundra-drift-run` | The Flock gave the test date (#51) and now keep a vigil. | `waders-rest` | 6 | E15 |
+| `sq-flock-vigil` | The Long Vigil | Mother Saxifrage Wader (saxifrage) | #53 `ch3-tundra-drift-run` | The Flock gave the test date (#51) and now keep a vigil. | `waders-rest` | 6 | E17 |
 | `race-snail-endurance` | Fizz Cup: Snail-Coach Endurance | Lugnut Lulu (speedway) | #54 `m54-the-heist-board` | After the drift run (#53) Shelldon is back in town and the Speedway reopens. | `speedway` | 6 | existing |
 | `nc-take-off` | Wings Over the Flats | Newcomers' Card host (R-156) | #20 `ch2-vespers-offer` | The Dust Flats and the airfield are open; the player must be able to fly before #46. | `dust-flats` | 4 | existing |
 | `sq-hoa-audit` | The HOA Audit | a stranger (strangers) | #55 `ch4-runway-flares` | Spans all five biomes: only once the Fells and the Dust Flats are open (#53). | `wilds` | 6 | existing |

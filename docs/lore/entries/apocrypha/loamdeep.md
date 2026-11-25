@@ -26,7 +26,7 @@ Loamdeep has six halls: the **Mother's Hall** (Old Mother Tumblesoil's), **Rootw
 
 ## In the games
 
-Planned (batch 3). The mole halls are an interior cell (E05), reached from the Burrow Door. Quest 49 (`m49-loamdeep`) has the three jobs; 24 (`m24-the-burrow-door`) introduces it from outside; 60 (`m60-the-moles-dig`) sends diggers out of it. E17 builds the mole jobs from the three kinds above.
+Planned (batch 3). The mole halls are an interior cell (E05), reached from the Burrow Door. Quest 49 (`m49-loamdeep`) has the three jobs; 24 (`m24-the-burrow-door`) introduces it from outside; 60 (`m60-the-moles-dig`) sends diggers out of it. E17 builds the mole jobs from the three kinds above. E17 builds it: six halls (the Mother's Hall, Rootway, Lamplight, Postern, Hearth and Under-Chorus), the four mole jobs (`mole-jobs`), and the quests `sq-burrow-post`, `sq-loamdeep-lamps` and `sq-loamdeep-under-chorus`. Achievements: "Honest Dirt", "Every Hall" and "Seat" (`gta-honest-dirt`, `gta-every-hall`, `gta-seat`).
 
 ## Loose threads
 

@@ -111,4 +111,18 @@ export const IDLE_ANIMS: readonly AnimDef<IdleAnimId>[] = [
       body: [0.06 + 0.02 * s(t, 3), 0, 0],
     }),
   },
+  {
+    // Heron stance: the left leg is drawn up (x < 0 swings it forward), the right leg stays straight. Arms hold out
+    // for balance with a slow wobble; k = 1 over the loop so it wraps seamlessly.
+    id: 'one-leg', label: 'One Leg', icon: '🦩', category: 'idle', duration: 4.0, loop: true,
+    parts: ['armL', 'armR', 'legL', 'legR', 'body'], emote: true,
+    pose: (t) => {
+      const wob = s(t, 4);
+      return {
+        armL: [0, 0, 0.35 + 0.08 * wob], armR: [0, 0, -(0.35 + 0.08 * wob)],
+        legL: [-1.4, 0, 0], legR: [0, 0, 0],
+        body: [0, 0, 0.02 * wob],
+      };
+    },
+  },
 ];

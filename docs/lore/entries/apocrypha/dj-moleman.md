@@ -8,7 +8,7 @@ status: canon
 games: [gnome-theft-auto]
 aliases: [Moleman, The Mole on the Floor]
 sources: [games/gnome-theft-auto/src/radio/content.ts, packages/music/src/themes/undergroundSet.ts]
-related: [subsoil-radio, turfton-fm, cress-caliper, sorrel-tillbrook, rooster-weatherby, shelldon-mucilage, the-carburettors, cloverfield-dew-wells, mole-clans, turfton]
+related: [molemans-burrow, the-long-tunnel, under-chorus-hall, subsoil-radio, turfton-fm, cress-caliper, sorrel-tillbrook, rooster-weatherby, shelldon-mucilage, the-carburettors, cloverfield-dew-wells, mole-clans, turfton]
 ---
 
 The host of 108.0 Subsoil Radio: a mole who plays one long record, from a burrow under Turfton, through speakers he has
@@ -45,6 +45,7 @@ are the same tunnel at three depths. Each one hands over to the next the way a t
 
 - Gnome Theft Auto: the host of Subsoil Radio, the bonus fourth station on the dial. His banter, callers and the titles
   of the set (`radio/content.ts`) and the set itself (`@lawn/music`, `buildUndergroundSet`).
+- Gnome Theft Auto (E17): once the lamps of Loamdeep are lit he comes up the Long Tunnel from his own burrow (`molemans-burrow`) and plays the Under-Chorus (`sq-loamdeep-under-chorus`, `under-chorus-hall`): the family's wish that he would visit comes true (R-220). He is an antenna with a trilby on top and headphones round his neck. The transmitter stays unexplained.
 
 ## Loose threads
 

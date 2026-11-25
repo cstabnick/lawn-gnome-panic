@@ -26,7 +26,7 @@ A moulded plastic bird on a metal spike, sun-faded at the beak, with a crack at 
 
 ## In the games
 
-Planned (batch 3). The centrepiece of Wader's Rest. In quest 51 (`m51-the-flock-stands`) she is the fragile cargo: the player drives her to safety on a flatbed while the Flock follow on one leg.
+Planned (batch 3). The centrepiece of Wader's Rest. In quest 51 (`m51-the-flock-stands`) she is the fragile cargo: the player drives her to safety on a flatbed while the Flock follow on one leg. E17: stands on her sand mound at Wader's Rest facing west (R-221); the shrine inside the big tent shows her in white.
 
 ## Loose threads
 

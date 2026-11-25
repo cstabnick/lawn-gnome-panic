@@ -28,7 +28,7 @@ Nubbin goes up to see the sky, which the Burrowfolk consider a bad habit. He has
 
 ## In the games
 
-Planned (batch 3). Chased through Mossy Wood and driven home in quest 24 (`m24-the-burrow-door`); in 48 (`m48-the-groundskeepers-secret`) he is the mole the player shows Basil Divot, the one who moved the ball; a digger in 60 (`m60-the-moles-dig`).
+Planned (batch 3). Chased through Mossy Wood and driven home in quest 24 (`m24-the-burrow-door`); in 48 (`m48-the-groundskeepers-secret`) he is the mole the player shows Basil Divot, the one who moved the ball; a digger in 60 (`m60-the-moles-dig`). E17: waits by the Burrow Door and gives the first errand, `sq-burrow-post`.
 
 ## Loose threads
 

@@ -51,6 +51,14 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'sq-anthill-rent': { suite: 'side', expect: 'pass' },
   'sq-levelright-night-shift': { suite: 'side', expect: 'pass' },
   'sq-windfall-croft-deed': { suite: 'side', expect: 'pass' },
+  // E17 societies: mole jobs, the Updraft and the sermon finish through their save writes (solvers/probe.ts).
+  'sq-burrow-post': { suite: 'side', expect: 'pass' },
+  'sq-loamdeep-lamps': { suite: 'side', expect: 'pass' },
+  'sq-loamdeep-under-chorus': { suite: 'side', expect: 'pass' },
+  'sq-underspan-verticality': { suite: 'side', expect: 'pass' },
+  'sq-underspan-scrap-run': { suite: 'side', expect: 'pass' },
+  'sq-flock-errands': { suite: 'side', expect: 'pass' },
+  'sq-flock-vigil': { suite: 'side', variants: ['A', 'B'], expect: 'pass' },
   'city-kerbside-rounds': { suite: 'city', expect: 'pass' },
   'city-impound-run': { suite: 'city', expect: 'pass' },
   'city-glow-band-express': { suite: 'city', expect: 'pass' }, // E23: driveTo no longer skips a route aim behind it

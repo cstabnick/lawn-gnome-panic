@@ -52,7 +52,34 @@ def merge3(ours: str, base: str, theirs: str):
     ok, out = _merge_file((tok(ours), tok(base), tok(theirs)))
     if ok:
         return untok(out), 'word'
+    replayed = _replay_inserts(ours, base, theirs)
+    if replayed is not None:
+        return replayed, 'replay'
     return None, 'manual'
+
+
+def _replay_inserts(ours: str, base: str, theirs: str):
+    """When theirs only *inserted* text into base (no deletions or replacements), insert the same text into ours
+    after the same left context. Handles 'both appended to the same list' (ours' additions come first)."""
+    import difflib
+    ops = [o for o in difflib.SequenceMatcher(None, base, theirs, autojunk=False).get_opcodes() if o[0] != 'equal']
+    if not ops or any(o[0] != 'insert' for o in ops):
+        return None
+    out = ours
+    for _, i1, _, j1, j2 in reversed(ops):
+        ins = theirs[j1:j2]
+        ctx = base[max(0, i1 - 40):i1]
+        right = base[i1:i1 + 40]
+        # Prefer the spot where the right context follows (end of an inserted run in ours: '...ours-added];').
+        k = out.find(ctx)
+        if k < 0:
+            return None
+        pos = k + len(ctx)
+        r = out.find(right, pos) if right else len(out)
+        if r >= 0 and right and out[pos:r].count('\n') == 0:
+            pos = r
+        out = out[:pos] + ins + out[pos:]
+    return out
 
 
 def main() -> None:

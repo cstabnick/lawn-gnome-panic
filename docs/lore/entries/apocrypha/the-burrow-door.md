@@ -26,7 +26,7 @@ The door is a round stone, hung so that a mole's shoulder opens it and a spade d
 
 ## In the games
 
-Planned (batch 3). The mole-entrance site in the Mossy Wood area epic, with the interior in E05's cell. Quest 24 (`m24-the-burrow-door`) ends here. It gets a lantern and Sorrel's "Moles are neighbours" sign (W06).
+Planned (batch 3). The mole-entrance site in the Mossy Wood area epic, with the interior in E05's cell. Quest 24 (`m24-the-burrow-door`) ends here. It gets a lantern and Sorrel's "Moles are neighbours" sign (W06). E17 puts Nubbin beside it and the Burrowfolk's halls (`loamdeep`) behind it.
 
 ## Loose threads
 

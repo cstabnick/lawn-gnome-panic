@@ -30,6 +30,8 @@ import { defineClubhouseInterior } from '../../golf/clubhouse';
 import { LOST_BALLS, MOLEHILLS } from '../../golf/types';
 import { createSportsStore } from '../../sports/save';
 import { SKATE_LINES } from '../../skate/types';
+import type { SocietySave } from '../../societies/config';
+import { updateSocietySave } from '../../societies/save';
 
 export type ProbeFidelity = 'api' | 'action' | 'economy' | 'vehicle';
 
@@ -92,6 +94,11 @@ async function mowOne(ctx: SimCtx, kindId: string, longGrass: boolean): Promise<
 const LOCH_DEEPS: [number, number] = [-700, -690];
 /** The Golf-cart at the Patio Heights Country Club (the objective's spot). */
 const GOLF_CART_SPOT: [number, number] = [185, -185];
+
+/** One E17 society probe: the save write the finished activity makes (mole job shift, Updraft ride, sermon stood). */
+function societyProbe(id: string, change: (s: SocietySave) => void): Record<string, ProbeAction> {
+  return { [id]: { fidelity: 'api', async run(ctx) { updateSocietySave(change, store()); await ctx.step(); } } };
+}
 
 export const PROBE_ACTIONS: Record<string, ProbeAction> = {
   'street-event': {
@@ -345,6 +352,15 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       },
     ]),
   ),
+  // E17 societies (societies/save.ts): the counts the mole jobs, the Updraft and the sermon write when finished.
+  ...societyProbe('mole-job-roots', (s) => { s.moleJobs.roots++; }),
+  ...societyProbe('mole-job-lamps', (s) => { s.moleJobs.lamps++; }),
+  ...societyProbe('mole-job-post', (s) => { s.moleJobs.post++; }),
+  ...societyProbe('mole-job-dig', (s) => { s.moleJobs.dig++; }),
+  ...societyProbe('mole-job-any', (s) => { s.moleJobs.roots++; }),
+  ...societyProbe('moleman-met', (s) => { s.molemanMet++; }),
+  ...societyProbe('underspan-updraft', (s) => { s.updraftRides++; }),
+  ...societyProbe('flock-sermon-stood', (s) => { s.sermonsStood++; }),
   [`spend:Pebblewick Hopper`]: {
     fidelity: 'economy',
     async run(ctx) {

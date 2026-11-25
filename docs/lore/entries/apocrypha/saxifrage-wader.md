@@ -28,7 +28,7 @@ Saxifrage keeps the Flock because someone has to, and prefers a rule to a mess. 
 
 ## In the games
 
-Planned (batch 3). The giver of quest 51 (`m51-the-flock-stands`) and the voice in 25 (`m25-one-leg-to-stand-on`), where her sermon names "the Even Cut, on the longest day". She gives the test date.
+Planned (batch 3). The giver of quest 51 (`m51-the-flock-stands`) and the voice in 25 (`m25-one-leg-to-stand-on`), where her sermon names "the Even Cut, on the longest day". She gives the test date. E17: stands beside the circle at Wader's Rest and gives `sq-flock-errands` and `sq-flock-vigil`.
 
 ## Loose threads
 

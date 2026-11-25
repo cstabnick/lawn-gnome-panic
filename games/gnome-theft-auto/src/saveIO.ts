@@ -41,6 +41,7 @@ export const GTA_SAVE_KEYS = [
   'gta-farm-v1', // farm/runtime.ts: Windfall Croft's beds, oak, crate, chosen seed, counters (E16)
   'gta-country-v1', // country/achievements.ts: estate sites, hunter camps and deer seen, the manor door (E16)
   'gta-camp-loot-v1', // country/campsBuild.ts: when each hunter camp's tin was last emptied (E16)
+  'gta-societies-v1', // societies/save.ts: mole job shifts and bests, DJ Moleman's visit, Updraft rides, sermons stood (E17)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

@@ -197,7 +197,7 @@ describe('quest step transitions', () => {
 
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(76); // + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
+    expect(QUESTS.length).toBe(83); // + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -348,7 +348,9 @@ describe('story campaign registry', () => {
         failures.push(`${label} at [${x}, ${z}] (r=${r}) hits box -> pushed [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`);
       }
     };
+    // Givers and visits inside an E05 interior use local room coordinates: the world's boxes do not apply to them.
     for (const g of Object.values(GIVERS)) {
+      if (g.interior) continue;
       check(`giver:${g.id}`, g.x, g.z, 0.8);
     }
     for (const q of QUESTS) {
@@ -358,7 +360,7 @@ describe('story campaign registry', () => {
           check(`${tag}.spawnAt`, o.spawnAt[0], o.spawnAt[1], 1.8);
           check(`${tag}.dropAt`, o.dropAt[0], o.dropAt[1], 2.0);
         } else if (o.kind === 'visit') {
-          check(`${tag}.at`, o.at[0], o.at[1], 1.0);
+          if (!o.interior) check(`${tag}.at`, o.at[0], o.at[1], 1.0);
         } else if (o.kind === 'choice') {
           check(`${tag}.optionA`, o.optionA.at[0], o.optionA.at[1], 1.0);
           check(`${tag}.optionB`, o.optionB.at[0], o.optionB.at[1], 1.0);

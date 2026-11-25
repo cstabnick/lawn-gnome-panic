@@ -42,6 +42,7 @@ export const MOWERS_KEEPERS_OUTRO: SceneScript = {
     // Hook: Tansy walks to her own bay door and takes the notice down. No narration.
     { do: 'cam', shot: { kind: 'cut', pos: up(-139.2, 64.6, 1.3), look: up(-142.4, 67.4, 0.9), fov: 44 } },
     { do: 'walk', who: 'tansy', path: [[-142.5, 68.5]], speed: 1.2 },
+    { do: 'sfx', id: 'paper', at: 'tansy', gain: 0.5, async: true },
     { do: 'despawn', id: 'notice' },
     { do: 'hold', who: 'tansy', prop: 'sealed-letter' },
     { do: 'gesture', who: 'tansy', name: 'facepalm', s: 1.0 },
@@ -57,6 +58,7 @@ export const MOWERS_KEEPERS_OUTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'track', pos: up(-150, 50, 3), who: 'vesper-car', fov: 50 } },
     { do: 'music', track: 'villain', fade: 1.2 },
     { do: 'stinger', id: 'villain' },
+    { do: 'sfx', id: 'engine-rev', at: 'vesper-car', gain: 0.3, async: true },
     { do: 'drive', vehicle: 'vesper-car', path: [[-150, 57.5], [-190, 57.5]], speed: 9, depart: true, arrive: false, async: true },
     { do: 'wait', s: 5 },
     cut(CREW.single('tansy', 'mcu')),
@@ -103,10 +105,12 @@ export const TAX_BREAK_IN_INTRO: SceneScript = {
     // Pip ducks behind the barrel: his own shot, a run and a flinch.
     // Behind the barrel (gta-dew-barrel at -132, 77) from the apron to the east: the barrel is between Pip and the lens.
     cut({ kind: 'cut', pos: up(-124, 70.5, 1.1), look: up(-134.2, 77.8, 0.5), fov: 40 }),
+    { do: 'sfx', id: 'rustle', at: 'pip', gain: 0.5, async: true },
     { do: 'walk', who: 'pip', path: [[-134.2, 78.2]], run: true },
     { do: 'gesture', who: 'pip', name: 'flinch', s: 1.0 },
     // Vesper steps out of the Lowrider onto the apron, alone.
     { do: 'spawn', id: 'vesper' },
+    { do: 'sfx', id: 'latch', at: 'vesper-car', gain: 0.5, async: true },
     { do: 'exit', who: 'vesper' },
     cut(shot('vesper', 'ms', { toward: 'tansy', height: 'low' })),
     { do: 'walk', who: 'vesper', path: [[-148, 70.5]], speed: 1.2 },
@@ -115,6 +119,7 @@ export const TAX_BREAK_IN_INTRO: SceneScript = {
     // The threat: a slow push-in on Vesper, low, alone in frame, nobody else in it.
     { do: 'cam', shot: { kind: 'dolly', from: up(-144.5, 67.5, 0.9), to: up(-146.2, 68.6, 0.9), look: 'vesper', s: 3.2, fov: 36 } },
     { do: 'say', who: 'vesper', text: 'Forty-eight hours, Ms. Clayfoot.' },
+    { do: 'sfx', id: 'paper', at: 'vesper', gain: 0.5, async: true },
     { do: 'give', from: 'vesper', to: 'tansy', prop: 'sealed-letter', s: 0.9 },
     ...reaction('tansy', { toward: 'vesper', gesture: 'crossArms', size: 'mcu', hold: 'pause' }),
     // The hat ladder, rung two: the one time he says the full line, and it is said to the player.
@@ -188,6 +193,7 @@ export const TAX_BREAK_IN_OUTRO: SceneScript = {
     cut(CREW.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'She is enormous! Tansy, she is enormous!' },
     cut(shot('player', 'ms', { toward: 'tansy' })),
+    { do: 'sfx', id: 'clatter', at: 'ride', gain: 0.4, async: true },
     { do: 'exit', who: 'player' },
     { do: 'walk', who: 'player', path: [[-148, 67]], speed: 1.4 },
     // The picture first: a dolly down onto the blueprints on the bench, then the hold.

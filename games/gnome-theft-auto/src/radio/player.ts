@@ -13,7 +13,9 @@ import { playBulletinIntro } from './bulletinAudio';
 import { EVENT_BULLETINS, STATIONS, type StationId } from './content';
 import { buildRadioSong } from './music/build';
 import { RADIO_SONGS } from './music/songs';
+import { CHARS_PER_SECOND, getTextSpeed, holdSeconds, typeSeconds } from '../cutscene/textSpeed';
 import { getRadioText } from './prefs';
+import { speakRadio, stopRadio } from './radioVoice';
 import { createProgram, type Segment } from './schedule';
 import { computeSpeakerAcoustics } from './spatial';
 
@@ -29,6 +31,10 @@ const PENDING_MAX = 2;
 const DIAL_SECONDS = 5;
 /** A song's credit ("Title, by Artist") stays on screen this long. The music plays on. */
 const SONG_CREDIT_SECONDS = 6;
+/** A segment that began less than this many seconds ago is "fresh": it types out and is spoken. A late join shows all of it. */
+const FRESH_SECONDS = 1.5;
+/** An on-foot speaker quieter than this is not worth reading aloud. */
+const AUDIBLE_GAIN = 0.05;
 /** How long a multiplayer "banger!" invite pill stays visible. */
 const BANGER_SECONDS = 7;
 
@@ -177,6 +183,10 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   /** Seconds left for the station label and for the text line. The programme itself does not wait for them. */
   let dialLeft = 0;
   let textLeft = 0;
+  /** The text line types out (fresh talk, caller, traffic and bulletin lines): `typedF` characters are shown so far. */
+  let typing = false;
+  let typedF = 0;
+  let painted = '';
   /** Currently playing audio stream key (`station:seed` or `under:blockId:seed`), so re-entering a car doesn't restart it. */
   let activeTrackKey: string | null = null;
   /** External speaker station when listening on foot. */
@@ -245,8 +255,39 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
         who.textContent = current.who;
         who.className = `gr-who ${current.kind === 'bulletin' ? 'gr-bulletin' : 'gr-talk'}`;
       }
-      text.textContent = current.text;
+      paint();
     }
+  }
+
+  /** Show the typed part of the line; touch the DOM only when the shown text changes. */
+  function paint(): void {
+    if (!current) return;
+    const full = current.text;
+    const s = typing && typedF < full.length ? full.slice(0, Math.floor(typedF)) : full;
+    if (s !== painted) {
+      painted = s;
+      text.textContent = s;
+    }
+  }
+
+  /**
+   * A talk, caller, traffic or bulletin line goes on air. Fresh ones type at the Text speed and are read aloud in the host's
+   * voice (in a vehicle, or on foot while the speaker is audible); one joined late shows in full, silent. The text holds a
+   * little past the line's end, never past the next segment's start plus 1.5 s. Returns the seconds the text stays.
+   */
+  function present(seg: Segment, host: string, offsetSec: number, remainingSec: number): number {
+    const fresh = offsetSec < FRESH_SECONDS;
+    const cps = CHARS_PER_SECOND[getTextSpeed()];
+    typing = fresh && Number.isFinite(cps);
+    typedF = 0;
+    painted = '';
+    if (!fresh) return remainingSec;
+    let spoken = 0;
+    if (inVehicle || lastSpatialGain > AUDIBLE_GAIN) {
+      spoken = speakRadio(seg, host, { gain: inVehicle ? 1 : lastSpatialGain, pan: inVehicle ? 0 : lastSpatialPan });
+    }
+    const cap = remainingSec + 1.5;
+    return Math.min(cap, Math.max(remainingSec + 1.5, spoken + 1.0, typeSeconds(seg.text) + holdSeconds(seg.text)));
   }
 
   /** Count the text timers down; repaint only when one of them runs out. */
@@ -254,6 +295,10 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
     const before = [dialLeft > 0, textLeft > 0];
     dialLeft = Math.max(0, dialLeft - dt);
     textLeft = Math.max(0, textLeft - dt);
+    if (typing && current && textLeft > 0) {
+      typedF += dt * CHARS_PER_SECOND[getTextSpeed()];
+      paint();
+    }
     if (before[0] !== dialLeft > 0 || before[1] !== textLeft > 0) render();
   }
 
@@ -271,6 +316,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
                 const song = songs[Math.min(songs.length - 1, index)];
                 current = { ...current, who: song.artist, text: `${song.title}, by ${song.artist}` };
                 textLeft = SONG_CREDIT_SECONDS;
+                typing = false;
                 render();
               }
             },
@@ -291,6 +337,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
       current = null;
       remaining = 0;
       activeTrackKey = null;
+      stopRadio();
       setSongMuffled(false);
       stopSong();
       render();
@@ -299,7 +346,13 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
     const slot = liveAt(station, Date.now() / 1000);
     current = slot.segment;
     remaining = slot.remainingSec;
-    textLeft = slot.segment.kind === 'song' ? SONG_CREDIT_SECONDS : slot.remainingSec;
+    const seg = slot.segment;
+    if (seg.kind === 'talk' || seg.kind === 'caller' || seg.kind === 'traffic') {
+      textLeft = present(seg, seg.who.toLowerCase(), slot.offsetSec, slot.remainingSec);
+    } else {
+      typing = false;
+      textLeft = seg.kind === 'song' ? SONG_CREDIT_SECONDS : slot.remainingSec;
+    }
     ensureStream(station, slot.trackKey, slot.songSeed, slot.songOffsetSec, slot.songIndex);
 
     if (slot.segment.kind === 'song') {
@@ -335,7 +388,8 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   function revealBulletin(key: string, seg: Segment): void {
     current = seg;
     remaining = seg.seconds;
-    textLeft = seg.seconds;
+    const host = program.station ? stationOf(program.station).sign.who.toLowerCase() : '';
+    textLeft = host ? present(seg, host, 0, seg.seconds) : seg.seconds;
     setSongMuffled(true);
     render();
     triggerPop();
@@ -372,6 +426,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   };
 
   function tuneTo(id: StationId | null, opts: { save?: boolean; showDial?: boolean } = {}): void {
+    stopRadio();
     program.tune(id);
     if (opts.save) saveDial(program.station);
     current = null;
@@ -386,6 +441,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
   return {
     get station() { return program.station; },
     cycle() {
+      stopRadio();
       program.cycle();
       saveDial(program.station);
       current = null;
@@ -431,6 +487,7 @@ export function createRadio(ui: HTMLElement, hooks: RadioHooks = {}): Radio {
       // Whatever was waiting to go out is still news: event news is kept for the next drive, heat news is dropped.
       for (const key of queued.splice(0)) keepPending(key);
       if (!opts?.keepPlaying) {
+        stopRadio();
         externalStation = null;
         activeTrackKey = null;
         setSongSpatial(null);

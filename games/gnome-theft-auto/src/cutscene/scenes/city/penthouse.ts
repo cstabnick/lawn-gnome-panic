@@ -44,6 +44,8 @@ export const PENTHOUSE_INTRO: SceneScript = {
     cut(TALK.single('hedda', 'mcu')),
     { do: 'gesture', who: 'hedda', name: 'point', s: 1.4, async: true },
     { do: 'say', who: 'hedda', text: 'Her Sycamore Copter is parked in the garden behind this stop.' },
+    // The Watch's pencils.
+    { do: 'sfx', id: 'tap', at: 'dot', async: true },
     cut(TALK.single('dot', 'mcu')),
     { do: 'say', who: 'dot', text: 'Mind the Watch on the roof. They write everything down.' },
     beat('pause'),

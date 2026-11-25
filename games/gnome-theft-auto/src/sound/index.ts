@@ -10,6 +10,8 @@
 // app.ts creates one createWorldSound() and calls update() once a frame.
 import type { Critter } from '../critters';
 import type { BiomeId, Npc, Vehicle, World } from '../types';
+import type { RegionId } from '../levels';
+import type { WeatherState } from '../weather/types';
 import { createAmbience } from './ambience';
 import { duck, play2d, setListener, unduck } from './bus';
 import { createLifeSounds } from './watchLife';
@@ -45,6 +47,10 @@ export interface WorldSoundFrame {
   cutscene: boolean;
   /** A shop or garage panel is open: the bell rings on open and the world quietens. */
   shopOpen: boolean;
+  /** The weather the player hears (weather/index.ts getWeather), or null indoors / with weather off. */
+  weather?: WeatherState | null;
+  /** The region the listener is in (levels.ts regionAt): picks the batch-3 region beds and spot sounds. */
+  region?: RegionId;
 }
 
 export interface WorldSound {
@@ -88,6 +94,7 @@ export function createWorldSound(): WorldSound {
       ambience.update({
         dt: f.dt, x: f.listener.x, z: f.listener.z, biome: f.biome, night: f.night, timeLabel: f.timeLabel,
         district: f.district, people, airborne: f.player.airborne || !!f.playerVehicle?.spec.flies,
+        weather: f.weather ?? null, region: f.region,
       });
       vehicleSounds.update({
         dt: f.dt, vehicles: f.vehicles, playerVehicle: f.playerVehicle, playerX: f.listener.x, playerZ: f.listener.z,

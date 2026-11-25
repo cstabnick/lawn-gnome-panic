@@ -144,7 +144,7 @@ export function createLifeSounds(): LifeSounds {
     e.next -= step;
     if (e.next > 0) return;
     e.next = n.state === 'flee' ? NPC_FLEE : NPC_WALK;
-    playAt(stepId(surfaceAt(n.x, n.z, f.world).kind), { x: n.x, z: n.z }, { gain: 0.5 });
+    playAt(stepId(surfaceAt(n.x, n.z, f.world).kind), { x: n.x, z: n.z }, { gain: 0.4 });
   }
 
   function gnomeFootsteps(f: LifeSoundFrame, step: number): void {

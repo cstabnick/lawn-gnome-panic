@@ -37,6 +37,7 @@ export const TUNDRA_INTRO: SceneScript = {
     // West round the rim building (it stands between Pip's bench and the mower), to the mower's west side.
     { do: 'walk', who: 'pip', path: [[9, -347], [7.5, -340]], run: true },
     { do: 'hold', who: 'pip', prop: null },
+    { do: 'sfx', id: 'clatter', at: 'mower', gain: 0.5, async: true },
     { do: 'sfx', id: 'thud', at: 'mower' },
     cut(PP.single('pip', 'ms')),
     { do: 'say', who: 'pip', text: 'Both arms, both barrels. Watch this.' },
@@ -51,6 +52,7 @@ export const TUNDRA_INTRO: SceneScript = {
     { do: 'say', who: 'pip', text: "Dust Flats. Tansy's there." },
     beat('beat'),
     { do: 'hold', who: 'pip', prop: 'brass-key' },
+    { do: 'sfx', id: 'keys', at: 'pip', gain: 0.6, async: true },
     { do: 'give', from: 'pip', to: 'player', prop: 'brass-key', s: 1.2 },
     { do: 'say', who: 'pip', text: "You drive. I'll guard the barrels." },
     cut(PP.single('player', 'mcu')),

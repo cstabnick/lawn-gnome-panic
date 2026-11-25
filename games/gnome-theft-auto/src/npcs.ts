@@ -12,7 +12,7 @@ import type { Fx, Npc, Npcs, Vehicle, World } from './types';
 import { inKeepOut, type KeepOutZone } from './cutscene/liveArea';
 import { createAnimator, type Animator } from './anim/animator';
 import { PAIR_GAP } from './anim/types';
-import { idleFor, pairFor, personaFor, walkStyleFor, yawToward, type Persona } from './anim/persona';
+import { angerFor, cheerFor, fleeStyleFor, gaitFor, idleFor, pairFor, personaFor, startleFor, yawToward, type Persona } from './anim/persona';
 import { animStride, newAnimClock, stepAnimClock, type AnimClock } from './animStride';
 
 type PlayerStateLike = Parameters<GnomeModel['update']>[0];
@@ -89,6 +89,8 @@ interface Aux {
   animClock: AnimClock;
   /** Character (anim/persona.ts): sets the walk style, the idles and the pairs. */
   persona: Persona;
+  /** Own walking speed as a multiple of PEDESTRIANS.walkSpeed (its gait, anim/persona.ts). */
+  speedMul: number;
   /** How hard the last knock was (m/s): soft knocks get up dazed instead of running. */
   knock: number;
   /** Seconds until this gnome may look up at a flyover again. */
@@ -98,7 +100,7 @@ interface Aux {
 function freshAux(x: number, z: number): Aux {
   const r = Math.random();
   const trait: NpcTrait = r < 0.22 ? 'grumpy' : r < 0.45 ? 'spectator' : 'normal';
-  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, anim: createAnimator(), panic: false, recycleT: 0, animClock: newAnimClock(Math.floor(Math.random() * 4)), persona: personaFor(trait), knock: 0, lookT: 0 };
+  return { idle: 0, clock: Math.random() * 10, turn: 0, stuckT: 0, anchorX: x, anchorZ: z, rag: null, upFromX: x, upFromZ: z, trait, anim: createAnimator(), panic: false, recycleT: 0, animClock: newAnimClock(Math.floor(Math.random() * 4)), persona: personaFor(trait), speedMul: 1, knock: 0, lookT: 0 };
 }
 
 function rnd<T>(a: readonly T[]): T {
@@ -253,6 +255,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     let a = aux.get(n);
     if (!a) {
       a = freshAux(n.x, n.z);
+      a.speedMul = gaitFor(n.id, a.persona).speedMul;
       aux.set(n, a);
     }
     return a;
@@ -266,13 +269,14 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
     n.fromZ = fromZ;
     a.turn = 0;
     a.anim.cancel(n.model);
-    // Half the time the arms go into the 'panic' loop; otherwise the hands-up pose in tick() does it.
-    a.panic = Math.random() < 0.5 && a.anim.play('panic', { loop: true });
+    // A flee arm loop (panic or a run variant); null leaves the hands-up pose in tick() to do it.
+    const arms = fleeStyleFor();
+    a.panic = arms !== null && a.anim.play(arms, { loop: true });
   }
 
   /** The walk overlay for this gnome's character (or the plain walk). */
-  function startWalkStyle(a: Aux): void {
-    const style = walkStyleFor(a.persona);
+  function startWalkStyle(n: Npc, a: Aux): void {
+    const { style } = gaitFor(n.id, a.persona);
     if (style) a.anim.play(style, { offset: Math.random() });
     else a.anim.stop();
   }
@@ -460,7 +464,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         n.state = 'walk';
         a.turn = 0;
         a.panic = false;
-        startWalkStyle(a);
+        startWalkStyle(n, a);
         clearHandsUp(n.model);
         pickTarget(n, world, npcs.list);
         resetStuck(n, a);
@@ -489,9 +493,9 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           a.anim.stop();
         }
       } else {
-        moveAlong(n, world, dt, Math.atan2(dx, dz), PEDESTRIANS.walkSpeed);
+        moveAlong(n, world, dt, Math.atan2(dx, dz), PEDESTRIANS.walkSpeed * a.speedMul);
         moving = true;
-        speed = PEDESTRIANS.walkSpeed;
+        speed = PEDESTRIANS.walkSpeed * a.speedMul;
         a.stuckT += dt;
         if (a.stuckT >= STUCK_WINDOW) {
           if (Math.hypot(n.x - a.anchorX, n.z - a.anchorZ) < STUCK_DIST) pickTarget(n, world, npcs.list);
@@ -518,7 +522,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
       if (a.idle <= 0) {
         pickTarget(n, world, npcs.list);
         n.state = 'walk';
-        startWalkStyle(a);
+        startWalkStyle(n, a);
         resetStuck(n, a);
       }
     }
@@ -596,7 +600,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           n.targetX = p.x;
           n.targetZ = p.z;
           n.state = 'walk';
-          startWalkStyle(a);
+          startWalkStyle(n, a);
           resetStuck(n, a);
         }
       }
@@ -684,13 +688,13 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
           n.yaw = Math.atan2(x - n.x, z - n.z);
           n.state = 'idle';
           a.idle = 2.0;
-          a.anim.play('shake-fist');
+          a.anim.play(angerFor());
           if (!yelled) yelled = `${n.name}: "${rnd(GRUMPY_LINES)}"`;
         } else if (d < 8) {
           startFlee(n, a, x, z);
         } else if (n.state !== 'flee') {
           n.yaw = Math.atan2(x - n.x, z - n.z);
-          a.anim.play(a.persona === 'nervous' ? 'jump-back' : 'startle-horn');
+          a.anim.play(startleFor(a.persona));
         }
       }
       return yelled;
@@ -703,7 +707,7 @@ export function createNpcs(scene: THREE.Scene, _world: World, fx: Fx): Npcs {
         if (Math.hypot(n.x - x, n.z - z) > 16) continue;
         const a = getAux(n);
         if (a.trait === 'spectator' || Math.random() < 0.35) {
-          a.anim.play(a.trait === 'spectator' ? 'cheer' : 'clap');
+          a.anim.play(cheerFor(a.trait));
           n.yaw = Math.atan2(x - n.x, z - n.z);
           count++;
         }

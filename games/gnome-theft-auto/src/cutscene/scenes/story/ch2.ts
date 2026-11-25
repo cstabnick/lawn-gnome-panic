@@ -47,6 +47,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     { do: 'drive', vehicle: 'convoy', path: [[2.5, 236], [2.5, 120]], speed: 14, async: true },
     { do: 'drive', vehicle: 'tanker', path: [[2.5, 262], [2.5, 120]], speed: 12, async: true },
     { do: 'wait', s: 1.2 },
+    { do: 'sfx', id: 'engine-rev', at: 'tanker', gain: 0.5, async: true },
     { do: 'horn', vehicle: 'tanker', async: true },
     { do: 'wait', s: 1.8 },
     // 2. The chapter card, over the road.
@@ -61,6 +62,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     // 4. Pulling up at the barn: the player and Pip get out, and Granny is on her porch.
     { do: 'cam', shot: spot(YARD, 'arrival') },
     { do: 'music', track: 'warm', fade: 2 },
+    { do: 'sfx', id: 'latch', at: 'ride', gain: 0.5, async: true },
     { do: 'exit', who: 'player' },
     { do: 'exit', who: 'pip' },
     { do: 'face', who: 'player', at: 'granny', s: 0.4, async: true },
@@ -136,6 +138,7 @@ export const DEW_RUN_OUTRO: SceneScript = {
     cut(shot('granny', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'granny', text: 'Now we can cook.' },
     // 3. The letter. Music out, Pip reads it in silence first; then the line, and the player's face takes it.
+    { do: 'sfx', id: 'paper', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'pip', prop: 'sealed-letter' },
     { do: 'music', track: null, fade: 0.6 },
     cut(PAYOFF.single('pip', 'cu')),
@@ -148,6 +151,7 @@ export const DEW_RUN_OUTRO: SceneScript = {
     cut(PAYOFF.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'We\'re legitimate! ...Don\'t tell anyone.' },
     // 4. Granny gives the player tea; Bramble leaves his tease, framed square to the camera.
+    { do: 'sfx', id: 'pour', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'player', prop: 'espresso-cup' },
     cut(shot('granny', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'granny', text: 'Tea, sugar. Dew makes everybody thirsty.' },

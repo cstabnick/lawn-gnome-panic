@@ -51,6 +51,9 @@ export const IMPOUND_RUN_INTRO: SceneScript = {
     ...reaction('you', { toward: 'dot', hold: 'pause' }),
     cut(DESK.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'Then take the job and bring me my Zero-Turn back.' },
+    // The ticket goes through the punch a beat before Dot says so.
+    { do: 'sfx', id: 'punch', at: 'dot', async: true },
+    { do: 'sfx', id: 'paper', at: 'dot', async: true },
     cut(DESK.single('dot', 'mcu', { height: 'low' })),
     { do: 'say', who: 'dot', text: 'Ticket punched. Clay-Mart returns yard. Go.' },
     beat('pause'),

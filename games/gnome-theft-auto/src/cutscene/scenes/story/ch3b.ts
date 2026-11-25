@@ -56,6 +56,7 @@ function denialBeat(): SceneScript['steps'] {
     ...reaction('pip', { toward: 'player', gesture: 'clutch', size: 'mcu', side: -25 }),
     { do: 'say', who: 'pip', text: '...Hairline.' },
     // Father Loam walks over from his snowmobile and the frost bells come in on his first line.
+    { do: 'sfx', id: 'crunch', at: 'loam', gain: 0.5, async: true },
     { do: 'walk', who: 'loam', path: [[0, -338]], speed: 1.4 },
     { do: 'music', track: 'frost', fade: 1.5 },
     ...loamScene(),
@@ -74,6 +75,7 @@ function loamScene(): SceneScript['steps'] {
     cut(L.single('loam', 'ms')),
     { do: 'say', who: 'loam', text: 'The Chapel threw me out for preaching on a snowmobile. The Kiln keeps no grudges.' },
     // The button: Pip sits down by the Zero-Turn, quiet for once, and asks.
+    { do: 'sfx', id: 'creak', at: 'pip', gain: 0.5, async: true },
     { do: 'gesture', who: 'pip', name: 'sit', s: 1.0 },
     { do: 'face', who: 'pip', at: 'loam', s: 0.3 },
     cut(L.single('pip', 'mcu')),
@@ -192,7 +194,9 @@ export const KILN_RESIN_OUTRO: SceneScript = {
   steps: [
     // The hook: Theo pours at the barrel.
     { do: 'cam', shot: spot(CAMP, 'wide') },
+    { do: 'sfx', id: 'pour', at: 'theo', gain: 0.6, async: true },
     { do: 'gesture', who: 'theo', name: 'lean', s: 1.0 },
+    { do: 'sfx', id: 'clink', at: 'theo', gain: 0.5, async: true },
     cut(shot('theo', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'theo', text: 'Acorn-broth. Burns the throat, warms the soul.' },
     // Pip flexes the new arm. No line for a beat.
@@ -211,6 +215,7 @@ export const KILN_RESIN_OUTRO: SceneScript = {
     cut(shot('theo', 'mcu', { toward: 'player', side: -25 })),
     { do: 'say', who: 'theo', text: "Post's here." },
     { do: 'hold', who: 'theo', prop: 'rolled-scroll' },
+    { do: 'sfx', id: 'paper', at: 'theo', gain: 0.6, async: true },
     { do: 'give', from: 'theo', to: 'player', prop: 'rolled-scroll', s: 1.2 },
     cut(shot('player', 'mcu', { toward: 'theo' })),
     { do: 'caption', text: 'Found the Stopping Stone. Dust Flats. Bring Pip. Bring snacks. - T.' },

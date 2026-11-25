@@ -103,3 +103,4 @@ dark. It is the right last moment because the car is the job now, and the pictur
 - [x] Night scene lit: `sky: 'golden'` and the car's headlights.
 - [x] Report: OK at 13.9 s (was 8.3 s, 3 faults); the dead shot and the player out of frame are gone.
 - [x] `direction.notes` in the scene points at this file.
+- E09 variety: the phone shot and the closing car shot are slow dollies on the same car (was five identical cuts); framing and eyelines unchanged.

@@ -62,6 +62,7 @@ export const MULCH_PYRAMID_INTRO: SceneScript = {
     { do: 'say', who: 'burt', text: 'I also have a citation book. Old habits. Pitch carefully.' },
     // Cedric's pitch, on his own single; the ad copy is a pill, not narration.
     { do: 'title', text: 'ACT NOW' },
+    { do: 'sfx', id: 'bell', at: 'cedric', gain: 0.6, async: true },
     { do: 'face', who: 'cedric', at: 'burt', s: 0.4 },
     cut(MARKS.single('cedric', 'ms')),
     { do: 'say', who: 'cedric', text: 'It is not a pyramid, friend. It is an inverted compost funnel.' },
@@ -69,6 +70,7 @@ export const MULCH_PYRAMID_INTRO: SceneScript = {
     { do: 'title', text: null },
     // The product: a locked medium of the sack held up to the camera while nobody talks.
     cut(shot('cedric', 'mcu', { toward: 'burt', side: 25 })),
+    { do: 'sfx', id: 'cloth', at: 'cedric', async: true },
     { do: 'wait', s: 2.0 },
     // The player asks; Cedric answers a different question first, then admits it.
     ...exchangeLooks('cedric', 'you'),
@@ -78,6 +80,7 @@ export const MULCH_PYRAMID_INTRO: SceneScript = {
     { do: 'say', who: 'cedric', text: 'Every bag is hand-filled, friend. With love.' },
     cut(SALE.single('you', 'mcu')),
     beat('pause'),
+    { do: 'sfx', id: 'rustle', at: 'cedric', gain: 0.6, async: true },
     cut(shot('cedric', 'mcu', { toward: 'you', side: 25 })),
     { do: 'say', who: 'cedric', text: 'Dyed sawdust. Craft glitter. The glitter is the expensive part.' },
     cut(SALE.single('you', 'mcu')),

@@ -62,14 +62,17 @@ export const TABLET_INTRO: SceneScript = {
     { do: 'say', who: 'bracken', text: 'You traded the old soil for Stink-Gro and engines.', hz: 76 },
     // 4. Sorrel's booth (she stands, pulls her headphones off), then she is in the hollow, stepping in.
     { do: 'cam', shot: spot('sorrel-radio-booth', 'two-shot') },
+    { do: 'sfx', id: 'static', at: 'sorrel', gain: 0.4, async: true },
     { do: 'gesture', who: 'sorrel', name: 'stand', s: 1.2 },
     { do: 'despawn', id: 'sorrel' },
     { do: 'spawn', id: 'sorrel', at: HOLLOW_SORREL.at, yaw: HOLLOW_SORREL.yaw },
+    { do: 'sfx', id: 'rustle', at: 'sorrel', gain: 0.4, async: true },
     cut(BS.single('sorrel', 'mcu')),
     { do: 'say', who: 'sorrel', text: 'Steady, Elder. Show them the tablet.', hz: 122 },
     // 5. The insert: the tablet and the Stopping Stone, before anyone explains them.
     { do: 'spawn', id: 'tablet' },
     { do: 'spawn', id: 'stone' },
+    { do: 'sfx', id: 'thud', at: 'stone', gain: 0.3, async: true },
     { do: 'cam', shot: { kind: 'dolly', from: up(-348.5, 30.5, 2.2), to: up(-348, 31.5, 2.0), look: up(-354.2, 38.6, 0.6), s: 2.6, fov: 42 } },
     { do: 'wait', s: 2.6 },
     // 6. Sorrel explains the copy; Bracken explains the jam.
@@ -119,7 +122,9 @@ export const TABLET_OUTRO: SceneScript = {
   steps: [
     // 1. Hook: the armoured rig rolls into the hollow. No narration: the picture is the line.
     { do: 'cam', shot: { kind: 'track', pos: up(-322, 26, 2.2), who: 'ride', fov: 50 } },
+    { do: 'sfx', id: 'engine-rev', at: 'ride', gain: 0.4, async: true },
     { do: 'drive', vehicle: 'ride', path: [RIG_AT, RIG_STOP], speed: 8 },
+    { do: 'sfx', id: 'latch', at: 'ride', gain: 0.5, async: true },
     { do: 'exit', who: 'player' },
     { do: 'cam', shot: { kind: 'track', pos: up(-334, 30, 1.8), who: 'player', fov: 50 } },
     { do: 'walk', who: 'player', path: [[-347, 34]], run: true },
@@ -156,6 +161,7 @@ export const TABLET_OUTRO: SceneScript = {
     { do: 'wait', s: 1.6 },
     // The push-in: Cam faces the camera as he talks, low and alone in frame.
     { do: 'cam', shot: { kind: 'dolly', from: up(-152, 65, 1.6), to: up(-153.5, 66.5, 1.5), look: 'turncoat', s: 4.5, fov: 44 } },
+    { do: 'sfx', id: 'static', at: 'turncoat', gain: 0.4, async: true },
     { do: 'say', who: 'turncoat', text: 'It\'s Cam, at Tansy\'s. The acorn\'s under the bench. Tuesday. The charter\'s mine.' },
     { do: 'stinger', id: 'villain' },
     { do: 'music', track: 'villain', fade: 1.2 },

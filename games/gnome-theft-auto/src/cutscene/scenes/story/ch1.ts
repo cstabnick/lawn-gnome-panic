@@ -484,6 +484,7 @@ export const MOWERS_KEEPERS_INTRO: SceneScript = {
     beat('beat'),
     { do: 'say', who: 'enf-1', text: 'Then the boot gets a ticket too. Code-enforced.' },
     // 3. Match cut on the phrase: the same words, now in Tansy's flat voice, the same ticket in her hand.
+    { do: 'sfx', id: 'paper', at: 'tansy', gain: 0.5, async: true },
     cut(BRIEF.single('tansy', 'mcu')),
     { do: 'music', track: 'turfton', fade: 0.3 },
     { do: 'say', who: 'tansy', text: '"Code-enforced."' },
@@ -519,6 +520,7 @@ export const MOWERS_KEEPERS_INTRO: SceneScript = {
     // 6. The button: as the player goes, Turncoat Cam stops sweeping and watches. No music, one soft sting.
     { do: 'walk', who: 'player', path: [MK_EXIT], speed: 1.4, async: true },
     { do: 'music', track: null, fade: 0.6 },
+    { do: 'sfx', id: 'rustle', at: 'turncoat', gain: 0.5, async: true },
     cut(shot('turncoat', 'fs', { side: 15 })),
     { do: 'face', who: 'turncoat', at: 'player', s: 0.6 },
     { do: 'stinger', id: 'mystery' },

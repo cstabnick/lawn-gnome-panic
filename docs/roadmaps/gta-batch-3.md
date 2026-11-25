@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-E04, E02 merged. Running: E01 (world), E08 (economy), E03 (bugs). When E01 lands start E05; then wave 3 (E06, E07, E09) as slots free. Keep at most 3 leads running. Lead branches may commit CRLF: normalise to LF when merging (see process doc).
+Merged: E04, E02, E01, E08 (+ main). Running: E03 (bugs), E05 (interiors), E28 (world II). Next as slots free: E29, E23, E27, then E06, E07, E09. New epics E23-E31 (session 2 requests) write their own brief first.
 
 ## Tracking
 
@@ -22,12 +22,12 @@ with deferred items listed).
 
 | Epic | Name | Kind | Wave | Depends on | Status | Branch | Merge | Notes / deferred |
 |---|---|---|---|---|---|---|---|---|
-| E01 | World expansion and site plan | Engine | 1 | – | running | epic/E01-* | | |
+| E01 | World expansion and site plan | Engine | 1 | – | merged | epic/E01-world | 242187e3 | worldHalf 1400, four bands (Snowcap Rise N, Saltbucket Shore S, Rootwell E, Trellisdown W), `src/sites.ts` 43 slots, POS_BOUND 1450, Founders' Green + Double Pot; R-168 records placement differences vs the spine; the Wasm kernel (from main) is fixed-size for worldHalf 900, so it is switched off above that (`KERNEL_MAX_WORLD_HALF`) until E28 resizes it |
 | E02 | Vehicle feel, combat and camera | Fix + Engine | 1 | – | merged | epic/E02-vehicles | 9fe85adb | all 12 items; canal raft collider left to E03 (expected-fail case in canalCruise.test.ts); first-person on F5; traffic.test "keep moving" flaky under full-suite load (passes alone); contracts: Box.shape round, SIM_AIR, createNpcChassis, chase.setFirstPerson, traffic.crackDriver |
 | E04 | Story bible and world writing | Story (docs) | 1 | – | merged | epic/E04-story | c9a94025 | names final (see E04/spine.md); new objective types needed (golf-hole, jam-game, skate-line, ski-run, tow-ski, ride-passenger, dig, interior-visit) each with a fallback; E18 builds the journal 'Later' shelf; rulings R-158..R-167 taken |
 | E03 | Bugs and quest reliability sweep | Fix | 2 | – | running | epic/E03-bugs | | |
-| E05 | Interiors and rooftops | Engine | 2 | E01 | planned | | | |
-| E08 | Economy, ownership and inventory | Engine | 2 | – | running | epic/E08-economy | | |
+| E05 | Interiors and rooftops | Engine | 2 | E01 | running | epic/E05-interiors | | |
+| E08 | Economy, ownership and inventory | Engine | 2 | – | merged | epic/E08-economy | b5bbef96 | loans sit **beside** Kiln-Debt (R-169), not inside it (E10 must follow); `DEALER_SITES` are fallback spots, move to E01 sites; deferred: 3D showroom, per-vehicle boat/aircraft looks, glaze/Pebblewick/hunting/taxi price tables, real-phone pass | | |
 | E06 | Sky, weather and time | Engine | 3 | – | planned | | | |
 | E07 | Map, options, mobile UI and loading | Polish | 3 | E01 (map extent) | planned | | | |
 | E09 | Sound, voice, animation and direction | Polish | 3 | – | planned | | | |
@@ -44,6 +44,15 @@ with deferred items listed).
 | E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
+| E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | planned | | | |
+| E24 | Jobs II: chef, mechanic, comedy stage | Content | 5 | E05, E08 | planned | | | |
+| E25 | Jobs III: garbage truck, firefighting, Gnomazon warehouse | Content | 5 | E08 | planned | | | |
+| E26 | Street racing and race modes | Content | 6 | E14 | planned | | | |
+| E27 | Physics follow-ups: bushes, water skipping | Fix | 3 | E02 | planned | | | |
+| E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | running | epic/E28-world2 | | |
+| E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | planned | | | |
+| E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | planned | | | |
+| E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | planned | | | |
 
 ## Engine work (built first, others build on it)
 
@@ -91,13 +100,18 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 | 8 | E21 | story act III, visits all new places |
 | 9 | E22 | final story act, lore pass, full checks, demos |
 
+**Revised order after session 2 (supersedes the table above where they differ):** E28 (world II engine) runs in wave 2
+next to E05; E23, E27 and E29 join wave 3 with E06, E07 and E09 (at most 3 leads at once, so wave 3 runs in two
+halves); E30 joins wave 4; E24, E25 and E31 join wave 5; E26 joins wave 6. Story epics E20–E22 stay last and also visit
+the European town and the nature preserve.
+
 ## Epic map (every source item has one owner)
 
 | Epic | Source items |
 |---|---|
 | E01 | L92, plus site slots for L12, L17, L35, L37, L43, L51, L52, L56, L58, L59, L61, L74, L81, L82, L85, L40, L50 |
 | E02 | L01, L13, L14, L18, L53, L55, L57, L76, L77, L78, L91, L93 |
-| E03 | L03, L07, L08, L09, L10, L16, L23, L24, L41, L49, L79, L80, L88 |
+| E03 | L96, L97, L100, L03, L07, L08, L09, L10, L16, L23, L24, L41, L49, L79, L80, L88 |
 | E04 | L04, L83, L84 (writing: docs, direction, characters, 70-quest outline), L86 (first pass), L58 (who lives where), L67 + L68 (design) |
 | E05 | L36, L75 |
 | E06 | L02, L05, L06, L11, L19, L20, L71 |
@@ -112,11 +126,20 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 | E15 | L85 |
 | E16 | L12, L37, L39, L69, L72 |
 | E17 | L28, L40, L50 |
-| E18 | L30, L54, L66, L67, L68 |
+| E18 | L54, L66, L67, L68 (chef L30 moved to E24) |
 | E19 | L59, L60, L61, L62 |
-| E20 | L04 (applied), L45, L58 (quest pickups/drop-offs at homes), L84 quests 1–35 (rewrites the existing 17 main quests in place where the bible says so) |
-| E21 | L45, L83, L84 quests 36–53 |
-| E22 | L84 quests 54–70 with the extended pivotal quests, L86 final lore pass, batch finish |
+| E20 | L95, L105, L106, L04 (applied), L45, L58 (quest pickups/drop-offs at homes), L84 quests 1–35 (rewrites the existing 17 main quests in place where the bible says so) |
+| E21 | L95, L45, L83, L84 quests 36–53 |
+| E22 | L95, L84 quests 54–70 with the extended pivotal quests, L86 final lore pass, batch finish |
+| E23 | L101, L102, L103 |
+| E24 | L30, L110, L111 |
+| E25 | L107, L108, L109 |
+| E26 | L112 |
+| E27 | L113, L114 |
+| E28 | L99 (land, reslotting, nature-preserve ground, roundabouts and traffic-director hats, pushing existing edges out), Wasm kernel resize |
+| E29 | L99 (European buildings, vehicles, plants and backyard prefabs) |
+| E30 | L99 (the town itself, environmental storytelling, classical radio station, its quests and people) |
+| E31 | L99 (nature preserve, more birds and animals everywhere, more vehicles in traffic, detailing existing places) |
 
 ## Source list (verbatim)
 
@@ -214,8 +237,40 @@ E11..E17, E19 ──> E21 (act III visits the new areas)
 - L92 take out 3 of the blocks in the main square and make a contiguous park. then make one mega 2x1 with a tunnel underneath somewhere else.
 - L93 (added later) also, fix the npc driving. its pretty shite. they turn like its arcade mode still but we have been liking the casual mode a lot. but they should be able ot drive on all ideally.
 - L94 (added later) i am unable to click the optisno on the tab menu, add a phone/tab menu redeisgn where we introduce a gnomlet that is a tablet with apps that give the different optiosn serviced by the phone and tab menu today. this will be more real gta like and is a good way of solving the problem. also include one fun app that is just gnomey bird.
+- L95 (added in session 2) I want the story to have more environmental elements. make new vehicles for cutscenes new buildginsn ew people special scripted stuff. I want players to feel connected to he world as they pay through it.
+- L96 mobile players cannot enter building. the enter button isn't available but the popup is present
+- L97 traffic algorithm seems busted on skyway vs the lower level
+- L98 resolve merge conflcits in the pr too (done by the orchestrator)
+- L99 add anotehr world expansion too, push into another yard. make it a whole kit and deal and just keep designing it out. The world should feel alive, the player should have the experience to visit a lot of areas. include a nature preserve too somewhere. continuing pushign existing environments out. may need to reslot a bit but yeah just keep it going non-stop. i think that the next yard should have a more european style city with closer buildings and ambling paths and make them a bit stereotypical in the satirical way we are already doing. kind of a parondonlin type of deal. it's a lot moree scope but i think the world will be better for it. adapt whatever we have planned to accomodate this. be ambitious and make sure to spend a lot of time detailing and environmentally story telling (add success criteira for that as part of AC for that task). more birds and animals too. more veicles as well. especially if we can start adopting european type vehicles. this will require another new set of prefabs, so make sure to build those. eorpean platns and backyard styling too. and include a new radio station for them that is just classical music or something. add trafic directing hats and roundabouts too
+- L100 the boot on the drive the boot parade float into the ampitheater is still missing. restart step makes it show up though
+- L101 if i fail a step stuff despawns. I think we need a way to pin certain vehicle to not depsawn during quests. or way to recover it or reset progress to last checkpoint in quest. just so I don't ahve to manually clcik restart step
+- L102 do some fuzzing or add fuzzing tool for quests. so that we test out what happens if vehicle is destroyed, or player teleports away, or things like that so we can handle edge cases either through the framework or via one-off fixes in code.
+- L103 audit and make sure that hat can sometimes be disabled on quests that require a lot of shooting as fighting the hat right now is effectively impossible. either that or rebalacne the hat if you think thati s better game design. they currently teleport in really quick and player has no visual aid to see how to lose levels.
+- L104 one thing I have to say is that the game is pretty fun already. So don't lose all its charm but grow it and improve it where growing pains appear. (standing decision for every epic)
+- L105 also add main character intros at appropriate timings. so players know who they are and what they are doing. keep it fairly short but enough to intro them
+- L106 make an early quest that makes it free to repair at pay and galze.
+- L107 add garbage truck job
+- L108 add firefighting job
+- L109 add warehouse gnomazon worker packing minigame job
+- L110 add comedy actor job where the entire thing is to just sit there while your character goes through something rather unfunny and gets grilled by the crowd
+- L111 add a mechanic job whre you customize a clients car
+- L112 add street races. add street race quests and modes f or players to race (as well as racing on the tracks).
+- L113 idk if covered already but make little bushes able to be ran over
+- L114 allow player to drive over water on jumps
 
 ## Standing decisions (leads do not ask about these)
+
+- **Keep the charm (L104).** The game is already fun. Grow it and fix growing pains; do not rewrite systems that work,
+  do not flatten its satirical tone, do not trade feel for features.
+- **Environmental storytelling is acceptance criteria** for every content epic (E10–E19, E24–E26, E28–E31) and every
+  story epic (L95): each new area or quest ships with (a) at least 3 readable story vignettes (props arranged to tell a
+  small story without text: an abandoned picnic mid-argument, a half-built thing with its plans blowing away), (b)
+  signage and posters with jokes that fit the place's lore, (c) at least one resident seen doing something specific to
+  the place, (d) ambient sound and life matching the place, and (e) a screenshot pass at 3 spots per area, recorded in
+  the epic's roadmap folder. Story quests also get scripted set pieces and cutscene-only vehicles, buildings and
+  people where the outline calls for them.
+- **New epics E23–E31 have no brief yet:** their lead writes the brief first (template in the process doc), from this
+  plan and the code, then runs decompose on it.
 
 - Today the main story has 17 quests over 5 chapters (`src/quests/chapter1.ts`–`chapter5.ts`). E04 writes the 70-quest
   outline; existing quests are kept, renumbered and rewritten where the outline says so. "Extended" pivotal quests are

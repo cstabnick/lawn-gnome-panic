@@ -44,8 +44,15 @@ export type DirectorSignal = 'a' | 'b' | 'clear';
 // The clock: wall time when the page loaded, then game time (traffic steps it every frame through stepGhosts), so a
 // headless sim that runs minutes in seconds still sees the wardens cycle, and clients that loaded at different times
 // still agree to within their pauses.
-const BASE = Date.now() / 1000;
+let BASE = Date.now() / 1000;
 let elapsed = 0;
+
+/** Tests: restart the game clock at `base` seconds (default 0), so a headless sim sees the same warden phases on every run
+ *  and in any test order (the clock is module state that every traffic step advances). */
+export function resetDirectorClock(base = 0): void {
+  BASE = base;
+  elapsed = 0;
+}
 let override: (() => number) | null = null;
 
 /** Seconds on the shared warden clock. */

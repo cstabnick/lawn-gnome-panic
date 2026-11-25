@@ -19,7 +19,7 @@ import { registerMowSounds } from './sounds';
 import { createMowRewards } from './rewards';
 import { createMowTally } from './tally';
 import { FLORA, MOWER_KINDS, PLANT_KINDS } from './kinds';
-import { CUT, REGROWING, STANDING, type PlantSeed, type PlantStore } from './types';
+import { CUT, REGROWING, STANDING, type PlantSeed, type PlantStore, type SizeClass } from './types';
 import { registerFloraTrainer } from './trainer';
 
 export interface FloraDeps {
@@ -28,6 +28,8 @@ export interface FloraDeps {
   increment(id: string, by?: number): void;
   earn(amount: number, reason?: string): void;
   toast(text: string, ms?: number): void;
+  /** Called for every plant the player's own vehicle flattens (E27: the Shrub Bowling counter). */
+  onPlayerMow?(kindId: string, size: SizeClass): void;
 }
 export interface FloraStats { plants: number; standing: number; cut: number; regrowing: number; mowed: number; lawn: number; byKind: Record<string, number> }
 export interface Flora {
@@ -125,6 +127,7 @@ export function createFlora(deps: FloraDeps): Flora {
           if (kind.size === 'big') deps.shake(FLORA.bigShake);
           rewards.record(kind.id, kind.longGrass, MOWER_KINDS.includes(v.kind));
           tally.show(rewards.save().total);
+          deps.onPlayerMow?.(kind.id, kind.size);
         }
       }
     }

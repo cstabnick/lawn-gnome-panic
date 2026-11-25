@@ -57,6 +57,9 @@ export const PLANT_KINDS: readonly PlantKind[] = [
   { id: 'reed-bed', name: 'Reeds', size: 'big', mowable: true, slow: 0.9, clip: 0x8fa457, regrow: [80, 120], sound: 'mow-chop', longGrass: true }, // 1.40
   { id: 'boxwood-ball', name: 'Boxwood', size: 'big', mowable: true, slow: 0.86, clip: 0x3f7a35, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 1.00
   { id: 'round-bush', name: 'Round bush', size: 'big', mowable: true, slow: 0.86, clip: 0x4a8a3c, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 1.23
+  { id: 'rose-bush', name: 'Rose bush', size: 'big', mowable: true, slow: 0.88, clip: 0xd94a6a, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 0.91
+  { id: 'flowering-bush', name: 'Flowering bush', size: 'big', mowable: true, slow: 0.88, clip: 0xe07ab0, regrow: [90, 120], sound: 'mow-thunk', longGrass: false }, // 0.48
+  { id: 'allotment-bed', name: 'Allotment bed', size: 'small', mowable: true, slow: 0.95, clip: 0x6a9a3a, regrow: [80, 120], sound: 'mow-chop', longGrass: false }, // 0.62
   // Not mowable: trees, hedgerow walls, set-piece topiary, tall cacti. They keep their colliders.
   { id: 'hedgerow', name: 'Hedgerow', size: 'big', mowable: false, ...NEVER }, // 1.30, a wall
   { id: 'hedge-arch', name: 'Hedge arch', size: 'big', mowable: false, ...NEVER },

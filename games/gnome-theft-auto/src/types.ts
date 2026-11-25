@@ -8,6 +8,7 @@ import type { MountPose } from './mount';
 import type { GlazeRig, Loadout } from '@lawn/glaze';
 import type { GunLoadout, ModdedGun } from './gunMods';
 import type { AirSpec, AirState } from './craft/model';
+import type { SkimState } from './skim';
 
 export type VehicleKind =
   | 'push-bike'
@@ -286,6 +287,8 @@ export interface Vehicle {
   waterlog?: number;
   /** True while flooded: the engine has stalled and gives no drive until it dries below WATERLOG.restartAt. */
   waterlogStalled?: boolean;
+  /** Skimming across deep water at speed (skim.ts, E27 L114). Absent, or active: false, when not skimming. */
+  skim?: SkimState;
   /** Aircraft with spec.air: attitude and flight state (craft/flight.ts). Created by createVehicle. */
   air?: AirState;
 }

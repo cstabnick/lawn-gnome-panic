@@ -957,3 +957,10 @@ as one gnome in two places.
 **Ruling:** **Pardonlin** is x -1800 to -1400, z -900 to 1100, west of Trellisdown. **The Unmown** is in the north-west, at x -1800 to -200, z -1800 to -1400, plus x -1800 to -1400, z -1400 to -900. The bands are pushed out to the edge: **Snowcap Rise** reaches the north edge (the High Tarn), **Rootwell** reaches the east edge (Rootwell Field Station), and **Saltbucket Shore** (the Saltwater) runs the whole south strip. The world is now 3600 m across, with the perimeter fence at 1795. The map's old edge stays a loose thread, and R-168 still names the band roads.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** the second expansion moves the edges of the world out, and the entries need one place to read where things are.
+
+## R-178
+
+**Question:** Gnome Theft Auto's mowers can now skip across deep water when they hit it fast, and run straight through small bushes and rose beds. R-050 and R-140 say deep water sinks a mower. What changes?
+**Ruling:** Nothing in R-050 or R-140 is undone: a mower that is slow in deep water still conks out and sinks. But a mower that hits deep water fast, off a jump or flat out, skips across it like a flat stone, bouncing and throwing spray, for as long as its speed lasts; once it slows it sinks as before. Gnomes call it "skipping", and the Skipping-Stone Pendant is the proof that you did it on purpose. Small bushes, rose bushes, flowering bushes and allotment beds give way under a mower and grow back (the mowing rules); hedgerows, hedge arches, topiary and trees do not. Flattening six big shrubs in a row is "shrub bowling", and the Shrub Disguise is what the gardeners who saw it wear afterwards so you cannot find them.
+**Applies to:** gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L113 and L114 ask for bushes to be run over and for driving over water on jumps; the water rule needs a footing that keeps sinking as the end of every skim.

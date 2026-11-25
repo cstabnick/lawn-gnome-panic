@@ -95,6 +95,7 @@ import { GTA_GUN_MODS_B } from './gta-gun-mods-b';
 import { GTA_GUN_STORE } from './gta-gun-store';
 import { GTA_ODD_RIDES } from './gta-odd-rides';
 import { GTA_MOWING } from './gta-mowing';
+import { GTA_PHYSICS_REWARDS } from './gta-physics-rewards';
 import { GTA_FLEET } from './gta-fleet';
 import { GTA_GLAZE_GRILLE } from './gta-glaze-grille';
 import { GTA_GLAZE_BUMPER } from './gta-glaze-bumper';
@@ -147,7 +148,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR, ...DAYG_BUILDINGS, ...DAYG_STORY_PROPS,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
-  ...GTA_ODD_RIDES, ...GTA_MOWING,
+  ...GTA_ODD_RIDES, ...GTA_MOWING, ...GTA_PHYSICS_REWARDS,
   ...GTA_FLEET,
   ...GTA_AIRCRAFT,
   ...GTA_SKY_TRAFFIC,

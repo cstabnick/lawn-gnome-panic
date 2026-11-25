@@ -10,6 +10,7 @@ import { surfaceAt } from './surfaces';
 import { aboveGround, groundAt, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
+import { hopVelocity, SKIM, skimSurfaceAt, stepSkim } from './skim';
 import { GLAZE_KINDS, isCraftKind } from './glazeStore';
 import { initAir, PLANE_REVERSE_FRAC } from './craft/flight';
 import { stepAircraft } from './craft/aircraft';
@@ -438,7 +439,18 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
   const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1) * waterlogSpeedMult(v);
   const acc = spec.accel * (surf?.accelMult ?? 1) * (boostOn ? 1.6 : 1);
   const turnRate = spec.turnRate * (surf?.turnMult ?? 1);
-  const g = groundAt(v.x, v.z, v.y);
+  let g = groundAt(v.x, v.z, v.y);
+
+  // Skimming across deep water at speed (skim.ts): the water surface is the floor, no engine drive, speed bleeds, hops.
+  let skimming = false;
+  if (!flying && !v.sunk && !v.exploded) {
+    skimming = stepSkim(v, Math.abs(v.speed), v.y, Math.abs(v.speed) * dt, dt);
+    if (skimming) {
+      g = Math.max(g, skimSurfaceAt(v.x, v.z) ?? g);
+      if (v.skim?.event === 'bounce') { v.vy = hopVelocity(v.speed); v.speed *= SKIM.hopKeep; }
+      v.speed *= SKIM.dragPerS ** dt;
+    }
+  }
 
   // Vertical (flyers only).
   if (flying) {
@@ -470,7 +482,9 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
   // Forward / reverse / coasting. A flyer only gets its throttle above the pad (it can lift off from the pad, nothing more).
   const drag = flying ? FLY.drag : GROUND_DRAG;
   const canDrive = !flying || aboveGround(v.x, v.y, v.z) > 0.3;
-  if (c.throttle > 0 || boostOn) {
+  if (skimming && c.throttle >= 0) {
+    // No engine drive and no coasting drag on the water: only the skim drag above slows it.
+  } else if (c.throttle > 0 || boostOn) {
     const th = boostOn ? Math.max(0.85, c.throttle) : c.throttle;
     if (canDrive) v.speed = Math.min(maxSpd, v.speed + acc * th * dt);
   } else if (c.throttle < 0) {
@@ -485,7 +499,7 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 
   // Steering: the yaw rate needs grip from rolling speed, except the zero-turn and flyers, which always have it.
   const grip = spec.kind === 'zero-turn' || flying ? 1 : Math.min(1, Math.abs(v.speed) / 4);
-  v.yaw -= c.steer * turnRate * dt * grip * Math.sign(v.speed || 1);
+  v.yaw -= c.steer * turnRate * dt * grip * (skimming ? SKIM.steer : 1) * Math.sign(v.speed || 1);
 
   // Lateral surface slide on ice, snow, or loose sand when turning at speed.
   if (surf && surf.lateralGrip < 0.95 && Math.abs(v.speed) > 4 && Math.abs(c.steer) > 0.1) {
@@ -501,7 +515,7 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 /** Move along forward, collide with boxes (flyers above a box pass over it), then keep inside the world. */
 function moveVehicle(v: Vehicle, dt: number, world: World): void {
   // A ground vehicle that is not airborne (before the move) follows the hill after it.
-  const grounded = !v.spec.flies && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
+  const grounded = !v.spec.flies && !v.skim?.active && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
   const x0 = v.x, z0 = v.z;
   // Move along forward + any lateral surface slide. y stays where the vertical step left it.
   v.x += (Math.sin(v.yaw) * v.speed + (v.slideX ?? 0)) * dt;
@@ -704,12 +718,18 @@ function kick(v: Vehicle, dx: number, dz: number, spinKick: number): void {
   k.spin = Math.max(-SPIN_MAX, Math.min(SPIN_MAX, k.spin + spinKick));
 }
 
+/** Game-time clock (ms) for the crash-damage debounce (Vehicle.lastHit). Starts high so a fresh lastHit of 0 never blocks. */
+let bumpClockMs = 1e6;
+
 /**
  * Push overlapping vehicles apart (heavier moves less), then trade momentum along the contact normal: a combine barely
  * notices a push-bike, which gets thrown back, slid sideways and spun; two equals bounce off each other. A hit off-centre
  * (the contact is nearer a vehicle's front than its middle) also turns it. Ground distance and height both matter.
  */
 export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
+  // The crash-damage debounce runs on game time (E27): it used performance.now(), so a slow or loaded machine (fewer
+  // frames per wall second) took more damage per simulated minute, and headless sims gave different answers per run.
+  if (Number.isFinite(dt) && dt > 0) bumpClockMs += dt * 1000;
   for (let i = 0; i < list.length; i++) {
     const a = list[i];
     for (let j = i + 1; j < list.length; j++) {
@@ -777,7 +797,7 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
       // Damage follows the closing speed along the contact normal (before the bump), so grazing a car going the same way
       // costs nothing. The heavier vehicle hurts the lighter one more.
       const closing = Math.max(0, closingN);
-      const now = performance.now();
+      const now = bumpClockMs;
       if (closing > CRASH_MIN && now - Math.max(a.lastHit, b.lastHit) > 400) {
         const dmg = (closing - CRASH_MIN) / (CRASH_SCALE * 1.4);
         damageVehicle(a, dmg * (2 * mb) / total);

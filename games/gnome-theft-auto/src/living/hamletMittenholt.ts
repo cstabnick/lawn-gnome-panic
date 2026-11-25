@@ -179,7 +179,7 @@ export function buildMittenholt(scene: THREE.Scene, boxes: Box[]): void {
   };
   // Name signs (board face centre (0, 1.45, 0.05), 1.8 x 0.7), plate 0.03 m in front.
   for (const s of on('hamlet-sign')) {
-    front(s, 1.45, 0.09, 'MITTENHOLT\nTwinned with nowhere, by request', 1.7, 0.6, 0xf4f1ea, 0x3a2418);
+    front(s, 1.45, 0.14, 'MITTENHOLT\nTwinned with nowhere, by request', 1.7, 0.6, 0xf4f1ea, 0x3a2418);
   }
   // Notice board (face centre (0, 1.45, 0.05), 1.4 x 0.9).
   for (const b of on('rules-board')) {

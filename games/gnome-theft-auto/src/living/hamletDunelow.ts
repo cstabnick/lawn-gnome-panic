@@ -129,7 +129,7 @@ export function planDunelow(): Piece[] {
 function nameSign(scene: THREE.Scene, boxes: Box[], x: number, z: number, yaw: number): void {
   const placed = placePieces(scene, boxes, [{ id: 'hamlet-sign', x, z, yaw, solid: true }], 'dunelow-sign');
   if (!placed.length) return;
-  const f = 0.05 + 0.03;
+  const f = 0.12;
   scene.add(textPlate('DUNELOW\nTwinned with nowhere, by request', x + Math.sin(yaw) * f, heightAt(x, z) + 1.45, z + Math.cos(yaw) * f, yaw,
     { w: 1.7, h: 0.6, bg: 0xf5f0e0, fg: 0x1f4e79 }));
 }

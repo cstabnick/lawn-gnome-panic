@@ -1,6 +1,6 @@
 // E25: the driving-shift HUD shared by the bin round and the fire brigade: a top panel (icon, title, up to 3 lines, a
 // meter bar) and one 44 px action button (also the I key, keys.ts KEYS.jobAction, and the pad's right-stick press).
-// Plan: docs/roadmaps/gta-batch-3/E25/roadmap.md. STUB: issue 19 fills it in.
+// Plan: docs/roadmaps/gta-batch-3/E25/roadmap.md. STUB: issue 18 fills it in.
 
 export interface ShiftHudView {
   icon: string;

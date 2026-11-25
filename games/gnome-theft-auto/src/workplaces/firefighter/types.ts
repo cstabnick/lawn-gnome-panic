@@ -88,15 +88,15 @@ export interface CallScore {
 /** Tuning (tweak here). */
 export const FIRE_JOB = {
   /** The engine stopped within this of the call centre: "Man the hose". */
-  hoseRange: 32,
+  hoseRange: 26,
   stopSpeed: 1.2,
   /** Tank, seconds of spray at level 1; + per level above 1. */
   tankS: 30,
   tankPerLevelS: 4,
-  /** Litres a second of spray. One tank second = one litre. */
-  litresPerS: 1,
+  /** Litres a second of spray (tank capacity in litres = tank seconds x litresPerS). */
+  litresPerS: 2,
   /** Refill per second when stopped within hydrantRadius of a hydrant. */
-  refillPerS: 6,
+  refillPerS: 12,
   hydrantRadius: 7,
   /** A call nobody answers within this long burns out (fails). */
   callTimeoutS: 300,

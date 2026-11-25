@@ -1,6 +1,7 @@
 // E24 workplace jobs: the chef at the Route South Acorn Diner (chef/), the mechanic at Pay 'n' Glaze (mechanic/) and the
 // comedian at Le Petit Groan in Pardonlin (comedy/). app.ts calls installWorkplaces once. Plan: docs/roadmaps/gta-batch-3/E24/.
 // E25 adds the bin crew (garbage/), the fire brigade (firefighter/) and Gnomazon FC-1 (gnomazon/). Plan: .../E25/.
+import { installFireDemo } from '../fire/demo';
 import type { Blip } from '../types';
 import './chef/kitchen';
 import './comedy/club';
@@ -28,8 +29,13 @@ export function installWorkplaces(deps: WorkDeps): Workplaces {
     installChef(deps), installMechanic(deps), installComedy(deps),
     installGarbage(deps), installFirefighter(deps), installGnomazon(deps),
   ];
+  // ?firedemo (fire/demo.ts): fires ahead of the player, for checking the fire system's look.
+  const fireDemo = installFireDemo(deps.scene, deps.fx, deps.player);
   return {
-    update(dt) { for (const j of jobs) j.update(dt); },
+    update(dt) {
+      for (const j of jobs) j.update(dt);
+      fireDemo.update(dt);
+    },
     isOpen: () => shiftCardOpen() || jobs.some((j) => j.isOpen()),
     blips: () => jobs.flatMap((j) => j.blips()),
     waypoint() {

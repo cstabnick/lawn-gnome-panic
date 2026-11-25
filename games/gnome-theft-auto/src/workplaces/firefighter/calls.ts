@@ -1,5 +1,5 @@
 // E25 firefighter: fire calls (what is burning, where, who called, whether someone is stuck up high) and how a call is
-// scored. Pure. STUB: issue 12 fills it in.
+// scored. Pure. STUB: issue 11 fills it in.
 import type { CallOutcome, CallPlace, CallScore, FireCall } from './types';
 
 /** Mossy Wood clearings for toadstool calls (world x, z; the runtime finds clear ground near each). */

@@ -1,5 +1,5 @@
 // E25 Gnomazon: the stock, orders, the right box, scoring a parcel, the quota and Kippy's lines. Pure.
-// STUB: issue 16 fills it in.
+// STUB: issue 15 fills it in.
 import type { BoxSize, Order, PackedParcel, ParcelScore, StockItem } from './types';
 
 export const STOCK: readonly StockItem[] = [

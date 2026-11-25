@@ -1,5 +1,5 @@
 // E25 firefighter: the hose controls while the player mans the hose: an aim pad, a Spray hold button, a Ladder hold
-// button (rescue calls), the tank gauge and "Back to the cab". Keys and pad too. STUB: issue 14 fills it in.
+// button (rescue calls), the tank gauge and "Back to the cab". Keys and pad too. STUB: issue 13 fills it in.
 
 export interface HoseInput {
   /** Aim rates -1..1 (x: turn right +, y: raise +). */

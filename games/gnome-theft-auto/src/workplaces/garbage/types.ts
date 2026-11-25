@@ -9,7 +9,7 @@ export const GARBAGE = {
   /** Metres between bins along a street (at least). */
   binGap: 22,
   /** The bin stands this far from the road's centre line, on the right-hand (kerb) side of the travel direction. */
-  kerbOffset: 5.2,
+  kerbOffset: 5.6,
   /** Round streets stay inside |x|, |z| <= this (Turfton's grid). */
   cityHalf: 200,
   /** Stopped (|speed| < stopSpeed) with the bin within stopRadius of the lorry centre: "Lift bin". */

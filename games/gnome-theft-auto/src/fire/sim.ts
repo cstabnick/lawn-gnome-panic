@@ -1,5 +1,5 @@
 // E25 fire system: the pure simulation (no three.js, no DOM). Types and tuning in fire/types.ts.
-// STUB: issue 10 fills it in. Signatures are the contract.
+// STUB: issue 09 fills it in. Signatures are the contract.
 import type { Fire, FireEvent, FireField, FuelPoint, IgniteOpts } from './types';
 
 export function createFireField(): FireField {

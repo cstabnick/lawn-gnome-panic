@@ -1,5 +1,5 @@
 // E25 firefighter: the hose stream in the world: instanced water droplets running along the arc and a splash ring
-// where it lands. STUB: issue 13 fills it in.
+// where it lands. STUB: issue 12 fills it in.
 import type * as THREE from 'three';
 
 export interface HoseView {

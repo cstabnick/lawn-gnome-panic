@@ -1,6 +1,6 @@
 // E25 Gnomazon: Fulfilment Centre FC-1 in the Dust Flats (site 'gnomazon-fc'): the big shed, loading docks and lot
 // outside (buildWarehouseOutside), and the packing floor interior GNOMAZON_FLOOR_ID (defined at import; workplaces/
-// index.ts imports this file once). STUB: issue 18 fills it in.
+// index.ts imports this file once). STUB: issue 17 fills it in.
 import type * as THREE from 'three';
 import { anchorOf } from '../../sites';
 import type { World } from '../../types';

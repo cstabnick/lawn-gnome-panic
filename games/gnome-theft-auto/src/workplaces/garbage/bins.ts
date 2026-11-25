@@ -1,5 +1,5 @@
 // E25 garbage: the round's wheelie bins in the world (prefab gta-wheelie-bin at each stop), the lorry's arm and the bin
-// riding it during a lift, and litter left by a spill. STUB: issue 09 fills it in.
+// riding it during a lift, and litter left by a spill. STUB: issue 07 fills it in.
 import type * as THREE from 'three';
 import type { Vehicle } from '../../types';
 import type { BinRound, BinStop, LiftState } from './types';

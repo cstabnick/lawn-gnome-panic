@@ -1,5 +1,5 @@
 // E25 garbage: the lift-arm minigame's on-screen controls (one big hold button, a side-view gauge of the swing and the
-// tip zone). Owns a LiftState and steps it (lift.ts). STUB: issue 07 fills it in.
+// tip zone). Owns a LiftState and steps it (lift.ts). STUB: issue 06 fills it in.
 import { createLift, liftResult, stepLift } from './lift';
 import type { LiftEvent, LiftResult, LiftState } from './types';
 

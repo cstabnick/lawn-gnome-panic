@@ -1,5 +1,5 @@
 // E25 firefighter: Turfton Fire Station No. 1 on the Mossy Wood edge (site 'fire-station'): the engine house with its
-// bay, the bell, Chief Hydra Pumpwell, a yard hydrant, and three small stories. STUB: issue 15 fills it in.
+// bay, the bell, Chief Hydra Pumpwell, a yard hydrant, and three small stories. STUB: issue 14 fills it in.
 import type * as THREE from 'three';
 import { HYDRANT_SPOTS } from '../../destructibles';
 import { anchorOf } from '../../sites';

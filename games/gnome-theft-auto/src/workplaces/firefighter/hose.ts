@@ -1,5 +1,5 @@
 // E25 firefighter: the hose stream as ballistics, the tank, and the ladder. Pure (no three.js, no DOM).
-// STUB: issue 13 fills it in.
+// STUB: issue 12 fills it in.
 
 export interface HoseAim {
   /** World yaw of the stream (0 = +z, like vehicle yaw: direction (sin yaw, cos yaw)). */

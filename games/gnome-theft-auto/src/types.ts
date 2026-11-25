@@ -59,6 +59,8 @@ export type VehicleKind =
   // Winter sports (E12, winter/): a tea-tray sled and a pair of skis on Snowdrop Slope; winter/runtime.ts steps them (slideRider.ts).
   | 'tea-tray-sled'
   | 'snow-skis'
+  // E19 the Gutter Bowls (skate/): a wooden skateboard, ridden anywhere; skate/runtime.ts steps it (skate/board.ts).
+  | 'skateboard'
   // Dirt country (E14): the Knobbly Dirt-Mower.
   | 'dirt-bike'
   // E31 living world: the Unmown Ranger Buggy, the Snail-Shell Camper (tourists on the band roads), the Saltbucket
@@ -743,6 +745,8 @@ export interface Blip {
     | 'ski' | 'bears' | 'icefish'
     // Hedgeworth Links (E15, golf/).
     | 'golf'
+    // Founders' Green sports (E19): Drainpipe Court (court/), the Gutter Bowls (skate/).
+    | 'court' | 'skate'
     // Rootwell (E13, campus/).
     | 'campus' | 'observatory' | 'windfarm';
 }

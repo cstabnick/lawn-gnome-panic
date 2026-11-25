@@ -16,6 +16,7 @@
     "@lawn/gnome": "*",
     "@lawn/music": "*",
     "@lawn/prefabs": "*",
+    "@lawn/trickboard": "*",
     "three": "0.187.0"
   },
   "devDependencies": {

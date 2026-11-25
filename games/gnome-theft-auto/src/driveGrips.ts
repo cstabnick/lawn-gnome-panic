@@ -90,6 +90,7 @@ const CONE_VAN_WHEEL: Vec3 = [0.18, 0.64, 0.54];
  * - snail-coach, hoa-van, taxi, euro-hatch, crepe-van, bin-lorry, fire-engine: closed cabs, the driver's hands are not seen;
  * - tessie: a turtle, ridden.
  * - tea-tray-sled, snow-skis: steered by leaning (winter/slideRider.ts), the rider holds nothing.
+ * - skateboard: steered by leaning (skate/board.ts), the rider holds nothing.
  */
 export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>> = {
   // Pay 'n' Glaze steer mounts (glazeMounts.ts): the rig's grip markers follow the styled wheels; these are the stock grips.

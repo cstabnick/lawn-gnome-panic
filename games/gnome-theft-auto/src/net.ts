@@ -26,7 +26,7 @@ export const VEHICLE_CODES: readonly VehicleKind[] = [
   'tow-tube',
   'euro-hatch', 'deux-pots', 'wespa', 'baguette-trike', 'crepe-van',
   'tow-ski', 'spoke-gondola',
-  'tea-tray-sled', 'snow-skis',
+  'tea-tray-sled', 'snow-skis', 'skateboard',
   'dirt-bike',
   'ranger-buggy', 'shell-camper', 'cone-van',
   'bin-lorry', 'fire-engine',

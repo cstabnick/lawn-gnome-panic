@@ -1,5 +1,5 @@
-import { normalizeBotInput } from './snapshot';
-import type { BotController, BotDecisionContext, BotInput, GameStateSnapshot } from './types';
+import { normalizeBotInput } from '@lawn/jam';
+import type { BotController, BotDecisionContext, BotInput, GameStateSnapshot } from '@lawn/jam';
 
 export interface RemoteBotOptions {
   id?: string;

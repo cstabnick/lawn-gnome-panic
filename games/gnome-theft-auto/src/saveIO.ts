@@ -36,6 +36,7 @@ export const GTA_SAVE_KEYS = [
   'gta-homes-visited-v1', // homes/visits.ts: character homes the player has stood at (E10 House Call)
   'gta-winter-v1', // winter/save.ts: Snowdrop Slope best times, runs, sled owned, ice catches, bears hugged (E12)
   'gta-golf-v1', // golf/save.ts: Hedgeworth Links board, holes, rounds, bests, aces, lost balls, molehills (E15)
+  'gta-sports-v1', // sports/save.ts: Founders' Green sports, pickup games, shootarounds, the skateboard, combo and line bests (E19)
   'gta-rootwell-v1', // campus/achievements.ts: Rootwell University doors visited (E13 First Class Honours)
   'gta-farm-v1', // farm/runtime.ts: Windfall Croft's beds, oak, crate, chosen seed, counters (E16)
   'gta-country-v1', // country/achievements.ts: estate sites, hunter camps and deer seen, the manor door (E16)

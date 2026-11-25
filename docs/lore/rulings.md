@@ -1204,3 +1204,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** About 26 small camps stand in the empty country of every outer region: tents, shared camps round a fire, shacks, deer stands, duck blinds on loch and coast shores and tuft-drying racks, some with a hunter asleep by the fire. They belong to Tuft & Tally licence holders (Hazel Mattock's lodge, R-141). By custom each leaves a tin of acorns or a snack for the next walker, and fills it again later. Nobody takes the tin for more than one pass, and nobody has been told to.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E16 scatters camps across the map, and who they belong to and why they give things away needed one answer.
+
+## R-215
+
+**Question:** How big is Drainpipe Court?
+**Ruling:** It plays by Gnomerena rules (GBA GJAM: two on two, twos and threes, turbo, shoves) on a court sized for street gnomes: the Gnomerena's court and hoop scaled by four fifths, so the rim is 2.44 m for a 1 m gnome (the Gnomerena's gnomes are a quarter bigger). Both hoops are drainpipe hoops with no net. Pickup games go to 11; a grudge match goes to 7.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the game reuses GBA GJAM's simulation and keeps its proportions.
+
+## R-216
+**Question:** What is a skateboard in Turfton?
+**Ruling:** A wooden deck on four wheels, ridden standing, on anything paved; grass stops it. It is slower than any mower and has no place in traffic law (the Hat Watch pretends it is not there, as at Kilnside Rec's old skate corner, which stays). Spare boards live in the Board Library at the Gutter Bowls: take one, leave one.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the board is ridable anywhere without becoming a vehicle class.
+
+## R-217
+**Question:** Are skate tricks the same in Turfton as in the Aether?
+**Ruling:** The names and the scoring of tricks (ollie, kickflip, grabs, grinds, combos) are the same everywhere gnomes ride boards. Nothing else connects the Gutter Bowls to the Aether or its Splash-Back Skaters.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Gnome Theft Auto shares Aether Board's trick tables and scoring.

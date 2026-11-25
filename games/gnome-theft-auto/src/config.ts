@@ -471,6 +471,12 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'snow-skis', mountStyle: 'hop', name: 'Skis', prefab: 'snow-skis', scale: 1.2,
     maxSpeed: 4, accel: 2, turnRate: 1.8, radius: 0.6, seat: [0, 0.06, 0], flies: false, mass: 0.5, stand: true,
   },
+  // E19 the Gutter Bowls (skate/runtime.ts steps it with skate/board.ts): a wooden board with wheels, nose +z; the gnome
+  // stands. From the Board Library at the park, or your own from the bag. Slower than any vehicle.
+  skateboard: {
+    kind: 'skateboard', mountStyle: 'hop', name: 'Skateboard', prefab: 'gta-skateboard', scale: 1,
+    maxSpeed: 4, accel: 2, turnRate: 2, radius: 0.45, seat: [0, 0.12, 0], flies: false, mass: 0.3, stand: true,
+  },
   // ---- European rides (E29; prefabs in packages/prefabs/src/catalog/gta-euro-fleet.ts and gta-euro-fleet-b.ts, nose +z,
   // contract in docs/roadmaps/gta-batch-3/E29/contracts.md). Seats and doors are the prefab's numbers times `scale`. ----
   'euro-hatch': {

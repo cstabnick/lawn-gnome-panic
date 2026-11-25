@@ -6,6 +6,7 @@ import type { VoiceSpec } from '@lawn/mutter';
 import type { DialogueLine } from '../quests/types';
 import { playerVoice, voiceFor } from '../voice/voices';
 import { HEDGEWORTH_CAST } from '../golf/types';
+import { SPORTS_CAST } from '../sports/types';
 import type { ScriptActor } from './script';
 
 export const BASE_SPEAKER_LOOK: GnomeLook = {
@@ -55,6 +56,14 @@ export const CAST: Record<string, CastPreset> = {
   peony: { look: HEDGEWORTH_CAST.peony.look, hz: HEDGEWORTH_CAST.peony.hz, held: HEDGEWORTH_CAST.peony.held, scale: 1.44 },
   basil: { look: HEDGEWORTH_CAST.basil.look, hz: HEDGEWORTH_CAST.basil.hz, held: HEDGEWORTH_CAST.basil.held, scale: 1.42 },
   thrift: { look: HEDGEWORTH_CAST.thrift.look, hz: HEDGEWORTH_CAST.thrift.hz, held: HEDGEWORTH_CAST.thrift.held, scale: 1.5 },
+  // Founders' Green regulars (sports/types.ts SPORTS_CAST): Drainpipe Court and the Gutter Bowls.
+  cardoon: { look: SPORTS_CAST.cardoon.look, hz: SPORTS_CAST.cardoon.hz, held: SPORTS_CAST.cardoon.held, scale: 1.44 },
+  lintel: { look: SPORTS_CAST.lintel.look, hz: SPORTS_CAST.lintel.hz, held: SPORTS_CAST.lintel.held, scale: 1.44 },
+  pansy: { look: SPORTS_CAST.pansy.look, hz: SPORTS_CAST.pansy.hz, held: SPORTS_CAST.pansy.held, scale: 1.44 },
+  benchley: { look: SPORTS_CAST.benchley.look, hz: SPORTS_CAST.benchley.hz, held: SPORTS_CAST.benchley.held, scale: 1.4 },
+  fennel: { look: SPORTS_CAST.fennel.look, hz: SPORTS_CAST.fennel.hz, held: SPORTS_CAST.fennel.held, scale: 1.44 },
+  moss: { look: SPORTS_CAST.moss.look, hz: SPORTS_CAST.moss.hz, held: SPORTS_CAST.moss.held, scale: 1.44 },
+  pebble: { look: SPORTS_CAST.pebble.look, hz: SPORTS_CAST.pebble.hz, held: SPORTS_CAST.pebble.held, scale: 1.25 },
 };
 
 /** The preset whose key appears in a speaker label ("Pip Potsworth" -> pip), or undefined. */

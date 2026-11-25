@@ -30,4 +30,4 @@ How a real tabby cat ended up small enough—or Turfton big enough—to share a 
 
 ## In the games
 
-Planned (E25). On fire calls Asphalt is sometimes found up a lamp post, and comes down the Watering-Can Pumper's ladder, unimpressed. Chief Hydra Pumpwell keeps a saucer out for him.
+Planned (E25). Visits Fennel's hammock under the Gutter Bowls' deck. On fire calls Asphalt is sometimes found up a lamp post, and comes down the Watering-Can Pumper's ladder, unimpressed. Chief Hydra Pumpwell keeps a saucer out for him.

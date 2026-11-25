@@ -54,6 +54,8 @@ const TABLE: Record<string, EngineSoundDef> = {
   // Winter sports (winter/): gravity only.
   'tea-tray-sled': { silent: true, gain: 0 },
   'snow-skis': { silent: true, gain: 0 },
+  // The Gutter Bowls (skate/): wheels, no engine (skate/runtime.ts plays the roll).
+  skateboard: { silent: true, gain: 0 },
   tessie: { silent: true, gain: 0 },
 
   // Mowers.

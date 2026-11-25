@@ -1,0 +1,22 @@
+{
+  "name": "@lawn/jam",
+  "private": true,
+  "type": "module",
+  "description": "Headless 2-on-2 arcade basketball (GBA GJAM's simulation): JamSimulation, balance config, court constants, control input and the pure bots. No DOM, no Vite, no Worker.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lawn/gnome": "*",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

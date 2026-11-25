@@ -2,20 +2,13 @@ import { JamSimulation, type SimCallbacks } from '../sim';
 import type { SimBalanceConfig } from '../balance';
 import { PRO_TEAMS } from '../teams';
 import type { Difficulty, GnomePlayerProfile, MatchConfig, MatchResult, PlayerBoxScore } from '../types';
-import { normalizeBotInput } from './snapshot';
-import type { BotController, BotDecisionContext, BotInput, GameStateSnapshot } from './types';
+import { normalizeBotInput } from '@lawn/jam';
+import type { BotController, BotDecisionContext, BotInput, GameStateSnapshot } from '@lawn/jam';
 
-/** Deterministic Mulberry32 PRNG for reproducible headless evaluations. */
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from '@lawn/jam';
+
+/** Deterministic Mulberry32 PRNG now lives in @lawn/jam. */
+export { mulberry32 };
 
 /** Runs fn with Math.random deterministically seeded, restoring it in finally. */
 export function withSeededRandom<T>(seed: number, fn: () => T): T {

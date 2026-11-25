@@ -41,6 +41,15 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   peony: { hz: 104, speed: 1.05, range: 0.7, glide: -0.1, formant: 1.12 },
   basil: { hz: 128, speed: 1.25, range: 1.4, wave: 'triangle', formant: 1.02 },
   thrift: { hz: 74, speed: 0.7, breath: 0.25, style: 'words', wave: 'triangle', formant: 0.85 },
+  // Founders' Green regulars (sports/types.ts SPORTS_CAST). Formants nudged off the default 1 where a voice would
+  // otherwise repeat an existing (wave, style, formant) combination.
+  cardoon: { hz: 118, speed: 1.2, range: 1.2, formant: 0.98 },
+  lintel: { hz: 136, speed: 1.35, glide: 0.2, formant: 1.08 },
+  pansy: { hz: 150, speed: 1.1, formant: 1.04 },
+  benchley: { hz: 78, speed: 0.75, breath: 0.2, formant: 0.87 },
+  fennel: { hz: 124, speed: 0.85, range: 0.8, formant: 1.02 },
+  moss: { hz: 96, speed: 0.9, range: 0.5, formant: 0.97 },
+  pebble: { hz: 168, speed: 1.3, range: 1.5, formant: 1.14 },
 
   // ---- speakers without a cast preset ----
   narrator: { hz: 130, wave: 'triangle', speed: 0.8, range: 0.6, glide: -0.3, bright: 2200, formant: 0.95 },

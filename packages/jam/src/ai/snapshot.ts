@@ -1,4 +1,4 @@
-import { COURT_HALF_X, COURT_HALF_Z, HOOP_X, HOOP_Y, THREE_PT_RADIUS } from '../arena';
+import { COURT_HALF_X, COURT_HALF_Z, HOOP_X, HOOP_Y, THREE_PT_RADIUS } from '../court';
 import type { PlayerControlInput } from '../input';
 import type { JamSimulation, SimPlayer } from '../sim';
 import type { BotInput, GameStateSnapshot, PlayerStateSnapshot } from './types';

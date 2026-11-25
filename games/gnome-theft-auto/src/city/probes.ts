@@ -12,6 +12,9 @@ import { createWinterStore } from '../winter/save';
 import { createGolfStore } from '../golf/save';
 import { GOLF_PROBES } from '../golf/types';
 import { jobStats } from '../jobs/career';
+import { createSportsStore } from '../sports/save';
+import { COURT_PROBES } from '../court/types';
+import { SKATE_LINES, SKATE_PROBES } from '../skate/types';
 
 export type ProbeFn = () => number;
 
@@ -25,6 +28,14 @@ function storage(): Storage | null {
     return null;
   }
 }
+
+/** One row per Gutter Bowls line: 1 once the line has a best time. Key `skate-line-<LineId>`. */
+const SKATE_LINE_PROBES: Readonly<Record<string, ProbeFn>> = Object.fromEntries(
+  SKATE_LINES.map((l) => [
+    `skate-line-${l.id}`,
+    () => withStore(() => (createSportsStore(storage() ?? undefined).data().skate.lines[l.id] !== undefined ? 1 : 0)) ?? 0,
+  ]),
+);
 
 /** Probes read from the activities' own saves (each call re-reads the save). */
 const SAVED: Readonly<Record<string, ProbeFn>> = {
@@ -51,6 +62,19 @@ const SAVED: Readonly<Record<string, ProbeFn>> = {
   [GOLF_PROBES.rounds]: () => withStore(() => createGolfStore(storage() ?? undefined).data().rounds) ?? 0,
   [GOLF_PROBES.balls]: () => withStore(() => createGolfStore(storage() ?? undefined).data().ballsFound.length) ?? 0,
   [GOLF_PROBES.molehills]: () => withStore(() => createGolfStore(storage() ?? undefined).data().molehills.length) ?? 0,
+  // Founders' Green sports (sports/save.ts): gta-sports-v1. Drainpipe Court, the skateboard, the Gutter Bowls.
+  [COURT_PROBES.games]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.games) ?? 0,
+  [COURT_PROBES.wins]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.wins) ?? 0,
+  [COURT_PROBES.threes]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.threes) ?? 0,
+  [COURT_PROBES.dunks]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.dunks) ?? 0,
+  [COURT_PROBES.swishBeaten]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.swishBeaten) ?? 0,
+  [COURT_PROBES.shootMakes]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.shootMakes) ?? 0,
+  [SKATE_PROBES.boardOwned]: () => withStore(() => (createSportsStore(storage() ?? undefined).data().skate.boardOwned ? 1 : 0)) ?? 0,
+  [SKATE_PROBES.ollies]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.ollies) ?? 0,
+  [SKATE_PROBES.bestCombo]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.bestCombo) ?? 0,
+  [SKATE_PROBES.lines]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.linesDone) ?? 0,
+  [SKATE_PROBES.fullRails]: () => withStore(() => createSportsStore(storage() ?? undefined).data().skate.fullRails) ?? 0,
+  ...SKATE_LINE_PROBES,
   // Sim jobs (jobs/, docs/roadmaps/gta-sim-jobs-and-tubing.md): their own live stats getter.
   'job-gigs': () => withStore(() => { const j = jobStats(); return j.taxiFares + j.parcels + j.flights + j.boatTrips + j.ferryLoops; }) ?? 0,
   'job-taxi': () => withStore(() => jobStats().taxiFares) ?? 0,

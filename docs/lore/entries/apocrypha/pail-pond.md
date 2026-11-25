@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: []
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-183, docs/lore/rulings.md#r-184]
 related: [snowcap-rise, fells-polar-bears, thermos-theo, gentian-bootlace, frozen-birdbath-basin, hoa]
 ---
 
@@ -25,7 +25,7 @@ The bears here are cousins of the ones on the Fells' sunny slope (see Fells Pola
 
 ## In the games
 
-Planned (batch 3): E01 site ice-lake at (-640, -1030), with ice-fishing huts built by the area epic. Quest row 38 (m38-pail-pond): the crew fishes with Theo past the bears for an HOA radio, which names the four parts of the Grand Combine and where they are.
+Built (batch 3, E12): flat ice around (-640, -1060) (E01 site ice-lake). Anyone may drill a hole with a hand auger; a hole refreezes when a fifth is drilled, and the ice never cracks. Fish come up, are measured, carded and slipped back: Pail Perch, Woolly Minnow, Lantern Burbot (at night) and Frostjaw Char (in falling snow, with a Split-Cane Rod or better). Thermos Theo keeps a red shanty here and lends a Bent-Pin Twig Rod. Four polar bears are about: one asleep, one in an inner tube, one fishing from a stool. The pail's handle sticks out of the ice at the edge; gnomes found it and still do not know what it is for (R-183). Quest row 38 (m38-pail-pond): the crew fishes with Theo past the bears for an HOA radio, which names the four parts of the Grand Combine and where they are.
 
 ## Loose threads
 

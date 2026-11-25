@@ -989,3 +989,24 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** **Gnome & Garden Furnishings** sells it: a flat-pack firm that delivers to Saucer Court, "stairs extra, free". Nothing they sell is ever assembled, and the instructions are a single diagram of a gnome looking worried. No other brand or entry covered furniture sellers.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E10 lets the player furnish Flat 3B and the catalogue needs a seller.
+
+## R-182
+
+**Question:** Why is there skiing in a garden, and how does it work on Snowcap Rise?
+**Ruling:** Snowdrop Slope is where gnomes ski and sled because the Tall Ones' winter left a long white bank there and gnomes never waste a bank. **The Bootlace Tow** pulls anyone up the east side: knotted bootlaces on cotton-reel pulleys, with cotton-reel handles to hang on to, and it hauls skiers and sledders alike. **The Wool Run** is the ski slalom: six blue-and-red flag gates from a timber start hut to an orange finish banner; a missed gate costs 3 seconds, and a clean run in 18 seconds or less is called "Black Diamond". **The Tea-Tray Run** is the straight sled lane down the west side; the sleds are round Tall-One tin tea trays with a painted rose, which gnomes call "rose shields". Falls are tumbles, never cracks: nobody is hurt on snow (R-021, R-049). The Woolly Sock Lodge rents skis and tea trays, sells Hot Cocoa (warming) and sells a tray to keep. Gentian Bootlace teaches the snowplough out front.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Epic E12 builds the ski hill, and the tow, the courses and the sleds need names and one rule for what a fall is.
+
+## R-183
+
+**Question:** How does ice fishing work on Pail Pond, and what about the pail's handle?
+**Ruling:** Anyone may drill a hole with a hand auger; the ice never cracks under anybody, and a hole refreezes when a fifth is drilled. Fish come up through a hole, are measured, carded on a nibble-clip and slipped back down: nothing is kept hungry or hurt (R-021, R-049). Thermos Theo keeps a red shanty on the ice and lends a Bent-Pin Twig Rod to anyone without one. The pond's cold-water fish are Pail Perch, Woolly Minnow, Lantern Burbot (bites at night) and Frostjaw Char (bites in falling snow; wants a Split-Cane Rod or better). The bears are paid in sardines, and an empty sardine tin sits by the holes. The giant pail's handle now sticks out of the ice at the edge, the handle of "the Rim"; gnomes found it and still do not know what it is for.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E12 adds ice fishing and the old "nobody has found the handle" joke has to be settled without ending it.
+
+## R-184
+
+**Question:** Where are the polar bears, and what do they do?
+**Ruling:** There are nine in all. Five lounge on the Fells' sun deck, now signposted "BEAR DECK". Four are on Snowcap Rise: one asleep on Pail Pond's ice, one turning slowly in an inner tube on the ice, one fishing a hole from a stool, and one on the Lodge's porch bench with a mug of cocoa. Their call is a long contented yawn. They never speak, and nothing upsets them: a shot, a ram or a shove gets a shrug. Standing beside all nine earns the "Bear Hug" achievement.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E12 adds the four Snowcap bears and a sign for the Fells' five, and they must stay the calmest creatures in Turfton (R-040).

@@ -4,5 +4,6 @@ import { cloverfieldLife } from './cloverfield';
 import { commonsLife } from './commons';
 import { dreyGangLife } from './dreyGang';
 import { fellsLife } from './fells';
+import { snowcapLife } from './snowcap';
 
-export const REGION_LIFE: readonly RegionLife[] = [cloverfieldLife, dreyGangLife, fellsLife, commonsLife];
+export const REGION_LIFE: readonly RegionLife[] = [cloverfieldLife, dreyGangLife, fellsLife, commonsLife, snowcapLife];

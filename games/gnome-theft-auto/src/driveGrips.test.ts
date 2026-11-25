@@ -15,8 +15,9 @@ const { gripWorld, handWeight, poseHands, settleHands, MAX_STRETCH, MIN_STRETCH 
 const { VEHICLES } = await import('./config');
 
 /** Kinds whose driver holds nothing, and why (keep in step with the DRIVE_CONTROLS comment). */
-const NO_CONTROL: readonly VehicleKind[] = ['walnut-dinghy', 'gravy-boat', 'snail-coach', 'hoa-van', 'taxi', 'tessie', 'tow-tube', 'euro-hatch', 'crepe-van'];
+const NO_CONTROL: readonly VehicleKind[] = ['walnut-dinghy', 'gravy-boat', 'snail-coach', 'hoa-van', 'taxi', 'tessie', 'tow-tube', 'euro-hatch', 'crepe-van', 'tea-tray-sled', 'snow-skis'];
 // tow-tube: the rider holds the tube's handles and leans (tubing/); there is no steering control to grip.
+// tea-tray-sled, snow-skis: steered by leaning (winter/); nothing to grip.
 const STEERS = [-1, -0.5, 0, 0.5, 1];
 /** The hand ball's centre lands within this of the grip (world units; the ball is 0.06 across). */
 const HAND_TOL = 0.02;

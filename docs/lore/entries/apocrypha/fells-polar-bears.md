@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The Chill Bears, Fells Polar Bears]
-sources: [docs/roadmaps/gnome-theft-auto-wild-world.md, games/gnome-theft-auto/src/critters/fells.ts, docs/lore/rulings.md#r-040]
-related: [frostbite-fells, sgnowmes]
+sources: [docs/roadmaps/gnome-theft-auto-wild-world.md, games/gnome-theft-auto/src/critters/fells.ts, docs/lore/rulings.md#r-040, docs/lore/rulings.md#r-184]
+related: [frostbite-fells, sgnowmes, pail-pond, snowcap-rise]
 ---
 
 Huge white bears who lounge in deck chairs on the Fells' sunny slope, in sunglasses, and are the calmest creatures in Turfton: nothing makes them angry.
@@ -24,7 +24,7 @@ Huge white bears who lounge in deck chairs on the Fells' sunny slope, in sunglas
 A row of polar bears in deck chairs in Frostbite Fells. A shot or a ram gets a slow shrug, never a fight; they never
 chase, never flee and never join a scrap. Turfton FM's weather reports quote them (Epic 8).
 
-They lounge on the sunny slope of the Fells.
+Five lounge on the Fells' sun deck, now signposted "BEAR DECK". Four more live on Snowcap Rise (batch 3, E12): one asleep on Pail Pond's ice, one turning slowly in an inner tube, one fishing a hole from a stool, and one on the Woolly Sock Lodge's porch bench with a mug of cocoa. Their call is a long contented yawn. They never speak and nothing upsets them. Standing beside all nine earns "Bear Hug". They are paid in sardines (an empty tin sits by the holes). See R-184.
 
 ## Loose threads
 

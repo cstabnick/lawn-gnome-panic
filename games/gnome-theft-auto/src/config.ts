@@ -437,6 +437,16 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     maxSpeed: 2.5, accel: 1.2, turnRate: 1.6, radius: 0.9, seat: [0, 0.32, 0], flies: false, mass: 0.6,
     boat: true, draft: 0.05,
   },
+  // Winter sports (E12, winter/runtime.ts steps them with winter/slideRider.ts): a Tall-One tea tray for a sled and a
+  // pair of skis (the gnome stands). Rented at the Woolly Sock Lodge; nothing else drives them.
+  'tea-tray-sled': {
+    kind: 'tea-tray-sled', mountStyle: 'hop', name: 'Tea-Tray Sled', prefab: 'tea-tray-sled', scale: 1.3,
+    maxSpeed: 4, accel: 2, turnRate: 1.6, radius: 0.7, seat: [0, 0.08, -0.05], flies: false, mass: 0.5,
+  },
+  'snow-skis': {
+    kind: 'snow-skis', mountStyle: 'hop', name: 'Skis', prefab: 'snow-skis', scale: 1.2,
+    maxSpeed: 4, accel: 2, turnRate: 1.8, radius: 0.6, seat: [0, 0.06, 0], flies: false, mass: 0.5, stand: true,
+  },
   // ---- European rides (E29; prefabs in packages/prefabs/src/catalog/gta-euro-fleet.ts and gta-euro-fleet-b.ts, nose +z,
   // contract in docs/roadmaps/gta-batch-3/E29/contracts.md). Seats and doors are the prefab's numbers times `scale`. ----
   'euro-hatch': {

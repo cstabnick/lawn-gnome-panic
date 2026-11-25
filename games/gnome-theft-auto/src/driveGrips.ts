@@ -85,6 +85,7 @@ const TRIKE_BARS: Vec3 = [0, 0.66, 0.2];
  * - walnut-dinghy, gravy-boat: rowed and paddled (anim/rideAuto.ts plays boat-row / boat-paddle), nothing to steer by hand;
  * - snail-coach, hoa-van, taxi, euro-hatch, crepe-van: closed cabs, the driver's hands are not seen;
  * - tessie: a turtle, ridden.
+ * - tea-tray-sled, snow-skis: steered by leaning (winter/slideRider.ts), the rider holds nothing.
  */
 export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>> = {
   // Pay 'n' Glaze steer mounts (glazeMounts.ts): the rig's grip markers follow the styled wheels; these are the stock grips.

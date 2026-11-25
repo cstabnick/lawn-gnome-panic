@@ -29,4 +29,6 @@ export const LOADING_FACTS: readonly string[] = [
   'Pardonlin\'s gates have customs huts that stamp your hat. Turfton gnomes once thought the Fence was the end of the world.',
   'Mowers are the great machine of gnome life. Gnomes fear them, ride them, or both. Why one runs with nobody on it is a mystery.',
   'Everything in the Yard is an ordinary garden object at giant scale. The gnomes just call it something else.',
+  'The Bootlace Tow is knotted bootlaces on cotton reels. Gnomes sled down on Tall-One tea trays and call them rose shields.',
+  'Pail Pond is a Tall-One pail frozen over. The handle sticks out of the ice, and nobody knows what it is for.',
 ];

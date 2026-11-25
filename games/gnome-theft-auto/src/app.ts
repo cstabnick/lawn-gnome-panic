@@ -154,6 +154,7 @@ import { createPhone } from './phone/phone';
 import { installJobs } from './jobs/runtime';
 import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
+import { installWinter } from './winter/runtime';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -472,6 +473,9 @@ const fishing = createFishing({
   scene, ui, world, hud, economy, play,
   unlock: (id) => void achievements.unlock(id),
   increment: (id, by) => void achievements.increment(id, by),
+  // Winter (E12): catches through Pail Pond's ice count toward Ice Station. `winter` is installed further down; a catch
+  // only happens once the game runs.
+  onCatch: (water) => winter.onCatch(water),
 });
 world.boxes.push(...fishing.boxes);
 // Pebblewick (outskirts/): the minor town on the eastern edge of the Dust Flats, its keepers, set pieces and the Hopper bus.
@@ -1052,6 +1056,14 @@ const jobDeps: JobsDeps = {
 const jobs = installJobs(jobDeps);
 const tubing = installTubing(jobDeps);
 registerJobsTrainer(jobs, tubing);
+// Winter sports (E12, winter/): Snowdrop Slope (skis, the tea-tray sled, the Bootlace Tow, timed runs), the Woolly Sock
+// Lodge, Pail Pond ice holes and Bear Hug. Builds its own scenery and pushes its colliders into world.boxes.
+const winter = installWinter({
+  ...jobDeps,
+  lendRod: () => fishing.lendRod(),
+  bears: () => critters.list.filter((c) => c.kind === 'polar-bear'),
+  onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
+});
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -1774,7 +1786,7 @@ function frame(now: number): void {
   const huntPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : hunting.prompt(player);
   const birdPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : birding.prompt(player);
   const fishPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : fishing.prompt(player);
-  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z);
+  const jobPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : jobs.prompt(player.x, player.z) ?? tubing.prompt(player.x, player.z) ?? winter.prompt(player.x, player.z);
   const townPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : outskirts.prompt(player);
   const portalPrompt = mount || player.vehicle || (player.airborne || player.ragdolling) || deathT > 0 ? null : gnomecinoDoor.prompt(Math.floor(watch.heat));
   if (inp.enterExit && !(player.airborne || player.ragdolling)) {
@@ -1788,7 +1800,7 @@ function frame(now: number): void {
     else if (huntPrompt) hunting.interact(player);
     else if (birdPrompt) birding.interact(player);
     else if (fishPrompt) fishing.interact(player);
-    else if (jobPrompt) { if (!jobs.interact(player.x, player.z)) tubing.interact(player.x, player.z); }
+    else if (jobPrompt) { if (!jobs.interact(player.x, player.z) && !tubing.interact(player.x, player.z)) winter.interact(player.x, player.z); }
     else if (townPrompt) outskirts.interact(player);
     else if (portalPrompt) gnomecinoDoor.interact(Math.floor(watch.heat));
     else if (interPrompt) interactables.interact(player);
@@ -1855,6 +1867,7 @@ function frame(now: number): void {
     if (v.driver === 'remote') { /* nothing to step here */ }
     else if (v === taxi.vehicle() && taxi.riding()) { /* the taxi drives itself (taxi.ts) */ }
     else if (tubing.drives(v)) tubing.stepRider(v, inp, dt);
+    else if (winter.drives(v)) winter.stepRider(v, inp, dt);
     else if (stageHome) { /* parked on the Pay 'n' Glaze stage: no driving, and no world edge to clamp it back */ }
     else if (v.sim) {
       // Keep the chassis: checkSink clears v.sim on the frame it sinks, and the telemetry read below then threw and froze the game.
@@ -2088,6 +2101,7 @@ function frame(now: number): void {
   section('jobs');
   jobs.update(dt);
   tubing.update(dt);
+  winter.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.
@@ -2412,7 +2426,7 @@ function frame(now: number): void {
     if (veh.driver !== 'none' || veh === whirligig) continue;
     blips.push({ x: veh.x, z: veh.z, color: veh.kind === 'plane' ? '#ffffff' : '#ffd23f' });
   }
-  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips());
+  blips.push(...quests.blips(), ...vibeNpcs.blips(), ...easterEggs.blips(), ...worldEvents.blips(), ...streetEvents.blips(), ...perkEffects.blips(), ...tessieWorld.blips(), ...stunts.blips(), ...encounters.blips(), ...taxi.blips(), ...jobs.blips(), ...tubing.blips(), ...winter.blips());
   if (!questHinted && performance.now() > 4000) {
     questHinted = true;
     const hint = quests.hint();
@@ -2634,6 +2648,14 @@ if (interiorParam) {
     if (startParams.get('roof') === '1') setTimeout(() => interiors.leave({ x: 120, y: 9, z: -75, yaw: Math.PI }), 5000);
   }, 800);
 }
+// Dev / demos (E12): ?winter=wool-run|tea-tray-run puts the player on that run's skis or tea tray at its start line.
+const winterParam = startParams.get('winter');
+if (winterParam === 'wool-run' || winterParam === 'tea-tray-run') {
+  setTimeout(() => {
+    const why = winter.api.startRun(winterParam);
+    if (why) hud.toast(why, 3000);
+  }, 1500);
+}
 // Dev (E10): ?decor=room|shop|colours opens the flat's Decorate panel (with ?interior=flat-3b to see the room move).
 const decorParam = startParams.get('decor');
 if (decorParam) setTimeout(() => decor.open(decorParam === 'shop' || decorParam === 'colours' ? decorParam : 'room'), 2500);
@@ -2694,6 +2716,8 @@ if (new URLSearchParams(location.search).has('debug')) {
   (window as unknown as Record<string, unknown>).__gta = {
     // Sim jobs and tubing (jobs/, tubing/): jobs.goOnDuty('taxi'), jobs.forceGig(), jobs.callCab(id), jobs.debug(); tubing.setTow(true), tubing.hopOn(), tubing.debug().
     jobs, tubing, jobDeps, onlineHub: () => onlineSync?.hub,
+    // Winter sports (winter/): winter.debug(), winter.api.startRun('wool-run'), winter.api.startRun('tea-tray-run').
+    winter,
     // Birding: birding.spawn(id, x, z), birding.markSeen(id), birding.species, birding.stats().
     birding,
     // Fishing: fishing.biteNow(id), fishing.catchById(id, size), fishing.grantAll(), fishing.species, fishing.stats().

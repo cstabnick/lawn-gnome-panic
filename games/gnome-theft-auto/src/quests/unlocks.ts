@@ -63,6 +63,9 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   // Pebblewick's side quests (outskirtsQuests.ts): the dry water line, then the humming combine.
   { questId: 'sq-weeping-line', after: 'ch3-kiln-resin-ice', why: 'Pebblewick plots need water; the dry line is found once the player has the tundra kiln run.' },
   { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', why: 'The dunes hum at three once the spade truce has opened the eastern sand.' },
+  // Snowcap Rise (winterQuests.ts). Temporary: the schedule has them after m38/m39 (act III, E20/E21), which do not exist yet.
+  { questId: 'sq-snowdrop-sled-trials', after: 'ch3-tundra-drift-run', why: "Gentian Bootlace's ski class is north of the Fells; unlocked once the player has been north. E21 moves it to after m38-pail-pond." },
+  { questId: 'sq-pail-pond-lines', after: 'ch3-tundra-drift-run', why: "Thermos Theo's shanty is on Pail Pond, north of the Fells. E21 moves it to after m39-couch-surfing." },
 ];
 
 const BY_ID = new Map(SIDE_UNLOCKS.map((u) => [u.questId, u]));
@@ -106,6 +109,8 @@ export const SIDE_COLORS: Readonly<Record<string, string>> = {
   'newcomers-club': '#f2c200',
   'pebblewick-plots': '#e0a050',
   'pebblewick-tower': '#9fd0ff',
+  gentian: '#e8f2ff',
+  'theo-pond': '#7fb6e0',
 };
 
 /** A giver's side-quest colour, '#3ad1c4' for one not in SIDE_COLORS. */

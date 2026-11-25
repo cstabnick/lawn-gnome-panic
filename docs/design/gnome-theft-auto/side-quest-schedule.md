@@ -71,8 +71,8 @@ written by its constant, `TESSIE.questId`.
 | `city-skyway-robbery` | The Skyway Job | Dorrit "Dot" Pennywort (kerb-exchange) | #36 `ch3-kiln-resin-ice` | The HOA raided Side-Valve (#35); Local 404 hits back through the Exchange. | `underspan` | 6 | existing |
 | `sq-hose-revolt` | The Great Hose-Pipe Tax Revolt | a stranger (strangers-canal) | #36 `ch3-kiln-resin-ice` | The HOA heat is on everyone after the raid; the canal gnomes ask for help. | `canal` | 6 | existing |
 | `nc-strike-a-pose` | Strike a Pose | Newcomers' Card host (R-156) | #2 `m02-roof-on-credit` | Emotes need nothing but the gnome; Neon-Moth Nina stamps the card on the walk home to Saucer Court. | `downtown` | 3 | existing |
-| `sq-snowdrop-sled-trials` | Snowdrop Sled Trials | Gentian Bootlace (gentian) | #38 `m38-pail-pond` | Gentian gave the crew a bunk (#37). | `snowcap-rise` | 6 | E12 |
-| `sq-pail-pond-lines` | Lines on Pail Pond | Thermos Theo (theo) | #39 `m39-couch-surfing` | Theo fished with the player (#38); the polar bears have been paid in sardines. | `snowcap-rise` | 6 | E12 |
+| `sq-snowdrop-sled-trials` | Snowdrop Sled Trials | Gentian Bootlace (gentian) | #38 `m38-pail-pond` (for now `ch3-tundra-drift-run`; E21 moves it) | Gentian gave the crew a bunk (#37). | `snowcap-rise` | 6 | E12 |
+| `sq-pail-pond-lines` | Lines on Pail Pond | Thermos Theo (theo-pond) | #39 `m39-couch-surfing` (for now `ch3-tundra-drift-run`; E21 moves it) | Theo fished with the player (#38); the polar bears have been paid in sardines. | `snowcap-rise` | 6 | E12 |
 | `nc-odd-jobs` | Odd Jobs | Newcomers' Card host (R-156) | #15 `ch1-founders-boot` | Act II costs Acorns and the flat has a loan; the sim jobs earn them (as today). | `downtown` | 3 | existing |
 | `TESSIE.questId` | The Loch Moss Monster | Driftwood (loch-driftwood) | #40 `m40-the-capwood-run` | Driftwood rings from his trailer once the crew is back in the city (#39). | `loch-moss` | 6 | existing |
 | `sq-capwood-cap-count` | The Cap Count | Warden Chanterelle Stook (chanterelle) | #41 `m41-pinwheel-ridge` | Chanterelle fined the player at #40 and has a clipboard of unfined caps. | `capwood` | 6 | E12 |
@@ -120,7 +120,7 @@ Every new area has at least one side quest:
 | Loamdeep, the Burrowfolk (E17) | `sq-burrow-post`, `sq-loamdeep-lamps` |
 | Wader's Rest (E15) | `sq-flock-errands`, `sq-flock-vigil` |
 | Hedgeworth (E15): owner, pro, groundskeeper | `sq-hedgeworth-lost-balls`, `sq-hedgeworth-pro-lesson`, `sq-hedgeworth-ninth-green`, `sq-hedgeworth-members-cup`, `sq-hedgeworth-reseed` |
-| Snowdrop Slope, sledding and polar bears (E12) | `sq-snowdrop-sled-trials`, `sq-pail-pond-lines` |
+| Snowdrop Slope, sledding and polar bears (E12) | `sq-snowdrop-sled-trials`, `sq-pail-pond-lines` (both unlocked after `ch3-tundra-drift-run` until E21 builds m38/m39) |
 | Capwood (E12) | `sq-capwood-cap-count` |
 | Pinwheel Ridge (E14) | `sq-pinwheel-linemen` |
 | Rutbottom (E14) | `sq-rutbottom-heats` |

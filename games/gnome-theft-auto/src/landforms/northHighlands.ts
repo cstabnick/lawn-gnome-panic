@@ -1,6 +1,6 @@
 // North Highlands landforms (region document north-highlands.level.json, data.terrain): a rolling high moor with crags
 // that fade out near roads. Paint: snow on the high ground, gravel on steep faces, meadow elsewhere.
-import { fbm, ridged, smoothstep } from './noise';
+import { distToPolyline, fbm, ridged, smoothstep } from './noise';
 import { roadDistAt } from './fields';
 import type { Landform, LandformInput, GroundFacts, PaintKind } from './types';
 
@@ -21,7 +21,18 @@ export const landform: Landform = {
       smoothstep(10, 50, roadDistAt(x, z));
     return swell + crags;
   },
-  paint(_x, _z, g: GroundFacts): PaintKind | null {
+  paint(x, z, g: GroundFacts, input: LandformInput): PaintKind | null {
+    // E12: Pail Pond is ice (a `pond` feature: within r of its point) and Snowdrop Slope is snow to the foot (a
+    // `snowfield` feature: within r of its line). The Wasm kernel (assembly/kernel.ts evalRegionPaint) mirrors this.
+    for (const f of input.features) {
+      if (f.r === undefined || f.points.length === 0) continue;
+      if (f.kind === 'pond') {
+        const [px, pz] = f.points[0];
+        if (Math.hypot(x - px, z - pz) < f.r) return 'ice';
+      } else if (f.kind === 'snowfield') {
+        if (distToPolyline(x, z, f.points) < f.r) return 'snow';
+      }
+    }
     if (g.height > 32) return 'snow';
     if (g.slope > 0.3) return 'gravel';
     return 'meadow';

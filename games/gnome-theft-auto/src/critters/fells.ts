@@ -306,7 +306,8 @@ export const fellsLife: RegionLife = {
   },
 
   onHit(rt, c, _cause, _fromX, _fromZ) {
-    if (c.kind !== 'polar-bear') return false;
+    // Only the deck's own bears: the Snowcap bears (critters/snowcap.ts) shrug through their own life.
+    if (c.kind !== 'polar-bear' || c.group !== 'fells-bears') return false;
     const st = states.get(rt);
     const now = st?.t ?? 0;
     const shrugT = Number(c.data.shrugT ?? 0);

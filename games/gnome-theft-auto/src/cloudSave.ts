@@ -129,6 +129,7 @@ const MERGES: Record<GtaSaveKey, ((a: string, b: string) => string) | null> = {
   'gta-gnomeybird-v1': bestGnomeyBird, // gnomlet/apps/gnomeyBird.ts: the higher best score wins
   'gta-home-v1': null, // home/layout.ts: one current flat layout; the newer side wins
   'gta-homes-visited-v1': unionArrays, // homes/visits.ts: home ids visited only grow
+  'gta-winter-v1': null, // winter/save.ts: best times, run counts, ice catches; the newer side wins
 };
 
 /** Keys that only grow: refreshBundle merges a local write into the bundle instead of replacing it (a stale in-memory

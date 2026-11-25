@@ -23,6 +23,7 @@ const REGION_FOR_WATER: Record<FishWater, RegionId> = {
   river: 'mossy-wood',
   canal: 'cloverfield-farms',
   sea: 'cloverfield-farms',
+  ice: 'north-highlands',
 };
 
 const MOON_JIG = baitById('moon-jig')!;

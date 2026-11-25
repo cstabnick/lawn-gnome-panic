@@ -150,6 +150,10 @@ interface Companion {
   waved: boolean;
   /** In the player's party: follows and fights with them (party.ts), never quests or strolls. */
   inParty: boolean;
+  /** Accumulated dt for distance-strided model animation updates. */
+  animDt: number;
+  /** True once dead ground height & pose have been applied for the current death. */
+  deadPosed: boolean;
 }
 
 const companions: Companion[] = [];
@@ -423,6 +427,7 @@ function hurt(c: Companion, enemyLevel: number): void {
   if (c.hp > 0) return;
   c.hp = 0;
   c.dead = true;
+  c.deadPosed = false;
   c.respawnS = c.inParty ? PARTY.helperRespawnS : RESPAWN_S;
   c.path = [];
   c.model.setDead(true);
@@ -857,6 +862,7 @@ function stepCompanion(c: Companion, dt: number): void {
     c.respawnS -= dt;
     if (c.respawnS <= 0) {
       c.dead = false;
+      c.deadPosed = false;
       c.hp = c.hpMax;
       c.model.setDead(false);
       if (c.inParty) placeBesidePlayer(c);
@@ -867,7 +873,8 @@ function stepCompanion(c: Companion, dt: number): void {
       c.arrived = false;
       sayBubble(c, c.personalityDef.lines.respawn, 0.85);
     }
-    if (visible) {
+    if (visible && !c.deadPosed) {
+      c.deadPosed = true;
       scratchVel.set(0, 0, 0);
       c.position.y = heightAt(c.position.x, c.position.z); // a body that fell where it stood rests on the ground
       c.model.setDead(true);
@@ -968,24 +975,32 @@ function stepCompanion(c: Companion, dt: number): void {
   }
 
   if (visible) {
-    const vx = dt > 0 ? (c.position.x - prevX) / dt : 0;
-    const vz = dt > 0 ? (c.position.z - prevZ) / dt : 0;
-    scratchVel.set(vx, 0, vz);
-    if (c.sitting) {
-      scratchSit.copy(c.position);
-      scratchSit.y -= SIT_DROP;
+    c.animDt += dt;
+    const stride = distToPlayer <= 40 || c.inParty || c.swing > 0 || c.waveS > 0 ? 1 : distToPlayer <= 95 ? 2 : 4;
+    if (stride === 1 || ((c.id + frameNo) & (stride - 1)) === 0) {
+      const stepDt = c.animDt;
+      c.animDt = 0;
+      const vx = dt > 0 ? (c.position.x - prevX) / dt : 0;
+      const vz = dt > 0 ? (c.position.z - prevZ) / dt : 0;
+      scratchVel.set(vx, 0, vz);
+      if (c.sitting) {
+        scratchSit.copy(c.position);
+        scratchSit.y -= SIT_DROP;
+      }
+      c.model.update({
+        position: c.sitting ? scratchSit : c.position, velocity: scratchVel, facing: c.facing, grounded: true, jumpsUsed: 0,
+        sitting: c.sitting,
+      }, stepDt);
+      if (c.swing > 0) {
+        c.model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, c.swing) / SWING_ANIM_S));
+      }
+      if (c.waveS > 0) {
+        c.waveS = Math.max(0, c.waveS - stepDt);
+        c.model.arms.left.rotation.x = -2.6 + 0.35 * Math.sin(c.waveS * 14);
+      }
     }
-    c.model.update({
-      position: c.sitting ? scratchSit : c.position, velocity: scratchVel, facing: c.facing, grounded: true, jumpsUsed: 0,
-      sitting: c.sitting,
-    }, dt);
-    if (c.swing > 0) {
-      c.model.arms.right.rotation.x = -2.4 * Math.sin(Math.PI * (1 - Math.max(0, c.swing) / SWING_ANIM_S));
-    }
-    if (c.waveS > 0) {
-      c.waveS = Math.max(0, c.waveS - dt);
-      c.model.arms.left.rotation.x = -2.6 + 0.35 * Math.sin(c.waveS * 14);
-    }
+  } else {
+    c.animDt = 0;
   }
 }
 
@@ -1074,6 +1089,8 @@ export function initCompanions(scene: THREE.Scene): void {
       waveS: 0,
       waved: false,
       inParty: false,
+      animDt: 0,
+      deadPosed: false,
     };
     assignQuest(c, true);
     placeAtQuestStart(c);

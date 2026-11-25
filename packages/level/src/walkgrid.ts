@@ -97,6 +97,11 @@ export class WalkGrid {
     return [...this.byId.keys()];
   }
 
+  /** Every installed tile, for bulk upload (e.g. Wasm pathfinding linear memory). */
+  tiles(): readonly WalkTile[] {
+    return this.list;
+  }
+
   setTile(t: WalkTile): void {
     this.byId.set(t.id, t);
     this.list = [...this.byId.values()];

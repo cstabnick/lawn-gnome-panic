@@ -1,0 +1,15 @@
+{
+  "title": "Gnomelock 2v2 Bramble District Skirmish",
+  "url": "http://localhost:5207/",
+  "setup": { "autostart": "solo", "hero": "tansy" },
+  "warmup": 2.5,
+  "duration": 5.5,
+  "steps": [
+    { "t": 0.2, "hold": "KeyW", "for": 2.4 },
+    { "t": 0.5, "press": "ShiftLeft" },
+    { "t": 0.65, "press": "Space" },
+    { "t": 1.6, "hold": "ControlLeft", "for": 0.9 },
+    { "t": 2.8, "press": "KeyQ" },
+    { "t": 3.4, "press": "KeyE" }
+  ]
+}

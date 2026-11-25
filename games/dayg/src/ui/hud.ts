@@ -1,7 +1,11 @@
-// Quiet HUD: need bars, stamina, a clay-body figure, clock and place, context prompt, toasts, busy bar.
+// Quiet HUD: need bars, stamina, a clay-body figure, clock and place, context prompt, toasts, busy bar, compass, quick-hand bar.
+import { prefabIconElement } from '@lawn/prefabs';
 import { DOM, LAYOUT, STAMINA } from '../config';
 import type { BodyPart, BodyState, CrackLevel, Hud, HudState } from '../game/types';
+import { getItem } from '../items/defs';
 import { HAVEN_NAME } from '../sim/regions';
+const COMPASS_DIRS = ['S', 'SE', 'E', 'NE', 'N', 'NW', 'W', 'SW'] as const; // facing=0 is +z (S), PI/2 is +x (E), PI is -z (N)
+const COMPASS_DISPLAY = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
 const CLAY = '#b9825a';
 const CLAY_BROKEN = '#6b4530';
 const GREY = '#a7aeae';
@@ -99,12 +103,22 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
     '.dayg-hud-pulse{animation:dayg-hud-pulse 1s ease-in-out infinite}' +
     '@keyframes dayg-toast-out{to{opacity:0}}' +
     '.dayg-hud-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:fit-content;max-width:100%;' +
-    'margin-left:auto;padding:0 5px;border-radius:4px;background:rgba(0,0,0,.32)}' +
+    'margin-left:auto;padding:2px 7px;border-radius:6px;background:rgba(14,18,13,.62);border:1px solid rgba(72,86,64,.45);backdrop-filter:blur(4px)}' +
     '.dayg-hud-prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(276px + env(safe-area-inset-bottom));' +
-    'max-width:60vw;padding:7px 14px;border-radius:999px;background:rgba(20,26,20,.78);text-align:center;white-space:normal;' +
-    'font-size:13px;display:none}' +
+    'max-width:60vw;padding:8px 16px;border-radius:999px;background:rgba(14,18,13,.84);border:1px solid rgba(111,130,98,.6);text-align:center;white-space:normal;' +
+    'font-size:13px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4)}' +
     '.dayg-hud-busy{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(340px + env(safe-area-inset-bottom));' +
-    'width:40vw;max-width:260px;display:none;text-align:center;background:rgba(20,26,20,.6);border-radius:8px;padding:5px 8px 6px}' +
+    'width:40vw;max-width:260px;display:none;text-align:center;background:rgba(14,18,13,.78);border:1px solid rgba(72,86,64,.6);border-radius:10px;padding:6px 10px 7px}' +
+    '.dayg-hud-compass{position:absolute;left:50%;transform:translateX(-50%);top:calc(4px + env(safe-area-inset-top));' +
+    'display:none;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:rgba(14,18,13,.66);border:1px solid rgba(72,86,64,.5);backdrop-filter:blur(4px);font-size:11px;letter-spacing:.04em;white-space:nowrap}' +
+    '.dayg-hud-compass span{color:rgba(244,247,242,.5);padding:1px 3px;border-radius:4px}' +
+    '.dayg-hud-compass span.on{color:#e8c35a;font-weight:700;background:rgba(232,195,90,.16)}' +
+    '.dayg-hud-hands{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));' +
+    'display:none;gap:8px;align-items:center;padding:4px 8px;border-radius:10px;background:rgba(14,18,13,.7);border:1px solid rgba(72,86,64,.55);backdrop-filter:blur(4px)}' +
+    '.dayg-hud-hand{display:flex;align-items:center;gap:5px;min-width:88px;max-width:140px;padding:3px 7px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid rgba(72,86,64,.4)}' +
+    '.dayg-hud-hand-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:rgba(244,247,242,.55)}' +
+    '.dayg-hud-hand-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '@media (max-width:680px){.dayg-hud-compass{top:calc(64px + env(safe-area-inset-top))}}' +
     '@media (orientation: landscape){' +
     '.dayg-hud-prompt,.dayg-hud-busy{left:33.3333%;right:33.3333%;width:auto;max-width:none;transform:none}' +
     '.dayg-hud-prompt{bottom:calc(120px + env(safe-area-inset-bottom))}' +
@@ -116,8 +130,8 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
   left.style.cssText = 'position:absolute;left:calc(8px + env(safe-area-inset-left));' +
     `top:calc(4px + env(safe-area-inset-top));display:flex;gap:6px;align-items:flex-start;max-height:${LAYOUT.topBar - 8}px`;
   const bars = document.createElement('div');
-  bars.style.cssText = 'display:flex;flex-direction:column;gap:1px;width:130px;padding:2px 5px;box-sizing:border-box;' +
-    'border-radius:6px;background:rgba(0,0,0,.32)';
+  bars.style.cssText = 'display:flex;flex-direction:column;gap:2px;width:134px;padding:4px 6px;box-sizing:border-box;' +
+    'border-radius:8px;background:rgba(14,18,13,.62);border:1px solid rgba(72,86,64,.45);backdrop-filter:blur(4px)';
   const barEls: Record<string, { fill: HTMLDivElement; row: HTMLDivElement }> = {};
   for (const n of [...NEEDS, { key: 'stamina', label: 'Stamina' }]) {
     const row = document.createElement('div');
@@ -177,10 +191,44 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
   prompt.className = 'dayg-hud-prompt';
 
   const toasts = document.createElement('div');
-  toasts.style.cssText = 'position:absolute;left:0;right:64px;text-align:center;' +
-    `top:calc(${LAYOUT.topBar + 8}px + env(safe-area-inset-top));display:flex;flex-direction:column;align-items:center;gap:4px`;
+  toasts.style.cssText = 'position:absolute;left:12px;right:12px;text-align:center;' +
+    `top:calc(${LAYOUT.topBar + 60}px + env(safe-area-inset-top));display:flex;flex-direction:column;align-items:center;gap:4px`;
 
-  root.append(left, right, busy, prompt, toasts);
+  // Top-center: Compass Strip (visible when facing is provided).
+  const compass = document.createElement('div');
+  compass.className = 'dayg-hud-compass';
+  const compassSpans = {} as Record<(typeof COMPASS_DISPLAY)[number], HTMLSpanElement>;
+  COMPASS_DISPLAY.forEach((dir, i) => {
+    if (i > 0) compass.append('·');
+    const sp = document.createElement('span');
+    sp.textContent = dir;
+    compassSpans[dir] = sp;
+    compass.appendChild(sp);
+  });
+
+  // Bottom-center: 2-slot Quick-Hand Bar (visible when hands is provided).
+  const handsBar = document.createElement('div');
+  handsBar.className = 'dayg-hud-hands';
+  const handSlots = [0, 1].map((idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'dayg-hud-hand';
+    const iconWrap = document.createElement('div');
+    iconWrap.style.cssText = 'width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex:none';
+    const textWrap = document.createElement('div');
+    textWrap.style.cssText = 'min-width:0;display:flex;flex-direction:column';
+    const lbl = document.createElement('div');
+    lbl.className = 'dayg-hud-hand-lbl';
+    lbl.textContent = idx === 0 ? 'Main' : 'Off';
+    const name = document.createElement('div');
+    name.className = 'dayg-hud-hand-name';
+    name.textContent = 'Empty';
+    textWrap.append(lbl, name);
+    slot.append(iconWrap, textWrap);
+    handsBar.appendChild(slot);
+    return { iconWrap, name };
+  });
+
+  root.append(left, right, compass, busy, prompt, toasts, handsBar);
   ui.appendChild(root);
 
   // Change cache: the DOM is only touched when a value changes.
@@ -245,6 +293,41 @@ export function createHud(ui: HTMLElement, opts: { onToast?: () => void } = {}):
         busy.style.display = 'block';
         busyLabel.textContent = s.busy.label;
         busyFill.style.width = `${Math.max(0, Math.min(1, s.busy.progress)) * 100}%`;
+      });
+      const ext = s as HudState & { facing?: number; hands?: [string | null, string | null] };
+      const dirKey = ext.facing === undefined
+        ? ''
+        : COMPASS_DIRS[((Math.round(ext.facing / (Math.PI / 4)) % 8) + 8) % 8];
+      put('compass', dirKey, (v) => {
+        compass.style.display = v ? 'flex' : 'none';
+        for (const d of COMPASS_DISPLAY) compassSpans[d].classList.toggle('on', d === v);
+      });
+      const handsKey = ext.hands ? `${ext.hands[0] ?? ''}|${ext.hands[1] ?? ''}` : 'none';
+      put('hands', handsKey, (v) => {
+        if (v === 'none' || !ext.hands) { handsBar.style.display = 'none'; return; }
+        handsBar.style.display = 'flex';
+        for (let i = 0; i < 2; i++) {
+          const id = ext.hands[i];
+          const slot = handSlots[i];
+          slot.iconWrap.replaceChildren();
+          if (!id) {
+            slot.name.textContent = 'Empty';
+            slot.name.style.opacity = '0.5';
+          } else {
+            let label = id;
+            let prefab = id;
+            try {
+              const def = getItem(id);
+              label = def.name;
+              prefab = def.prefab;
+            } catch { /* fallback to id */ }
+            const icon = prefabIconElement(prefab, '✋', 22);
+            icon.style.pointerEvents = 'none';
+            slot.iconWrap.append(icon);
+            slot.name.textContent = label;
+            slot.name.style.opacity = '1';
+          }
+        }
       });
     },
     prompt(text: string | null) {

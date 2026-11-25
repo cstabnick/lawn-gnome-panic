@@ -1,6 +1,7 @@
 // The room panel: solo, create, join or reopen (roadmap 8.7). The Online button opens it, and so does main.ts for `?open=room`.
 import { DOM_MORE } from '../config';
 import type { RoomChoice, RoomListItem, RoomPanel } from '../game/types';
+import { exportWorldJson, importWorldJson, listOwnedWorlds, removeOwnedWorld } from '../net/worldStore';
 
 // Same pattern as ROOM_CODE_RE in @lawn/mp. Copied rather than imported: the package index loads background.ts, which installs a worker onmessage handler.
 const ROOM_CODE = /^[A-Z0-9]{4,8}$/;
@@ -21,10 +22,10 @@ const MODES: readonly { value: RoomMode; label: string; enabled: boolean }[] = [
   { value: 'full', label: 'Full (later)', enabled: false },
 ];
 
-const SURFACE = 'min-height:44px;min-width:44px;padding:8px 14px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#2d3a25;color:#eee;font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;box-sizing:border-box';
-const INPUT = 'box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#1d241a;color:#eee;font:15px system-ui,sans-serif';
+const SURFACE = 'min-height:44px;min-width:44px;padding:8px 14px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation;box-sizing:border-box';
+const INPUT = 'box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:15px var(--dg-font)';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -50,12 +51,15 @@ function formatSaved(iso: string): string {
 }
 
 // A row of toggle buttons where one value is picked. Disabled options are shown dimmed and cannot be tapped.
-function segment<T extends string>(options: readonly { value: T; label: string; enabled: boolean }[], initial: T):
-  { node: HTMLElement; get(): T } {
+function segment<T extends string>(
+  options: readonly { value: T; label: string; enabled: boolean }[],
+  initial: T,
+  onChange?: (value: T) => void,
+): { node: HTMLElement; get(): T } {
   let value = initial;
   const row = el('div', 'display:flex;flex-wrap:wrap;gap:6px');
   const buttons = options.map((o) => {
-    const b = btn(o.label, () => { value = o.value; paint(); });
+    const b = btn(o.label, () => { value = o.value; paint(); onChange?.(value); });
     b.disabled = !o.enabled;
     if (!o.enabled) b.style.opacity = '0.45';
     row.append(b);
@@ -76,17 +80,19 @@ function segment<T extends string>(options: readonly { value: T; label: string; 
 export function createRoomPanel(ui: HTMLElement): RoomPanel {
   const openListeners: (() => void)[] = [];
   const choiceListeners: ((c: RoomChoice) => void)[] = [];
+  const saveListeners: (() => void)[] = [];
   let worlds: readonly RoomListItem[] = [];
 
   const root = el('div');
   root.id = DOM_MORE.room;
   root.hidden = true;
   root.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;box-sizing:border-box;z-index:55;' +
-    'background:rgba(18,22,16,0.97);color:#eee;font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;' +
+    'background:var(--dg-bg);backdrop-filter:blur(6px);color:var(--dg-text);font:14px var(--dg-font);overflow-y:auto;overflow-x:hidden;' +
     '-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;' +
     'padding:max(env(safe-area-inset-top),12px) max(env(safe-area-inset-right),12px) ' +
     'max(env(safe-area-inset-bottom),12px) max(env(safe-area-inset-left),12px)';
   const inner = el('div', 'max-width:480px;margin:0 auto;padding-bottom:24px');
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   root.append(inner);
 
   function open(): void {
@@ -103,15 +109,15 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
 
   // Header and status line.
   const head = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px');
-  head.append(el('h2', 'margin:0;font:700 20px system-ui,sans-serif', 'Online worlds'));
+  head.append(el('h2', 'margin:0;font:700 20px var(--dg-font);color:var(--dg-accent)', 'Persistent Worlds'));
   const closeBtn = btn('✕', close, 'width:48px;height:48px;padding:0;font-size:22px');
-  closeBtn.setAttribute('aria-label', 'Close online worlds');
+  closeBtn.setAttribute('aria-label', 'Close persistent worlds');
   head.append(closeBtn);
 
-  const statusRow = el('div', 'margin:12px 0 0;padding:10px;border-radius:8px;background:#1d241a;border:1px solid #3c4a32');
-  const statusText = el('div', 'font:14px system-ui,sans-serif');
-  const codeRow = el('div', 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px');
-  const codeBig = el('span', 'font:700 28px ui-monospace,Consolas,monospace;letter-spacing:4px;color:#e8c35a;user-select:all');
+  const statusRow = el('div', 'margin:12px 0 0;padding:10px;border-radius:8px;background:var(--dg-surface-2);border:1px solid var(--dg-border)');
+  const statusText = el('div', 'font:14px var(--dg-font)');
+  const codeRow = el('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px');
+  const codeBig = el('span', 'font:700 26px ui-monospace,Consolas,monospace;letter-spacing:4px;color:var(--dg-accent);user-select:all');
   const copyBtn = btn('Copy code', () => {
     const code = codeBig.textContent ?? '';
     if (!code) return;
@@ -120,7 +126,21 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
       .catch(() => { copyBtn.textContent = 'Copy failed'; })
       .finally(() => setTimeout(() => { copyBtn.textContent = 'Copy code'; }, 1500));
   });
-  codeRow.append(codeBig, copyBtn);
+  const copyLinkBtn = btn('Copy invite link', () => {
+    const code = codeBig.textContent ?? '';
+    if (!code) return;
+    const url = `${location.origin}${location.pathname}?room=${code}`;
+    navigator.clipboard.writeText(url)
+      .then(() => { copyLinkBtn.textContent = 'Link copied'; })
+      .catch(() => { copyLinkBtn.textContent = 'Copy failed'; })
+      .finally(() => setTimeout(() => { copyLinkBtn.textContent = 'Copy invite link'; }, 1500));
+  });
+  const saveNowBtn = btn('Save world now', () => {
+    for (const fn of saveListeners) fn();
+    saveNowBtn.textContent = 'Saved';
+    setTimeout(() => { saveNowBtn.textContent = 'Save world now'; }, 1200);
+  });
+  codeRow.append(codeBig, copyBtn, copyLinkBtn, saveNowBtn);
   codeRow.hidden = true;
   statusRow.append(statusText, codeRow);
   statusRow.hidden = true;
@@ -132,11 +152,39 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
   titleInput.setAttribute('aria-label', 'World title');
   const pace = segment(PACES, 'standard');
   const mode = segment(MODES, 'co-op');
-  const createBtn = btn('Create world', () => choose({ mode: 'create', code: null, title: formTitle(), pace: pace.get(), roomMode: mode.get() }),
-    'width:100%;margin-top:10px;background:#4a5a36');
+  const RESPAWN_INTERVAL_KEY = 'dayg_loot_respawn_interval';
+  type RespawnInterval = '1d' | '3d' | '5d' | '7d';
+  const savedInterval = (() => {
+    try {
+      const v = localStorage.getItem(RESPAWN_INTERVAL_KEY);
+      return (v === '1d' || v === '3d' || v === '5d' || v === '7d') ? v : '3d';
+    } catch { return '3d'; }
+  })() as RespawnInterval;
+  const intervalRow = el('div', 'margin-top:8px');
+  intervalRow.hidden = true;
+  const intervalSeg = segment<RespawnInterval>([
+    { value: '1d', label: '1d', enabled: true },
+    { value: '3d', label: '3d', enabled: true },
+    { value: '5d', label: '5d', enabled: true },
+    { value: '7d', label: '7d', enabled: true },
+  ], savedInterval, (v) => {
+    try { localStorage.setItem(RESPAWN_INTERVAL_KEY, v); } catch { /* ignore */ }
+  });
+  intervalRow.append(el('div', 'margin:0 0 4px;font-size:13px;opacity:0.85', 'Loot Respawn Interval'), intervalSeg.node);
+
+  const lootResp = segment([
+    { value: 'off', label: 'Loot Respawn: Off (Default)', enabled: true },
+    { value: 'on', label: 'Loot Respawn: On', enabled: true },
+  ] as const, 'off', (v) => {
+    intervalRow.hidden = v !== 'on';
+  });
+  const createBtn = btn('Create & Host World', () => choose({
+    mode: 'create', code: null, title: formTitle(), pace: pace.get(), roomMode: mode.get(), lootRespawn: lootResp.get() === 'on',
+  }), 'width:100%;margin-top:10px;background:#4a5a36');
   const newSection = el('section');
-  newSection.append(heading('New world'), titleInput, el('div', 'margin:10px 0 4px;opacity:0.85', 'Pace'), pace.node,
-    el('div', 'margin:10px 0 4px;opacity:0.85', 'Mode'), mode.node, createBtn);
+  newSection.append(heading('New persistent world'), titleInput, el('div', 'margin:10px 0 4px;opacity:0.85', 'Pace'), pace.node,
+    el('div', 'margin:10px 0 4px;opacity:0.85', 'Mode'), mode.node,
+    el('div', 'margin:10px 0 4px;opacity:0.85', 'Loot Respawning'), lootResp.node, intervalRow, createBtn);
 
   // Join.
   const codeInput = el('input', INPUT + ';text-transform:uppercase;width:auto;flex:1;min-width:0');
@@ -170,31 +218,91 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
 
   // My worlds.
   const worldsBox = el('div');
+  function downloadJson(code: string, title: string): void {
+    const json = exportWorldJson(code);
+    if (!json) return;
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'world'}-${code}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function syncFromStore(): void {
+    worlds = listOwnedWorlds().map((w) => ({
+      code: w.code,
+      title: w.title,
+      summary: `Owner: ${w.owner} · Day ${w.day} · Loot respawn: ${w.lootRespawn ? 'On' : 'Off'}`,
+      updatedAt: w.updatedAt,
+    }));
+    renderWorlds();
+  }
   function renderWorlds(): void {
     worldsBox.replaceChildren();
     if (worlds.length === 0) {
-      worldsBox.append(el('div', 'opacity:0.85', 'Sign in to keep worlds in the cloud.'));
+      worldsBox.append(el('div', 'opacity:0.85', 'No saved worlds yet. Create a world above — it auto-saves locally and to the cloud.'));
       return;
     }
     for (const w of worlds) {
-      const row = el('div', 'display:flex;align-items:center;gap:10px;padding:10px;margin-bottom:8px;border:1px solid #3c4a32;' +
-        'border-radius:8px;background:#1d241a');
-      const text = el('div', 'flex:1;min-width:0');
+      const row = el('div', 'display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px;margin-bottom:8px;border:1px solid var(--dg-border);' +
+        'border-radius:8px;background:var(--dg-surface-2)');
+      const text = el('div', 'flex:1;min-width:160px');
       text.append(
-        el('div', 'font:600 15px system-ui,sans-serif;overflow-wrap:anywhere', w.title),
-        el('div', 'font:13px system-ui,sans-serif;opacity:0.85;overflow-wrap:anywhere', w.summary),
-        el('div', 'font:12px system-ui,sans-serif;opacity:0.7', `Last saved ${formatSaved(w.updatedAt)}`),
+        el('div', 'font:600 15px var(--dg-font);overflow-wrap:anywhere', w.title),
+        el('div', 'font:13px var(--dg-font);opacity:0.85;overflow-wrap:anywhere', w.summary),
+        el('div', 'font:12px var(--dg-font);opacity:0.7', `Last saved ${formatSaved(w.updatedAt)}`),
       );
-      row.append(text, btn('Reopen', () => choose({ mode: 'reopen', code: w.code, title: w.title, pace: pace.get(), roomMode: mode.get() })));
+      const actions = el('div', 'display:flex;flex-wrap:wrap;gap:6px;align-items:center');
+      const reopenBtn = btn('Reopen', () => choose({ mode: 'reopen', code: w.code, title: w.title, pace: pace.get(), roomMode: mode.get(), lootRespawn: lootResp.get() === 'on' }));
+      const exportBtn = btn('Export', () => downloadJson(w.code, w.title));
+      const deleteBtn = btn('Delete', () => {
+        removeOwnedWorld(w.code);
+        worlds = worlds.filter((item) => item.code !== w.code);
+        renderWorlds();
+      }, 'background:#4a2525;border-color:#7d4242');
+      actions.append(reopenBtn, exportBtn, deleteBtn);
+      row.append(text, actions);
       worldsBox.append(row);
     }
   }
+  const importInput = document.createElement('input');
+  importInput.type = 'file';
+  importInput.accept = '.json,application/json';
+  importInput.style.display = 'none';
+  importInput.addEventListener('change', () => {
+    const file = importInput.files?.[0];
+    importInput.value = '';
+    if (!file) return;
+    void file.text().then((txt) => {
+      const imported = importWorldJson(txt);
+      if (imported) {
+        syncFromStore();
+        statusText.textContent = `Imported "${imported.title}" (${imported.code})`;
+        statusRow.hidden = false;
+      } else {
+        statusText.textContent = 'Invalid world JSON file.';
+        statusRow.hidden = false;
+      }
+    });
+  });
+  const ioRow = el('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-top:8px');
+  const exportLatestBtn = btn('Export World JSON', () => {
+    const target = worlds[0];
+    if (target) downloadJson(target.code, target.title);
+  });
+  const importBtn = btn('Import World JSON', () => importInput.click());
+  ioRow.append(exportLatestBtn, importBtn, importInput);
+
   const worldsSection = el('section');
-  worldsSection.append(heading('My worlds'), worldsBox);
+  worldsSection.append(heading('My persistent worlds'), worldsBox, ioRow);
   renderWorlds();
 
-  const soloBtn = btn('Play alone', () => choose({ mode: 'solo', code: null, title: formTitle(), pace: pace.get(), roomMode: mode.get() }),
-    'width:100%;margin-top:18px');
+  const soloBtn = btn('Play solo (persistent local save)', () => choose({
+    mode: 'solo', code: null, title: formTitle(), pace: pace.get(), roomMode: mode.get(), lootRespawn: lootResp.get() === 'on',
+  }), 'width:100%;margin-top:18px');
 
   inner.append(head, statusRow, newSection, joinSection, worldsSection, soloBtn);
 
@@ -203,11 +311,6 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
   root.addEventListener('keydown', (e) => e.stopPropagation());
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !root.hidden) close(); }, true);
 
-  // The Online button, bottom of the HUD zone, right side.
-  const openBtn = btn('Online', open,
-    'position:absolute;z-index:50;pointer-events:auto;top:calc(72px + env(safe-area-inset-top));right:calc(60px + env(safe-area-inset-right))');
-  openBtn.id = 'dayg-room-open';
-  ui.appendChild(openBtn);
   ui.appendChild(root);
 
   return {
@@ -217,6 +320,7 @@ export function createRoomPanel(ui: HTMLElement): RoomPanel {
     isOpen: (): boolean => !root.hidden,
     onChoose: (fn: (c: RoomChoice) => void): void => { choiceListeners.push(fn); },
     onOpen: (fn: () => void): void => { openListeners.push(fn); },
+    onSaveNow: (fn: () => void): void => { saveListeners.push(fn); },
     setWorlds: (list: readonly RoomListItem[]): void => { worlds = list.slice(); renderWorlds(); },
     setStatus: (text: string): void => {
       statusText.textContent = text;

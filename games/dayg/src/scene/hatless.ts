@@ -28,6 +28,7 @@ interface Pending { region: RegionId; count: number; spots: readonly SpotDef[]; 
 
 interface Hatless {
   model: GnomeModel;
+  region: RegionId;
   pos: THREE.Vector3;          // feet
   vel: THREE.Vector3;
   facing: number;
@@ -44,6 +45,9 @@ interface Hatless {
   scratchT: number;
   reaching: boolean;           // hunting from below a player who is out of reach: arms up
   swayT: number;
+  rigDrop: number;
+  rigTiltX: number;
+  rigTiltZ: number;
   crumbleT: number;
   fx: THREE.Group | null;
   fxMats: THREE.Material[];
@@ -145,8 +149,13 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
   let authority = true;        // false on a viewer: puppets only, hits are queued for the owner
   let extraFn: (() => { key: string; pos: Vec3 }[]) | null = null;
   let remoteScratch: ((key: string, strength: number, from: { x: number; z: number }) => void) | null = null;
+  let npcTargetFn: (() => { key: string; pos: Vec3 }[]) | null = null;
+  let npcScratch: ((key: string, strength: number, from: { x: number; z: number }) => void) | null = null;
   const strikes: { x: number; y: number; z: number; f: number; reach: number; dmg: number }[] = [];
-  const extras = (): { key: string; pos: Vec3 }[] => (extraFn ? extraFn() : []);
+  const extras = (): { key: string; pos: Vec3 }[] => [
+    ...(extraFn ? extraFn() : []),
+    ...(npcTargetFn ? npcTargetFn() : []),
+  ];
 
   // Hearing: a Hatless within the noise's radius that is not already hunting is drawn to it.
   // Noise from inside a building reaches a Hatless in a different space muffled.
@@ -254,6 +263,8 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     }
   };
 
+  const SAFE_SPAWN_DIST = 18;  // gm: keep normal spawns away from the player's immediate view
+
   /** A spot inside the region rect (jittered around a hatless spot when one exists), or the region's edge point nearest `from`. */
   const placeOne = (req: Pending): Hatless | null => {
     const def = REGIONS.find((r) => r.id === req.region);
@@ -261,9 +272,11 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     const r = def.rect;
     const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
     const spots = req.spots.filter((s) => s.kind === 'hatless' && s.region === req.region);
+    const p = getPlayer();
     let x = 0, z = 0, y = def.floorY;
+    let bestX = cx, bestZ = cz, bestY = def.floorY, bestDist = -1;
     let drawnTo: XZ | null = null;
-    for (let attempt = 0; attempt < 8; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       if (req.from) {
         x = clampTo(req.from.x, r.x0 + 0.5, r.x1 - 0.5);
         z = clampTo(req.from.z, r.z0 + 0.5, r.z1 - 0.5);
@@ -286,15 +299,19 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
         z = r.z0 + 0.5 + Math.random() * (r.z1 - r.z0 - 1);
         y = collider.groundAt(x, z, def.floorY);
       }
-      // Zero-length move reports whether the spot itself is inside a block; retry a few times.
-      if (collider.move({ x, y, z }, 0, 0, HATLESS.radius, GNOME_HEIGHT, HATLESS_STEP, out) === null) break;
+      const dist = Math.hypot(x - p.pos.x, z - p.pos.z);
+      const clear = collider.move({ x, y, z }, 0, 0, HATLESS.radius, GNOME_HEIGHT, HATLESS_STEP, out) === null;
+      if (clear && dist > bestDist) { bestX = x; bestZ = z; bestY = y; bestDist = dist; }
+      // Zero-length move reports whether the spot itself is inside a block; also keep away from player.
+      if (clear && (req.from || dist >= SAFE_SPAWN_DIST)) break;
+      if (attempt === 11 && bestDist >= 0) { x = bestX; z = bestZ; y = bestY; }
     }
     const id = nextId++;
     const model = makeGnome(hatlessLook(id), { hatless: true });
     scene.add(model.object);
     model.object.position.set(x, y, z);
     return {
-      id, puppet: false, goal: null,
+      id, puppet: false, goal: null, region: req.region,
       model,
       pos: new THREE.Vector3(x, y, z),
       vel: new THREE.Vector3(),
@@ -312,6 +329,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       scratchT: 0,
       reaching: false,
       swayT: Math.random() * 10,
+      rigDrop: 0, rigTiltX: 0, rigTiltZ: 0,
       crumbleT: 0,
       fx: null,
       fxMats: [],
@@ -381,6 +399,7 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
           const strength = Math.min(1, 0.5 + 0.1 * others);
           const from = { x: h.pos.x, z: h.pos.z };
           if (key === null) bus.emit('player-hit', { strength, from });
+          else if (key.startsWith('npc:')) npcScratch?.(key, strength, from);
           else remoteScratch?.(key, strength, from);
         }
       } else {
@@ -416,10 +435,89 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     }
   };
 
-  /** Poses the model for this frame: walk animation, idle sway, reaching arms. */
+  /** Poses the model for this frame: 8 unique seeded zombie locomotion archetypes, idle variants, lunge, stagger, reaching arms. */
   const pose = (h: Hatless, dt: number): void => {
+    h.model.rig.position.y -= h.rigDrop;
+    h.model.rig.rotation.x -= h.rigTiltX;
+    h.model.rig.rotation.z -= h.rigTiltZ;
+    h.rigDrop = h.rigTiltX = h.rigTiltZ = 0;
+
     h.model.update({ position: h.pos, velocity: h.vel, facing: h.facing, grounded: true, jumpsUsed: 0 }, dt);
-    h.model.object.rotation.z = h.mode === 'idle' ? Math.sin(h.swayT * SWAY_SPEED) * SWAY_ANGLE : 0;
+    const moving = Math.hypot(h.vel.x, h.vel.z) > 0.05;
+    const t = h.swayT;
+    if (h.mode === 'stagger') {
+      h.rigTiltX = -0.35;
+      h.rigTiltZ = Math.sin(t * 14) * 0.2;
+      h.model.arms.left.rotation.x = -0.4;
+      h.model.arms.right.rotation.x = -0.4;
+    } else if (!moving) {
+      const idleKind = h.id % 3;
+      if (idleKind === 0) {
+        h.model.object.rotation.z = Math.sin(t * SWAY_SPEED) * SWAY_ANGLE;
+      } else if (idleKind === 1) {
+        h.model.object.rotation.z = 0;
+        h.rigTiltZ = Math.sin(t * 7.5) * 0.09 * Math.max(0, Math.sin(t * 1.1));
+      } else {
+        h.model.object.rotation.z = 0;
+        h.rigTiltX = 0.14 + Math.sin(t * 1.4) * 0.06;
+        h.model.arms.left.rotation.x = -0.6 + Math.sin(t * 1.4) * 0.15;
+        h.model.arms.right.rotation.x = -0.6 - Math.sin(t * 1.4) * 0.15;
+      }
+    } else {
+      h.model.object.rotation.z = 0;
+      const arch = h.id % 8;
+      if (arch === 0) {
+        // Shambler: heavy asymmetric drag, arms forward-down
+        h.rigTiltZ = Math.sin(t * 3.5) * 0.14;
+        h.model.arms.left.rotation.x = -0.9 + Math.sin(t * 3.5) * 0.2;
+        h.model.arms.right.rotation.x = -0.7 - Math.sin(t * 3.5) * 0.15;
+      } else if (arch === 1) {
+        // Limper: pronounced left-leg hitch and dip every stride
+        const hitch = Math.max(0, Math.sin(t * 4.2));
+        h.rigDrop = hitch * 0.14;
+        h.rigTiltZ = -hitch * 0.2;
+        if (h.model.legs) h.model.legs.left.rotation.x *= 0.3;
+      } else if (arch === 2) {
+        // Hunched-crawler: deep forward torso hunch, low swinging arms
+        h.rigTiltX = 0.38;
+        h.model.arms.left.rotation.x = -0.5 + Math.sin(t * 5) * 0.45;
+        h.model.arms.right.rotation.x = -0.5 - Math.sin(t * 5) * 0.45;
+      } else if (arch === 3) {
+        // Twitcher: rapid erratic shoulder/torso snap
+        const snap = Math.sin(t * 11) * Math.cos(t * 4.3);
+        h.rigTiltZ = snap * 0.24;
+        h.model.arms.left.rotation.z = 0.2 + snap * 0.38;
+        h.model.arms.right.rotation.z = -0.2 - snap * 0.38;
+      } else if (arch === 4) {
+        // Head-loller: slow swaying tilt, stiff outstretched arms
+        h.rigTiltZ = Math.sin(t * 2.1) * 0.26;
+        h.model.arms.left.rotation.x = -1.35;
+        h.model.arms.right.rotation.x = -1.35;
+      } else if (arch === 5) {
+        // Stalker: low prowl lean, tense elbows
+        h.rigTiltX = 0.22 + (h.lungeLeft > 0 ? 0.24 : 0);
+        h.model.arms.left.rotation.x = -0.85 + Math.sin(t * 6) * 0.25;
+        h.model.arms.right.rotation.x = -0.85 - Math.sin(t * 6) * 0.25;
+      } else if (arch === 6) {
+        // Berserker-flail: wild overhead arm swings & frantic side roll
+        h.rigTiltZ = Math.sin(t * 8.5) * 0.18;
+        h.model.arms.left.rotation.x = -1.8 + Math.sin(t * 9.5) * 0.7;
+        h.model.arms.right.rotation.x = -1.8 - Math.sin(t * 9.5) * 0.7;
+      } else {
+        // Stiff-reacher: rigid Frankenstein stride with locked elbows
+        h.rigTiltZ = Math.sin(t * 3.0) * 0.08;
+        h.model.arms.left.rotation.x = -1.55;
+        h.model.arms.right.rotation.x = -1.55;
+        if (h.model.legs) {
+          h.model.legs.left.rotation.x *= 0.65;
+          h.model.legs.right.rotation.x *= 0.65;
+        }
+      }
+      if (h.lungeLeft > 0) h.rigTiltX += 0.25;
+    }
+    h.model.rig.position.y += h.rigDrop;
+    h.model.rig.rotation.x += h.rigTiltX;
+    h.model.rig.rotation.z += h.rigTiltZ;
     if (h.reaching) {
       h.model.arms.left.rotation.x = ARMS_UP;
       h.model.arms.right.rotation.x = ARMS_UP;
@@ -473,11 +571,12 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     scene.add(model.object);
     model.object.position.set(n.x, n.y, n.z);
     return {
-      id: n.id, puppet: true, goal: n, model,
+      id: n.id, puppet: true, goal: n, region: collider.regionAt(n.x, n.z) ?? 'forecourt', model,
       pos: new THREE.Vector3(n.x, n.y, n.z), vel: new THREE.Vector3(), facing: n.f,
       baseScale: model.object.scale.x, mode: 'idle', staggerBack: 'idle', staggerLeft: 0, hp: HATLESS.coreHp,
       lastSeen: { x: n.x, z: n.z }, drawnTo: null, unseen: 0, lungeLeft: 0, lungeCool: 0, scratchT: 0,
-      reaching: false, swayT: Math.random() * 10, crumbleT: 0, fx: null, fxMats: [],
+      reaching: false, swayT: Math.random() * 10, rigDrop: 0, rigTiltX: 0, rigTiltZ: 0,
+      crumbleT: 0, fx: null, fxMats: [],
     };
   };
 
@@ -541,6 +640,8 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
     drainStrikes() { return strikes.splice(0); },
     setExtraTargets(fn) { extraFn = fn; },
     onRemoteScratch(fn) { remoteScratch = fn; },
+    setNpcTargets(fn) { npcTargetFn = fn; },
+    onNpcScratch(fn) { npcScratch = fn; },
     setHazards() {},
     spawn(region, count, spots, from) {
       if (count <= 0 || !authority) return;
@@ -552,6 +653,28 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
       for (const h of all) removeHatless(h);
       all.length = 0;
       pending.length = 0;
+      return n;
+    },
+    pruneOutside(keepRegions, playerPos, maxDist) {
+      let removed = 0;
+      for (let i = all.length - 1; i >= 0; i--) {
+        const h = all[i];
+        if (h.mode === 'crumble' || h.mode === 'hunting') continue;
+        if (keepRegions.has(h.region)) continue;
+        if (Math.hypot(h.pos.x - playerPos.x, h.pos.z - playerPos.z) <= maxDist) continue;
+        removeHatless(h);
+        all.splice(i, 1);
+        removed++;
+      }
+      for (let i = pending.length - 1; i >= 0; i--) {
+        if (!keepRegions.has(pending[i].region)) pending.splice(i, 1);
+      }
+      return removed;
+    },
+    countInRegion(region) {
+      let n = 0;
+      for (const h of all) if (h.mode !== 'crumble' && h.region === region) n++;
+      for (const p of pending) if (p.region === region) n += p.count;
       return n;
     },
     update(dt, ctx) {
@@ -609,6 +732,16 @@ export function createHatlessSystem(deps: HatlessDeps): HatlessSystem {
         if (h.mode !== 'crumble' && Math.hypot(h.pos.x - pos.x, h.pos.z - pos.z) <= radius) n++;
       }
       return n;
+    },
+    nearestPos(pos, radius) {
+      let best: Vec3 | null = null;
+      let bestD = radius;
+      for (const h of all) {
+        if (h.mode === 'crumble') continue;
+        const d = Math.hypot(h.pos.x - pos.x, h.pos.z - pos.z);
+        if (d <= bestD) { bestD = d; best = { x: h.pos.x, y: h.pos.y, z: h.pos.z }; }
+      }
+      return best;
     },
   };
 }

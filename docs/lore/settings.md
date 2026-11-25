@@ -10,8 +10,8 @@ A setting is a world that one or more games share. Each `## \`id\`` heading belo
 | `the-yard` | sample-3d (Lawn Gnome Panic), lawn-prix, gnome-front, gnome-golf, gnome-bowling, gnome-blackjack, gnome-party, gnomylpics, music-room, faster-than-lawn, mower-chain, gnaft, club-gnome, incregnomtal, cooking-gnoma, gnome-billiards, gba-gjam, wordle-gnome, gnomillion, snigms |
 | `the-tall-house` | paragnormal |
 | `the-aether` | aether-board, gnome-set-radio |
-| `unplaced` | peak-climb, gnome-sweet-gnome, water-flow |
-| `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto, nothing-left-to-collect, dayg |
+| `unplaced` | peak-climb, gnome-sweet-gnome, water-flow, dead-grid |
+| `apocrypha` | gnome-company, giant-pup, tribute-schedule, gnome-theft-auto, nothing-left-to-collect, dayg, gnomelock, gnome-souls |
 | `none` | gnome-creator, prefab-gallery, sample-dodge, me, admin-profiler |
 
 ## `core` Core
@@ -80,7 +80,7 @@ Games with gnomes that don't belong to a setting yet. They follow the core; give
 wants to share their world.
 
 - **Games:** `games/peak-climb` (Mt. Gnome), `games/gnome-sweet-gnome` (a match-3 with its own three gnome homes: Mossy Lane, Oakwood Treehouse, Shell Cove).
-- **Games (no gnomes):** `games/water-flow`, a water-simulation tech demo.
+- **Games (no gnomes):** `games/water-flow`, a water-simulation tech demo; `games/dead-grid`, a hidden WASM-core DayZ-inspired post-apocalyptic society simulator.
 
 ## `apocrypha` Apocrypha
 
@@ -94,7 +94,11 @@ Parodies and one-offs. Their lore is theirs; no other game has to agree with it,
   `games/nothing-left-to-collect` (The Final
   Collectathon: a job interview at the Annex, an office of collectors by Club Gnome's square, that becomes a
   collectathon parody; ends on Shellshore, the beach planet; R-040); `games/dayg` (DayG: zombie-gnome survival in
-  Mossgrave, a Tall One cemetery at gnome height, where the Hatless walk; R-039).
+  Mossgrave, a Tall One cemetery at gnome height, where the Hatless walk; R-039); `games/gnomelock` (Gnomelock:
+  The Bramble District, a 2v2 Deadlock-parody MOBA where Amber Hearth Red Caps and Sapphire Well Blue Caps
+  battle over Ceramic Patrons, Soul Acorns, and the 5-minute Gilded Relic); `games/gnome-souls` (Gnome Souls:
+  a semi-horror Souls-parody in the Sunken Spigot culvert where gnomes wield a two-handed greatsword against
+  Hollow Gnomes and Slink, the Uncoiled Hose).
 
 ## `none` No setting
 

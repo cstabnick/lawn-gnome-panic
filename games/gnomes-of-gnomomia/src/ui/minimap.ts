@@ -9,7 +9,7 @@ import { remotePlayers } from '../net/mmo';
 import { player, walkTo } from '../player';
 import { checkCondition } from '../quests';
 import { onSettingsChange, settings, updateSettings } from '../settings';
-import { groundColourAt, heightAt } from '../terrain';
+import { buildMinimapPixels, groundColourAt, heightAt } from '../terrain';
 import { activeZones, currentZone, isTeleportExit } from '../zones';
 import { EDGE, TOUCH, compact, onLayout } from './layout';
 
@@ -19,7 +19,10 @@ const CHUNK_PX = 32;
 const BASE_RADIUS_M = 58;
 const WATER_RGB = '#2d6a9f';
 
-const chunkCache = new Map<string, HTMLCanvasElement>();
+const chunkCache = new Map<number, HTMLCanvasElement>();
+const chunkKey = (ci: number, cj: number): number => (ci + 32768) * 65536 + (cj + 32768);
+let lastCompassTransform = '';
+let lastZoneText = '';
 
 let wrap: HTMLDivElement;
 let circle: HTMLDivElement;
@@ -31,7 +34,7 @@ let sizePx = 164;
 let compassRadius = 82;
 
 function getTerrainChunk(ci: number, cj: number): HTMLCanvasElement {
-  const key = `${ci},${cj}`;
+  const key = chunkKey(ci, cj);
   const cached = chunkCache.get(key);
   if (cached) return cached;
 
@@ -42,6 +45,14 @@ function getTerrainChunk(ci: number, cj: number): HTMLCanvasElement {
   const step = WORLD.chunk / CHUNK_PX;
   const x0 = ci * WORLD.chunk;
   const z0 = cj * WORLD.chunk;
+
+  const wasmPixels = buildMinimapPixels(x0, z0, WORLD.chunk, CHUNK_PX, TUNING.waterLevel);
+  if (wasmPixels) {
+    const bytes = new Uint8ClampedArray(wasmPixels.buffer as ArrayBuffer, wasmPixels.byteOffset, wasmPixels.byteLength);
+    g.putImageData(new ImageData(bytes, CHUNK_PX, CHUNK_PX), 0, 0);
+    chunkCache.set(key, c);
+    return c;
+  }
 
   for (let py = 0; py < CHUNK_PX; py++) {
     const wz = z0 + (py + 0.5) * step;
@@ -209,9 +220,17 @@ export function updateMinimap(): void {
   const northAngle = -Math.PI / 2 + yaw;
   const nx = Math.cos(northAngle) * (compassRadius - 8);
   const ny = Math.sin(northAngle) * (compassRadius - 8);
-  compassBtn.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`;
+  const nextTransform = `translate(calc(-50% + ${nx.toFixed(2)}px), calc(-50% + ${ny.toFixed(2)}px))`;
+  if (nextTransform !== lastCompassTransform) {
+    lastCompassTransform = nextTransform;
+    compassBtn.style.transform = nextTransform;
+  }
 
-  zoneLabel.textContent = currentZone().name;
+  const nextZone = currentZone().name;
+  if (nextZone !== lastZoneText) {
+    lastZoneText = nextZone;
+    zoneLabel.textContent = nextZone;
+  }
 
   ctx.save();
   ctx.clearRect(0, 0, sizePx, sizePx);

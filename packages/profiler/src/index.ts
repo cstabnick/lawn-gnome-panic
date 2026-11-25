@@ -1,14 +1,16 @@
 // @lawn/profiler: an opt-in hitch profiler for any game. Off by default (see config.ts for the URL flags);
 // off, timed() is a plain call and the rest are one boolean check. Nothing is observed or sent until it is on.
-import { readProfileConfig } from './config';
+import { readProfileConfig, STORAGE_KEY } from './config';
 import { Profiler } from './core';
 import type { Ctx, LiveStats, RenderStats } from './core';
+import type { UploadHandle, UploadStatus } from './upload';
 
 export { Profiler } from './core';
 export type { Ctx, FrameStats, HitchKind, HitchReport, LiveStats, ProfilerOptions, RenderStats } from './core';
 export { createGpuTimer, type GpuTimer } from './gpu';
 export { parseProfileValue, readProfileConfig, DEFAULT_THRESHOLD_MS, STORAGE_KEY } from './config';
 export type { ProfileConfig } from './config';
+export type { UploadStatus } from './upload';
 
 function storage(): Storage | null {
   try {
@@ -69,6 +71,17 @@ export function measure<T>(name: string, fn: () => T): T {
 }
 
 let started = false;
+let registeredGame = 'game';
+let uploadEnabled = config.upload;
+let uploadHandle: UploadHandle | null = null;
+
+function beginUpload(): void {
+  if (uploadHandle || typeof window === 'undefined') return;
+  import('./upload').then((m) => {
+    if (!uploadEnabled || uploadHandle) return;
+    uploadHandle = m.startUpload(profiler, registeredGame);
+  }).catch(() => {});
+}
 
 /**
  * Starts watching this page: long tasks (or animation-frame gaps where the browser has no longtask timing),
@@ -76,6 +89,7 @@ let started = false;
  * Without it the frame API still logs, it just watches nothing outside the frame.
  */
 export function initProfiler(game: string, opts: { context?: () => Ctx } = {}): void {
+  registeredGame = game;
   if (opts.context) profiler.setContext(opts.context);
   if (!profiler.on || started || typeof window === 'undefined') return;
   started = true;
@@ -91,6 +105,10 @@ export function initProfiler(game: string, opts: { context?: () => Ctx } = {}): 
     summary: () => console.table(profiler.summary()),
     /** The reports as JSON, e.g. copy(__lawnProfile.json()). */
     json: () => JSON.stringify({ game, thresholdMs: profiler.thresholdMs, ua: navigator.userAgent, reports: profiler.reports }),
+    /** Upload status when upload is active. */
+    upload: () => uploadHandle?.status() ?? null,
+    /** Flush queued reports immediately. */
+    flush: () => uploadHandle?.flush(),
   };
 
   let longtask = false;
@@ -120,7 +138,45 @@ export function initProfiler(game: string, opts: { context?: () => Ctx } = {}): 
     requestAnimationFrame(tick);
   }
 
-  if (config.upload) {
-    import('./upload').then((m) => m.startUpload(profiler, game)).catch(() => {});
+  if (uploadEnabled) beginUpload();
+}
+
+/** Enables profiling (and optionally upload + persistence) at runtime. */
+export function enableProfiler(opts: { thresholdMs?: number; upload?: boolean; keep?: boolean } = {}): void {
+  profiler.setEnabled(true, opts.thresholdMs);
+  if (opts.upload !== undefined) uploadEnabled = opts.upload;
+  if (opts.keep) {
+    try {
+      const parts = [String(profiler.thresholdMs)];
+      if (uploadEnabled) parts.push('upload');
+      storage()?.setItem(STORAGE_KEY, parts.join(','));
+    } catch {
+      /* blocked storage */
+    }
   }
+  initProfiler(registeredGame);
+  if (uploadEnabled) beginUpload();
+}
+
+/** Disables profiling at runtime, stops any active upload, and clears any kept setting. */
+export function disableProfiler(): void {
+  profiler.setEnabled(false);
+  uploadEnabled = false;
+  uploadHandle?.stop();
+  uploadHandle = null;
+  try {
+    storage()?.removeItem(STORAGE_KEY);
+  } catch {
+    /* blocked storage */
+  }
+}
+
+/** Flushes queued hitch/sample reports immediately when upload is active. */
+export function flushUpload(): void {
+  uploadHandle?.flush();
+}
+
+/** Current upload status, or null when upload is not active. */
+export function uploadStatus(): UploadStatus | null {
+  return uploadHandle?.status() ?? null;
 }

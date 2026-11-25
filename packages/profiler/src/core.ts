@@ -84,8 +84,8 @@ export interface ProfilerOptions {
 export type Ctx = Record<string, string | number | boolean>;
 
 export class Profiler {
-  readonly on: boolean;
-  readonly thresholdMs: number;
+  on: boolean;
+  thresholdMs: number;
   readonly reports: HitchReport[] = [];
   /** Periodic 'sample' reports (only while on), newest last, at most 60 kept. */
   readonly samples: HitchReport[] = [];
@@ -128,6 +128,12 @@ export class Profiler {
   /** True when timing runs: profiling is on, or an overlay asked for live stats. */
   get collecting(): boolean {
     return this.on || this.live;
+  }
+
+  /** Turns profiling on or off at runtime (optionally updating the hitch threshold). */
+  setEnabled(on: boolean, thresholdMs?: number): void {
+    this.on = on;
+    if (thresholdMs !== undefined && Number.isFinite(thresholdMs) && thresholdMs > 0) this.thresholdMs = thresholdMs;
   }
 
   /** Turns live stats (liveStats()) on or off; nothing is reported unless the profiler is on. */

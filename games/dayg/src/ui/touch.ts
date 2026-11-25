@@ -176,10 +176,10 @@ export function createTouchControls(ui: HTMLElement): TouchSource {
   crouchBtn.style.borderRadius = '30px';
   const upBtn = button('dt-up', 'UP', BIG, 'climb', blockPos(0, 80, BIG, BIG), 'Climb');
   button('dt-hit', 'HIT', HIT, 'attack', blockPos(140, 180, HIT, HIT), 'Hit');
-  // VIEW: 48 px, under the HUD clock row.
+  // VIEW: 48 px, under the top-left HUD needs bars so it stays clear of the right-side action dock.
   button('dt-view dt-view-btn', 'VIEW', 48, 'view', {
-    right: `calc(env(safe-area-inset-right, 0px) + 12px)`,
-    top: `calc(env(safe-area-inset-top, 0px) + ${LAYOUT.topBar + 8}px)`,
+    left: `calc(env(safe-area-inset-left, 0px) + 12px)`,
+    top: `calc(env(safe-area-inset-top, 0px) + ${LAYOUT.topBar + 10}px)`,
   }, 'Toggle view');
 
   refresh();

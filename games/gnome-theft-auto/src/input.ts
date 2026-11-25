@@ -329,7 +329,8 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
         moveY: big(clamp(kbY + stickY), p?.moveY ?? 0),
         lift: big(clamp(kbLift + (upIds.size > 0 ? 1 : 0) - (downIds.size > 0 ? 1 : 0)), p?.lift ?? 0),
         jump: s.jump || !!p?.jump,
-        fire: has(...MOVE_KEYS.fire) || mouseFire || fireIds.size > 0 || !!p?.fire,
+        // A click on the More menu must never fire, even if the pointer lock has not released yet.
+        fire: has(...MOVE_KEYS.fire) || (mouseFire && !menu) || fireIds.size > 0 || !!p?.fire,
         enterExit: s.enterExit || !!p?.enterExit,
         switchGun: s.switchGun || !!p?.switchGun,
         reload: s.reload || !!p?.reload,

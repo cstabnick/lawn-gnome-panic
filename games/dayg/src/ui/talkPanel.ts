@@ -26,6 +26,9 @@ const ACORN_MAX = 10;
 
 type Mode = 'verbs' | 'ask' | 'trade';
 
+const CONVERSATION_VERBS: readonly TalkVerb[] = ['greet', 'ask', 'trade', 'offer-help', 'ask-help', 'share-food', 'warn'];
+const FACTION_RISK_VERBS: readonly TalkVerb[] = ['recruit', 'join', 'threaten', 'rob'];
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   if (css) node.style.cssText = css;
@@ -34,8 +37,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: stri
 }
 
 function button(text: string, onClick: () => void, disabled = false, extra = ''): HTMLButtonElement {
-  const b = el('button', 'min-height:44px;min-width:44px;padding:8px 10px;border-radius:8px;border:1px solid #56614a;' +
-    'background:#2d3a25;color:#eee;font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation;text-align:left;' +
+  const b = el('button', 'min-height:44px;min-width:44px;padding:8px 10px;border-radius:8px;border:1px solid var(--dg-border);' +
+    'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation;text-align:left;' +
     (disabled ? 'opacity:0.45;cursor:default;' : '') + extra, text);
   b.type = 'button';
   b.disabled = disabled;
@@ -55,10 +58,17 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
   const { host, npcs, interact, inv, bus, getPlayer } = deps;
   const root = el('div');
   root.id = DOM_MORE.talk;
-  root.style.cssText = 'position:fixed;box-sizing:border-box;background:rgba(18,22,16,0.95);color:#eee;' +
-    'font:14px system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;z-index:50;touch-action:pan-y;pointer-events:auto;' +
-    '-webkit-overflow-scrolling:touch;border:1px solid #56614a';
+  root.style.cssText = 'position:fixed;box-sizing:border-box;background:var(--dg-surface);color:var(--dg-text);backdrop-filter:blur(6px);' +
+    'font:14px var(--dg-font);overflow-y:auto;overflow-x:hidden;z-index:60;touch-action:pan-y;pointer-events:auto;' +
+    '-webkit-overflow-scrolling:touch;border:1px solid var(--dg-border);box-shadow:var(--dg-shadow)';
   root.hidden = true;
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
+  window.addEventListener('keydown', (e) => {
+    if (!root.hidden && e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  });
   ui.appendChild(root);
 
   let npcId: NpcId | null = null;
@@ -233,28 +243,31 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
   function header(npc: NpcId): HTMLElement {
     const w: WorldState = host.world;
     const n = w.npcs[npc];
-    const wrap = el('div', 'margin-bottom:8px;padding-right:52px;position:relative');
-    wrap.append(el('div', 'font:bold 18px system-ui,sans-serif', n.name));
+    const wrap = el('div', 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;' +
+      'padding-bottom:10px;border-bottom:1px solid var(--dg-border);margin-bottom:10px');
+    const info = el('div', 'min-width:0;flex:1');
+    info.append(el('div', 'font:bold 18px var(--dg-font);color:var(--dg-accent);overflow-wrap:anywhere', n.name));
     const f = factionOf(w, n);
-    const line = el('div', 'font:13px system-ui,sans-serif;opacity:0.9;margin-top:2px;display:flex;align-items:center;gap:6px');
+    const line = el('div', 'font:13px var(--dg-font);opacity:0.9;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap');
     if (f) {
-      const sw = el('span', `display:inline-block;width:12px;height:12px;border-radius:3px;background:#${f.hat.toString(16).padStart(6, '0')}`);
+      const sw = el('span', `display:inline-block;width:12px;height:12px;border-radius:3px;flex:none;background:#${f.hat.toString(16).padStart(6, '0')}`);
       line.append(sw, el('span', '', f.name));
     } else {
       line.append(el('span', '', 'No faction'));
     }
     const t = trustOf(w, npc, subjectOfPlayer(host.me));
     line.append(el('span', '', `· ${trustWord(t)}`));
-    wrap.append(line);
-    const x = button('✕', () => close(), false, 'position:absolute;top:0;right:0;width:48px;height:48px;min-width:48px;' +
-      'min-height:48px;text-align:center;font-size:20px;padding:0');
+    info.append(line);
+    const x = button('✕', () => close(), false, 'flex:none;width:44px;height:44px;min-width:44px;' +
+      'min-height:44px;text-align:center;font-size:18px;padding:0;display:flex;align-items:center;justify-content:center');
     x.setAttribute('aria-label', 'Close talk');
-    wrap.append(x);
+    wrap.append(info, x);
     return wrap;
   }
 
   function linesBlock(): HTMLElement {
-    const box = el('div', 'margin:8px 0;min-height:44px');
+    const box = el('div', 'margin:8px 0;min-height:44px;padding:10px;border-radius:8px;' +
+      'background:rgba(0,0,0,0.25);border:1px solid var(--dg-border)');
     if (log.length === 0) box.append(el('div', 'opacity:0.6;font-style:italic', 'Nothing said yet.'));
     for (const l of log) box.append(el('p', 'margin:4px 0', l));
     return box;
@@ -271,28 +284,40 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
   }
 
   function verbsBlock(npc: NpcId): HTMLElement {
-    const grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:6px');
-    for (const v of verbsFor(host.world, npc, host.me)) {
-      const cell = el('div', 'display:flex;flex-direction:column;gap:2px');
-      const onPress = (): void => {
-        if (v.verb === 'ask') { mode = 'ask'; render(); return; }
-        if (v.verb === 'trade') { startTrade(npc); return; }
-        if (v.verb === 'share-food') { submit('share-food', { offer: { resource: 'food', count: 1 } }); return; }
-        if (v.verb === 'warn') { submit('warn', { warnOf: npc }); return; }
-        submit(v.verb);
-      };
-      cell.append(button(VERB_LABEL[v.verb], onPress, !v.ok, 'width:100%'));
-      if (!v.ok && v.why) cell.append(el('div', 'font:12px system-ui,sans-serif;opacity:0.7;padding:0 2px', v.why));
-      grid.append(cell);
-    }
-    return grid;
+    const wrap = el('div', 'display:flex;flex-direction:column;gap:10px;margin-top:8px');
+    const allVerbs = verbsFor(host.world, npc, host.me);
+    const renderSection = (title: string, allow: readonly TalkVerb[]): void => {
+      const items = allVerbs.filter((v) => allow.includes(v.verb));
+      if (items.length === 0) return;
+      const sec = el('div');
+      sec.append(el('div', 'font:700 11px var(--dg-font);text-transform:uppercase;letter-spacing:.08em;color:var(--dg-muted);margin-bottom:6px', title));
+      const grid = el('div', 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px');
+      for (const v of items) {
+        const cell = el('div', 'display:flex;flex-direction:column;gap:2px');
+        const onPress = (): void => {
+          if (v.verb === 'ask') { mode = 'ask'; render(); return; }
+          if (v.verb === 'trade') { startTrade(npc); return; }
+          if (v.verb === 'share-food') { submit('share-food', { offer: { resource: 'food', count: 1 } }); return; }
+          if (v.verb === 'warn') { submit('warn', { warnOf: npc }); return; }
+          submit(v.verb);
+        };
+        cell.append(button(VERB_LABEL[v.verb], onPress, !v.ok, 'width:100%'));
+        if (!v.ok && v.why) cell.append(el('div', 'font:12px var(--dg-font);opacity:0.7;padding:0 2px', v.why));
+        grid.append(cell);
+      }
+      sec.append(grid);
+      wrap.append(sec);
+    };
+    renderSection('Conversation', CONVERSATION_VERBS);
+    renderSection('Faction & Risk', FACTION_RISK_VERBS);
+    return wrap;
   }
 
   function topicsBlock(npc: NpcId): HTMLElement {
     const w = host.world;
     const box = el('div', 'margin-top:8px');
-    box.append(el('div', 'margin-bottom:4px;font-weight:bold', 'Ask about…'));
-    const grid = el('div', 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px');
+    box.append(el('div', 'margin-bottom:6px;font-weight:bold', 'Ask about…'));
+    const grid = el('div', 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px');
     const ask = (topic: AskTopic): void => { submit('ask', { topic }); mode = 'verbs'; };
     const n = w.npcs[npc];
     const places = [n.region, ...(w.graph.neighbours[n.region] ?? []).map((nb) => nb.to)];
@@ -323,11 +348,13 @@ export function createTalkPanel(ui: HTMLElement, deps: TalkDeps): TalkPanel {
   }
 
   function stepper(label: string, value: string, dec: () => void, inc: () => void): HTMLElement {
-    const row = el('div', 'display:flex;align-items:center;gap:8px;margin:6px 0');
-    row.append(el('span', 'min-width:84px', label));
-    row.append(button('−', dec, false, 'min-width:44px;text-align:center'));
-    row.append(el('span', 'min-width:90px;text-align:center', value));
-    row.append(button('+', inc, false, 'min-width:44px;text-align:center'));
+    const row = el('div', 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:6px 0');
+    row.append(el('span', 'min-width:72px', label));
+    const ctrl = el('div', 'display:flex;align-items:center;gap:6px');
+    ctrl.append(button('−', dec, false, 'min-width:44px;text-align:center'));
+    ctrl.append(el('span', 'min-width:80px;text-align:center', value));
+    ctrl.append(button('+', inc, false, 'min-width:44px;text-align:center'));
+    row.append(ctrl);
     return row;
   }
 

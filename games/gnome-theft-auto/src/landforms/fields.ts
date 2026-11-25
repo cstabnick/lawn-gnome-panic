@@ -4,6 +4,7 @@
 import { distToSeg } from '@lawn/level';
 import { WORLD_HALF } from '../config';
 import { REGION_IDS, REGIONS, highways, regionAt, waterBodies, waterPaths, type RegionId } from '../levels';
+import { wasmBuildDistanceFields } from '../wasm/gtaWasm';
 
 const MC = 4;
 const MN = Math.round((2 * WORLD_HALF) / MC) + 1;
@@ -23,6 +24,8 @@ function innerEdges(id: RegionId): [number, number, number, number][] {
 }
 
 function buildFields(): NonNullable<typeof fields> {
+  const fromWasm = wasmBuildDistanceFields();
+  if (fromWasm) return fromWasm;
   const river = new Float32Array(MN * MN);
   const water = new Float32Array(MN * MN);
   const border = new Float32Array(MN * MN);

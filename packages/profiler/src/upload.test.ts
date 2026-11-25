@@ -19,4 +19,13 @@ describe('upload', () => {
     expect(out[1].name.length).toBeLessThanOrEqual(64);
     expect(Object.keys(j.context as object)).toHaveLength(8);
   });
+
+  it('clamps extreme durations and span times to server limits', () => {
+    const j = toHitchJson({
+      kind: 'gap', ms: 900_000, at: -5, parts: [], spans: [{ name: 'tab', start: -1, ms: 900_000 }], wall: Date.UTC(2026, 0, 2), ctx: {},
+    });
+    expect(j.durationMs).toBe(600_000);
+    expect(j.atMs).toBe(0);
+    expect((j.spans as { startMs: number; durationMs: number }[])[0]).toEqual({ name: 'tab', startMs: 0, durationMs: 600_000 });
+  });
 });

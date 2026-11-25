@@ -507,6 +507,10 @@ export function buildDressing(root: THREE.Group): THREE.Object3D[] {
   return clickable;
 }
 
+const COARSE = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+const DRESS_VIEW_RADIUS = COARSE ? 384 : WORLD.viewRadius;
+const DRESS_NEAR_RADIUS = COARSE ? 128 : WORLD.nearRadius;
+
 /** Per frame: culls distant/other-realm zone dressing, shows teleport exit rings whose `when` holds, and a gate on each pass that is closed. */
 export function updateDressing(focus: THREE.Vector3): void {
   const playerIndoor = focus.z > WORLD.instanceZ - 400;
@@ -516,8 +520,8 @@ export function updateDressing(focus: THREE.Vector3): void {
       continue;
     }
     const d = zoneRectDistance(v.id, focus.x, focus.z);
-    v.group.visible = d <= WORLD.viewRadius;
-    v.detailGroup.visible = v.group.visible && d <= WORLD.nearRadius;
+    v.group.visible = d <= DRESS_VIEW_RADIUS;
+    v.detailGroup.visible = v.group.visible && d <= DRESS_NEAR_RADIUS;
   }
   for (const v of exitViews) {
     if (v.parentGroup.visible) v.group.visible = checkCondition(v.exit.when);
@@ -527,8 +531,8 @@ export function updateDressing(focus: THREE.Vector3): void {
     if (roadGroup.visible) {
       for (const pe of passEndViews) {
         const dist = Math.hypot(pe.x - focus.x, pe.z - focus.z);
-        pe.signGroup.visible = dist <= WORLD.nearRadius;
-        pe.gateGroup.visible = dist <= WORLD.viewRadius && !passOpen(pe.pass);
+        pe.signGroup.visible = dist <= DRESS_NEAR_RADIUS;
+        pe.gateGroup.visible = dist <= DRESS_VIEW_RADIUS && !passOpen(pe.pass);
       }
     }
   }

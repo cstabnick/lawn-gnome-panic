@@ -24,6 +24,7 @@ import { applyTrackRelief } from './raceTrack/track';
 import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
 import { SKYWAY } from './highways/skyways';
+import { wasmBuildBaseHeightGrid, wasmNaturalHeightAt } from './wasm/gtaWasm';
 
 export type { SurfaceKind };
 
@@ -93,11 +94,15 @@ const DOC_STAMPS: Stamp[] = REGION_IDS.flatMap((id) => {
   return (REGION_DOCS[id].stamps ?? []).map((s): Stamp => ({ ...s, x: s.x + o.x, z: s.z + o.z }));
 });
 
-function stampsInUse(): Stamp[] {
-  const doc = opts.landforms ? DOC_STAMPS : [];
-  if (!opts.testHill) return doc;
-  const t = TERRAIN.testHill;
-  return [...doc, { op: 'gauss', x: t.x, z: t.z, sigma: t.sigma, amount: t.amount }];
+const EMPTY_STAMPS: readonly Stamp[] = [];
+const HILL_ONLY_STAMPS: readonly Stamp[] = [
+  { op: 'gauss', x: TERRAIN.testHill.x, z: TERRAIN.testHill.z, sigma: TERRAIN.testHill.sigma, amount: TERRAIN.testHill.amount },
+];
+const DOC_AND_HILL_STAMPS: readonly Stamp[] = [...DOC_STAMPS, HILL_ONLY_STAMPS[0]];
+
+function stampsInUse(): readonly Stamp[] {
+  if (opts.landforms) return opts.testHill ? DOC_AND_HILL_STAMPS : DOC_STAMPS;
+  return opts.testHill ? HILL_ONLY_STAMPS : EMPTY_STAMPS;
 }
 
 /** True while the authored land is flat (naturalHeightAt is 0 everywhere). */
@@ -113,9 +118,12 @@ export function terrainFlat(): boolean {
 /** Height before roads and sites are flattened (amplitude applied). */
 export function naturalHeightAt(x: number, z: number): number {
   if (reliefFlat()) return 0;
+  const stamps = stampsInUse();
+  const fromWasm = wasmNaturalHeightAt(x, z, opts.amplitude, opts.landforms, stamps);
+  if (fromWasm !== null) return fromWasm;
   let h = 0;
   if (opts.landforms) for (const f of RELIEFS) h += f(x, z);
-  h = applyStamps(h, stampsInUse(), x, z);
+  h = applyStamps(h, stamps, x, z);
   return opts.amplitude * h;
 }
 
@@ -152,16 +160,7 @@ function flatSites(): FlatSite[] {
 
 function buildGrid(): Float32Array {
   const N = GRID_N;
-  const g = new Float32Array(N * N);
-  for (let j = 0; j < N; j++) {
-    const z = -H + j * S;
-    for (let i = 0; i < N; i++) g[j * N + i] = naturalHeightAt(-H + i * S, z);
-  }
   const clampI = (v: number): number => Math.max(0, Math.min(N - 1, v));
-
-  // Roads and trails: the nearest segment wins. Flat across within inner, blended back to the land by outer.
-  const bestW = new Float32Array(N * N);
-  const target = new Float32Array(N * N);
   const roadInner = ROAD_WIDTH / 2 + TERRAIN.roadShoulder;
   const flatPaths = [
     ...HIGHWAYS.map((hw) => ({ points: hw.points, inner: roadInner, outer: roadInner + TERRAIN.roadFade })),
@@ -170,39 +169,10 @@ function buildGrid(): Float32Array {
       return { points: t.points, inner, outer: inner + TERRAIN.trailFade };
     }),
   ];
-  for (const hw of flatPaths) {
-    const { inner, outer } = hw;
-    for (let k = 0; k + 1 < hw.points.length; k++) {
-      const [ax, az] = hw.points[k];
-      const [bx, bz] = hw.points[k + 1];
-      const vx = bx - ax, vz = bz - az;
-      const len2 = vx * vx + vz * vz || 1e-9;
-      const i0 = clampI(Math.floor((Math.min(ax, bx) - outer + H) / S)), i1 = clampI(Math.ceil((Math.max(ax, bx) + outer + H) / S));
-      const j0 = clampI(Math.floor((Math.min(az, bz) - outer + H) / S)), j1 = clampI(Math.ceil((Math.max(az, bz) + outer + H) / S));
-      for (let j = j0; j <= j1; j++) {
-        const z = -H + j * S;
-        for (let i = i0; i <= i1; i++) {
-          const x = -H + i * S;
-          const t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / len2));
-          const cx = ax + vx * t, cz = az + vz * t;
-          const d = Math.hypot(x - cx, z - cz);
-          if (d >= outer) continue;
-          const w = 1 - smoothstep(inner, outer, d);
-          const idx = j * N + i;
-          if (w <= bestW[idx]) continue;
-          bestW[idx] = w;
-          target[idx] = naturalHeightAt(cx, cz);
-        }
-      }
-    }
-  }
-  for (let idx = 0; idx < N * N; idx++) {
-    const w = bestW[idx];
-    if (w > 0) g[idx] = target[idx] + (g[idx] - target[idx]) * (1 - w);
-  }
+  const sites = flatSites();
 
-  // Sites, then Turfton (target 0, so the city is exactly flat).
-  const rectFlatten = (r: FlatSite, margin: number, fade: number, to: number): void => {
+  let g = wasmBuildBaseHeightGrid(opts.amplitude, opts.landforms, stampsInUse(), flatPaths, sites);
+  const rectFlatten = (arr: Float32Array, r: FlatSite, margin: number, fade: number, to: number): void => {
     const reach = margin + fade;
     const i0 = clampI(Math.floor((r.minX - reach + H) / S)), i1 = clampI(Math.ceil((r.maxX + reach + H) / S));
     const j0 = clampI(Math.floor((r.minZ - reach + H) / S)), j1 = clampI(Math.ceil((r.maxZ + reach + H) / S));
@@ -216,16 +186,60 @@ function buildGrid(): Float32Array {
         if (d >= reach) continue;
         const keep = smoothstep(margin, reach, d);
         const idx = j * N + i;
-        g[idx] = to + (g[idx] - to) * keep;
+        arr[idx] = to + (arr[idx] - to) * keep;
       }
     }
   };
-  for (const s of flatSites()) {
-    rectFlatten(s, TERRAIN.siteMargin, TERRAIN.siteFade, s.target ?? naturalHeightAt((s.minX + s.maxX) / 2, (s.minZ + s.maxZ) / 2));
+
+  if (!g) {
+    g = new Float32Array(N * N);
+    for (let j = 0; j < N; j++) {
+      const z = -H + j * S;
+      for (let i = 0; i < N; i++) g[j * N + i] = naturalHeightAt(-H + i * S, z);
+    }
+
+    // Roads and trails: the nearest segment wins. Flat across within inner, blended back to the land by outer.
+    const bestW = new Float32Array(N * N);
+    const target = new Float32Array(N * N);
+    for (const hw of flatPaths) {
+      const { inner, outer } = hw;
+      for (let k = 0; k + 1 < hw.points.length; k++) {
+        const [ax, az] = hw.points[k];
+        const [bx, bz] = hw.points[k + 1];
+        const vx = bx - ax, vz = bz - az;
+        const len2 = vx * vx + vz * vz || 1e-9;
+        const i0 = clampI(Math.floor((Math.min(ax, bx) - outer + H) / S)), i1 = clampI(Math.ceil((Math.max(ax, bx) + outer + H) / S));
+        const j0 = clampI(Math.floor((Math.min(az, bz) - outer + H) / S)), j1 = clampI(Math.ceil((Math.max(az, bz) + outer + H) / S));
+        for (let j = j0; j <= j1; j++) {
+          const z = -H + j * S;
+          for (let i = i0; i <= i1; i++) {
+            const x = -H + i * S;
+            const t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / len2));
+            const cx = ax + vx * t, cz = az + vz * t;
+            const d = Math.hypot(x - cx, z - cz);
+            if (d >= outer) continue;
+            const w = 1 - smoothstep(inner, outer, d);
+            const idx = j * N + i;
+            if (w <= bestW[idx]) continue;
+            bestW[idx] = w;
+            target[idx] = naturalHeightAt(cx, cz);
+          }
+        }
+      }
+    }
+    for (let idx = 0; idx < N * N; idx++) {
+      const w = bestW[idx];
+      if (w > 0) g[idx] = target[idx] + (g[idx] - target[idx]) * (1 - w);
+    }
+
+    for (const s of sites) {
+      rectFlatten(g, s, TERRAIN.siteMargin, TERRAIN.siteFade, s.target ?? naturalHeightAt((s.minX + s.maxX) / 2, (s.minZ + s.maxZ) / 2));
+    }
   }
+
   // The Lost & Found Speedway (raceTrack/track.ts): rises, banked corners and jumps, raised on its flattened reserve.
   if (opts.landforms) applyTrackRelief(g, N, H, S);
-  rectFlatten({ minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
+  rectFlatten(g, { minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
   // Water (Epic 4, water.ts): carve the river, canal, loch and sea beds into the finished ground; record bridge decks.
   if (waterCarving()) carveWater(g, N, H, S);
   return g;

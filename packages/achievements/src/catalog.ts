@@ -1718,6 +1718,53 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Every Horn in Fescue', description: 'Win all five horn calls in Gnomomia.',
     reward: { slot: 'head', prefabId: 'five-horn-circlet', label: 'Five-Horn Circlet', exclusive: true },
   },
+  // ---- Gnomelock ----
+  {
+    id: 'gnomelock-first-win', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Patron Cracker', description: 'Win your first 2v2 match of Gnomelock.',
+    reward: { slot: 'head', prefabId: 'patron-laurel', label: 'Patron Laurel' },
+  },
+  {
+    id: 'gnomelock-orb-snatcher', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Orb Snatcher', description: 'Confirm or deny 25 Soul Acorns.', target: 25,
+    reward: { slot: 'neck', prefabId: 'acorn-bandolier', label: 'Acorn Bandolier' },
+  },
+  {
+    id: 'gnomelock-flow-state', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Flow State', description: 'Reach Flow Tier 3 through smooth dashes, slides, and wall-jumps.',
+    reward: { slot: 'back', prefabId: 'wind-cape', label: 'Bramble Runner Cape' },
+  },
+  {
+    id: 'gnomelock-comeback', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'One Last Chance', description: 'Claim the 5-minute Gilded Relic while trailing and win the match.',
+    reward: { slot: 'hand', prefabId: 'relic-bell', label: 'Gilded Relic Bell', exclusive: true },
+  },
+  {
+    id: 'gnomelock-tower-breaker', game: 'gnomelock', gameTitle: 'Gnomelock',
+    title: 'Kiln Siege', description: 'Destroy 10 enemy towers or Patrons in Gnomelock.', target: 10,
+    reward: { slot: 'head', prefabId: 'kiln-visor', label: 'Kiln-Warden Visor' },
+  },
+  // ---- Gnome Souls ----
+  {
+    id: 'gnome-souls-first-ember', game: 'gnome-souls', gameTitle: 'Gnome Souls',
+    title: 'Ember Restored', description: 'Rest at the Kiln-Ember Shrine in Gnome Souls.',
+    reward: { slot: 'neck', prefabId: 'glaze-ember-charm', label: 'Glaze Ember Charm' },
+  },
+  {
+    id: 'gnome-souls-slay-slink', game: 'gnome-souls', gameTitle: 'Gnome Souls',
+    title: 'Spigot Sealed', description: 'Defeat Slink, the Uncoiled Hose in Gnome Souls.',
+    reward: { slot: 'head', prefabId: 'spigot-helm', label: 'Spigot Knight Helm' },
+  },
+  {
+    id: 'gnome-souls-no-flask', game: 'gnome-souls', gameTitle: 'Gnome Souls',
+    title: 'Unfired Clay', description: 'Defeat Slink without drinking a Glaze Flask.',
+    reward: { slot: 'hand', prefabId: 'kiln-breaker-greatsword', label: 'Kiln-Breaker Greatsword', exclusive: true },
+  },
+  {
+    id: 'gnome-souls-coop-slay', game: 'gnome-souls', gameTitle: 'Gnome Souls',
+    title: 'Jolly Glazing', description: 'Defeat Slink with another gnome in online co-op.',
+    reward: { slot: 'back', prefabId: 'hose-coil-cloak', label: 'Hose-Coil Cloak' },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

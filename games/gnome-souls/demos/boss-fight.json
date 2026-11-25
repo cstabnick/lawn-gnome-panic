@@ -1,0 +1,12 @@
+{
+  "game": "gnome-souls",
+  "url": "?autostart=solo&boss=1",
+  "steps": [
+    { "wait": 1500 },
+    { "key": "KeyW", "hold": 900 },
+    { "key": "Space", "hold": 150 },
+    { "wait": 600 },
+    { "key": "KeyJ", "hold": 120 },
+    { "wait": 1200 }
+  ]
+}

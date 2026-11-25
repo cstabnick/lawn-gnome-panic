@@ -5,7 +5,7 @@ import { writeChronicle } from './chronicle';
 import { stepGroups } from './groups';
 import { stepBase } from './base';
 import { seedHorde, stepHorde } from './horde';
-import { dailyForage, initLoot } from './loot';
+import { dailyForage, dailyLootRespawn, initLoot } from './loot';
 import { initMarket, stepMarket } from './market';
 import { spawnNpcs, stepNpcs } from './npcs';
 import { graphFor } from './regionsFull';
@@ -120,7 +120,7 @@ export function stepWorld(w: WorldState, s: Streams): void {
   stepFarms(w, s.farm);
   stepMowing(w, s.mowing);
   stepStorylets(w, s.story);
-  if (endOfDay(w)) { dailyForage(w, s.loot); recordDaily(w); }
+  if (endOfDay(w)) { dailyForage(w, s.loot); dailyLootRespawn(w, s.loot); recordDaily(w); }
   writeChronicle(w, s.chronicle);
   w.tick += 1;
 }

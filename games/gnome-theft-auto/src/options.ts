@@ -12,6 +12,9 @@ import { mountSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
 import { mountWaveOptions } from './waveOptions';
 import { mountViewOptions } from './viewPrefs';
+import {
+  flushPerfUpload, isOverlayOpen, isProfiling, perfCounts, perfUploadStatus, setPerfOverlay, setProfileUpload,
+} from './perf';
 import { registerAction } from './ui/actions';
 import { getTouchLayout, setTouchLayout, TOUCH_LAYOUTS, type TouchLayout } from './ui/style';
 import { controlsFor, esc } from './ui/glyphs';
@@ -245,9 +248,73 @@ export function createOptions(
   trList.append(trainerBtn);
   panel.append(trHeading, trList);
 
+  // Profiler: toggle hitch profiling + upload, live perf overlay, and manual flush.
+  const profHeading = document.createElement('h3');
+  profHeading.textContent = 'Profiler';
+  const profList = document.createElement('div');
+  profList.className = 'gta-opt-list';
+  const profBtn = document.createElement('button');
+  profBtn.type = 'button';
+  profBtn.className = 'gta-opt-mode';
+  const overlayBtn = document.createElement('button');
+  overlayBtn.type = 'button';
+  overlayBtn.className = 'gta-opt-mode';
+  const uploadNowBtn = document.createElement('button');
+  uploadNowBtn.type = 'button';
+  uploadNowBtn.className = 'gta-opt-mode';
+  uploadNowBtn.innerHTML = 'Upload now<small>Flush queued hitch and frame-health reports immediately.</small>';
+  const profNote = document.createElement('div');
+  profNote.className = 'gta-opt-note';
+
+  const paintProfiler = (): void => {
+    const on = isProfiling();
+    const ov = isOverlayOpen();
+    profBtn.style.borderColor = on ? '#ffd23f' : 'rgba(255,255,255,.3)';
+    profBtn.innerHTML = `${on ? 'Profiling & Upload: ON' : 'Profile & Upload: OFF'}<small>Record hitches &gt;${perfCounts().thresholdMs} ms and 5 s frame samples; kept across reloads.</small>`;
+    overlayBtn.style.borderColor = ov ? '#ffd23f' : 'rgba(255,255,255,.3)';
+    overlayBtn.innerHTML = `${ov ? 'Perf Overlay: ON' : 'Perf Overlay: OFF'}<small>Show live FPS, CPU/GPU ms, draw calls and slowest systems.</small>`;
+    uploadNowBtn.style.display = on ? 'block' : 'none';
+    if (!on) {
+      profNote.textContent = 'Off (or open with ?profile=upload). View reports at /admin/profiler/.';
+      return;
+    }
+    const c = perfCounts();
+    const u = perfUploadStatus();
+    if (!u) {
+      profNote.textContent = `Recording: ${c.reports} hitches, ${c.samples} samples · starting upload...`;
+      return;
+    }
+    if (u.state === 'unavailable' || u.state === 'error') {
+      profNote.textContent = `${c.reports} hitches, ${c.samples} samples · upload error: ${u.lastError}`;
+      return;
+    }
+    profNote.textContent = `${c.reports} hitches, ${c.samples} samples · ${u.sent} sent, ${u.queued} queued`;
+  };
+
+  profBtn.addEventListener('click', () => {
+    const next = !isProfiling();
+    setProfileUpload(next);
+    if (next && !isOverlayOpen()) setPerfOverlay(true);
+    paintProfiler();
+  });
+  overlayBtn.addEventListener('click', () => {
+    setPerfOverlay(!isOverlayOpen());
+    paintProfiler();
+  });
+  uploadNowBtn.addEventListener('click', () => {
+    flushPerfUpload();
+    paintProfiler();
+  });
+  buttons.set('profiler-toggle', profBtn);
+  buttons.set('profiler-overlay', overlayBtn);
+  buttons.set('profiler-flush', uploadNowBtn);
+  profList.append(profBtn, overlayBtn, uploadNowBtn);
+  panel.append(profHeading, profList, profNote);
+  paintProfiler();
+
   // The tune buttons get the gold border of the picked tune; the touch layout buttons paint themselves (paintLayout).
   const mark = (): void => buttons.forEach((b, id) => {
-    if (id.startsWith('layout-')) return;
+    if (id.startsWith('layout-') || id.startsWith('profiler-')) return;
     b.style.borderColor = id === getTune().id ? '#ffd23f' : 'rgba(255,255,255,.3)';
   });
 
@@ -278,14 +345,18 @@ export function createOptions(
     }
     requestAnimationFrame(pollPad);
   }
+  let profTimer = 0;
   function setOpen(open: boolean): void {
     isOpen = open;
     panel.style.display = open ? 'flex' : 'none';
     document.body.dataset.options = open ? 'open' : '';
+    window.clearInterval(profTimer);
     if (open) {
       if (document.pointerLockElement) document.exitPointerLock();
       paintLayout();
       paintControls();
+      paintProfiler();
+      profTimer = window.setInterval(paintProfiler, 1000);
       focus = Math.max(0, ids.indexOf(getTune().id));
       showFocus();
       // Buttons already held when it opened (the Start press itself) must not count as new presses.

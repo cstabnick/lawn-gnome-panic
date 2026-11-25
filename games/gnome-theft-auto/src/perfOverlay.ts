@@ -31,6 +31,7 @@ export function mountPerfOverlay(
   ui: HTMLElement,
   read: () => LiveStats | null,
   extra?: () => Record<string, string | number>,
+  statusLine?: () => string | null,
 ): PerfOverlay {
   const box = el('div', {
     position: 'fixed',
@@ -59,9 +60,10 @@ export function mountPerfOverlay(
   const cpuLine = el('div', {});
   const drawLine = el('div', {});
   const geoLine = el('div', {});
+  const profLine = el('div', { color: '#7FD3FF', display: 'none' });
   const extraBox = el('div', {});
   const systemBox = el('div', { marginTop: '4px' });
-  body.append(cpuLine, drawLine, geoLine, extraBox, systemBox);
+  body.append(cpuLine, drawLine, geoLine, profLine, extraBox, systemBox);
 
   // Extra rows are created on demand and reused after that.
   const extraRows: HTMLDivElement[] = [];
@@ -123,6 +125,10 @@ export function mountPerfOverlay(
       const dpr = Math.round(r.pixelRatio * 100) / 100;
       geoLine.textContent = `Geo ${r.geometries} · Tex ${r.textures} · Prog ${r.programs} · DPR ${dpr}`;
     }
+
+    const pText = statusLine?.() ?? null;
+    profLine.style.display = pText ? 'block' : 'none';
+    if (pText) profLine.textContent = pText;
 
     const extras = extra ? Object.entries(extra()) : [];
     for (let i = 0; i < extras.length; i++) {

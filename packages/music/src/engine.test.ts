@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { musicLevelDb } from './engine';
+import { musicLevelDb, selectContextOptions } from './engine';
 
 describe('music output level', () => {
   it('is the shared level (-12 dB) at full volume with no boost or duck', () => {
@@ -18,5 +18,22 @@ describe('music output level', () => {
 
   it('never returns -Infinity for silence', () => {
     expect(Number.isFinite(musicLevelDb(0, 0, 0))).toBe(true);
+  });
+});
+
+describe('AudioContext option selection', () => {
+  it('uses playback latency without sampleRate override at <= 48 kHz', () => {
+    expect(selectContextOptions(44100, false)).toEqual({ latencyHint: 'playback' });
+    expect(selectContextOptions(48000, false)).toEqual({ latencyHint: 'playback' });
+  });
+
+  it('caps sampleRate to 48 kHz on high-rate devices', () => {
+    expect(selectContextOptions(96000, false)).toEqual({ sampleRate: 48000, latencyHint: 'playback' });
+    expect(selectContextOptions(192000, false)).toEqual({ sampleRate: 48000, latencyHint: 'playback' });
+  });
+
+  it('uses device defaults in fallback mode', () => {
+    expect(selectContextOptions(48000, true)).toEqual({});
+    expect(selectContextOptions(192000, true)).toEqual({});
   });
 });

@@ -17,6 +17,7 @@
 import { PAINT_SURFACES, TUNING, WORLD, type Condition, type Deck, type WorldObjectDef, type ZoneDef, type ZoneExit, type ZoneId } from './config';
 import { FURNITURE_RADIUS } from './data/interiors';
 import { DeltaGrid, PaintGrid, applyStamps, stampBounds, type PathDef, type Rect, type Stamp, type WalkGrid } from '@lawn/level';
+import { registerTerrainWasm, type ChunkMeshBuffers } from './wasm/terrainWasm';
 
 // ---------------------------------------------------------------- helpers
 
@@ -96,7 +97,12 @@ export interface Terrain {
   passes(): readonly Pass[];
   passOpen(p: Pass): boolean;
   distToRoad(x: number, z: number): number;
+  isWithinRoad(x: number, z: number, maxDist: number): boolean;
   heightAt(x: number, z: number): number;
+  /** Builds non-indexed terrain chunk attributes (positions, flat normals, linear-sRGB colours) in Wasm when ready. */
+  buildChunkBuffers(cx: number, cz: number, chunkSize: number, segments: number): ChunkMeshBuffers | null;
+  /** Builds a pxCount x pxCount packed ABGR Uint32Array for a minimap chunk tile in Wasm when ready. */
+  buildMinimapPixels(x0: number, z0: number, chunkSize: number, pxCount: number, waterLevel: number): Uint32Array | null;
   deckLayout(): readonly { deck: Deck; top: number; ramp: { minX: number; maxX: number; minZ: number; maxZ: number } }[];
   surfacesAt(x: number, z: number): number[];
   /** A collider added at run time (camp tents, standing stones...). Never baked; always checked live. */
@@ -150,20 +156,41 @@ export function createTerrain(input: TerrainInput): Terrain {
   let memoX = NaN;
   let memoZ = NaN;
   let memoH = 0;
+  const HMEMO_SIZE = 4096;
+  const HMEMO_MASK = HMEMO_SIZE - 1;
+  const hMemoGen = new Uint32Array(HMEMO_SIZE);
+  const hMemoX = new Float64Array(HMEMO_SIZE);
+  const hMemoZ = new Float64Array(HMEMO_SIZE);
+  const hMemoY = new Float64Array(HMEMO_SIZE);
+  const hScratchF64 = new Float64Array(2);
+  const hScratchU32 = new Uint32Array(hScratchF64.buffer);
+  let curHMemoGen = 1;
+  function bumpHeightMemo(): void {
+    memoX = NaN;
+    curHMemoGen = (curHMemoGen + 1) >>> 0;
+    if (curHMemoGen === 0) {
+      hMemoGen.fill(0);
+      curHMemoGen = 1;
+    }
+  }
   let roads: RoadSeg[] | null = null;
   const roadBuckets = new Map<number, RoadSeg[]>();
+  const cutBuckets = new Map<number, RoadSeg[]>();
+  const CUT_BUCKET_PAD = WORLD.roadHalfWidth + 10.5;
   let passList: Pass[] = [];
   /** Segments the ridge is cut along: every pass, plus the in-zone road from the shrine to each pass exit. */
   let cutRoads: RoadSeg[] = [];
   let deckInfos: DeckInfo[] | null = null;
   /** Colliders from zone data (houses, shrines, walls, deck posts, interiors), built on first use. */
   const staticColliders: Buckets = new Map();
+  const staticCircleList: Circle[] = [];
   let staticDone = false;
   /** Colliders of flora chunks, by chunk key, so a chunk's can be removed again. */
   const floraColliders: Buckets = new Map();
   const floraCircles = new Map<number, Circle[]>();
   /** Colliders from addCollider(). */
   const extraColliders: Buckets = new Map();
+  const extraCircleList: Circle[] = [];
   const floraCache = new Map<number, Flora[]>();
 
   function collectStamps(): Stamp[] {
@@ -293,6 +320,21 @@ export function createTerrain(input: TerrainInput): Terrain {
         }
       }
     }
+    cutBuckets.clear();
+    for (const s of cutRoads) {
+      const i0 = Math.floor((Math.min(s.ax, s.bx) - CUT_BUCKET_PAD) / ROAD_CELL);
+      const i1 = Math.floor((Math.max(s.ax, s.bx) + CUT_BUCKET_PAD) / ROAD_CELL);
+      const j0 = Math.floor((Math.min(s.az, s.bz) - CUT_BUCKET_PAD) / ROAD_CELL);
+      const j1 = Math.floor((Math.max(s.az, s.bz) + CUT_BUCKET_PAD) / ROAD_CELL);
+      for (let i = i0; i <= i1; i++) {
+        for (let j = j0; j <= j1; j++) {
+          const k = bucketKey(i, j);
+          let list = cutBuckets.get(k);
+          if (!list) { list = []; cutBuckets.set(k, list); }
+          list.push(s);
+        }
+      }
+    }
   }
 
   /** Every road: shrine to region, shrine to exit, the passes between zones, and authored roads. For drawing and for keeping flora off. */
@@ -333,8 +375,10 @@ export function createTerrain(input: TerrainInput): Terrain {
 
   function distToCut(x: number, z: number): number {
     initRoads();
-    let bestSq = Infinity;
-    for (const s of cutRoads) {
+    const list = cutBuckets.get(bucketKey(Math.floor(x / ROAD_CELL), Math.floor(z / ROAD_CELL)));
+    if (!list) return 1e3;
+    let bestSq = 1e6;
+    for (const s of list) {
       const d2 = distToSegSq(x, z, s.ax, s.az, s.bx, s.bz);
       if (d2 < bestSq) bestSq = d2;
     }
@@ -371,9 +415,22 @@ export function createTerrain(input: TerrainInput): Terrain {
    * (WORLD.ridge high, over the last 28 m) and between zones, except along a pass road, which cuts through it. Then the
    * zones' stamps and the brush deltas are added (overworld only). */
   function heightAt(x: number, z: number): number {
-    // One-entry memo: a walking test (standY -> surfacesAt -> isBlocked -> isBlocked) asks for the same point three
-    // times in a row, and A* makes about 65 such tests per node. The height field is fixed data, so this is exact.
+    // Fast 1-entry register check + 4096-slot typed-array hash memo so consecutive walking tests AND per-frame
+    // entity/companion height queries hit cache in nanoseconds with exact JS IEEE-754 f64 parity.
     if (x === memoX && z === memoZ) return memoH;
+    const nx = x + 0;
+    const nz = z + 0;
+    hScratchF64[0] = nx;
+    hScratchF64[1] = nz;
+    let hash = (Math.imul(hScratchU32[0] ^ hScratchU32[1], 0x9e3779b1) ^ Math.imul(hScratchU32[2] ^ hScratchU32[3], 0x85ebca6b)) >>> 0;
+    hash = (hash ^ (hash >>> 16)) & HMEMO_MASK;
+    if (hMemoGen[hash] === curHMemoGen && hMemoX[hash] === nx && hMemoZ[hash] === nz) {
+      const cached = hMemoY[hash];
+      memoX = x;
+      memoZ = z;
+      memoH = cached;
+      return cached;
+    }
     let h = computeHeight(x, z);
     if (z <= INSTANCES_FROM_Z) {
       if (stamps.length > 0) {
@@ -382,6 +439,10 @@ export function createTerrain(input: TerrainInput): Terrain {
       }
       if (!deltas.isEmpty()) h += deltas.sample(x, z);
     }
+    hMemoGen[hash] = curHMemoGen;
+    hMemoX[hash] = nx;
+    hMemoZ[hash] = nz;
+    hMemoY[hash] = h;
     memoH = h;
     memoX = x;
     memoZ = z;
@@ -520,10 +581,13 @@ export function createTerrain(input: TerrainInput): Terrain {
   /** Adds a ground-level collision circle (blocks walkers within WORLD.groundBand of the ground). world.ts calls this for
    * props it builds (camp tents, standing stones, signposts); terrain adds houses, shrines, walls, deck posts and flora. */
   function addCollider(x: number, z: number, r: number): void {
-    bucketAdd(extraColliders, x, z, r);
+    extraCircleList.push(bucketAdd(extraColliders, x, z, r));
+    wasmBridge.onExtraCollider(x, z, r);
   }
 
-  const addStatic = (x: number, z: number, r: number): void => { bucketAdd(staticColliders, x, z, r); };
+  const addStatic = (x: number, z: number, r: number): void => {
+    staticCircleList.push(bucketAdd(staticColliders, x, z, r));
+  };
 
   /** A building interior: the room's walls, its furniture, and its bookshelves and lecterns (which are objects). */
   function addInteriorColliders(def: ZoneDef): void {
@@ -794,12 +858,14 @@ export function createTerrain(input: TerrainInput): Terrain {
   }
 
   function invalidate(rect?: Rect): void {
-    memoX = NaN;
+    bumpHeightMemo();
     roads = null;
     roadBuckets.clear();
+    cutBuckets.clear();
     deckInfos = null;
     stamps = collectStamps();
     purgeBuckets(staticColliders);
+    staticCircleList.length = 0;
     staticDone = false;
     const C = WORLD.chunk;
     // Flora reads heights, roads, regions, lakes, houses and decks within a few metres, so grow the box.
@@ -821,17 +887,48 @@ export function createTerrain(input: TerrainInput): Terrain {
       const box = rect ?? { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
       for (const id of walk.tilesIn(box)) walk.deleteTile(id);
     }
+    wasmBridge.onInvalidate();
   }
 
+  const wasmBridge = registerTerrainWasm(
+    {
+      allZones: ALL,
+      outdoorZones: OUTDOOR,
+      indoorZones: INDOOR,
+      interiorZones: INTERIORS,
+      passes,
+      passOpen,
+      roadSegments,
+      cutRoadSegments: () => { initRoads(); return cutRoads; },
+      decks: initDecks,
+      stamps: () => stamps,
+      staticCircles: () => { initStaticColliders(); return staticCircleList; },
+      extraCircles: () => extraCircleList,
+      ensureFloraCircles: (ci, cj) => {
+        const key = bucketKey(ci, cj);
+        if (!floraCache.has(key)) chunkFlora(ci, cj);
+        return floraCircles.get(key) ?? [];
+      },
+      walkGrid: () => walk,
+      deltas: () => deltas,
+      paint: () => paint,
+    },
+    standY,
+    isBlocked,
+  );
+
   return {
-    zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, heightAt, deckLayout, surfacesAt,
+    zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, isWithinRoad, heightAt,
+    buildChunkBuffers: wasmBridge.buildChunkBuffers,
+    buildMinimapPixels: wasmBridge.buildMinimapPixels,
+    deckLayout, surfacesAt,
     addCollider, chunkFlora, isBlocked, findFreeSpot, isBlockedAt, standY, groundColourAt, regionNameAt, staticSolidAt,
-    setWalkGrid(grid) { walk = grid; },
+    setWalkGrid(grid) { walk = grid; wasmBridge.onWalkGridChange(); },
     get walkGrid() { return walk; },
     get deltas() { return deltas; },
-    setDeltas(grid) { deltas = grid; memoX = NaN; },
+    setDeltas(grid) { deltas = grid; bumpHeightMemo(); wasmBridge.onDeltasChange(); },
     get paint() { return paint; },
-    setPaint(grid) { paint = grid; },
+    setPaint(grid) { paint = grid; wasmBridge.onPaintChange(); },
     invalidate,
   };
 }

@@ -20,6 +20,7 @@ const baked = loadWalkGrid();
 if (baked) terrain.setWalkGrid(baked);
 
 export const {
-  zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, heightAt, deckLayout, surfacesAt,
+  zoneRectDistance, zoneAt, themeZoneAt, roadSegments, passes, passOpen, distToRoad, isWithinRoad, heightAt,
+  buildChunkBuffers, buildMinimapPixels, deckLayout, surfacesAt,
   addCollider, chunkFlora, isBlocked, findFreeSpot, isBlockedAt, standY, groundColourAt, regionNameAt,
 } = terrain;

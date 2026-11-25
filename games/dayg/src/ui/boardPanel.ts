@@ -12,8 +12,8 @@ const NEWCOMER_TITLE = 'Jobs for newcomers';
 const FALLBACK_ICON = '📦';
 const DEFAULT_BOARD: BoardId = 'board:gate-roof';
 
-const BTN = 'min-width:44px;min-height:44px;padding:0 12px;border:none;border-radius:8px;background:#2d3a25;color:#eee;' +
-  'font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation';
+const BTN = 'min-width:44px;min-height:44px;padding:0 12px;border:1px solid var(--dg-border);border-radius:8px;background:var(--dg-surface-2);color:var(--dg-text);' +
+  'font:14px var(--dg-font);cursor:pointer;touch-action:manipulation';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, css = '', text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -72,10 +72,11 @@ export function createBoardPanel(ui: HTMLElement, deps: { host: SimHost; inv: In
   root.id = DOM_MORE.board;
   root.hidden = true;
   root.style.cssText = 'position:fixed;box-sizing:border-box;left:50%;transform:translateX(-50%);' +
-    'top:calc(64px + env(safe-area-inset-top));width:min(92vw,420px);' +
+    'top:calc(64px + env(safe-area-inset-top));width:min(92vw,440px);' +
     'max-height:calc(100dvh - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;' +
-    'background:rgba(18,22,16,0.95);color:#eee;font:14px system-ui,sans-serif;padding:12px 14px;border-radius:10px;' +
+    'background:var(--dg-surface);color:var(--dg-text);font:14px var(--dg-font);padding:14px 16px;border-radius:var(--dg-radius);border:1px solid var(--dg-border);box-shadow:var(--dg-shadow);' +
     'z-index:60;touch-action:pan-y;pointer-events:auto';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);
 
   let current: BoardId | null = null;

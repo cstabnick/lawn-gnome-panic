@@ -268,6 +268,9 @@ export interface WorldState {
   mowing: MowingState;
   storylets: StoryletState[];
   lanterns: Record<string, boolean>;         // grave lantern spot id -> lit
+  lootRespawn?: boolean;                     // toggleable loot respawn (default false)
+  lootRespawnDays?: number;                  // days between replenishments (default 3)
+  worldMeta?: { title: string; owner: string; lootRespawn: boolean };
   bellTick: number | null;                   // last time the chapel bell rang
   lastSeason: Season;                        // for the season patch
 }

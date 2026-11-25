@@ -79,6 +79,8 @@ import { DAYG_BASE_ITEMS } from './dayg-base-items';
 import { DAYG_BUILD } from './dayg-build';
 import { DAYG_MATERIALS } from './dayg-materials';
 import { DAYG_GEAR } from './dayg-gear';
+import { DAYG_BUILDINGS } from './dayg-buildings';
+import { DAYG_STORY_PROPS } from './dayg-story-props';
 import { GTA_GLAZE_TYRES } from './gta-glaze-tyres';
 import { GTA_GLAZE_RIMS } from './gta-glaze-rims';
 import { GTA_GLAZE_STEER } from './gta-glaze-steer';
@@ -127,6 +129,8 @@ import { GTA_HANGAR_BOATHOUSE } from './gta-hangar-boathouse';
 import { GTA_AIRCRAFT } from './gta-aircraft';
 import { GTA_SKY_TRAFFIC } from './gta-sky-traffic';
 import { GTA_SKYWAY_WORKS } from './gta-skyway-works';
+import { GNOMELOCK_GEAR } from './gnomelock';
+import { GNOME_SOULS } from './gnome-souls';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -137,7 +141,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_BOATS, ...GTA_WATERWORKS, ...GTA_LANDSCAPING, ...GTA_TOWERS, ...GTA_HOUSES, ...GTA_REGION_MOTIFS, ...GTA_WATER_HINTS,
   ...GTA_FARM_CRITTERS, ...GTA_WILD_LIFE,
   ...GTA_TESSIE, ...GTA_TESSIE_GEAR, ...GTA_WILD_GEAR,
-  ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR,
+  ...DAYG, ...DAYG_BASE, ...DAYG_BASE_ITEMS, ...DAYG_BUILD, ...DAYG_MATERIALS, ...DAYG_GEAR, ...DAYG_BUILDINGS, ...DAYG_STORY_PROPS,
   ...GTA_GLAZE_TYRES, ...GTA_GLAZE_RIMS, ...GTA_GLAZE_STEER, ...GTA_GLAZE_LAMPS, ...GTA_GLAZE_SPOILERS, ...GTA_GLAZE_SEATS, ...GTA_GLAZE_ORNAMENTS, ...GTA_GLAZE_EXTRAS, ...GTA_GLAZE_GEAR, ...GTA_GLAZE_GRILLE, ...GTA_GLAZE_BUMPER, ...GTA_GLAZE_CANOPY, ...GTA_GLAZE_MIRROR, ...GTA_GLAZE_EXHAUST, ...GTA_GLAZE_STAGE,
   ...GTA_GUN_MODS_A, ...GTA_GUN_MODS_B, ...GTA_GUN_STORE,
   ...GTA_ODD_RIDES, ...GTA_MOWING,
@@ -151,4 +155,6 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_PEBBLEWICK, ...GTA_PEBBLEWICK_B, ...GTA_PEBBLEWICK_GEAR,
   ...GTA_STREET_KIT, ...GTA_STREET_KIT_B, ...GTA_PARK_KIT, ...GTA_PARK_KIT_B,
   ...GTA_FRINGE_KIT, ...GTA_FRINGE_KIT_B, ...GTA_FRINGE_YARD,
+  ...GNOMELOCK_GEAR,
+  ...GNOME_SOULS,
 ];

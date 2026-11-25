@@ -1,4 +1,6 @@
 // Grid A* pathfinding for click-to-move. Cells are 1 unit; cell (i, j) has its centre at (i, j).
+import { tryWasmFindPath2, tryWasmFindPath3 } from './wasm/terrainWasm';
+
 export interface Point {
   x: number;
   z: number;
@@ -99,6 +101,9 @@ function lineClear(a: Point, b: Point, blocked: (x: number, z: number) => boolea
  * If `to` is blocked or unreachable, the path ends at the reachable cell closest to `to`. Empty array = cannot move.
  */
 export function findPath(from: Point, to: Point, blocked: (x: number, z: number) => boolean): Point[] {
+  const wasmOut = tryWasmFindPath2(from, to, blocked, MAX_EXPAND);
+  if (wasmOut !== null) return wasmOut;
+
   const si = Math.round(from.x);
   const sj = Math.round(from.z);
   const gi = Math.round(to.x);
@@ -313,6 +318,9 @@ function avgCost(cost: (x: number, z: number) => number, pts: { x: number; z: nu
  * smallest value cost can return: the heuristic is scaled by it, so the search stays optimal. Without opts nothing changes.
  */
 export function findPath3(from: Point3, goal: Point3, step: StepFn, maxExpand = MAX_EXPAND, opts?: { cost?: (x: number, z: number) => number; minCost?: number }): Point3[] {
+  const wasmOut = tryWasmFindPath3(from, goal, step, maxExpand, opts);
+  if (wasmOut !== null) return wasmOut;
+
   const si = Math.round(from.x);
   const sj = Math.round(from.z);
   // A goal no walker can stand on (water, a tree, a house, the ridge) is never reached, so the search would spend its

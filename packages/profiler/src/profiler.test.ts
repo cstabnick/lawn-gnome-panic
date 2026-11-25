@@ -186,4 +186,19 @@ describe('config', () => {
     expect(readProfileConfig('', bad).on).toBe(false);
     expect(readProfileConfig('?profile=keep', bad).on).toBe(true);
   });
+
+  it('can be enabled and disabled at runtime via setEnabled', () => {
+    let t = 0;
+    const p = new Profiler({ on: false, thresholdMs: 50, log: false, now: () => t });
+    expect(p.on).toBe(false);
+    p.setEnabled(true, 40);
+    expect(p.on).toBe(true);
+    expect(p.thresholdMs).toBe(40);
+    p.beginFrame();
+    p.timed('work', () => { t += 60; });
+    p.endFrame();
+    expect(p.reports).toHaveLength(1);
+    p.setEnabled(false);
+    expect(p.on).toBe(false);
+  });
 });

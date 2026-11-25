@@ -18,6 +18,7 @@ import { PAINT_KINDS, regionPaintAt, riverDistAt, waterDistAt, type GroundFacts,
 import type { SurfaceKind } from './surfaces';
 import { GRID_N, heightGrid, terrainFlat, terrainOptions } from './terrain';
 import type { GroundKind } from './textures';
+import { wasmBuildPaintGrid } from './wasm/gtaWasm';
 
 /** How each paint kind drives. */
 export const PAINT_SURFACE: Record<PaintKind, SurfaceKind> = {
@@ -35,6 +36,8 @@ let paint: Uint8Array | null = null;
 let builtFor: Float32Array | null = null;
 
 function buildPaint(g: Float32Array): Uint8Array {
+  const fromWasm = wasmBuildPaintGrid(g);
+  if (fromWasm) return fromWasm;
   const N = GRID_N;
   const C = N - 1;
   const S = TERRAIN.step;
@@ -82,6 +85,15 @@ function buildPaint(g: Float32Array): Uint8Array {
     }
   }
   return out;
+}
+
+/** Raw (GRID_N - 1)^2 surface paint byte raster (0 = unpainted, 1..12 = PAINT_KINDS[v - 1] -> PAINT_GROUND), or null. */
+export function paintGridBytes(): Uint8Array | null {
+  if (terrainFlat() || !terrainOptions().landforms) return null;
+  const g = heightGrid();
+  if (!g) return null;
+  if (!paint || builtFor !== g) { paint = buildPaint(g); builtFor = g; }
+  return paint;
 }
 
 /** The paint at world (x, z), or null where it is unpainted (and everywhere while flat or without landforms). */

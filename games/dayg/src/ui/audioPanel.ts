@@ -13,8 +13,8 @@ const ROWS: readonly { key: SliderKey; label: string; note?: string }[] = [
   { key: 'music', label: 'Music', note: 'the score under the game' },
 ];
 
-const BUTTON = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid #56614a;' +
-  'background:#2d3a25;color:#eee;font:14px system-ui,sans-serif;cursor:pointer;touch-action:manipulation';
+const BUTTON = 'min-height:44px;min-width:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--dg-border);' +
+  'background:var(--dg-surface-2);color:var(--dg-text);font:14px var(--dg-font);cursor:pointer;touch-action:manipulation';
 
 export interface AudioPanel {
   root: HTMLElement;
@@ -29,8 +29,9 @@ export function createAudioPanel(ui: HTMLElement, audio: Audio): AudioPanel {
   root.id = 'dayg-audio';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-label', 'Sound settings');
-  root.style.cssText = 'position:fixed;inset:0;z-index:53;display:none;align-items:center;justify-content:center;' +
-    'background:rgba(0,0,0,.6);padding:12px;box-sizing:border-box;color:#eee;font:14px system-ui,sans-serif;user-select:none';
+  root.style.cssText = 'position:fixed;inset:0;z-index:53;display:none;align-items:center;justify-content:center;pointer-events:auto;' +
+    'background:rgba(10,14,10,.7);backdrop-filter:blur(6px);padding:12px;box-sizing:border-box;color:var(--dg-text);font:14px var(--dg-font);user-select:none';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
 
   const card = document.createElement('div');
   card.style.cssText = 'width:100%;max-width:420px;max-height:100%;overflow:auto;box-sizing:border-box;padding:16px;' +
@@ -106,15 +107,6 @@ export function createAudioPanel(ui: HTMLElement, audio: Audio): AudioPanel {
   root.append(card);
   ui.appendChild(root);
 
-  const button = document.createElement('button');
-  button.id = 'dayg-audio-btn';
-  button.type = 'button';
-  button.textContent = '🔊';
-  button.setAttribute('aria-label', 'Sound settings');
-  button.style.cssText = BUTTON + ';position:absolute;top:calc(120px + env(safe-area-inset-top));' +
-    'right:calc(8px + env(safe-area-inset-right));width:48px;height:48px;padding:0;font-size:20px;z-index:40;box-sizing:border-box';
-  ui.appendChild(button);
-
   let open = false;
   function sync(): void {
     const s = audio.getSettings();
@@ -134,7 +126,6 @@ export function createAudioPanel(ui: HTMLElement, audio: Audio): AudioPanel {
     }
   }
 
-  button.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!open); });
   close.addEventListener('click', (e) => { e.stopPropagation(); setOpen(false); });
   window.addEventListener('keydown', (e) => { if (open && e.key === 'Escape') setOpen(false); });
 

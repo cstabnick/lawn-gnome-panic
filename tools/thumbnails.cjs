@@ -238,6 +238,64 @@ const SHOTS = {
   },
   // Floor 2 with Clips everywhere; 8 s lets the opening lines finish so no dialogue box covers the floor.
   'nothing-left-to-collect': { suffix: '?chapter=ch2&fast', wait: 8 },
+  // Gnome Souls: inside the Sunken Spigot Basin facing Slink, the Uncoiled Hose.
+  'gnome-souls': {
+    suffix: '?autostart=solo&boss=1&nohud=1',
+    wait: 1.8,
+    prepare: async (page) => {
+      await page.keyboard.down('KeyW');
+      await new Promise((r) => setTimeout(r, 1550));
+      await page.keyboard.up('KeyW');
+      await titleCard(page, {
+        text: 'GNOME SOULS',
+        sub: 'the sunken spigot',
+        fill: 'linear-gradient(180deg,#f2e5c8,#c7a25a 55%,#7a1f1f)',
+        shadow: '3px 3px 0 #07090e, 6px 6px 0 #3a0d0d',
+        subColor: '#d9c69c',
+        top: '6%',
+        size: 80,
+      });
+    },
+  },
+  // DayG: Mossgrave cemetery at gnome height.
+  dayg: {
+    suffix: '?seed=42&simdays=0',
+    wait: 2.0,
+    prepare: async (page) => {
+      await page.keyboard.down('KeyW');
+      await new Promise((r) => setTimeout(r, 900));
+      await page.keyboard.up('KeyW');
+      await titleCard(page, {
+        text: 'DAYG',
+        sub: 'survive mossgrave. watch the hatless.',
+        fill: 'linear-gradient(180deg,#e4f0d0,#88b058 55%,#3d5a24)',
+        shadow: '3px 3px 0 #0a0d08, 6px 6px 0 #263618',
+        subColor: '#d8e6c3',
+        top: '6%',
+        size: 92,
+        hide: '#ui > div',
+      });
+    },
+  },
+  // Gnomelock: 2v2 MOBA lane skirmish in The Bramble District.
+  gnomelock: {
+    suffix: '?autostart=solo&nohud=1',
+    wait: 2.0,
+    prepare: async (page) => {
+      await page.keyboard.down('KeyW');
+      await new Promise((r) => setTimeout(r, 1400));
+      await page.keyboard.up('KeyW');
+      await titleCard(page, {
+        text: 'GNOMELOCK',
+        sub: '2v2 bramble district moba',
+        fill: 'linear-gradient(180deg,#ffe08a,#ff9838 50%,#3d8bff)',
+        shadow: '3px 3px 0 #121521, 6px 6px 0 #1f3c73',
+        subColor: '#f5ebd6',
+        top: '6%',
+        size: 84,
+      });
+    },
+  },
 };
 
 /**

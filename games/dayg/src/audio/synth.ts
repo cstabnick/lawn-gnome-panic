@@ -69,15 +69,23 @@ export function renderUi(kind: UiSound, sr: number): Float32Array {
 }
 
 const STEP: Record<Surface, { seconds: number; lp: number; decay: number; gain: number; click: number }> = {
-  grass: { seconds: 0.09, lp: 1800, decay: 40, gain: 0.35, click: 0 },
-  gravel: { seconds: 0.07, lp: 4000, decay: 55, gain: 0.5, click: 0.4 },
-  stone: { seconds: 0.06, lp: 3000, decay: 60, gain: 0.55, click: 0.6 },
-  moss: { seconds: 0.14, lp: 1200, decay: 25, gain: 0.25, click: 0 },
-  mud: { seconds: 0.16, lp: 500, decay: 22, gain: 0.5, click: 0 },
+  grass: { seconds: 0.09, lp: 1500, decay: 42, gain: 0.20, click: 0 },
+  gravel: { seconds: 0.07, lp: 3200, decay: 58, gain: 0.28, click: 0.22 },
+  stone: { seconds: 0.06, lp: 2600, decay: 62, gain: 0.30, click: 0.32 },
+  moss: { seconds: 0.14, lp: 1000, decay: 26, gain: 0.14, click: 0 },
+  mud: { seconds: 0.16, lp: 450, decay: 24, gain: 0.26, click: 0 },
 };
 
 /** One footstep. `volume` 0..1 scales the surface level (sneaking is quieter, a sprint is louder). */
 export function renderStep(surface: Surface, sr: number, volume: number, seed = 1): Float32Array {
   const s = STEP[surface];
   return normalise(noise(sr, s.seconds, s.lp, s.decay, rng(seed), s.click), s.gain * Math.min(1, Math.max(0.05, volume)));
+}
+
+/** Melee swing whoosh or ceramic/clay hit thud. */
+export function renderAttack(hit: boolean, sr: number): Float32Array {
+  const whoosh = normalise(noise(sr, 0.14, 1800, 22, rng(19), 0.15), 0.28);
+  if (!hit) return whoosh;
+  const thud = normalise(mix(blip(sr, 0.1, 240, 90, 26), noise(sr, 0.08, 2800, 45, rng(23), 0.7)), 0.45);
+  return mix(whoosh, thud);
 }

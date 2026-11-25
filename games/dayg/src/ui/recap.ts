@@ -36,13 +36,14 @@ export function createRecap(ui: HTMLElement, log: EventLog, bedOf?: () => HavenI
   const root = document.createElement('div');
   root.id = DOM.recap;
   root.style.cssText = 'display:none;position:absolute;inset:0;align-items:center;justify-content:center;' +
-    'background:rgba(10,14,12,0.8);pointer-events:auto;padding:12px;box-sizing:border-box;z-index:50;' +
-    'font:16px/1.45 system-ui,sans-serif;color:#e8eee6';
+    'background:rgba(10,14,12,0.82);backdrop-filter:blur(6px);pointer-events:auto;padding:12px;box-sizing:border-box;z-index:50;' +
+    'font:16px/1.45 var(--dg-font);color:var(--dg-text)';
+  root.addEventListener('mousedown', (e) => e.stopPropagation());
   ui.appendChild(root);
 
   const card = el('div',
     'box-sizing:border-box;width:min(440px,92vw);max-width:92vw;min-width:0;max-height:calc(100% - 24px);overflow-y:auto;white-space:normal;' +
-    'background:#1c2420;border:1px solid #4d5f52;border-radius:10px;padding:18px 20px;' +
+    'background:var(--dg-surface);border:1px solid var(--dg-border);border-radius:var(--dg-radius);box-shadow:var(--dg-shadow);padding:18px 20px;' +
     '-webkit-overflow-scrolling:touch');
   root.appendChild(card);
 

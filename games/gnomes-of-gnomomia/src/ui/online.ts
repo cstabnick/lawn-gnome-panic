@@ -34,11 +34,26 @@ let plateLayer: HTMLDivElement;
 /** Where the composer's line goes: public chat, or the party (shown only while in a party). */
 let channel: 'all' | 'party' = 'all';
 
-interface Bubble { el: HTMLDivElement; text: HTMLDivElement; shown: string }
-interface Plate { el: HTMLDivElement; label: HTMLDivElement; fill: HTMLDivElement; bubble: Bubble }
+interface Bubble { el: HTMLDivElement; text: HTMLDivElement; shown: string; visible: boolean; lastOpacity: number }
+interface Plate {
+  el: HTMLDivElement;
+  label: HTMLDivElement;
+  fill: HTMLDivElement;
+  bubble: Bubble;
+  lastColor: string;
+  lastHpPct: number;
+  lastPx: number;
+  lastPy: number;
+  shown: boolean;
+}
 const plates = new Map<string, Plate>();
+const seenKeys = new Set<string>();
+const activeKeys = new Set<string>();
 /** My own bubble, in a holder of its own (I have no name plate). */
 let myHolder: HTMLDivElement;
+let myHolderShown = false;
+let myLastPx = NaN;
+let myLastPy = NaN;
 let myBubble: Bubble;
 const v = new THREE.Vector3();
 /** Gnomes drawn near me at the last pill refresh; the pill is redrawn when this changes. */
@@ -420,13 +435,16 @@ function makeBubble(parent: HTMLElement): Bubble {
     background: 'rgba(255, 252, 240, 0.95)', borderRight: '1px solid #3a2e20', borderBottom: '1px solid #3a2e20',
     transform: 'rotate(45deg)',
   });
-  return { el, text, shown: '' };
+  return { el, text, shown: '', visible: false, lastOpacity: -1 };
 }
 
 /** Shows a player's current line in b (or hides b), fading out at the end. Text only ever goes in as textContent. */
 function drawBubble(b: Bubble, line: ChatBubble | null): void {
   if (!line) {
-    if (b.el.style.display !== 'none') b.el.style.display = 'none';
+    if (b.visible) {
+      b.visible = false;
+      b.el.style.display = 'none';
+    }
     return;
   }
   const key = `${line.at}|${line.text}`;
@@ -434,8 +452,15 @@ function drawBubble(b: Bubble, line: ChatBubble | null): void {
     b.shown = key;
     b.text.textContent = line.text;
   }
-  b.el.style.display = '';
-  b.el.style.opacity = String(Math.max(0, Math.min(1, (line.until - performance.now()) / BUBBLE_FADE_MS)));
+  if (!b.visible) {
+    b.visible = true;
+    b.el.style.display = '';
+  }
+  const op = Math.round(Math.max(0, Math.min(1, (line.until - performance.now()) / BUBBLE_FADE_MS)) * 50) / 50;
+  if (b.lastOpacity !== op) {
+    b.lastOpacity = op;
+    b.el.style.opacity = String(op);
+  }
 }
 
 // ---------------------------------------------------------------- public API
@@ -503,8 +528,8 @@ function screenAt(camera: THREE.Camera, w: number, h: number): { x: number; y: n
 export function updateOnlineUi(camera: THREE.Camera): void {
   updatePartyUi();
   if (mmoStatus() === 'online' && nearCount() !== shownNear) refresh();
-  const seen = new Set<string>();
-  const activeKeys = new Set<string>();
+  seenKeys.clear();
+  activeKeys.clear();
   const w = innerWidth;
   const h = innerHeight;
 
@@ -522,7 +547,7 @@ export function updateOnlineUi(camera: THREE.Camera): void {
     v.y += 2.3;
     const p = screenAt(camera, w, h);
     if (!p) return;
-    seen.add(key);
+    seenKeys.add(key);
     let plate = plates.get(key);
     if (!plate) {
       const el = make(plateLayer, 'div', {
@@ -534,27 +559,58 @@ export function updateOnlineUi(camera: THREE.Camera): void {
       const label = make(el, 'div', {});
       const track = make(el, 'div', { width: '40px', height: '4px', margin: '1px auto 0', background: '#3a1010', border: '1px solid #000' });
       const fill = make(track, 'div', { height: '100%', background: UI.good });
-      plate = { el, label, fill, bubble };
+      plate = { el, label, fill, bubble, lastColor: '', lastHpPct: -1, lastPx: NaN, lastPy: NaN, shown: true };
       plates.set(key, plate);
     }
-    plate.label.style.color = color;
+    if (plate.lastColor !== color) {
+      plate.lastColor = color;
+      plate.label.style.color = color;
+    }
     if (plate.label.textContent !== text) plate.label.textContent = text;
-    plate.fill.style.width = `${Math.max(0, Math.min(1, hp01)) * 100}%`;
+    const hpPct = Math.round(Math.max(0, Math.min(1, hp01)) * 100);
+    if (plate.lastHpPct !== hpPct) {
+      plate.lastHpPct = hpPct;
+      plate.fill.style.width = `${hpPct}%`;
+    }
     drawBubble(plate.bubble, bubbleLine);
-    plate.el.style.display = '';
-    plate.el.style.transform = `translate(calc(-50% + ${p.x}px), calc(-100% + ${p.y}px))`;
+    if (!plate.shown) {
+      plate.shown = true;
+      plate.el.style.display = '';
+    }
+    const px = Math.round(p.x * 2) * 0.5;
+    const py = Math.round(p.y * 2) * 0.5;
+    if (plate.lastPx !== px || plate.lastPy !== py) {
+      plate.lastPx = px;
+      plate.lastPy = py;
+      plate.el.style.transform = `translate(calc(-50% + ${px}px), calc(-100% + ${py}px))`;
+    }
   }
 
   // My own last line, just above my HP bar.
   const mine = myOnlineId() >= 0 ? chatBubble(myOnlineId()) : null;
-  v.copy(player.position);
-  v.y += 2.4;
-  const at = mine ? screenAt(camera, w, h) : null;
-  if (mine && at) {
-    drawBubble(myBubble, mine);
-    myHolder.style.display = '';
-    myHolder.style.transform = `translate(calc(-50% + ${at.x}px), calc(-100% + ${at.y}px))`;
-  } else if (myHolder.style.display !== 'none') {
+  if (mine) {
+    v.copy(player.position);
+    v.y += 2.4;
+    const at = screenAt(camera, w, h);
+    if (at) {
+      drawBubble(myBubble, mine);
+      if (!myHolderShown) {
+        myHolderShown = true;
+        myHolder.style.display = '';
+      }
+      const px = Math.round(at.x * 2) * 0.5;
+      const py = Math.round(at.y * 2) * 0.5;
+      if (myLastPx !== px || myLastPy !== py) {
+        myLastPx = px;
+        myLastPy = py;
+        myHolder.style.transform = `translate(calc(-50% + ${px}px), calc(-100% + ${py}px))`;
+      }
+    } else if (myHolderShown) {
+      myHolderShown = false;
+      myHolder.style.display = 'none';
+    }
+  } else if (myHolderShown) {
+    myHolderShown = false;
     myHolder.style.display = 'none';
   }
 
@@ -587,11 +643,12 @@ export function updateOnlineUi(camera: THREE.Camera): void {
   }
 
   for (const [key, plate] of plates) {
-    if (seen.has(key)) continue;
+    if (seenKeys.has(key)) continue;
     if (!activeKeys.has(key)) {
       plate.el.remove();
       plates.delete(key);
-    } else {
+    } else if (plate.shown) {
+      plate.shown = false;
       plate.el.style.display = 'none';
     }
   }

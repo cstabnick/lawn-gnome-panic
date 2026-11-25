@@ -5,6 +5,7 @@ import { VEHICLES } from '../config';
 import { pushOutOfBoxes } from '../collide';
 import { SCENES } from '../cutscene/scenes';
 import { GIVERS } from '../quests/defs';
+import { interiorById } from '../interiors/registry';
 import type { QuestDef } from '../quests/types';
 import type { World } from '../types';
 import { waterAt } from '../terrain';
@@ -51,7 +52,7 @@ export function spotsOf(q: QuestDef, world?: World): Spot[] {
         for (const t of o.targets) add(step, `crack.${t.id}`, t.near[0], t.near[1], 0);
         break;
       case 'visit':
-        add(step, 'visit.at', o.at[0], o.at[1], 1);
+        if (!o.interior) add(step, 'visit.at', o.at[0], o.at[1], 1); // an interior target is local to its room
         break;
       case 'steal-deliver': {
         const boat = VEHICLES[o.vehicleKind].boat === true;
@@ -102,7 +103,7 @@ export function spotsOf(q: QuestDef, world?: World): Spot[] {
       case 'checkpoints':
         // A gate hung at a height (a Skyway deck, a rooftop) is not a ground spot.
         o.points.forEach((p, i) => {
-          if (p.height === undefined) add(step, `checkpoints.gate${i}`, p.at[0], p.at[1], 1);
+          if (p.height === undefined && !p.interior) add(step, `checkpoints.gate${i}`, p.at[0], p.at[1], 1);
         });
         break;
       case 'probe':
@@ -143,6 +144,8 @@ export function staticFindings(q: QuestDef, world: World): Finding[] {
   const giver = GIVERS[q.giver];
   if (!giver) {
     add('giver-missing', `giver ${q.giver} is not in GIVERS`);
+  } else if (giver.interior) {
+    if (!interiorById(giver.interior)) add('giver.interior', `giver ${q.giver} names interior ${giver.interior}, which is not registered`);
   } else if (pushOutOfBoxes(giver.x, giver.z, 0.8, world.boxes, 0).hit) {
     add('spot-in-collider', `giver ${q.giver} at (${giver.x}, ${giver.z}) is inside a building`);
   }

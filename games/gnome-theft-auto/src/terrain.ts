@@ -24,6 +24,8 @@ import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, water
 import { applyTrackRelief } from './raceTrack/track';
 import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
+import { INTERIOR_FLOOR_Y, INTERIOR_MIN_X } from './interiors/space';
+import { rooftopSurfaceBelow } from './interiors/rooftops';
 import { SKYWAY } from './highways/skyways';
 import { wasmBuildBaseHeightGrid, wasmNaturalHeightAt } from './wasm/gtaWasm';
 
@@ -279,6 +281,7 @@ setWaterSource(() => {
  */
 export function heightAt(x: number, z: number): number {
   if (terrainFlat()) return 0;
+  if (x >= INTERIOR_MIN_X) return INTERIOR_FLOOR_Y; // an interior pocket (E05): flat floor
   const h = gridHeight(x, z);
   // A road bridge (water.ts): the deck, not the river bed under it.
   const d = bridgeDeckAt(x, z);
@@ -341,6 +344,7 @@ export interface WaterHit { surface: number; depth: number }
  * the water is off). Ignores bridge decks: under a bridge it is the river. "In the water" means `w && y < w.surface`.
  */
 export function waterAt(x: number, z: number): WaterHit | null {
+  if (x >= INTERIOR_MIN_X) return null; // interior pockets are dry
   const surface = waterLevelAt(x, z);
   if (surface === null) return null;
   const depth = surface - (waterBedAt(x, z) ?? surface);
@@ -363,7 +367,14 @@ export function bedAt(x: number, z: number): number {
 export function groundAt(x: number, z: number, y: number = Infinity): number {
   const land = heightAt(x, z);
   const deck = deckSurfaceBelow(x, z, y + SKYWAY.step);
-  return deck !== null && deck > land ? deck : land;
+  let top = deck !== null && deck > land ? deck : land;
+  // A walkable rooftop with no box under it (the Double Pot slab, E05 interiors/rooftops.ts). Only for a known height:
+  // something dropped with y omitted lands on the land under it, not on the roof over a tunnel.
+  if (y !== Infinity) {
+    const roof = rooftopSurfaceBelow(x, z, y + SKYWAY.step, false);
+    if (roof !== null && roof > top) top = roof;
+  }
+  return top;
 }
 
 /** How high world point (x, y, z) is above the ground under it (negative = below it). Skyway decks count (groundAt). */

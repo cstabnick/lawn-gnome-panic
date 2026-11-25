@@ -11,6 +11,8 @@ import { placeOnGround } from '../terrainMesh';
 import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
 import { SCENES } from '../cutscene/scenes';
+import { interiorById, interiorToWorld } from '../interiors/registry';
+import { currentInterior } from '../interiors/runtime';
 import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './objectivesAction';
 import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
@@ -260,7 +262,25 @@ function buildHoseVisual(scene: THREE.Scene, x: number, z: number): HoseVisual {
   return { group, leftSeg, rightSeg, bulge, valve };
 }
 
+/** A giver with x, z and exit in world coordinates (interior givers are local to their room). */
+export function worldGiver(g: GiverDef): GiverDef {
+  if (!g.interior) return g;
+  const [x, z] = interiorToWorld(g.interior, g.x, g.z);
+  const [ex, ez] = interiorToWorld(g.interior, g.exit.x, g.exit.z);
+  return { ...g, x, z, exit: { ...g.exit, x: ex, z: ez } };
+}
+
+/** Where a giver shows on the map: its door while the player is outside its interior. */
+function giverBlipPos(g: GiverDef): { x: number; z: number } {
+  if (g.interior && currentInterior() !== g.interior) {
+    const d = interiorById(g.interior)?.def.door;
+    if (d) return { x: d.x, z: d.z };
+  }
+  return { x: g.x, z: g.z };
+}
+
 const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void): Run => {
+  const at: [number, number] = obj.interior ? interiorToWorld(obj.interior, obj.at[0], obj.at[1]) : obj.at;
   let reached = false;
   /** An arrival scene is playing: the step completes when it ends. */
   let arriving = false;
@@ -271,10 +291,10 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
     flatLayer(new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false }), LAYER.marker),
   );
   ring.rotation.x = -Math.PI / 2;
-  placeOnGround(ring, obj.at[0], obj.at[1], 0.08, true);
+  placeOnGround(ring, at[0], at[1], 0.08, true);
   deps.scene.add(ring);
 
-  const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, obj.at[0], obj.at[1]) : null;
+  const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, at[0], at[1]) : null;
   let hoseKinked = false;
 
   return {
@@ -290,10 +310,10 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
         mistTimer -= dt;
         if (mistTimer <= 0) {
           mistTimer = 0.28;
-          deps.fx?.waterJet?.(obj.at[0], 0.45, obj.at[1]);
+          deps.fx?.waterJet?.(at[0], 0.45, at[1]);
         }
       }
-      if (!reached && !arriving && Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) {
+      if (!reached && !arriving && Math.hypot(px - at[0], pz - at[1]) <= obj.radius) {
         const script = obj.scene ? SCENES[obj.scene] : undefined;
         if (obj.scene && !script) console.warn(`[cutscene] visit: unknown scene ${obj.scene}`);
         if (script && !deps.cutscene.active) {
@@ -318,8 +338,8 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
           hose.bulge.scale.set(2.1, 1.9, 2.1);
           hose.bulge.position.set(-0.45, 0.45, 0);
           hose.valve.rotation.z = 0.5;
-          deps.fx?.waterJet?.(obj.at[0], 0.6, obj.at[1]);
-          deps.fx?.confetti?.(obj.at[0], 0.7, obj.at[1]);
+          deps.fx?.waterJet?.(at[0], 0.6, at[1]);
+          deps.fx?.confetti?.(at[0], 0.7, at[1]);
           deps.play('splash');
           const lingering = hose.group;
           setTimeout(() => deps.scene.remove(lingering), 3500);
@@ -329,7 +349,11 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
       }
     },
     onCracked() {},
-    blips: () => (reached ? [] : [{ x: obj.at[0], z: obj.at[1], color: TARGET_COLOR, quest: obj.hint }]),
+    blips: () => {
+      if (reached) return [];
+      const door = obj.interior && currentInterior() !== obj.interior ? interiorById(obj.interior)?.def.door : undefined;
+      return [{ x: door ? door.x : at[0], z: door ? door.z : at[1], color: TARGET_COLOR, quest: obj.hint }];
+    },
     cracked: () => [],
     cleanup() {
       deps.scene.remove(ring);
@@ -416,8 +440,9 @@ function storeSaves(s: Record<string, QuestSave>): void {
 export function createQuests(
   deps: QuestDeps,
   questList: readonly QuestDef[] = QUESTS,
-  giversMap: Record<string, GiverDef> = GIVERS,
+  giversArg: Record<string, GiverDef> = GIVERS,
 ): Quests {
+  const giversMap: Record<string, GiverDef> = Object.fromEntries(Object.entries(giversArg).map(([k, g]) => [k, worldGiver(g)]));
   const saves = loadSaves();
   let activeId: string | null = null;
 
@@ -807,7 +832,7 @@ export function createQuests(
       for (const g of Object.values(giversMap)) {
         if (!waitingAt(g.id)) continue;
         const kind = giverKind(g.id);
-        out.push({ x: g.x, z: g.z, color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
+        out.push({ ...giverBlipPos(g), color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
       }
       if (run) out.push(...run.blips().map((b) => ({ ...b, kind: 'objective' as const })));
       return out;
@@ -935,7 +960,7 @@ export function createQuests(
           pinned = null;
           return null;
         }
-        return { x: g.x, z: g.z, color: giverColor(g.id), label: g.name };
+        return { ...giverBlipPos(g), color: giverColor(g.id), label: g.name };
       }
       return null;
     },

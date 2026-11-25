@@ -214,4 +214,43 @@ export const COSMETICS_HEAD_B: PrefabDef[] = [
       { s: 'box', d: [0.008, 0.07, 0.008], at: [0.08, 0.08, 0.08], c: 'gold' },
     ],
   },
+  {
+    id: 'tea-cosy-hat', name: 'Tea-Cosy Hat', category: 'armor', uses: ['wear-head'],
+    tags: ['tea', 'cosy', 'cozy', 'knit', 'hat', 'pompom', 'kettle', 'head', 'reward'], emoji: [],
+    tint: 'green',
+    about: 'Home Sweet Hovel: the Tea-Cosy Hat, a squat knitted dome with a pompom on top and a spout-hole flap at the side. The knit takes a tint. Achievement reward for Home Sweet Hovel.',
+    examine: [
+      'A squat knitted dome, the shape of a warm pot, with a fat pompom on top and a little flap at the side for the spout.',
+      'Saying of the Hovel: the kettle goes on first, and the cosy goes on the gnome, because someone has to stay warm while it brews.',
+      'Tip: the spout flap is for the spout. Pop the spout through and the tea comes out where the tea should come out.',
+      'Joke: a gnome in a tea cosy is still the one who gets offered the biscuit, because nobody can see where the tea went.',
+      'The pompom has been replaced twice. Each new one is a little more orange than the one before, and nobody has said why.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.14], at: [0, 0.1, 0], scale: [1, 0.72, 1], c: 'tint', seg: 10 },
+      { s: 'ring', d: [0.14, 0.02], at: [0, 0.03, 0], rot: [90, 0, 0], c: 'tint', seg: 12 },
+      { s: 'box', d: [0.05, 0.04, 0.02], at: [0.13, 0.1, 0], c: 'wool' },
+      { s: 'ball', d: [0.035], at: [0, 0.2, 0], c: 'wool', seg: 8 },
+    ],
+  },
+  {
+    id: 'propeller-beanie', name: 'Propeller Beanie', category: 'armor', uses: ['wear-head'],
+    tags: ['propeller', 'beanie', 'cap', 'hat', 'aircraft', 'roof', 'knit', 'head', 'reward'], emoji: [],
+    tint: 'blue',
+    about: 'Roof Rat: the Propeller Beanie, a small knitted beanie with a stalk and a two-blade propeller on top. The cap takes a tint. Achievement reward for Roof Rat.',
+    examine: [
+      'A small knitted beanie with a stalk on top and a two-blade wooden propeller bolted to the stalk, ready to spin.',
+      'Saying of the Rooftops: the cap goes on before the flight and the propeller goes round before the landing. Neither is optional.',
+      'Tip: keep your head down when the blades are turning. A propeller does not know whose hat it is.',
+      'Joke: the propeller has never once lifted a gnome off the ground. It has, however, lifted several gnomes\' opinions of the roof.',
+      'The blades are carved with the names of every aircraft that landed on a roof and lived to talk about it.',
+    ],
+    parts: [
+      { s: 'ball', d: [0.14], at: [0, 0.07, 0], scale: [1, 0.7, 1], c: 'tint', seg: 10 },
+      { s: 'ring', d: [0.145, 0.014], at: [0, 0.02, 0], rot: [90, 0, 0], c: 'white', seg: 12 },
+      { s: 'cyl', d: [0.01, 0.01, 0.05], at: [0, 0.19, 0], c: 'iron', seg: 6 },
+      { s: 'box', d: [0.22, 0.012, 0.03], at: [0, 0.23, 0], c: 'wood' },
+      { s: 'ball', d: [0.02], at: [0, 0.23, 0], c: 'iron', seg: 6 },
+    ],
+  },
 ];

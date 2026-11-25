@@ -6,6 +6,7 @@
 /** A short verb for a prompt sentence ("Enter The Gnomecino" -> "Enter"). */
 export function promptVerb(text: string): string {
   const t = text.toLowerCase();
+  if (/^(leave|exit)\b|\bgo out\b/.test(t)) return 'Leave';
   if (/\benter\b|\bgo in\b|\bdoor\b/.test(t)) return 'Enter';
   if (/\bbuy\b|\bshop\b|\bstore\b/.test(t)) return 'Shop';
   if (/\btalk\b|\bask\b|\bchat\b|\bspeak\b/.test(t)) return 'Talk';

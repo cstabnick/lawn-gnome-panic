@@ -12,6 +12,8 @@ import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
 import { restoreVehicle } from './questPins';
 import type { CheckpointDef, ObjectiveDef, QuestDeps, Run } from './types';
 import { readProbe } from '../city/probes';
+import { interiorById, interiorToWorld } from '../interiors/registry';
+import { currentInterior } from '../interiors/runtime';
 
 const GATE_COLOR = 0xffd23f;
 const BLIP_COLOR = '#ff7a00';
@@ -79,6 +81,8 @@ export function checkpointsRun(
   say: (t: string) => void,
 ): Run {
   const n = obj.points.length;
+  /** A gate with its position in world coordinates (interior gates are local to their room). */
+  const world = (g: CheckpointDef): CheckpointDef => (g.interior ? { ...g, at: interiorToWorld(g.interior, g.at[0], g.at[1]) } : g);
   let next = 0;
   let t = 0;
   let startedAt: number | null = null;
@@ -108,8 +112,8 @@ export function checkpointsRun(
   const showGate = (px: number, pz: number): void => {
     if (gateFor === next || doneFlag) return;
     disposeMesh(deps.scene, gateMesh);
-    const prev: [number, number] = next > 0 ? obj.points[next - 1].at : [px, pz];
-    gateMesh = buildGate(obj.points[next], prev);
+    const prev: [number, number] = next > 0 ? world(obj.points[next - 1]).at : [px, pz];
+    gateMesh = buildGate(world(obj.points[next]), prev);
     deps.scene.add(gateMesh);
     gateFor = next;
   };
@@ -156,7 +160,7 @@ export function checkpointsRun(
       const p = deps.player;
       if (!needsRide()) {
         const y = p?.vehicle ? p.vehicle.y : (p?.y ?? 0);
-        const g = obj.points[next];
+        const g = world(obj.points[next]);
         if (gateHit(g, px, y, pz, heightAt(g.at[0], g.at[1]))) {
           if (next === 0) {
             startedAt = t;
@@ -183,7 +187,12 @@ export function checkpointsRun(
       if (doneFlag) return [];
       if (needsRide() && ride) return [{ x: ride.x, z: ride.z, color: BLIP_COLOR, quest: ride.spec.name }];
       const g = obj.points[next];
-      return [{ x: g.at[0], z: g.at[1], color: BLIP_COLOR, quest: g.label }];
+      if (g.interior && currentInterior() !== g.interior) {
+        const d = interiorById(g.interior)?.def.door;
+        if (d) return [{ x: d.x, z: d.z, color: BLIP_COLOR, quest: g.label }];
+      }
+      const w = world(g);
+      return [{ x: w.at[0], z: w.at[1], color: BLIP_COLOR, quest: g.label }];
     },
     cracked: () => [],
     cleanup() {

@@ -27,5 +27,6 @@ describe('touch action button label (E03: mobile could not enter buildings)', ()
     expect(promptVerb('Ride the Pebblewick Hopper to Turfton (8 Acorns)')).toBe('Ride');
     expect(promptVerb('Talk to the hide keeper')).toBe('Talk');
     expect(promptVerb('Pick up the crate')).toBe('Use');
+    expect(promptVerb('Leave Bodega & Sons')).toBe('Leave');
   });
 });

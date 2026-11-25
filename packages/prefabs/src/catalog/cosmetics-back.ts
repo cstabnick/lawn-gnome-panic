@@ -125,4 +125,27 @@ export const COSMETICS_BACK: PrefabDef[] = [
       { s: 'cyl', d: [0.006, 0.006, 0.2], at: [-0.05, 0.33, 0], c: 'iron', seg: 6 },
     ],
   },
+  {
+    id: 'rooftop-pigeon-pack', name: 'Rooftop Pigeon', category: 'armor', uses: ['wear-back'],
+    tags: ['pigeon', 'bird', 'pack', 'roof', 'rooftop', 'back', 'reward', 'grey'], emoji: [],
+    tint: 'slate',
+    about: 'A plump grey pigeon perched on a small strap pad on the back, the body takes a tint. Achievement reward for Rooftop Run.',
+    examine: [
+      'A plump grey pigeon perched on a small leather pad strapped across the shoulders, feathers puffed against the wind.',
+      'Saying of the Rooftops: a pigeon on the roof is a letter waiting to happen, and a pigeon on your back is a letter with legs.',
+      'Tip: keep the pigeon facing forward. Turned round, it will try to take the view home with it.',
+      'Joke: the pigeon has never once carried a message for the gnome. It has carried several for the gnome\'s neighbours.',
+      'Its left wing has a bent feather that it insists was always there, and no gnome on the roof has been able to disagree.',
+    ],
+    parts: [
+      { s: 'box', d: [0.2, 0.2, 0.1], at: [0, 0.1, 0], c: 'leather' },
+      { s: 'box', d: [0.22, 0.04, 0.12], at: [0, 0.22, 0], c: 'leather-dark' },
+      { s: 'ball', d: [0.09], at: [0, 0.33, 0], scale: [1, 0.9, 1.4], c: 'tint', seg: 8 },
+      { s: 'ball', d: [0.05], at: [0, 0.39, 0.08], c: 'tint', seg: 8 },
+      { s: 'box', d: [0.03, 0.08, 0.1], at: [0.09, 0.33, -0.01], c: 'iron', mirror: true },
+      { s: 'box', d: [0.08, 0.02, 0.07], at: [0, 0.3, -0.13], rot: [-15, 0, 0], c: 'iron' },
+      { s: 'box', d: [0.02, 0.02, 0.03], at: [0, 0.39, 0.13], c: 'brass' },
+      { s: 'ball', d: [0.012], at: [0.03, 0.41, 0.1], c: 'black', seg: 6, mirror: true },
+    ],
+  },
 ];

@@ -68,18 +68,26 @@ const SPOTS: readonly Spot[] = [
 export interface ExtraSpot {
   x: number;
   z: number;
+  /** When set, the player's feet must also be within 2 m of this height (a spot on a roof, E05). */
+  y?: number;
   prompt: string;
   run(player: Player, deps: { hud: Hud; economy: Economy; fx: Fx; play: (sfx: Sfx) => void }): boolean;
 }
 const EXTRA: ExtraSpot[] = [];
-export function addInteractSpot(s: ExtraSpot): void {
+/** Adds a spot; returns a function that removes it again (interior rooms add theirs on entry, remove on leaving). */
+export function addInteractSpot(s: ExtraSpot): () => void {
   EXTRA.push(s);
+  return () => {
+    const i = EXTRA.indexOf(s);
+    if (i >= 0) EXTRA.splice(i, 1);
+  };
 }
 function nearestExtra(player: Player): ExtraSpot | null {
   if (player.vehicle || player.airborne) return null;
   let best: ExtraSpot | null = null;
   let bestD2 = INTERACT_RANGE * INTERACT_RANGE;
   for (const s of EXTRA) {
+    if (s.y !== undefined && Math.abs(player.y - s.y) > 2) continue;
     const dx = player.x - s.x;
     const dz = player.z - s.z;
     const d2 = dx * dx + dz * dz;

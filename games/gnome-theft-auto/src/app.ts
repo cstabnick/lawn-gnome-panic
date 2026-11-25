@@ -32,7 +32,7 @@ import { createHud } from './hud';
 import { landmarkBlips, placeBlips } from './mapPois';
 import { createInteractables } from './interactables';
 import { createGnomecinoDoor } from './portal/gnomecinoDoor';
-import { buildRooftops, createInteriors, createRoofLife } from './interiors';
+import { buildRooftops, createInteriors, createRoofLife, currentInterior } from './interiors';
 import { buildDoublePotRoof } from './interiors/showcase/doublePot';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
@@ -56,6 +56,12 @@ import { passengerCount, SeatBook } from './seats';
 import { createNpcs } from './npcs';
 import { createPlayer, setChuteHook } from './player';
 import { createAmbientGnomes } from './ambientGnomes';
+import { pardonlinResidents } from './pardonlin/plans';
+import { createPardonlinLife } from './pardonlin/life';
+import { createPardonlinSound } from './pardonlin/sound';
+import { createPardonlinActivities } from './pardonlin/activities';
+import { nearestTownSpeaker } from './pardonlin/speakers';
+import './pardonlin/interiors';
 import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
 import { questById } from './quests/defs';
@@ -417,6 +423,19 @@ const directorViews = createDirectorViews(scene);
 const waveWatch = createWaveWatch();
 const lapWatch = createLapWatch();
 const ambientGnomes = createAmbientGnomes(scene);
+// E30: Pardonlin's Continentals (pardonlin/plans.ts), its pigeons, swans and cyclists, its sounds and its side activities.
+const plResidents = createAmbientGnomes(scene, pardonlinResidents());
+const plLife = createPardonlinLife(scene);
+const plSound = createPardonlinSound();
+let adagioHeard = 0;
+let adagioDone = false;
+const plActivities = createPardonlinActivities({
+  scene,
+  toast: (t, ms) => hud.toast(t, ms),
+  unlock: (id) => void achievements.unlock(id),
+  increment: (id, by) => void achievements.increment(id, by),
+  earn: (amt, why) => economy.earn(amt, why),
+});
 // The Lost & Found Speedway (raceTrack/): circuit, grandstands, crowd, free-roam lap timer. Its races are quests (quests/races.ts).
 const raceTrack = createRaceTrack(scene, world, ui, { hud, unlock: (id) => void achievements.unlock(id), play });
 // Wildlife (critters.ts, src/critters/*): local to this browser. Events go out on Turfton FM when a bulletin exists for them.
@@ -1568,6 +1587,8 @@ function liveWorldFrame(dt: number, live: LiveWorld): void {
   sky.update(dt, cx, camera.position.y, cz, null, false);
   // Far away as the "player": no chatter bubbles pop up in a scene's frame.
   ambientGnomes.update(dt, 1e6, 1e6);
+  plResidents.update(dt, 1e6, 1e6);
+  plLife.update(dt, 1e6, 1e6, 0);
   const liveBiome = world.biomeAt(cx, cz);
   atmosphere?.update(dt, cx, cz, liveBiome, false);
   weatherFrame(dt, cx, cz, false);
@@ -2059,6 +2080,14 @@ function frame(now: number): void {
     }
   }
   ambientGnomes.update(dt, simX, simZ);
+  // E30: Pardonlin's life, sound and activities (each does nothing while the player is far from town).
+  plResidents.update(dt, simX, simZ);
+  plLife.update(dt, simX, simZ, atmosphere?.nightFactor() ?? 0);
+  plSound.update(dt, simX, simZ, atmosphere?.nightFactor() ?? 0, !!currentInterior());
+  {
+    const pv = player.vehicle;
+    plActivities.update(dt, { x: simX, z: simZ, vehicle: pv ? pv.spec.kind : null });
+  }
   cityDressing.update(dt, simX, simZ);
   garages.update(dt, player, watch);
   lockup.update(dt);
@@ -2327,8 +2356,16 @@ function frame(now: number): void {
     if (remoteSpeaker) {
       bestSpeaker = { x: remoteSpeaker.x, y: remoteSpeaker.y, z: remoteSpeaker.z, station: remoteSpeaker.station };
     }
+    // E30: no car radio near, so Pardonlin's own loudspeakers and gramophones play Radio Adagio (pardonlin/speakers.ts).
+    if (!bestSpeaker && !currentInterior()) {
+      const ts = nearestTownSpeaker(player.x, player.z, SPEAKER_MAX_DIST);
+      if (ts) bestSpeaker = { x: ts.x, y: ts.y + heightAt(ts.x, ts.z), z: ts.z, station: 'adagio' };
+    }
     radio.setListener({ x: player.x, y: player.y, z: player.z, yaw: chase.yaw }, bestSpeaker);
-  }
+    if (bestSpeaker?.station === 'adagio') adagioHeard += dt;
+  } else if (radio.station === 'adagio') adagioHeard += dt;
+  // E30: "Largo": three minutes of Radio Adagio (a car tuned to it, or a town speaker on foot), counted per session.
+  if (!adagioDone && adagioHeard >= 180) { adagioDone = true; void achievements.unlock('gta-pl-adagio'); }
   radio.update(dt);
   // HUD.
   section('hud');

@@ -24,7 +24,7 @@ export interface Segment {
 }
 
 /** The dial order when the player presses the radio key: each station, then off, then round again. */
-export const DIAL: readonly (StationId | null)[] = ['blade', 'fpr', 'beats', 'under', null];
+export const DIAL: readonly (StationId | null)[] = ['blade', 'fpr', 'beats', 'under', 'adagio', null];
 
 const BREAKS = ['talk', 'ad', 'talk', 'caller', 'talk', 'traffic'] as const;
 type BreakKind = (typeof BREAKS)[number];

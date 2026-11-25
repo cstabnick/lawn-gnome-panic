@@ -971,3 +971,28 @@ block (1, two flats), the Pebblewick bungalow (in home-06) and the homes on new-
 - **Home:** a hut on Long Spoon Pier (site:coast, ack) · **Work:** Saltbucket Boardwalk
 - **L58 visibility:** acknowledged (seen in quests: #43)
 - **Relationships:** Sells Driftwood's tube rides at a discount. Rivals with Captain Samphire for tourists. Loves the Spokewheel as one loves a stubborn old cat.
+
+## Pardonlin (the Continentals)
+
+The residents of Pardonlin (E30), west of Trellisdown through the Wickets. They are not in the 70-quest outline: they are
+town characters, available for later quests (E20-E22 may use them). Lore: `docs/lore/entries/apocrypha/` (ids below), rulings
+R-179 (the satire), R-180 (no HOA) and R-181 (Radio Adagio). All are Continentals: gentle satire, polite, never mean.
+
+| Who | Where | Wants | How they talk |
+|---|---|---|---|
+| Marcel Muet (`marcel-muet`) | the Grand Platz, by the fountain | out of an invisible box | never speaks; gestures, captioned in italics |
+| Odile Easelby (`odile-easelby`) | an artists' terrace, the Left Bank | everyone sat for her portrait | airy and sure: "Hold still, mon petit croissant." |
+| Gaston Plonque and the other Gaston (`the-gastons`) | the boules pitch, the Grand Platz | to settle one throw | overlapping, polite, both certain: "Measure again." |
+| Fifi Haricot (`fifi-haricot`) | the foot of the Bean Tower | a full tour, with the flag | bright guide patter: "Follow the flag!" |
+| Brigitte Levain (`brigitte-levain`) | the bakery off the Rue Haute | the Baguette Round delivered in order | brisk, exacting: "Eighty centimetres. Not seventy-nine." |
+| Jean-Pot and Sabine Sip (`jean-pot-and-sabine-sip`) | a Teacup Row terrace | another point to make about the same espresso | alternate profundities, then argue over whose it was |
+| Hector Disdain (`hector-disdain`) | Café Pardon, Teacup Row | to be left to his own timing | drily weary: "Hector has seen you." |
+| Anatole Bellows (`anatole-bellows`) | the east quay | a listener for the fourth tune | warm, wistful, in three-tune phrases |
+| Prudence Spine (`prudence-spine`) | the riverside quay wall | to keep the right book from the wrong gnome | cool, literary: "Not that one. Not yet." |
+| Roquette Fromage (`roquette-fromage`) | the Beetle Market | an argument for the cheese to age on | passionate, pungent: "It is not old. It is experienced." |
+| Sartorius Gloom (`sartorius-gloom`) | a Left Bank café terrace | a reason, or at least a rhyme | short rhyming gloom, cheerful underneath |
+| Greta Clothespeg (`greta-clothespeg`) | the Left Bank backyards | the last word over the garden wall | clipped, brisk, with a sniff |
+| Aurèle Clippe (`aurele-clippe`) | the Jardin | every leaf the same height | quiet, exact: "Please do not stand there." |
+| Wilhelmina Marrow (`wilhelmina-marrow`) | the Little Gardens | a bigger marrow than anyone's | booming, competitive, fair |
+| Captain Anchois (`captain-anchois`) | Basin Quay | a ship, any ship | formal, nautical, saluting the swan |
+| Maestro Ottavio Lento (`ottavio-lento`) | the Opera Hall, the Left Bank (Radio Adagio, 96.1) | the next piece to be played slowly enough | unhurried, grand, murmuring to his orchestra |

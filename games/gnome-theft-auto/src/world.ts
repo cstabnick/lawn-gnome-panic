@@ -33,6 +33,7 @@ import type { BiomeId, Box, ParkedSpot, RoadNode, VehicleKind, VendingSpot, Worl
 import { applyRoundabouts } from './roundabouts';
 import { buildRoundaboutIslands } from './roundaboutIslands';
 import { buildWickets } from './pardonlin/wickets';
+import { buildPardonlinTown } from './pardonlin/town';
 import { buildUnmownGate } from './unmownGate';
 
 // Phones: a lighter render keeps the frame rate up (fewer pixels, a smaller shadow map).
@@ -1094,6 +1095,8 @@ export function buildWorld(scene: THREE.Scene, _renderer: THREE.WebGLRenderer): 
   buildWickets(scene, boxes);
   buildRoundaboutIslands(scene, boxes);
   buildUnmownGate(scene, boxes);
+  // ---- E30: Pardonlin's town (pardonlin/town.ts): terraces, squares, quays, signs, colliders; the European traffic zone ----
+  buildPardonlinTown(scene, boxes);
 
   // ---- Walk points on sidewalks (every 8 units, the middle of the strip) --------------------------------------------
   for (const axis of ['vert', 'horz'] as Axis[]) {

@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14, E15, E24, E13. Running: E25, E31, E16. Next: E17, E19, E26, E32, E33, then wave 6 (E16, E17, E19, E26), E18, E20–E22. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: merged E10, E30, E11, E12. Merged F1 (gear fit), E14, E15, E24, E13, E31. Running: E25, E16, E17. Next: E19, E26, E32, E33, then wave 6 (E16, E17, E19, E26), E18, E20–E22. Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -43,7 +43,7 @@ with deferred items listed).
 | E14 | Dirt, rally and toadstools | Content | 5 | E01, E02 | merged | epic/E14-dirt | see log | **TrackDef registry** `raceTrack/tracks.ts` (+ `defs/`) for E26; Rutbottom Dirt Bowl 1.22 km banked circuit + `dirt-bike` Knobbly Dirt-Mower (dealer 650); Capwood ~140 toadstools + Great Ring; Capwood Run 2.73 km rally (shorter than the 3–4 km asked: small mountain) with fords capped at `WATERLOG.fordCap` 0.3; 4 quests (unlocks temporarily after ch2/ch4/ch5 quests — E21 re-times to #40/#42), 6 achievements, R-189..R-192 (renumbered); deferred: rally free-roam timer, mixed-kind races, glaze for the Knobbly, demo GIF |
 | E15 | Golf course | Content | 5 | E01, E05 | merged | epic/E15-golf | a2d6abde | Hedgeworth Links: Kicked Board (breaks, saved), 4 holes numbered 1,2,3,9 (par 16), drive-through hedge arches, real golf (swing meter, clubs, lies, scorecard, golf cam, touch), clubhouse interior, Peony/Basil/Thrift + 4 side quests (temporarily after existing story quests), 6 achievements, 32 prefabs; new package **@lawn/golf** (Gnome Golf re-exports it; 25-shot golden test unchanged); shared `golf-flagstick` flag moved off the pole; R-193..R-195 (renumbered); deferred: reseed quest (needs E21's mown scar), online balls; hedges ~2.8 m thick; phone: hole strip overlaps weather chip |
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | running | epic/E16-country |  |  |
-| E17 | Underground societies | Content | 6 | E01, E05, E04 | planned | | | |
+| E17 | Underground societies | Content | 6 | E01, E05, E04 | running | epic/E17-societies |  |  |
 | E19 | Courts and skate park | Content | 6 | E01 | planned | | | |
 | E18 | Activities and side-quest pacing | Content | 7 | E04, E05, E08 | planned | | | |
 | E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
@@ -57,7 +57,7 @@ with deferred items listed).
 | E28 | World expansion II: the European yard, nature preserve, roundabouts | Engine | 2 | E01 | merged | epic/E28-world2 | see log | worldHalf 1800, POS_BOUND 1850; **Pardonlin** (river Thymes, the Wickets), **the Unmown** preserve; roundabouts (Hatwheel, Place du Pot, Trellis Cross, Anthill Ring) + 4 HOA-hat traffic wardens; 18 sites for E30/E31 (Bean Tower, Grand Platz, Teacup Row, Radio Adagio, Beetle Market...); Wasm kernel sized from the world, parity tests back on; lore R-172..R-177 (renumbered at merge); Thymes bridges are low canal bridges (shallow); deferred: settlements in new regions, customs-counter prop, real phone |
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | merged | epic/E30-pardonlin | see log | 4 districts (Old Town, Teacup Row & Quays, Left Bank, Jardin & Basin), 33 vignettes, 400+ signs, 22 residents, Radio Adagio 96.1 (13 pieces, Maestro Ottavio Lento), Café Pardon + radio foyer/studio, 4 town activities, 5 achievements, screens in E30/; rulings renumbered R-182..R-184; at merge: Left Bank allotment beds lost their colliders (E27 made them mowable), duplicate import fixed; open: Left Bank 848 buildings — check low-end phones; deferred: story quests with residents (E20–E22), tram, online town state |
-| E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | running | epic/E31-living |  |  |
+| E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | merged | epic/E31-living | see log | the Unmown (ranger station walk-in, Reedmere marsh boardwalk, 3 hides, checklist app), 8 bird species (36 total), 8 small animals, 3 vehicles (Ranger Buggy, Snail-Shell Camper, Cone Van), regional traffic + boat routes + 3 flights, band-road houses, hamlets Espalier End/Mittenholt/Dunelow, High Tarn; perf flat at 7.5 ms avg on phone viewport; R-203..R-206 (renumbered); hides are solid boxes (camera inside); deferred: guided walk, white hares, Turfton duck pond |
 | E32 | Hedgeworth to nine holes | Content | 6 | E15 | planned | | | |
 | E33 | Mountain routes | Content | 6 | E12, E14 | planned | | | |
 | R1 | Editorial review and polish (editors by content group, decider for disputes, iterate) | Review | 10 | everything | planned | | | |
@@ -66,6 +66,7 @@ with deferred items listed).
 
 - Done (F1, merged 16046042): 40 wearables' `wear` mounts fixed; `npm test -w packages/gnome` green. Neck items (e.g.
   house-key-necklace hangs low, windsock-quiver shrunk to 0.68) were not eyeballed on a gnome: check in the equip lab.
+ - also `traffic.levels.test.ts` "cars stay on a surface and never jump levels: focus on the deck" (load-flaky, after E31).
 - `traffic.test.ts`: "a bullet at the driver head hits them..." and "a lane-following car ... 90 degree corner" fail
   under full-suite load and pass alone (3/3 after the E24 merge). Make them load-independent (F2).
 - `AGENT_INDEX.md`'s Gnome Theft Auto row was built by splicing each epic's insertion and has garbled fragments in

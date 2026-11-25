@@ -13,7 +13,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Session 3: resumed E30, E10, E11; merged E10, E30, E11; started E12, E14, FIX-1. Running: E12, E14, FIX-1 (traffic corner regression + gnome gear fit). Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
+Session 3: resumed E30, E10, E11; merged E10, E30, E11; started E12, E14. Running: E12, E14. Queued: FIX-1 (traffic corner regression + gnome gear fit; start when the subagent limit allows). Session 2 ended on a usage limit. Merged into `gta-batch-3`: E01–E09, E23, E27, E28, E29 (+ main). Leads that were
 still running (worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`): **E30** Pardonlin
 (was at its screenshot pass; build + lore passed), **E10** homes (screenshot pass), **E11** coast (early). For each:
 check its worktree branch (`git -C <worktree> log --oneline -3`, `git status`); if committed, merge it with
@@ -66,7 +66,7 @@ with deferred items listed).
   box-camera), many are batch-3 rewards (frost-glaze-muffler, flaneur-cravat, daily-baguette, house-key-necklace...).
   Fix their `wear` mounts in `packages/prefabs` so the suite is green before the PR merges.
 - `traffic.test.ts` "lane-following car ... 90 degree corner on every preset" now fails alone on simcade (car never
-  reaches the last node) after the E10/E30/E11 merges: a real regression. FIX-1 (running) owns both items.
+  reaches the last node) after the E10/E30/E11 merges: a real regression. FIX-1 (queued) owns both items.
 
 ## Engine work (built first, others build on it)
 

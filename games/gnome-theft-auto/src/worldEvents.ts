@@ -19,7 +19,8 @@ export type WorldEventKind =
   | 'street-drag'
   | 'runaway-combine';
 
-export const EVENT_INTERVAL = 110;
+/** Seconds between world events (L71: was 110). */
+export const EVENT_INTERVAL = 160;
 export const EVENT_DURATION = 90;
 export const DRIFT_TRIAL_TIME = 45;
 export const ACORN_SPILL_TIME = 60;

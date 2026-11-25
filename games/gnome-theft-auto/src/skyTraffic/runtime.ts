@@ -10,6 +10,7 @@ import { activeWorldEvents } from '../events/api';
 import { SKY } from './config';
 import { SKY_BEHAVIOURS, skyBehaviour } from './behaviours';
 import { followSpecFor, newFollow, stepFollow } from './follow';
+import { awayFor, initialDelay, presenceUntil } from './presence';
 import { createBanner } from './banner';
 import type { SkyBanner } from './banner';
 import { READABLE_AD_COUNT, nextAd } from './ads';
@@ -174,6 +175,10 @@ interface Rec {
   adT: number;
   adSeenT: number;
   adCredited: boolean;
+  /** L20: absolute time it leaves on its own (Infinity when forced or without presence). */
+  onUntil: number;
+  /** L20: seconds it stays away once it has left. */
+  away: number;
 }
 
 function faceYaw(from: { x: number; z: number }, to: SkyWaypoint): number {
@@ -189,6 +194,10 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
   const records: Rec[] = [];
   const loose: SkyBanner[] = [];
   const cooldownUntil = new Map<string, number>();
+  for (const def of SKY_BEHAVIOURS) {
+    const d = initialDelay(def, Math.random);
+    if (d > 0) cooldownUntil.set(def.id, d);
+  }
   const activeIds = new Set<string>();
   const ctx: SkyContext = {
     playerX: 0,
@@ -266,6 +275,8 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
       adT: 0,
       adSeenT: 0,
       adCredited: false,
+      onUntil: presenceUntil(def, time, forced, Math.random),
+      away: awayFor(def, Math.random),
     };
     if (def.banner) {
       const banner = createBanner(deps.scene);
@@ -301,6 +312,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     for (const r of records) {
       activeIds.add(r.def.id);
       if (!r.forced && r.state === 'flying' && r.def.when && !r.def.when(ctx)) leave(r);
+      if (!r.forced && r.state === 'flying' && time >= r.onUntil) leave(r);
     }
     if (!enabled || !spawning) return;
     const def = pickBehaviour(SKY_BEHAVIOURS, ctx, activeIds, cooldownUntil, records.length);
@@ -342,7 +354,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
     v.questOwned = false;
     v.variant = undefined;
     if (v.air) v.air.airborne = v.y - floorUnder(v.x, v.z, v.y).y > 0.05;
-    cooldownUntil.set(rec.def.id, time + rec.def.cooldown);
+    cooldownUntil.set(rec.def.id, time + rec.away);
     records.splice(i, 1);
   }
 
@@ -546,7 +558,7 @@ export function createSkyTraffic(deps: SkyTrafficDeps): SkyTraffic {
         rec.leaveT += dt;
         if (rec.leaveT > SKY.leaveFor) {
           removeAt(i);
-          cooldownUntil.set(rec.def.id, time + rec.def.cooldown);
+          cooldownUntil.set(rec.def.id, time + rec.away);
           continue;
         }
       }

@@ -25,7 +25,7 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
   },
   {
     id: 'fish-stripy-perch', name: 'Stripy Perch', rarity: 'common', size: [12, 35], waters: ['loch', 'canal'],
-    baits: { 'glitter-spinner': 1.8, 'acorn-crumb': 1.3 }, fight: 'darter', difficulty: 1, minRod: 0, value: 5,
+    baits: { 'glitter-spinner': 1.8, 'acorn-crumb': 1.3 }, weather: { rain: 1.5 }, fight: 'darter', difficulty: 1, minRod: 0, value: 5,
     prefab: 'fish-stripy-perch', blurb: 'Wears its stripes like a referee and argues every call.',
   },
   {
@@ -57,7 +57,7 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
   },
   {
     id: 'fish-pebble-loach', name: 'Pebble Loach', rarity: 'common', size: [6, 15], waters: ['river', 'canal'],
-    baits: { dough: 1.5, 'acorn-crumb': 1.5 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
+    baits: { dough: 1.5, 'acorn-crumb': 1.5 }, weather: { rain: 2.2 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
     prefab: 'fish-pebble-loach', blurb: 'Looks exactly like a pebble until the pebble swims off.',
   },
   {
@@ -77,7 +77,7 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
   },
   {
     id: 'fish-gudgeon', name: 'Gudgeon', rarity: 'common', size: [8, 18], waters: ['river', 'canal'],
-    baits: { dough: 1.4 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
+    baits: { dough: 1.4 }, weather: { rain: 1.8 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
     prefab: 'fish-gudgeon', blurb: 'Will bite anything, twice. The first fish of every gnome who ever held a rod.',
   },
   // ---- The Southern Drainage Canal ----------------------------------------------------------------------------------

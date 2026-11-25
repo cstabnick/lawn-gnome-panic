@@ -11,6 +11,7 @@ import { getMapPlayers, setMapPlayers } from './mapPrefs';
 import { mountSoundOptions } from './sound/volumeUi';
 import { mountCloudStatus } from './cloudSave';
 import { mountWaveOptions } from './waveOptions';
+import { mountWeatherOptions } from './weather/options';
 import { mountViewOptions } from './viewPrefs';
 import {
   flushPerfUpload, isOverlayOpen, isProfiling, perfCounts, perfUploadStatus, setPerfOverlay, setProfileUpload,
@@ -227,6 +228,8 @@ export function createOptions(
   mountViewOptions(panel);
   // Water waves: off / low / high (src/waveOptions.ts).
   mountWaveOptions(panel);
+  // Weather: on / off (src/weather/options.ts; E07's options registry will take this row over).
+  mountWeatherOptions(panel);
   // Cloud save: synced / syncing / offline (src/cloudSave.ts).
   mountCloudStatus(panel);
 

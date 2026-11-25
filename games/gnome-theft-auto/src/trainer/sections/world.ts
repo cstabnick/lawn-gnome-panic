@@ -4,6 +4,8 @@ import { activeWorldEvents, clearStreetEvents } from '../../events/api';
 import { placeBlips } from '../../mapPois';
 import { GIVERS } from '../../quests/defs';
 import { trainerSpot } from '../aim';
+import { forceWeather } from '../../weather';
+import type { WeatherKind } from '../../weather/types';
 import type { TrainerCtx } from '../types';
 import { registerTrainerSection } from '../registry';
 import { button, grid, heading, note, row, status } from '../ui';
@@ -33,6 +35,24 @@ function buildTime(el: HTMLElement, ctx: TrainerCtx): void {
     buttons.push({ mode, el: b });
   }
   el.append(grid(...buttons.map((x) => x.el)));
+}
+
+const WEATHER_BUTTONS: readonly { label: string; kind: WeatherKind | null; intensity?: number }[] = [
+  { label: 'Schedule', kind: null },
+  { label: 'Clear', kind: 'clear' },
+  { label: 'Cloud', kind: 'cloud' },
+  { label: 'Mist', kind: 'mist' },
+  { label: 'Rain', kind: 'rain' },
+  { label: 'Drizzle', kind: 'rain', intensity: 0.35 },
+  { label: 'Snow', kind: 'snow' },
+];
+
+function buildWeather(el: HTMLElement): void {
+  el.append(heading('Weather'));
+  const buttons = WEATHER_BUTTONS.map(({ label, kind, intensity }) =>
+    button(label, () => forceWeather(kind, intensity ?? 1, true)));
+  el.append(grid(...buttons));
+  el.append(note('Forced weather is local to this browser; Schedule goes back to the shared one.'));
 }
 
 function buildLaw(el: HTMLElement, ctx: TrainerCtx, st: ReturnType<typeof status>): void {
@@ -85,9 +105,9 @@ export function registerWorldSection(): void {
       const st = status();
       el.append(st.el);
       buildTime(el, ctx);
+      buildWeather(el);
       buildLaw(el, ctx, st);
       buildTeleport(el, ctx, st);
-      el.append(note('Weather: Turfton has no weather to set yet.'));
     },
   });
 }

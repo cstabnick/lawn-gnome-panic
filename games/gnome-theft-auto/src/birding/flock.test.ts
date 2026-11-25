@@ -122,4 +122,63 @@ describe('stepFlock', () => {
     for (let i = 0; i < 200; i++) stepFlock(f, frame({ time: i * 0.05 }), env);
     expect(f.y).toBeGreaterThan(0);
   });
+
+  it('takes different paths when sent to the same far target with different random sequences', () => {
+    const a = createFlock(7, sparrow, 3, 0, 0, 0, 'flying', makeEnv(7), () => 1);
+    const b = createFlock(8, sparrow, 3, 0, 0, 0, 'flying', makeEnv(99), () => 1);
+    const envA = makeEnv(7);
+    const envB = makeEnv(99);
+    sendFlock(a, 120, 0, 0, 'ground', envA);
+    sendFlock(b, 120, 0, 0, 'ground', envB);
+    for (let i = 0; i < 100; i++) {
+      stepFlock(a, frame(), envA);
+      stepFlock(b, frame(), envB);
+    }
+    expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThan(1);
+    for (const f of [a, b]) {
+      let settled = false;
+      for (let i = 0; i < 2400 && !settled; i++) {
+        stepFlock(f, frame(), f === a ? envA : envB);
+        if (f.mode === 'perched') settled = true;
+      }
+      expect(settled).toBe(true);
+    }
+  });
+
+  it('circles clockwise when circleDir is -1', () => {
+    const env = makeEnv();
+    let n = 0;
+    const soarer: BirdSpecies = { ...sparrow, id: 'test-soarer-cw', flight: 'soar', altitude: 14 };
+    const f = createFlock(9, soarer, 1, 11, 0, 0, 'perched', env, () => ++n);
+    circleFlock(f, 0, 0, env);
+    f.circleDir = -1;
+    f.circleR = 1;
+    f.x = 11;
+    f.z = 0;
+    f.tx = 0;
+    f.tz = 0;
+    f.y = f.ty;
+    let total = 0;
+    let prev = Math.atan2(f.z - f.tz, f.x - f.tx);
+    for (let i = 0; i < 20; i++) {
+      stepFlock(f, frame({ time: i * 0.05 }), env);
+      const cur = Math.atan2(f.z - f.tz, f.x - f.tx);
+      total += Math.atan2(Math.sin(cur - prev), Math.cos(cur - prev));
+      prev = cur;
+    }
+    expect(f.mode).toBe('circling');
+    expect(total).toBeLessThan(0);
+  });
+
+  it('keeps circleR within 0.7..1.6 after circleFlock', () => {
+    const soarer: BirdSpecies = { ...sparrow, id: 'test-soarer-r', flight: 'soar', altitude: 14 };
+    for (let seed = 1; seed <= 50; seed++) {
+      const env = makeEnv(seed);
+      let n = 0;
+      const f = createFlock(10, soarer, 2, 0, 0, 0, 'perched', env, () => ++n);
+      circleFlock(f, 0, 0, env);
+      expect(f.circleR).toBeGreaterThanOrEqual(0.7);
+      expect(f.circleR).toBeLessThanOrEqual(1.6);
+    }
+  });
 });

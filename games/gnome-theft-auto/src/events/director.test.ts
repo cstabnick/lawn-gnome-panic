@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { World } from '../types';
-import { pickEvent } from './director';
+import { DIRECTOR, pickEvent } from './director';
 import { offRoad, pickAnchor, roadClearance, ROAD_HALF } from './spots';
 import type { EventDef, SpawnContext } from './types';
 
@@ -16,6 +16,14 @@ const ctx = {
   px: 0, pz: 0, biome: 'turf', district: null, night: 0, heat: 0, inVehicle: false, onQuest: false,
 } as unknown as SpawnContext;
 const none = new Map<string, number>();
+
+describe('director cadence', () => {
+  it('spaces street events further apart (L71)', () => {
+    expect(DIRECTOR.gapMin).toBe(45);
+    expect(DIRECTOR.gapMax).toBe(90);
+    expect(DIRECTOR.firstDelay).toBe(25);
+  });
+});
 
 describe('pickEvent', () => {
   it('returns null for an empty list', () => {

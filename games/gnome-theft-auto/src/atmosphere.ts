@@ -11,7 +11,10 @@ export const CYCLE_SECONDS = 360;
 /** Starting phase in 'auto' mode: bright morning-noon (0 = dawn/midnight, 0.25 = noon, 0.5 = golden, 0.75 = night). */
 export const INITIAL_PHASE = 0.22;
 
-const MOTE_COUNT = 260;
+/** Ambient motes (dust, pollen, fireflies). L05: fewer and fainter than before (was 260 at full opacity). */
+const MOTE_COUNT = 180;
+/** Every biome's mote opacity is scaled by this (L05). */
+export const MOTE_OPACITY_SCALE = 0.75;
 const MOTE_SPAN = 64;
 const MOTE_HALF = MOTE_SPAN * 0.5;
 const MOTE_HEIGHT = 18;
@@ -461,12 +464,91 @@ export function computeAtmosphereState(
   };
 }
 
+/**
+ * Weather dimming (E06, src/weather/): `overcast` 0..1 greys the sky and fog and dims the sun; `mist` 0..1 pulls the
+ * fog in. Pure; applied after the time-of-day and biome blend.
+ */
+export function applyWeatherLook(s: AtmosphereState, overcast: number, mist: number): AtmosphereState {
+  const o = Math.max(0, Math.min(1, overcast));
+  const m = Math.max(0, Math.min(1, mist));
+  if (o === 0 && m === 0) return s;
+  const grey = (hex: number, dark: number): number => {
+    const r = (hex >> 16) & 0xff;
+    const g = (hex >> 8) & 0xff;
+    const b = hex & 0xff;
+    const l = Math.min(247, Math.round((r * 0.3 + g * 0.55 + b * 0.15) * dark));
+    return (l << 16) | (l << 8) | (l + 8);
+  };
+  const fogMist = lerpHex(s.fogHex, grey(s.fogHex, 1.05), m * 0.6);
+  return {
+    ...s,
+    skyHex: lerpHex(s.skyHex, grey(s.skyHex, 0.82), o * 0.7),
+    fogHex: lerpHex(fogMist, grey(fogMist, 0.85), o * 0.55),
+    fogNear: s.fogNear * (1 - 0.3 * o) * (1 - 0.75 * m),
+    fogFar: s.fogFar * (1 - 0.25 * o) * (1 - 0.55 * m),
+    sunIntensity: s.sunIntensity * (1 - 0.55 * o),
+    hemiIntensity: s.hemiIntensity * (1 - 0.18 * o),
+  };
+}
+
+/** Time-lapse handle (E06, L11): `seconds` is how long the scrub takes (0 when the sky was already there). */
+export interface TimeLapse {
+  seconds: number;
+  done: Promise<void>;
+}
+
+/** A time of day as a phase: the fixed modes' phases, or a phase number (wrapped). */
+export function targetPhase(target: Exclude<TimeMode, 'auto'> | number): number {
+  return typeof target === 'number' ? wrapPhase(target) : effectivePhase(0, target);
+}
+
+/** Forward distance from phase `a` to phase `b`, in [0, 1). */
+export function forwardDelta(a: number, b: number): number {
+  return wrapPhase(b - a);
+}
+
+/** Signed shortest distance from phase `a` to phase `b`, in [-0.5, 0.5). */
+export function shortestDelta(a: number, b: number): number {
+  const d = wrapPhase(b - a);
+  return d >= 0.5 ? d - 1 : d;
+}
+
+/** Cutscene time-lapse (L11): seconds to scrub into a scene's `sky`, and back to world time when it ends. */
+export const TIME_LAPSE = { inSeconds: 2.6, outSeconds: 1.6 } as const;
+
+/** Below this phase distance a lapse is skipped (the sky is already there). */
+export const LAPSE_MIN_DELTA = 0.03;
+
 export interface AtmosphereController {
   update(dt: number, focusX: number, focusZ: number, biome: BiomeId, airborneOrFlying?: boolean): void;
+  /** Like update, but the world clock does not advance (frozen cutscenes: the sky still animates a time-lapse). */
+  render(dt: number, focusX: number, focusZ: number, biome: BiomeId): void;
   nightFactor(): number;
   timeLabel(): TimeLabel;
   setMode(mode: TimeMode): void;
   getMode(): TimeMode;
+  /** The world clock's phase (0..1; 0.25 noon, 0.5 golden, 0.75 night). A fixed mode ignores it, but it is kept. */
+  getPhase(): number;
+  /** Set the world clock's phase (no animation). */
+  setPhase(phase: number): void;
+  /** The phase the sky was last drawn at (a fixed mode's phase, or a time-lapse's). */
+  displayPhase(): number;
+  /**
+   * Visual only (L11): scrub the drawn sky forward (wrapping) to `target` over `seconds`, then hold it there until
+   * releaseLapse. The world clock is untouched. Returns seconds 0 (and holds at once) when the sky is already there.
+   */
+  timeLapseTo(target: Exclude<TimeMode, 'auto'> | number, seconds: number): TimeLapse;
+  /** Scrub the drawn sky back (the shortest way) to the world's own time over `seconds`, then drop the hold. */
+  releaseLapse(seconds: number): TimeLapse;
+  /** True while a time-lapse holds or scrubs the drawn sky away from world time. */
+  lapsing(): boolean;
+  /**
+   * Intentional world-time change (e.g. E10's "sleep until night"): scrub the sky forward to `target` over `seconds`,
+   * then set the world clock there. A fixed time mode is switched to 'auto' so the new time shows.
+   */
+  advanceWorldTime(target: Exclude<TimeMode, 'auto'> | number, seconds?: number): TimeLapse;
+  /** Weather dimming (src/weather/): see applyWeatherLook. Eased in over about a second. */
+  setWeatherLook(overcast: number, mist: number): void;
 }
 
 function wrapCoord(v: number, center: number, halfSpan: number): number {
@@ -484,6 +566,18 @@ export function createAtmosphere(
 ): AtmosphereController {
   let mode: TimeMode = 'auto';
   let phase = INITIAL_PHASE;
+  // Time-lapse (L11): a drawn phase that scrubs from `from` by `delta` over `dur`, then holds ('in'), or ends (a release
+  // or an advance). null with no hold = the sky shows world time.
+  let lapse: {
+    from: number; delta: number; t: number; dur: number; kind: 'in' | 'release' | 'advance'; target: number;
+    resolve: () => void;
+  } | null = null;
+  let lapseHold: number | null = null;
+  let lastDisplay = effectivePhase(INITIAL_PHASE, 'auto');
+  let wantOvercast = 0;
+  let wantMist = 0;
+  let curOvercast = 0;
+  let curMist = 0;
   let clock = 0;
   let currentNight = 0;
   let currentLabel: TimeLabel = timeLabelForPhase(INITIAL_PHASE);
@@ -540,20 +634,74 @@ export function createAtmosphere(
   motes.frustumCulled = false;
   scene.add(motes);
 
+  /** Advance the lapse by dt and return the phase to draw. */
+  function stepDisplay(dt: number): number {
+    const world = effectivePhase(phase, mode);
+    if (lapse) {
+      lapse.t += dt;
+      const k = smoothstep(lapse.t / Math.max(1e-6, lapse.dur));
+      // A release chases the world's own (moving) time: re-aim at it every frame.
+      if (lapse.kind === 'release') lapse.delta = shortestDelta(lapse.from, world);
+      if (lapse.t >= lapse.dur) {
+        const done = lapse;
+        lapse = null;
+        if (done.kind === 'in') lapseHold = done.target;
+        else if (done.kind === 'advance') {
+          phase = done.target;
+          lapseHold = null;
+        } else lapseHold = null;
+        done.resolve();
+        return done.kind === 'in' ? done.target : effectivePhase(phase, mode);
+      }
+      return wrapPhase(lapse.from + lapse.delta * k);
+    }
+    return lapseHold ?? world;
+  }
+
+  function startLapse(kind: 'in' | 'release' | 'advance', target: number, seconds: number, forward: boolean): TimeLapse {
+    if (lapse) {
+      lapse.resolve();
+      lapse = null;
+    }
+    const from = lastDisplay;
+    const delta = forward ? forwardDelta(from, target) : shortestDelta(from, target);
+    let resolve: () => void = () => {};
+    const done = new Promise<void>((r) => { resolve = r; });
+    if (Math.abs(delta) < LAPSE_MIN_DELTA || seconds <= 0) {
+      if (kind === 'in') lapseHold = target;
+      else if (kind === 'advance') {
+        phase = target;
+        lapseHold = null;
+      } else lapseHold = null;
+      resolve();
+      return { seconds: 0, done };
+    }
+    lapseHold = null;
+    lapse = { from, delta, t: 0, dur: seconds, kind, target, resolve };
+    return { seconds, done };
+  }
+
   function update(
     dt: number,
     focusX: number,
     focusZ: number,
     biome: BiomeId,
     airborneOrFlying = false,
+    advanceClock = true,
   ): void {
     const safeDt = Math.max(0, Math.min(dt, 0.25));
     clock += safeDt;
-    if (mode === 'auto') {
+    if (mode === 'auto' && advanceClock) {
       phase = wrapPhase(phase + safeDt / CYCLE_SECONDS);
     }
 
-    const state = computeAtmosphereState(phase, mode, biome);
+    const scrubbing = lapse !== null;
+    const display = stepDisplay(safeDt);
+    lastDisplay = display;
+    const weatherK = Math.min(1, safeDt * 2.5);
+    curOvercast = lerpNum(curOvercast, wantOvercast, weatherK);
+    curMist = lerpNum(curMist, wantMist, weatherK);
+    const state = applyWeatherLook(computeAtmosphereState(display, 'auto', biome), curOvercast, curMist);
     currentNight = state.nightFactor;
     currentLabel = state.label;
 
@@ -561,7 +709,8 @@ export function createAtmosphere(
       ? Math.min(VIEW.cameraFar - 30, state.fogFar * 1.25)
       : state.fogFar;
 
-    const blend = initialized ? Math.min(1, safeDt * 2.8) : 1;
+    // A time-lapse scrubs fast: follow it exactly instead of easing behind it.
+    const blend = initialized && !scrubbing ? Math.min(1, safeDt * 2.8) : 1;
     initialized = true;
 
     curSkyHex = lerpHex(curSkyHex, state.skyHex, blend);
@@ -605,7 +754,7 @@ export function createAtmosphere(
     curVz = lerpNum(curVz, bp.vz, blend);
     curSwirl = lerpNum(curSwirl, bp.swirl, blend);
     curMoteSize = lerpNum(curMoteSize, bp.moteSize, blend);
-    const targetOpacity = lerpNum(bp.moteOpacityDay, bp.moteOpacityNight, state.nightFactor);
+    const targetOpacity = lerpNum(bp.moteOpacityDay, bp.moteOpacityNight, state.nightFactor) * MOTE_OPACITY_SCALE;
     curMoteOpacity = lerpNum(curMoteOpacity, targetOpacity, blend);
     targetMoteColor.setHex(lerpHex(bp.moteColorDay, bp.moteColorNight, state.nightFactor));
     moteColor.copy(moteMat.color).lerp(targetMoteColor, blend);
@@ -636,12 +785,32 @@ export function createAtmosphere(
   }
 
   return {
-    update,
+    update: (dt, x, z, b, air = false) => update(dt, x, z, b, air, true),
+    render: (dt, x, z, b) => update(dt, x, z, b, false, false),
     nightFactor: () => currentNight,
     timeLabel: () => currentLabel,
     setMode: (next: TimeMode) => {
       mode = next;
     },
     getMode: () => mode,
+    getPhase: () => phase,
+    setPhase: (p: number) => {
+      phase = wrapPhase(p);
+    },
+    displayPhase: () => lastDisplay,
+    timeLapseTo: (target, seconds) => startLapse('in', targetPhase(target), seconds, true),
+    releaseLapse: (seconds) => {
+      if (!lapse && lapseHold === null) return { seconds: 0, done: Promise.resolve() };
+      return startLapse('release', effectivePhase(phase, mode), seconds, false);
+    },
+    lapsing: () => lapse !== null || lapseHold !== null,
+    advanceWorldTime: (target, seconds = 2) => {
+      mode = 'auto';
+      return startLapse('advance', targetPhase(target), seconds, true);
+    },
+    setWeatherLook: (overcast: number, mist: number) => {
+      wantOvercast = overcast;
+      wantMist = mist;
+    },
   };
 }

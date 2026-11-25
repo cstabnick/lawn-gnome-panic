@@ -603,6 +603,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'back', prefabId: 'salvage-wrench-pack', label: 'Side-Valve Tool Pack' },
   },
   {
+    id: 'gta-caught-in-rain', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Caught in the Rain', description: 'Spend two minutes out in the rain. Glazed gnomes are waterproof; that is not the point.',
+    reward: { slot: 'head', prefabId: 'umbrella-hat', label: 'Umbrella Hat' },
+  },
+  {
+    id: 'gta-glazed-over', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Glazed Over', description: 'Stand out in the falling snow for a full minute. The Fells folk insist it is frost glaze.',
+    reward: { slot: 'neck', prefabId: 'frost-glaze-muffler', label: 'Frost-Glaze Muffler' },
+  },
+  {
     id: 'gta-boot-legger', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Boot-Legger', description: "Hijack Gnorwin's Boot Parade Float and crash the HOA Tribunal.",
     reward: { slot: 'head', prefabId: 'parade-boot-cap', label: "Founder's Parade Boot Cap" },

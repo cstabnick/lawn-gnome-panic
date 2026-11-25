@@ -32,7 +32,7 @@ export function spawnSceneVehicle(scene: THREE.Scene, def: ScriptVehicle): Vehic
   if (def.loadout && v.look) setVehicleLook(v, normalizeLoadout({ ...v.look, ...def.loadout }, v.tint));
   v.questOwned = true;
   v.driver = 'none';
-  setVehicleHeadlights([v], !!def.headlights);
+  setVehicleHeadlights([v], def.headlights ? 1 : 0);
   v.object.visible = !def.hidden;
   syncVehicleMesh(v, 0);
   return v;
@@ -52,7 +52,7 @@ export function poseSceneVehicle(v: Vehicle, s: VehicleSample, dt: number): void
   // A driving vehicle has a driver, so the body works its suspension.
   v.driver = s.driving ? 'npc' : 'none';
   v.object.visible = s.visible;
-  setVehicleHeadlights([v], s.headlights);
+  setVehicleHeadlights([v], s.headlights ? 1 : 0);
   // A boat's pitch and roll settle towards level; syncVehicleMesh reads them.
   if (v.boat) {
     v.boat.pitch *= 0.95;

@@ -957,3 +957,14 @@ as one gnome in two places.
 **Ruling:** **Pardonlin** is x -1800 to -1400, z -900 to 1100, west of Trellisdown. **The Unmown** is in the north-west, at x -1800 to -200, z -1800 to -1400, plus x -1800 to -1400, z -1400 to -900. The bands are pushed out to the edge: **Snowcap Rise** reaches the north edge (the High Tarn), **Rootwell** reaches the east edge (Rootwell Field Station), and **Saltbucket Shore** (the Saltwater) runs the whole south strip. The world is now 3600 m across, with the perimeter fence at 1795. The map's old edge stays a loose thread, and R-168 still names the band roads.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** the second expansion moves the edges of the world out, and the entries need one place to read where things are.
+
+## R-178
+
+**Question:** Does the Yard have weather, and what is the white stuff that falls on the Fells and Snowcap Rise?
+**Ruling:** Yes. Rain, mist, cloud and snow pass over the Yard in fronts; most gnomes blame the Tall Ones' sprinkler for
+the rain and say so out loud. On Frostbite Fells the locals call falling snow **frost glaze** and will correct you; on
+Snowcap Rise they just call it snow. Saltbucket Shore gets sea mist off the Saltwater, and Pardonlin's rain is a
+continental drizzle that never commits to a downpour. Glazed gnomes do not mind getting wet.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Gnome Theft Auto's weather (batch 3, E06) needs toast lines and achievements that fit the setting, and the Fells'
+"It is frost glaze, not snow" joke has to survive real snowfall.

@@ -253,10 +253,23 @@ function buildHeadlights(radius: number): THREE.Group {
   return g;
 }
 
-/** Switch every vehicle's headlights to `on` (dusk and night); `forceOn` is one vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview). */
-export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean, forceOn: Vehicle | null = null): void {
+/** Night factors over which headlights come on, one vehicle at a time (L02): each vehicle's own threshold is in here. */
+export const HEADLIGHT_DUSK: readonly [number, number] = [0.3, 0.6];
+
+/** The night factor at which vehicle `id` switches its lamps on: a fixed hash of the id spread over HEADLIGHT_DUSK. Pure. */
+export function headlightThreshold(id: number): number {
+  const h = Math.sin(id * 12.9898 + 78.233) * 43758.5453;
+  return HEADLIGHT_DUSK[0] + (HEADLIGHT_DUSK[1] - HEADLIGHT_DUSK[0]) * (h - Math.floor(h));
+}
+
+/**
+ * Headlights by the night factor (0 day .. 1 night): each vehicle switches on at its own threshold (headlightThreshold),
+ * so lamps come on one by one over dusk instead of all at once. Pass 1 to light every lamp, 0 for none. `forceOn` is one
+ * vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview).
+ */
+export function setVehicleHeadlights(vehicles: Vehicle[], night: number, forceOn: Vehicle | null = null): void {
   for (const v of vehicles) {
-    if (v.headlights) v.headlights.visible = (on || v === forceOn) && !v.exploded;
+    if (v.headlights) v.headlights.visible = (night >= headlightThreshold(v.id) || v === forceOn) && !v.exploded;
   }
 }
 

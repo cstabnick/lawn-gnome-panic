@@ -15,9 +15,9 @@ import type { EventAnchor, EventDef, EventScript, EventStatus, SpawnContext } fr
 export const DIRECTOR = {
   /** Seconds before the first random event. */
   firstDelay: 25,
-  /** Seconds between random spawns: a random value in [gapMin, gapMax]. */
-  gapMin: 30,
-  gapMax: 60,
+  /** Seconds between random spawns: a random value in [gapMin, gapMax] (L71: was 30..60). */
+  gapMin: 45,
+  gapMax: 90,
   /** At most this many events at once. */
   maxActive: 2,
   /** Random events spawn this far from the player. */

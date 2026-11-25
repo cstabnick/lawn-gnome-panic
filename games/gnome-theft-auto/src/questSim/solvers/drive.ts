@@ -53,16 +53,30 @@ export const stealDeliverSolver: Solver<'steal-deliver'> = {
   kind: 'steal-deliver',
   async solve(obj, ctx, opts) {
     const [sx, sz] = obj.spawnAt;
-    await waitFor(ctx, () => nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40) !== null, 2);
-    const target = nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40);
+    // The target is at its pickup, or wherever it was left (a retry, a bail): the quest's own quest-owned car of that kind
+    // under an objective blip, else the one near the pickup.
+    const find = (): Vehicle | null => {
+      if (ctx.player.vehicle?.kind === obj.vehicleKind && ctx.player.vehicle.questOwned) return ctx.player.vehicle;
+      for (const b of objectiveBlips(ctx)) {
+        const v = nearestVehicle(ctx, b.x, b.z, obj.vehicleKind, 6);
+        if (v && v.questOwned) return v;
+      }
+      return nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40);
+    };
+    await waitFor(ctx, () => find() !== null, 2);
+    let target = find();
     if (!target) {
-      throw new SimFail('bug', `steal-deliver: no ${obj.vehicleKind} spawned near ${sx}, ${sz}`);
+      throw new SimFail('bug', `steal-deliver: no ${obj.vehicleKind} at its pickup ${sx}, ${sz} or under an objective blip`);
     }
     await getInto(ctx, target, 'steal-deliver: take the target');
     await travelTo(ctx, obj.dropAt[0], obj.dropAt[1], 'deliver');
     await runUntil(ctx, { questId: opts.questId, step: opts.step, budget: opts.budget, what: 'steal-deliver' }, async () => {
       // The runner only delivers while the player drives the target: climb back in if the car was left behind.
-      if (ctx.player.vehicle !== target) await getInto(ctx, target, 'steal-deliver: back into the target');
+      if (ctx.player.vehicle !== target) {
+        target = find() ?? target!;
+        await getInto(ctx, target, 'steal-deliver: back into the target');
+        await travelTo(ctx, obj.dropAt[0], obj.dropAt[1], 'deliver (again)');
+      }
     });
   },
   check(obj, world, questId, step) {

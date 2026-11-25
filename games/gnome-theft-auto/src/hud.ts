@@ -4,7 +4,7 @@ import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/pref
 import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
-import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
+import type { Blip, GunKind, Hud, HudState, RoadNode, WatchSearch, World } from './types';
 import { isTyping, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
@@ -29,6 +29,13 @@ const CSS = `
  */
 #gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 8px);right:calc(var(--sar) + 62px);
   height:44px;display:flex;align-items:center;gap:8px;}
+#gta-hud .gta-evade{position:absolute;top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 56px);right:calc(var(--sar) + 62px);
+  display:none;flex-direction:column;align-items:flex-end;gap:2px;max-width:calc(100vw - 2 * var(--m) - 62px);pointer-events:none;
+  font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.85);}
+#gta-hud .gta-evade.on{display:flex;}
+#gta-hud .gta-evade-bar{width:64px;height:6px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden;}
+#gta-hud .gta-evade-fill{height:100%;width:0;background:#6fd36f;}
+#gta-hud .gta-evade-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 #gta-hud .gta-meter{position:relative;display:block;width:40px;height:40px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
 #gta-hud .gta-meter img{position:absolute;left:3px;top:3px;width:34px;height:34px;}
 #gta-hud .gta-meter svg{display:block;position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;}
@@ -543,6 +550,29 @@ function drawLegend(g: CanvasRenderingContext2D, px: number): void {
   g.textBaseline = 'alphabetic';
 }
 
+/** E23: the one-line EVADE label under the hats. */
+export function evadeLabel(s: WatchSearch): string {
+  if (s.dispatchIn > 0) return `Units en route ${Math.ceil(s.dispatchIn)}s`;
+  if (s.seen) return 'SEEN \u2014 break line of sight';
+  if (!s.inside) return `Lying low ${Math.round(Math.max(0, Math.min(1, s.evade)) * 100)}%`;
+  return 'Leave the circle';
+}
+
+/** The pulsing search circle, centre and radius in the context's current (CSS pixel) units. */
+function drawSearchCircle(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, s: WatchSearch, t: number, lw: number) {
+  g.save();
+  g.beginPath();
+  g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.fillStyle = s.level >= 4 ? 'rgba(212,175,55,0.18)' : 'rgba(47,85,212,0.16)';
+  g.fill();
+  g.setLineDash([5 * lw, 4 * lw]);
+  g.lineWidth = 1.5 * lw;
+  g.globalAlpha = 0.55 + 0.35 * Math.sin(t * 4);
+  g.strokeStyle = s.seen ? '#ff5a4d' : s.level >= 4 ? '#d4af37' : '#5b7bff';
+  g.stroke();
+  g.restore();
+}
+
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -776,6 +806,13 @@ export function createHud(ui: HTMLElement): Hud {
   const lifeEl = el('span', 'gta-meter');
   lifeEl.setAttribute('aria-label', 'Clay');
   meters.append(wantedEl, lifeEl);
+  // E23: how to lose the Hat Watch, under the hats.
+  const evadeEl = el('div', 'gta-evade');
+  const evadeBar = el('div', 'gta-evade-bar');
+  const evadeFill = el('div', 'gta-evade-fill');
+  const evadeLabelEl = el('div', 'gta-evade-label');
+  evadeBar.append(evadeFill);
+  evadeEl.append(evadeBar, evadeLabelEl);
   // Under the icons: the gun with its ammo over it, then the gun's name (and RELOADING, when it applies).
   const gunBlock = el('div', 'gta-gunblock');
   const gunName = el('span', 'gta-gunname');
@@ -886,7 +923,7 @@ export function createHud(ui: HTMLElement): Hud {
   });
   big.append(bigCanvas, bigHint, legendBtn);
 
-  root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
+  root.append(tl, tr, meters, evadeEl, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -946,6 +983,14 @@ export function createHud(ui: HTMLElement): Hud {
       g.setTransform(mapDpr, 0, 0, mapDpr, 0, 0);
       const ks = size / MAP_VIEW;
       const half = size / 2;
+      if (s.search) {
+        g.save();
+        g.beginPath();
+        g.rect(0, 0, size, size);
+        g.clip();
+        drawSearchCircle(g, half - (s.search.x - px0) * ks, half - (s.search.z - pz0) * ks, s.search.r * ks, s.search, t, 1);
+        g.restore();
+      }
       if (s.route && s.route.points.length >= 2) {
         drawRoute(g, s.route.points, (x, z) => [half - (x - px0) * ks, half - (z - pz0) * ks], s.route.color, t, true);
       }
@@ -1063,6 +1108,14 @@ export function createHud(ui: HTMLElement): Hud {
     g.drawImage(bgCanvas, 0, 0, px, px);
     const X = (x: number) => (W / 2 - x) * k; // mirrored, as on the minimap
     const Y = (z: number) => (W / 2 - z) * k;
+    if (s.search) {
+      g.save();
+      g.beginPath();
+      g.rect(0, 0, px, px);
+      g.clip();
+      drawSearchCircle(g, X(s.search.x), Y(s.search.z), s.search.r * k, s.search, t, 1);
+      g.restore();
+    }
     if (s.route && s.route.points.length >= 2) {
       drawRoute(g, s.route.points, (x, z) => [X(x), Y(z)], s.route.color, t, false);
     }
@@ -1178,6 +1231,7 @@ export function createHud(ui: HTMLElement): Hud {
     vehicle?: string | null; cracked?: number; acorns?: number; debt?: number; prompt?: string | null; online?: string | null;
     altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string; district?: string | null;
     timeLabel?: string; boost?: number | null; buff?: string | null; stunts?: string;
+    evadeText?: string | null; evadeFill?: number;
   } = {};
 
   // The vehicle hint: the controls of a car or aircraft, shown for 6 s when the player enters one (keyboard / pad only),
@@ -1208,6 +1262,19 @@ export function createHud(ui: HTMLElement): Hud {
       bgHalf = world.half;
     },
     set(s: HudState) {
+      {
+        const text = s.search ? evadeLabel(s.search) : null;
+        if (text !== last.evadeText) {
+          last.evadeText = text;
+          evadeEl.classList.toggle('on', text !== null);
+          evadeLabelEl.textContent = text ?? '';
+        }
+        const fill = s.search ? Math.round(clamp01(s.search.evade) * 100) : 0;
+        if (fill !== last.evadeFill) {
+          last.evadeFill = fill;
+          evadeFill.style.width = `${fill}%`;
+        }
+      }
       if (s.heat !== last.heat) {
         last.heat = s.heat;
         const maxHeat = Math.max(MAX_HEAT, 4);

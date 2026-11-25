@@ -1398,13 +1398,16 @@ function wakeAtHospital(): void {
   canvas.style.filter = '';
   const { receipt } = economy.chargeHospital();
   hud.toast(receipt, 6000);
-  player.respawn(world.hospital.x, world.hospital.z, world.hospital.yaw);
+  watch.clear();
+  // E23 L101: during a quest the step is retried from its checkpoint (the quest places the player there, ride beside).
+  if (!quests.onPlayerDown?.()) {
+    player.respawn(world.hospital.x, world.hospital.z, world.hospital.yaw);
+    chase.yaw = world.hospital.yaw;
+  }
   player.model.object.visible = true;
-  chase.yaw = world.hospital.yaw;
   wasAirborne = false;
   hadChute = false;
   weapons.setVisible(true);
-  watch.clear();
 }
 
 // ---- Frame loop --------------------------------------------------------------------------------------------------
@@ -1882,7 +1885,8 @@ function frame(now: number): void {
       hud.banner('HOA ENFORCEMENT', 3000);
       hud.toast('4-Hat HOA Enforcement! Watch out for the HOA Van!', 4500);
     } else {
-      hud.toast(level === 1 ? 'The Hat Watch has noticed you.' : `Hat Watch level ${level}!`);
+      // E23 L103: say how to lose them (the HUD's search circle and evade meter show the rest).
+      hud.toast(level === 1 ? 'The Hat Watch has noticed you. Break line of sight and leave the search circle to lose them.' : `Hat Watch level ${level}!`);
     }
     if (level >= 3) void achievements.unlock('gta-three-hats');
   }
@@ -2277,6 +2281,7 @@ function frame(now: number): void {
   const distId = districtAt(simX, simZ);
   hud.set({
     heat: level,
+    search: watch.search?.() ?? null,
     health: player.health,
     ammo: weapons.ammo, mag: weapons.mag, reloading: weapons.reloading,
     gun: GUNS[weapons.gun].name,

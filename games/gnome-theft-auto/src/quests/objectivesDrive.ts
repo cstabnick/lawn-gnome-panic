@@ -7,7 +7,8 @@ import { planRoute } from '../errands';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Box, Npc, Vehicle } from '../types';
 import { normalizeLoadout } from '@lawn/glaze';
-import { collideVehicles, createVehicle, removeVehicle, repairVehicle, setVehicleLook, syncVehicleMesh } from '../vehicles';
+import { collideVehicles, createVehicle, removeVehicle, setVehicleLook, syncVehicleMesh } from '../vehicles';
+import { restoreVehicle } from './questPins';
 import { stepNpcCar } from '../npcChassis';
 import { createFollowWatchdog, setFollowStats } from './followWatchdog';
 import type { ObjectiveDef, QuestDeps, Run } from './types';
@@ -210,10 +211,12 @@ export function stealDeliverRun(
           banterCool = 6;
         }
       }
-      if (target.exploded || (obj.maxDamage !== undefined && 1 - target.hp > obj.maxDamage)) {
-        repairVehicle(target);
+      if (target.exploded || target.sunk || (obj.maxDamage !== undefined && 1 - target.hp > obj.maxDamage)) {
+        restoreVehicle(target);
         target.x = spawnX;
         target.z = spawnZ;
+        // E23 (fuzz): a sunk target sat on the river bed; back on the ground at the pickup.
+        target.y = heightAt(spawnX, spawnZ);
         target.yaw = obj.spawnAt[2];
         target.speed = 0;
         if (driving && deps.player) {
@@ -358,7 +361,7 @@ export function chaseFollowRun(
         const respawnPt = path[Math.max(0, wpIdx - 1)] ?? start;
         const targetPt = path[Math.min(wpIdx, path.length - 1)] ?? respawnPt;
         if (deps.player?.vehicle === leader) deps.player.exit();
-        repairVehicle(leader);
+        restoreVehicle(leader);
         leader.x = respawnPt[0];
         leader.z = respawnPt[1];
         leader.yaw = Math.atan2(targetPt[0] - respawnPt[0], targetPt[1] - respawnPt[1]);
@@ -534,9 +537,9 @@ export function convoyAmbushRun(
       if (doneFlag) return;
 
       const wp = obj.route[wpIdx];
-      if (hauler.exploded) {
+      if (hauler.exploded || hauler.sunk) {
         if (deps.player?.vehicle === hauler) deps.player.exit();
-        repairVehicle(hauler);
+        restoreVehicle(hauler);
         hauler.x = start[0];
         hauler.z = start[1];
         hauler.yaw = yaw;

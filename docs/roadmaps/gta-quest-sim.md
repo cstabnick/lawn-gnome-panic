@@ -96,8 +96,8 @@ played and compiled, no exceptions.
 
 | Quest | Result | Class | Why |
 | --- | --- | --- | --- |
-| city-glow-band-express | fail | bot | Timed push-bike run (90 s): driveTo loses its way between gate 1 and gate 2 (-62, 90) in the Greenhouse Strip. |
-| city-skyway-robbery | fail | bot (game bug under it) | The bot drives up the Skyway west on-ramp and is walled in at the landing: a skyway side-rail collider sits across the deck at x -213.5..-208.9, z -60 (see bugs). |
+| city-glow-band-express | pass | | E23: passes since `driveTo` stopped skipping a route aim behind the bike (it used to cut into a building near (47,-37)). |
+| city-skyway-robbery | pass | | E23: passes since deck gates need the deck height and the route starts from the street under a deck node. |
 | nc-party | blocked | blocked | Needs the @lawn/mp relay; headless has none. |
 | every other quest (52 quests, 55 runs) | pass | | |
 

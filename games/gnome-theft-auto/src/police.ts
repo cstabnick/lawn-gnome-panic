@@ -14,7 +14,7 @@ import { runOverHit } from './runOver';
 import { clearHandsUp, gnomeState, makeGnome, poseHandsUp, randomGnomeName, randomTownLook } from './gnomes';
 import { createRagdoll, impulse, poseRagdoll, ragdollCentre, resetPose, stepRagdoll, type Ragdoll } from './ragdoll';
 import { createVehicle, exitPoint, removeVehicle, stepVehicle, syncVehicleMesh } from './vehicles';
-import type { Fx, Npc, RoadNode, Vehicle, VehicleKind, Watch, WatchContext, World } from './types';
+import type { Box, Fx, Npc, RoadNode, Vehicle, VehicleKind, Watch, WatchContext, WatchSearch, World } from './types';
 
 /** Body radius for collisions with boxes and the world edge. */
 const BODY_R = 0.4;
@@ -26,13 +26,41 @@ export function levelNodes(nodes: RoadNode[], x: number, z: number, y: number, m
     return d >= minD && d <= maxD && Math.abs(nodeY(n) - y) < 3;
   });
 }
+/** False when the 2D segment a-b crosses any box at least 1.6 m tall (slab test on the AABB; shape ignored). */
+export function lineOfSight(boxes: Box[], ax: number, az: number, bx: number, bz: number): boolean {
+  const sMinX = Math.min(ax, bx), sMaxX = Math.max(ax, bx);
+  const sMinZ = Math.min(az, bz), sMaxZ = Math.max(az, bz);
+  const dx = bx - ax, dz = bz - az;
+  for (const b of boxes) {
+    if (b.h < 1.6) continue;
+    if (b.maxX < sMinX || b.minX > sMaxX || b.maxZ < sMinZ || b.minZ > sMaxZ) continue;
+    let t0 = 0, t1 = 1;
+    let hit = true;
+    for (let axis = 0; axis < 2 && hit; axis++) {
+      const o = axis === 0 ? ax : az, d = axis === 0 ? dx : dz;
+      const lo = axis === 0 ? b.minX : b.minZ, hi = axis === 0 ? b.maxX : b.maxZ;
+      if (Math.abs(d) < 1e-9) {
+        if (o < lo || o > hi) hit = false;
+      } else {
+        let ta = (lo - o) / d, tb = (hi - o) / d;
+        if (ta > tb) { const t = ta; ta = tb; tb = t; }
+        t0 = Math.max(t0, ta);
+        t1 = Math.min(t1, tb);
+        if (t0 > t1) hit = false;
+      }
+    }
+    if (hit) return false;
+  }
+  return true;
+}
+
 /** Chasers stop this far (horizontal) from their target. */
 const STOP_DISTANCE = 4;
 /** Only shoot while the target is below this height. */
 const SPRAY_MAX_Y = 4;
 const SPRAY_INTERVAL = 0.12;
 /** Officers within this distance of the player count as "seeing" the player for cooling. */
-const SEEN_DISTANCE = 30;
+const SEEN_DISTANCE = 40;
 /** Guards start chasing from this far outside the base, while heat is 2+. */
 const GUARD_WAKE_DISTANCE = 6;
 /** A surplus officer leaves once this far from the player. */
@@ -111,6 +139,16 @@ export function createWatch(
   let time = 0;
   /** Seconds since any officer or guard was within SEEN_DISTANCE of the player. */
   let unseenFor = 0;
+  /** Heat ceiling set by a quest (null = none). */
+  let cap: number | null = null;
+  let lastLevel = 0;
+  /** Seconds until the units of the newest level arrive. */
+  let dispatchT = 0;
+  /** Player heading estimate (unit vector) and last position. */
+  let hx = 0, hz = 1;
+  let lastPx = 0, lastPz = 0, hasLast = false;
+  /** Search centre (last seen point) and whether a unit sees the player right now. */
+  let searchX = 0, searchZ = 0, seenNow = false;
 
   function newNpc(name: string, look: Npc['look'], x: number, z: number, yaw: number, state: Npc['state']): Npc {
     return {
@@ -161,13 +199,25 @@ export function createWatch(
     units.delete(u.npc.id);
   }
 
-  function spawnOfficer(world: World, px: number, pz: number): boolean {
-    const cands = world.walkPoints.filter((p) => {
-      const d = Math.hypot(p.x - px, p.z - pz);
-      return d >= 25 && d <= WATCH.spawnDistance + 10;
+  /** Pick a random point from `pts`, preferring ones behind the player's heading. */
+  function pickBehind<T extends { x: number; z: number }>(pts: T[], px: number, pz: number): T | null {
+    if (pts.length === 0) return null;
+    const behind = pts.filter((p) => {
+      const d = Math.hypot(p.x - px, p.z - pz) || 1;
+      return ((p.x - px) / d) * hx + ((p.z - pz) / d) * hz < -0.2;
     });
-    if (cands.length === 0) return false;
-    const p = cands[Math.floor(Math.random() * cands.length)];
+    const from = behind.length > 0 ? behind : pts;
+    return from[Math.floor(Math.random() * from.length)];
+  }
+
+  function spawnOfficer(world: World, px: number, pz: number): boolean {
+    const inBand = (min: number, max: number) => world.walkPoints.filter((p) => {
+      const d = Math.hypot(p.x - px, p.z - pz);
+      return d >= min && d <= max;
+    });
+    let p = pickBehind(inBand(WATCH.officerSpawnMin, WATCH.officerSpawnMax), px, pz);
+    if (!p) p = pickBehind(inBand(Math.max(25, WATCH.spawnNever), WATCH.spawnDistance + 10), px, pz);
+    if (!p) return false;
     const look = randomTownLook({ hat: WATCH.hat, shirt: WATCH.coat });
     const npc = newNpc(`Officer ${randomGnomeName()}`, look, p.x, p.z, Math.atan2(px - p.x, pz - p.z), 'walk');
     makeUnit('officer', npc, null);
@@ -315,11 +365,18 @@ export function createWatch(
 
     if (chase) {
       const dT = Math.hypot(tx - n.x, tz - n.z);
-      if (dT > STOP_DISTANCE) {
-        const ux = (tx - n.x) / dT;
-        const uz = (tz - n.z) / dT;
+      // An officer with no line of sight, far away, heads for the search centre instead of straight at the player.
+      let gx = tx, gz = tz;
+      if (u.role === 'officer' && dT > 12 && !(dT <= SEEN_DISTANCE && lineOfSight(world.boxes, n.x, n.z, tx, tz))) {
+        gx = searchX;
+        gz = searchZ;
+      }
+      const dG = Math.hypot(gx - n.x, gz - n.z);
+      if (dG > STOP_DISTANCE) {
+        const ux = (gx - n.x) / dG;
+        const uz = (gz - n.z) / dG;
         n.yaw = Math.atan2(ux, uz);
-        nudge(u, ux, uz, Math.min(WATCH.speed * dt, dT - STOP_DISTANCE), world);
+        nudge(u, ux, uz, Math.min(WATCH.speed * dt, dG - STOP_DISTANCE), world);
         moving = true;
       }
       const d = Math.hypot(tx - n.x, tz - n.z);
@@ -372,15 +429,17 @@ export function createWatch(
   }
 
   function spawnPursuit(kind: Pursuit['kind'], world: World, px: number, pz: number, py: number): void {
-    let nodes = levelNodes(world.roads.nodes, px, pz, py, 32, 75);
-    if (nodes.length === 0) nodes = world.roads.nodes.filter((n) => n.deck === undefined && Math.hypot(n.x - px, n.z - pz) >= 32 && Math.hypot(n.x - px, n.z - pz) <= 75);
-    const node = nodes.length > 0 ? nodes[Math.floor(Math.random() * nodes.length)] : null;
-    const x = node ? node.x : px + 36;
-    const z = node ? node.z : pz + 36;
+    let nodes = levelNodes(world.roads.nodes, px, pz, py, WATCH.pursuitSpawnMin, WATCH.pursuitSpawnMax);
+    if (nodes.length === 0) nodes = world.roads.nodes.filter((n) => n.deck === undefined && Math.hypot(n.x - px, n.z - pz) >= WATCH.pursuitSpawnMin && Math.hypot(n.x - px, n.z - pz) <= WATCH.pursuitSpawnMax);
+    const node = pickBehind(nodes, px, pz);
+    // No road in range: nothing arrives (never pop in next to the player).
+    if (!node) return;
+    const x = node.x;
+    const z = node.z;
     const yaw = Math.atan2(px - x, pz - z);
     const tint = kind === 'hoa-van' ? WATCH.hoaHat : WATCH.hat;
     const v = createVehicle(scene, kind, x, z, yaw, tint);
-    v.y = node ? nodeY(node) : groundAt(x, z, py);
+    v.y = nodeY(node);
     v.driver = 'police';
     const look = kind === 'hoa-van'
       ? randomTownLook({ hat: WATCH.hoaHat, shirt: WATCH.hoaCoat })
@@ -488,9 +547,10 @@ export function createWatch(
 
     const countOf = (k: Pursuit['kind']): number => pursuits.filter((p) => p.kind === k).length;
     const spawnY = ctx.playerVehicle ? ctx.playerVehicle.y : ctx.playerY;
-    if (countOf('ride-on') < wantRideOn) spawnPursuit('ride-on', world, ctx.playerX, ctx.playerZ, spawnY);
-    if (countOf('zero-turn') < wantZeroTurn) spawnPursuit('zero-turn', world, ctx.playerX, ctx.playerZ, spawnY);
-    if (countOf('hoa-van') < wantHoaVan) spawnPursuit('hoa-van', world, ctx.playerX, ctx.playerZ, spawnY);
+    const canSpawn = dispatchT <= 0;
+    if (canSpawn && countOf('ride-on') < wantRideOn) spawnPursuit('ride-on', world, ctx.playerX, ctx.playerZ, spawnY);
+    if (canSpawn && countOf('zero-turn') < wantZeroTurn) spawnPursuit('zero-turn', world, ctx.playerX, ctx.playerZ, spawnY);
+    if (canSpawn && countOf('hoa-van') < wantHoaVan) spawnPursuit('hoa-van', world, ctx.playerX, ctx.playerZ, spawnY);
 
     // Despawn surplus pursuit vehicles when heat cools down.
     for (let i = pursuits.length - 1; i >= 0; i--) {
@@ -638,28 +698,46 @@ export function createWatch(
     const ty = ctx.playerVehicle ? ctx.playerVehicle.y : ctx.playerY;
     const tz = ctx.playerVehicle ? ctx.playerVehicle.z : pz;
 
-    // Cooling: heat drops only after nobody has been close to the player for a while. Inside giant grass on foot
+    // Heading estimate from the player's movement.
+    if (hasLast) {
+      const mx = px - lastPx, mz = pz - lastPz;
+      const ml = Math.hypot(mx, mz);
+      if (ml > 0.05) { hx = mx / ml; hz = mz / ml; }
+    }
+    lastPx = px; lastPz = pz; hasLast = true;
+    const capMax = Math.min(MAX_HEAT, cap ?? MAX_HEAT);
+    if (w.heat > capMax) w.heat = capMax;
+
+    // Cooling: a unit sees the player only within SEEN_DISTANCE with a clear line. Inside giant grass on foot
     // (Tallgrass Commons, critters.ts isPlayerHidden) nobody sees the player at all.
     const hiddenNow = isPlayerHidden();
+    const canSee = (x: number, z: number): boolean =>
+      Math.hypot(x - px, z - pz) <= SEEN_DISTANCE && lineOfSight(world.boxes, x, z, px, pz);
     let near = false;
-    for (const u of hiddenNow ? [] : units.values()) {
-      if (Math.hypot(u.npc.x - px, u.npc.z - pz) <= SEEN_DISTANCE) {
-        near = true;
-        break;
+    if (!hiddenNow) {
+      for (const u of units.values()) {
+        if (canSee(u.npc.x, u.npc.z)) { near = true; break; }
       }
-    }
-    if (!near && !hiddenNow) {
-      for (const p of pursuits) {
-        if (Math.hypot(p.vehicle.x - px, p.vehicle.z - pz) <= SEEN_DISTANCE) {
-          near = true;
-          break;
+      if (!near) {
+        for (const p of pursuits) {
+          if (canSee(p.vehicle.x, p.vehicle.z)) { near = true; break; }
         }
       }
     }
-    unseenFor = near ? 0 : unseenFor + dt;
+    seenNow = near;
+    if (near) { searchX = px; searchZ = pz; }
+    const sr = WATCH.searchRadius + WATCH.searchRadiusPerLevel * Math.max(0, Math.floor(w.heat) - 1);
+    const insideSearch = Math.hypot(px - searchX, pz - searchZ) <= sr;
+    unseenFor = near ? 0 : unseenFor + dt * (insideSearch ? 1 : 1.5);
     if (unseenFor > HEAT.coolDelay && w.heat > 0) {
-      w.heat = Math.max(0, w.heat - HEAT.coolRate * dt);
+      w.heat = Math.max(0, w.heat - HEAT.coolRate * dt * (insideSearch ? 1 : 2));
     }
+
+    // A level-up starts the dispatch delay; units of the new level arrive only after it.
+    const levelNow = Math.floor(w.heat);
+    if (levelNow > lastLevel) dispatchT = WATCH.dispatchDelay[Math.min(levelNow, WATCH.dispatchDelay.length - 1)];
+    lastLevel = levelNow;
+    if (dispatchT > 0) dispatchT = Math.max(0, dispatchT - dt);
 
     // Officer count follows heat. Surplus officers (farthest first) walk away.
     const levels = WATCH.officersPerLevel;
@@ -670,7 +748,7 @@ export function createWatch(
       if (u.role === 'officer' && !u.leaving && u.npc.state !== 'flee') active.push(u);
     }
     let need = target - active.length;
-    while (need > 0 && spawnOfficer(world, px, pz)) need--;
+    while (dispatchT <= 0 && need > 0 && spawnOfficer(world, px, pz)) need--;
     if (active.length > target) {
       active.sort((a, b) => Math.hypot(b.npc.x - px, b.npc.z - pz) - Math.hypot(a.npc.x - px, a.npc.z - pz));
       for (let i = 0; i < active.length - target; i++) active[i].leaving = true;
@@ -688,10 +766,33 @@ export function createWatch(
   const w: Watch = {
     heat: 0,
     addHeat(a: number) {
-      w.heat = Math.max(0, Math.min(MAX_HEAT, w.heat + a));
+      w.heat = Math.max(0, Math.min(MAX_HEAT, cap ?? MAX_HEAT, w.heat + a));
+    },
+    setCap(c: number | null) {
+      cap = c;
+      if (c !== null && w.heat > c) {
+        w.heat = c;
+        if (c <= 0) w.clear();
+      }
+    },
+    search(): WatchSearch | null {
+      const level = Math.floor(w.heat);
+      if (level < 1) return null;
+      const r = WATCH.searchRadius + WATCH.searchRadiusPerLevel * (level - 1);
+      const inside = Math.hypot(lastPx - searchX, lastPz - searchZ) <= r;
+      let evade = 0;
+      if (!seenNow) {
+        evade = unseenFor <= HEAT.coolDelay
+          ? 0.5 * unseenFor / HEAT.coolDelay
+          : 0.5 + 0.5 * (1 - (w.heat - level));
+      }
+      return { x: searchX, z: searchZ, r, seen: seenNow, inside, evade: Math.max(0, Math.min(1, evade)), level, dispatchIn: Math.max(0, dispatchT) };
     },
     clear() {
       w.heat = 0;
+      dispatchT = 0;
+      lastLevel = 0;
+      unseenFor = 0;
       for (const u of [...units.values()]) {
         if (u.role === 'officer') removeUnit(u);
       }

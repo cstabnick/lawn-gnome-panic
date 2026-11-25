@@ -160,6 +160,8 @@ export const CITY_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'city-skyway-robbery',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 1: { cap: 1 } },
     title: 'The Skyway Job',
     giver: EXCHANGE_GIVER,
     prereq: 'city-impound-run',

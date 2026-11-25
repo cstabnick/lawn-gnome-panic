@@ -60,6 +60,8 @@ export const SIDE_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'sq-porcelain-blues',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 0: { cap: 1 } },
     title: 'Porcelain Blues',
     giver: 'strangers-porch',
     rewardAcorns: 500,

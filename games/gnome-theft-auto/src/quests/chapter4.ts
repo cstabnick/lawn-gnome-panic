@@ -88,6 +88,8 @@ export const CHAPTER_4_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'ch4-spade-truce',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 1: { cap: 1 } },
     title: 'Nobody Fires the Guard',
     giver: 'dust-overlook',
     prereq: 'ch4-sandpit-drop',

@@ -272,6 +272,25 @@ export interface QuestDef {
   demo?: boolean;
   /** Toast on completion. */
   doneText: string;
+  /**
+   * E23 L103: the Hat Watch while this quest runs (every step). 'off' = no Hat Watch at all (heat held at 0, quest heat
+   * ignored); { cap: n } = heat cannot pass n; 'free' = no limit. Absent = the default for the step's kind
+   * (quests/hoaPolicy.ts).
+   */
+  hoa?: HoaPolicy;
+  /** E23 L103: per-step override of `hoa`, objective index -> policy (like `beats`). */
+  hoaSteps?: Readonly<Record<number, HoaPolicy>>;
+}
+
+/** E23 L103: how much Hat Watch a quest step allows. See QuestDef.hoa and quests/hoaPolicy.ts. */
+export type HoaPolicy = 'off' | 'free' | { cap: number };
+
+/** E23 L101: where a step restarts after a failure (the player's spot when the step began). */
+export interface QuestCheckpoint {
+  step: number;
+  x: number;
+  z: number;
+  yaw: number;
 }
 
 /** Saved progress. */
@@ -283,6 +302,8 @@ export interface QuestSave {
   cracked: string[];
   /** The TESSIE.unlockKey entry only: the rolled trigger beat, "<questId>#<step>" (see tessieUnlock.ts). */
   beat?: string;
+  /** E23 L101: the active step's checkpoint (set when the step starts; the auto retry puts the player back here). */
+  checkpoint?: QuestCheckpoint;
 }
 
 /** Dependencies provided to the quest engine and objective runners. */
@@ -343,4 +364,10 @@ export interface Run {
   outro?(): string | undefined;
   /** Debug: chase-follow stall stats, read by the quest sim. */
   followStats?(): { maxStall: number; waited: number };
+  /**
+   * E23 L101: a reason when this step can no longer be finished as it stands (a required NPC is gone for good, the
+   * vehicle it needs is wrecked and it has no recovery of its own); the engine then retries the step from its checkpoint.
+   * null / absent = fine. Read every frame.
+   */
+  failed?(): string | null;
 }

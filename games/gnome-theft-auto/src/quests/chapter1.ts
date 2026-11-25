@@ -205,6 +205,8 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
   },
   {
     id: 'ch1-founders-boot',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 1: { cap: 1 } },
     title: "Founder's Boot & The Kangaroo Court",
     giver: 'side-valve',
     prereq: 'ch1-tax-break-in',

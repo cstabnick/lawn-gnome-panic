@@ -8,6 +8,8 @@ const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 export const CHAPTER_3_QUESTS: readonly QuestDef[] = [
   {
     id: 'ch3-salvage-raid',
+    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
+    hoaSteps: { 0: { cap: 1 } },
     title: 'The Salvage Raid',
     giver: 'side-valve',
     prereq: 'ch2-unmowed-tablet',

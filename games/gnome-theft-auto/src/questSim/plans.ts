@@ -36,17 +36,9 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'sq-hum-at-three': { suite: 'side', expect: 'pass' },
   'city-kerbside-rounds': { suite: 'city', expect: 'pass' },
   'city-impound-run': { suite: 'city', expect: 'pass' },
-  'city-glow-band-express': {
-    suite: 'city',
-    expect: { status: 'fail', class: 'bot', reason: 'checkpoints' },
-    note: 'Timed push-bike run (90 s): driveTo loses its way between gate 1 and gate 2 (-62, 90) in the Greenhouse Strip. Bot limitation.',
-  },
+  'city-glow-band-express': { suite: 'city', expect: 'pass' }, // E23: driveTo no longer skips a route aim behind it
   'city-penthouse-exclusive': { suite: 'city', expect: 'pass' },
-  'city-skyway-robbery': {
-    suite: 'city',
-    expect: { status: 'fail', class: 'bot', reason: 'checkpoints' },
-    note: 'West on-ramp landing fixed (highways/colliders.ts mitres the skyway rails at corners). The bot now gets past it and is stuck at gate 2: the Skyway deck over Downtown, not yet a route the bot can drive.',
-  },
+  'city-skyway-robbery': { suite: 'city', expect: 'pass' }, // E23: deck gates need deck height; route starts on the street
   'nc-good-neighbour': { suite: 'newcomers', expect: 'pass' },
   'nc-strike-a-pose': { suite: 'newcomers', expect: 'pass' },
   'nc-wheel-and-kit': { suite: 'newcomers', expect: 'pass' },

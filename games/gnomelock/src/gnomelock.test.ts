@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { getPrefab } from '@lawn/prefabs';
 import type { PlayerInfo } from '@lawn/mp';
-import { buildRosterSlots } from './net/protocol';
-import { MOVEMENT } from './sim/config';
+import { BOT_DIFFICULTY_SKILL, buildRosterSlots } from './net/protocol';
+import { botReactionDelayS, computeBotInput } from './sim/bot';
+import { ECONOMY, MOVEMENT } from './sim/config';
 import { HERO_LIST, HEROES } from './sim/heroes';
 import { computeHeroStats, ITEMS } from './sim/items';
 import { groundHeightAt } from './sim/map';
@@ -316,5 +317,106 @@ describe('Gnomelock items, prefabs, and gear sync', () => {
     expect(state.heroes[0].acorns).toBeGreaterThan(acornsBefore + 100);
     expect(state.orbs.length).toBeGreaterThanOrEqual(1);
     expect(state.campTimers[golem.campId]).toBeCloseTo(70, 0);
+  });
+});
+
+describe('Gnomelock AOE last-hits, solo-lane 100% XP, bot reaction delay, and air strafing', () => {
+  it('grants AOE last-hit credit when nearby creep dies, with 100% solo share and duo split', () => {
+    const slots = [
+      { heroId: 'potsworth' as const, name: 'A0', isBot: false },
+      { heroId: 'bramble' as const, name: 'A1', isBot: true },
+      { heroId: 'tansy' as const, name: 'S0', isBot: true },
+      { heroId: 'fernwick' as const, name: 'S1', isBot: true },
+    ];
+    const idle: HeroActionInput = {
+      move: { forward: 0, right: 0, yaw: 0, jumpPressed: false, dashPressed: false, slideHeld: false },
+      pitch: 0,
+      fireHeld: false,
+      reloadPressed: false,
+      abilityPressed: null,
+    };
+
+    // Solo in lane: A1 is jungling at (-28, -26), out of creepCreditRadius (22m)
+    const soloState = createMatchState(slots);
+    soloState.heroes[0].move.pos = { x: 0, y: 0, z: -4 };
+    soloState.heroes[1].move.pos = { x: -28, y: 0, z: -26 };
+    soloState.creeps.push(
+      { id: 1001, team: 0, kind: 'melee', x: 0, y: 0, z: -1, hp: 200, maxHp: 200, damage: 20, range: 2.5, fireCooldown: 0, bounty: 125, lastDamagedBySlot: -1 },
+      { id: 1002, team: 1, kind: 'melee', x: 0, y: 0, z: 0, hp: 10, maxHp: 200, damage: 10, range: 2.5, fireCooldown: 99, bounty: 125, lastDamagedBySlot: -1 },
+    );
+    const soloBefore = soloState.heroes[0].acorns;
+    stepWorld(soloState, [idle, idle, idle, idle], 1 / 30);
+    const soloGain = Math.round(soloState.heroes[0].acorns - soloBefore);
+    expect(soloState.heroes[0].lastHits).toBe(1);
+    expect(soloState.heroes[1].lastHits).toBe(0);
+    expect(soloState.orbs.length).toBe(1);
+    expect(soloGain).toBe(Math.round(125 * ECONOMY.creepLastHitShare));
+
+    // Duo in lane: both A0 and A1 within creepCreditRadius
+    const duoState = createMatchState(slots);
+    duoState.heroes[0].move.pos = { x: -2, y: 0, z: -4 };
+    duoState.heroes[1].move.pos = { x: 2, y: 0, z: -4 };
+    duoState.creeps.push(
+      { id: 1001, team: 0, kind: 'melee', x: 0, y: 0, z: -1, hp: 200, maxHp: 200, damage: 20, range: 2.5, fireCooldown: 0, bounty: 125, lastDamagedBySlot: -1 },
+      { id: 1002, team: 1, kind: 'melee', x: 0, y: 0, z: 0, hp: 10, maxHp: 200, damage: 10, range: 2.5, fireCooldown: 99, bounty: 125, lastDamagedBySlot: -1 },
+    );
+    const duoBefore0 = duoState.heroes[0].acorns;
+    const duoBefore1 = duoState.heroes[1].acorns;
+    stepWorld(duoState, [idle, idle, idle, idle], 1 / 30);
+    expect(duoState.heroes[0].lastHits).toBe(1);
+    expect(duoState.heroes[1].lastHits).toBe(1);
+    const expectedDuo = Math.round(125 * ECONOMY.creepLastHitShare * ECONOMY.duoLaneShareMult);
+    expect(Math.round(duoState.heroes[0].acorns - duoBefore0)).toBe(expectedDuo);
+    expect(Math.round(duoState.heroes[1].acorns - duoBefore1)).toBe(expectedDuo);
+    expect(expectedDuo).toBeLessThan(soloGain);
+  });
+
+  it('enforces 250ms bot reaction delay on Easy down to 150ms on Pro', () => {
+    expect(botReactionDelayS(BOT_DIFFICULTY_SKILL.easy)).toBeCloseTo(0.25, 4);
+    expect(botReactionDelayS(BOT_DIFFICULTY_SKILL.pro)).toBeCloseTo(0.15, 4);
+
+    const state = createMatchState([
+      { heroId: 'potsworth', name: 'A0', isBot: false },
+      { heroId: 'bramble', name: 'A1', isBot: true },
+      { heroId: 'tansy', name: 'S0', isBot: true },
+      { heroId: 'fernwick', name: 'S1', isBot: true },
+    ]);
+    state.heroes[2].move.pos = { x: 0, y: 0, z: 10 };
+    state.orbs.push({ id: 500, team: 0, x: 0, y: 1, z: 0, acorns: 50, ttl: 2.0, ageS: 0.05 });
+
+    // Fresh orb (0.05s) is ignored on both Easy and Pro
+    const inpEasyFresh = computeBotInput(state, 2, { skill: BOT_DIFFICULTY_SKILL.easy });
+    const inpProFresh = computeBotInput(state, 2, { skill: BOT_DIFFICULTY_SKILL.pro });
+    expect(inpEasyFresh.fireHeld).toBe(false);
+    expect(inpProFresh.fireHeld).toBe(false);
+
+    // At 0.16s, Pro reacts while Easy still waits
+    state.orbs[0].ageS = 0.16;
+    const inpEasyMid = computeBotInput(state, 2, { skill: BOT_DIFFICULTY_SKILL.easy });
+    expect(inpEasyMid.fireHeld).toBe(false);
+
+    // At 0.26s, Easy can also react and fire
+    state.orbs[0].ageS = 0.26;
+    state.rng = () => 0.1; // ensure orbChance & fireHeld rng rolls pass deterministically
+    const inpEasyReady = computeBotInput(state, 2, { skill: BOT_DIFFICULTY_SKILL.easy });
+    expect(inpEasyReady.fireHeld).toBe(true);
+  });
+
+  it('supports Source-style air strafing while preserving horizontal speed', () => {
+    const m = createMoveState(0, 5, 0, 3);
+    m.grounded = false;
+    m.vel.x = 0;
+    m.vel.y = 6;
+    m.vel.z = -11; // moving toward -Z at 11 m/s
+
+    let yaw = 0;
+    for (let i = 0; i < 25; i++) {
+      yaw -= 0.035; // smoothly turn right while holding right strafe
+      stepHeroMovement(m, { forward: 0, right: 1, yaw, jumpPressed: false, dashPressed: false, slideHeld: false }, 1 / 60);
+    }
+
+    const hSpeed = Math.hypot(m.vel.x, m.vel.z);
+    expect(m.vel.x).toBeGreaterThan(2.5); // curved significantly to the right (+X)
+    expect(hSpeed).toBeGreaterThanOrEqual(10.8); // momentum preserved / gained
   });
 });

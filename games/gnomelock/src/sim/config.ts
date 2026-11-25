@@ -47,6 +47,8 @@ export const ECONOMY = {
   creepProximityShare: 0.18, // if missed last-hit
   creepLastHitShare: 0.55, // instant on last-hit
   creepOrbShare: 0.45, // floats as Soul Acorn Orb (confirm or deny!)
+  creepCreditRadius: 22, // AOE last-hit radius (keeps jungle camps at |x|=28 out of lane share)
+  duoLaneShareMult: 0.55, // 1 hero in lane = 100%, 2 heroes = 55% each
   orbLifetimeS: 2.2,
   orbRiseSpeed: 2.4,
   orbHitRadius: 0.68,
@@ -74,7 +76,10 @@ export const MOVEMENT = {
   groundAccel: 54,
   groundFriction: 11.5,
   airAccel: 16,
-  airDrag: 0.45,
+  airDrag: 0.12,
+  airWishSpeed: 5.0,
+  airStrafeAccel: 14.0,
+  airBrakeAccel: 18.0,
   gravity: 26,
   jumpVel: 9.8,
   doubleJumpVel: 9.6,

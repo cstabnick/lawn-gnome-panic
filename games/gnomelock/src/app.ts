@@ -265,7 +265,7 @@ export function bootGnomelock(): void {
       aggroSlot: -1,
       fireCooldown: 0,
     }));
-    state.orbs = snap.orbs.map((o) => ({ ...o, acorns: 0, ttl: 1 }));
+    state.orbs = snap.orbs.map((o) => ({ ...o, acorns: 0, ttl: 1, ageS: 0 }));
     for (const ss of snap.structures) {
       const st = state.structures.find((x) => x.id === ss.id);
       if (st) {

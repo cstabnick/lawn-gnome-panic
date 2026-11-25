@@ -13,6 +13,7 @@ import {
   type GnomeModel,
 } from '@lawn/gnome';
 import { buildHeld, buildPrefab } from '@lawn/prefabs';
+import { applyHeroAnimation, createHeroAnimState, triggerCastAnim, triggerShotAnim, type HeroAnimState } from './heroAnim';
 import { attachHeroGear, HERO_LOOKS, HERO_SCALES } from './heroModels';
 import { VfxSystem } from './particles';
 import { TEAM_COLORS, type HeroId, type Team } from './sim/config';
@@ -82,7 +83,7 @@ export class GnomelockScene {
   private tracers: Tracer[] = [];
   private particles: Particle[] = [];
   private spellFx: SpellFx[] = [];
-  private castTimers = new Map<number, number>();
+  private heroAnims = new Map<number, HeroAnimState>();
   private skyUniforms = { uTime: { value: 0 } };
   private vfx: VfxSystem;
   private shakeMag = 0;
@@ -90,7 +91,6 @@ export class GnomelockScene {
   private camPos = new THREE.Vector3(0, 6, -120);
   private camLook = new THREE.Vector3(0, 3, -100);
   private lastHeroMeta = new Map<number, { userId?: string; characterCode?: string; team: Team; heroId: HeroId }>();
-  private recoilTimers = new Map<number, number>();
   private muzzleLight: THREE.PointLight;
   private skyMesh!: THREE.Mesh;
   private aetherFloaters: { group: THREE.Object3D; baseY: number; speed: number; phase: number; spinY: number }[] = [];
@@ -803,10 +803,20 @@ export class GnomelockScene {
   }
 
   spawnEvents(events: readonly SimEvent[], state?: MatchState): void {
+    const getAnim = (slot: number, heroId: HeroId): HeroAnimState => {
+      let a = this.heroAnims.get(slot);
+      if (!a) {
+        a = createHeroAnimState(heroId);
+        this.heroAnims.set(slot, a);
+      }
+      return a;
+    };
+
     for (const ev of events) {
       if (ev.type === 'shot') {
-        this.recoilTimers.set(ev.slot, 0.11);
         const h = state?.heroes[ev.slot];
+        const heroId = h?.heroId ?? 'fernwick';
+        triggerShotAnim(getAnim(ev.slot, heroId));
         const yaw = h?.yaw ?? 0;
         const rightX = Math.cos(yaw);
         const rightZ = -Math.sin(yaw);
@@ -815,7 +825,6 @@ export class GnomelockScene {
         const mz = ev.oz + rightZ * 0.34;
         this.muzzleLight.position.set(mx, my + 0.15, mz);
         this.muzzleLight.intensity = 3.6;
-        const heroId = h?.heroId ?? 'fernwick';
         this.vfx.spawnProjectile(heroId, ev.team, mx, my, mz, ev.tx, ev.ty, ev.tz, ev.hitKind);
         if (ev.slot === this.lastLocalSlot) {
           this.shakeMag = Math.max(this.shakeMag, 0.048);
@@ -847,7 +856,8 @@ export class GnomelockScene {
           this.vfx.dustPuff(h.move.pos.x, h.move.pos.y, h.move.pos.z, 0x74b9ff, 8, 2.4);
         }
       } else if (ev.type === 'ability') {
-        this.castTimers.set(ev.slot, 0.25);
+        triggerCastAnim(getAnim(ev.slot, ev.heroId), ev.heroId, ev.ability);
+        this.vfx.burst(ev.x, ev.y + 0.3, ev.z, ev.team === 0 ? 0xffb347 : 0x74b9ff, 6, { speed: 4.5, up: 2.5, scale: 0.65, ttl: 0.28 });
         if (ev.ability === 'X') this.shakeMag = Math.max(this.shakeMag, 0.2);
         this.spellFx.push(
           createSpellVfx(this.scene, this.vfx, ev.heroId, ev.ability, ev.x, ev.y, ev.z, ev.tx, ev.ty, ev.tz),
@@ -888,18 +898,13 @@ export class GnomelockScene {
           },
           dt,
         );
-        // Slide tilt visual + weapon recoil kickback + spell cast arm animation
-        model.object.rotation.x = h.move.sliding ? -0.45 : 0;
-        const rec = this.recoilTimers.get(h.slot) ?? 0;
-        if (rec > 0) {
-          this.recoilTimers.set(h.slot, Math.max(0, rec - dt));
-          model.arms.right.rotation.x = -Math.PI * 0.42 - rec * 3.2;
+        // Layered combat, movement, air-strafe banking, and ability-cast animations
+        let anim = this.heroAnims.get(h.slot);
+        if (!anim) {
+          anim = createHeroAnimState(h.heroId);
+          this.heroAnims.set(h.slot, anim);
         }
-        const castT = this.castTimers.get(h.slot) ?? 0;
-        if (castT > 0) {
-          this.castTimers.set(h.slot, Math.max(0, castT - dt));
-          model.arms.left.rotation.x = -Math.PI * 0.75 * (castT / 0.25);
-        }
+        applyHeroAnimation(model, h, anim, dt, state.timeS);
         shieldRing.visible = h.shield > 0;
 
         // Update overhead HP bar

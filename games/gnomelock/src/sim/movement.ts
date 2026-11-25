@@ -287,18 +287,28 @@ export function stepHeroMovement(m: MoveState, input: MoveInput, dt: number): Mo
           }
         }
       } else {
-        // Air control: preserves momentum while letting you curve
+        // Source/Quake-style air strafing: preserves momentum, curves sharply when strafing + turning,
+        // and allows slight speed gain up to slideMaxSpeed.
         const airDrop = Math.max(0, 1 - MOVEMENT.airDrag * dt);
         m.vel.x *= airDrop;
         m.vel.z *= airDrop;
         if (wishLen > 1e-4) {
-          m.vel.x += wishX * MOVEMENT.airAccel * dt;
-          m.vel.z += wishZ * MOVEMENT.airAccel * dt;
+          const currentSpeed = m.vel.x * wishX + m.vel.z * wishZ;
+          const addSpeed = MOVEMENT.airWishSpeed - currentSpeed;
+          if (addSpeed > 0) {
+            const accelSpeed = Math.min(addSpeed, MOVEMENT.airStrafeAccel * topSpeed * dt);
+            m.vel.x += wishX * accelSpeed;
+            m.vel.z += wishZ * accelSpeed;
+          }
           const newHSpeed = Math.hypot(m.vel.x, m.vel.z);
           const cap = Math.max(topSpeed, MOVEMENT.slideMaxSpeed);
           if (newHSpeed > cap) {
             m.vel.x = (m.vel.x / newHSpeed) * cap;
             m.vel.z = (m.vel.z / newHSpeed) * cap;
+          }
+          // Reward fast air-strafing with a touch of Flow
+          if (newHSpeed > 11.5 && Math.abs(input.right) > 0.25) {
+            addFlow(m, 12 * dt, events);
           }
         }
       }

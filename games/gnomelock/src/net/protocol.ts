@@ -4,13 +4,13 @@ import type { AbilitySlot, HeroId, Team } from '../sim/config';
 import type { HeroActionInput, SlotSetup } from '../sim/world';
 
 export type TeamMode = 'versus' | 'coop' | 'custom';
-export type BotDifficulty = 'easy' | 'normal' | 'hard' | 'nightmare';
+export type BotDifficulty = 'easy' | 'normal' | 'hard' | 'pro';
 
 export const BOT_DIFFICULTY_SKILL: Record<BotDifficulty, number> = {
   easy: 0.72,
   normal: 1.0,
   hard: 1.18,
-  nightmare: 1.32,
+  pro: 1.32,
 };
 
 export interface MatchCustomConfig {

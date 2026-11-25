@@ -198,7 +198,7 @@ export class GnomelockUI {
       { diff: 'easy', label: 'Easy' },
       { diff: 'normal', label: 'Normal' },
       { diff: 'hard', label: 'Hard' },
-      { diff: 'nightmare', label: 'Nightmare' },
+      { diff: 'pro', label: 'Pro' },
     ];
     const diffBtnEls = new Map<BotDifficulty, HTMLButtonElement>();
 
@@ -273,7 +273,7 @@ export class GnomelockUI {
             [0.72, 'Bot: Easy (0.72x)'],
             [1.0, 'Bot: Normal (1.0x)'],
             [1.18, 'Bot: Hard (1.18x)'],
-            [1.32, 'Bot: Nightmare (1.32x)'],
+            [1.32, 'Bot: Pro (1.32x)'],
           ] as const) {
             const opt = document.createElement('option');
             opt.value = String(val);

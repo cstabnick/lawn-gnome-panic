@@ -6,7 +6,13 @@ import { isNearShop, RELIC_ALTAR } from './map';
 import { tryBuyItem, type HeroActionInput, type MatchState } from './world';
 
 export interface BotConfig {
-  skill: number; // ~0.85..1.15
+  skill: number; // ~0.72..1.32
+}
+
+/** Bot reaction delay in seconds: 250ms on Easy (0.72) down to 150ms on Pro (1.32). */
+export function botReactionDelayS(skill: number): number {
+  const t = Math.max(0, Math.min(1, (skill - 0.72) / (1.32 - 0.72)));
+  return 0.25 - t * 0.10;
 }
 
 function aimAt(
@@ -69,18 +75,21 @@ export function computeBotInput(
   const retreating = hpFrac < 0.28 || underEnemyTower;
 
   // 1. Target selection priority:
-  // (a) Soul Acorn Orbs (confirm own or deny enemy) based on bot skill
+  // (a) Soul Acorn Orbs (confirm own or deny enemy) based on bot skill + reaction delay
+  const reactDelay = botReactionDelayS(cfg.skill);
   let targetX = 0;
   let targetY = 1.0;
   let targetZ = -homeDir * 30;
   let hasTarget = false;
   let targetKind: 'orb' | 'creep' | 'hero' | 'tower' | 'relic' | 'none' = 'none';
+  let targetKey = 'none';
 
-  const orbChance = Math.max(0.25, Math.min(0.95, (cfg.skill - 0.35) * 0.95));
+  const orbChance = Math.max(0.22, Math.min(0.92, (cfg.skill - 0.4) * 0.85));
   if (state.orbs.length > 0 && state.rng() < orbChance) {
     let bestOrb = null;
     let bestDist = def.weapon.range * 0.95;
     for (const orb of state.orbs) {
+      if (orb.ageS < reactDelay) continue;
       const d = Math.hypot(orb.x - px, orb.z - pz);
       if (d < bestDist) {
         bestDist = d;
@@ -93,6 +102,7 @@ export function computeBotInput(
       targetZ = bestOrb.z;
       hasTarget = true;
       targetKind = 'orb';
+      targetKey = `orb:${bestOrb.id}`;
     }
   }
 
@@ -105,6 +115,7 @@ export function computeBotInput(
       targetZ = RELIC_ALTAR.z;
       hasTarget = true;
       targetKind = 'relic';
+      targetKey = 'relic';
     }
   }
 
@@ -129,6 +140,7 @@ export function computeBotInput(
       targetZ = bestCreep.z;
       hasTarget = true;
       targetKind = 'creep';
+      targetKey = `creep:${bestCreep.id}`;
     }
   }
 
@@ -146,6 +158,7 @@ export function computeBotInput(
         targetZ = st.z;
         hasTarget = true;
         targetKind = 'tower';
+        targetKey = `tower:${st.id}`;
         break;
       }
     }
@@ -169,6 +182,7 @@ export function computeBotInput(
       targetZ = bestHero.move.pos.z;
       hasTarget = true;
       targetKind = 'hero';
+      targetKey = `hero:${bestHero.slot}`;
     }
   }
 
@@ -186,10 +200,17 @@ export function computeBotInput(
         targetZ = st.z;
         hasTarget = true;
         targetKind = 'tower';
+        targetKey = `tower:${st.id}`;
         break;
       }
     }
   }
+
+  if (targetKey !== h.botTargetKey) {
+    h.botTargetKey = targetKey;
+    h.botTargetSinceS = state.timeS;
+  }
+  const reacted = targetKind === 'orb' || (state.timeS - h.botTargetSinceS >= reactDelay);
 
   // Movement goal
   let moveX = 0;
@@ -259,7 +280,7 @@ export function computeBotInput(
 
   // Abilities
   let abilityPressed: AbilitySlot | null = null;
-  if (targetKind === 'hero' || targetKind === 'relic') {
+  if (reacted && (targetKind === 'hero' || targetKind === 'relic')) {
     const castChance = h.heroId === 'thistle' ? 0.36 : 0.14;
     for (const ab of ['X', 'Q', 'E', 'F'] as const) {
       if (h.cooldowns[ab] <= 0 && state.rng() < castChance * cfg.skill) {
@@ -271,7 +292,7 @@ export function computeBotInput(
     abilityPressed = 'F';
   }
 
-  const fireHeld = hasTarget && !retreating && state.rng() < 0.92 * Math.min(1.08, cfg.skill);
+  const fireHeld = reacted && hasTarget && !retreating && state.rng() < 0.92 * Math.min(1.08, cfg.skill);
 
   return {
     move: { forward, right, yaw, jumpPressed, dashPressed, slideHeld },

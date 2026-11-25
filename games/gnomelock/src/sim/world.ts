@@ -74,6 +74,9 @@ export interface HeroEntity {
   // Damage attribution
   lastDamagedBySlot: number;
   lastDamagedTimer: number;
+  // Bot reaction delay tracking
+  botTargetKey: string;
+  botTargetSinceS: number;
 }
 
 export interface CreepEntity {
@@ -121,6 +124,7 @@ export interface SoulOrbEntity {
   z: number;
   acorns: number;
   ttl: number;
+  ageS: number;
 }
 
 export interface TurretEntity {
@@ -299,6 +303,8 @@ export function createMatchState(slots: SlotSetup[], seed = 1337): MatchState {
       incomeObjective: 0,
       lastDamagedBySlot: -1,
       lastDamagedTimer: 0,
+      botTargetKey: '',
+      botTargetSinceS: 0,
     };
   });
 
@@ -590,6 +596,7 @@ function handleNeutralDeath(state: MatchState, n: NeutralEntity, killerSlot: num
       z: n.z,
       acorns: orbVal,
       ttl: ECONOMY.orbLifetimeS,
+      ageS: 0,
     });
   }
   const remainingInCamp = state.neutrals.some((other) => other !== n && other.campId === n.campId && other.hp > 0);
@@ -600,33 +607,41 @@ function handleNeutralDeath(state: MatchState, n: NeutralEntity, killerSlot: num
 }
 
 function handleCreepDeath(state: MatchState, creep: CreepEntity, killerSlot: number): void {
-  if (killerSlot >= 0 && state.heroes[killerSlot]?.team !== creep.team) {
+  const recipients: HeroEntity[] = [];
+  for (const h of state.heroes) {
+    if (h.team !== creep.team && h.alive) {
+      if (Math.hypot(h.move.pos.x - creep.x, h.move.pos.z - creep.z) <= ECONOMY.creepCreditRadius) {
+        recipients.push(h);
+      }
+    }
+  }
+  if (killerSlot >= 0) {
     const killer = state.heroes[killerSlot];
-    killer.lastHits++;
-    const instant = Math.round(creep.bounty * ECONOMY.creepLastHitShare);
+    if (killer && killer.alive && killer.team !== creep.team && !recipients.includes(killer)) {
+      recipients.push(killer);
+    }
+  }
+
+  if (recipients.length > 0) {
+    const shareMult = recipients.length === 1 ? 1.0 : ECONOMY.duoLaneShareMult;
+    const instant = Math.round(creep.bounty * ECONOMY.creepLastHitShare * shareMult);
     const orbVal = Math.round(creep.bounty * ECONOMY.creepOrbShare);
-    awardAcorns(killer, instant, 'lastHit');
-    state.events.push({ type: 'lastHit', slot: killerSlot, acorns: instant, kind: 'creep', x: creep.x, y: creep.y + 0.9, z: creep.z });
+    for (const h of recipients) {
+      h.lastHits++;
+      awardAcorns(h, instant, 'lastHit');
+      state.events.push({ type: 'lastHit', slot: h.slot, acorns: instant, kind: 'creep', x: creep.x, y: creep.y + 0.9, z: creep.z });
+    }
     // Spawn Soul Acorn Orb!
     state.orbs.push({
       id: state.nextEntityId++,
-      team: killer.team,
+      team: recipients[0].team,
       x: creep.x,
       y: creep.y + 0.85,
       z: creep.z,
       acorns: orbVal,
       ttl: ECONOMY.orbLifetimeS,
+      ageS: 0,
     });
-  } else {
-    // Missed last-hit: proximity share to nearby enemy heroes
-    const proxVal = Math.round(creep.bounty * ECONOMY.creepProximityShare);
-    for (const h of state.heroes) {
-      if (h.team !== creep.team && h.alive) {
-        if (Math.hypot(h.move.pos.x - creep.x, h.move.pos.z - creep.z) <= 18) {
-          awardAcorns(h, proxVal, 'passive');
-        }
-      }
-    }
   }
 }
 
@@ -1665,13 +1680,23 @@ export function stepWorld(state: MatchState, inputs: HeroActionInput[], dt: numb
   for (let i = state.orbs.length - 1; i >= 0; i--) {
     const orb = state.orbs[i];
     orb.y += ECONOMY.orbRiseSpeed * dt;
+    orb.ageS += dt;
     orb.ttl -= dt;
     if (orb.ttl <= 0) {
-      // Unpopped orb expires to original team's heroes in range (or split)
-      const allies = state.heroes.filter((h) => h.team === orb.team);
-      if (allies.length > 0) {
-        const share = Math.round(orb.acorns / allies.length);
-        for (const a of allies) awardAcorns(a, share, 'orb');
+      // Unpopped orb expires to nearby alive allies (100% if solo, duoLaneShareMult if 2), else split across alive allies
+      const nearby = state.heroes.filter(
+        (h) => h.team === orb.team && h.alive && Math.hypot(h.move.pos.x - orb.x, h.move.pos.z - orb.z) <= ECONOMY.creepCreditRadius,
+      );
+      if (nearby.length > 0) {
+        const shareMult = nearby.length === 1 ? 1.0 : ECONOMY.duoLaneShareMult;
+        const share = Math.round(orb.acorns * shareMult);
+        for (const a of nearby) awardAcorns(a, share, 'orb');
+      } else {
+        const allies = state.heroes.filter((h) => h.team === orb.team);
+        if (allies.length > 0) {
+          const share = Math.round(orb.acorns / allies.length);
+          for (const a of allies) awardAcorns(a, share, 'orb');
+        }
       }
       state.orbs.splice(i, 1);
     }

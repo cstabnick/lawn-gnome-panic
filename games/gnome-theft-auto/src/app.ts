@@ -2240,6 +2240,9 @@ function frame(now: number): void {
     critters: critters.list, npcs: npcs.list, biome, night: nightF, timeLabel: atmosphere?.timeLabel() ?? 'Noon',
     district: districtAt(simX, simZ), eventKind: worldEvents.activeEvent()?.kind ?? null, cutscene: cutscene.active,
     shopOpen: garages.isOpen(),
+    // Rain and snow beds (sound/ambience.ts): only on the map (not in interiors at x >= 5000) and with weather on.
+    weather: isWeatherEnabled() && Math.abs(simX) < WORLD_HALF + 200 && Math.abs(simZ) < WORLD_HALF + 200 ? getWeather() : null,
+    region: regionAt(simX, simZ),
   });
   section('world');
   setVehicleHeadlights(vehicles, nightF, lightsPreview ? showroomVehicle : null);

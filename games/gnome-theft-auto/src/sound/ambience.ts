@@ -4,6 +4,8 @@
 import { BIRD_AMBIENCE_IDS, getBirdSounds } from '../birdPrefs';
 import { waterAt } from '../terrain';
 import type { BiomeId } from '../types';
+import type { RegionId } from '../levels';
+import type { WeatherState } from '../weather/types';
 import { getAmbienceOverride, busOut, playAt } from './bus';
 import { noise } from './synth';
 
@@ -23,6 +25,10 @@ export interface AmbienceFrame {
   people: number;
   /** True while flying or parachuting (wind rushes, ground beds thin out). */
   airborne: boolean;
+  /** The weather heard here (weather/index.ts getWeather), or null indoors / with weather off: rain and snow beds. */
+  weather?: WeatherState | null;
+  /** levels.ts regionAt(x, z): picks the batch-3 region beds and spot sounds. */
+  region?: RegionId;
 }
 
 export interface Ambience {

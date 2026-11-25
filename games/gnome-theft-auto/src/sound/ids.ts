@@ -25,16 +25,27 @@ export const WORLD_SOUNDS = [
   'crowd-murmur', 'smash-wood', 'smash-glass', 'metal-clang', 'wind-gust', 'water-lap', 'bell-toll',
 ] as const;
 
+/**
+ * Region and weather spot sounds for the batch-3 places (recipes/regions.ts; docs/design/gnome-theft-auto/sound-design.md):
+ * surf and a buoy bell on Saltbucket Shore, snow creak and icicles on Snowcap Rise, café clinks and the chapel chime in
+ * Pardonlin, tall-grass hiss in the Unmown, the Rootwell University bell, Trellisdown's garden sprinklers, far thunder in rain.
+ */
+export const REGION_SOUNDS = [
+  'surf-wash', 'buoy-bell', 'snow-creak', 'icicle-tink', 'cafe-clink', 'chapel-chime', 'grass-hiss', 'thunder-far',
+  'campus-bell', 'sprinkler-tick',
+] as const;
+
 export type VehicleSoundId = (typeof VEHICLE_SOUNDS)[number];
 export type CombatSoundId = (typeof COMBAT_SOUNDS)[number];
 export type CritterSoundId = (typeof CRITTER_SOUNDS)[number];
 export type StepSoundId = (typeof STEP_SOUNDS)[number];
 export type WorldOnlySoundId = (typeof WORLD_SOUNDS)[number];
+export type RegionSoundId = (typeof REGION_SOUNDS)[number];
 /** Built-in ids. registerSound() may add more at runtime (string ids), e.g. gun-mod variants. */
-export type WorldSoundId = VehicleSoundId | CombatSoundId | CritterSoundId | StepSoundId | WorldOnlySoundId;
+export type WorldSoundId = VehicleSoundId | CombatSoundId | CritterSoundId | StepSoundId | WorldOnlySoundId | RegionSoundId;
 
 export const ALL_SOUNDS: readonly WorldSoundId[] = [
-  ...VEHICLE_SOUNDS, ...COMBAT_SOUNDS, ...CRITTER_SOUNDS, ...STEP_SOUNDS, ...WORLD_SOUNDS,
+  ...VEHICLE_SOUNDS, ...COMBAT_SOUNDS, ...CRITTER_SOUNDS, ...STEP_SOUNDS, ...WORLD_SOUNDS, ...REGION_SOUNDS,
 ];
 
 /** What a recipe knows about this play. */

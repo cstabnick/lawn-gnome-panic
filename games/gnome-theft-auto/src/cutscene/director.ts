@@ -22,6 +22,8 @@ import type { SceneScript, ScriptActor, StageEnv, Timeline, TimedStep, SceneFram
 import { compile, eventsBetween, sampleFrame, targetPoint } from './timeline';
 import { lineTiming } from './textSpeed';
 import { liveWorldFor, type LiveWorld } from './liveArea';
+import { CAST_INTROS, introFor } from './castIntros';
+import { createIntroCard } from './introCard';
 
 export interface DirectorHooks {
   setUiVisible(v: boolean): void;
@@ -136,6 +138,15 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   fadeEl.style.cssText = 'position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;';
   overlay.append(bar(true), bar(false), titleEl, captionEl, skipBtn, timeEl, fadeEl);
   ui.appendChild(overlay);
+  // Character intro cards ('intro' steps), drawn under the fade.
+  const introCard = createIntroCard(overlay);
+  overlay.insertBefore(introCard.el, fadeEl);
+  let introShown = false;
+  const hideIntro = (): void => {
+    if (!introShown) return;
+    introShown = false;
+    introCard.hide();
+  };
 
   let phase: Phase = 'off';
   let phaseT = 0;
@@ -199,6 +210,19 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         break;
       }
       case 'call': c.onTrigger?.(st.name, st.arg); break;
+      case 'intro': {
+        const rec = c.actors.get(st.who);
+        const key = rec?.def.preset ?? st.who;
+        // The stored card's name wins over the cast's short display name; an unlisted actor keeps its own name.
+        const known = !!CAST_INTROS[key.toLowerCase()];
+        introCard.show(
+          introFor(key, { name: st.name ?? (known ? undefined : rec?.cast.name), role: st.role, line: st.line }),
+          { seconds: ts.dur, freeze: st.freeze !== false },
+        );
+        introShown = true;
+        cue.stinger('intro');
+        break;
+      }
       case 'enter': {
         const vr = c.vehicles.get(st.vehicle);
         const from = c.lastFrame.actors[st.who];
@@ -278,6 +302,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     cue.stopAll();
     voice.stop();
     c.subtitles.destroy();
+    hideIntro();
     if (world) hooks.setPlayerVisible?.(true);
     if (world && c.script.sky) hooks.setSky?.(null);
     timeEl.style.opacity = '0';
@@ -311,6 +336,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     voice.stop();
     cur.subtitles.hide();
     cur.subShown = false;
+    hideIntro();
     cur.holdT = 0;
     timeEl.style.opacity = '0';
     phase = 'out';
@@ -583,6 +609,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       titleEl.style.display = title ? 'block' : 'none';
       captionEl.textContent = frame.caption ?? '';
       captionEl.style.display = frame.caption ? 'block' : 'none';
+      if (!frame.intro) hideIntro();
 
       let phaseFade = 0;
       if (phase === 'in') phaseFade = 1 - phaseT / fadeIn;

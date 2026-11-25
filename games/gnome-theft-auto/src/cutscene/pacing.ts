@@ -307,6 +307,9 @@ export function checkPacing(script: SceneScript, env: StageEnv, opts: PacingOpti
       case 'title': case 'caption':
         if (st.text) busy.push([ts.start, ts.start + 2.5]);
         break;
+      case 'intro':
+        busy.push([ts.start, ts.start + ts.dur]);
+        break;
       default:
         break;
     }

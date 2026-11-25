@@ -21,7 +21,7 @@ const camera = (over: Partial<CameraSample> = {}): CameraSample => ({
 });
 
 const frame = (over: Partial<SceneFrame> = {}): SceneFrame => ({
-  t: 1.5, actors: {}, vehicles: {}, props: {}, camera: camera(), say: null, title: null, caption: null, fade: 0,
+  t: 1.5, actors: {}, vehicles: {}, props: {}, camera: camera(), say: null, title: null, caption: null, intro: null, fade: 0,
   ...over,
 });
 

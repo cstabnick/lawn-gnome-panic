@@ -274,6 +274,16 @@ export const HEDGEWORTH_CAST: Readonly<Record<'peony' | 'basil' | 'thrift', Hedg
   },
 };
 
+/** Where each of them stands (life.ts puts them there; their quest giver markers are here too). yaw = facing. */
+export const PEOPLE_SPOTS: Readonly<Record<'peony' | 'basil' | 'thrift', { x: number; z: number; yaw: number }>> = {
+  // On the terrace, looking over the first tee.
+  peony: { x: -1060, z: 462, yaw: 0 },
+  // Beside the first tee, practising his swing toward the fairway (west).
+  basil: { x: -1090, z: 475, yaw: -Math.PI / 2 },
+  // Between his shed door and the ninth green, watering can in hand.
+  thrift: { x: -1057, z: 611, yaw: -Math.PI / 2 },
+};
+
 // ---- Ids ---------------------------------------------------------------------------------------------------------
 
 export const GOLF_SAVE_KEY = 'gta-golf-v1';

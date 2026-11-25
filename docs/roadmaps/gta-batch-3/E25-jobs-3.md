@@ -96,7 +96,9 @@ E09 sound bus; E10 `homePlaces()` for fire-call addresses; E24 `finishShift`, sh
 - Fire visuals: `fx.fire` puffs are small; `fire/view.ts` adds instanced flame cones and a light pool so a fire reads
   at 60 m and on a phone. Performance: at most 12 burning points per call, view culled past 220 m.
 - Placement: three new slots (bin-depot (-240, -97) by the Compost Heap reserve, fire-station (-245, 135), gnomazon-fc
-  (250, 90)); the layout golden regenerated (4 scenery boxes fewer).
+  (255, 92), 80 x 40, natural ground: levelling it lowered the ground under a ch4 cutscene camera). The new slot shifted
+  the desert scatter so a mesa landed under the beltway: desert scatter now keeps off skyway embankments
+  (`biomes.ts nearSkywayFoot`). The layout golden regenerated.
 
 ## Done when
 `npm run build -w games/gnome-theft-auto`, `npm test -w games/gnome-theft-auto`, `npm test -w packages/prefabs`,

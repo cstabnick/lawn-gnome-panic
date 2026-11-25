@@ -1099,7 +1099,7 @@ workplaces = installWorkplaces({
   blocked: jobDeps.blocked,
   timeLabel: jobDeps.timeLabel,
   // The gun is put away while a workplace holds the camera (a comedian with a pistol is a different act).
-  showroom: (t) => { hud.setVisible(!t); chase.showroom(t); weapons.setVisible(!t && !player.vehicle); },
+  showroom: (t) => { hud.setVisible(!t); input.setVisible(!t); chase.showroom(t); weapons.setVisible(!t && !player.vehicle); },
   teleport: (x, z, yaw) => { player.respawn(x, z, yaw); chase.yaw = yaw; },
   getOut: () => { if (player.vehicle) getOut(); },
   fx,

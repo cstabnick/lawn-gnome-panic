@@ -22,8 +22,9 @@ conveyors, packing stations (one is the player's "Clock in" spot), associates at
 
 ## Change
 - `games/gnome-theft-auto/src/workplaces/gnomazon/warehouse.ts`:
-  - `buildWarehouseOutside(scene, world)` (idempotent): `gnomazon-warehouse` centred in the site with its front (logo,
-    door, docks) facing east (+x) toward the road at x ~302 (rotate as its prefab needs); the door at
+  - `buildWarehouseOutside(scene, world)` (idempotent): `gnomazon-warehouse` (modelled at HALF size, 25 x 13 x 4.5 with
+    its front on +z: build it with `buildPrefab('gnomazon-warehouse', { scale: 2 })` for 50 x 26 x 9 m) centred in the
+    site with its front (logo, door, docks) facing east (+x) toward the road at x ~302 (rotation.y = pi/2); the door at
     `warehouseDoor()` (the `door` anchor: keep the interior door prompt there, on walkable ground just outside the
     front); colliders for the shed (leave the door spot outside them); the lot at the `lot` anchor with a few parked
     vans/cars as props if a prefab fits (grep 'van'), `gnomazon-returns-pile` by the docks.

@@ -33,7 +33,8 @@
     z -74..-50): anchors gate (-218, -89, yaw pi/2), lorry (-230, -93, yaw pi/2), office (-254, -103, yaw 0), tip (-250, -84, yaw pi).
   - `fire-station` (Fire Station No. 1, rect x -273..-217, z 121..149): anchors apron (-221, 135, yaw pi/2), engine
     (-227, 135, yaw pi/2), door (-235, 123, yaw pi), yard (-263, 139, yaw 0).
-  - `gnomazon-fc` (Gnomazon Fulfilment Centre FC-1, rect x 215..285, z 72..108; a north-south road runs at x ~302):
-    anchors door (283, 84, yaw pi/2), dock (280, 100, yaw pi/2), lot (274, 76, yaw pi/2).
+  - `gnomazon-fc` (Gnomazon Fulfilment Centre FC-1, rect x 215..295, z 72..112; a north-south road runs at x ~302;
+    the shed stands at (269, 92), front east at x 279.4): anchors door (283, 97, yaw pi/2), dock (283, 81, yaw pi/2),
+    lot (291, 110, yaw pi/2).
 - Style: plain, short code comments; match the surrounding code's style (2-space indent, single quotes, semicolons).
 - Report back in at most 15 lines: files changed, checks run and their result, anything left undone.

@@ -177,6 +177,18 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.8, 1.3], balance: [-0.2, 0.6], steering: [0.7, 1.2], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
     lean: 0.9,
   },
+  // Bin Lorry: grippy, understeery and top-heavy; it leans a lot and takes its time.
+  'bin-lorry': {
+    stock: { grip: 1.15, balance: 0.4, steering: 0.8, assists: 1.3, brakes: 1.1, stiffness: 0.9, comHeight: 1.25 },
+    ranges: { grip: [0.9, 1.4], balance: [0, 0.8], steering: [0.6, 1.1], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [1, 1.5] },
+    lean: 1.0,
+  },
+  // Watering-Can Pumper: like the HOA van, a bit livelier.
+  'fire-engine': {
+    stock: { grip: 1.05, balance: 0.1, steering: 1.1, assists: 1.1, brakes: 1.1, stiffness: 1.0, comHeight: 1.0 },
+    ranges: { grip: [0.8, 1.35], balance: [-0.3, 0.5], steering: [0.75, 1.35], assists: [0.4, 1.7], brakes: [0.8, 1.4], comHeight: [0.85, 1.3] },
+    lean: 0.8,
+  },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };
 export const profileFor = (kind: VehicleKind): VehicleProfile => PROFILES[kind] ?? FALLBACK;

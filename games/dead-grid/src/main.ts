@@ -7,6 +7,7 @@ import {
   type DeadGridSim,
   type SimParams,
 } from './sim/bridge';
+import { EconomyModal, type PriceSample } from './ui/economyModal';
 import { Hud, type HistorySample } from './ui/hud';
 import { OptimizerModal } from './ui/optimizerModal';
 
@@ -35,6 +36,7 @@ async function main(): Promise<void> {
   let brushCount = 200;
 
   const history: HistorySample[] = [];
+  const priceHistory: PriceSample[] = [];
   let lastHistoryTick = -100;
 
   const sim = await createSim(seed, params);
@@ -60,6 +62,14 @@ async function main(): Promise<void> {
       sim.disasterPlague(wx, wy, brushRadius);
     } else if (activeBrush === 'drought') {
       sim.disasterDrought(wx, wy, brushRadius);
+    } else if (activeBrush === 'zone-city') {
+      sim.brushPaintZone(wx, wy, brushRadius, 9);
+    } else if (activeBrush === 'zone-military') {
+      sim.brushPaintZone(wx, wy, brushRadius, 10);
+    } else if (activeBrush === 'zone-farm') {
+      sim.brushPaintZone(wx, wy, brushRadius, 11);
+    } else if (activeBrush === 'zone-industrial') {
+      sim.brushPaintZone(wx, wy, brushRadius, 12);
     }
     hud.updateStats(sim.readStats(), history);
   };
@@ -128,6 +138,28 @@ async function main(): Promise<void> {
     },
     onOpenOptimizer() {
       optimizerModal.open();
+    },
+    onOpenEconomy() {
+      economyModal.open();
+    },
+  });
+
+  const economyModal = new EconomyModal(ui, {
+    getLootTable: () => params.lootTable,
+    onApplyLootLive(table) {
+      params = { ...params, lootTable: table };
+      sim.applyParams(params);
+    },
+    onApplyLootReset(table) {
+      params = { ...params, lootTable: table };
+      history.length = 0;
+      priceHistory.length = 0;
+      lastHistoryTick = -100;
+      sim.reset(seed, params);
+      viewport.syncWorldSize(sim.gridW, sim.gridH);
+    },
+    onSelectZoneBrush(brush) {
+      hud.setBrushTool(brush);
     },
   });
 
@@ -219,6 +251,14 @@ async function main(): Promise<void> {
         disasters: stats.disasters,
       });
       if (history.length > 1000) history.shift();
+      priceHistory.push({
+        tick: stats.tick,
+        food: stats.avgPriceFood,
+        water: stats.avgPriceWater,
+        gear: stats.avgPriceGear,
+        mats: stats.avgPriceMats,
+      });
+      if (priceHistory.length > 500) priceHistory.shift();
     }
 
     const factions = sim.readFactions();
@@ -226,6 +266,7 @@ async function main(): Promise<void> {
     viewport.render(sim, factions, republics);
     hud.updateStats(stats, history);
     hud.appendEvents(sim.drainEvents());
+    economyModal.update(stats, factions, priceHistory);
 
     if (viewport.selectedAgent >= 0) {
       const ag = sim.inspectAgent(viewport.selectedAgent);

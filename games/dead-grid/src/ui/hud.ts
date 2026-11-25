@@ -60,6 +60,7 @@ export interface HudCallbacks {
   onBrushChange: (brush: BrushTool, radius: number, count: number) => void;
   onRecenter: () => void;
   onOpenOptimizer: () => void;
+  onOpenEconomy: () => void;
 }
 
 const SPEED_OPTIONS = [
@@ -170,11 +171,12 @@ export class Hud {
       }
     });
     const optBtn = this.makeToggleBtn('Lab ML', () => this.cb.onOpenOptimizer());
+    const econBtn = this.makeToggleBtn('Economy', () => this.cb.onOpenEconomy());
     const fitBtn = this.makeToggleBtn('Fit', () => this.cb.onRecenter());
     const helpBtn = this.makeToggleBtn('?', () => {
       this.helpModal.classList.toggle('open');
     });
-    controls.append(labToggle, telToggle, graphsBtn, optBtn, fitBtn, helpBtn);
+    controls.append(labToggle, telToggle, graphsBtn, optBtn, econBtn, fitBtn, helpBtn);
 
     // ---- Experiment Lab Drawer ----
     this.labDrawer = document.createElement('div');
@@ -334,6 +336,12 @@ export class Hud {
     }
   }
 
+  setBrushTool(tool: BrushTool): void {
+    this.activeBrush = tool;
+    for (const [t, btn] of this.brushBtns) btn.classList.toggle('active', t === tool);
+    this.cb.onBrushChange(tool, this.brushRadius, this.brushCount);
+  }
+
   syncParams(p: SimParams): void {
     this.params = { ...p };
     if (this.gridSelect) this.gridSelect.value = String(p.gridSize);
@@ -422,6 +430,10 @@ export class Hud {
       ['quake', '🌋 Quake'],
       ['plague', '☣ Plague'],
       ['drought', '☀ Drought'],
+      ['zone-city', '🏙 City'],
+      ['zone-military', '🪖 Military'],
+      ['zone-farm', '🌾 Farm'],
+      ['zone-industrial', '🏭 Industry'],
     ];
     for (const [tool, label] of brushes) {
       const b = document.createElement('button');

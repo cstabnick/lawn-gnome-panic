@@ -1,4 +1,4 @@
-import { DEFAULT_PARAMS, type SimParams } from './bridge';
+import { cloneLootTable, DEFAULT_LOOT_TABLE, DEFAULT_PARAMS, type SimParams } from './bridge';
 
 export const SCENARIOS_STORAGE_KEY = 'dead-grid.scenarios.v1';
 
@@ -87,7 +87,11 @@ export function importScenarioJson(jsonText: string): { name: string; seed: numb
   if (!data || typeof data !== 'object' || !data.params) {
     throw new Error('Invalid scenario JSON: missing params');
   }
-  const merged: SimParams = { ...DEFAULT_PARAMS, ...data.params };
+  const merged: SimParams = {
+    ...DEFAULT_PARAMS,
+    ...data.params,
+    lootTable: cloneLootTable(data.params.lootTable ?? DEFAULT_LOOT_TABLE),
+  };
   if (merged.gridSize !== 512 && merged.gridSize !== 768 && merged.gridSize !== 1024) {
     merged.gridSize = 512;
   }

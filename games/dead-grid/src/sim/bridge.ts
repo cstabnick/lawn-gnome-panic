@@ -19,7 +19,57 @@ export type BrushTool =
   | 'flood'
   | 'quake'
   | 'plague'
-  | 'drought';
+  | 'drought'
+  | 'zone-city'
+  | 'zone-military'
+  | 'zone-farm'
+  | 'zone-industrial';
+
+export interface BiomeLootRule {
+  food: number;
+  water: number;
+  gear: number;
+  respawn: number;
+}
+
+export type LootTable = Record<number, BiomeLootRule>;
+
+export const LOOT_BIOME_IDS = [1, 2, 4, 8, 9, 10, 11, 12] as const;
+
+export function cloneLootTable(src: LootTable): LootTable {
+  const out: LootTable = {};
+  for (let i = 0; i < 14; i++) {
+    const r = src[i] ?? { food: 1, water: 1, gear: 1, respawn: 1 };
+    out[i] = { food: r.food, water: r.water, gear: r.gear, respawn: r.respawn };
+  }
+  return out;
+}
+
+export const DEFAULT_LOOT_TABLE: LootTable = cloneLootTable({});
+
+export const LOOT_PRESETS: { id: string; label: string; apply: (t: LootTable) => void }[] = [
+  { id: 'balanced', label: 'DayZ Balanced', apply: () => {} },
+  {
+    id: 'mil-surplus',
+    label: 'Military Surplus',
+    apply: (t) => { t[10] = { food: 1.5, water: 1.5, gear: 3.0, respawn: 2.0 }; t[12] = { food: 0.5, water: 0.5, gear: 2.2, respawn: 1.5 }; },
+  },
+  {
+    id: 'famine',
+    label: 'Famine',
+    apply: (t) => { for (let i = 0; i < 14; i++) t[i] = { food: 0.25, water: 0.35, gear: 1.0, respawn: 0.2 }; },
+  },
+  {
+    id: 'agrarian',
+    label: 'Agrarian Boom',
+    apply: (t) => { t[11] = { food: 3.0, water: 2.0, gear: 0.5, respawn: 2.5 }; t[4] = { food: 2.2, water: 1.5, gear: 0.5, respawn: 2.0 }; },
+  },
+  {
+    id: 'urban-gold',
+    label: 'Urban Goldmine',
+    apply: (t) => { t[9] = { food: 2.5, water: 2.5, gear: 2.5, respawn: 2.2 }; t[8] = { food: 2.0, water: 2.0, gear: 1.8, respawn: 1.8 }; },
+  },
+];
 
 export const WATER_STYLE_NAMES = [
   'Coastal Mainland',
@@ -122,6 +172,7 @@ export interface SimParams {
   initialZombies: number;
   initialAnimals: number;
   cityDensity: number;
+  lootTable: LootTable;
 }
 
 export const DEFAULT_PARAMS: SimParams = {
@@ -147,6 +198,7 @@ export const DEFAULT_PARAMS: SimParams = {
   initialZombies: 14000,
   initialAnimals: 2500,
   cityDensity: 1.0,
+  lootTable: DEFAULT_LOOT_TABLE,
 };
 
 export interface PresetDef {
@@ -373,6 +425,12 @@ export interface SimStats {
   farmsBuilt: number;
   terraforms: number;
   disasters: number;
+  tradeVolume: number;
+  globalWealth: number;
+  avgPriceFood: number;
+  avgPriceWater: number;
+  avgPriceGear: number;
+  avgPriceMats: number;
 }
 
 export interface FactionInfo {
@@ -391,6 +449,12 @@ export interface FactionInfo {
   kills: number;
   foundedTick: number;
   republicId: number; // -1 if independent
+  wealth: number;
+  tradeVol: number;
+  priceFood: number;
+  priceWater: number;
+  priceGear: number;
+  priceMats: number;
 }
 
 export interface RepublicInfo {
@@ -492,6 +556,13 @@ interface SimWasmExports extends WebAssembly.Exports {
   getFacColorPtr(): number;
   getFacKillsPtr(): number;
   getFacFoundedPtr(): number;
+  getLootTablePtr(): number;
+  getFacWealthPtr(): number;
+  getFacTradeVolPtr(): number;
+  getFacPriceFoodPtr(): number;
+  getFacPriceWaterPtr(): number;
+  getFacPriceGearPtr(): number;
+  getFacPriceMatsPtr(): number;
 
   getAgKindPtr(): number;
   getAgSubkindPtr(): number;
@@ -526,6 +597,7 @@ interface SimWasmExports extends WebAssembly.Exports {
   disasterQuake(cx: number, cy: number, radius: number): void;
   disasterPlague(cx: number, cy: number, radius: number): void;
   disasterDrought(cx: number, cy: number, radius: number): void;
+  brushPaintZone(cx: number, cy: number, radius: number, tileType: number): void;
   findNearestAgent(wx: number, wy: number, maxDist: number): number;
 }
 
@@ -582,6 +654,13 @@ export class DeadGridSim {
   private readonly facColor: Uint32Array;
   private readonly facKills: Uint32Array;
   private readonly facFounded: Uint32Array;
+  private readonly lootTableView: Float32Array;
+  private readonly facWealth: Float32Array;
+  private readonly facTradeVol: Uint32Array;
+  private readonly facPriceFood: Float32Array;
+  private readonly facPriceWater: Float32Array;
+  private readonly facPriceGear: Float32Array;
+  private readonly facPriceMats: Float32Array;
 
   readonly agKind: Uint8Array;
   readonly agSubkind: Uint8Array;
@@ -614,7 +693,7 @@ export class DeadGridSim {
     const buf = ex.memory.buffer;
 
     this.cfgView = new Float32Array(buf, ex.getCfgPtr(), 64);
-    this.statsView = new Int32Array(buf, ex.getStatsPtr(), 32);
+    this.statsView = new Int32Array(buf, ex.getStatsPtr(), 40);
     this.eventsView = new Int32Array(buf, ex.getEventsPtr(), MAX_EVENTS * 4);
 
     const maxGridN = 1024 * 1024;
@@ -651,6 +730,13 @@ export class DeadGridSim {
     this.facColor = new Uint32Array(buf, ex.getFacColorPtr(), MAX_FACTIONS);
     this.facKills = new Uint32Array(buf, ex.getFacKillsPtr(), MAX_FACTIONS);
     this.facFounded = new Uint32Array(buf, ex.getFacFoundedPtr(), MAX_FACTIONS);
+    this.lootTableView = new Float32Array(buf, ex.getLootTablePtr(), 14 * 4);
+    this.facWealth = new Float32Array(buf, ex.getFacWealthPtr(), MAX_FACTIONS);
+    this.facTradeVol = new Uint32Array(buf, ex.getFacTradeVolPtr(), MAX_FACTIONS);
+    this.facPriceFood = new Float32Array(buf, ex.getFacPriceFoodPtr(), MAX_FACTIONS);
+    this.facPriceWater = new Float32Array(buf, ex.getFacPriceWaterPtr(), MAX_FACTIONS);
+    this.facPriceGear = new Float32Array(buf, ex.getFacPriceGearPtr(), MAX_FACTIONS);
+    this.facPriceMats = new Float32Array(buf, ex.getFacPriceMatsPtr(), MAX_FACTIONS);
 
     this.agKind = new Uint8Array(buf, ex.getAgKindPtr(), MAX_AGENTS);
     this.agSubkind = new Uint8Array(buf, ex.getAgSubkindPtr(), MAX_AGENTS);
@@ -698,6 +784,18 @@ export class DeadGridSim {
     this.cfgView[17] = p.roadBuildCost;
     this.cfgView[18] = p.waterFlowRate;
     this.cfgView[19] = p.disasterRate;
+    this.applyLootTable(p.lootTable ?? DEFAULT_LOOT_TABLE);
+  }
+
+  applyLootTable(table: LootTable): void {
+    for (let i = 0; i < 14; i++) {
+      const r = table[i] ?? { food: 1, water: 1, gear: 1, respawn: 1 };
+      const base = i * 4;
+      this.lootTableView[base] = r.food;
+      this.lootTableView[base + 1] = r.water;
+      this.lootTableView[base + 2] = r.gear;
+      this.lootTableView[base + 3] = r.respawn;
+    }
   }
 
   reset(seed: number, params: SimParams): void {
@@ -757,6 +855,10 @@ export class DeadGridSim {
     this.ex.disasterDrought(cx | 0, cy | 0, radius | 0);
   }
 
+  brushPaintZone(cx: number, cy: number, radius = 10, tileType = 9): void {
+    this.ex.brushPaintZone(cx | 0, cy | 0, radius | 0, tileType | 0);
+  }
+
   findNearestAgent(wx: number, wy: number, maxDist = 6): number {
     return this.ex.findNearestAgent(wx, wy, maxDist);
   }
@@ -795,6 +897,12 @@ export class DeadGridSim {
       farmsBuilt: s[29],
       terraforms: s[30],
       disasters: s[31],
+      tradeVolume: s[32],
+      globalWealth: s[33],
+      avgPriceFood: s[34] / 100,
+      avgPriceWater: s[35] / 100,
+      avgPriceGear: s[36] / 100,
+      avgPriceMats: s[37] / 100,
     };
   }
 
@@ -819,6 +927,12 @@ export class DeadGridSim {
         kills: this.facKills[f],
         foundedTick: this.facFounded[f],
         republicId: rep < MAX_REPUBLICS ? rep : -1,
+        wealth: Math.round(this.facWealth[f]),
+        tradeVol: this.facTradeVol[f],
+        priceFood: Math.round(this.facPriceFood[f] * 100) / 100,
+        priceWater: Math.round(this.facPriceWater[f] * 100) / 100,
+        priceGear: Math.round(this.facPriceGear[f] * 100) / 100,
+        priceMats: Math.round(this.facPriceMats[f] * 100) / 100,
       });
     }
     return out;

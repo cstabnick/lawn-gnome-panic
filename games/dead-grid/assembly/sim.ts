@@ -62,6 +62,15 @@ const FAC_ROAD_TY: usize    = 0x00B180; // 32 * u16 (64 B)
 const FAC_ROAD_CX: usize    = 0x00B1C0; // 32 * u16 (64 B)
 const FAC_ROAD_CY: usize    = 0x00B200; // 32 * u16 (64 B)
 
+// Economy & Loot Table (0x00B400 .. 0x00BE00)
+const FAC_WEALTH: usize      = 0x00B400; // 32 * f32 (128 B)
+const FAC_PRICE_FOOD: usize  = 0x00B480; // 32 * f32 (128 B)
+const FAC_PRICE_WATER: usize = 0x00B500; // 32 * f32 (128 B)
+const FAC_PRICE_GEAR: usize  = 0x00B580; // 32 * f32 (128 B)
+const FAC_PRICE_MATS: usize  = 0x00B600; // 32 * f32 (128 B)
+const FAC_TRADE_VOL: usize   = 0x00B680; // 32 * u32 (128 B)
+const LOOT_TABLE_PTR: usize  = 0x00BC00; // 14 biomes * 4 f32 (food, water, gear, respawn)
+
 const TILE_TYPE: usize      = 0x010000; // 1048576 * u8 (1 MB)
 const ELEVATION: usize      = 0x110000; // 1048576 * u8 (1 MB)
 const LOOT_FOOD: usize      = 0x210000; // 1048576 * u8 (1 MB)
@@ -225,6 +234,12 @@ const ST_TERRITORY_TILES: i32 = 28;
 const ST_FARMS_BUILT: i32    = 29;
 const ST_TERRAFORMS: i32     = 30;
 const ST_DISASTERS: i32      = 31;
+const ST_TRADE_VOL: i32      = 32;
+const ST_GLOBAL_WEALTH: i32  = 33;
+const ST_AVG_P_FOOD: i32     = 34;
+const ST_AVG_P_WATER: i32    = 35;
+const ST_AVG_P_GEAR: i32     = 36;
+const ST_AVG_P_MATS: i32     = 37;
 
 // Event types
 const EVT_FOUNDED: i32         = 1;
@@ -276,6 +291,13 @@ export function getFacMatsPtr(): usize { return FAC_MATS; }
 export function getFacColorPtr(): usize { return FAC_COLOR; }
 export function getFacKillsPtr(): usize { return FAC_KILLS; }
 export function getFacFoundedPtr(): usize { return FAC_FOUNDED; }
+export function getLootTablePtr(): usize { return LOOT_TABLE_PTR; }
+export function getFacWealthPtr(): usize { return FAC_WEALTH; }
+export function getFacTradeVolPtr(): usize { return FAC_TRADE_VOL; }
+export function getFacPriceFoodPtr(): usize { return FAC_PRICE_FOOD; }
+export function getFacPriceWaterPtr(): usize { return FAC_PRICE_WATER; }
+export function getFacPriceGearPtr(): usize { return FAC_PRICE_GEAR; }
+export function getFacPriceMatsPtr(): usize { return FAC_PRICE_MATS; }
 
 export function getAgKindPtr(): usize { return AG_KIND; }
 export function getAgSubkindPtr(): usize { return AG_SUBKIND; }
@@ -604,6 +626,47 @@ function spawnAgent(
   return slot;
 }
 
+@inline function lootMult(t: u8, col: i32): f32 {
+  const b = <i32>t;
+  if (b < 0 || b >= 14) return 1.0;
+  const v = load<f32>(LOOT_TABLE_PTR + (<usize>(b * 4 + col) << 2));
+  return v >= 0.0 ? v : 1.0;
+}
+
+function seedTileLoot(i: i32, t: u8): void {
+  let f: i32 = 0;
+  let w: i32 = 0;
+  let g: i32 = 0;
+  const r = randU32() & 255;
+  if (t == TILE_CITY) {
+    if (r < 95) f = 18 + (r & 31);
+    if (r < 80) w = 16 + (r & 31);
+    if (r < 70) g = 14 + (r & 31);
+  } else if (t == TILE_TOWN) {
+    if (r < 90) f = 20 + (r & 31);
+    if (r < 85) w = 18 + (r & 31);
+    if (r < 48) g = 10 + (r & 15);
+  } else if (t == TILE_FARM) {
+    if (r < 140) f = 32 + (r & 31);
+    if (r < 60) w = 15 + (r & 15);
+  } else if (t == TILE_MILITARY) {
+    if (r < 45) f = 15 + (r & 15);
+    if (r < 150) g = 45 + (r & 63);
+  } else if (t == TILE_INDUSTRIAL) {
+    if (r < 100) g = 24 + (r & 31);
+  } else if (t == TILE_BEACH || t == TILE_SWAMP) {
+    if (r < 110) w = 25 + (r & 31);
+    if (r < 25) f = 10;
+  } else if (t == TILE_FOREST && r < 24) {
+    f = 12;
+  }
+  f = clampI(<i32>(<f32>f * lootMult(t, 0)), 0, 255);
+  w = clampI(<i32>(<f32>w * lootMult(t, 1)), 0, 255);
+  g = clampI(<i32>(<f32>g * lootMult(t, 2)), 0, 255);
+  store<u8>(LOOT_FOOD + <usize>i, <u8>f);
+  store<u8>(LOOT_WATER + <usize>i, <u8>w);
+  store<u8>(LOOT_GEAR + <usize>i, <u8>g);
+}
 function findSpawnTile(preferA: u8, preferB: u8): i32 {
   for (let attempt = 0; attempt < 36; attempt++) {
     const x = 4 + randInt(gridW - 8);
@@ -635,12 +698,13 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
   if (rngState == 0) rngState = 0x9E3779B9;
 
   // Clear state tables
-  memory.fill(STATS_PTR, 0, 128);
+  memory.fill(STATS_PTR, 0, 192);
   memory.fill(EVENTS_PTR, 0, MAX_EVENTS * 16);
   memory.fill(FAC_ACTIVE, 0, 0x0820);
   memory.fill(GRP_ACTIVE, 0, 0x1000);
   memory.fill(REP_ACTIVE, 0, 0x0260);
   memory.fill(FAC_REPUBLIC, 255, MAX_FACTIONS);
+  memory.fill(FAC_WEALTH, 0, 0x0300);
   memory.fill(FACTION_CLAIM, 0, <usize>gridN);
   memory.fill(ROAD_COND, 0, <usize>gridN);
   memory.fill(WATER_DEPTH, 0, <usize>gridN);
@@ -786,41 +850,13 @@ export function generateWorld(seed: u32, size: i32, waterStyle: i32): void {
     }
   }
 
-  // 4. Seed initial Food, Water, and Gear loot
+  // 4. Seed initial Food, Water, and Gear loot using LOOT_TABLE_PTR
   for (let i = 0; i < gridN; i++) {
     const t = load<u8>(TILE_TYPE + <usize>i);
     if (t == TILE_WATER) store<u8>(WATER_DEPTH + <usize>i, 85);
     else if (t == TILE_SWAMP) store<u8>(WATER_DEPTH + <usize>i, 14);
     else if (t == TILE_FARM) store<u8>(ROAD_COND + <usize>i, 160);
-    let f: u8 = 0;
-    let w: u8 = 0;
-    let g: u8 = 0;
-    const r = randU32() & 255;
-    if (t == TILE_CITY) {
-      if (r < 95) f = <u8>(18 + (r & 31));
-      if (r < 80) w = <u8>(16 + (r & 31));
-      if (r < 70) g = <u8>(14 + (r & 31));
-    } else if (t == TILE_TOWN) {
-      if (r < 90) f = <u8>(20 + (r & 31));
-      if (r < 85) w = <u8>(18 + (r & 31));
-      if (r < 48) g = <u8>(10 + (r & 15));
-    } else if (t == TILE_FARM) {
-      if (r < 140) f = <u8>(32 + (r & 31));
-      if (r < 60) w = <u8>(15 + (r & 15));
-    } else if (t == TILE_MILITARY) {
-      if (r < 45) f = <u8>(15 + (r & 15));
-      if (r < 150) g = <u8>(45 + (r & 63));
-    } else if (t == TILE_INDUSTRIAL) {
-      if (r < 100) g = <u8>(24 + (r & 31));
-    } else if (t == TILE_BEACH || t == TILE_SWAMP) {
-      if (r < 110) w = <u8>(25 + (r & 31));
-      if (r < 25) f = 10;
-    } else if (t == TILE_FOREST && r < 24) {
-      f = 12;
-    }
-    store<u8>(LOOT_FOOD + <usize>i, f);
-    store<u8>(LOOT_WATER + <usize>i, w);
-    store<u8>(LOOT_GEAR + <usize>i, g);
+    seedTileLoot(i, t);
   }
 
   // 5. Spawn Zombies (with packs), Humans (with personalities & archetypes), and Wild Animals
@@ -938,24 +974,26 @@ function updateScentAndLoot(tick: i32): void {
     const phase = tick & 127;
     const prob = <i32>(respawnRate * 40.0);
     for (let i = phase; i < gridN; i += stride) {
-      if (<i32>(randU32() & 255) >= prob) continue;
       const t = load<u8>(TILE_TYPE + <usize>i);
+      const rMult = lootMult(t, 3);
+      if (rMult <= 0.01) continue;
+      if (<i32>(randU32() & 255) >= <i32>(<f32>prob * rMult)) continue;
       if (t == TILE_FARM) {
         const curF = load<u8>(LOOT_FOOD + <usize>i);
-        if (curF < 55) store<u8>(LOOT_FOOD + <usize>i, curF + 10);
+        if (curF < 55) store<u8>(LOOT_FOOD + <usize>i, <u8>clampI(curF + <i32>(10.0 * lootMult(t, 0)), 0, 255));
       } else if (t == TILE_TOWN || t == TILE_CITY) {
         const curF = load<u8>(LOOT_FOOD + <usize>i);
-        if (curF < 36) store<u8>(LOOT_FOOD + <usize>i, curF + 6);
+        if (curF < 36) store<u8>(LOOT_FOOD + <usize>i, <u8>clampI(curF + <i32>(6.0 * lootMult(t, 0)), 0, 255));
         const curW = load<u8>(LOOT_WATER + <usize>i);
-        if (curW < 36) store<u8>(LOOT_WATER + <usize>i, curW + 6);
+        if (curW < 36) store<u8>(LOOT_WATER + <usize>i, <u8>clampI(curW + <i32>(6.0 * lootMult(t, 1)), 0, 255));
         const curG = load<u8>(LOOT_GEAR + <usize>i);
-        if (curG < 28) store<u8>(LOOT_GEAR + <usize>i, curG + 4);
+        if (curG < 28) store<u8>(LOOT_GEAR + <usize>i, <u8>clampI(curG + <i32>(4.0 * lootMult(t, 2)), 0, 255));
       } else if (t == TILE_MILITARY || t == TILE_INDUSTRIAL) {
         const curG = load<u8>(LOOT_GEAR + <usize>i);
-        if (curG < 80) store<u8>(LOOT_GEAR + <usize>i, curG + 12);
+        if (curG < 80) store<u8>(LOOT_GEAR + <usize>i, <u8>clampI(curG + <i32>(12.0 * lootMult(t, 2)), 0, 255));
       } else if (t == TILE_BEACH || t == TILE_SWAMP) {
         const curW = load<u8>(LOOT_WATER + <usize>i);
-        if (curW < 45) store<u8>(LOOT_WATER + <usize>i, curW + 8);
+        if (curW < 45) store<u8>(LOOT_WATER + <usize>i, <u8>clampI(curW + <i32>(8.0 * lootMult(t, 1)), 0, 255));
       }
     }
   }
@@ -2137,6 +2175,80 @@ function stepDiplomacyAndRepublics(tick: i32): void {
   }
 }
 
+function stepEconomy(tick: i32): void {
+  if ((tick & 15) != 0) return;
+
+  // 1. Update per-society commodity prices (demand / supply) & local production wealth
+  for (let f = 0; f < MAX_FACTIONS; f++) {
+    const u = <usize>f;
+    if (load<u8>(FAC_ACTIVE + u) == 0) continue;
+    const pop = Mathf.max(1.0, <f32>load<u16>(FAC_POP + (u << 1)));
+    const food = load<f32>(FAC_FOOD + (u << 2));
+    const water = load<f32>(FAC_WATER + (u << 2));
+    const mats = load<f32>(FAC_MATS + (u << 2));
+    const lvl = <f32>load<u8>(FAC_LEVEL + u);
+
+    const pFood = clampF((pop * 2.2) / (food + 4.0) * 4.0, 0.5, 25.0);
+    const pWater = clampF((pop * 2.2) / (water + 4.0) * 4.0, 0.5, 25.0);
+    const pMats = clampF((pop * 1.4) / (mats + 4.0) * 5.0, 0.8, 30.0);
+    const pGear = clampF(8.0 + lvl * 1.5 - mats * 0.05, 2.0, 35.0);
+
+    store<f32>(FAC_PRICE_FOOD + (u << 2), pFood);
+    store<f32>(FAC_PRICE_WATER + (u << 2), pWater);
+    store<f32>(FAC_PRICE_MATS + (u << 2), pMats);
+    store<f32>(FAC_PRICE_GEAR + (u << 2), pGear);
+
+    // Local production GDP
+    const wPtr = FAC_WEALTH + (u << 2);
+    store<f32>(wPtr, load<f32>(wPtr) + pop * 0.25 + lvl * 1.5);
+  }
+
+  // 2. Inter-society trade for friendly / Republic pairs
+  for (let a = 0; a < MAX_FACTIONS; a++) {
+    if (load<u8>(FAC_ACTIVE + <usize>a) == 0) continue;
+    for (let b = a + 1; b < MAX_FACTIONS; b++) {
+      if (load<u8>(FAC_ACTIVE + <usize>b) == 0) continue;
+      const repA = load<u8>(FAC_REPUBLIC + <usize>a);
+      const repB = load<u8>(FAC_REPUBLIC + <usize>b);
+      const sameRep = repA < <u8>MAX_REPUBLICS && repA == repB;
+      const rel = <i32>load<i8>(FAC_REL + <usize>(a * MAX_FACTIONS + b));
+      if (!sameRep && rel < 10) continue;
+
+      const ua = <usize>a;
+      const ub = <usize>b;
+      const fA = load<f32>(FAC_FOOD + (ua << 2));
+      const fB = load<f32>(FAC_FOOD + (ub << 2));
+      const mA = load<f32>(FAC_MATS + (ua << 2));
+      const mB = load<f32>(FAC_MATS + (ub << 2));
+
+      let traded: u32 = 0;
+      if (fA > 25.0 && fB < 18.0 && mB > 12.0) {
+        // A exports food, B exports materials
+        store<f32>(FAC_FOOD + (ua << 2), fA - 4.0);
+        store<f32>(FAC_FOOD + (ub << 2), fB + 4.0);
+        store<f32>(FAC_MATS + (ub << 2), mB - 3.0);
+        store<f32>(FAC_MATS + (ua << 2), mA + 3.0);
+        traded += 10;
+      } else if (fB > 25.0 && fA < 18.0 && mA > 12.0) {
+        store<f32>(FAC_FOOD + (ub << 2), fB - 4.0);
+        store<f32>(FAC_FOOD + (ua << 2), fA + 4.0);
+        store<f32>(FAC_MATS + (ua << 2), mA - 3.0);
+        store<f32>(FAC_MATS + (ub << 2), mB + 3.0);
+        traded += 10;
+      }
+
+      if (traded > 0) {
+        const bonus: f32 = sameRep ? 8.0 : 5.0;
+        store<f32>(FAC_WEALTH + (ua << 2), load<f32>(FAC_WEALTH + (ua << 2)) + bonus);
+        store<f32>(FAC_WEALTH + (ub << 2), load<f32>(FAC_WEALTH + (ub << 2)) + bonus);
+        store<u32>(FAC_TRADE_VOL + (ua << 2), load<u32>(FAC_TRADE_VOL + (ua << 2)) + traded);
+        store<u32>(FAC_TRADE_VOL + (ub << 2), load<u32>(FAC_TRADE_VOL + (ub << 2)) + traded);
+        addStat(ST_TRADE_VOL, <i32>traded);
+      }
+    }
+  }
+}
+
 function stepSocieties(tick: i32): void {
   memory.fill(SCR_FAC_COUNTS, 0, MAX_FACTIONS * 4);
   for (let i = 0; i < activeLimit; i++) {
@@ -2211,6 +2323,7 @@ function stepSocieties(tick: i32): void {
   }
   stepTerritory(tick);
   stepDiplomacyAndRepublics(tick);
+  stepEconomy(tick);
 }
 
 function recountAll(): void {
@@ -2252,8 +2365,21 @@ function recountAll(): void {
   freeCursor = 0;
 
   let facCount = 0;
+  let sumWealth: f32 = 0.0;
+  let sumPF: f32 = 0.0;
+  let sumPW: f32 = 0.0;
+  let sumPG: f32 = 0.0;
+  let sumPM: f32 = 0.0;
   for (let f = 0; f < MAX_FACTIONS; f++) {
-    if (load<u8>(FAC_ACTIVE + <usize>f) != 0) facCount++;
+    const u = <usize>f;
+    if (load<u8>(FAC_ACTIVE + u) != 0) {
+      facCount++;
+      sumWealth += load<f32>(FAC_WEALTH + (u << 2));
+      sumPF += load<f32>(FAC_PRICE_FOOD + (u << 2));
+      sumPW += load<f32>(FAC_PRICE_WATER + (u << 2));
+      sumPG += load<f32>(FAC_PRICE_GEAR + (u << 2));
+      sumPM += load<f32>(FAC_PRICE_MATS + (u << 2));
+    }
   }
 
   let repCount = 0;
@@ -2284,6 +2410,11 @@ function recountAll(): void {
   setStat(ST_REPUBLICS, repCount);
   setStat(ST_ROAD_TILES, roadTiles);
   setStat(ST_TERRITORY_TILES, terrTiles);
+  setStat(ST_GLOBAL_WEALTH, <i32>sumWealth);
+  setStat(ST_AVG_P_FOOD, facCount > 0 ? <i32>((sumPF / <f32>facCount) * 100.0) : 400);
+  setStat(ST_AVG_P_WATER, facCount > 0 ? <i32>((sumPW / <f32>facCount) * 100.0) : 400);
+  setStat(ST_AVG_P_GEAR, facCount > 0 ? <i32>((sumPG / <f32>facCount) * 100.0) : 800);
+  setStat(ST_AVG_P_MATS, facCount > 0 ? <i32>((sumPM / <f32>facCount) * 100.0) : 500);
 }
 
 export function stepTicks(count: i32): void {
@@ -2665,4 +2796,22 @@ export function disasterDrought(cx: i32, cy: i32, radius: i32): void {
   }
   addStat(ST_DISASTERS, 1);
   pushEvent(EVT_DISASTER, 4, (cx << 10) | cy);
+}
+
+export function brushPaintZone(cx: i32, cy: i32, radius: i32, tileType: u8): void {
+  const r = clampI(radius, 1, 40);
+  const r2 = r * r;
+  for (let dy = -r; dy <= r; dy++) {
+    const y = clampI(cy + dy, 1, gridH - 2);
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const x = clampI(cx + dx, 1, gridW - 2);
+      const idx = y * gridW + x;
+      const cur = load<u8>(TILE_TYPE + <usize>idx);
+      if (cur == TILE_WATER || cur == TILE_MOUNTAIN) continue;
+      store<u8>(TILE_TYPE + <usize>idx, tileType);
+      if (tileType == TILE_FARM) store<u8>(ROAD_COND + <usize>idx, 180);
+      seedTileLoot(idx, tileType);
+    }
+  }
 }

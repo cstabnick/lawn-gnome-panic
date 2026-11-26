@@ -1,6 +1,7 @@
 // Story row 36 "Kiln-Resin & Black Ice" (rewrite, keeps its id; docs/design/gnome-theft-auto/story-outline.md). The def
 // and its comms moved here from quests/chapter3.ts and comms.ts (E21 setup); objectives, count and order are unchanged.
-// Its scenes (kiln-resin-intro, kiln-resin-outro) stay in cutscene/scenes/story/ch3b.ts.
+// Its scenes (kiln-resin-intro, kiln-resin-outro) stay in cutscene/scenes/story/ch3b.ts, rewritten in E21: the scroll now
+// says Vesper builds the Combine in parts out at the edges (the Dust Flats line moved to row 53), and Theo points north.
 import type { GnomeLook } from '@lawn/gnome';
 import type { QuestDef } from '../types';
 import { brief, call, type StoryFile } from './kit';
@@ -50,7 +51,7 @@ const KILN_RESIN: QuestDef = {
       hint: 'Thermos Theo\'s Bend',
     },
   ],
-  doneText: 'Pip\'s clay arm is glued tight with Kiln-Resin—just as one of Shelldon\'s snails delivers a scroll from Tansy.',
+  doneText: 'Pip\'s arm is glued tight with Kiln-Resin, and Tansy\'s scroll says the Combine is built in parts, out at the edges. The road north is next.',
 };
 
 export const STORY: StoryFile = {
@@ -58,11 +59,22 @@ export const STORY: StoryFile = {
   comms: {
     'ch3-kiln-resin-ice': {
       0: brief(
-        ['loam', 'Kiln-Resin, from the northern shrine. Without it, the boy\'s arm stays in a sack.'],
-        ['loam', 'The HOA salts the road to keep pilgrims off it. Crack the plow crew.'],
+        ['loam', 'The raid took the shop, the Acorn, the boy\'s arm. Resin mends one.'],
+        ['loam', 'Fetch Kiln-Resin from the northern shrine, up the highway. The plows are watching that road.'],
+        ['loam', 'Nine hundred acorns, my child, and Pip keeps his arm.'],
       ),
-      2: call(['loam', 'Ninety seconds while it sets. Keep them off the basin, my child.']),
-      3: call(['pip', 'It set! Arm\'s on! Thermos Theo says there\'s post for us. Snail post!']),
+      1: call(['loam', 'Salt-plows block the approach. Crack the two drivers, and mind the ice.']),
+      2: call(['pip', 'Here they come, eight of them! Keep them off the basin while it sets!']),
+      3: call(['thermos theo', 'A snail came to my barrel, round the bend. Scroll for you. Tea first.']),
     },
+  },
+  bulletins: {
+    'ch3-kiln-resin-ice': [
+      'Turfton FM: Frostbite Fells reports a hillside shrine visited by a stranger and a very empty jar. Father Loam says the jar is full again, and the Kiln is satisfied.',
+      'HOA crews on the North Basin Approach report eight snow-pursuit mowers lost on the Frozen Birdbath. The HOA blames the ice. The ice declines to comment.',
+    ],
+  },
+  plans: {
+    'ch3-kiln-resin-ice': { suite: 'story', expect: 'pass' },
   },
 };

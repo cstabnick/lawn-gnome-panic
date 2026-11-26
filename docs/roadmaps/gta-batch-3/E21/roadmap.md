@@ -64,6 +64,46 @@ epic only for the 8-worker cap.
 Areas with no act III main quest: the Unmown preserve and Pardonlin (E28/E30/E31: the outline gives them to act IV or
 side quests), the Underspan and Mossy Wood (acts I-II).
 
-## Result
+## Result (all 14 issues done; nothing deferred)
 
-(filled at integration)
+| row | id(s) | intro cards (first appearance) | W-ids | sim |
+|---|---|---|---|---|
+| 36 | ch3-kiln-resin-ice (rewrite: Tansy's scroll, Theo points north) | Loam, Thermos Theo | - | pass |
+| 37 | m37-snowdrop-slope (ski run via `winter-ski-runs`) | Gentian | - | pass |
+| 38 | m38-pail-pond (inspect three ice holes, the sock map) | - | - | pass |
+| 39 | m39-couch-surfing (passenger Pip, Hyssop's stairwell, the culvert reunion) | Silt-Diver Sal | W09 | pass |
+| 40 | m40-the-capwood-run (race `capwood-run`, Chanterelle's fine, the charter torn) | Chanterelle | - | pass |
+| 41 | m41-pinwheel-ridge (cut, crack, crack, spin) | Ragwort | W10 | pass |
+| 42 | m42-rutbottom-impound (3-lap dirt race, impounded ride out) | Clary | - | pass |
+| 43 | m43-saltbucket-boardwalk (Spokewheel + tow-ski probes, sincere outro) | Marram | - | pass |
+| 44 | m44-the-bathtub-queen (boat out, boarding, the blades home) | Samphire | W11 | pass |
+| 45 | m45-rootwell-admissions (registrar, the Dean's lecture, `uni-library`) | Lovage, Betony | - | pass |
+| 46 | m46-...-p1 Night Class, -p2 The Sugar Toll, -p3 The Lens, m46 Dean's Leap | Wally | W12 | pass x4 |
+| 47 | m47-hedgeworth-links (one hole vs Basil: `golf-par-holes`) | Peony, Basil | - | pass |
+| 48 | m48-the-groundskeepers-secret (passenger the moles, trap-line, the ball) | - | - | pass |
+| 49 | m49-loamdeep (roots, lamps, post: the mole-job probes; Moleman's decks) | DJ Moleman | W13 | pass |
+| 50 | m50-trellisdown-tasting (manor interior, photograph the ledger; Vesper sees you) | Countess Wisteria | - | pass |
+| 51 | m51-the-flock-stands (the Standing Lady on a roller, the gala date) | - | - | pass |
+| 52 | m52-...-p1 Tee Time, -p2 Mow Line, -p3 Against the Deck, m52 Through the Hedge | - | W14 (built: `worldChanges/rows/mownScar.ts`) | pass x4 |
+| 53 | ch3-tundra-drift-run (rewrite: Bracken lends the Stone; Tansy's ridge call; prereq m52) | - | - | pass |
+
+Unlock moves (setup): all 19 E18 `planned` unlocks for rows 38-52 moved onto their rows (`sq-snowdrop-sled-trials` m38,
+`sq-pail-pond-lines` m39, `race-capwood-open` + Tessie m40, `sq-capwood-cap-count` m41, `race-rutbottom-knobbly` m42,
+`race-lowrider-derby` m43, `sq-rutbottom-heats` m44, `coast-spokewheel-gondola` + `coast-boardwalk-tubing` m45,
+`coast-bathtub-tours` + `coast-queens-treasure` m46, `sq-rootwell-lost-essay` m47, `sq-anthill-rent` m48,
+`sq-hedgeworth-pro-lesson` m49, `sq-hedgeworth-ninth-green` + `sq-loamdeep-lamps` + `sq-loamdeep-under-chorus` m50,
+`sq-hedgeworth-members-cup` m52); W09-W14 `after` moved onto m39/m41/m44/m46/m49/m52. Not built (no quest yet):
+`sq-pinwheel-linemen` (#42), `sq-trellisdown-pickers` (#51).
+
+Engine: `storyMarks.ts` (map markers + journal Items tab; E20's rows 17/26/29/32 filled too); crack targets snap to a
+walk point only within 30 m (the far edges have none nearby). Lore: R-230 (the test is on the gala night, the Even Cut
+on the longest day; the outline row 51 is corrected).
+
+Checks: build, game tests, cutscene report 0 faults in Story A/B, quest-sim suites green, quest-sim 24/24 E21 ids, quest-fuzz
+48 runs 0 bugs, lore OK, prefabs/achievements/gnome tests green.
+
+Known gaps and reductions: the Woolly Sock Lodge as a save point/wardrobe, Ragwort's spare-parts shop, the student badge,
+keeping the dirt bike (no grant API) and the waiter outfit are said in scenes and doneText only; homes do not change with
+the story (Pip's couch, Driftwood's tube hut stay notes in `homes/data.ts`); interior beats (Moleman's burrow, the manor
+hall, the library window) are staged as world sets beside the interiors; W14 builds the Hedgeworth side only (not the
+Flock at Wader's Rest); no scene was watched in a real browser beyond the smokes.

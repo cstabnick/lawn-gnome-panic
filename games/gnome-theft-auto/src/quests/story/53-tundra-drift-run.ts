@@ -1,6 +1,7 @@
 // Story row 53 "Volatile on Ice" (rewrite, keeps its id; docs/design/gnome-theft-auto/story-outline.md). The def and its
 // comms moved here from quests/chapter3.ts and comms.ts (E21 setup); objectives, count and order are unchanged. Its
-// scenes (tundra-intro, tundra-outro) stay in cutscene/scenes/story/ch3c.ts.
+// scenes (tundra-intro, tundra-outro) stay in cutscene/scenes/story/ch3c.ts, rewritten in E21: Bracken lends the Stopping
+// Stone, and Tansy's ridge call points the crew at the Dust Flats for air power.
 import type { GnomeLook } from '@lawn/gnome';
 import type { QuestDef } from '../types';
 import { brief, call, type StoryFile } from './kit';
@@ -38,7 +39,7 @@ const TUNDRA: QuestDef = {
       ],
     },
   ],
-  doneText: 'You made the Dust Flats intact. Time to take the sky from Fort Sandpit.',
+  doneText: 'The Stopping Stone reached the Dust Flats uncracked. Tansy wants air power, and the air is at Fort Sandpit.',
 };
 
 export const STORY: StoryFile = {
@@ -46,10 +47,20 @@ export const STORY: StoryFile = {
   comms: {
     'ch3-tundra-drift-run': {
       0: brief(
-        ['pip', 'Tansy\'s hiding in the Dust Flats, at the overlook. She\'s got the Stone!'],
-        ['pip', 'Loam packed the barrels in ice. Very volatile. Drive like it\'s soup.'],
+        ['loam', 'The Combine cut its test line and Vesper named the day. Bracken lent the Stone.'],
+        ['loam', 'Drive it east across the Ring Road to the Dust Flats Overlook. Gently.'],
+        ['loam', 'Eight hundred and fifty acorns, and an elder\'s trust.'],
       ),
-      1: call(['tansy', 'HOA spotters on the ridge. Crack them before they phone it in.']),
+      1: call(['loam', 'HOA spotters on the overlook, my child. Crack them before they report.']),
     },
+  },
+  bulletins: {
+    'ch3-tundra-drift-run': [
+      'Turfton FM: a Zero-Turn crossed the Ring Road at dusk with a very large rock strapped in the seat, travelling carefully and at almost no speed. Witnesses called it the politest getaway on record.',
+      'HOA spotters at the Dust Flats Overlook failed to file tonight\'s report. Headquarters says it was mislaid, along with two spotters.',
+    ],
+  },
+  plans: {
+    'ch3-tundra-drift-run': { suite: 'story', expect: 'pass' },
   },
 };

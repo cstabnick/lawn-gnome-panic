@@ -7,7 +7,10 @@ import type { Finding } from './types';
 
 // The static content findings the quest data has today: a recorded baseline, not a wish list. A new finding fails the
 // test (fix the quest data or add it here with a reason); a fixed one fails it too until it is removed from this list.
-const KNOWN_STATIC: string[] = []
+const KNOWN_STATIC: string[] = [
+  // E21 row 44: the player comes alongside the HOA barge in the boat from the step before; a visit at sea is the point.
+  'm44-the-bathtub-queen|1|spot-on-water|visit.at at (117, 1452) r=1 is on water',
+]
 
 describe('quest static checks', () => {
   const sim = buildSimWorld();

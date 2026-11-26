@@ -49,6 +49,8 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   cardoon: 'Cardoon "Swish" Trowelly',
   fennel: 'Fennel Gripwax',
   thrift: 'Thrift Hosepipe',
+  peony: 'Dame Peony Gravelrake',
+  basil: 'Basil Divot',
   'don compost': 'Don Compost',
   parsley: 'Parsley Inkpot',
   hyssop: 'Hyssop Doormat',

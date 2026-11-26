@@ -1,19 +1,26 @@
 // Chapter 3, the drift run and the chapter's close at the Dust Flats Overlook. Re-directed in the Story B direction
 // pass (docs/design/gnome-theft-auto/direction/lanes.md); notes in direction/scenes/<id>.md.
-// Registered through CH3_SCENES in ch3.ts.
+// Rewritten for E21 (row 53, "Volatile on Ice"): Bracken lends the Stopping Stone, and Tansy's ridge call points at the
+// Dust Flats for air power. Registered through CH3_SCENES in ch3.ts.
 import type { SceneScript } from '../../script';
-import { beat, coverage, cut, exchangeLooks, reaction, shot } from '../../direct';
+import { beat, coverage, cut, reaction, shot } from '../../direct';
 import { carMark, markOf, spot, up } from './kit';
 
 const BASIN = 'birdbath-basin';
-const SAFE = 'dust-safehouse';
+
+const towards = (a: [number, number], b: [number, number]): number => Math.atan2(b[0] - a[0], b[1] - a[1]);
 
 /**
- * Tundra run: Pip carries a Black Dew barrel onto the parked mower, Loam blesses it, and Pip hands the player the key.
- * The player drives the run; the scene ends on foot beside the mower.
+ * Tundra run (dusk): the Combine has cut its test line and Vesper has named the day. Bracken and Father Loam load the
+ * Stopping Stone into the ice-packed Zero-Turn, and Bracken lends it in words: lent, not given, back uncracked. Pip,
+ * steadier now, sits it out on the bench with his glued arm. The scene ends on foot beside the mower.
  */
-/** Pip and the player talk across the mower: one side of their line. */
-const PP = coverage('pip', 'player', 1);
+const MOWER_AT: [number, number] = [10, -335];
+const B_FROM: [number, number] = [3, -341];
+const B_AT: [number, number] = [7.4, -338.6];
+const L_AT: [number, number] = [12.6, -338.8];
+const BL = coverage('bracken', 'player', 1);
+const BP = coverage('bracken', 'pip', -1);
 
 export const TUNDRA_INTRO: SceneScript = {
   id: 'tundra-intro',
@@ -21,158 +28,145 @@ export const TUNDRA_INTRO: SceneScript = {
   music: 'frost',
   ambience: 'wind',
   sky: 'golden',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/tundra-intro.md' },
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/tundra-intro.md', kind: 'intro' },
   actors: [
-    { id: 'player', player: true, ...markOf(BASIN, 'player') },
-    { id: 'loam', preset: 'loam', held: 'clay-jar', ...markOf(BASIN, 'loam') },
-    { id: 'pip', preset: 'pip', held: 'gta-dew-barrel', ...markOf(BASIN, 'pip') },
+    { id: 'player', player: true, at: [4, -331], yaw: towards([4, -331], B_AT) },
+    { id: 'bracken', preset: 'bracken', at: B_FROM, yaw: towards(B_FROM, B_AT) },
+    { id: 'loam', preset: 'loam', at: L_AT, yaw: towards(L_AT, MOWER_AT) },
+    { id: 'pip', preset: 'pip', held: null, ...markOf(BASIN, 'pip') },
   ],
   vehicles: [
     // The drift-run mower: the stage's parked ice-zero-turn, where the quest starts.
     { id: 'mower', ...carMark(BASIN, 'ice-zero-turn') },
   ],
+  props: [
+    // L95: the Stone, set in the seat once loaded, and a salt-sack roped beside it for ballast.
+    { id: 'stone-seat', prefab: 'stopping-stone', at: up(10.2, -335, 0.95), yaw: 0.3, size: 0.55, hidden: true },
+    { id: 'ballast', prefab: 'sugar-sack', at: [9, -332.6], yaw: 0.5, size: 0.5, by: 'h' },
+  ],
   steps: [
-    // 1. Hook: Pip carries a barrel across the basin to the mower, with two arms.
+    { do: 'gesture', who: 'pip', name: 'sit', s: 0.8, async: true },
+    // 1. Hook: Bracken carries the Stone across the basin ice, slow and level.
     { do: 'cam', shot: spot(BASIN, 'arrival') },
-    // West round the rim building (it stands between Pip's bench and the mower), to the mower's west side.
-    { do: 'walk', who: 'pip', path: [[9, -347], [7.5, -340]], run: true },
-    { do: 'hold', who: 'pip', prop: null },
-    { do: 'sfx', id: 'clatter', at: 'mower', gain: 0.5, async: true },
-    { do: 'sfx', id: 'thud', at: 'mower' },
-    cut(PP.single('pip', 'ms')),
-    { do: 'say', who: 'pip', text: 'Both arms, both barrels. Watch this.' },
-    // 2. Loam blesses the getaway from the rim.
-    cut(shot('loam', 'mcu', { side: -30 })),
-    { do: 'gesture', who: 'loam', name: 'bow', s: 1.6 },
-    { do: 'say', who: 'loam', text: 'Compost tea, for the getaway. The Kiln wants a clean lap.' },
-    // 3. The turn: Pip gives the player the key. He trusts them to drive.
-    ...reaction('player', { toward: 'pip', side: -25, hold: 'beat' }),
-    { do: 'say', who: 'player', text: "Where's it going?" },
-    cut(PP.single('pip', 'ms')),
-    { do: 'say', who: 'pip', text: "Dust Flats. Tansy's there." },
+    { do: 'sfx', id: 'crunch', at: 'bracken', gain: 0.5, async: true },
+    { do: 'walk', who: 'bracken', path: [B_AT], speed: 0.9 },
+    // 2. Loam gives the Previously.
+    cut(shot('loam', 'mcu', { toward: 'bracken', side: 25 })),
+    { do: 'say', who: 'loam', text: 'The Combine cut its line through Hedgeworth. Vesper has named the day.' },
+    { do: 'sfx', id: 'cloth', at: 'loam', gain: 0.4, async: true },
+    // 3. The loading: the Stone leaves Bracken's arms and settles into the seat. Nobody speaks over it.
+    cut({ kind: 'cut', pos: up(14.4, -331.4, 1.7), look: up(9.2, -337, 1.0), fov: 42 }),
+    { do: 'face', who: 'bracken', at: MOWER_AT, s: 0.4 },
+    { do: 'hold', who: 'bracken', prop: null },
+    { do: 'spawn', id: 'stone-seat' },
+    { do: 'sfx', id: 'thud', at: 'mower', gain: 0.6, async: true },
+    { do: 'sfx', id: 'creak', at: 'mower', gain: 0.4 },
+    { do: 'gesture', who: 'loam', name: 'bow', s: 1.2, async: true },
+    beat('pause'),
+    // 4. Bracken lends it, in words, to the player. No joke anywhere near him.
+    { do: 'face', who: 'bracken', at: 'player', s: 0.5 },
+    cut(BL.single('bracken', 'mcu', { height: 'low' })),
+    { do: 'say', who: 'bracken', text: 'This Stone stopped one machine. One. Nothing since.', hz: 76 },
+    ...reaction('player', { toward: 'bracken', size: 'mcu', hold: 'pause' }),
+    cut(BL.single('bracken', 'mcu', { height: 'low' })),
+    { do: 'say', who: 'bracken', text: 'I lend it. I do not give it. Bring it back uncracked.', hz: 76 },
+    cut(BL.single('player', 'mcu')),
+    { do: 'say', who: 'player', text: 'Uncracked. I will.' },
+    ...reaction('bracken', { toward: 'player', gesture: 'nod', size: 'mcu', side: 25, hold: 'pause' }),
+    // 5. The turn: Bracken looks past the player to Pip on the bench. Two short lines. Pip stands for it.
+    { do: 'face', who: 'bracken', at: 'pip', s: 0.5, async: true },
+    cut(BP.single('bracken', 'mcu', { height: 'low' })),
+    { do: 'say', who: 'bracken', text: 'Potsworth. Hold the arm level, and the load will follow.', hz: 76 },
+    cut(BP.single('pip', 'mcu')),
+    { do: 'gesture', who: 'pip', name: 'stand', s: 0.4 },
+    { do: 'say', who: 'pip', text: 'Level. Yes, Elder.' },
     beat('beat'),
-    { do: 'hold', who: 'pip', prop: 'brass-key' },
-    { do: 'sfx', id: 'keys', at: 'pip', gain: 0.6, async: true },
-    { do: 'give', from: 'pip', to: 'player', prop: 'brass-key', s: 1.2 },
-    { do: 'say', who: 'pip', text: "You drive. I'll guard the barrels." },
-    cut(PP.single('player', 'mcu')),
-    { do: 'say', who: 'player', text: 'Why me?' },
-    cut(PP.single('pip', 'ms')),
-    { do: 'say', who: 'pip', text: "Because you're not me. Don't drift." },
-    cut(PP.single('player', 'mcu')),
-    { do: 'say', who: 'player', text: "I won't." },
-    cut(PP.single('pip', 'ms')),
-    { do: 'say', who: 'pip', text: 'Okay, drift a little.' },
-    // 4. Button: Pip leans on the mower and sounds the horn; the player's flat look.
+    // 6. Loam's blessing, short, and the button: Pip leans on the horn and Bracken does not blink.
+    cut(shot('loam', 'mcu', { toward: 'player', side: -30 })),
+    { do: 'say', who: 'loam', text: 'Go with the Kiln, and keep the ice under you.' },
     { do: 'walk', who: 'player', path: [[6, -331]], speed: 1.2, async: true },
-    cut(PP.single('pip', 'ms')),
-    { do: 'gesture', who: 'pip', name: 'lean', s: 1.2 },
+    cut(shot('pip', 'ms', { toward: 'player', side: 30 })),
+    { do: 'gesture', who: 'pip', name: 'lean', s: 1.0 },
     { do: 'horn', vehicle: 'mower' },
-    ...reaction('player', { toward: 'pip', side: -25, hold: 'pause' }),
+    beat('beat'),
+    cut(shot('bracken', 'mcu', { toward: 'pip', side: -25, height: 'low' })),
+    beat('pause'),
   ],
 };
 
 /**
- * Chapter 3 closer: dusk at the Dust Flats Overlook. Tansy has the Stopping Stone; the reunion with Pip's resin arm
- * (her first hug, no music); then Vesper's Grand Combine fires up on the horizon. Title: END OF CHAPTER 3.
+ * Tundra outro (night): the Dust Flats Overlook lit by a single lamp over the map table. Pip, steadier, has carried the
+ * Stone the last stretch in both hands. Tansy calls down from the ridge: what stops the Combine is not on the ground.
+ * Air power, and the air is at Fort Sandpit. Closes the chapter on the act's turn, not on the threat.
  */
-const TP = coverage('tansy', 'pip', 1);
-const TL = coverage('tansy', 'player', 1);
-/** Where the hug happens: Pip's mark, with Tansy stopping 0.45 m in front of him. */
-const HUG_CENTRE: [number, number] = [277.85, 55.82];
+const OVERLOOK_LAMP: [number, number] = [270.8, 41.6];
+const TABLE: [number, number] = [270, 40];
+const RIDGE: [number, number] = [272, 29.5];
+const O_PLAYER: [number, number] = [274.5, 47];
+const O_PIP: [number, number] = [278.5, 52];
+const TP = coverage('pip', 'player', -1);
+const UP = coverage('tansy', 'player', 1);
 
 export const TUNDRA_OUTRO: SceneScript = {
   id: 'tundra-outro',
   stage: { kind: 'world' },
   music: 'warm',
   ambience: 'wind',
+  sky: 'night',
   direction: { kind: 'chapter-close', notes: 'docs/design/gnome-theft-auto/direction/scenes/tundra-outro.md' },
   actors: [
-    { id: 'player', player: true, ...markOf(SAFE, 'player') },
-    { id: 'tansy', preset: 'tansy', held: 'stopping-stone', ...markOf(SAFE, 'tansy') },
-    { id: 'pip', preset: 'pip', ...markOf(SAFE, 'pip') },
-  ],
-  vehicles: [
-    { id: 'whirligig', ...carMark(SAFE, 'safehouse-whirligig') },
+    { id: 'player', player: true, at: O_PLAYER, yaw: towards(O_PLAYER, TABLE) },
+    { id: 'pip', preset: 'pip', held: 'stopping-stone', at: O_PIP, yaw: towards(O_PIP, TABLE) },
+    { id: 'tansy', preset: 'tansy', held: null, at: RIDGE, yaw: towards(RIDGE, O_PLAYER) },
   ],
   props: [
-    // The Grand Combine, held back for the threat cut (the picture, not a line).
-    { id: 'combine', prefab: 'grand-combine-boss', at: [0, -200], yaw: Math.PI, size: 14, by: 'w', hidden: true },
+    // L95: one lamp in the whole dark, over the map table; Tansy a silhouette on the rim above it.
+    { id: 'lamp', prefab: 'garden-lamp-post', at: OVERLOOK_LAMP, yaw: 0, size: 2.2, by: 'h' },
   ],
   steps: [
-    // 1. Hook: Tansy at the map table hears them and turns.
-    cut(TL.single('tansy', 'mcu')),
-    { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
-    { do: 'say', who: 'tansy', text: "You're late." },
-    cut(shot('pip', 'ms', { side: -60 })),
-    { do: 'say', who: 'pip', text: 'We were cracked. Partially.' },
-    // 2. She sees the arm.
-    { do: 'face', who: 'tansy', at: 'pip', s: 0.3 },
-    cut(TP.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: 'Pip. Your arm is... shiny.' },
+    // 1. Hook: the dark overlook, one lamp. Pip walks the last metres with the Stone in both hands, counting under his breath.
+    { do: 'cam', shot: { kind: 'cut', pos: up(282, 56, 3.2), look: up(OVERLOOK_LAMP[0], OVERLOOK_LAMP[1], 1.2), fov: 50 } },
+    { do: 'sfx', id: 'crunch', at: 'pip', gain: 0.4, async: true },
+    { do: 'walk', who: 'pip', path: [[274, 44.4]], speed: 1.6 },
+    // 2. He sets it on the map table, turns to the player, and checks it twice for cracks.
+    { do: 'hold', who: 'pip', prop: null },
+    { do: 'sfx', id: 'thud', at: 'pip', gain: 0.4, async: true },
+    { do: 'face', who: 'pip', at: 'player', s: 0.4 },
     cut(TP.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: 'Kiln-Resin. Shinier, even.' },
-    // 3. The hug: the first time Tansy touches anyone. No music; she walks over and stops in front of him.
-    { do: 'music', track: null, fade: 0.6 },
-    { do: 'hold', who: 'tansy', prop: null },
-    cut(shot('tansy', 'ms', { toward: 'pip', side: 40 })),
-    { do: 'walk', who: 'tansy', path: [[270, 44], [276, 50], [277.7, 55.65]], speed: 2.4 },
-    { do: 'face', who: 'pip', at: 'tansy', s: 0.3, async: true },
-    { do: 'wait', s: 0.3 },
-    // Side-on, eye level, locked: the two of them in one frame, the hug held through the silence.
-    { do: 'cam', shot: { kind: 'cut', pos: up(HUG_CENTRE[0] + 1.75, HUG_CENTRE[1] - 1.5, 1.1), look: up(HUG_CENTRE[0], HUG_CENTRE[1], 0.95), fov: 34 } },
-    { do: 'gesture', who: 'tansy', name: 'hug', s: 2.5, async: true },
-    { do: 'gesture', who: 'pip', name: 'hug', s: 2.5 },
-    beat('silence'),
-    // A reaction on Pip, stunned; then Tansy steps back, dry again.
-    // Pip's reaction from his own side: Tansy stands between him and the default camera.
-    ...reaction('pip', { size: 'cu', side: 90, hold: 'pause' }),
-    cut(TP.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: "Don't tell anyone." },
-    // 4. The plan: she lifts the Stopping Stone and the music comes back under it.
-    { do: 'music', track: 'warm', fade: 1.5 },
-    { do: 'hold', who: 'tansy', prop: 'stopping-stone' },
-    ...exchangeLooks('tansy', 'player'),
-    cut(TL.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: 'Bracken lent us the Stopping Stone. He wants it back uncracked.' },
-    cut(TL.single('player', 'mcu')),
-    { do: 'say', who: 'player', text: "What's it for?" },
-    cut(TL.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: 'Jamming things that shouldn\'t run.' },
-    // 5. The turn: a machine horn rolls over the dunes. Everyone looks north-west; cut to the Combine itself.
-    { do: 'sfx', id: 'alarm', gain: 0.3 },
-    { do: 'shake', amp: 0.05, s: 1.5 },
-    { do: 'face', who: 'player', at: [200, 0], s: 0.5, async: true },
-    { do: 'face', who: 'pip', at: [200, 0], s: 0.5, async: true },
-    { do: 'face', who: 'tansy', at: [200, 0], s: 0.5 },
-    { do: 'spawn', id: 'combine' },
-    { do: 'cam', shot: { kind: 'cut', pos: up(-14, -226, 1.4), look: up(0, -200, 6), fov: 50 } },
-    { do: 'stinger', id: 'villain' },
-    { do: 'music', track: 'villain', fade: 1 },
-    { do: 'wait', s: 2.5 },
-    // 6. Back at the overlook: the acorn, the bad news, and the answer.
-    { do: 'walk', who: 'player', path: [[275, 42]], speed: 1.2, async: true },
-    { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
-    cut(TL.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: "Vesper's put the acorn in the Grand Combine. We can't outdrive that." },
-    // Pip turns to the fort and points; Tansy follows his look. Both shot from the fort side of their look.
+    { do: 'say', who: 'pip', text: 'Level, level, whole! Not a chip. Bracken gets it back with a bow on.' },
+    { do: 'face', who: 'player', at: 'pip', s: 0.3 },
+    cut(TP.single('player', 'mcu')),
+    { do: 'say', who: 'player', text: 'You carried it well.' },
+    cut(TP.single('pip', 'mcu')),
+    { do: 'say', who: 'pip', text: "Both hands. Didn't drop it once." },
+    beat('beat'),
+    // 3. The call: from above, out of the dark. They look up before they hear her.
+    { do: 'sfx', id: 'whoosh', gain: 0.25, async: true },
+    { do: 'face', who: 'pip', at: RIDGE, s: 0.5, async: true },
+    { do: 'face', who: 'player', at: RIDGE, s: 0.5 },
+    cut(shot('tansy', 'ms', { toward: 'player', side: 25, height: 'low' })),
+    { do: 'say', who: 'tansy', text: "Stone's here? Good. Now come up. Both of you." },
+    // 4. Tansy on the rim: what stops a Combine is not on the ground.
+    cut(UP.single('tansy', 'mcu', { height: 'low' })),
+    { do: 'say', who: 'tansy', text: "We can't outdrive that. We can't outdig it either. We need air power." },
+    cut(UP.single('player', 'mcu')),
+    { do: 'say', who: 'player', text: 'Where do we get air?' },
+    { do: 'face', who: 'tansy', at: [374, 30], s: 0.5, async: true },
+    cut(shot('tansy', 'mcu', { side: -60, height: 'low' })),
+    { do: 'say', who: 'tansy', text: 'East. The Dust Flats. Fort Sandpit has a Whirligig.' },
+    // 5. Pip turns to the fort and points: he wants the plan.
     { do: 'face', who: 'pip', at: [374, 30], s: 0.4 },
     cut(shot('pip', 'ms', { side: -60 })),
     { do: 'gesture', who: 'pip', name: 'point', s: 1.0 },
     { do: 'say', who: 'pip', text: "Then we don't drive." },
-    { do: 'face', who: 'tansy', at: [374, 30], s: 0.5 },
-    // She turns to look at the fort: shoot her from the front of that look, not over her shoulder.
-    cut(shot('tansy', 'mcu', { side: -60 })),
-    { do: 'say', who: 'tansy', text: 'Fort Sandpit has a Whirligig.' },
-    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
-    beat('beat'),
-    // 7. Button: the threat, not the plan. Back to the Combine, closer now, a slow push-in under the title.
-    { do: 'cam', shot: { kind: 'dolly', from: up(-9, -221, 1.0), to: up(-6.5, -214, 1.3), look: up(0, -200, 6), s: 6, fov: 54 } },
-    { do: 'sfx', id: 'engine-rev', gain: 0.8 },
+    beat('pause'),
+    // 6. Button: the lamp, the Stone beneath it, and the title. The next act's breath, not the threat.
+    cut({ kind: 'cut', pos: up(266.5, 45.5, 1.0), look: up(TABLE[0], TABLE[1], 0.9), fov: 38 }),
+    { do: 'sfx', id: 'creak', at: 'lamp', gain: 0.3, async: true },
     { do: 'title', text: 'END OF CHAPTER 3' },
     { do: 'wait', s: 3 },
     { do: 'title', text: null },
-    { do: 'wait', s: 1.5 },
+    { do: 'wait', s: 1.2 },
   ],
 };
 

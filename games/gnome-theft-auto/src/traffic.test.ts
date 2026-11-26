@@ -5,18 +5,26 @@ import { PLACES, ROAD_WIDTH, TRAFFIC } from './config';
 import { BUS_ROUTE_PLACES, pickBusErrand, pickErrand, placeNodes, planRoute } from './errands';
 import type { RoadNode, Vehicle, VehicleKind, World } from './types';
 
+// Vehicle ids of the light records below; deterministic() numbers them from 1 again (see there).
+const mockIds = vi.hoisted(() => ({ next: 1 }));
+
 // The real vehicle meshes need a DOM; the drivers only need a vehicle record, so swap in a light one and keep the real physics.
 vi.mock('./vehicles', async (importOriginal) => {
   const real = await importOriginal<typeof import('./vehicles')>();
   const { VEHICLES } = await import('./config');
-  let id = 1;
   return {
     ...real,
     createVehicle: (_s: unknown, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle => ({
-      id: id++, kind, spec: VEHICLES[kind], x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
+      id: mockIds.next++, kind, spec: VEHICLES[kind], x, y: 0, z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
       object: new THREE.Group(), rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0, look: {},
     }) as Vehicle,
-    syncVehicleMesh: () => undefined,
+    // Place the (empty) mesh at the vehicle's pose like the real sync does, so seatWorld (driverAt, crackDriver) finds each
+    // driver at their own car. A no-op left every car's seat at the world origin: any other live car with a seat at a
+    // similar height then answered driverAt for the cracked car (the cracking test failed whenever traffic spawned one).
+    syncVehicleMesh: (v: Vehicle) => {
+      v.object.position.set(v.x, v.y, v.z);
+      v.object.rotation.set(0, v.yaw, 0, 'YXZ');
+    },
     setVehicleLook: (v: Vehicle, look: unknown) => { (v as { look?: unknown }).look = look; },
     removeVehicle: () => undefined,
   };
@@ -33,7 +41,7 @@ vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() 
 
 const { createTraffic } = await import('./traffic');
 const { collideVehicles } = await import('./vehicles');
-const { inView } = await import('./trafficSim');
+const { inView, resetGhostIds } = await import('./trafficSim');
 const { resetDirectorClock } = await import('./trafficDirectors');
 
 /** The 7x7 city grid (60 apart) plus a long spur out east, like the real road graph. */
@@ -135,6 +143,11 @@ function seededRandom(seed: number): () => number {
  * Every traffic sim below runs the same on every run, alone or under a loaded full suite, in any order (E27): Math.random
  * is seeded, and the warden clock (trafficDirectors.ts: wall time at load plus every earlier test's traffic steps) starts
  * at 0. Crash damage debounces on game time (vehicles.ts collideVehicles), so pass the step's dt to collideVehicles.
+ * F2: the corner test seeded once and ran its four presets on one random stream, so each preset drew from wherever the
+ * earlier ones stopped, and how far that was depended on module state the earlier tests in the file left behind (vehicle
+ * ids from the mock above, ghost ids in trafficSim.ts, both advanced by unseeded tests too). The same seed then gave
+ * different runs per test selection: run after the chassis test alone, simcade never reached its last node. `restart`
+ * now reseeds and zeroes the clock and both id counters before every fresh traffic, so each run starts from one state.
  */
 // Pull-out: with the warden clock fixed, a 16-seed sweep gave a worst wait of 9-15 s on 13 seeds and a jam on 3
 // (seed 7: 32 s, 12: 30 s, 14: 150 s; a real, rare blocker jam left for a traffic epic). Seed 1 is a typical run (11 s).
@@ -142,10 +155,20 @@ const PULL_OUT_SEED = 1;
 const KEEP_MOVING_SEED = 1;
 const IN_VIEW_SEED = 1;
 const CORNER_SEED = 1;
-function deterministic(seed: number): void {
-  resetDirectorClock();
-  const rnd = vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed));
+const CRACK_SEED = 1;
+/** Seed Math.random and restart every sim counter (warden clock, vehicle and ghost ids). Returns `restart`, which does it
+ *  again for a fresh traffic inside the same test (the corner test's presets each start from the same state). */
+function deterministic(seed: number): () => void {
+  const restart = (): void => {
+    resetDirectorClock();
+    resetGhostIds();
+    mockIds.next = 1;
+    rnd.mockImplementation(seededRandom(seed));
+  };
+  const rnd = vi.spyOn(Math, 'random');
+  restart();
   onTestFinished(() => { rnd.mockRestore(); resetDirectorClock(); });
+  return restart;
 }
 /** Every car within reach is a real vehicle, 14 of them: the live drivers on their own, as before the off-screen tier. */
 const ALL_LIVE = { liveRadius: 1e9, liveRadiusOut: 1e9, minCars: 14, maxCars: 14, maxLive: 14 };
@@ -373,6 +396,7 @@ describe('traffic drivers', () => {
 describe('NPC drivers can be cracked out of their car', () => {
   it('a bullet at the driver head hits them, 2 m above misses, and a crack leaves the car rolling without a driver', async () => {
     const { seatWorld } = await import('./vehicles');
+    deterministic(CRACK_SEED);
     const nodes = gridNodes();
     const world = { boxes: [], roads: { nodes, laneOffset: 2.5 }, half: 600 } as unknown as World;
     const traffic = createTraffic(new THREE.Scene(), world);
@@ -443,10 +467,10 @@ describe('NPC cars on the sim chassis', () => {
       const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
       return Math.hypot(x - (ax + dx * t), z - (az + dz * t));
     }));
-    deterministic(CORNER_SEED);
+    const restart = deterministic(CORNER_SEED);
     for (const preset of ['arcade', 'casual', 'simcade', 'drift']) {
       setTune(preset);
-      resetDirectorClock();
+      restart();
       const w = world();
       const traffic = createTraffic(new THREE.Scene(), w);
       const vehicles: Vehicle[] = [];

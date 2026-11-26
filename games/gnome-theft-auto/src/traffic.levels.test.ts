@@ -5,20 +5,23 @@ import { heightAt } from './terrain';
 import type { RoadNode, World } from './types';
 import { deckContactsAt } from './highways/deck';
 import { addSkywayRoads, roadY } from './highways/roads';
-import { pickSpot, simGraph } from './trafficSim';
+import { pickSpot, resetGhostIds, simGraph } from './trafficSim';
+import { resetDirectorClock } from './trafficDirectors';
 import { TRAFFIC } from './config';
 import type { Vehicle, VehicleKind } from './types';
+
+// Vehicle ids of the light records below; each live-traffic run numbers them from 1 again.
+const mockIds = vi.hoisted(() => ({ next: 1 }));
 
 // Light vehicle records (no meshes); the real physics, chassis and traffic code run.
 vi.mock('./vehicles', async (importOriginal) => {
   const real = await importOriginal<typeof import('./vehicles')>();
   const { VEHICLES } = await import('./config');
   const { heightAt: land } = await import('./terrain');
-  let id = 1;
   return {
     ...real,
     createVehicle: (_s: unknown, kind: VehicleKind, x: number, z: number, yaw: number, tint?: number): Vehicle => ({
-      id: id++, kind, spec: VEHICLES[kind], x, y: land(x, z), z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
+      id: mockIds.next++, kind, spec: VEHICLES[kind], x, y: land(x, z), z, yaw, speed: 0, vy: 0, driver: 'none', tint: tint ?? 0,
       object: new THREE.Group(), rider: null, riderLook: null, wheelSpin: 0, steerVis: 0, hp: 1, damage: 0, lastHit: 0, look: {},
     }) as Vehicle,
     syncVehicleMesh: () => undefined,
@@ -36,6 +39,11 @@ vi.mock('./gnomes', () => ({ gnomeState: () => ({ position: new THREE.Vector3() 
 
 let world: World;
 let graph: ReturnType<typeof simGraph>;
+let createTraffic: typeof import('./traffic').createTraffic;
+
+// The whole-world build takes seconds alone and minutes on a loaded machine (it timed out at the old 120 s under load):
+// time is not what this file checks, so the hook and the sims get 5 minutes, and the traffic module loads in the hook.
+const LOADED_MS = 300_000;
 
 beforeAll(async () => {
   installFakeDom();
@@ -43,7 +51,8 @@ beforeAll(async () => {
   world = buildWorld(new THREE.Scene(), undefined as unknown as THREE.WebGLRenderer);
   addSkywayRoads(world.roads);
   graph = simGraph(world.roads.nodes, world.roads.laneOffset);
-}, 120000);
+  ({ createTraffic } = await import('./traffic'));
+}, LOADED_MS);
 
 /** A seeded random source, so the spots are the same every run. */
 function lcg(seed: number): () => number {
@@ -89,17 +98,28 @@ describe('traffic height follows the road level', () => {
   });
 });
 
+const LEVELS_SEED = 1;
+
 describe('live traffic keeps its level (chassis on)', () => {
   for (const [name, fx, fz] of [['on the deck', 255, -60], ['under the deck', 0, -60]] as const) {
     it(`cars stay on a surface and never jump levels: focus ${name}`, async () => {
-      const { createTraffic } = await import('./traffic');
+      // Same run every time, alone or in the full suite, in any order (F2): traffic draws its spawns, kinds and turns from
+      // Math.random (unseeded, it was a different 14 cars every run), the traffic-warden clock is module state that starts
+      // at the wall clock (the Turfton wardens stand on this grid), and vehicle/ghost ids are counters the other run in this
+      // file advanced.
+      resetDirectorClock();
+      resetGhostIds();
+      mockIds.next = 1;
+      const rnd = vi.spyOn(Math, 'random').mockImplementation(lcg(LEVELS_SEED));
+      onTestFinished(() => { rnd.mockRestore(); resetDirectorClock(); });
       const saved = { ...TRAFFIC };
       Object.assign(TRAFFIC, { liveRadius: 1e9, liveRadiusOut: 1e9, minCars: 14, maxCars: 14, maxLive: 14 });
       onTestFinished(() => { Object.assign(TRAFFIC, saved); });
       const traffic = createTraffic(new THREE.Scene(), world);
       const vehicles: Vehicle[] = [];
       const dt = 1 / 30;
-      const lastY = new Map<number, number>();      const bad: string[] = [];
+      const lastY = new Map<number, number>();
+      const bad: string[] = [];
       for (let step = 0; step < 120 * 30; step++) {
         traffic.update(dt, vehicles, world, fx, fz);
         for (const v of vehicles) {
@@ -117,6 +137,6 @@ describe('live traffic keeps its level (chassis on)', () => {
       }
       expect(vehicles.filter((v) => v.driver === 'npc').length).toBeGreaterThan(0);
       expect(bad.slice(0, 10)).toEqual([]);
-    }, 120000);
+    }, LOADED_MS);
   }
 });

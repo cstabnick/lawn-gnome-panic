@@ -13,8 +13,8 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged so far: E01–E17, E19, E23–E31, F1 (+ main). Running: E32 (nine holes), E33 (mountain routes), E18
-(activities, side-quest pacing). Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
+Merged so far: E01–E17, E19, E23–E31, F1 (+ main). Running: E33 (mountain routes), E18 (activities,
+side-quest pacing). E32 merged. Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
 then R1 (editorial review). Leads run in worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`;
 if a session ends mid-lead, resume the lead (or start a new one told to continue from its worktree), then merge with
 `bash tools/batch-merge.sh`, `tools/renumber-rulings.py`, `tools/merge-hunks.py` (see the process doc).
@@ -57,7 +57,7 @@ with deferred items listed).
 | E29 | European kit: buildings, vehicles, plants, backyard styling | Engine (prefabs) | 3 | – | merged | epic/E29-eurokit | f758721b | 51 `euro-*` prefabs (16 buildings, 13 street furniture, 14 plants/backyard, rides + 3 reward gear); 5 rides (euro-hatch Petit Pois, deux-pots, wespa, baguette-trike, crepe-van) online, dealer, traffic (`setEuroZone` → 70% euro); `planStreetRow` in `src/eurokit/` for E30; deferred: glaze mounts for the rides, tram, parked spots |
 | E30 | The European town: build-out, storytelling, classical radio | Content | 4 | E28, E29 | merged | epic/E30-pardonlin | see log | 4 districts (Old Town, Teacup Row & Quays, Left Bank, Jardin & Basin), 33 vignettes, 400+ signs, 22 residents, Radio Adagio 96.1 (13 pieces, Maestro Ottavio Lento), Café Pardon + radio foyer/studio, 4 town activities, 5 achievements, screens in E30/; rulings renumbered R-182..R-184; at merge: Left Bank allotment beds lost their colliders (E27 made them mowable), duplicate import fixed; open: Left Bank 848 buildings — check low-end phones; deferred: story quests with residents (E20–E22), tram, online town state |
 | E31 | Living world: nature preserve, birds and animals, pushing existing places out | Content | 5 | E28, E29 | merged | epic/E31-living | see log | the Unmown (ranger station walk-in, Reedmere marsh boardwalk, 3 hides, checklist app), 8 bird species (36 total), 8 small animals, 3 vehicles (Ranger Buggy, Snail-Shell Camper, Cone Van), regional traffic + boat routes + 3 flights, band-road houses, hamlets Espalier End/Mittenholt/Dunelow, High Tarn; perf flat at 7.5 ms avg on phone viewport; R-203..R-206 (renumbered); hides are solid boxes (camera inside); deferred: guided walk, white hares, Turfton duck pond |
-| E32 | Hedgeworth to nine holes | Content | 6 | E15 | running | epic/E32-golf9 |  |  |
+| E32 | Hedgeworth to nine holes | Content | 6 | E15 | merged | epic/E32-golf9 | see log | nine holes, par 34: site extended 145 m south into the Bottom Garden via the Turn Gate; holes 4 Peony's Promise, 5 The Maze, 6 The Drip, 7 The Potting Shed (roof tee), 8 The Rhubarb Patch; old 4-hole saves kept; thinner hedges, mole pops, phone HUD fix; `nine.test.ts` plays all 9; R-226 (renumbered); Peony's Promise unlock moved to ch5-even-cut at merge; Reedy Blind camp moved |
 | E33 | Mountain routes | Content | 6 | E12, E14 | running | epic/E33-mountains |  |  |
 | R1 | Editorial review and polish (editors by content group, decider for disputes, iterate) | Review | 10 | everything | planned | | | |
 

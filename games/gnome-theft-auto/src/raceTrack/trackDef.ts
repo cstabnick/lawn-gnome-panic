@@ -68,6 +68,11 @@ export interface TrackDef {
   maxGrade?: number;
   /** ribbon: the window (m) the land height is averaged over along the line. Default 30. */
   smooth?: number;
+  /**
+   * ribbon, open tracks only (E33): over this many metres at each end the road base eases back to the ground as it is,
+   * so a route that starts on a highway meets it at the highway's own height instead of the smoothed average.
+   */
+  pinEnds?: number;
   /** Optional rectangle the whole track (with barriers) stays inside: a reserve marker or a site. Used by tests. */
   reserve?: { x: number; z: number; hw: number; hd: number };
   extraRoads?: readonly TrackExtraRoad[];
@@ -528,6 +533,15 @@ export function createTrack(def: TrackDef): Track {
           sum += raw[q]; cnt++;
         }
         bs[k] = sum / cnt;
+      }
+      // E33: ease the base back to the ground as it is at both ends of an open route (pinEnds metres).
+      if (!def.closed && def.pinEnds && def.pinEnds > 0) {
+        for (let k = 0; k < nS; k++) {
+          const d = Math.min(k, nS - 1 - k) * step;
+          if (d >= def.pinEnds) continue;
+          const t = d / def.pinEnds;
+          bs[k] = raw[k] + (bs[k] - raw[k]) * t * t * (3 - 2 * t);
+        }
       }
       // Grade limit: forward then backward pass, so no step climbs or falls more than maxGrade * step.
       const lim = (def.maxGrade ?? 0.22) * step;

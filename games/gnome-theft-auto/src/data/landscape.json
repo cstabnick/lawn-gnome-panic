@@ -33,8 +33,8 @@
     { "id": "ridge/wind-farm", "kind": "ridge", "points": [[640, -1200], [850, -1205], [1060, -1195]], "r": 60, "h": 24 },
     { "id": "hill/observatory-mound", "kind": "hill", "points": [[1240, 150]], "r": 120, "h": 45, "seed": 1240 },
     { "id": "hill/vineyard-slope", "kind": "hill", "points": [[-1180, -230]], "r": 200, "h": 14 },
-    { "id": "mountain/the-bobble", "kind": "mountain", "points": [[690, -1690]], "r": 210, "h": 125, "seed": 3301 },
-    { "id": "mountain/old-pate", "kind": "mountain", "points": [[760, -1500]], "r": 150, "h": 80, "seed": 3302 },
+    { "id": "mountain/the-bobble", "kind": "mountain", "points": [[690, -1690]], "r": 210, "h": 124, "seed": 3301 },
+    { "id": "mountain/old-pate", "kind": "mountain", "points": [[800, -1500]], "r": 165, "h": 72, "seed": 3302 },
     { "id": "ridge/hatbrim", "kind": "ridge", "points": [[775, -1450], [730, -1590], [690, -1700], [650, -1800]], "r": 95, "h": 48, "seed": 3303 }
   ]
 }

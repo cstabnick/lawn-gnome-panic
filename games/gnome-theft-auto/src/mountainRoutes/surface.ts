@@ -115,20 +115,48 @@ function buildRoad(scene: THREE.Scene, id: string, track: Track, def: RouteDef):
 
   if (def.shoulder > 0) {
     const verge: THREE.BufferGeometry[] = [];
-    for (const side of [1, -1]) verge.push(ribbon(track, side * (half + def.shoulder / 2), def.shoulder, 0.06));
-    addMesh(scene, `e33-${id}-verge`, verge, mat(LAYER.edge, 0xffffff, groundTexture('gravel')), TILE.gravel);
+    for (const side of [1, -1]) verge.push(ribbon(track, side * (half + def.shoulder / 2), def.shoulder, 0.05));
+    // Under the road and the pads (LAYER.tint), so where the draped edges meet, the asphalt and the pads win.
+    addMesh(scene, `e33-${id}-verge`, verge, mat(LAYER.tint, 0xffffff, groundTexture('gravel')), TILE.gravel);
   }
 }
 
-/** Track: a narrow gravel shelf. */
+/**
+ * The centre line of `track` (every 2nd sample) cut into pieces that leave out where it lies on one of `over` (a wider
+ * route drawn on the same layer: the Hatband where it joins the road, the Brim Walk where it crosses the road or the
+ * Hatband), so two ribbons never share a spot and flicker.
+ */
+function piecesOff(track: Track, over: readonly Track[]): Pt[][] {
+  const S = track.samples();
+  const out: Pt[][] = [];
+  let cur: Pt[] = [];
+  for (let k = 0; k < S.length; k += 2) {
+    const p = S[k];
+    const covered = over.some((o) => {
+      const reach = o.def.width / 2 + o.def.shoulder + track.def.width / 2 + 0.3;
+      const spot = o.locate(p.x, p.z, reach);
+      return spot !== null && Math.abs(spot.lat) <= reach;
+    });
+    if (covered) {
+      if (cur.length >= 2) out.push(cur);
+      cur = [];
+    } else cur.push([p.x, p.z]);
+  }
+  if (cur.length >= 2) out.push(cur);
+  return out;
+}
+
+/** Track: a narrow gravel shelf (left out where it runs onto a road). */
 function buildTrack(scene: THREE.Scene, id: string, track: Track): void {
-  addMesh(scene, `e33-${id}-road`, [ribbon(track, 0, track.def.width, 0.07)],
+  const roads = ALL_ROUTES.filter((t) => (t.def as RouteDef).kind === 'road');
+  addMesh(scene, `e33-${id}-road`, piecesOff(track, roads).map((pts) => drapedRibbon(pts, track.def.width, 0.07)),
     mat(LAYER.road, 0xffffff, groundTexture('gravel')), TILE.gravel);
 }
 
-/** Trail: a dirt footpath, tinted to read as trodden. */
+/** Trail: a dirt footpath, tinted to read as trodden (left out where it crosses a road or the Hatband). */
 function buildTrail(scene: THREE.Scene, id: string, track: Track): void {
-  addMesh(scene, `e33-${id}-path`, [ribbon(track, 0, track.def.width, 0.06)],
+  const wider = ALL_ROUTES.filter((t) => (t.def as RouteDef).kind !== 'trail');
+  addMesh(scene, `e33-${id}-path`, piecesOff(track, wider).map((pts) => drapedRibbon(pts, track.def.width, 0.06)),
     mat(LAYER.road, 0xd8c8a8, groundTexture('dirt')), TILE.dirt);
 }
 

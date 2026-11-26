@@ -19,6 +19,7 @@ export const SPINE_CUT: RouteDef = {
   relief: 'ribbon',
   maxGrade: 0.03,
   smooth: 160,
+  pinEnds: 40,
   gates: 2,
   startOffset: 10,
   finishPad: 10,

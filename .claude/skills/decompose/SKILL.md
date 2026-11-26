@@ -1,6 +1,6 @@
 ---
 name: decompose
-description: Plan a game prototype or feature as epics of parallel issues and run them on Haiku workers. Use before building anything bigger than a one-file fix, e.g. "prototype a game where...", "add enemies and a score to games/x".
+description: Plan a game prototype or feature as epics of parallel issues and run them on Haiku workers. Use before any change to more than two source files or about 80 lines, including follow-ups and features on an existing game, e.g. "prototype a game where...", "add enemies and a score to games/x", "lower the speed and add obstacles to games/x".
 ---
 
 # Decomposing a problem for Haiku workers
@@ -21,6 +21,31 @@ A **roadmap** is an ordered list of epics. An **epic** is a set of issues. An **
 - When all of an epic's issues are done, the game builds (`npm run build -w games/<name>`), so the next epic starts from a working state.
 
 Elapsed time is roughly the number of epics, so prefer few, wide epics.
+
+## When this applies
+
+Every task above the size line in `AGENTS.md` ("Delegating work"): more than two source files or about 80 lines. Having
+already read the code is not a reason to write it yourself; it is what makes the issues quick to write.
+
+## Feature work on an existing game
+
+The default cut is by file ownership, one issue per area the feature touches:
+
+| Area | Typical files |
+|---|---|
+| Generation / world data | `world.ts`, level data |
+| Rules / physics / simulation | `physics.ts`, `rules.ts`, pure sim modules |
+| View | `view/*.ts`, mesh builders |
+| HUD and UI | `hud.ts`, new `*-hud.ts` modules |
+| Audio and effects | `audio.ts`, `view/fx.ts` |
+| Wiring | `app.ts` / `main.ts` (one owner, usually the foundation or the last issue) |
+| Shared catalogs | a prefab file in `packages/prefabs/src/catalog/`, `packages/achievements/src/catalog.ts`, `docs/lore/` |
+| Tests | a new `*.test.ts` per new module (each issue writes its own) |
+
+Fix the shared contract first: a new field on the world type, a new event in the event union, a tuning constant. If
+those need code, write them yourself as a one-commit foundation (types, constants, stubs whose bodies return
+nothing), then launch every issue in one message. Tuning-only changes (one constant) are not an issue: make them in the
+foundation.
 
 ## Finding the parallelism
 
@@ -110,7 +135,7 @@ For each epic:
 ## Record and run the plan
 
 1. Write the roadmap to `docs/roadmaps/<short-name>.md`: the goal, a shape table (epic, done when, issue count), then every issue in full inside `~~~~text` fences.
-2. For each epic in order, launch one `haiku-worker` Agent call per issue **in a single message** so they run in parallel. Paste the full issue text into the prompt; the worker cannot see the roadmap file unless you name it.
+2. For each epic in order, launch one `haiku-worker` Agent call per issue **in a single message** so they run in parallel, in the background. Paste the full issue text into the prompt; the worker cannot see the roadmap file unless you name it. While they run, do your own non-overlapping work (docs, lore, README, PR text); never edit a file a worker owns.
 3. When an epic's workers report, run the end-of-epic check yourself (`npm run build -w games/<name>`). Fix small breakage directly; for larger breakage write a fix issue.
 4. Before the next epic, re-check its issues against the code as it now stands and correct their text.
 5. After the last epic: commit, push the branch and open a pull request (see "Finishing work" in `AGENTS.md`). Workers never commit.

@@ -19,7 +19,7 @@ export const TUNE = {
   carveKeep: 0.9,         // share of sideways speed turned into forward speed while carving (fluid carves)
   rollDrag: 0.025,        // linear, per second
   airDrag: 0.0042,        // quadratic: terminal speed about 35-46 m/s on the island slopes (boost goes past it)
-  maxSpeed: 43.4,         // soft cap (70 % of the old 62: the race is about lines, not raw speed)
+  maxSpeed: 62,           // soft cap (free ride scales it by RACE_SPEED_SCALE)
   stickMin: 0.07,         // m: the ground may drop this far below the board in one step and we still stick...
   stickMax: 0.4,          // ...up to this at rest; faster = lifts off crests more easily
   // pop
@@ -40,7 +40,7 @@ export const TUNE = {
   grindSnap: 1.4,         // m: catch distance to a rail
   grindAlign: 0.55,       // |cos| between velocity and rail needed to lock on
   leyAccel: 10,           // ley-lines push you along (m/s²), up to leyMax
-  leyMax: 34,             // 70 % of the old 48, with the speed cap
+  leyMax: 48,             // free ride scales it by RACE_SPEED_SCALE
   grindCooldown: 0.35,
   // boost (Shift / RB), fed by flow
   boostAccel: 34,
@@ -56,6 +56,9 @@ export const TUNE = {
   manualControl: 3.4,     // how hard W/S push the balance back
   manualDamp: 1.3,        // 1/s
 } as const;
+
+/** Free ride (the race to the gate) caps top speed at this share of TUNE.maxSpeed and TUNE.leyMax. Descent and Flood Run do not. */
+export const RACE_SPEED_SCALE = 0.7;
 
 /**
  * Descent assists, set by the run's perks (descent/perks.ts applyPerks, and app.ts per hill). The defaults change

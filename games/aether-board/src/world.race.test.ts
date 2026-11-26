@@ -21,8 +21,11 @@ describe('the race course (free ride)', () => {
   });
 
   it('Descent and Flood Run worlds have no bumpers', () => {
+    expect(generateWorld(3).race).toBe(true);
     expect(generateWorld(3, { hazard: 3, steep: 3, tricky: 3, runs: 5 }).bumpers).toEqual([]);
+    expect(generateWorld(3, { hazard: 3, steep: 3, tricky: 3, runs: 5 }).race).toBe(false);
     expect(generateWorld(11, FLOOD_HILL).bumpers).toEqual([]);
+    expect(generateWorld(11, FLOOD_HILL).race).toBe(false);
   });
 
   it('keeps the start, the exit-kicker run-ups and the rails clear of obstacles', () => {

@@ -20,7 +20,7 @@ const CLASSIC: [number, string, number][] = [
   [42, '8321ccfb', 234339],
 ];
 
-const DESCENT_KEYS = new Set(['hazards', 'bumpers', 'drops', 'theme']);
+const DESCENT_KEYS = new Set(['hazards', 'bumpers', 'race', 'drops', 'theme']);
 
 describe('free-ride worlds', () => {
   it('are unchanged by the Descent options', () => {

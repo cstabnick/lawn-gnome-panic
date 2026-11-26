@@ -8,7 +8,7 @@
 // - Landing is judged on board direction (either way round: switch is fine), front/back flips and a board trick
 //   that finished. Smooth landings (moving along the slope) are "perfect" and give a little kick.
 import * as THREE from 'three';
-import { ASSIST, BIG_AIR_S, BOARD_TRICKS, CLOSE_CALL_M, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
+import { ASSIST, BIG_AIR_S, BOARD_TRICKS, CLOSE_CALL_M, RACE_SPEED_SCALE, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
 import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type Hazard, type World } from './world';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -277,7 +277,7 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
   if (externalForces && p.mode !== 'grind') externalForces(p, w, dt, ev);
 
   // Soft speed cap (flow raises it a little).
-  const cap = TUNE.maxSpeed * (1 + 0.25 * p.flow);
+  const cap = TUNE.maxSpeed * (w.race ? RACE_SPEED_SCALE : 1) * (1 + 0.25 * p.flow);
   const sp = p.vel.length();
   if (sp > cap) p.vel.multiplyScalar(1 - Math.min(0.5, ((sp - cap) / sp) * 3 * dt));
 
@@ -801,7 +801,7 @@ function stepGrind(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: nu
   // Gravity along the rail, and the ley-line current.
   const travelY = vTan.y * gr.dir;
   gr.speed += -G * travelY * dt;
-  if (r.ley && gr.speed < TUNE.leyMax) gr.speed += TUNE.leyAccel * dt;
+  if (r.ley && gr.speed < TUNE.leyMax * (w.race ? RACE_SPEED_SCALE : 1)) gr.speed += TUNE.leyAccel * dt;
   if (r.ley) p.flow = Math.min(1, p.flow + 0.05 * dt);
   gr.speed *= 1 - 0.01 * dt;
   if (p.boosting) {

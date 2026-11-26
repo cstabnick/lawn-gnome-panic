@@ -133,6 +133,8 @@ export interface World {
   hazards: Hazard[];
   /** Free ride only (empty in Descent and Flood): side walls and pinball posts you bounce off. */
   bumpers: Bumper[];
+  /** Free ride (the default route): the race to the gate, with the race speed cap. False in Descent and Flood Run. */
+  race: boolean;
   /** Look: the candy aether plane (free ride) or a snowy pine mountain (Descent). */
   theme: 'aether' | 'snow';
 }
@@ -913,7 +915,7 @@ export function generateWorld(seed: number, hill?: HillParams): World {
   const sz = s0.cz - s0.dz * s0.r * s0.stretch * 0.85;
   const spawn = { pos: new THREE.Vector3(sx, (surfaceY(s0, sx, sz) ?? s0.baseY), sz), heading: Math.atan2(s0.dx, s0.dz) };
   const lowest = islands.reduce((m, o) => Math.min(m, o.baseY - o.slope * o.r * o.stretch), Infinity);
-  const w: World = { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor, hazards, bumpers: [], theme: hill ? 'snow' : 'aether' };
+  const w: World = { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor, hazards, bumpers: [], race: !hill, theme: hill ? 'snow' : 'aether' };
   if (!hill) addRaceCourse(w);
   return w;
 }

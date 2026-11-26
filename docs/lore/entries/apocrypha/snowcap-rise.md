@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [The High North]
 sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, games/gnome-theft-auto/src/data/levels/north-highlands.level.json, games/gnome-theft-auto/src/sites.ts]
-related: [frostbite-fells, snowdrop-slope, pail-pond, capwood, pinwheel-ridge, thermos-theo, ash-shovel-ernie]
+related: [frostbite-fells, snowdrop-slope, pail-pond, capwood, pinwheel-ridge, thermos-theo, ash-shovel-ernie, hatbrim]
 ---
 
 The high country north of Frostbite Fells, where the road gives up being a road and the snow stops melting at the edges. It holds the ski hill, a frozen pond, a toadstool forest and a ridge of pinwheels, and very few gnomes who mind being there.
@@ -29,7 +29,7 @@ The north band of the map (code region `north-highlands`, x -1400 to 1400, z -14
 
 Quest rows 37 (m37-snowdrop-slope) and 38 (m38-pail-pond) use the region tag `snowcap-rise`; row 27 (m27-heap-of-trouble) ends with a convoy vanishing toward it. It is act III's northern base.
 
-Since the second expansion the band reaches the north edge, where the High Tarn sits (R-177).
+Since the second expansion the band reaches the north edge, where the High Tarn sits (R-177). The Hatbrim (R-223) stands on that north edge with the Brim Gap Road, the Hatband, the Brim Walk and the Spine Cut (batch 3, E33).
 
 ## Look and motifs
 

@@ -9,6 +9,8 @@ import { isTyping, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
 import { ALL_TRACKS } from './raceTrack/tracks';
+import { ROUTES, routesOfKind } from './mountainRoutes/routes';
+import type { Track } from './raceTrack/trackDef';
 import { drawSkywaysOnMap } from './highways/map';
 import { drawRoute } from './highways/routeDraw';
 import { clampView, fitScale, fitView, panBy, zoomAt, type MapView, type MapViewport } from './bigMapView';
@@ -817,6 +819,42 @@ function paintWorld(g: CanvasRenderingContext2D, world: World, s: number, ox: nu
     g.strokeStyle = '#9a7a52';
     g.lineWidth = t.def.width;
     g.stroke();
+  }
+  // E33: the mountain routes that are not roads (the roads are in the road graph). A route is culled like a road: its
+  // bounds, mirrored like the map, must touch the culling window.
+  const routeBox = (t: Track): boolean => {
+    const b = t.bounds();
+    const x0 = X(b.maxX);
+    const z0 = Y(b.maxZ);
+    return near(Math.min(x0, X(b.minX)), Math.min(z0, Y(b.minZ)), Math.max(x0, X(b.minX)), Math.max(z0, Y(b.minZ)));
+  };
+  const routeLine = (t: Track, closed: boolean) => {
+    g.beginPath();
+    t.samples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
+    if (closed) g.closePath();
+  };
+  for (const id of routesOfKind('track')) {
+    const t = ROUTES[id];
+    if (!routeBox(t)) continue;
+    g.lineCap = 'round';
+    routeLine(t, false);
+    g.strokeStyle = '#5b4630';
+    g.lineWidth = t.def.width + e(2);
+    g.stroke();
+    routeLine(t, false);
+    g.strokeStyle = '#b8a27a';
+    g.lineWidth = t.def.width;
+    g.stroke();
+  }
+  for (const id of routesOfKind('trail')) {
+    const t = ROUTES[id];
+    if (!routeBox(t)) continue;
+    routeLine(t, false);
+    g.setLineDash([e(6), e(4)]);
+    g.strokeStyle = '#7a5a3a';
+    g.lineWidth = Math.max(e(2.2), 2.2);
+    g.stroke();
+    g.setLineDash([]);
   }
 
   // The skyways (highways/map.ts): drawn over the roads they cross. They work in pixels, so give them the pixel mapping.

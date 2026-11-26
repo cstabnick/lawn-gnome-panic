@@ -729,6 +729,32 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Section Nine', description: 'Count every unfined cap for Warden Stook.',
     reward: { slot: 'hand', prefabId: 'warden-ticket-book', label: 'Ticket Book' },
   },
+  // ---- Gnome Theft Auto E33: mountain routes (rewards in packages/prefabs/src/catalog/gta-mountain-gear.ts) ----
+  {
+    id: 'gta-brim-gap-road', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Over the Brim', description: 'Drive the Brim Gap Road from one end to the other.',
+    reward: { slot: 'head', prefabId: 'pass-driving-goggles', label: 'Pass Goggles' },
+  },
+  {
+    id: 'gta-spine-cut', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Keyhole', description: 'Drive the Spine Cut end to end, under the Keyhole.',
+    reward: { slot: 'back', prefabId: 'keyhole-pennant', label: 'Keyhole Pennant' },
+  },
+  {
+    id: 'gta-hatband', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Round the Hatband', description: 'Ride the Hatband end to end on a bike or a buggy.',
+    reward: { slot: 'neck', prefabId: 'goat-bell', label: 'Goat Bell' },
+  },
+  {
+    id: 'gta-brim-walk', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Brim Walker', description: 'Walk the Brim Walk from Mittenholt to the High Tarn on foot.',
+    reward: { slot: 'head', prefabId: 'mountain-bobble-beanie', label: 'Bobble Beanie' },
+  },
+  {
+    id: 'gta-summit-register', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Signed at the Top', description: 'Sign the Summit Register on the Bobble.',
+    reward: { slot: 'hand', prefabId: 'alpenstock', label: 'Alpenstock' },
+  },
   {
     id: 'gta-dry-bone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Dry as a Bone', description: "Deliver Big Lou's VIP bowler without chipping the ride.",

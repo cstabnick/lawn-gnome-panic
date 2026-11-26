@@ -75,7 +75,8 @@ A `Track` (from `createTrack(def)`, `src/raceTrack/trackDef.ts`) gives: `samples
   `buildPrefab(id, { lights: false, scale?, tint?, trim? })` returns a `THREE.Group` (front faces +z, feet at y 0).
 - `import { buildStaticCells } from '../cull'` — `buildStaticCells(placements, { name: 'my-batch' })` merges many static
   prefabs into culled per-cell batches and returns a `THREE.Group` to `scene.add`. A placement is
-  `{ id, x, y, z, yaw?, scale?, tint?, trim? }` (y absolute). Unknown prefab ids are skipped. Use it for scenery.
+  `{ id, x, y, z, yaw?, scale?, tint?, trim? }` (y absolute). It THROWS on an unknown prefab id: filter placements
+  with `getPrefab(id)` first. Use it for scenery.
 - `import { heightAt, groundAt, waterAt } from '../terrain'`; `import { placeOnGround } from '../terrainMesh'`.
 - Colliders: `Box` from `../types` is `{ minX, maxX, minZ, maxZ, h }` (axis-aligned, `h` = absolute top height). Push
   one per solid thing into `world.boxes`. Small things you can walk through get no collider.

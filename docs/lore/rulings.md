@@ -1254,3 +1254,21 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The Underspan stays inside its site beside the Unfinished Span and never goes under the deck. The Roost, a scaffold deck above it, is the only way "up", and it is not allowed (the HOA cites it as "unauthorised verticality"). The Chute is the way back down.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E17 builds the Underspan and its Updraft and needs its limits fixed.
+
+## R-223
+**Question:** Where is Snowcap Rise's real high ground, and what is it called?
+**Ruling:** The Hatbrim, a short range on the north edge between Mittenholt and the High Tarn. Seen from Mittenholt it looks like a hat left on the fence: Old Pate (a bald dome, about 72 m) is the crown's near side, Brim Gap (about 40 m) the dent, and the Bobble (about 105 m) the bobble on top: the highest point in the yard, higher than Snowdrop Slope's mountain (about 85 m). Snow lies on it above about 32 m all year.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 needs a range for the mountain routes, and the lore calls the Rise "the high country" without a peak.
+
+## R-224
+**Question:** Who made the Hatbrim's routes, and who may use them?
+**Ruling:** The Brim Gap Road (cars, two-way, seven or so numbered hairpins) was built by the HOA's Highways Sub-Committee "to plough it", which it has never done. The Hatband is an old goat shelf round the Bobble, bikes and buggies only, kept that way by bollards rather than by the sign. The Brim Walk is waymarked by cairns and nobody owns it. The Spine Cut was blasted through the Highland Spine for the Pinwheel Ridge works, and the Keyhole, a rock arch over the road, was left standing because the surveyor "had not finished measuring it". The Summit Register on the Bobble has been kept since before the HOA, and signing it is a rite: "you were here, and so was your hat".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 builds them and the dressing needs one story.
+
+## R-225
+**Question:** Who keeps the Top Hat, and who is the gnome at the Keyhole?
+**Ruling:** **Velma Crown** keeps the Top Hat, the café at Brim Gap whose roof is a giant black top hat; she serves Gap Tea and Hairpin Buns and counts every car that stops ("Cars today: 3. Buns: 41."). **Plumb Bob** is the surveyor at the Keyhole, who has measured the arch every day for years, waiting to be sure, and has never been sure.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 puts them on screen.

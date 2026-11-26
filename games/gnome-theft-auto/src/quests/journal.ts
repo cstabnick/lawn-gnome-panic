@@ -9,6 +9,7 @@ import { fillHint } from '../ui/glyphs';
 import type { Hud } from '../types';
 import { isPaced, sidePacing } from './pacing';
 import { isQuestAvailable, type Quests } from './quests';
+import { storyItems } from './storyMarks';
 import type { QuestDef } from './types';
 import { MAIN_COLOR, sideColor, unlockRule } from './unlocks';
 
@@ -20,10 +21,11 @@ const CSS = `
 #gta-journal .j-title{font-size:18px;font-weight:800;color:#ffd23f;letter-spacing:.04em;}
 #gta-journal .j-close{width:44px;height:44px;border-radius:10px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer;}
 #gta-journal .j-tabs{display:flex;gap:6px;}
-#gta-journal .j-tab{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 12px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+#gta-journal .j-tab{flex:1 1 0;min-width:0;min-height:44px;padding:0 3px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 11px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
 #gta-journal .j-tab[data-tab="available"]{flex-grow:1.5;}
 #gta-journal .j-tab[data-tab="later"]{flex-grow:1.1;}
 #gta-journal .j-tab[data-tab="done"]{flex-grow:1.7;}
+#gta-journal .j-tab[data-tab="items"]{flex-grow:1;}
 #gta-journal .j-tab.on{border-color:#ffd23f;background:rgba(255,210,63,.2);color:#ffd23f;}
 #gta-journal .j-body{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;}
 #gta-journal .j-item{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;}
@@ -36,7 +38,7 @@ const CSS = `
 #gta-journal .j-empty{padding:18px 8px;text-align:center;font-size:13px;opacity:.75;}
 `;
 
-type Tab = 'active' | 'available' | 'later' | 'done';
+type Tab = 'active' | 'available' | 'later' | 'done' | 'items';
 type Snap = ReturnType<Quests['getJournal']>;
 
 /** The Story or Side tag for a quest: '★ Ch.N' in the story gold, '? Side' in the colour of the giver who offers it. */
@@ -63,6 +65,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         <button type="button" class="j-tab" data-tab="available">Available</button>
         <button type="button" class="j-tab" data-tab="later">Later</button>
         <button type="button" class="j-tab" data-tab="done">Completed</button>
+        <button type="button" class="j-tab" data-tab="items">Items</button>
       </div>
       <div class="j-body"></div>
     </div>
@@ -125,6 +128,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       available: `Open ${avail.length}`,
       later: `Later ${later.length}`,
       done: `Done ${doneList.length}/${snap.quests.length}`,
+      items: 'Items',
     };
     for (const tb of tabBtns) {
       const key = tb.dataset.tab as Tab;
@@ -218,6 +222,21 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         return;
       }
       for (const q of later) body.appendChild(offerButton(q, snap));
+      return;
+    }
+
+    if (tab === 'items') {
+      const items = storyItems((id) => snap.saves[id]?.state === 'done');
+      if (items.length === 0) {
+        body.innerHTML = '<div class="j-empty">No story items yet.</div>';
+        return;
+      }
+      for (const it of items) {
+        const box = document.createElement('div');
+        box.className = 'j-item';
+        box.innerHTML = `<div class="j-item-title"><span>${it.title}</span></div><div class="j-item-sub">${it.text}</div>`;
+        body.appendChild(box);
+      }
       return;
     }
 

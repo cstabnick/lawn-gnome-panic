@@ -6,7 +6,7 @@ export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' |
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
   | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
   | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish' | 'golf' | 'campus' | 'observatory' | 'windfarm'
-  | 'court' | 'skate';
+  | 'court' | 'skate' | 'story';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -47,6 +47,7 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   windfarm: { name: 'Pinwheel Ridge', color: '#e0a21b' },
   court: { name: 'Drainpipe Court (basketball)', color: '#e0702a' },
   skate: { name: 'The Gutter Bowls (skate park)', color: '#3a7ac0' },
+  story: { name: 'Story place', color: '#e6b422' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -503,6 +504,16 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
         g.arc(x + u * s, y + v * s, 0.16 * s, 0, TAU);
         g.fill();
       }
+      break;
+    }
+    case 'story': {
+      // A ring with a dot: a place the story pointed you to.
+      g.beginPath();
+      g.arc(x, y, 0.9 * s, 0, TAU);
+      g.stroke();
+      g.beginPath();
+      g.arc(x, y, 0.3 * s, 0, TAU);
+      g.fill();
       break;
     }
   }

@@ -87,6 +87,19 @@ export const CAST: Record<string, CastPreset> = {
   fennel: { look: SPORTS_CAST.fennel.look, hz: SPORTS_CAST.fennel.hz, held: SPORTS_CAST.fennel.held, scale: 1.44 },
   moss: { look: SPORTS_CAST.moss.look, hz: SPORTS_CAST.moss.hz, held: SPORTS_CAST.moss.held, scale: 1.44 },
   pebble: { look: SPORTS_CAST.pebble.look, hz: SPORTS_CAST.pebble.hz, held: SPORTS_CAST.pebble.held, scale: 1.25 },
+  // Batch 3 act III cast (E21): looks reuse the area epics' colours (winterQuests, dirtRaces, windFarm, coastQuests, coast/life,
+  // gridTruthers, ch3b). Betony and Lovage have no earlier look. DJ Moleman is a mole: grey skin and small scale, like Nubbin.
+  gentian: { look: { hat: 0xc2402e, shirt: 0x3a5f8f, beard: null, hair: null }, hz: 124, scale: 1.42 },
+  'thermos theo': { look: { hat: 0x9e3b2a, shirt: 0x4a5a6a, beard: 0xdddddd }, hz: 144, scale: 1.44 },
+  chanterelle: { look: { hat: 0x7a5a3a, shirt: 0x4f6b3a, beard: 0xb0b0b0 }, hz: 120, held: 'citation-slip', scale: 1.4 },
+  ragwort: { look: { hat: 0xc0c4c8, shirt: 0x7a7f86, pants: 0x7a7f86, skin: 0xe0ac69, beard: null, glasses: true }, hz: 114, held: 'torque-wrench-chrome', scale: 1.4 },
+  clary: { look: { hat: 0xe8e8e8, shirt: 0x8a7a5c, beard: null }, hz: 90, held: 'slalom-flag', scale: 1.44 },
+  marram: { look: { hat: 0xe8b83a, shirt: 0x2f7f8f, beard: null, hair: { color: 0x6b4a2a, style: 'pigtails' } }, hz: 138, scale: 1.4 },
+  samphire: { look: { hat: 0x2c3e50, shirt: 0x3b2a1a, beard: 0xdddddd, glasses: false }, hz: 82, held: 'hunters-spyglass', scale: 1.5 },
+  betony: { look: { hat: 0x1f2f5a, shirt: 0xe8e8ee, pants: 0x3a3a4a, beard: 0xf2f2f2 }, hz: 110, held: 'rolled-chart', scale: 1.42 },
+  lovage: { look: { hat: 0x5a1f2a, shirt: 0x2a2a35, pants: 0x1c1c24, beard: 0x8a8a8a, glasses: true }, hz: 94, scale: 1.5 },
+  'silt-diver sal': { look: { hat: 0x6b5a3e, shirt: 0x2f4f4f, beard: 0x8a8a7a }, hz: 98, held: 'torch', scale: 1.4 },
+  'dj moleman': { look: { hat: 0x5a5e68, shirt: 0x3a3a46, pants: 0x4a4e58, skin: 0x7a7e88, beard: null, glasses: true }, hz: 160, scale: 1.25 },
 };
 
 /** The preset whose key appears in a speaker label ("Pip Potsworth" -> pip), or undefined. */

@@ -1743,6 +1743,37 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'On the House', description: "Square things with Chrome-Knuckle Cass: Pay 'n' Glaze repairs are free.",
     reward: { slot: 'hand', prefabId: 'chrome-knuckle-glove', label: 'Chrome-Knuckle Glove' },
   },
+  // ---- Gnome Theft Auto: story act III (E21) ----
+  {
+    id: 'gta-woolly-sock-regular', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Woolly Sock Regular', description: 'Lose the salt-plows on Snowdrop Slope and take a bunk at the Woolly Sock Lodge.',
+    reward: { slot: 'neck', prefabId: 'bunk-peg-sock', label: 'Bunk Peg Sock' },
+  },
+  {
+    id: 'gta-cap-bruiser', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Cap Bruiser', description: 'Win the Capwood Run for Lugnut Lulu and the Carburettors.',
+    reward: { slot: 'hand', prefabId: 'racing-flag', label: 'Racing Flag' },
+  },
+  {
+    id: 'gta-pirate-for-a-night', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Pirate for a Night', description: "Take an HOA barge's blades and raise the crew's colours on the Bathtub Queen.",
+    reward: { slot: 'head', prefabId: 'pirate-tricorn', label: 'Pirate Tricorn' },
+  },
+  {
+    id: 'gta-sugar-landlord', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sugar Landlord', description: 'Pay the ants\' sugar toll and fly out of Rootwell with the guidance lens.',
+    reward: { slot: 'back', prefabId: 'faculty-gown', label: 'Faculty Gown' },
+  },
+  {
+    id: 'gta-everyone-digs', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Everyone Digs', description: 'Do all three jobs for the Burrowfolk of Loamdeep.',
+    reward: { slot: 'head', prefabId: 'mole-lamp-helmet', label: 'Mole Lamp Helmet' },
+  },
+  {
+    id: 'gta-nothing-works', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nothing Works', description: "Throw everything at the Grand Combine's deck and live to run through the hedge.",
+    reward: { slot: 'hand', prefabId: 'golf-umbrella', label: 'Golf Umbrella' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

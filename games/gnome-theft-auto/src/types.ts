@@ -748,7 +748,7 @@ export interface Blip {
     // Hedgeworth Links (E15, golf/).
     | 'golf'
     // Founders' Green sports (E19): Drainpipe Court (court/), the Gutter Bowls (skate/).
-    | 'court' | 'skate'
+    | 'court' | 'skate' | 'story'
     // Rootwell (E13, campus/).
     | 'campus' | 'observatory' | 'windfarm';
 }

@@ -70,6 +70,16 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   midge: 'Squeaky-Clean Midge',
   cass: 'Chrome-Knuckle Cass',
   'dj moleman': 'DJ Moleman',
+  gentian: 'Gentian Bootlace',
+  'thermos theo': 'Thermos Theo',
+  chanterelle: 'Warden Chanterelle',
+  ragwort: 'Ragwort Coilspring',
+  clary: 'Marshal Clary',
+  marram: 'Marram Teaspoon',
+  samphire: 'Captain Samphire',
+  betony: 'Professor Betony Sextant',
+  lovage: 'Dean Lovage Inkwell',
+  'silt-diver sal': 'Silt-Diver Sal',
   ...CITY_CALLER_NAMES,
   ...NEWCOMER_CALLER_NAMES,
 };
@@ -171,21 +181,7 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
   // ---- Chapter 3: the player is the one others lean on ----
   // ch3-salvage-raid: comms live in its story file (quests/story/), E20.
 
-  'ch3-kiln-resin-ice': {
-    0: brief(
-      ['loam', 'Kiln-Resin, from the northern shrine. Without it, the boy\'s arm stays in a sack.'],
-      ['loam', 'The HOA salts the road to keep pilgrims off it. Crack the plow crew.'],
-    ),
-    2: call(['loam', 'Ninety seconds while it sets. Keep them off the basin, my child.']),
-    3: call(['pip', 'It set! Arm\'s on! Thermos Theo says there\'s post for us. Snail post!']),
-  },
-  'ch3-tundra-drift-run': {
-    0: brief(
-      ['pip', 'Tansy\'s hiding in the Dust Flats, at the overlook. She\'s got the Stone!'],
-      ['pip', 'Loam packed the barrels in ice. Very volatile. Drive like it\'s soup.'],
-    ),
-    1: call(['tansy', 'HOA spotters on the ridge. Crack them before they phone it in.']),
-  },
+  // ch3-kiln-resin-ice, ch3-tundra-drift-run: comms live in their story files (quests/story/), E21.
   // ---- Chapter 4: the one everybody's plan depends on ----
   'ch4-runway-flares': {
     0: brief(

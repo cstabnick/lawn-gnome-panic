@@ -74,6 +74,8 @@ import './pardonlin/interiors';
 import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
 import { questById } from './quests/defs';
+import { storyMarkers } from './quests/storyMarks';
+import { PLACE_STYLE } from './mapIcons';
 import { createCritters } from './critters';
 import { createLivingWorld } from './living/runtime';
 import { createHunting } from './hunting/hunting';
@@ -303,6 +305,8 @@ const perf = initPerf(renderer, ui, () => ({
 let cullX = 0;
 let cullZ = 0;
 let cullSyncT = 0;
+let storyBlips: Blip[] = [];
+let storyBlipsAt = -Infinity;
 function preRender(focusX: number, focusZ: number): void {
   section('cull');
   // Vehicles and pedestrians come and go: keep the culler's lists of them current (gnomes stop casting at 35 m).
@@ -2611,9 +2615,16 @@ function frame(now: number): void {
   radio.update(dt);
   // HUD.
   section('hud');
+  // E21: story-mark blips (storyMarks.ts) change only when a quest finishes: rebuilt once a second, not every frame.
+  if (now - storyBlipsAt > 1000) {
+    storyBlipsAt = now;
+    const saves = quests.getJournal().saves;
+    storyBlips = storyMarkers((id) => saves[id]?.state === 'done').map((m) => ({ x: m.x, z: m.z, color: PLACE_STYLE.story.color, kind: 'story' as const, label: m.label }));
+  }
   const blips: Blip[] = [
     { x: whirligig.x, z: whirligig.z, color: '#ff4fd8', kind: 'whirligig', label: 'The Whirligig' },
     ...placeBlips(),
+    ...storyBlips,
     ...landmarkBlips(),
     { x: PAY_N_GLAZE.bay.x, z: PAY_N_GLAZE.bay.z, color: '#ff3b9a', kind: 'glaze', label: "Pay 'n' Glaze" },
     ...raceTrack.blips(),

@@ -1,4 +1,4 @@
-// The E20 story stages, one file per row. Only the E20 lead edits this file.
+// The E20/E21 story stages, one file per row. Only the E20/E21 leads edit this file.
 import type { Stage } from '../kit';
 import * as r02 from './s02-roof-on-credit';
 import * as r05 from './s05-sweepers-wages';
@@ -27,8 +27,26 @@ import * as r32 from './s32-driftwoods-chart';
 import * as r33 from './s33-the-bench-lock';
 import * as r34 from './s34-forty-seven-wrenches';
 import * as r35 from './s35-salvage-raid';
+import * as r36 from './s36-kiln-resin-ice';
+import * as r37 from './s37-snowdrop-slope';
+import * as r38 from './s38-pail-pond';
+import * as r39 from './s39-couch-surfing';
+import * as r40 from './s40-the-capwood-run';
+import * as r41 from './s41-pinwheel-ridge';
+import * as r42 from './s42-rutbottom-impound';
+import * as r43 from './s43-saltbucket-boardwalk';
+import * as r44 from './s44-the-bathtub-queen';
+import * as r45 from './s45-rootwell-admissions';
+import * as r46 from './s46-starfall-at-the-anthill';
+import * as r47 from './s47-hedgeworth-links';
+import * as r48 from './s48-the-groundskeepers-secret';
+import * as r49 from './s49-loamdeep';
+import * as r50 from './s50-trellisdown-tasting';
+import * as r51 from './s51-the-flock-stands';
+import * as r52 from './s52-the-test-cut';
+import * as r53 from './s53-tundra-drift-run';
 
-const FILES = [r02, r05, r07, r09, r10, r11, r12, r13, r14, r15, r17, r19, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30, r31, r32, r33, r34, r35];
+const FILES = [r02, r05, r07, r09, r10, r11, r12, r13, r14, r15, r17, r19, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30, r31, r32, r33, r34, r35, r36, r37, r38, r39, r40, r41, r42, r43, r44, r45, r46, r47, r48, r49, r50, r51, r52, r53];
 export const STORY_STAGES: readonly Stage[] = FILES.flatMap((f) => f.STAGES);
 /** Existing stage id -> extra quest ids for its usedBy. */
 export const STORY_STAGE_USES: Readonly<Record<string, readonly string[]>> = (() => {

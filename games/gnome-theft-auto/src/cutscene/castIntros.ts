@@ -78,6 +78,18 @@ export const CAST_INTROS: Readonly<Record<string, CharacterIntro>> = {
   wenna: { name: 'Wenna Gudgeon', role: 'Bent Pin. Fishing teacher.', line: 'Quick and exact about centimetres. Every fish goes back in.', accent: 0x2f6f8f },
   hazel: { name: 'Hazel Mattock', role: 'Tuft & Tally. Hunting.', line: 'Sells the Tuft License. Nobody gets hurt. Mostly.', accent: 0x5a6b2e },
   dunnock: { name: 'Dunnock Pell', role: 'Reedwatch. Birding.', line: 'Keeps the hide and the life list. The birds don\'t mind you there.', accent: 0x6b7a5a },
+  // Act III (E21).
+  gentian: { name: 'Gentian Bootlace', role: 'Ski instructor, Snowdrop.', line: 'Shouts like a coach and counts in threes. Three layers. I said three.', accent: 0xc2402e },
+  'thermos theo': { name: 'Thermos Theo', role: 'Ice fisher, Frostbite Fells.', line: 'Slow and kind, and stirs his barrel. Tea first, questions after.', accent: 0x9e3b2a },
+  chanterelle: { name: 'Warden Chanterelle Stook', role: 'Warden of Capwood.', line: 'Prim and regulation-bound. Fines every bruised cap, by section.', accent: 0x7a5a3a },
+  ragwort: { name: 'Ragwort Coilspring', role: 'Keeper, Pinwheel Ridge.', line: 'Dry and technical. Explains in numbers. Naturally.', accent: 0xc0c4c8 },
+  clary: { name: 'Marshal Clary Mudguard', role: 'Starter, Rutbottom Bowl.', line: 'A bored bark and a flat countdown. Go on, then.', accent: 0xe8e8e8 },
+  marram: { name: 'Marram Teaspoon', role: 'Runs the Spokewheel.', line: 'Sells the whole sea for two acorns. Calls everyone pet.', accent: 0xe8b83a },
+  samphire: { name: 'Captain Samphire Bilge', role: 'Captain, the Bathtub Queen.', line: 'Booming and theatrical. Tells tour groups about pirates, deadpan.', accent: 0x2c3e50 },
+  betony: { name: 'Professor Betony Sextant', role: 'Astronomer, Rootwell.', line: 'Absent-minded and precise. Trails off into figures. As I was saying.', accent: 0x1f2f5a },
+  lovage: { name: 'Dean Lovage Inkwell', role: 'Dean of Rootwell.', line: 'Pompous and smooth. Never answers a question. Mind the optics.', accent: 0x5a1f2a },
+  'silt-diver sal': { name: 'Silt-Diver Sal', role: 'Under-Deck culvert trader.', line: 'Raspy, damp and bargaining. Wants clean socks and dry matches.', accent: 0x6b5a3e },
+  'dj moleman': { name: 'DJ Moleman', role: 'Mole DJ, Loamdeep.', line: 'Spins from the dark. Nobody has heard him say a word.', accent: 0x5a5e68 },
 };
 
 const titleCase = (s: string): string => s.replace(/\b\w/g, (m) => m.toUpperCase());

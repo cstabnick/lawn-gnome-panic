@@ -45,7 +45,9 @@ const OLD_ROUTE = [
   ['Dust Flats', [[300, 600], [520, 300], [560, 30]]],
   ['Turfton (back)', [[560, 30], [200, 0], [60, -60]]],
 ];
-const ROUTE = routeArg >= 0 && args[routeArg + 1] === 'outer' ? OUTER : OLD_ROUTE;
+// --legs '<json>' (E33): your own legs, e.g. along a mountain route: [["Brim Gap Road", [[640,-1302],[700,-1500]]], ...].
+const legsArg = args.indexOf('--legs');
+const ROUTE = legsArg >= 0 ? JSON.parse(args[legsArg + 1]) : routeArg >= 0 && args[routeArg + 1] === 'outer' ? OUTER : OLD_ROUTE;
 
 const BROWSERS = [
   process.env.DEMO_BROWSER,

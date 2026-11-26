@@ -23,6 +23,8 @@ export const STORY_ROWS: Readonly<Record<string, number>> = {
   'm62-cams-cell': 62, 'm63-four-taps': 63, 'm64-all-hats': 64, 'm65-the-countess-relents': 65,
   'm66-porcelain-hearts': 66, 'm67-emergency-assessment': 67, 'm68-lights-out': 68, 'm69-the-combine-wakes': 69,
   'ch5-even-cut': 70,
+  // E20 extended rows: the parts before the final (which keeps the row id) share the row.
+  'ch1-founders-boot-p1': 15, 'ch1-founders-boot-p2': 15, 'ch3-salvage-raid-p1': 35, 'ch3-salvage-raid-p2': 35,
 };
 
 /** The spine row of a main quest id, or undefined (a side quest, or an id not in the spine). */

@@ -6,3 +6,4 @@ import './moles';
 import './lights';
 import './coastAndFort';
 import './sideValve';
+import './party';

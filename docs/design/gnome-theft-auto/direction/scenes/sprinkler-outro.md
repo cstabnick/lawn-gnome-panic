@@ -109,3 +109,4 @@ is still open; the player is the one who has to decide whether to go and find ou
 - [x] Day scene.
 - [x] scene checker (`scenecheck.dev.test.ts`): OK, all shots pass, zero faults.
 - [x] `direction.notes` in the scene points at this file.
+Intro card: Driftwood, on his mcu right after "That's Driftwood. Ignore him." (the card is the punchline), then a short held stare.

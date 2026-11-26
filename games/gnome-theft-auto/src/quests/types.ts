@@ -204,7 +204,65 @@ export type ObjectiveDef =
    * `probe` (city/probes.ts) has risen by `count` (default 1) since the step started, or with `absolute` when it reads
    * at least `count`. `at` puts a map blip (and the route) on the place to do it.
    */
-  | { kind: 'probe'; text: string; probe: string; count?: number; absolute?: boolean; at?: [number, number]; hint: string };
+  | { kind: 'probe'; text: string; probe: string; count?: number; absolute?: boolean; at?: [number, number]; hint: string }
+  // ---- E20 story kinds (runners in objectivesPassenger.ts and objectivesInspect.ts) ----
+  /**
+   * L58 pick-up and drop-off: a named character waits at `pickup` (a home door, a workplace, homes/data.ts homeDoor /
+   * workOf); the player pulls up in any ground vehicle and stops, the character climbs in (seated, or out of sight on a
+   * one-seat mower), rides along (`banter` lines toast on the way), and gets out at `dropAt`, walking to the door. With
+   * `vehicle` a ride is parked beside the pickup when the step starts. `maxDamage` (0..1 of hp lost since pickup):
+   * past it the passenger refuses to ride on (the step fails and the engine retries from its checkpoint).
+   * `who` is a CAST key (cutscene/cast.ts) for the look; `look` overrides it.
+   */
+  | {
+      kind: 'passenger';
+      text: string;
+      who: string;
+      name: string;
+      look?: Partial<GnomeLook>;
+      pickup: [number, number];
+      dropAt: [number, number];
+      radius: number;
+      hint: string;
+      vehicle?: { kind: VehicleKind; at: [number, number, number] };
+      maxDamage?: number;
+      banter?: string[];
+      /** Toast when the passenger gets in / gets out. */
+      onBoard?: string;
+      onDrop?: string;
+    }
+  /**
+   * Look closely at things on foot: walk to each point and press (or hold, `holdSeconds`) the action button there: E /
+   * Space / gamepad A, or the on-screen 44 px button that appears in range. Photograph a permit, read a barometer, look
+   * through a knot-hole, stand on one leg through a sermon, test a lock. Points are done in any order unless `ordered`.
+   * `prop` (a @lawn/prefabs id) is built at each point while it is pending. `scene` (a SCENES id) plays once the last
+   * point is done, before the step completes.
+   */
+  | {
+      kind: 'inspect';
+      text: string;
+      points: InspectPoint[];
+      /** Button label, e.g. 'Photograph', 'Look', 'Hold'. */
+      verb: string;
+      holdSeconds?: number;
+      ordered?: boolean;
+      hint: string;
+      scene?: string;
+    };
+
+/** One point of an 'inspect' objective. */
+export interface InspectPoint {
+  at: [number, number];
+  /** Tracker / toast label, e.g. "Permit 2 of 3: the show-home gate". */
+  label: string;
+  /** Toast once done (the line that gives the player the context). */
+  note?: string;
+  prop?: string;
+  /** Metres within which the button shows (default 3). */
+  radius?: number;
+  /** When set, `at` is local to this interior (E05). */
+  interior?: string;
+}
 
 /** One gate of a 'checkpoints' objective. */
 export interface CheckpointDef {

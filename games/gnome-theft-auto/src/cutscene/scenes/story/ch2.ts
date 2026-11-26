@@ -70,6 +70,8 @@ export const DEW_RUN_INTRO: SceneScript = {
     // 5. The briefing. Granny's lines, the player's question, Pip's delight, then the turn.
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Tansy said you\'d come. Vesper\'s boys are draining my Dew-Wells dry.' },
+    cut(BRIEF.single('granny', 'cu', { height: 'high' })),
+    { do: 'intro', who: 'granny' },
     cut(BRIEF.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'What\'s it worth?' },
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
@@ -80,6 +82,10 @@ export const DEW_RUN_INTRO: SceneScript = {
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'sfx', id: 'thud' },
     beat('pause'),
+    // Bramble, first framed: the farmer who heard the well go.
+    cut(shot('bramble', 'mcu', { toward: 'granny' })),
+    { do: 'intro', who: 'bramble' },
+    cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Dry as a biscuit. So here\'s the plan.' },
     cut(BRIEF.single('granny', 'cu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Borrow a Buck-Iron Combine and block the South Highway.' },
@@ -150,6 +156,11 @@ export const DEW_RUN_OUTRO: SceneScript = {
     { do: 'music', track: 'warm', fade: 2 },
     cut(PAYOFF.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'We\'re legitimate! ...Don\'t tell anyone.' },
+    // The Kiln-Debt is clear; the flat's loan is not.
+    cut(shot('granny', 'mcu', { toward: 'player' })),
+    { do: 'say', who: 'granny', text: 'Kiln-Debt\'s clear, sugar. The flat\'s loan is still yours to carry.' },
+    cut(PAYOFF.single('pip', 'mcu')),
+    { do: 'say', who: 'pip', text: 'Right. The flat. Landlords have no sense of occasion.' },
     // 4. Granny gives the player tea; Bramble leaves his tease, framed square to the camera.
     { do: 'sfx', id: 'pour', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'player', prop: 'espresso-cup' },

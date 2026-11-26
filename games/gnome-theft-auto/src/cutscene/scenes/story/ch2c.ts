@@ -142,7 +142,8 @@ export const SPRINKLER_OUTRO: SceneScript = {
     cut(shot('granny', 'mcu')),
     { do: 'say', who: 'granny', text: 'That\'s Driftwood. Ignore him. He\'s been out in the sun since spring.' },
     cut(shot('driftwood', 'mcu')),
-    { do: 'wait', s: 2.0 },
+    { do: 'intro', who: 'driftwood' },
+    { do: 'wait', s: 0.8 },
   ],
 };
 

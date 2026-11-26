@@ -4,6 +4,7 @@ import type { Panel, PanelCtx } from './glazeUi';
 import { sectionLabel } from './glazeUi';
 import { dealerPrice, UNLISTED_VALUE } from './dealers/config';
 import { repairVehicle } from './vehicles';
+import { perkActive } from './perks';
 import type { Vehicle, VehicleKind } from './types';
 
 /** Repair pricing (Acorns). */
@@ -65,8 +66,9 @@ function paint(): void {
   statusEl.textContent = v.damage > 0 ? `Health ${pct} % · damage level ${v.damage}` : `Health ${pct} %`;
 
   const q = repairQuote(v.hp, v.damage, v.kind);
-  button.textContent = q > 0 ? `Repair · ${q} 🌰` : 'Nothing to fix';
-  button.disabled = q <= 0 || ctxRef.acorns() < q;
+  const free = q > 0 && perkActive('glaze-on-the-house');
+  button.textContent = q <= 0 ? 'Nothing to fix' : free ? "Repair · Free (Cass's tab)" : `Repair · ${q} 🌰`;
+  button.disabled = q <= 0 || (!free && ctxRef.acorns() < q);
 }
 
 function onRepairClick(): void {
@@ -74,6 +76,7 @@ function onRepairClick(): void {
   const v = ctxRef.vehicle();
   const q = repairQuote(v.hp, v.damage, v.kind);
   if (q <= 0) return;
+  // With Cass's tab the economy wrapper (perkEffects.ts) scales this reason to 0 Acorns (perks.ts PRICE_PERKS).
   if (!ctxRef.spend(q, "Pay 'n' Glaze repair")) {
     ctxRef.toast?.('Not enough Acorns.');
     return;

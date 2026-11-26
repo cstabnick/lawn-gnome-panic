@@ -1,13 +1,12 @@
 // Prologue & Chapter 1: "Fresh Out the Kiln" & "Acorns & Alibis".
 import type { GnomeLook } from '@lawn/gnome';
-import { AMPHITHEATER, SIDE_VALVE } from '../config';
+import { SIDE_VALVE } from '../config';
 import { homeDoor } from '../homes/data';
 import type { QuestDef } from './types';
 
 const GOLD_HAT = 0xffd23f;
 
 const PIP_LOOK: Partial<GnomeLook> = { hat: 0xd93636, shirt: 0x2f8a4a, beard: 0x6b5b4b };
-const REGINALD_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b, glasses: true };
 const HOA_LOOK: Partial<GnomeLook> = { hat: 0x18181e, shirt: 0xc9b99b };
 
 export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
@@ -47,6 +46,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     id: 'first-contract',
     title: 'First Contract',
     giver: 'mulch-club',
+    prereq: 'm02-roof-on-credit',
     chapter: 1,
     rewardAcorns: 1000,
     radioBulletin: 'gta-first-contract',
@@ -70,7 +70,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     id: 'ch1-mowers-keepers',
     title: "Mower's Keepers",
     giver: 'side-valve',
-    prereq: 'prologue-fresh-kiln',
+    prereq: 'first-contract',
     chapter: 1,
     rewardAcorns: 400,
     radioBulletin: 'ch1-mowers-keepers',
@@ -119,7 +119,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     id: 'ch1-two-coat-tail',
     title: 'Two-Coat Tail',
     giver: 'city-hall',
-    prereq: 'ch1-mowers-keepers',
+    prereq: 'm05-sweepers-wages',
     chapter: 1,
     rewardAcorns: 450,
     radioBulletin: 'ch1-two-coat-tail',
@@ -176,7 +176,7 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     id: 'ch1-tax-break-in',
     title: 'The Glaze & Tax Break-In',
     giver: 'side-valve',
-    prereq: 'ch1-two-coat-tail',
+    prereq: 'm07-even-estates',
     chapter: 1,
     rewardAcorns: 550,
     radioBulletin: 'ch1-tax-break-in',
@@ -212,51 +212,5 @@ export const CHAPTER_1_QUESTS: readonly QuestDef[] = [
     ],
     doneText: 'Deed recovered—along with Vesper\'s blueprint for The Grand Combine, powered by a Fescue Golden Acorn.',
   },
-  {
-    id: 'ch1-founders-boot',
-    // E23 L103: a squad shoot-out; the Hat Watch may notice (1 hat) but sends no pursuits.
-    hoaSteps: { 1: { cap: 1 } },
-    title: "Founder's Boot & The Kangaroo Court",
-    giver: 'side-valve',
-    prereq: 'ch1-tax-break-in',
-    chapter: 1,
-    rewardAcorns: 700,
-    achievement: 'gta-boot-legger',
-    radioBulletin: 'ch1-founders-boot',
-    cutscene: { kind: 'script', script: 'founders-boot-intro' },
-    outro: { kind: 'script', script: 'founders-boot-outro' },
-    objectives: [
-      {
-        kind: 'steal-deliver',
-        text: "Hijack Gnorwin's Boot Parade Float and crash the Amphitheater tribunal",
-        vehicleKind: 'boot-float',
-        spawnAt: [2.5, -120, -Math.PI / 2],
-        dropAt: [AMPHITHEATER.x, AMPHITHEATER.z + 18],
-        radius: 14,
-        hint: 'Turfton Amphitheater',
-        heatOnEnter: 2,
-      },
-      {
-        kind: 'crack',
-        text: 'Scatter Reginald Vance and his HOA Enforcers at the Amphitheater',
-        targets: [
-          { id: 'reginald-vance', name: 'Reginald "Quarter-Inch" Vance', near: [-90, -80], hint: 'Turfton Amphitheater', look: REGINALD_LOOK },
-          { id: 'tribunal-hoa-1', name: 'HOA Bailiff Pike', near: [-82, -84], hint: 'Turfton Amphitheater', look: HOA_LOOK },
-          { id: 'tribunal-hoa-2', name: 'HOA Bailiff Reed', near: [-98, -84], hint: 'Turfton Amphitheater', look: HOA_LOOK },
-          { id: 'tribunal-hoa-3', name: 'HOA Bailiff Moss', near: [-90, -72], hint: 'Turfton Amphitheater', look: HOA_LOOK },
-        ],
-      },
-      {
-        kind: 'steal-deliver',
-        text: 'Escape the 4-Hat HOA Van pursuit in Pip\'s getaway Combine back to Side-Valve Salvage',
-        vehicleKind: 'combine',
-        spawnAt: [AMPHITHEATER.x - 16, AMPHITHEATER.z + 10, Math.PI],
-        dropAt: [SIDE_VALVE.bay.x, SIDE_VALVE.bay.z],
-        radius: 10,
-        hint: 'Side-Valve Salvage bay',
-        heatOnEnter: 4,
-      },
-    ],
-    doneText: 'Tribunal adjourned. Tansy\'s deed is stamped, and Vesper knows you\'re not playing by HOA rules.',
-  },
+  // ch1-founders-boot (row 15) lives in quests/story/15-founders-boot.ts with its parts p1 and p2.
 ];

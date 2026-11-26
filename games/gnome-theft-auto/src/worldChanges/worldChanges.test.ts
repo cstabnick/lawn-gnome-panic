@@ -38,7 +38,7 @@ describe('world change table', () => {
     const raid = { 'ch3-salvage-raid': done, 'm34-forty-seven-wrenches': done };
     expect(activeWorldChanges(raid)).toContain('W08');
     expect(activeWorldChanges(raid)).not.toContain('W07');
-    const finale = { 'ch3-salvage-raid': done, 'ch1-tax-break-in': done, 'ch5-even-cut': done };
+    const finale = { 'ch3-salvage-raid': done, 'm07-even-estates': done, 'ch5-even-cut': done };
     const on = activeWorldChanges(finale);
     expect(on).toContain('W17');
     expect(on).toContain('W18');

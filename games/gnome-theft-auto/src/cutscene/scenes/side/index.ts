@@ -9,6 +9,7 @@ import { GRID_TRUTHERS_SCENES } from './gridTruthers';
 import { HOA_AUDIT_SCENES } from './hoaAudit';
 import { HOSE_REVOLT_SCENES } from './hoseRevolt';
 import { MULCH_PYRAMID_SCENES } from './mulchPyramid';
+import { ON_THE_HOUSE_SCENES } from './onTheHouse';
 import { PORCELAIN_BLUES_SCENES } from './porcelainBlues';
 import { PORCELAIN_SUPPORT_SCENES } from './porcelainSupport';
 import { SNAIL_RIGGING_SCENES } from './snailRigging';
@@ -18,6 +19,6 @@ export const SIDE_SCENES: Record<string, SceneScript> = Object.fromEntries(
   [
     GRID_TRUTHERS_SCENES, HOA_AUDIT_SCENES, SNAIL_RIGGING_SCENES, MULCH_PYRAMID_SCENES, BIG_LOU_SCENES, HOSE_REVOLT_SCENES,
     BISCUIT_HOTDOG_SCENES, CASTAWAY_SCENES, PORCELAIN_BLUES_SCENES, PORCELAIN_SUPPORT_SCENES, FESCUE_FUGITIVE_SCENES,
-    TESSIE_SCENES,
+    TESSIE_SCENES, ON_THE_HOUSE_SCENES,
   ].flat().map((s) => [s.id, s]),
 );

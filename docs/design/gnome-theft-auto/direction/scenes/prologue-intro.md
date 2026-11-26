@@ -131,3 +131,4 @@ promise in one picture: a vehicle that is not yours, a friend who is already lea
 - [x] Report OK; removed from `pacing.baseline.ts`.
 - [x] `npm test` passes (line of sight included); watched at desktop and phone size.
 - [x] `direction.notes` points here.
+Intro cards: Pip after "I'm Pip! Grab that Ride-On and follow me!", John Bodega after his Asphalt line.

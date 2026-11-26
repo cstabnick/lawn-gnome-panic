@@ -84,6 +84,16 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   dock: { hz: 90, wave: 'sine', style: 'words', speed: 0.8 },
   marigold: { hz: 124, wave: 'triangle', glide: 0.2, formant: 0.85, speed: 1.0 },
   tattler: { hz: 136, wave: 'square', speed: 1.45, glide: 0.3, formant: 1.3 },
+  // Act III (E21). 'thermos theo' and 'dj moleman' are above.
+  gentian: { hz: 124, speed: 1.45, wave: 'square', style: 'words', range: 1.7, glide: 0.35, formant: 1.04 },
+  chanterelle: { hz: 120, speed: 1.1, wave: 'square', style: 'letters', range: 0.35, q: 10, formant: 1.37 },
+  ragwort: { hz: 114, speed: 0.95, wave: 'sine', style: 'letters', range: 0.3, glide: -0.2, formant: 0.97 },
+  clary: { hz: 90, speed: 0.75, wave: 'saw', style: 'words', range: 0.4, glide: -0.5, sub: 0.8, formant: 0.89 },
+  marram: { hz: 138, speed: 1.7, wave: 'triangle', style: 'letters', range: 1.8, glide: 0.4, formant: 1.17 },
+  samphire: { hz: 82, speed: 0.8, wave: 'saw', style: 'syllables', range: 1.9, wobble: 0.15, sub: 0.9, formant: 0.81 },
+  betony: { hz: 110, speed: 0.85, wave: 'triangle', style: 'letters', range: 1.2, breath: 0.1, glide: -0.3, formant: 1.01 },
+  lovage: { hz: 94, speed: 0.7, wave: 'sine', style: 'words', range: 0.9, wobble: 0.1, formant: 0.93 },
+  'silt-diver sal': { hz: 98, speed: 1.3, wave: 'saw', style: 'letters', breath: 0.35, wobble: 0.2, formant: 0.84 },
 };
 
 type Wave = NonNullable<VoiceSpec['wave']>;

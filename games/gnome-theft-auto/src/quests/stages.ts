@@ -275,6 +275,36 @@ export const CAST: readonly CastMember[] = [
     routine: 'Drives the one Turfton Taxi; every fare ends at the Central Bus Stop.',
     vehicle: null,
   },
+  {
+    id: 'gentian', name: 'Gentian Bootlace', preset: 'gentian', home: 'gentian', haunts: [],
+    routine: 'Opens the Woolly Sock Lodge at first light, shouts three layers at every guest and keeps the tea-tray sleds in a row.',
+    vehicle: null,
+  },
+  {
+    id: 'chanterelle', name: 'Warden Chanterelle Stook', preset: 'chanterelle', home: 'capwood-warden', haunts: [],
+    routine: 'Patrols the Capwood caps with a ticket book, writes a fine for every bruise and apologises silently for each one.',
+    vehicle: null,
+  },
+  {
+    id: 'clary', name: 'Marshal Clary Mudguard', preset: 'clary', home: 'rutbottom-tower', haunts: [],
+    routine: "Climbs the starter's tower before every race, counts the field down flat and watches the berm.",
+    vehicle: null,
+  },
+  {
+    id: 'marram', name: 'Marram Teaspoon', preset: 'marram', home: 'coast-spokewheel', haunts: [],
+    routine: 'Sells rides on the Spokewheel from her pier hut and checks every gondola bolt by hand.',
+    vehicle: null,
+  },
+  {
+    id: 'betony', name: 'Professor Betony Sextant', preset: 'betony', home: 'betony', haunts: [],
+    routine: 'Charts stars from a staff room in the Anthill Observatory and pays the ants their rent in sugar.',
+    vehicle: null,
+  },
+  {
+    id: 'lovage', name: 'Dean Lovage Inkwell', preset: 'lovage', home: 'lovage', haunts: [],
+    routine: "Patrols the Rootwell quad for mature students and takes calls in the Dean's lodge.",
+    vehicle: null,
+  },
 ];
 
 // ---- The stages ----------------------------------------------------------------------------------------------------

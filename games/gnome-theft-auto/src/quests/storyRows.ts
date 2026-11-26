@@ -25,6 +25,9 @@ export const STORY_ROWS: Readonly<Record<string, number>> = {
   'ch5-even-cut': 70,
   // E20 extended rows: the parts before the final (which keeps the row id) share the row.
   'ch1-founders-boot-p1': 15, 'ch1-founders-boot-p2': 15, 'ch3-salvage-raid-p1': 35, 'ch3-salvage-raid-p2': 35,
+  // E21 extended rows.
+  'm46-starfall-at-the-anthill-p1': 46, 'm46-starfall-at-the-anthill-p2': 46, 'm46-starfall-at-the-anthill-p3': 46,
+  'm52-the-test-cut-p1': 52, 'm52-the-test-cut-p2': 52, 'm52-the-test-cut-p3': 52,
 };
 
 /** The spine row of a main quest id, or undefined (a side quest, or an id not in the spine). */

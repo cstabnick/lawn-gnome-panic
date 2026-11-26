@@ -4,8 +4,9 @@ import type { GiverDef, QuestDef } from '../types';
 import type { QuestPlan } from '../../questSim/types';
 import { ACT_I } from './actI';
 import { ACT_II } from './actII';
+import { ACT_III } from './actIII';
 
-const FILES = [...ACT_I, ...ACT_II];
+const FILES = [...ACT_I, ...ACT_II, ...ACT_III];
 
 export const STORY_QUESTS: readonly QuestDef[] = FILES.flatMap((f) => f.quests);
 

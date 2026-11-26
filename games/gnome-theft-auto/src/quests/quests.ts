@@ -99,9 +99,13 @@ export interface Quests {
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
 
+/** A target snaps to a walk point only this near its `near` spot (E21: the far edges have few walk points, and a
+ *  target 500 m from its spot is worse than one stood exactly where the quest put it). */
+const WALK_SNAP_MAX = 30;
+
 const nearestWalk = (world: World, x: number, z: number): { x: number; z: number } => {
   let best = { x, z };
-  let bd = Infinity;
+  let bd = WALK_SNAP_MAX;
   for (const p of world.walkPoints) {
     const d = Math.hypot(p.x - x, p.z - z);
     if (d < bd) { bd = d; best = p; }

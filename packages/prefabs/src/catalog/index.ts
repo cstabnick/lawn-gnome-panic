@@ -211,6 +211,8 @@ import { GTA_SOCIETIES_GEAR } from './gta-societies-gear';
 import { GTA_DEWDROP } from './gta-dewdrop';
 import { GTA_STORY_ACT12 } from './gta-story-act12';
 import { GTA_STORY_GEAR } from './gta-story-gear';
+import { GTA_STORY_ACT3 } from './gta-story-act3';
+import { GTA_STORY_GEAR3 } from './gta-story-gear3';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -258,5 +260,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_COUNTRY_DEER, ...GTA_COUNTRY_CROPS, ...GTA_COUNTRY_CROPS_B, ...GTA_COUNTRY_CROFT, ...GTA_COUNTRY_SITE, ...GTA_COUNTRY_VINEYARD, ...GTA_COUNTRY_MANOR, ...GTA_COUNTRY_CAMP, ...GTA_COUNTRY_GEAR,
   ...GTA_MOLES, ...GTA_LOAMDEEP, ...GTA_LOAMDEEP_HOME, ...GTA_UNDERSPAN, ...GTA_FLOCK, ...GTA_SOCIETIES_GEAR,
   ...GTA_DEWDROP,
-  ...GTA_STORY_ACT12, ...GTA_STORY_GEAR,
+  ...GTA_STORY_ACT12, ...GTA_STORY_GEAR, ...GTA_STORY_ACT3, ...GTA_STORY_GEAR3,
 ];

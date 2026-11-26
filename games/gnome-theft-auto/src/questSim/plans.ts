@@ -45,6 +45,7 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'sq-hedgeworth-pro-lesson': { suite: 'side', expect: 'pass' },
   'sq-hedgeworth-ninth-green': { suite: 'side', expect: 'pass' },
   'sq-hedgeworth-members-cup': { suite: 'side', expect: 'pass' },
+  'sq-hedgeworth-peonys-promise': { suite: 'side', expect: 'pass' },
   'sq-court-regulars': { suite: 'side', expect: 'pass' },
   'sq-gutter-bowls-sessions': { suite: 'side', expect: 'pass' },
   'sq-rootwell-lost-essay': { suite: 'side', expect: 'pass' },

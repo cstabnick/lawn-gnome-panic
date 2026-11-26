@@ -1223,3 +1223,9 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The names and the scoring of tricks (ollie, kickflip, grabs, grinds, combos) are the same everywhere gnomes ride boards. Nothing else connects the Gutter Bowls to the Aether or its Splash-Back Skaters.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** Gnome Theft Auto shares Aether Board's trick tables and scoring.
+
+## R-218
+**Question:** How many holes does Hedgeworth Links have now, and where are 4 to 8?
+**Ruling:** Nine. Holes 4 to 8, promised by Dame Peony every season for as long as anyone has been a member, are built in the Bottom Garden, the Tall One's old bottom garden south of the old south fence, through the Turn Gate: 4 Peony's Promise (par 4, the opening ribbon still strung across the green), 5 The Maze (par 4, the old hedge maze clipped into a hole), 6 The Drip (par 3, a carry over the overflow pool and its giant birdbath), 7 The Potting Shed (par 3, teed off the shed roof) and 8 The Rhubarb Patch (par 4, a dogleg round the vegetable patch). Course par 34. R-194 stands as history: the card said nine for years and the course had four. Play order is 1 to 9, and 9, The Ninth, is still by Thrift's shed. Thrift laid the new holes out by hand over three seasons; Peony named them, Basil Divot none.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E32 builds the missing holes, and the joke that the card was right all along needed an answer that keeps R-194.

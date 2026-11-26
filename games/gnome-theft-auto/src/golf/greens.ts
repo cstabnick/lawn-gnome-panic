@@ -202,8 +202,8 @@ export function buildCourseGround(scene: THREE.Scene): { boxes: Box[] } {
     const { fairway, stripes } = holeGround(h);
     hole.add(fairway, ...stripes);
 
-    // Tee box: a square on the terrain, flat (no raised box).
-    const tee = new THREE.Mesh(square(h.tee, TEE_HALF_M, 4, LIFT), flat(TEE, LAYER.area));
+    // Tee box: a square on the terrain, flat (no raised box); an elevated tee (the shed roof) lifts it by teeY.
+    const tee = new THREE.Mesh(square(h.tee, TEE_HALF_M, 4, LIFT + (h.teeY ?? 0)), flat(TEE, LAYER.area));
     tee.name = `tee-${h.number}`;
     hole.add(tee);
 

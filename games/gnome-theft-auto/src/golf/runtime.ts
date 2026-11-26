@@ -7,7 +7,7 @@ import { CAST_INTROS } from '../cutscene/castIntros';
 import { showCharacterIntro } from '../cutscene/introCard';
 import { PLACE_STYLE } from '../mapIcons';
 import { playAt } from '../sound/bus';
-import { heightAt } from '../terrain';
+import { groundAt, heightAt } from '../terrain';
 import type { JobsDeps } from '../jobs/types';
 import type { Blip, InputState, Vehicle } from '../types';
 import { createVehicle, removeVehicle } from '../vehicles';
@@ -23,11 +23,12 @@ import { createGolfStore } from './save';
 import { registerGolfSounds } from './sounds';
 import {
   BOARD_BREAK_SPEED, BOARD_KICK_RANGE, CART_SPOTS, CLUBHOUSE, GOLF_ACH, GOLF_ORIGIN, HEDGE_ARCHES, HOLES, KICKED_BOARD,
-  LOST_BALLS, MOLEHILLS, PEOPLE_SPOTS, PICK_RANGE, SOFT_SLOW_PER_S, inYard,
+  LOST_BALLS, MOLEHILLS, PEOPLE_SPOTS, PICK_RANGE, POTTING_SHED, SOFT_SLOW_PER_S, TURN_GATE, inYard,
   type Golf, type GolfApi, type GolfStore, type HudAction, type RoundEvent, type RoundState,
 } from './types';
 import { createGolfView } from './view';
 import { buildYard } from './yard';
+import { buildBottomGarden } from './bottomGarden';
 
 export interface GolfDeps extends JobsDeps {
   /** True when the gnome is on foot and free (no vehicle, not airborne, no cutscene, alive). */
@@ -57,8 +58,25 @@ const ARCH_RANGE = 2;
 const LOOSE_BALL_R = 0.09;
 const BALL_PREFAB_R = 0.016;
 const RUSTLE_GAP_S = 0.8;
+const LADDER_RANGE = 1.8;
+const ROOF_CLIMB_RANGE = 2.5;
 
 const face = (yaw: number): { x: number; z: number } => ({ x: Math.sin(yaw), z: Math.cos(yaw) });
+
+/**
+ * Achievements earned by one round event. 'holed' on The Maze (index 5) at par or better; a finished nine (round-done
+ * fires only once every hole is scored; a pick-up counts) and a total under par.
+ */
+export function achievementsFor(e: RoundEvent, scores: readonly (number | null)[]): string[] {
+  if (e.kind === 'holed') return e.hole === 5 && e.strokes <= e.par ? [GOLF_ACH.maze] : [];
+  if (e.kind === 'round-done') {
+    const out: string[] = [];
+    if (scores.every((x) => x !== null)) out.push(GOLF_ACH.fullNine);
+    if (e.toPar < 0) out.push(GOLF_ACH.underPar);
+    return out;
+  }
+  return [];
+}
 
 interface LooseSpot { id: string; x: number; z: number; obj: THREE.Object3D | null }
 
@@ -70,7 +88,9 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
   const ground = buildCourseGround(deps.scene);
   const buildings = buildHedgeworthBuildings(deps.scene);
   const life = buildHedgeworthLife(deps.scene);
-  deps.world.boxes.push(...yard.boxes, ...ground.boxes, ...buildings.boxes, ...life.boxes);
+  const bottom = buildBottomGarden(deps.scene);
+  const softSpots = [...yard.soft, ...bottom.soft];
+  deps.world.boxes.push(...yard.boxes, ...ground.boxes, ...buildings.boxes, ...life.boxes, ...bottom.boxes);
   if (!store.data().boardBroken) deps.world.boxes.push(yard.boardBox);
   const hud = createGolfHud(deps.ui);
   const view = createGolfView(deps.scene, deps.camera);
@@ -160,7 +180,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     const v = deps.player.vehicle;
     rustleT -= dt;
     if (!v || v.driver !== 'player') return;
-    for (const s of yard.soft) {
+    for (const s of softSpots) {
       if (Math.hypot(v.x - s.x, v.z - s.z) > s.r) continue;
       v.speed *= Math.exp(-SOFT_SLOW_PER_S * dt);
       if (rustleT <= 0 && Math.abs(v.speed) > 0.5) {
@@ -203,15 +223,17 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
   // ---- The round ----
   const addressing = (): boolean => !!round && (round.phase === 'aim' || round.phase === 'swing' || round.phase === 'flight');
   const behind = (x: number, z: number, yaw: number, d: number): { x: number; z: number } => ({ x: x - Math.sin(yaw) * d, z: z - Math.cos(yaw) * d });
-  function putPlayer(x: number, z: number, yaw: number): void {
+  /** Stand at (x, z) on the surface at ground level plus `rel` metres (a roof for rel > 0), facing yaw. */
+  function putPlayer(x: number, z: number, yaw: number, rel = 0): void {
     const p = deps.player;
     const v = p.vehicle;
-    if (v) { v.x = x; v.z = z; v.y = heightAt(x, z); v.yaw = yaw; v.speed = 0; }
-    p.x = x; p.z = z; p.y = heightAt(x, z); p.yaw = yaw;
+    const y = groundAt(x, z, heightAt(x, z) + rel);
+    if (v) { v.x = x; v.z = z; v.y = y; v.yaw = yaw; v.speed = 0; }
+    p.x = x; p.z = z; p.y = y; p.yaw = yaw;
   }
   function standAtBall(s: RoundState): void {
-    // Beside the ball on its left (left of the aim), facing the aim.
-    putPlayer(s.ball.x + Math.cos(s.aimYaw) * 0.6, s.ball.z - Math.sin(s.aimYaw) * 0.6, s.aimYaw);
+    // Beside the ball on its left (left of the aim), facing the aim. A tee on a raised pad (the shed roof) keeps the gnome up there.
+    putPlayer(s.ball.x + Math.cos(s.aimYaw) * 0.6, s.ball.z - Math.sin(s.aimYaw) * 0.6, s.aimYaw, HOLES[s.hole].teeY ?? 0);
   }
   function quitRound(): void {
     round = null;
@@ -231,7 +253,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     const h = Math.max(0, Math.min(HOLES.length - 1, Math.floor(hole)));
     round = newRound(seed++, h);
     const b = behind(round.ball.x, round.ball.z, round.aimYaw, 1.5);
-    putPlayer(b.x, b.z, round.aimYaw);
+    putPlayer(b.x, b.z, round.aimYaw, HOLES[h].teeY ?? 0);
     hud.show(true);
     return null;
   }
@@ -246,6 +268,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
         store.recordHole(e.hole, e.strokes, e.par);
         if (e.strokes === 1) deps.unlock(GOLF_ACH.ace);
         if (s.birdieRun >= 2) deps.unlock(GOLF_ACH.birdies);
+        for (const id of achievementsFor(e, s.scores)) deps.unlock(id);
         for (const cb of [...listeners]) cb({ hole: e.hole, strokes: e.strokes, par: e.par });
         cardOpen = true;
         hud.card(cardView(s, store.data().best));
@@ -255,6 +278,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
       } else if (e.kind === 'round-done') {
         store.recordRound(e.total);
         deps.unlock(GOLF_ACH.card);
+        for (const id of achievementsFor(e, s.scores)) deps.unlock(id);
         cardOpen = true;
         hud.card(cardView(s, store.data().best));
       }
@@ -279,7 +303,13 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     } else if (a === 'next-hole') {
       cardOpen = false;
       hud.card(null);
+      const before = s.hole;
       handleEvents(nextHole(s));
+      if (round && s.phase !== 'done' && s.hole !== before) {
+        const tee = HOLES[s.hole].tee;
+        if (HOLES[s.hole].number === 7) toast('Hole 7: tee off from the potting shed roof. Up the ladder.');
+        else if ((deps.player.z < TURN_GATE.z) !== (tee.z < TURN_GATE.z)) toast(`Hole ${HOLES[s.hole].number}: through the Turn Gate.`);
+      }
     } else if (a === 'to-ball') {
       if (s.phase !== 'walk') return;
       const pin = HOLES[s.hole].pin;
@@ -323,6 +353,21 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
   function actionAt(x: number, z: number): Action | null {
     if (addressing()) return null;
     if (!broken && nearBoard(x, z, BOARD_KICK_RANGE)) return { text: 'Kick the loose board', run: () => doBreakBoard(true) };
+    const ground = heightAt(x, z);
+    const roofX = POTTING_SHED.x + POTTING_SHED.w / 2;
+    if (deps.player.y > ground + 2) {
+      if (Math.hypot(x - roofX, z - POTTING_SHED.z) <= ROOF_CLIMB_RANGE) {
+        return {
+          text: 'Climb down the ladder',
+          run: () => putPlayer(POTTING_SHED.ladder.x + 1.2, POTTING_SHED.ladder.z, Math.PI / 2),
+        };
+      }
+    } else if (deps.player.y < ground + 1 && Math.hypot(x - POTTING_SHED.ladder.x, z - POTTING_SHED.ladder.z) <= LADDER_RANGE) {
+      return {
+        text: 'Climb the ladder to the 7th tee',
+        run: () => putPlayer(POTTING_SHED.x + 2, POTTING_SHED.z, -Math.PI / 2, POTTING_SHED.roofY),
+      };
+    }
     const s = round;
     if (s) {
       if (s.phase === 'walk' && Math.hypot(x - s.ball.x, z - s.ball.z) <= ADDRESS_RANGE) {
@@ -383,6 +428,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     update(dt: number, inp: InputState) {
       t += dt;
       yard.update(dt, t);
+      bottom.update(dt, t);
       life.update(dt, t, deps.player.x, deps.player.z);
       syncT += dt;
       if (syncT >= 1) {

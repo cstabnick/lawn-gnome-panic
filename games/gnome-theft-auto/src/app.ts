@@ -167,6 +167,7 @@ import { installTubing } from './tubing/runtime';
 import { installCoast } from './coast';
 import { installWinter } from './winter/runtime';
 import { installGolf } from './golf/runtime';
+import { holeIndexOfNumber } from './golf/types';
 import { installCourt } from './court/runtime';
 import { installSkate } from './skate/runtime';
 import { installRootwell } from './campus';
@@ -2792,11 +2793,11 @@ if (winterParam === 'wool-run' || winterParam === 'tea-tray-run') {
     if (why) hud.toast(why, 3000);
   }, 1500);
 }
-// Dev / demos (E15): ?golf=1..4 starts a round of Hedgeworth Links on that hole (?golf alone: hole 1).
+// Dev / demos (E15, E32): ?golf=1..9 starts a round of Hedgeworth Links on that card hole number (?golf alone: hole 1).
 if (startParams.has('golf')) {
   setTimeout(() => {
-    const n = Number(startParams.get('golf'));
-    const why = golf.api.startRound(Number.isFinite(n) && n >= 1 && n <= 4 ? n - 1 : 0);
+    const i = holeIndexOfNumber(Number(startParams.get('golf')));
+    const why = golf.api.startRound(i >= 0 ? i : 0);
     if (why) hud.toast(why, 3000);
   }, 1500);
 }

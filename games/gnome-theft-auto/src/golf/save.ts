@@ -1,5 +1,7 @@
-// Hedgeworth's save, gta-golf-v1 (E15 A3): board broken, holes and rounds played, bests, aces, lost balls found,
-// molehills patted. Tolerant parse like winter/save.ts: anything broken falls back field by field to the empty save.
+// Hedgeworth's save, gta-golf-v1 (E15 A3, E32 nine holes): board broken, holes and rounds played, bests, aces, lost
+// balls found, molehills patted. `best` has one entry per HOLES index (nine). `bestNine` is the best nine-hole round
+// total; `bestRound` is the legacy four-hole best from E15 (kept, merged, no longer written). Tolerant parse like
+// winter/save.ts: anything broken falls back field by field to the empty save.
 import { notifySaveChanged } from '../saveHook';
 import { GOLF_SAVE_KEY, HOLES, LOST_BALLS, MOLEHILLS, type GolfSave, type GolfStore } from './types';
 
@@ -8,7 +10,7 @@ export { GOLF_SAVE_KEY };
 type GolfStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function emptyGolfSave(): GolfSave {
-  return { v: 1, boardBroken: false, holesPlayed: 0, parHoles: 0, rounds: 0, best: HOLES.map(() => null), bestRound: null, aces: 0, ballsFound: [], molehills: [] };
+  return { v: 1, boardBroken: false, holesPlayed: 0, parHoles: 0, rounds: 0, best: HOLES.map(() => null), bestRound: null, bestNine: null, aces: 0, ballsFound: [], molehills: [] };
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -47,6 +49,7 @@ export function parseGolfSave(raw: string | null): GolfSave {
   if (isNonNegInt(parsed.rounds)) out.rounds = parsed.rounds;
   if (isNonNegInt(parsed.aces)) out.aces = parsed.aces;
   if (isStrokes(parsed.bestRound)) out.bestRound = parsed.bestRound;
+  if (isStrokes(parsed.bestNine)) out.bestNine = parsed.bestNine;
 
   if (Array.isArray(parsed.best)) {
     out.best = HOLES.map((_, i) => {
@@ -73,6 +76,7 @@ export function mergeGolfSave(a: string, b: string): string {
     rounds: Math.max(x.rounds, y.rounds),
     best: HOLES.map((_, i) => lower(x.best[i] ?? null, y.best[i] ?? null)),
     bestRound: lower(x.bestRound, y.bestRound),
+    bestNine: lower(x.bestNine, y.bestNine),
     aces: Math.max(x.aces, y.aces),
     ballsFound: knownIds(LOST_BALLS, [...x.ballsFound, ...y.ballsFound]),
     molehills: knownIds(MOLEHILLS, [...x.molehills, ...y.molehills]),
@@ -144,7 +148,7 @@ export function createGolfStore(storage?: Pick<Storage, 'getItem' | 'setItem'>):
     },
     recordRound(total) {
       d.rounds += 1;
-      if (d.bestRound === null || total < d.bestRound) d.bestRound = total;
+      if (d.bestNine === null || total < d.bestNine) d.bestNine = total;
       save();
     },
     findBall: (id) => addOnce(d.ballsFound, LOST_BALLS, id),

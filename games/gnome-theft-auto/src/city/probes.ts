@@ -62,6 +62,7 @@ const SAVED: Readonly<Record<string, ProbeFn>> = {
   [GOLF_PROBES.rounds]: () => withStore(() => createGolfStore(storage() ?? undefined).data().rounds) ?? 0,
   [GOLF_PROBES.balls]: () => withStore(() => createGolfStore(storage() ?? undefined).data().ballsFound.length) ?? 0,
   [GOLF_PROBES.molehills]: () => withStore(() => createGolfStore(storage() ?? undefined).data().molehills.length) ?? 0,
+  [GOLF_PROBES.bottomHoles]: () => withStore(() => createGolfStore(storage() ?? undefined).data().best.slice(4, 9).filter((b) => b !== null).length) ?? 0,
   // Founders' Green sports (sports/save.ts): gta-sports-v1. Drainpipe Court, the skateboard, the Gutter Bowls.
   [COURT_PROBES.games]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.games) ?? 0,
   [COURT_PROBES.wins]: () => withStore(() => createSportsStore(storage() ?? undefined).data().jam.wins) ?? 0,

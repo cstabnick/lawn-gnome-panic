@@ -4,8 +4,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeDom } from '../testing/fakeDom';
 import type { InputState, Vehicle } from '../types';
 import { GOLF_SAVE_KEY } from './save';
-import { golfApi, installGolf, type GolfDeps } from './runtime';
-import { CART_SPOTS, GOLF_ACH, HOLES, KICKED_BOARD } from './types';
+import { achievementsFor, golfApi, installGolf, type GolfDeps } from './runtime';
+import { CART_SPOTS, GOLF_ACH, HOLES, KICKED_BOARD, POTTING_SHED } from './types';
+import { heightAt } from '../terrain';
 
 /** An element that takes any call or property: enough for the HUD, the card and the intro cards. */
 function fakeEl(): unknown {
@@ -119,6 +120,35 @@ describe('golf runtime', () => {
     golf.api.quitRound();
     expect(golf.api.inRound()).toBe(false);
     expect(golf.addressing()).toBe(false);
+  });
+
+  it('unlocks The Maze for holing hole index 5 at par or better, not over par', () => {
+    const scores = HOLES.map(() => null);
+    expect(achievementsFor({ kind: 'holed', hole: 5, strokes: 4, par: 4, name: '' }, scores)).toContain(GOLF_ACH.maze);
+    expect(achievementsFor({ kind: 'holed', hole: 5, strokes: 5, par: 4, name: '' }, scores)).not.toContain(GOLF_ACH.maze);
+    expect(achievementsFor({ kind: 'holed', hole: 4, strokes: 3, par: 4, name: '' }, scores)).toEqual([]);
+  });
+
+  it('unlocks the full nine and under-par on round-done', () => {
+    const full = HOLES.map(() => 3);
+    expect(achievementsFor({ kind: 'round-done', total: 27, toPar: -7 }, full)).toEqual([GOLF_ACH.fullNine, GOLF_ACH.underPar]);
+    expect(achievementsFor({ kind: 'round-done', total: 40, toPar: 6 }, full)).toEqual([GOLF_ACH.fullNine]);
+    const gap = HOLES.map((_, i) => (i === 2 ? null : 4));
+    expect(achievementsFor({ kind: 'round-done', total: 30, toPar: 0 }, gap)).toEqual([]);
+  });
+
+  it('offers the ladder to the 7th tee at the shed and a climb down from the roof', () => {
+    const w = makeWorld();
+    const golf = installGolf(w.deps, { storage: w.storage });
+    const lx = POTTING_SHED.ladder.x;
+    const lz = POTTING_SHED.ladder.z;
+    w.player.y = heightAt(lx, lz);
+    expect(golf.prompt(lx, lz)).toBe('Climb the ladder to the 7th tee');
+    expect(golf.interact(lx, lz)).toBe(true);
+    expect(w.player.x).toBe(POTTING_SHED.x + 2);
+    expect(w.player.yaw).toBeCloseTo(-Math.PI / 2);
+    w.player.y = heightAt(POTTING_SHED.x, POTTING_SHED.z) + POTTING_SHED.roofY;
+    expect(golf.prompt(POTTING_SHED.x + POTTING_SHED.w / 2, POTTING_SHED.z)).toBe('Climb down the ladder');
   });
 
   it('refuses a round from a cart', () => {

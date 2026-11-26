@@ -288,6 +288,14 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       await ctx.step();
     },
   },
+  'golf-bottom-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      // One finished Bottom Garden hole: hole 4 (index 4), par 4, in four.
+      createGolfStore(store()).recordHole(4, 4, 4);
+      await ctx.step();
+    },
+  },
   'golf-holes-played': {
     fidelity: 'api',
     async run(ctx) {

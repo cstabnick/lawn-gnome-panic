@@ -1,4 +1,4 @@
-// Hedgeworth's round as pure state. One player, four holes, @lawn/golf for the swing and the ball. World metres for the
+// Hedgeworth's round as pure state. One player, nine holes (played in HOLE_ORDER), @lawn/golf for the swing and the ball. World metres for the
 // ball and aim; the flight itself is the package result in the golf frame (golf/course.ts). No three.js, no DOM.
 import {
   CLUB_ORDER, CLUBS, LIES,
@@ -7,7 +7,7 @@ import {
 } from '@lawn/golf';
 import { courseGroundY, golfEnv, golfStart, golfToWorld, HOLES_YD, lieAtWorld, yardsBetween } from './course';
 import type { CardView, HudView, RoundEvent, RoundState } from './types';
-import { HOLES, MAX_STROKES, MAX_WIND, POND_NAME } from './types';
+import { HOLE_ORDER, HOLES, MAX_STROKES, MAX_WIND, POND_NAME } from './types';
 
 const BANNER_SECONDS = 3;
 const BALL_REST_LIFT = 0.04;
@@ -118,6 +118,13 @@ export function tapSwing(s: RoundState): RoundEvent[] {
   return [];
 }
 
+/** Take a shot straight from 'aim' with a chosen power and accuracy, skipping the meter (scripted rounds, tests and
+ *  bots). Same result as a meter swing that locked those values. */
+export function playShot(s: RoundState, power: number, accuracy: number): RoundEvent[] {
+  if (s.phase !== 'aim') return [];
+  return fire(s, power, accuracy);
+}
+
 /** Take the shot: one stroke, the flight starts from the ball. */
 function fire(s: RoundState, power: number, accuracy: number): RoundEvent[] {
   s.strokes += 1;
@@ -203,7 +210,7 @@ function pickUp(s: RoundState, events: RoundEvent[]): void {
   events.push({ kind: 'picked-up', hole: s.hole });
 }
 
-/** From 'holed': the next unscored hole in index order (wrapping), or the round's end. */
+/** From 'holed': the next unscored hole in play order (HOLE_ORDER, wrapping), or the round's end. */
 export function nextHole(s: RoundState): RoundEvent[] {
   if (s.phase !== 'holed') return [];
   if (s.scores.every((x) => x !== null)) {
@@ -211,8 +218,9 @@ export function nextHole(s: RoundState): RoundEvent[] {
     const t = totals(s);
     return [{ kind: 'round-done', total: t.strokes, toPar: t.toPar }];
   }
-  for (let k = 1; k <= HOLES.length; k++) {
-    const i = (s.hole + k) % HOLES.length;
+  const at = Math.max(0, HOLE_ORDER.indexOf(s.hole));
+  for (let k = 1; k <= HOLE_ORDER.length; k++) {
+    const i = HOLE_ORDER[(at + k) % HOLE_ORDER.length];
     if (s.scores[i] === null) {
       startHole(s, i);
       break;
@@ -277,7 +285,11 @@ export function hudView(s: RoundState, atBall: boolean): HudView {
 export function cardView(s: RoundState, best: readonly (number | null)[]): CardView {
   const t = totals(s);
   return {
-    holes: HOLES.map((h, i) => ({ number: h.number, name: h.name, par: h.par, strokes: s.scores[i], best: best[i] ?? null })),
+    // In card order (1..9), whatever the save index.
+    holes: HOLE_ORDER.map((i) => {
+      const h = HOLES[i];
+      return { number: h.number, name: h.name, par: h.par, strokes: s.scores[i], best: best[i] ?? null };
+    }),
     total: t.strokes,
     toPar: t.toPar,
     final: s.phase === 'done',

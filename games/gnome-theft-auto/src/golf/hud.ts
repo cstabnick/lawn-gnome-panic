@@ -195,6 +195,18 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
     let narrow = false;
     try { narrow = typeof innerWidth === 'number' && innerWidth < 600 && !isLandscape(); } catch { /* no window */ }
     strip.style.top = narrow ? 'calc(env(safe-area-inset-top) + 250px)' : 'calc(env(safe-area-inset-top) + 56px)';
+    // Phone portrait: anchored right so it clears the birding row (life-list pill, binoculars) at the left.
+    if (narrow) {
+      strip.style.left = 'auto';
+      strip.style.right = 'calc(env(safe-area-inset-right) + 8px)';
+      strip.style.transform = 'none';
+      strip.style.maxWidth = 'calc(100vw - 160px)';
+    } else {
+      strip.style.left = '50%';
+      strip.style.right = 'auto';
+      strip.style.transform = 'translateX(-50%)';
+      strip.style.maxWidth = '92vw';
+    }
     const btnTop = narrow ? 'calc(env(safe-area-inset-top) + 352px)' : 'calc(env(safe-area-inset-top) + 8px)';
     cardBtn.style.top = btnTop;
     quitBtn.style.top = btnTop;
@@ -261,17 +273,21 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
       const title = div('font-weight:800;font-size:17px;text-align:center;margin-bottom:8px;', "Hedgeworth Links · Members' card");
       cardPanel.appendChild(title);
 
+      // Nine rows must fit a phone: compact cells, and a long hole name ellipsises in its column.
       const table = document.createElement('table');
-      table.style.cssText = 'width:100%;border-collapse:collapse;font-size:14px;';
+      table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
       const addRow = (cells: string[], css: string): void => {
         const tr = document.createElement('tr');
         tr.style.cssText = css;
-        for (const text of cells) {
+        cells.forEach((text, i) => {
           const td = document.createElement('td');
-          td.style.cssText = 'padding:4px 6px;text-align:left;';
+          td.style.cssText = 'padding:3px 5px;text-align:left;';
+          if (i === 1) {
+            td.style.cssText += 'max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          }
           td.textContent = text;
           tr.appendChild(td);
-        }
+        });
         table.appendChild(tr);
       };
       addRow(['No.', 'Hole', 'Par', 'Score', 'Best'], 'font-weight:700;border-bottom:1px solid rgba(243,233,210,0.4);');
@@ -281,13 +297,11 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
           'border-bottom:1px solid rgba(243,233,210,0.15);',
         );
       }
-      const total = document.createElement('tr');
-      const totalCell = document.createElement('td');
-      totalCell.style.cssText = 'padding:6px;font-weight:700;';
-      totalCell.textContent = `Total ${view.total} (${toParText(view.toPar)})`;
-      totalCell.colSpan = 5;
-      total.appendChild(totalCell);
-      table.appendChild(total);
+      // Total row: par and strokes summed over the holes shown (strokes only from the holes played), best is not summed.
+      const parSum = view.holes.reduce((s, h) => s + h.par, 0);
+      const played = view.holes.filter((h) => h.strokes !== null);
+      const strokesSum = played.length === 0 ? '–' : String(played.reduce((s, h) => s + (h.strokes ?? 0), 0));
+      addRow(['', 'Total', String(parSum), strokesSum, '–'], 'font-weight:700;border-top:1px solid rgba(243,233,210,0.4);');
       cardPanel.appendChild(table);
 
       if (view.final) {

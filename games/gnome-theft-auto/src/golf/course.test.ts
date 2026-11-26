@@ -1,8 +1,9 @@
 // Hedgeworth as a @lawn/golf course: lies on the yard, and the package's calibrated ball flight on GTA ground.
 import { describe, expect, it } from 'vitest';
 import { CLUBS, simulateShot } from '@lawn/golf';
-import { golfEnv, golfStart, golfToWorld, lieAtWorld, holeYards, yardsBetween } from './course';
-import { HOLES, YD, toGolf } from './types';
+import { courseGroundY, golfEnv, golfStart, golfToWorld, lieAtWorld, holeYards, yardsBetween } from './course';
+import { heightAt } from '../terrain';
+import { HOLES, POTTING_SHED, YD, toGolf } from './types';
 
 describe('Hedgeworth lies', () => {
   it('reads tee, fairway, green, fringe, sand, water and rough where the holes put them', () => {
@@ -41,5 +42,33 @@ describe('ball flight on GTA ground', () => {
     const a = simulateShot(golfEnv(), start, shot, 'fairway', { yaw: 1, mph: 6 }, { x: 0, z: 0 });
     const b = simulateShot(golfEnv(), start, shot, 'fairway', { yaw: 1, mph: 6 }, { x: 0, z: 0 });
     expect(a).toEqual(b);
+  });
+});
+
+describe('the new holes: the shed roof and the hedge walls', () => {
+  it('lifts hole 7 onto the potting shed roof', () => {
+    const s = POTTING_SHED;
+    expect(courseGroundY(s.x, s.z) - heightAt(s.x, s.z)).toBeCloseTo(2.6, 5);
+    const roof = golfStart(HOLES[7].tee.x, HOLES[7].tee.z);
+    const ground = golfStart(s.x + 10, s.z);
+    expect(roof.y - ground.y).toBeCloseTo(2.6 / YD, 3);
+  });
+
+  const h5 = HOLES[5];
+  const wallZ = 866; // the first maze wall, across the line straight south of hole 5's tee
+  const fire = (club: 'SW' | '5I', power: number, env = golfEnv()) =>
+    simulateShot(env, golfStart(h5.tee.x, h5.tee.z), { club, power, accuracy: 0, yaw: 0 }, 'tee', { yaw: 0, mph: 0 }, toGolf(h5.pin.x, h5.pin.z));
+
+  it('stops a low punch at the first maze wall', () => {
+    const r = fire('5I', 0.58);
+    // Without the wall the same ball would carry on past it; with it, the ball is stopped on this side.
+    expect(golfToWorld(fire('5I', 0.58, { ...golfEnv(), collide: undefined }).end).z).toBeGreaterThan(wallZ);
+    expect(golfToWorld(r.end).z).toBeLessThan(wallZ);
+    expect(r.events.some((e) => e.kind === 'bounce')).toBe(true);
+  });
+
+  it('lets a full sand wedge fly over it', () => {
+    const r = fire('SW', 1);
+    expect(golfToWorld(r.end).z).toBeGreaterThan(wallZ);
   });
 });

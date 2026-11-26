@@ -1,7 +1,7 @@
 // The Gnomlet's Hedgeworth card (A14): the holes with par and length, the player's best scores, and a button that
 // starts a round from the tablet (the runtime refuses with a reason when the player is far from the course).
 import { registerGnomletApp, type GnomletCtx } from '../gnomlet/registry';
-import { COURSE_PAR, HOLES, LOST_BALLS, YD, type GolfApi, type GolfSave, type GolfStore } from './types';
+import { COURSE_PAR, HOLES, HOLE_ORDER, LOST_BALLS, YD, type GolfApi, type GolfSave, type GolfStore } from './types';
 
 export interface GolfAppDeps {
   store(): GolfStore;
@@ -39,8 +39,8 @@ function holeYards(index: number): number {
 }
 
 function detailText(save: GolfSave): string {
-  if (save.bestRound === null) return 'No card yet';
-  return `Best round ${save.bestRound} (${toParText(save.bestRound - COURSE_PAR)})`;
+  if (save.bestNine === null) return 'No card yet';
+  return `Best nine ${save.bestNine} (${toParText(save.bestNine - COURSE_PAR)})`;
 }
 
 /** Register the Hedgeworth Gnomlet app (id `hedgeworth`). */
@@ -63,23 +63,38 @@ export function registerGolfApp(deps: GolfAppDeps): void {
       };
 
       box.appendChild(el('h3', 'Hedgeworth Links', 'margin:0;font-size:18px;overflow-wrap:anywhere;'));
-      line(`Four holes. Nine on the card. Par ${COURSE_PAR}.`);
+      line(`Nine holes, at last. Par ${COURSE_PAR}.`);
 
       // The holes: number, name, par, length (gnome yards from the tee), your best.
       const table = el('table', undefined, 'width:100%;border-collapse:collapse;font-size:14px;');
       const head = el('tr');
       for (const title of ['No.', 'Hole', 'Par', 'Yards', 'Best']) head.appendChild(el('th', title, CELL_CSS));
       table.appendChild(head);
-      for (const h of HOLES) {
+      // Card order (1..9), not array order.
+      let totalYards = 0;
+      let totalBest: number | null = 0;
+      for (const index of HOLE_ORDER) {
+        const h = HOLES[index];
         const best = save.best[h.index];
+        const yards = holeYards(h.index);
+        totalYards += yards;
+        if (best === null || best === undefined || totalBest === null) totalBest = null;
+        else totalBest += best;
         const row = el('tr');
         row.appendChild(el('td', String(h.number), CELL_CSS));
         row.appendChild(el('td', h.name, CELL_CSS));
         row.appendChild(el('td', String(h.par), CELL_CSS));
-        row.appendChild(el('td', String(holeYards(h.index)), CELL_CSS));
+        row.appendChild(el('td', String(yards), CELL_CSS));
         row.appendChild(el('td', best === null || best === undefined ? '–' : String(best), CELL_CSS));
         table.appendChild(row);
       }
+      const total = el('tr');
+      total.appendChild(el('td', 'Total', CELL_CSS));
+      total.appendChild(el('td', '', CELL_CSS));
+      total.appendChild(el('td', String(COURSE_PAR), CELL_CSS));
+      total.appendChild(el('td', String(totalYards), CELL_CSS));
+      total.appendChild(el('td', totalBest === null ? '–' : String(totalBest), CELL_CSS));
+      table.appendChild(total);
       box.appendChild(table);
 
       // The stats.
@@ -87,7 +102,8 @@ export function registerGolfApp(deps: GolfAppDeps): void {
       box.appendChild(stats);
       stats.appendChild(el('p', 'The card', `${LINE_CSS}font-weight:bold;`));
       line(`Rounds played: ${save.rounds}`, stats);
-      line(`Best round: ${save.bestRound === null ? '—' : `${save.bestRound} (${toParText(save.bestRound - COURSE_PAR)})`}`, stats);
+      line(`Best round: ${save.bestNine === null ? '—' : `${save.bestNine} (${toParText(save.bestNine - COURSE_PAR)})`}`, stats);
+      if (save.bestRound !== null) line(`Old four-hole card: ${save.bestRound}`, stats);
       line(`Holes in one: ${save.aces}`, stats);
       line(`Lost balls found: ${save.ballsFound.length} / ${LOST_BALLS.length}`, stats);
       line(`The Kicked Board: ${save.boardBroken ? 'broken' : 'still standing'}`, stats);

@@ -87,6 +87,7 @@ const ROWS: HomeDef[] = [
   // the bible's `speedway` is not a stage: speedway-pits stands in for it
   atStage('lulu', 'a converted car-wash bay, Lost & Found Speedway', 'speedway-pits'),
   atStage('sage', 'a room above the Route South Acorn Diner', 'south-highway-diner'),
+  hidden('cass', "a flat over the Pay 'n' Glaze paint store"), // E20 (L106): never shown
   onSite('chicory', "a gardener's lodge at the vineyard gate", 'vineyard'),
   onSite('wisteria', 'Brassknock Manor', 'mansion'),
   onSite('saxifrage', "the big tent at Wader's Rest", 'cult-camp'),
@@ -154,6 +155,7 @@ const WORK_ROWS: WorkDef[] = [
   noWork('hogweed', 'the Underspan workshops'),
   workStage('lulu', 'the Carburettors; Rutbottom in summer', 'speedway-pits'), // speedway is not a stage
   workStage('sage', 'the diner kitchen (chef-job employer)', 'south-highway-diner'),
+  workStage('cass', "the Pay 'n' Glaze custom shop", 'pay-n-glaze'),
   noWork('chicory', 'Trellisdown Vineyard'),
   noWork('wisteria', 'Trellisdown Vineyard'),
   noWork('saxifrage', 'the Flock'),

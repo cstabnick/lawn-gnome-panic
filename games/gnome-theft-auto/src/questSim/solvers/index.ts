@@ -9,6 +9,7 @@ import { tessieBuoysSolver, tessieEscortSolver, tessieRideSolver, tessieSighting
 import { raceSolver } from './race';
 import { checkpointsSolver } from './checkpoints';
 import { probeSolver } from './probe';
+import { inspectSolver, passengerSolver } from './story';
 
 export const SOLVERS: { [K in ObjectiveDef['kind']]: Solver<K> } = {
   crack: crackSolver,
@@ -27,6 +28,8 @@ export const SOLVERS: { [K in ObjectiveDef['kind']]: Solver<K> } = {
   race: raceSolver,
   checkpoints: checkpointsSolver,
   probe: probeSolver,
+  passenger: passengerSolver,
+  inspect: inspectSolver,
 };
 
 /** The solver for one objective (typed loosely for the runner). */

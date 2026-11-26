@@ -123,3 +123,4 @@ which is the whole idea of Don Compost.
 - [x] Report OK (never in the baseline).
 - [x] `npm test` passes; watched at desktop and phone size.
 - [x] `direction.notes` points here.
+Intro card: Don Compost after his first tap. Big Lou is not in this scene (he is the Gnomecino door), so no card here.

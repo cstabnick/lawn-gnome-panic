@@ -5,6 +5,7 @@
 
 import type { Place } from '../config';
 import { RADIO_SONGS } from './music/songs';
+import { STORY_BULLETINS } from '../quests/story';
 import { ADAGIO_STATION } from './adagioStation';
 import { WORLD_CHANGES, worldBulletinKey } from '../worldChanges/defs';
 
@@ -523,6 +524,8 @@ export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
     { who: 'BULLETIN', text: 'A gnome outran a bee swarm through Tallgrass Commons and got clear. The bees have gone home. Nobody is hurt, and nobody is sure whose hat was in the hive.' },
     { who: 'BULLETIN', text: 'Good news from the Commons: the swarm lost interest at the far fence and went home. The gnome who outran them is asking for a bigger hat.' },
   ],
+  // E20: the story rows' own bulletins (quests/story/<NN>-*.ts `bulletins`).
+  ...Object.fromEntries(Object.entries(STORY_BULLETINS).map(([id, lines]) => [id, lines.map((text) => ({ who: 'BULLETIN', text }))])),
 };
 
 /** Traffic reports built from the map's places (the errands from R-026), so the report is always somewhere the player can go. */

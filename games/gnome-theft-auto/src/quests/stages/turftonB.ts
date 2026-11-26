@@ -410,13 +410,15 @@ export const TURFTON_B_STAGES: readonly Stage[] = [
     facing: 0,
     time: 'day',
     built: 'existing',
-    usedBy: ['pay-n-glaze-shop', 'city-impound-run'],
+    givers: ['cass'],
+    usedBy: ['pay-n-glaze-shop', 'city-impound-run', 'sq-on-the-house'],
     look: 'A ring of spray-bay walls at the Pay \'n\' Glaze shop, open to the z = 120 road, with paint splashes on the concrete and a shop front glowing behind.',
     sounds: 'A spray gun hissing, a radio playing jingles, the buzz of the shop sign, a car rolling into the bay.',
     marks: [
       mark('glaze-tech', [94, 150], [90, 146], 'work', 'sprays a coat of primer on the bay floor with a spray gun'),
       mark('pip', [84, 141], [88, 138], 'lean', 'leans on the bay wall, keys spinning on one finger'),
       mark('player', [88, 138], [90, 146], 'stand', 'waits at the bay entrance with the keys'),
+      mark('cass', [80, 134], [86, 134], 'stand', 'arms folded by the work-order board, chrome knuckles catching the light'),
     ],
     cameras: [
       cam('wide', [60, 6, 110], [90, 1.2, 140], 'establishing: the shop front and the bay from the road'),

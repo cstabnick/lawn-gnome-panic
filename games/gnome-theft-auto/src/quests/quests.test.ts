@@ -12,6 +12,7 @@ import { pushOutOfBoxes } from '../collide';
 import { EVENT_BULLETINS } from '../radio/content';
 import { buildWorld } from '../world';
 import { GIVERS, QUESTS, questById } from './defs';
+import { STORY_QUESTS } from './story';
 import { SCENES } from '../cutscene/scenes';
 import type { SceneScript } from '../cutscene/script';
 
@@ -197,7 +198,9 @@ describe('quest step transitions', () => {
 
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(92); // + the 3 Dewdrop quests (E18) + the ribbon-cutting side quest (E32) + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
+    // E20: story rows live in quests/story/ (rows moved there from the chapter files count once).
+    const moved = STORY_QUESTS.filter((q) => ['m02-roof-on-credit', 'ch1-founders-boot', 'ch2-unmowed-tablet', 'ch3-salvage-raid'].includes(q.id)).length;
+    expect(QUESTS.length).toBe(93 - moved + STORY_QUESTS.length); // + On the House (E20) + the 3 Dewdrop quests (E18) + the ribbon-cutting side quest (E32) + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -249,14 +252,14 @@ describe('story campaign registry', () => {
       cur = cur.prereq ? questById(cur.prereq) : undefined;
     }
     expect(chain[chain.length - 1]).toBe('prologue-fresh-kiln');
-    expect(chain.length).toBe(16);
+    expect(chain.length).toBe(45); // E20: rows 1-35 (39 quests with the extended parts) + the 6 later chapter quests
   });
 
   it('preserves first-contract compatibility and includes John Bodega & Asphalt cameos in chapters 1, 3, and 5', () => {
     const fc = questById('first-contract');
     expect(fc).toBeDefined();
     expect(fc!.giver).toBe('mulch-club');
-    expect(fc!.prereq).toBeUndefined();
+    expect(fc!.prereq).toBe('m02-roof-on-credit'); // E20: the flat comes first (outline row 3)
     const crack = fc!.objectives[0];
     expect(crack.kind).toBe('crack');
     if (crack.kind === 'crack') {

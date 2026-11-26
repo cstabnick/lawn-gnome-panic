@@ -2,6 +2,8 @@
 import { marker, markerNum } from '../levels';
 import { CHAPTER_1_QUESTS } from './chapter1';
 import { HOME_QUESTS } from './homeQuests';
+import { STORY_GIVERS, STORY_QUESTS } from './story';
+import { STORY_ROWS } from './storyRows';
 import { CHAPTER_2_QUESTS } from './chapter2';
 import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
@@ -23,6 +25,7 @@ import { COUNTRY_QUESTS_DEFS } from './countryQuests';
 import { LOAMDEEP_QUESTS } from './loamdeepQuests';
 import { SOCIETY_QUEST_DEFS } from './societyQuests';
 import { DEWDROP_QUESTS } from './dewdropQuests';
+import { GLAZE_GIVERS, GLAZE_QUESTS } from './glazeQuests';
 import { SHOP as BENT_PIN } from '../fishing/types';
 import { HIDE } from '../birding/types';
 import { LODGE } from '../hunting/species';
@@ -199,6 +202,7 @@ export const GIVERS: Record<string, GiverDef> = {
     letter: '!',
   },
   ...COAST_GIVERS,
+  ...GLAZE_GIVERS,
   // Snowcap Rise's side quests (winterQuests.ts): the ski class and the pond shanty.
   gentian: {
     id: 'gentian',
@@ -423,16 +427,26 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: 'N',
   },
+  // E20: givers the story rows add (quests/story/<NN>-*.ts `givers`).
+  ...STORY_GIVERS,
 };
 
-export const QUESTS: readonly QuestDef[] = [
-  CHAPTER_1_QUESTS[0],
+/**
+ * The main story in play order (spine row, storyRows.ts; a stable sort keeps an extended row's parts before its final).
+ * E20: rows 2-35 that live one file per row (quests/story/) mix with the kept chapter quests.
+ */
+const MAIN_STORY: readonly QuestDef[] = [
+  ...CHAPTER_1_QUESTS,
   ...HOME_QUESTS,
-  ...CHAPTER_1_QUESTS.slice(1),
+  ...STORY_QUESTS,
   ...CHAPTER_2_QUESTS,
   ...CHAPTER_3_QUESTS,
   ...CHAPTER_4_QUESTS,
   ...CHAPTER_5_QUESTS,
+].map((q, i) => ({ q, i, row: STORY_ROWS[q.id] ?? 999 })).sort((a, b) => a.row - b.row || a.i - b.i).map((x) => x.q);
+
+export const QUESTS: readonly QuestDef[] = [
+  ...MAIN_STORY,
   ...SIDE_QUESTS,
   ...OUTSKIRTS_QUESTS,
   ...COAST_QUEST_DEFS,
@@ -450,6 +464,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...LOAMDEEP_QUESTS,
   ...SOCIETY_QUEST_DEFS,
   ...DEWDROP_QUESTS,
+  ...GLAZE_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

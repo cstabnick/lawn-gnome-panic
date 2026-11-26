@@ -30,6 +30,7 @@ import { SPORTS_STAGES } from './stages/sports';
 import { ROOTWELL_STAGES } from './stages/rootwell';
 import { COUNTRY_STAGES } from './stages/country';
 import { SOCIETY_STAGES } from './stages/societies';
+import { STORY_STAGE_USES, STORY_STAGES } from './stages/story';
 import type { CutsceneRoom } from './types';
 
 export * from './stages/kit';
@@ -59,7 +60,7 @@ export const CAST: readonly CastMember[] = [
       glaze: { paint: 0xf8f8fa, finish: 'pearl', rim: 'spinner', rimColor: 0xc9a227, bumper: 'chrome', tyre: 'whitewall', ornament: 'hat', underglow: 0xc9a227 } },
   },
   {
-    id: 'don-compost', name: 'Don Compost', home: 'mulch-club-door', haunts: [],
+    id: 'don-compost', name: 'Don Compost', preset: 'don compost', home: 'mulch-club-door', haunts: [],
     routine: 'Never seen outside before dark. Arrives at the Mulch Club side door at dusk in his black Lowrider, two bodyguards first, then him; leaves at dawn.',
     vehicle: { kind: 'lowrider', parkedAt: 'don-lowrider', note: 'Gloss black Lowrider, whitewalls, chrome bumper, a bodyguard always leaning on it.',
       glaze: { paint: 0x141414, finish: 'gloss', tyre: 'whitewall', bumper: 'chrome', rim: 'mesh', rimColor: 0xd9d9d9, lamp: 'round', beam: 'warm' } },
@@ -79,7 +80,7 @@ export const CAST: readonly CastMember[] = [
       glaze: { paint: 0x2f5a8f, finish: 'pearl', extras: ['flag'], ornament: 'trowel', tyre: 'whitewall' } },
   },
   {
-    id: 'mayor-mulch', name: 'Mayor Barnaby "Two-Coat" Mulch', home: 'city-hall-steps', haunts: ['patio-gallery'],
+    id: 'mayor-mulch', name: 'Mayor Barnaby "Two-Coat" Mulch', preset: 'mayor mulch', home: 'city-hall-steps', haunts: ['patio-gallery'],
     routine: 'Cuts ribbons in the morning, naps in his office after lunch, slips out to Patio Heights after dark.',
     vehicle: { kind: 'ride-on', parkedAt: 'mayor-ride-on', note: 'Candy-red Ride-On on its second coat (a third after the finale), bunting, a bell.',
       glaze: { paint: 0xc21f2a, finish: 'candy', extras: ['bunting', 'bell'], bumper: 'chrome', seat: 'throne' } },
@@ -178,28 +179,53 @@ export const CAST: readonly CastMember[] = [
       glaze: { paint: 0x7a8a78, finish: 'patina' } },
   },
   {
-    id: 'midge', name: 'Squeaky-Clean Midge', home: 'glaze-clinic', haunts: [],
+    id: 'midge', name: 'Squeaky-Clean Midge', preset: 'midge', home: 'glaze-clinic', haunts: [],
     routine: 'Paces outside the Glaze Clinic doors between patients at 140 BPM, re-glazes anyone the ambulance brings in.',
     vehicle: null,
   },
   {
-    id: 'gary', name: 'Gate-Guard Gary', home: 'patio-gate', haunts: [],
+    id: 'gary', name: 'Gate-Guard Gary', preset: 'gary', home: 'patio-gate', haunts: [],
     routine: 'Reads a 900-page HOA binder in the sentry box all day, waves luxury Zero-Turns through, sighs at push-bikes.',
     vehicle: null,
   },
   {
-    id: 'rooster', name: 'Rooster "Squall-Box" Weatherby', home: 'rooster-windmill', haunts: [],
+    id: 'rooster', name: 'Rooster "Squall-Box" Weatherby', preset: 'rooster weatherby', home: 'rooster-windmill', haunts: [],
     routine: 'Roosts on the windmill platform shouting barometric prophecies through a tin funnel; climbs down only for seed.',
     vehicle: null,
   },
   {
-    id: 'frank', name: 'Fence-Post Frank', home: 'south-highway-diner', haunts: [],
+    id: 'frank', name: 'Fence-Post Frank', preset: 'frank', home: 'south-highway-diner', haunts: [],
     routine: 'Leans on his hand-painted sign by the South Highway all day, waving at convoys, eats every meal at the diner counter.',
     vehicle: null,
   },
   {
-    id: 'ernie', name: 'Ash-Shovel Ernie', home: 'compost-heap', haunts: [],
+    id: 'ernie', name: 'Ash-Shovel Ernie', preset: 'ernie', home: 'compost-heap', haunts: [],
     routine: 'Stokes the mulch furnace and roasts chestnuts on a trowel, humming Fescue work-songs.',
+    vehicle: null,
+  },
+  {
+    id: 'chard', name: 'Chard Levelright', preset: 'chard', home: 'chard', haunts: [],
+    routine: 'Walks the Even-Estates site at dusk with a spirit level, checks every wall by eye, sleeps in the site caravan with one lit window.',
+    vehicle: null,
+  },
+  {
+    id: 'lulu', name: 'Lugnut Lulu', preset: 'lugnut lulu', home: 'speedway-pits', haunts: [],
+    routine: 'Holds court in the pit lane of the Lost & Found Speedway, keeps the Carburettors\' tabs, races with her mother\'s wheel-trim in the glovebox.',
+    vehicle: null,
+  },
+  {
+    id: 'hogweed', name: 'Hogweed Sprocket', preset: 'hogweed', home: 'hogweed', haunts: [],
+    routine: 'Tinkers in the Underspan workshop-hammock, tests the Dewdrop on anybody who stands still, argues with warning signs.',
+    vehicle: null,
+  },
+  {
+    id: 'sage', name: 'Sage Ladle', preset: 'sage', home: 'south-highway-diner', haunts: [],
+    routine: 'Opens the Acorn Diner kitchen before dawn, runs the lunch rush with a ladle in her belt, serves Vesper on Thursdays without a word.',
+    vehicle: null,
+  },
+  {
+    id: 'cass', name: 'Chrome-Knuckle Cass', preset: 'cass', home: 'pay-n-glaze', haunts: [],
+    routine: 'Hands out work orders at the Pay \'n\' Glaze custom shop, checks the chrome twice, signs off every respray herself.',
     vehicle: null,
   },
   {
@@ -224,7 +250,7 @@ export const CAST: readonly CastMember[] = [
       glaze: { paint: 0x2b1f3a, finish: 'holo', tyre: 'glow', extras: ['fairylights'], underglow: 0x8e44ad } },
   },
   {
-    id: 'turncoat-cam', name: 'Turncoat Cam', home: 'side-valve-bay', haunts: ['patio-gate'],
+    id: 'turncoat-cam', name: 'Turncoat Cam', preset: 'turncoat cam', home: 'side-valve-bay', haunts: ['patio-gate'],
     routine: 'Used to sweep the Side-Valve bay; after chapter 3 races for a Patio Heights charter and parks at the gate.',
     vehicle: { kind: 'zero-turn', parkedAt: 'cam-zero-turn', note: 'Chameleon-finish Zero-Turn with a fin spoiler, bought with the reward money.',
       glaze: { paint: 0xf4f4f8, finish: 'chameleon', spoiler: 'fin', rim: 'turbine', underglow: 0xffffff } },
@@ -245,7 +271,7 @@ export const CAST: readonly CastMember[] = [
     vehicle: null,
   },
   {
-    id: 'mabel', name: 'Mabel Kerbstone', home: 'bus-stop', haunts: [],
+    id: 'mabel', name: 'Mabel Kerbstone', preset: 'mabel', home: 'bus-stop', haunts: [],
     routine: 'Drives the one Turfton Taxi; every fare ends at the Central Bus Stop.',
     vehicle: null,
   },
@@ -253,7 +279,9 @@ export const CAST: readonly CastMember[] = [
 
 // ---- The stages ----------------------------------------------------------------------------------------------------
 
-export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES, ...DIRT_STAGES, ...STREET_STAGES, ...GOLF_STAGES, ...ROOTWELL_STAGES, ...COUNTRY_STAGES, ...SPORTS_STAGES, ...SOCIETY_STAGES];
+// E20: the story rows' own stages (stages/story/, one file per row), plus the quest ids they add to existing stages.
+export const STAGES: readonly Stage[] = [...TURFTON_STAGES, ...TURFTON_B_STAGES, ...TURFTON_C_STAGES, ...CLOVERFIELD_STAGES, ...WILDS_STAGES, ...EAST_STAGES, ...SPEEDWAY_STAGES, ...PEBBLEWICK_STAGES, ...COAST_STAGES, ...WINTER_STAGES, ...DIRT_STAGES, ...STREET_STAGES, ...GOLF_STAGES, ...ROOTWELL_STAGES, ...COUNTRY_STAGES, ...SPORTS_STAGES, ...SOCIETY_STAGES, ...STORY_STAGES]
+  .map((s) => (STORY_STAGE_USES[s.id] ? { ...s, usedBy: [...s.usedBy, ...STORY_STAGE_USES[s.id]] } : s));
 
 export function stageById(id: string): Stage | undefined {
   return STAGES.find((s) => s.id === id);

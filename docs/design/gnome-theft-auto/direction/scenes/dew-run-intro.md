@@ -147,3 +147,4 @@ his reaction, and the audience is in on the pumpkins.
 ## Review pass (planner)
 
 Watched at 960x600. Granny's singles are taken from a high angle: at eye level her rocking chair's arm crossed her face. The opening track now sits south of the convoy (z 186) on the tanker, so the chapter card plays over the farm road, not over downtown.
+Intro cards: Granny on a cu after her first line; Bramble on a reaction shot when the Dew-Well coughs dry.

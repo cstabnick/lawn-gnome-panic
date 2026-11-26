@@ -50,7 +50,25 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   fennel: { hz: 124, speed: 0.85, range: 0.8, formant: 1.02 },
   moss: { hz: 96, speed: 0.9, range: 0.5, formant: 0.97 },
   pebble: { hz: 168, speed: 1.3, range: 1.5, formant: 1.14 },
-
+  // Batch 3 cast (E20). Each (wave, style, rounded formant) is unique; hz matches cutscene/cast.ts.
+  'don compost': { hz: 72, speed: 0.55, wave: 'sine', style: 'words', sub: 1, formant: 0.78 },
+  parsley: { hz: 98, speed: 0.7, wave: 'sine', breath: 0.2, range: 0.4, formant: 1.07 },
+  hyssop: { hz: 130, speed: 1.4, wave: 'square', range: 1.6, glide: 0.5, formant: 1.13 },
+  chard: { hz: 84, speed: 0.6, wave: 'saw', breath: 0.15, wobble: 0.1, range: 0.3, formant: 0.83 },
+  hogweed: { hz: 120, speed: 1.5, wave: 'triangle', range: 1.8, wobble: 0.3, formant: 0.96 },
+  gary: { hz: 100, speed: 0.85, wave: 'square', style: 'syllables', range: 0.3, glide: -0.3, formant: 1.16 },
+  sage: { hz: 112, speed: 0.75, wave: 'sine', range: 0.6, formant: 0.91 },
+  frank: { hz: 90, speed: 0.6, wave: 'triangle', style: 'syllables', glide: -0.4, formant: 0.88 },
+  chicory: { hz: 96, speed: 0.7, wave: 'sine', style: 'syllables', glide: -0.2, formant: 0.98 },
+  wisteria: { hz: 106, speed: 0.6, wave: 'triangle', style: 'syllables', range: 0.8, wobble: 0.1, formant: 1.09 },
+  nubbin: { hz: 170, speed: 1.3, wave: 'sine', style: 'syllables', range: 1.2, formant: 1.35 },
+  tumblesoil: { hz: 118, speed: 0.6, wave: 'sine', wobble: 0.3, breath: 0.2, formant: 1.18 },
+  saxifrage: { hz: 108, speed: 0.7, wave: 'triangle', style: 'words', range: 0.5, wobble: 0.2, formant: 1.03 },
+  ernie: { hz: 86, speed: 0.8, wave: 'saw', style: 'syllables', wobble: 0.25, formant: 0.86 },
+  midge: { hz: 156, speed: 1.6, wave: 'square', style: 'letters', range: 1.5, formant: 1.22 },
+  cass: { hz: 100, speed: 1.0, wave: 'square', style: 'words', sub: 0.6, formant: 0.94 },
+  // Never seen: the radio voice out of the Loamdeep tunnels (no CAST preset).
+  'dj moleman': { hz: 160, speed: 1.1, wave: 'triangle', style: 'letters', range: 1.3, glide: 0.2, breath: 0.2, formant: 1.31 },
   // ---- speakers without a cast preset ----
   narrator: { hz: 130, wave: 'triangle', speed: 0.8, range: 0.6, glide: -0.3, bright: 2200, formant: 0.95 },
   'mayor mulch': { hz: 108, range: 1.8, speed: 1.2, wave: 'square', formant: 0.8 },

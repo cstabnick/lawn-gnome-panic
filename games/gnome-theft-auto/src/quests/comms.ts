@@ -9,6 +9,8 @@ import { BASE_SPEAKER_LOOK, CAST } from '../cutscene/cast';
 import { voiceFor } from '../voice/voices';
 import { CITY_CALLER_NAMES, CITY_COMMS } from './commsCity';
 import { NEWCOMER_CALLER_NAMES, NEWCOMER_COMMS } from './commsNewcomers';
+import { STORY_COMMS } from './story';
+import { GLAZE_COMMS } from './glazeQuests';
 
 export interface CommsLine {
   /** A CAST key (cutscene/cast.ts) or another speaker key from CALLER_NAMES. */
@@ -44,6 +46,30 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   bramble: 'Bramble',
   shelldon: 'Shelldon',
   wally: 'Wind-Sock Wally',
+  cardoon: 'Cardoon "Swish" Trowelly',
+  fennel: 'Fennel Gripwax',
+  thrift: 'Thrift Hosepipe',
+  'don compost': 'Don Compost',
+  parsley: 'Parsley Inkpot',
+  hyssop: 'Hyssop Doormat',
+  'turncoat cam': 'Turncoat Cam',
+  'mayor mulch': 'Mayor Mulch',
+  'lugnut lulu': 'Lugnut Lulu',
+  chard: 'Chard Levelright',
+  hogweed: 'Hogweed Sprocket',
+  gary: 'Gate-Guard Gary',
+  sage: 'Sage Ladle',
+  frank: 'Fence-Post Frank',
+  chicory: 'Chicory Snips',
+  wisteria: 'Countess Wisteria',
+  'rooster weatherby': 'Rooster Weatherby',
+  nubbin: 'Nubbin',
+  tumblesoil: 'Old Mother Tumblesoil',
+  saxifrage: 'Mother Saxifrage',
+  ernie: 'Ash-Shovel Ernie',
+  midge: 'Squeaky-Clean Midge',
+  cass: 'Chrome-Knuckle Cass',
+  'dj moleman': 'DJ Moleman',
   ...CITY_CALLER_NAMES,
   ...NEWCOMER_CALLER_NAMES,
 };
@@ -79,6 +105,7 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['pip', 'The Mulch Club is Don Compost\'s. He doesn\'t talk. He taps.'],
       ['pip', 'Three gold hats owe him Acorns. Crack them and he pays your debt down.'],
       ['pip', 'Clay-Mart owns your Kiln-Debt. Five thousand. This is how you start.'],
+      ['pip', 'And the bank owns your flat now. Tap faster.'],
     ),
   },
   'ch1-mowers-keepers': {
@@ -110,15 +137,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
     1: call(['pip', 'Auditors down! Vault\'s inside. Deed first, snacks second.']),
     2: call(['tansy', 'That Combine in his yard is Vesper\'s. Bring it to my bay. Loudly.']),
   },
-  'ch1-founders-boot': {
-    0: brief(
-      ['tansy', 'Founder\'s Trim Day. Gnorwin\'s Boot rolls in the parade.'],
-      ['tansy', 'Gnorwin Clayfoot, first king of Fescue. Allegedly my great-great-something.'],
-      ['tansy', 'Vesper\'s tribunal is at the Amphitheater. Put the Boot in the jury box.'],
-    ),
-    1: call(['pip', 'Boot\'s in the jury box! Reginald is very upset. Crack his Enforcers!']),
-    2: call(['tansy', 'Four hats on your tail. Bring the Combine home. The stamp\'s inked.']),
-  },
+  // ch1-founders-boot: comms live in its story file (quests/story/), E20.
+
   // ---- Chapter 2: debt paid, and the first refusal ----
   'ch2-dew-run': {
     0: brief(
@@ -143,28 +163,14 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['granny', 'Listen to him. Say no. Then run.'],
     ),
     1: call(['granny', 'Porcelain Guards. They don\'t bend, so make them crack.']),
-    2: call(
-      ['sorrel', 'This is Sorrel Tillbrook, 88.7 Fescue Public. Elder Bracken asks you west.'],
-      ['sorrel', 'Mossy Wood. Bring Pip. He won\'t want to come.'],
-    ),
+    // E20: Sorrel's call moved to m22-off-air; the gate step is Granny's now (outline row 20).
+    2: call(['granny', 'Lose the hats at the West Highway Gate. Then go home and say nothing.']),
   },
-  'ch2-unmowed-tablet': {
-    0: brief(
-      ['sorrel', 'The Unmowed are the gnomes who never let a mower in.'],
-      ['sorrel', 'Vesper\'s welders are plating his Grand Combine at the Compost Heap.'],
-      ['sorrel', 'The Elder wants their plates. He says they are his to melt.'],
-    ),
-    2: call(['bracken', 'The plate rig. Bring it to the hollow. Do not drive on the moss.']),
-  },
+  // ch2-unmowed-tablet: comms live in its story file (quests/story/), E20.
+
   // ---- Chapter 3: the player is the one others lean on ----
-  'ch3-salvage-raid': {
-    0: call(
-      ['tansy', 'Cam sold us. Get Pip out. I\'ll draw them off.'],
-      ['tansy', 'Father Loam, up in Frostbite Fells, mends cracked clay. Go north.'],
-    ),
-    1: call(['tansy', 'Ring Road, northwest. Lose the cordon. Don\'t come back for me.']),
-    2: call(['pip', 'Take my Zero-Turn. You drive. I\'m, uh, short an arm.']),
-  },
+  // ch3-salvage-raid: comms live in its story file (quests/story/), E20.
+
   'ch3-kiln-resin-ice': {
     0: brief(
       ['loam', 'Kiln-Resin, from the northern shrine. Without it, the boy\'s arm stays in a sack.'],
@@ -264,6 +270,10 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
   },
   ...CITY_COMMS,
   ...NEWCOMER_COMMS,
+  // E20: the story rows' own comms (quests/story/), last so a rewritten row's file wins over its old entry above.
+  ...STORY_COMMS,
+  // E20 L106: Chrome-Knuckle Cass's "On the House" (glazeQuests.ts).
+  ...GLAZE_COMMS,
 };
 
 /** The call for objective `step` of a quest, if it has one. */

@@ -1682,6 +1682,67 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'End to End', description: 'Grind a rail from one end to the other.',
     reward: { slot: 'neck', prefabId: 'skate-tool-lanyard', label: 'Skate Tool Lanyard' },
   },
+  // ---- Gnome Theft Auto: story acts I-II (E20) ----
+  {
+    id: 'gta-mortgage-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mortgage Gnome', description: 'Sign for Flat 3B and climb the stairs.',
+    reward: { slot: 'neck', prefabId: 'house-key-lanyard', label: 'House Key Lanyard' },
+  },
+  {
+    id: 'gta-cap-back', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Cap Back', description: 'Bring Asphalt and her bottlecap home to Bodega & Sons.',
+    reward: { slot: 'neck', prefabId: 'bottlecap-pendant', label: 'Bottlecap Pendant' },
+  },
+  {
+    id: 'gta-off-by-a-quarter-inch', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Off by a Quarter-Inch', description: "Swap Reginald's calipers without anyone raising an alarm.",
+    reward: { slot: 'hand', prefabId: 'quarter-inch-ruler', label: 'Quarter-Inch Ruler' },
+  },
+  {
+    id: 'gta-swish-seven', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Swish', description: "Win Pip's toolbox back at Drainpipe Court.",
+    reward: { slot: 'head', prefabId: 'court-headband', label: 'Court Headband' },
+  },
+  {
+    id: 'gta-dress-rehearsal', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Dress Rehearsal Clean', description: 'Run the Boot float through the Even-Estates site at night.',
+    reward: { slot: 'back', prefabId: 'parade-banner-cape', label: 'Parade Banner Cape' },
+  },
+  {
+    id: 'gta-fair-weather-friend', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fair-Weather Friend', description: "Set all three of Rooster's barometers down unbroken.",
+    reward: { slot: 'back', prefabId: 'weathervane-pack', label: 'Weathervane Pack' },
+  },
+  {
+    id: 'gta-agreeable', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Agreeable', description: 'Leave the penthouse key on the table.',
+    reward: { slot: 'neck', prefabId: 'beige-cravat', label: 'Beige Cravat' },
+  },
+  {
+    id: 'gta-mole-neighbour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Neighbourly', description: 'Bring Nubbin home to the Burrow Door without a bump.',
+    reward: { slot: 'neck', prefabId: 'mole-lantern-charm', label: 'Mole Lantern Charm' },
+  },
+  {
+    id: 'gta-standing-ovation', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Standing Ovation', description: "Stand on one leg through Mother Saxifrage's whole sermon.",
+    reward: { slot: 'head', prefabId: 'flamingo-plume', label: 'Flamingo Plume' },
+  },
+  {
+    id: 'gta-gentle-hands', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Gentle Hands', description: 'Drive Granny to the Glaze Clinic without a single bump.',
+    reward: { slot: 'hand', prefabId: 'pie-tin', label: 'Pie Tin' },
+  },
+  {
+    id: 'gta-hold-the-bay', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hold the Bay', description: 'Hold Side-Valve Alley while the crate is loaded.',
+    reward: { slot: 'neck', prefabId: 'shop-rag-scarf', label: 'Shop Rag Scarf' },
+  },
+  {
+    id: 'gta-on-the-house', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'On the House', description: "Square things with Chrome-Knuckle Cass: Pay 'n' Glaze repairs are free.",
+    reward: { slot: 'hand', prefabId: 'chrome-knuckle-glove', label: 'Chrome-Knuckle Glove' },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

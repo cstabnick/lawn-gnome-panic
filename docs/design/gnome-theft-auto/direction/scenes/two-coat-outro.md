@@ -128,3 +128,4 @@ is the lawn she is still standing on.
 - [x] Day scene.
 - [x] Checker: all shots pass; the Juniper-to-Reginald track holds under 12 s; the outro's long holds are fixed by cutting to Juniper's watching shot.
 - [x] `direction.notes` points here.
+Intro card: Reginald, right after "Your grass is a quarter-inch proud."

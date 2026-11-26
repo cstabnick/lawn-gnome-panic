@@ -20,6 +20,7 @@ import { RACE_QUESTS } from './races';
 import { DIRT_QUESTS } from './dirtRaces';
 import { STREET_QUESTS } from './streetRaces';
 import { DEWDROP_QUESTS } from './dewdropQuests';
+import { GLAZE_QUESTS } from './glazeQuests';
 import { beatsDone, sidePacing } from './pacing';
 import { OFFER_WINDOW, STORY_ROWS, offerCap } from './storyRows';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
@@ -56,10 +57,11 @@ describe('side unlock table', () => {
       ...LOAMDEEP_QUESTS.map((q) => q.id),
       ...SOCIETY_QUEST_DEFS.map((q) => q.id),
       ...DEWDROP_QUESTS.map((q) => q.id),
+      ...GLAZE_QUESTS.map((q) => q.id),
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + STREET_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length + COUNTRY_QUESTS_DEFS.length + SPORTS_QUESTS.length + LOAMDEEP_QUESTS.length + SOCIETY_QUEST_DEFS.length + DEWDROP_QUESTS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + STREET_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length + COUNTRY_QUESTS_DEFS.length + SPORTS_QUESTS.length + LOAMDEEP_QUESTS.length + SOCIETY_QUEST_DEFS.length + DEWDROP_QUESTS.length + GLAZE_QUESTS.length);
   });
 
   it('every beat is a built main quest with a spine row; every planned beat is a spine row not built yet', () => {
@@ -152,7 +154,7 @@ describe('side unlock table', () => {
       expect(isQuestAvailable(q, saves), q.id).toBe(false);
     }
     expect(isQuestAvailable(questById('prologue-fresh-kiln')!, saves)).toBe(true);
-    expect(isQuestAvailable(questById('first-contract')!, saves)).toBe(true);
+    expect(isQuestAvailable(questById('first-contract')!, saves)).toBe(false); // E20: after A Roof on Credit (row 2)
   });
 
   it('unlockMet follows the story beat, keeps started quests open, and Tessie uses its own entry', () => {

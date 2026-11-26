@@ -66,6 +66,8 @@ export const TWO_COAT_INTRO: SceneScript = {
     // Hook: Juniper, on the statement, before anyone has moved.
     cut(shot('juniper', 'mcu')),
     { do: 'say', who: 'juniper', text: 'Citizens. The grass is growing at a healthy, legal height.' },
+    cut(shot('juniper', 'cu')),
+    { do: 'intro', who: 'juniper' },
     // One reporter question, covered from the Councilwoman's side.
     cut(PRESS.single('press-a', 'mcu')),
     { do: 'say', who: 'press-a', text: 'Councilwoman, what about the medians?' },
@@ -126,7 +128,7 @@ export const TWO_COAT_HANDOVER: SceneScript = {
   actors: [
     { id: 'player', player: true, at: PATIO_PLAYER.at, yaw: PATIO_PLAYER.yaw },
     { id: 'vesper', preset: 'vesper', at: PATIO_VESPER, yaw: towards(PATIO_VESPER, PATIO_MAYOR) },
-    { id: 'mayor', name: 'Mayor Mulch', look: MAYOR_LOOK, at: PATIO_MAYOR, yaw: towards(PATIO_MAYOR, PATIO_VESPER) },
+    { id: 'mayor', preset: 'mayor mulch', name: 'Mayor Mulch', look: MAYOR_LOOK, at: PATIO_MAYOR, yaw: towards(PATIO_MAYOR, PATIO_VESPER) },
     { id: 'guard-a', name: 'HOA Bodyguard', look: GUARD_LOOK, at: PATIO_GUARD_A.at, yaw: towards(PATIO_GUARD_A.at, PATIO_PLAYER.at) },
     { id: 'guard-b', name: 'HOA Bodyguard', look: GUARD_LOOK, at: PATIO_GUARD_B.at, yaw: PATIO_GUARD_B.yaw },
   ],
@@ -138,6 +140,8 @@ export const TWO_COAT_HANDOVER: SceneScript = {
     // Hook: the Mayor's line over the ledger.
     cut(LEDGER.single('mayor', 'mcu')),
     { do: 'say', who: 'mayor', text: 'The median leases, Vesper. Every one signed in ink. Mostly.' },
+    cut(LEDGER.single('mayor', 'cu')),
+    { do: 'intro', who: 'mayor' },
     { do: 'sfx', id: 'paper', at: 'mayor', gain: 0.5, async: true },
     { do: 'give', from: 'mayor', to: 'vesper', prop: 'ledger' },
     { do: 'give', from: 'vesper', to: 'mayor', prop: 'sealed-letter', s: 1 },
@@ -165,6 +169,7 @@ export const TWO_COAT_HANDOVER: SceneScript = {
     cut(LEDGER.single('vesper', 'cu', { height: 'low' })),
     { do: 'gesture', who: 'vesper', name: 'tipHat', s: 1.2 },
     { do: 'say', who: 'vesper', text: 'Nice hat.' },
+    { do: 'intro', who: 'vesper' },
     { do: 'music', track: 'chase', fade: 0.5 },
     { do: 'walk', who: 'guard-a', path: [[149, -148]], run: true, async: true },
     { do: 'walk', who: 'guard-b', path: [[150, -150]], run: true, async: true },
@@ -209,6 +214,7 @@ export const TWO_COAT_OUTRO: SceneScript = {
     cut(shot('reginald', 'ms', { height: 'high', toward: 'player' })),
     { do: 'gesture', who: 'reginald', name: 'think', s: 1.4 },
     { do: 'say', who: 'reginald', text: 'Juniper. Your grass is a quarter-inch proud.' },
+    { do: 'intro', who: 'reginald' },
     cut(shot('juniper', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'juniper', text: 'Reginald. Your boss is a crook.' },
     // Enforcing: the one time he is shot from below.

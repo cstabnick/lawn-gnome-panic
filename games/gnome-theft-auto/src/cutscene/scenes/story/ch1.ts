@@ -96,6 +96,7 @@ export const PROLOGUE_INTRO: SceneScript = {
     cut(STOP.single('pip', 'mcu')),
     { do: 'gesture', who: 'pip', name: 'point', s: 1.1, async: true },
     { do: 'say', who: 'pip', text: 'I\'m Pip! Grab that Ride-On and follow me!' },
+    { do: 'intro', who: 'pip' },
     // The insert: the Ride-On at the kerb, the thing the player is about to borrow.
     { do: 'cam', shot: { kind: 'dolly', from: up(-11, 21.5, 1.6), to: up(-11.2, 23.5, 1.3), look: 'kerb-ride', s: 2.2, fov: 44 } },
     { do: 'wait', s: 1.4 },
@@ -111,6 +112,7 @@ export const PROLOGUE_INTRO: SceneScript = {
     { do: 'wait', s: 1.4 },
     cut(shot('john', 'mcu', { toward: 'cat', side: -30 })),
     { do: 'say', who: 'john', text: 'Whistles before lunch, Asphalt. Must be Tuesday.' },
+    { do: 'intro', who: 'john' },
     // 7. The title: Pip tears off; the player is left with the Ride-On.
     cut(STOP.single('pip', 'mcu', { handheld: 0.03 })),
     { do: 'say', who: 'pip', text: 'Okay. Go go go!' },
@@ -157,7 +159,7 @@ export const PROLOGUE_OUTRO: SceneScript = {
     { id: 'player', player: true, at: [-125, 57.5], yaw: -Math.PI / 2, seatedIn: 'ride' },
     { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', at: PO_TANSY, yaw: -Math.PI / 2, held: 'brass-wrench' },
     { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: [0, 0], seatedIn: 'pip-bike' },
-    { id: 'turncoat', name: 'Turncoat Cam', look: TURNCOAT_LOOK, held: 'broom', at: [-158, 68], yaw: Math.PI / 2 },
+    { id: 'turncoat', preset: 'turncoat cam', name: 'Turncoat Cam', look: TURNCOAT_LOOK, held: 'broom', at: [-158, 68], yaw: Math.PI / 2 },
   ],
   vehicles: [
     { id: 'tansy-ride', ...rideOf('tansy'), ...carMark(SV, 'tansy-zero-turn') },
@@ -176,6 +178,7 @@ export const PROLOGUE_OUTRO: SceneScript = {
     { do: 'walk', who: 'turncoat', path: [[-146, 68]], speed: 0.6, async: true },
     { do: 'gesture', who: 'tansy', name: 'think', s: 1.0, async: true },
     { do: 'say', who: 'tansy', text: 'Forty-five. Forty-six. Forty-seven.' },
+    { do: 'intro', who: 'tansy' },
     // She puts the brass one back in the box before anyone sees it. An engine is coming.
     { do: 'hold', who: 'tansy', prop: null },
     { do: 'sfx', id: 'engine-rev', gain: 0.6 },
@@ -199,6 +202,9 @@ export const PROLOGUE_OUTRO: SceneScript = {
     { do: 'say', who: 'pip', text: 'We got the Ride-On! Totally legal. The kerb said nothing.' },
     cut(shot('tansy', 'mcu', { side: -105 })),
     { do: 'say', who: 'tansy', text: 'I\'m Tansy. That\'s Cam on the broom. Keep it short.' },
+    // Cam, first framed with his broom.
+    cut(shot('turncoat', 'mcu', { toward: 'tansy' })),
+    { do: 'intro', who: 'turncoat' },
     // 4. The player's question is the one she turns round for.
     cut(BAY.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'What\'s in the crate?' },
@@ -272,7 +278,7 @@ export const FIRST_CONTRACT_INTRO: SceneScript = {
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/first-contract-intro.md', kind: 'intro' },
   actors: [
     { id: 'player', player: true, at: FC_PLAYER, yaw: Math.PI },
-    { id: 'don', name: 'Don Compost', look: DON_LOOK, at: FC_DON, yaw: 0, scale: 1.75 },
+    { id: 'don', preset: 'don compost', name: 'Don Compost', look: DON_LOOK, at: FC_DON, yaw: 0, scale: 1.75 },
     { id: 'guard-1', name: 'Bodyguard', look: GUARD_LOOK, held: 'gta-pistol', at: FC_G1, yaw: towards(FC_G1, FC_PLAYER) },
     { id: 'guard-2', name: 'Bodyguard', look: GUARD_LOOK, held: 'gta-pistol', at: FC_G2, yaw: towards(FC_G2, FC_PLAYER), hz: 118 },
   ],
@@ -288,6 +294,7 @@ export const FIRST_CONTRACT_INTRO: SceneScript = {
     cut(BOSS.single('don', 'ms', { height: 'low' })),
     { do: 'wait', s: 0.9 },
     { do: 'sfx', id: 'knock', at: 'don' },
+    { do: 'intro', who: 'don' },
     { do: 'wait', s: 0.9 },
     // 2. The translator. He is sure of himself; he should not be.
     cut(DEAL.single('guard-1', 'mcu')),

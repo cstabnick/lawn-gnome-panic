@@ -1300,3 +1300,9 @@ hobby teachers (Wenna Gudgeon, Hazel Mattock, Dunnock Pell) hand out their own N
 Mabel sends newcomers to them.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E18 builds the world changes (L68) and moves the hobby intros (L66) to the teachers.
+
+## R-229
+**Question:** The act I-II story (E20) puts places and habits on screen the lore has not fixed. Where does the Tattler work now that Founders' Green took its block, where is the parade office, what do the Skyway night meets, the Heap's convoys and Cass's tab mean, and what of the Vance siblings' photograph?
+**Ruling:** Hedda Galley runs the Turfton Tattler from a street desk on the Kiln-Shield kerb at the north gate of Founders' Green; the old Tattler tower lost its block to the Green and was never rebuilt, and Hedda says a desk you can see is harder to sue. The parade office is a booth behind City Hall on the z = -120 road, where the Boot float waits between parades. The Carburettors' night meets gather at the west foot of the Skyway, under the Unfinished Span. The Compost Heap's plate convoys leave by the Ring Road north toward the snow line and Mittenholt; a bill of lading names one place and never the route. Chrome-Knuckle Cass never gives a gift: she runs tabs, and a gnome on her tab is repaired free at Pay 'n' Glaze. Tansy owes Sage Ladle forty breakfasts and settles debts with her by lending out help. The photograph in townhouse 404 shows Juniper and Reginald at ten and eight, signed "J. and R."; it is never a joke.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E20 builds story rows 1-35 (L84, L95, L106) and the writers needed these facts fixed. E21/E22 may take R-230 on.

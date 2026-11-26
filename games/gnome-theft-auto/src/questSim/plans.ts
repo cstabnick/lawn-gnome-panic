@@ -2,20 +2,19 @@
 // bot to: 'pass', or a known failure with its class and reason (docs/roadmaps/gta-quest-sim.md keeps the table). When a
 // quest's result changes, update its row here and in the roadmap.
 import type { QuestPlan } from './types';
+import { STORY_PLANS } from '../quests/story';
 
 export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
+  // E20: each story row file (quests/story/) carries its own plans; a row moved there drops its line below.
+  ...STORY_PLANS,
   'prologue-fresh-kiln': { suite: 'story', expect: 'pass' },
-  'm02-roof-on-credit': { suite: 'story', expect: 'pass' },
   'first-contract': { suite: 'story', expect: 'pass' },
   'ch1-mowers-keepers': { suite: 'story', expect: 'pass' },
   'ch1-two-coat-tail': { suite: 'story', expect: 'pass' },
   'ch1-tax-break-in': { suite: 'story', expect: 'pass' },
-  'ch1-founders-boot': { suite: 'story', expect: 'pass' },
   'ch2-dew-run': { suite: 'story', expect: 'pass' },
   'ch2-sprinkler-gauntlet': { suite: 'story', expect: 'pass' },
   'ch2-vespers-offer': { suite: 'story', expect: 'pass' },
-  'ch2-unmowed-tablet': { suite: 'story', expect: 'pass' },
-  'ch3-salvage-raid': { suite: 'story', expect: 'pass' },
   'ch3-kiln-resin-ice': { suite: 'story', expect: 'pass' },
   'ch3-tundra-drift-run': { suite: 'story', expect: 'pass' },
   'ch4-runway-flares': { suite: 'story', expect: 'pass' },
@@ -61,6 +60,7 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'sq-dewdrop-1': { suite: 'side', expect: 'pass' },
   'sq-dewdrop-2': { suite: 'side', expect: 'pass' },
   'sq-dewdrop-3': { suite: 'side', expect: 'pass' },
+  'sq-on-the-house': { suite: 'side', expect: 'pass' },
   'sq-flock-errands': { suite: 'side', expect: 'pass' },
   'sq-flock-vigil': { suite: 'side', variants: ['A', 'B'], expect: 'pass' },
   'city-kerbside-rounds': { suite: 'city', expect: 'pass' },

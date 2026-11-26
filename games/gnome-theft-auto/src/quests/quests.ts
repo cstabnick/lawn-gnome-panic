@@ -20,6 +20,8 @@ import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { raceRun } from './objectivesRace';
 import { checkpointsRun, probeRun } from './objectivesCity';
+import { passengerRun } from './objectivesPassenger';
+import { inspectRun } from './objectivesInspect';
 import { beatsDone, isPaced, sidePacing } from './pacing';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
 import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockMet } from './unlocks';
@@ -398,6 +400,10 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     checkpointsRun(obj, deps, changed, say)) as unknown as Maker,
   probe: ((obj: Extract<ObjectiveDef, { kind: 'probe' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     probeRun(obj, deps, changed, say)) as unknown as Maker,
+  passenger: ((obj: Extract<ObjectiveDef, { kind: 'passenger' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    passengerRun(obj, deps, changed, say)) as unknown as Maker,
+  inspect: ((obj: Extract<ObjectiveDef, { kind: 'inspect' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    inspectRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
 export { mergeQuestSaves };

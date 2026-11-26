@@ -106,6 +106,11 @@ export interface Spot { from: number; to: number; t: number; x: number; z: numbe
 
 let nextGhostId = 1;
 
+/** Tests: number ghosts from 1 again, so a headless sim gets the same ghost ids (and civilian mods) in any test order. */
+export function resetGhostIds(): void {
+  nextGhostId = 1;
+}
+
 /** The node after `to` on an errand, or null: path[1] of a fresh errand. */
 function nextOf(errand: Errand | null): number | null {
   return errand && errand.path.length > 1 ? errand.path[1] : null;

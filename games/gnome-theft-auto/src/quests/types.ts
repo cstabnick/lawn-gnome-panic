@@ -319,6 +319,14 @@ export interface QuestSave {
   beat?: string;
   /** E23 L101: the active step's checkpoint (set when the step starts; the auto retry puts the player back here). */
   checkpoint?: QuestCheckpoint;
+  /**
+   * E18 side-quest pacing (pacing.ts): how many main quests were done when this quest finished. Set by the engine on
+   * completion; absent in older saves. A follow-up in a chain (its `prereq` is this quest) is offered for OFFER_WINDOW
+   * main quests counted from here.
+   */
+  doneAt?: number;
+  /** E18 world changes (W17): the ending a 'choice' objective picked, 'A' (optionA) or 'B' (optionB). Absent = A. */
+  ending?: 'A' | 'B';
 }
 
 /** Dependencies provided to the quest engine and objective runners. */

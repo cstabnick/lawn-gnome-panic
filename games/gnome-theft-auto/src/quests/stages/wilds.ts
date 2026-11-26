@@ -240,7 +240,8 @@ export const WILDS_STAGES: readonly Stage[] = [
     facing: Math.PI / 2,
     time: 'night',
     built: 'dressed',
-    usedBy: ['lore-fence-line'],
+    givers: ['club-lodge'],
+    usedBy: ['lore-fence-line', 'nc-tuft-and-tally'],
     look: 'A fence post of split cedar in the perimeter fence, a thimble turned over as a stool, a brass telescope on a stand, rain running down the wire.',
     sounds: 'Wire fence humming in the wind, the creak of a telescope stand, Nora breathing through a flask.',
     marks: [

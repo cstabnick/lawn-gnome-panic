@@ -22,6 +22,10 @@ import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
 import { COUNTRY_QUESTS_DEFS } from './countryQuests';
 import { LOAMDEEP_QUESTS } from './loamdeepQuests';
 import { SOCIETY_QUEST_DEFS } from './societyQuests';
+import { DEWDROP_QUESTS } from './dewdropQuests';
+import { SHOP as BENT_PIN } from '../fishing/types';
+import { HIDE } from '../birding/types';
+import { LODGE } from '../hunting/species';
 import { BURROW_DOOR, LOAMDEEP, SOCIETY_INTERIORS, UNDERSPAN, WADERS_REST } from '../societies/config';
 import type { GiverDef, QuestDef } from './types';
 
@@ -388,6 +392,37 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  // E18 hobby intros (newcomerQuests.ts): the teacher at the hobby's own place, a few metres in front of the counter.
+  'club-bent-pin': {
+    id: 'club-bent-pin',
+    name: 'The Bent Pin',
+    label: 'Ask Wenna about fishing',
+    x: BENT_PIN.x,
+    z: BENT_PIN.z - 3,
+    exit: { x: BENT_PIN.x, z: BENT_PIN.z - 5, yaw: Math.PI },
+    room: 'street',
+    letter: 'N',
+  },
+  'club-lodge': {
+    id: 'club-lodge',
+    name: 'Tuft & Tally Lodge',
+    label: 'Ask Hazel about hunting',
+    x: LODGE.x,
+    z: LODGE.z + 6,
+    exit: { x: LODGE.x, z: LODGE.z + 8, yaw: 0 },
+    room: 'street',
+    letter: 'N',
+  },
+  'club-reedwatch': {
+    id: 'club-reedwatch',
+    name: 'Reedwatch Hide',
+    label: 'Ask Dunnock about birding',
+    x: HIDE.x,
+    z: HIDE.z - 4,
+    exit: { x: HIDE.x, z: HIDE.z - 6, yaw: Math.PI },
+    room: 'street',
+    letter: 'N',
+  },
 };
 
 export const QUESTS: readonly QuestDef[] = [
@@ -414,6 +449,7 @@ export const QUESTS: readonly QuestDef[] = [
   ...COUNTRY_QUESTS_DEFS,
   ...LOAMDEEP_QUESTS,
   ...SOCIETY_QUEST_DEFS,
+  ...DEWDROP_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

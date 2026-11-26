@@ -91,6 +91,7 @@ const CONE_VAN_WHEEL: Vec3 = [0.18, 0.64, 0.54];
  * - tessie: a turtle, ridden.
  * - tea-tray-sled, snow-skis: steered by leaning (winter/slideRider.ts), the rider holds nothing.
  * - skateboard: steered by leaning (skate/board.ts), the rider holds nothing.
+ * - (bubble-mobile has a fixed 'rim' control: the rider holds the frame bars, nothing turns.)
  */
 export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>> = {
   // Pay 'n' Glaze steer mounts (glazeMounts.ts): the rig's grip markers follow the styled wheels; these are the stock grips.
@@ -204,6 +205,8 @@ export const DRIVE_CONTROLS: Readonly<Partial<Record<VehicleKind, DriveControl>>
   'cone-van': { control: 'wheel', pivot: 'steer', grips: pair(CONE_VAN_WHEEL, 0.09), axis: ringAxis(120) },
   // Dandelion Drifter: a balloon does not steer; the pilot holds the front of the basket rim (r 0.7, y 0.85).
   'dandelion-drifter': { control: 'rim', pivot: null, grips: [[0.25, 0.85, 0.654], [-0.25, 0.85, 0.654]] },
+  // The Dewdrop: the rider holds the harness bars of the seat frame; nothing turns (the ball does the rolling).
+  'bubble-mobile': { control: 'rim', pivot: null, grips: [[0.22, 0.56, 0.2], [-0.22, 0.56, 0.2]] },
 };
 
 let registered = false;

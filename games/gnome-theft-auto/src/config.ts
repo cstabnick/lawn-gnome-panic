@@ -408,6 +408,11 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
     kind: 'barrow-buggy', mountStyle: 'hop', name: 'Barrow Buggy', prefab: 'gta-barrow-buggy', scale: 1.5,
     maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
   },
+  // ---- The Dewdrop (E18, dewdrop/): Hogweed's clear hamster ball. Slow to turn, gentle top speed, bouncy. ----
+  'bubble-mobile': {
+    kind: 'bubble-mobile', mountStyle: 'hop', name: 'The Dewdrop', prefab: 'gta-dewdrop', scale: 1.5,
+    maxSpeed: 10, accel: 4, turnRate: 1.2, radius: 1.2, seat: [0, 0.3, 0], flies: false, mass: 1.2,
+  },
   // ---- The Putting-Green Cart (fleet.ts; lore: the Country Club's silent carts): the golf-cart prefab is 1.3 wide, 2.1 long,
   // bench top at y 0.75, steering wheel on the left (+x). Two-seat bench; parked now and then in place of a ride-on. ----
   'golf-cart': {

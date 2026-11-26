@@ -19,6 +19,9 @@ import { COAST_QUEST_DEFS } from './coastQuests';
 import { RACE_QUESTS } from './races';
 import { DIRT_QUESTS } from './dirtRaces';
 import { STREET_QUESTS } from './streetRaces';
+import { DEWDROP_QUESTS } from './dewdropQuests';
+import { beatsDone, sidePacing } from './pacing';
+import { OFFER_WINDOW, STORY_ROWS, offerCap } from './storyRows';
 import { createQuests, isQuestAvailable, SAVE_KEY } from './quests';
 import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
 import type { GiverDef, QuestDef, QuestDeps, QuestSave } from './types';
@@ -52,29 +55,95 @@ describe('side unlock table', () => {
       ...COUNTRY_QUESTS_DEFS.map((q) => q.id),
       ...LOAMDEEP_QUESTS.map((q) => q.id),
       ...SOCIETY_QUEST_DEFS.map((q) => q.id),
+      ...DEWDROP_QUESTS.map((q) => q.id),
     ]) {
       expect(ids.filter((x) => x === id).length, id).toBe(1);
     }
-    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + STREET_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length + COUNTRY_QUESTS_DEFS.length + SPORTS_QUESTS.length + LOAMDEEP_QUESTS.length + SOCIETY_QUEST_DEFS.length);
+    expect(ids.length).toBe(SIDE_QUESTS.length + CITY_QUESTS.length + 1 + RACE_QUESTS.length + DIRT_QUESTS.length + STREET_QUESTS.length + OUTSKIRTS_QUESTS.length + NEWCOMER_QUESTS.length + COAST_QUEST_DEFS.length + WINTER_QUESTS.length + GOLF_QUESTS.length + ROOTWELL_QUESTS_DEFS.length + COUNTRY_QUESTS_DEFS.length + SPORTS_QUESTS.length + LOAMDEEP_QUESTS.length + SOCIETY_QUEST_DEFS.length + DEWDROP_QUESTS.length);
   });
 
-  it('every beat is a chapter quest, no beat opens more than 2 side quests, and 8 or more beats are used', () => {
-    // The Newcomers' Card tutorials (nc-*) are short teaching jobs: counted on their own, at most 2 per beat too.
-    const counts = new Map<string, number>();
-    const tutorials = new Map<string, number>();
-    const coast = new Map<string, number>();
+  it('every beat is a built main quest with a spine row; every planned beat is a spine row not built yet', () => {
+    // When E20-E22 build a planned row, this fails until the unlock's `after` is moved onto it (then drop `planned`).
     for (const u of SIDE_UNLOCKS) {
       const after = QUESTS.find((q) => q.id === u.after);
       expect(after?.chapter, u.after).toBeDefined();
-      // The coast quests (coast-*) are one more family, also at most 2 per beat.
-      const m = u.questId.startsWith('nc-') ? tutorials : u.questId.startsWith('coast-') ? coast : counts;
-      m.set(u.after, (m.get(u.after) ?? 0) + 1);
+      expect(STORY_ROWS[u.after], `${u.after} has a spine row`).toBeDefined();
+      if (u.planned) {
+        expect(STORY_ROWS[u.planned], `${u.questId} planned ${u.planned}`).toBeDefined();
+        expect(questById(u.planned), `${u.planned} is built: move ${u.questId} onto it`).toBeUndefined();
+      }
     }
-    // 5 until E21 moves the two winter quests and The Ninth Green (E15) onto their own beats (they share ch3-tundra-drift-run for now).
-    for (const n of counts.values()) expect(n).toBeLessThanOrEqual(5);
-    for (const n of tutorials.values()) expect(n).toBeLessThanOrEqual(2);
-    for (const n of coast.values()) expect(n).toBeLessThanOrEqual(2);
-    expect(counts.size).toBeGreaterThanOrEqual(8);
+    for (const q of QUESTS) if (q.chapter !== undefined) expect(STORY_ROWS[q.id], `${q.id} is in storyRows.ts`).toBeDefined();
+  });
+
+  it('chains have no cycle and a follow-up never unlocks before the quest it needs', () => {
+    const side = new Set(SIDE_UNLOCKS.map((u) => u.questId));
+    for (const u of SIDE_UNLOCKS) {
+      const seen = new Set<string>();
+      let q = questById(u.questId);
+      while (q?.prereq && side.has(q.prereq)) {
+        expect(seen.has(q.id), `cycle at ${q.id}`).toBe(false);
+        seen.add(q.id);
+        const pre = unlockRule(q.prereq)!;
+        expect(STORY_ROWS[unlockRule(q.id)!.after], `${q.id} after ${q.prereq}`).toBeGreaterThanOrEqual(STORY_ROWS[pre.after]);
+        q = questById(q.prereq);
+      }
+    }
+  });
+
+  it('a player who plays the story and no side quests is never offered more than the act cap', () => {
+    const mains = QUESTS.filter((q) => q.chapter !== undefined).sort((a, b) => STORY_ROWS[a.id] - STORY_ROWS[b.id]);
+    const saves: Record<string, QuestSave> = {};
+    const everOffered = new Set<string>();
+    for (const m of mains) {
+      saves[m.id] = { state: 'done', step: 0, cracked: [] };
+      const p = sidePacing(saves, QUESTS);
+      expect(p.offered.length, `after ${m.id}`).toBeLessThanOrEqual(offerCap(STORY_ROWS[m.id]));
+      expect(p.cap).toBe(offerCap(STORY_ROWS[m.id]));
+      for (const id of p.offered) everOffered.add(id);
+      // Nothing is both offered and shelved.
+      expect(new Set([...p.offered, ...p.later]).size).toBe(p.offered.length + p.later.length);
+    }
+    // Nothing is lost: at the end every root side quest is offered or on the Later shelf, and a good share of them were
+    // offered at some point (the rest are taken from the shelf; taking quests frees slots for the queue).
+    const side = new Set(SIDE_UNLOCKS.map((u) => u.questId));
+    const roots = SIDE_UNLOCKS.filter((u) => { const pre = questById(u.questId)?.prereq; return !pre || !side.has(pre); });
+    const end = sidePacing(saves, QUESTS);
+    // (Tessie's prereq is its unlock pseudo-entry, which the engine sets when the beat is done: not set in this pure run.)
+    for (const r of roots.filter((u) => u.questId !== TESSIE.questId)) expect([...end.offered, ...end.later], r.questId).toContain(r.questId);
+    expect(everOffered.size).toBeGreaterThanOrEqual(18);
+  });
+
+  it('a save far into the story sees a short offer list and the rest on the Later shelf', () => {
+    const saves: Record<string, QuestSave> = {};
+    for (const q of QUESTS) if (q.chapter !== undefined && STORY_ROWS[q.id] <= 23) saves[q.id] = { state: 'done', step: 0, cracked: [] };
+    const p = sidePacing(saves, QUESTS);
+    expect(p.row).toBe(23);
+    expect(p.offered.length).toBeLessThanOrEqual(4);
+    expect(p.later.length).toBeGreaterThan(5);
+    // The oldest act-I quests are shelved, not offered.
+    expect(p.offered).not.toContain('sq-grid-truthers');
+    expect(p.later).toContain('sq-grid-truthers');
+  });
+
+  it('taking a side quest frees its slot, and a chain follow-up is offered for OFFER_WINDOW beats from its prereq', () => {
+    const done = (doneAt?: number): QuestSave => ({ state: 'done', step: 0, cracked: [], ...(doneAt !== undefined ? { doneAt } : {}) });
+    const saves: Record<string, QuestSave> = {};
+    for (const q of QUESTS) if (q.chapter !== undefined && STORY_ROWS[q.id] <= 1) saves[q.id] = done();
+    expect(sidePacing(saves, QUESTS).offered).toContain('sq-grid-truthers');
+    saves['sq-grid-truthers'] = { state: 'active', step: 0, cracked: [] };
+    expect(sidePacing(saves, QUESTS).offered).not.toContain('sq-grid-truthers');
+
+    // The Fizz Cup: rookie done (at the beat count it was finished), derby unlocked -> offered first, then shelved.
+    const story: Record<string, QuestSave> = {};
+    const mains = QUESTS.filter((q) => q.chapter !== undefined).sort((a, b) => STORY_ROWS[a.id] - STORY_ROWS[b.id]);
+    for (const m of mains) if (STORY_ROWS[m.id] <= STORY_ROWS[unlockRule('race-lowrider-derby')!.after]) story[m.id] = done();
+    story['race-rookie-mowdown'] = done(beatsDone(story, QUESTS));
+    expect(sidePacing(story, QUESTS).offered[0]).toBe('race-lowrider-derby');
+    for (const m of mains.filter((q) => !story[q.id]).slice(0, OFFER_WINDOW)) story[m.id] = done();
+    const p = sidePacing(story, QUESTS);
+    expect(p.offered).not.toContain('race-lowrider-derby');
+    expect(p.later).toContain('race-lowrider-derby');
   });
 
   it('a fresh save offers no side quest and no Tessie quest, but the first story quests', () => {
@@ -179,6 +248,16 @@ describe('side unlock engine', () => {
     engine.update(5, 0, 0);
     expect(onSideUnlock).not.toHaveBeenCalled();
     expect(engine.blips().some((b) => b.kind === 'side')).toBe(true);
+  });
+
+  it('marks the offered side giver and records doneAt when the story quest finishes', () => {
+    const engine = createQuests(makeDeps(vi.fn()), [pipQ, gridQ], givers);
+    expect(engine.interact(0, 0)).toBe(true);
+    engine.update(0.1, 10, 0);
+    const side = engine.blips().find((b) => b.x === 30);
+    expect(side?.kind).toBe('side');
+    const saved = JSON.parse(storage.getItem(SAVE_KEY) as string) as Record<string, { doneAt?: number }>;
+    expect(saved['prologue-fresh-kiln'].doneAt).toBe(1);
   });
 
   it('the real defs give every side quest a giver with a colour', () => {

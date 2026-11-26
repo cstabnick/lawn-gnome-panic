@@ -197,7 +197,7 @@ describe('quest step transitions', () => {
 
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(88); // + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
+    expect(QUESTS.length).toBe(91); // + the 3 Dewdrop quests (E18) + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);

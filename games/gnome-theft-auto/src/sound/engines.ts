@@ -56,6 +56,8 @@ const TABLE: Record<string, EngineSoundDef> = {
   'snow-skis': { silent: true, gain: 0 },
   // The Gutter Bowls (skate/): wheels, no engine (skate/runtime.ts plays the roll).
   skateboard: { silent: true, gain: 0 },
+  // The Dewdrop (dewdrop/): a hamster ball rolls quietly.
+  'bubble-mobile': { wave: 'drone', idleHz: 14, maxHz: 36, gears: 0, bright: 0.15, rough: 0.1, gain: 0.55, curve: 0.9 },
   tessie: { silent: true, gain: 0 },
 
   // Mowers.

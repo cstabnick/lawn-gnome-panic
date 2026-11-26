@@ -16,7 +16,7 @@ export const TURFTON_STAGES: readonly Stage[] = [
     givers: ['pip-spawn', 'newcomers-club'],
     // The Newcomers' Card (quests/newcomerQuests.ts): Mabel hands out the stamps here, between fares.
     usedBy: ['prologue-fresh-kiln', 'intro-tour',
-      'nc-good-neighbour', 'nc-strike-a-pose', 'nc-wheel-and-kit', 'nc-lockup', 'nc-mind-the-verges', 'nc-bent-pin', 'nc-skyway', 'nc-odd-jobs', 'nc-take-off', 'nc-sky-spotting', 'nc-tuft-and-tally', 'nc-last-stop-pebblewick', 'nc-reedwatch', 'nc-hangar-and-boathouse', 'nc-party'],
+      'nc-good-neighbour', 'nc-strike-a-pose', 'nc-wheel-and-kit', 'nc-lockup', 'nc-mind-the-verges', 'nc-skyway', 'nc-odd-jobs', 'nc-take-off', 'nc-sky-spotting', 'nc-last-stop-pebblewick', 'nc-hangar-and-boathouse', 'nc-party'],
     look: 'A kerbside snail-coach stop on the west pavement of the x = 0 road: a bench, a timetable signpost, a flowerpot and a Clay-Mart billboard over the shelter, the Gnoma truck down the road.',
     sounds: 'Snail-coach air brakes, Ride-Ons idling at the lights, a pigeon, Pip talking too fast.',
     marks: [

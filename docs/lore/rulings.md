@@ -1273,3 +1273,22 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The Skyway Foot, at the west foot of the Turfton Skyway, run by Ratchet Gaskin for the Carburettors. It is quiet by day and full after dark. Lugnut Lulu, their captain, may turn up there; the night race in #5 `m05-sweepers-wages` stages at the Skyway Foot. The Ring Road time trials stay the Carburettors' illicit run (the-carburettors).
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E20's m05 needs a place for the Carburettors' night meet, and E26 builds it.
+
+## R-226
+**Question:** What is the Dewdrop, and can anyone buy one?
+**Ruling:** The Dewdrop is Hogweed Sprocket's clear rolling ball, ridden from a seat that stays upright inside. It is an
+Underspan prototype, not a dealer vehicle: a gnome gets one only by finishing Hogweed's three Dewdrop jobs, and a
+replacement is sold only at his workshop (400 Acorns), with a handwritten ownership form. The HOA has no category for it
+and cites it, when it cites it at all, as "unauthorised roundness".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 adds the bubble-mobile (L54) and needs where it comes from and who sells it fixed.
+
+## R-227
+**Question:** How does Turfton change as the story moves, who tells the town, and who hands out the hobby stamps?
+**Ruling:** Changes after a run of story events are public and stay: signs go up, notices come down, a roof is mended, a
+bay is boarded. Each one is reported once in a Turfton FM news bulletin, in the station's dry voice. Changes follow
+what the crew has done, not the calendar; nothing reverts except Side-Valve's seizure, which ends with the finale. The
+hobby teachers (Wenna Gudgeon, Hazel Mattock, Dunnock Pell) hand out their own Newcomers' Card stamps at their counters;
+Mabel sends newcomers to them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 builds the world changes (L68) and moves the hobby intros (L66) to the teachers.

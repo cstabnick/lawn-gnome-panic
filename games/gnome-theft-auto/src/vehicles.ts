@@ -36,6 +36,8 @@ interface Pivots {
   handle?: THREE.Object3D;
   steer?: THREE.Object3D;
   reel?: THREE.Object3D;
+  /** The Dewdrop's clear ball: rolls with the distance driven while the seat frame stays upright. */
+  ball?: THREE.Object3D;
   rotor?: THREE.Object3D;
   tailRotor?: THREE.Object3D;
   /** A fixed-wing plane's propeller (spins about its local z axis). */
@@ -57,6 +59,8 @@ const ROTOR_SPIN_DOWN = ROTOR_SPIN / 2;
 const PROP_SPIN = 40;
 const PROP_SPIN_DOWN = PROP_SPIN / 2;
 const WHEEL_RADIUS = 0.3;
+/** The Dewdrop's ball radius in world metres (prefab 0.73 x scale 1.5), so the roll matches the distance driven. */
+const BALL_ROLL_RADIUS = 1.1;
 /** A wall hit below this speed (units/s) does no damage; above it, each unit of speed over costs 1/CRASH_SCALE of the hit points. */
 export const CRASH_MIN = 5;
 export const CRASH_SCALE = 45;
@@ -82,6 +86,7 @@ function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number
     handle,
     steer,
     reel: body.getObjectByName('reel'),
+    ball: body.getObjectByName('ball'),
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
     prop: body.getObjectByName('prop'),
@@ -540,7 +545,8 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   v.z = sw.z;
   if (sw.hit) {
     const vel = { x: Math.sin(v.yaw) * v.speed + (v.slideX ?? 0), z: Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0) };
-    const b = wallBounce(vel.x, vel.z, sw.nx, sw.nz);
+    // The Dewdrop is a rubbery ball: it rebounds off walls and kerbs keeping about 45% of the speed.
+    const b = v.kind === 'bubble-mobile' ? wallBounce(vel.x, vel.z, sw.nx, sw.nz, 0.45, 0.2) : wallBounce(vel.x, vel.z, sw.nx, sw.nz);
     v.speed = b.vx * Math.sin(v.yaw) + b.vz * Math.cos(v.yaw);
     v.slideX = 0;
     v.slideZ = 0;
@@ -669,6 +675,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   if (p.handle) poseControl(p.handle, v.kind, v.steerVis);
   if (p.steer) poseControl(p.steer, v.kind, v.steerVis);
   if (p.blade) p.blade.rotation.y = v.wheelSpin;
+  if (p.ball) p.ball.rotation.x = (v.wheelSpin * WHEEL_RADIUS) / BALL_ROLL_RADIUS;
   if (p.reel) {
     if (v.kind === 'mulch-spreader') p.reel.rotation.y += dt * (Math.abs(v.speed) > 0.5 ? 8 : 1.5);
     else p.reel.rotation.x = v.wheelSpin;

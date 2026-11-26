@@ -36,9 +36,9 @@ export const NEWCOMER_COMMS: Readonly<Record<string, Readonly<Record<number, Com
     1: call(['juniper', 'The putting-green cart lives by the Country Club. Borrow it. Return optional.']),
   },
   'nc-bent-pin': {
-    0: brief(['wenna', 'Rods are on the counter. Cheapest one catches fish fine.']),
-    1: call(['wenna', 'Face the water, hold to cast, wait for the bob. Reel steady.']),
-    2: call(['wenna', 'Bring me the cards. Fish stay in the canal. Acorns go in your pocket.']),
+    0: brief(['wenna', 'Twig Rod, 40 Acorns, on the counter. It catches fish fine.']),
+    1: call(['wenna', 'Bank, face the water, hold {jump} to cast. Wait for the bob.']),
+    2: call(['wenna', 'Bring me the card. The fish stay in the canal.']),
   },
   'nc-skyway': {
     0: brief(['grout', 'West on-ramp, brother. Up on the deck. Drive it end to end.']),
@@ -57,8 +57,8 @@ export const NEWCOMER_COMMS: Readonly<Record<string, Readonly<Record<number, Com
     1: call(['hedda', 'Got it? Exchange. My desk. Now.']),
   },
   'nc-tuft-and-tally': {
-    0: brief(['hazel', 'License at my counter first. No license, no tufts.']),
-    1: call(['hazel', 'Crouch, come in downwind, knock one over. Then comb it gently.']),
+    0: brief(['hazel', 'License is 120 Acorns, at my counter. No license, no tufts.']),
+    1: call(['hazel', 'Crouch, creep up, knock one over. Then comb it gently.']),
     2: call(['hazel', 'Bag full or not, bring it back. I pay fair.']),
   },
   'nc-last-stop-pebblewick': {
@@ -66,7 +66,7 @@ export const NEWCOMER_COMMS: Readonly<Record<string, Readonly<Record<number, Com
     1: call(['mabel', 'The Hopper stop is by the square. It comes when you ask.']),
   },
   'nc-reedwatch': {
-    0: brief(['dunnock', 'Binoculars up. Slowly. Hold on a bird until it\'s logged.']),
+    0: brief(['dunnock', 'Hold {binoculars} for the binoculars. Stay on a bird until it\'s logged.']),
     1: call(['dunnock', 'Now listen. Some birds you only hear. The scope shows the call.']),
     2: call(['dunnock', 'Steady now. A photograph. Breathe out first.']),
   },

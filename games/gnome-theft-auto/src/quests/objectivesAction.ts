@@ -6,7 +6,7 @@ import { angleDiff } from '../collide';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Npc, Vehicle } from '../types';
 import { collideVehicles, createVehicle, removeVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
-import type { ObjectiveDef, QuestDeps, Run } from './types';
+import type { ObjectiveDef, QuestDeps, QuestSave, Run } from './types';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
 import { trackBeam } from '../questMarkerPrefs';
@@ -267,6 +267,7 @@ export function bossCombineRun(
 export function choiceRun(
   obj: Extract<ObjectiveDef, { kind: 'choice' }>,
   deps: QuestDeps,
+  save: QuestSave,
   changed: () => void,
   say: (t: string) => void,
 ): Run {
@@ -290,6 +291,7 @@ export function choiceRun(
       if (Math.hypot(px - obj.optionA.at[0], pz - obj.optionA.at[1]) <= 4.5) {
         chosen = true;
         ending = obj.optionA.outro;
+        save.ending = 'A';
         const bonus = obj.optionA.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionA.label);
         if (obj.optionA.achievement) deps.unlock(obj.optionA.achievement);
@@ -298,6 +300,7 @@ export function choiceRun(
       } else if (Math.hypot(px - obj.optionB.at[0], pz - obj.optionB.at[1]) <= 4.5) {
         chosen = true;
         ending = obj.optionB.outro;
+        save.ending = 'B';
         const bonus = obj.optionB.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionB.label);
         if (obj.optionB.achievement) deps.unlock(obj.optionB.achievement);

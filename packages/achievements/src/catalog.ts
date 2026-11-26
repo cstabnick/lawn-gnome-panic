@@ -1461,6 +1461,22 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Unauthorised Verticality', description: "Ride the Underspan's Updraft up onto the Roost.",
     reward: { slot: 'head', prefabId: 'underspan-goggles', label: 'Underspan Goggles' },
   },
+  // ---- Gnome Theft Auto: E18 the Dewdrop and the hobby intros (ids in games/gnome-theft-auto/src/dewdrop/config.ts DEWDROP_ACH, hobbyIntros.ts) ----
+  {
+    id: 'gta-roll-with-it', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Roll With It', description: "Finish Hogweed's Dewdrop series and roll away in your own hamster ball.",
+    reward: { slot: 'head', prefabId: 'gta-bubble-visor', label: 'Bubble Visor' },
+  },
+  {
+    id: 'gta-hamster-hour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hamster Hour', description: 'Spend a whole minute inside the Dewdrop without climbing out.',
+    reward: { slot: 'neck', prefabId: 'gta-hamster-medal', label: 'Hamster Wheel Medal' },
+  },
+  {
+    id: 'gta-rod-comb-notebook', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rod, Comb and Notebook', description: "Finish the Newcomers' Card fishing, hunting and birding intros (The Bent Pin, Tuft & Tally, Reedwatch).",
+    reward: { slot: 'neck', prefabId: 'gta-newcomer-lanyard', label: "Newcomer's Lanyard" },
+  },
   {
     id: 'gta-birds-of-a-feather', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Birds of a Feather', description: 'Join the Flock of the One Leg.',

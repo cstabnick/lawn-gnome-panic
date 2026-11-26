@@ -61,16 +61,14 @@ with deferred items listed).
 | E33 | Mountain routes | Content | 6 | E12, E14 | merged | epic/E33-mountains | see log | the Hatbrim range (the Bobble ~105 m, Old Pate, Brim Gap): Brim Gap Road (1.77 km pass road, Top Hat café), the Hatband (0.49 km gravel shelf, World's Edge lookout), the Brim Walk (1.65 km footpath, Summit Register), the Spine Cut (gorge road under the Keyhole arch); drive-along tests; perf flat; R-230..R-232 (renumbered); no coastal clifftop road (terrain can't make cliffs near water), no real tunnels; Brim Walk crosses the band road twice; hairpin chevrons one-way |
 | R1 | Editorial review and polish (editors by content group, decider for disputes, iterate) | Review | 10 | everything | planned | | | |
 
-## Cross-cutting cleanup (do in E22 or a small fix epic)
+## Cross-cutting cleanup
 
-- Done (F1, merged 16046042): 40 wearables' `wear` mounts fixed; `npm test -w packages/gnome` green. Neck items (e.g.
-  house-key-necklace hangs low, windsock-quiver shrunk to 0.68) were not eyeballed on a gnome: check in the equip lab.
- - also `traffic.levels.test.ts` "cars stay on a surface and never jump levels: focus on the deck" (load-flaky, after E31).
-- `traffic.test.ts`: "a bullet at the driver head hits them..." and "a lane-following car ... 90 degree corner" fail
-  under full-suite load and pass alone (3/3 after the E24 merge). Make them load-independent (F2).
-- `AGENT_INDEX.md`'s Gnome Theft Auto row was built by splicing each epic's insertion and has garbled fragments in
-  places (e.g. "E28 d`)", "contracts.m 7:"); rewrite the row cleanly from the epics' contracts docs (F2 or E22).
-- After merging an epic that adds a workspace package (e.g. @lawn/golf), run `npm install` at the root before building.
+- Done (F1): 40 wearables' `wear` mounts fixed; `npm test -w packages/gnome` green. Neck items (house-key-necklace hangs
+  low, windsock-quiver shrunk to 0.68) were not eyeballed on a gnome: check in the equip lab during R1.
+- Done (F2, 23885abc): the load-flaky traffic tests are deterministic (four full suites in a row green); the Gnome
+  Theft Auto row of `AGENT_INDEX.md` rewritten cleanly. Merge tip: when an epic edits that row, re-splice with the
+  usual helper and re-read it.
+- After merging an epic that adds a workspace package, run `npm install` at the root before building.
 
 ## Side-quest load (for E18)
 

@@ -1280,3 +1280,23 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** Nine. Holes 4 to 8, promised by Dame Peony every season for as long as anyone has been a member, are built in the Bottom Garden, the Tall One's old bottom garden south of the old south fence, through the Turn Gate: 4 Peony's Promise (par 4, the opening ribbon still strung across the green), 5 The Maze (par 4, the old hedge maze clipped into a hole), 6 The Drip (par 3, a carry over the overflow pool and its giant birdbath), 7 The Potting Shed (par 3, teed off the shed roof) and 8 The Rhubarb Patch (par 4, a dogleg round the vegetable patch). Course par 34. R-194 stands as history: the card said nine for years and the course had four. Play order is 1 to 9, and 9, The Ninth, is still by Thrift's shed. Thrift laid the new holes out by hand over three seasons; Peony named them, Basil Divot none.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E32 builds the missing holes, and the joke that the card was right all along needed an answer that keeps R-194.
+
+## R-227
+
+**Question:** What is the Dewdrop, and can anyone buy one?
+**Ruling:** The Dewdrop is Hogweed Sprocket's clear rolling ball, ridden from a seat that stays upright inside. It is an
+Underspan prototype, not a dealer vehicle: a gnome gets one only by finishing Hogweed's three Dewdrop jobs, and a
+replacement is sold only at his workshop (400 Acorns), with a handwritten ownership form. The HOA has no category for it
+and cites it, when it cites it at all, as "unauthorised roundness".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 adds the bubble-mobile (L54) and needs where it comes from and who sells it fixed.
+
+## R-228
+**Question:** How does Turfton change as the story moves, who tells the town, and who hands out the hobby stamps?
+**Ruling:** Changes after a run of story events are public and stay: signs go up, notices come down, a roof is mended, a
+bay is boarded. Each one is reported once in a Turfton FM news bulletin, in the station's dry voice. Changes follow
+what the crew has done, not the calendar; nothing reverts except Side-Valve's seizure, which ends with the finale. The
+hobby teachers (Wenna Gudgeon, Hazel Mattock, Dunnock Pell) hand out their own Newcomers' Card stamps at their counters;
+Mabel sends newcomers to them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 builds the world changes (L68) and moves the hobby intros (L66) to the teachers.

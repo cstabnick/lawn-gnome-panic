@@ -15,7 +15,7 @@ export const SOCIETY_STAGES: readonly Stage[] = [
     time: 'day',
     built: 'existing',
     givers: ['hogweed'],
-    usedBy: ['sq-underspan-verticality', 'sq-underspan-scrap-run'],
+    usedBy: ['sq-underspan-verticality', 'sq-underspan-scrap-run', 'sq-dewdrop-1', 'sq-dewdrop-2', 'sq-dewdrop-3'],
     look: 'A scrap shed patched with road signs, scaffold towers holding up a plank deck, manifesto posters, a post stacked with HOA citations.',
     sounds: 'Weld crackle, a pedal generator whirring, traffic thumping over the Skyway.',
     marks: [

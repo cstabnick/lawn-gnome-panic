@@ -43,7 +43,7 @@ const ROWED: Readonly<Record<string, AnimId>> = { 'walnut-dinghy': 'boat-row', '
 const DRIVE_STYLE: Readonly<Record<string, AnimId>> = {
   'golf-cart': 'drive-casual', lowrider: 'drive-lean-cool', 'hoa-van': 'drive-white-knuckle', taxi: 'drive-elbow-out',
   'pot-rod': 'drive-elbow-out', 'snail-coach': 'drive-sleepy', 'boot-float': 'drive-sing-along', combine: 'drive-sleepy',
-  'ride-on': 'drive-casual', 'teacup-trundler': 'drive-sing-along', 'barrow-buggy': 'drive-casual', 'lawn-roller': 'drive-sleepy',
+  'ride-on': 'drive-casual', 'teacup-trundler': 'drive-sing-along', 'barrow-buggy': 'drive-casual', 'bubble-mobile': 'drive-casual', 'lawn-roller': 'drive-sleepy',
   'euro-hatch': 'drive-white-knuckle', 'deux-pots': 'drive-sing-along', wespa: 'drive-lean-cool', 'baguette-trike': 'drive-elbow-out',
   'crepe-van': 'drive-casual', 'bin-lorry': 'drive-casual', 'fire-engine': 'drive-white-knuckle',
 };

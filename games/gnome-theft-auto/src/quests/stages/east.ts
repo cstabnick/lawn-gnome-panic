@@ -196,8 +196,8 @@ export const EAST_STAGES: readonly Stage[] = [
     facing: Math.PI,
     time: 'golden',
     built: 'dressed',
-    givers: ['loch-driftwood'],
-    usedBy: ['sq-tessie'],
+    givers: ['loch-driftwood', 'club-reedwatch'],
+    usedBy: ['sq-tessie', 'nc-reedwatch'],
     look: 'A weathered wooden dock off the end of the loch-spur track: a timber jetty into the reeds, a fishing rod leaning on a deck chair, a tin pail and a NO MONSTERS signpost on the shore, the dark loch and its reeds beyond.',
     sounds: 'Lapping water against the jetty, reeds rattling, a gull, Driftwood muttering at the water.',
     marks: [

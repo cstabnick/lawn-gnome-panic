@@ -6,6 +6,7 @@
 import type { Place } from '../config';
 import { RADIO_SONGS } from './music/songs';
 import { ADAGIO_STATION } from './adagioStation';
+import { WORLD_CHANGES, worldBulletinKey } from '../worldChanges/defs';
 
 /** A station's playlist: the titles and artists of its songs (the music itself is songs/<station>.ts). */
 const playlist =(id: 'blade' | 'fpr' | 'beats' | 'adagio'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
@@ -262,8 +263,21 @@ export const HEAT_BULLETINS: Readonly<Record<1 | 2 | 3 | 4, readonly Line[]>> = 
   ],
 };
 
+/** World-change news (worldChanges/defs.ts WORLD_CHANGES): one bulletin per change, plus W17's Ending B line. */
+function worldChangeBulletins(): Record<string, readonly Line[]> {
+  const out: Record<string, readonly Line[]> = {};
+  // The table's text opens "Turfton FM news: ..."; the other bulletins here do not, so the prefix is dropped.
+  const body = (text: string) => text.replace(/^Turfton FM news: /, '').replace(/^./, (c) => c.toUpperCase());
+  for (const w of WORLD_CHANGES) {
+    if (w.bulletin) out[worldBulletinKey(w.id)] = [{ who: 'BULLETIN', text: body(w.bulletin) }];
+    if (w.bulletinB) out[worldBulletinKey(w.id, 'B')] = [{ who: 'BULLETIN', text: body(w.bulletinB) }];
+  }
+  return out;
+}
+
 /** Bulletins for things the player does, keyed by the achievement id that marks it. The radio plays them only while on. */
 export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
+  ...worldChangeBulletins(),
   'gta-borrowed': [
     { who: 'BULLETIN', text: 'A Ride-On has been "borrowed" from outside the Gnomecino. The owner says the borrower was very polite and took the hat with them.' },
     { who: 'BULLETIN', text: 'A Push-Mower Bike has left the Greenhouse Strip at a speed the owner describes as "considerate". The owner would like the bike back.' },

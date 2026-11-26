@@ -205,6 +205,7 @@ import { GTA_LOAMDEEP_HOME } from './gta-loamdeep-home';
 import { GTA_UNDERSPAN } from './gta-underspan';
 import { GTA_FLOCK } from './gta-flock';
 import { GTA_SOCIETIES_GEAR } from './gta-societies-gear';
+import { GTA_DEWDROP } from './gta-dewdrop';
 
 export const CATALOG: readonly PrefabDef[] = [
   ...WEAPONS, ...ARMOR, ...CONSUMABLES, ...MATERIALS, ...TRINKETS, ...DOCUMENTS, ...TOOLS, ...FURNITURE, ...PROPS, ...BOWLING, ...CASINO, ...GNOMEOKEMON,
@@ -250,4 +251,5 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_JOBS3_FLEET, ...GTA_BIN_ROUND, ...GTA_FIRE_BRIGADE, ...GTA_GNOMAZON,
   ...GTA_COUNTRY_DEER, ...GTA_COUNTRY_CROPS, ...GTA_COUNTRY_CROPS_B, ...GTA_COUNTRY_CROFT, ...GTA_COUNTRY_SITE, ...GTA_COUNTRY_VINEYARD, ...GTA_COUNTRY_MANOR, ...GTA_COUNTRY_CAMP, ...GTA_COUNTRY_GEAR,
   ...GTA_MOLES, ...GTA_LOAMDEEP, ...GTA_LOAMDEEP_HOME, ...GTA_UNDERSPAN, ...GTA_FLOCK, ...GTA_SOCIETIES_GEAR,
+  ...GTA_DEWDROP,
 ];

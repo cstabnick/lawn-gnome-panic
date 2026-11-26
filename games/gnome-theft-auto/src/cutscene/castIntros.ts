@@ -55,6 +55,10 @@ export const CAST_INTROS: Readonly<Record<string, CharacterIntro>> = {
   fennel: { name: 'Fennel Gripwax', role: 'Gutter Bowls skater.', line: 'Lives under the deck. Feeds the strays. Keeps a list of lines.', accent: 0x3a7ac0 },
   moss: { name: 'Moss Squeegee', role: 'Dries the bowls.', line: 'A bowl is a roof on the ground. Roofs need looking after.', accent: 0x4a7a3a },
   pebble: { name: 'Pebble Nollie', role: 'Films everything.', line: 'Has never stood on a board. Has seen every trick.', accent: 0xf07aa0 },
+  // Hobby teachers (hobbyIntros.ts): the Bent Pin, the Tuft & Tally Lodge and the Reedwatch Hide.
+  wenna: { name: 'Wenna Gudgeon', role: 'Bent Pin. Fishing teacher.', line: 'Quick and exact about centimetres. Every fish goes back in.', accent: 0x2f6f8f },
+  hazel: { name: 'Hazel Mattock', role: 'Tuft & Tally. Hunting.', line: 'Sells the Tuft License. Nobody gets hurt. Mostly.', accent: 0x5a6b2e },
+  dunnock: { name: 'Dunnock Pell', role: 'Reedwatch. Birding.', line: 'Keeps the hide and the life list. The birds don\'t mind you there.', accent: 0x6b7a5a },
 };
 
 const titleCase = (s: string): string => s.replace(/\b\w/g, (m) => m.toUpperCase());

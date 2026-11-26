@@ -68,6 +68,8 @@ export type VehicleKind =
   | 'ranger-buggy'
   | 'shell-camper'
   | 'cone-van'
+  // E18 the Dewdrop (dewdrop/): Hogweed Sprocket's clear hamster ball, rolled from inside; unlocked by sq-dewdrop-3.
+  | 'bubble-mobile'
   // E25 jobs III (workplaces/garbage, workplaces/firefighter): the Bin Lorry (pivot 'arm', the lift arm on the kerb
   // side) and the Watering-Can Pumper (pivots 'ladder', 'nozzle'). Spawned by their jobs; never in traffic.
   | 'bin-lorry'

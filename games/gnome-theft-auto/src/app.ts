@@ -178,6 +178,9 @@ import { installSkate } from './skate/runtime';
 import { installRootwell } from './campus';
 import { installCountryside } from './country';
 import { installSocieties, type Societies } from './societies';
+import { installDewdrop } from './dewdrop/runtime';
+import { installWorldChanges } from './worldChanges/runtime';
+import { installHobbyIntros } from './hobbyIntros';
 import type { JobsDeps } from './jobs/types';
 import { createLockup } from './lockup/runtime';
 // E08 economy, ownership and inventory (docs/roadmaps/gta-batch-3/E08/contracts.md).
@@ -1199,6 +1202,21 @@ const rootwell = installRootwell(jobDeps);
 const countryside = installCountryside(jobDeps);
 // E17 (societies/): the Underspan, Wader's Rest and Loamdeep (mole jobs, DJ Moleman). Static scenery: world.ts buildSocieties.
 societies = installSocieties({ ...jobDeps, teleport: (x, z, yaw) => { player.respawn(x, z, yaw); chase.yaw = yaw; } });
+// E18: the Dewdrop hamster ball (dewdrop/), world changes after quest series (worldChanges/), hobby teachers' intro cards.
+const dewdrop = installDewdrop(jobDeps);
+const worldChanges = installWorldChanges({
+  scene,
+  saves: () => quests.getJournal().saves,
+  news: (key) => reportNews(key),
+  night: () => atmosphere?.nightFactor() ?? 0,
+  groundY: (x, z) => heightAt(x, z),
+});
+const hobbyIntros = installHobbyIntros({
+  player,
+  saves: () => quests.getJournal().saves,
+  unlock: (id) => void achievements.unlock(id),
+  onFoot: () => !player.vehicle && !player.airborne && !player.ragdolling && deathT <= 0 && !cutscene.active,
+});
 
 const stats = { cracked: 0, driven: new Set<VehicleKind>(), whirligigStolen: false, trespassed: false };
 
@@ -2261,6 +2279,9 @@ function frame(now: number): void {
   rootwell.update(dt);
   countryside.update(dt);
   societies?.update(dt);
+  dewdrop.update(dt);
+  worldChanges.update(dt);
+  hobbyIntros.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();
   // The route to the waypoint (an objective, or a giver pinned in the journal), along the roads, re-planned twice a second.

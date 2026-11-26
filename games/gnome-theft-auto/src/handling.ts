@@ -147,6 +147,12 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
     lean: 1.1,
   },
+  // Dewdrop: a clear hamster ball. Barely grips, soft steering, rolls on after you let go.
+  'bubble-mobile': {
+    stock: { grip: 0.6, balance: 0.2, steering: 0.6, assists: 0.8, stiffness: 0.6, comHeight: 0.9 },
+    ranges: { grip: [0.5, 1.0], balance: [-0.2, 0.5], steering: [0.4, 1.0], assists: [0.2, 1.4] },
+    lean: 0.4,
+  },
   // European rides. Euro-Hatch: nippy and planted city car.
   'euro-hatch': {
     stock: { grip: 1.1, balance: 0.05, steering: 1.25, assists: 1.1, stiffness: 1.05, comHeight: 0.95 },

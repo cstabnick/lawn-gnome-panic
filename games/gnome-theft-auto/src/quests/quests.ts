@@ -20,8 +20,9 @@ import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { raceRun } from './objectivesRace';
 import { checkpointsRun, probeRun } from './objectivesCity';
+import { beatsDone, isPaced, sidePacing } from './pacing';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
-import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
+import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
 import { createQuestPins, recoverVehicleNear } from './questPins';
 import type { QuestPins } from './questPins';
@@ -381,8 +382,8 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     surviveDerbyRun(obj, deps, changed, say)) as unknown as Maker,
   'boss-combine': ((obj: Extract<ObjectiveDef, { kind: 'boss-combine' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     bossCombineRun(obj, deps, changed, say)) as unknown as Maker,
-  choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
-    choiceRun(obj, deps, changed, say)) as unknown as Maker,
+  choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    choiceRun(obj, deps, save, changed, say)) as unknown as Maker,
   'tessie-sightings': ((obj: Extract<ObjectiveDef, { kind: 'tessie-sightings' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     tessieSightingsRun(obj, deps, changed, say)) as unknown as Maker,
   'tessie-buoys': ((obj: Extract<ObjectiveDef, { kind: 'tessie-buoys' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
@@ -454,6 +455,7 @@ export function createQuests(
     dirty ||= unlocked;
     if (!dirty) return;
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     if (unlocked) deps.onTessieUnlock?.();
   }
@@ -507,10 +509,20 @@ export function createQuests(
     marks.set(g.id, { g, beam, star, ring, main, side });
   }
 
+  let pacing = sidePacing(saves, questList);
+  let offeredSet = new Set(pacing.offered);
+  function refreshPacing(): void {
+    pacing = sidePacing(saves, questList);
+    offeredSet = new Set(pacing.offered);
+  }
   const waitingAt = (id: string): boolean => activeId === null && questList.some((qd) => qd.giver === id && isQuestAvailable(qd, saves));
-  /** The kind of the quest a giver offers next (the one interact() plays). */
+  const isMarked = (qd: QuestDef): boolean => isQuestAvailable(qd, saves) && (markerKind(qd) === 'main' || !isPaced(qd.id) || offeredSet.has(qd.id));
+  /** A giver that gets a map mark: has a main quest, an unpaced side quest or an offered side quest ready. */
+  const markedAt = (id: string): boolean => activeId === null && questList.some((qd) => qd.giver === id && isMarked(qd));
+  /** The kind of the quest a giver offers next (main first, then an offered side quest). */
   const giverKind = (id: string): 'main' | 'side' => {
-    const next = questList.find((qd) => qd.giver === id && isQuestAvailable(qd, saves));
+    const mine = questList.filter((qd) => qd.giver === id && isMarked(qd));
+    const next = mine.find((qd) => markerKind(qd) === 'main') ?? mine[0] ?? questList.find((qd) => qd.giver === id && isQuestAvailable(qd, saves));
     return next ? markerKind(next) : 'side';
   };
   const giverColor = (id: string): string => (giverKind(id) === 'main' ? MAIN_COLOR : sideColor(id));
@@ -546,6 +558,7 @@ export function createQuests(
       save,
       () => {
         storeSaves(saves);
+        refreshPacing();
         notifySaveChanged();
         refreshTracker();
         stepCheck(q);
@@ -557,6 +570,7 @@ export function createQuests(
     if (p && save.checkpoint?.step !== save.step) {
       save.checkpoint = { step: save.step, x: p.x, z: p.z, yaw: p.yaw };
       storeSaves(saves);
+      refreshPacing();
     }
     deps.watch?.setCap?.(hoaCap(hoaPolicyFor(q, save.step)));
     refreshTracker();
@@ -607,6 +621,7 @@ export function createQuests(
     save.cracked = [];
     if (save.step < q.objectives.length) {
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       tessieCheck();
       noticeUnlocks();
@@ -632,10 +647,12 @@ export function createQuests(
     run = null;
     activeId = null;
     save.state = 'done';
+    save.doneAt = beatsDone(saves, questList);
     pins.releaseAll();
     retryIn = 0;
     deps.watch?.setCap?.(null);
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     tessieCheck();
     noticeUnlocks();
@@ -710,6 +727,7 @@ export function createQuests(
     pinned = null;
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     tessieCheck();
     activeId = q.id;
@@ -721,11 +739,12 @@ export function createQuests(
   // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.
   tessieCheck(!!deps.tessieNow, true);
   // What is already open at load gets no notice.
-  for (const id of unlockedSideIds(saves)) known.add(id);
+  for (const id of pacing.offered) known.add(id);
 
   /** Queue a notice for each side quest that just opened (not Tessie, which has onTessieUnlock). The first is 4.5 s out, each next 3 s after the previous. */
   function noticeUnlocks(): void {
-    for (const id of unlockedSideIds(saves)) {
+    refreshPacing();
+    for (const id of pacing.offered) {
       if (known.has(id)) continue;
       known.add(id);
       if (id === TESSIE.questId || !quest(id)) continue;
@@ -767,7 +786,7 @@ export function createQuests(
         if (q) deps.onSideUnlock?.(q, giversMap[q.giver]);
       }
       for (const m of marks.values()) {
-        const waiting = waitingAt(m.g.id);
+        const waiting = markedAt(m.g.id);
         const kind = giverKind(m.g.id);
         if (m.kind !== kind) {
           m.kind = kind;
@@ -832,7 +851,7 @@ export function createQuests(
     blips() {
       const out: Blip[] = [];
       for (const g of Object.values(giversMap)) {
-        if (!waitingAt(g.id)) continue;
+        if (!markedAt(g.id)) continue;
         const kind = giverKind(g.id);
         out.push({ ...giverBlipPos(g), color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
       }
@@ -841,7 +860,7 @@ export function createQuests(
     },
 
     hint() {
-      const waiting = Object.values(giversMap).filter((g) => waitingAt(g.id));
+      const waiting = Object.values(giversMap).filter((g) => markedAt(g.id));
       const main = waiting.find((g) => giverKind(g.id) === 'main');
       if (main) return `A contract is waiting at ${main.name}.`;
       if (waiting.length > 0) return `A side job is waiting at ${waiting[0].name}.`;
@@ -915,6 +934,7 @@ export function createQuests(
       delete saves[activeId];
       activeId = null;
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       deps.hud.setObjective(null);
       deps.hud.toast('Quest abandoned.', 3000);
@@ -927,6 +947,7 @@ export function createQuests(
       if (!q || !saves[activeId]) return false;
       saves[activeId].cracked = [];
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       startStep(q);
       const ride = pins.ride();

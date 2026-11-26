@@ -13,8 +13,8 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-Merged so far: E01–E17, E19, E23–E31, F1 (+ main). Running: E33 (mountain routes), E18 (activities,
-side-quest pacing). E32 merged. Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
+Merged so far: E01–E17, E19, E23–E31, F1 (+ main). Running: E33 (mountain routes), E20 (story rows
+#1–#35). E32, E18 merged. Next, as slots free: E18 (activities), E20 → E21 → E22 (story),
 then R1 (editorial review). Leads run in worktrees under `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`;
 if a session ends mid-lead, resume the lead (or start a new one told to continue from its worktree), then merge with
 `bash tools/batch-merge.sh`, `tools/renumber-rulings.py`, `tools/merge-hunks.py` (see the process doc).
@@ -44,8 +44,8 @@ with deferred items listed).
 | E16 | Countryside, fauna and the farm | Content | 6 | E01, E08 | merged | epic/E16-country | see log | 3 Even-Estates building sites, Trellisdown Vineyard + Brassknock Manor (tasting-hall interior), 6 deer herds + 2 goat flocks (+ hunting quarry), Windfall Croft farm (loan, 4 crops, oak acorns, Farm app, offline growth capped 2 h), 26 hunter camps; 2 side quests (temp unlocks; E20 → #7/#31), 6 achievements, 70 prefabs, R-210..R-214 (renumbered); deferred: hoardings timing W02/W17, manor ledger room; no camps in Fells/Mossy Wood; vines thin from afar |
 | E17 | Underground societies | Content | 6 | E01, E05, E04 | merged | epic/E17-societies | see log | `src/societies/`: the Underspan (Hogweed Sprocket, workshop + Updraft to the Roost), Wader's Rest (Flock of the One Leg, flamingo, big tent, sermon), Loamdeep (6 underground halls, 4 mole jobs, DJ Moleman + Under-Chorus); 7 side quests (temp unlocks; E20/E21 move them), 6 achievements, ~61 prefabs, save `gta-societies-v1`, R-218..R-222 (renumbered); deferred: world changes W06/W13 (Burrow Door lantern, moles on the surface); hold games use Space/touch, not E |
 | E19 | Courts and skate park | Content | 6 | E01 | merged | epic/E19-courts | see log | Drainpipe Court 2v2 pickup basketball on GJAM's sim (+ shootaround), the Gutter Bowls (half-pipe, bowl, street), `skateboard` vehicle kind with GTA controller scored by Aether Board tricks, 4 skate lines; packages **@lawn/jam**, **@lawn/trickboard** (both source games' goldens unchanged); 2 side quests (temp after `ch1-founders-boot`; E20 → after #14/#15), 6 achievements, R-215..R-217 (renumbered); local only online (board relays); landscape court buttons may overlap |
-| E18 | Activities and side-quest pacing | Content | 7 | E04, E05, E08 | running | epic/E18-activities |  |  |
-| E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | planned | | | |
+| E18 | Activities and side-quest pacing | Content | 7 | E04, E05, E08 | merged | epic/E18-activities | see log | offer caps (3/4/6 by act), journal Later shelf + Active/Open/Later/Done, chain queue, all unlocks re-timed; **43 unlocks carry `planned` story rows** (E20 21, E21 19, E22 3; table in `E18/contracts.md`; the test fails once a planned row exists until `after` moves onto it); hobby intros by Wenna/Hazel/Dunnock with intro cards; `bubble-mobile` Dewdrop + `sq-dewdrop-1..3`; world changes `src/worldChanges/` (props W01–W06, W08–W13, W15, W17, W18; W07/W14/W16 need props from E20–E22); R-227, R-228 (renumbered); Peony's Promise unlock appended at merge (no planned row); deferred: 6 schedule quests unwritten (incl. `sq-chef-first-shift`, `sq-hyssop-stairwell`); zfight timed out, no eyeball pass |
+| E20 | Story acts I–II (quests 1–35) | Story | 7 | E04, E10 | running | epic/E20-story12 |  |  |
 | E21 | Story act III (quests 36–53) | Story | 8 | E11–E17, E20 | planned | | | |
 | E22 | Story act IV (quests 54–70), lore and finish | Story + Finish | 9 | everything | planned | | | |
 | E23 | Quest robustness, fuzzing and HOA balance | Engine + Fix | 3 | E03 | merged | epic/E23-quests | 5d56c186 | pinned quest rides + checkpoint auto-retry; `npm run quest-fuzz` (10 disruptions, 0 open bugs on seeds 1-2); sim 57/58 (nc-party needs relay); HOA: 1-hat cap on shooting steps, delayed arrival, LOS cooling, search circle + evade meter (not checked at 390x844) | | |

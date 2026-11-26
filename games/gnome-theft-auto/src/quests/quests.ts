@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { notifySaveChanged } from '../saveHook';
-import { mergeQuestSaves, parseSavesJson } from './questSave';
+import { mergeQuestSaves, migrateFinaleSave, parseSavesJson } from './questSave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
 import { heightAt } from '../terrain';
@@ -436,7 +436,10 @@ export function summarizeQuestSaves(text: string): string {
 function loadSaves(): Record<string, QuestSave> {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    return parseSavesJson(raw);
+    const saves = parseSavesJson(raw);
+    // E22: a save from before the finale was split into parts resumes in the right part.
+    if (migrateFinaleSave(saves)) storeSaves(saves);
+    return saves;
   } catch {
     return {};
   }

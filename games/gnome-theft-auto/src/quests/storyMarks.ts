@@ -1,9 +1,23 @@
-// What finished story quests reveal: map markers (blips on the minimap and big map) and journal items (the Quest
-// Journal's Items tab). One pure data table; app.ts and journal.ts read it. No DOM, no imports from app.ts.
+// What finished story quests reveal: map markers (blips on the minimap and big map), journal items (the Quest
+// Journal's Items tab) and grants (E22: a vehicle put in the player's garage, a garage deed signed over). One pure data
+// table; app.ts and journal.ts read it. No DOM, no imports from app.ts.
+import type { VehicleKind } from '../types';
 
 export interface StoryMarker { label: string; x: number; z: number }
 export interface StoryItem { id: string; title: string; text: string }
-export interface StoryMarks { markers?: readonly StoryMarker[]; items?: readonly StoryItem[] }
+/**
+ * E22: something a finished story quest gives for keeps. app.ts applies each grant once its quest is done (also for an
+ * old save that finished it before grants existed): a deed ('air' Hangar Two, 'water' the Mossbank Boathouse) is given
+ * free when not owned; a vehicle is put in its garage when the player has no stored or out vehicle of that name (so a
+ * written-off one comes back on the next load). `note` is the toast shown when it is given.
+ */
+export interface StoryGrant {
+  id: string;
+  deed?: 'air' | 'water';
+  vehicle?: { kind: VehicleKind; name: string; tint: number };
+  note: string;
+}
+export interface StoryMarks { markers?: readonly StoryMarker[]; items?: readonly StoryItem[]; grants?: readonly StoryGrant[] }
 
 /**
  * Finished quest id -> what it reveals. E20/E21/E22 leads add rows; quest writers report them.
@@ -36,7 +50,11 @@ export const STORY_MARKS: Readonly<Record<string, StoryMarks>> = {
     items: [{ id: 'sock-map', title: 'The sock map', text: 'A woolly sock inked with four red crosses: deck at Hedgeworth, guidance at Rootwell, power at Pinwheel Ridge, money at Trellisdown.' }],
   },
   'm41-pinwheel-ridge': { markers: [{ label: "Pinwheel Ridge, Ragwort's hut", x: 860, z: -1239 }] },
-  'm42-rutbottom-impound': { markers: [{ label: 'Rutbottom Dirt Bowl, the impound pit', x: 1020, z: -684 }] },
+  'm42-rutbottom-impound': {
+    markers: [{ label: 'Rutbottom Dirt Bowl, the impound pit', x: 1020, z: -684 }],
+    // E22: E21 could only say it; the impounded Knobbly is the player's for keeps.
+    grants: [{ id: 'impound-knobbly', vehicle: { kind: 'dirt-bike', name: 'Impound Knobbly', tint: 0xd8342c }, note: 'Clary signed the impounded Knobbly over to you. It waits in the Lock-Up.' }],
+  },
   'm43-saltbucket-boardwalk': { markers: [{ label: "The Last Tube, Driftwood's hut", x: 150, z: 1155 }] },
   'm44-the-bathtub-queen': {
     markers: [{ label: 'The Bathtub Queen, the sea route', x: 300, z: 1268 }],
@@ -59,6 +77,13 @@ export const STORY_MARKS: Readonly<Record<string, StoryMarks>> = {
   'ch3-tundra-drift-run': {
     items: [{ id: 'stopping-stone', title: 'The Stopping Stone', text: "Elder Bracken's Stone, lent not given: the only thing that ever stopped a machine. Bring it back uncracked." }],
   },
+  // E22 rows 54-70 (added by the E22 lead)
+  'ch4-runway-flares': {
+    grants: [
+      { id: 'hangar-two-deed', deed: 'air', note: 'Wind-Sock Wally signed Hangar Two over to the crew. Planes you keep live there now.' },
+      { id: 'crew-crop-duster', vehicle: { kind: 'plane', name: "The Crew's Crop Duster", tint: 0xf2c230 }, note: "The Crop Duster is the crew's plane now. It waits in Hangar Two." },
+    ],
+  },
 };
 
 /** Markers of every finished quest, in table order, deduplicated by label. */
@@ -71,6 +96,21 @@ export function storyMarkers(isDone: (questId: string) => boolean): StoryMarker[
       if (seen.has(m.label)) continue;
       seen.add(m.label);
       out.push(m);
+    }
+  }
+  return out;
+}
+
+/** Grants of every finished quest, in table order, deduplicated by id. */
+export function storyGrants(isDone: (questId: string) => boolean): StoryGrant[] {
+  const seen = new Set<string>();
+  const out: StoryGrant[] = [];
+  for (const [id, marks] of Object.entries(STORY_MARKS)) {
+    if (!marks.grants || !isDone(id)) continue;
+    for (const g of marks.grants) {
+      if (seen.has(g.id)) continue;
+      seen.add(g.id);
+      out.push(g);
     }
   }
   return out;

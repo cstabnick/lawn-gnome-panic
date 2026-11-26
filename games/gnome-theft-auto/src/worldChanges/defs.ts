@@ -63,7 +63,7 @@ export const WORLD_CHANGES: readonly WorldChangeDef[] = [
     bulletin: 'Turfton FM news: a root stall has opened on Bodega\'s street. The roots are, the buyers say, excellent.' },
   { id: 'W14', title: 'The mown scar', after: ['m52-the-test-cut'], where: "Hedgeworth Links; Wader's Rest",
     bulletin: "Turfton FM news: a clean stripe has appeared across Hedgeworth. Groundskeepers there describe it as 'a little too clean'." },
-  { id: 'W15', title: 'Coalition colours', after: ['ch4-spade-truce'], planned: 'm60-the-moles-dig', where: 'Fort Sandpit gate; Pebblewick water tower',
+  { id: 'W15', title: 'Coalition colours', after: ['m60-the-moles-dig'], where: 'Fort Sandpit gate; Pebblewick water tower',
     bulletin: 'Turfton FM news: the Spade Guard has taken to flying a flag of many colours. The Commander has no comment, and a medal.' },
   { id: 'W16', title: 'All hats', after: ['m64-all-hats'], where: 'Dust Flats overlook; New Puddle marina',
     bulletin: 'Turfton FM news: a great many hats are seen on the Dust Flats. Observers say they all appear to be friends.' },

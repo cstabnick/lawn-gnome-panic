@@ -90,7 +90,7 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'race-rutbottom-knobbly', after: 'm42-rutbottom-impound', why: 'Clary opens the Bowl to anyone on a Knobbly.' },
   { questId: 'sq-rutbottom-heats', after: 'm44-the-bathtub-queen', why: 'Teasel wants a rematch on the dirt (needs the Knobbly heat).' },
   { questId: 'race-lowrider-derby', after: 'm43-saltbucket-boardwalk', why: 'The Carburettors are back on their wheels (needs the Rookie Mow-Down).' },
-  { questId: 'race-snail-endurance', after: 'ch3-tundra-drift-run', planned: 'm54-the-heist-board', why: 'After the drift run Shelldon is back in town and the Speedway reopens.' },
+  { questId: 'race-snail-endurance', after: 'm54-the-heist-board', why: 'After the drift run Shelldon is back in town and the Speedway reopens.' },
   { questId: 'sq-flock-vigil', after: 'ch3-tundra-drift-run', why: 'The Flock gave the test date and now keep a vigil (needs Errands for the Flock).' },
   { questId: 'sq-rootwell-lost-essay', after: 'm47-hedgeworth-links', why: 'Dean Lovage is sure the player is a student and wants a paper on level lines.' },
   { questId: 'sq-anthill-rent', after: 'm48-the-groundskeepers-secret', why: "Sextant knows the ants, and the ants are late on a sugar invoice." },
@@ -108,9 +108,9 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-underspan-scrap-run', after: 'ch4-sandpit-drop', why: 'The workshop is short on parts (needs Unauthorised Verticality).' },
   { questId: 'coast-bathtub-tours', after: 'm46-starfall-at-the-anthill', why: 'Captain Bilge joined the crew (m44) and has a boat to fill.' },
   { questId: 'coast-queens-treasure', after: 'm46-starfall-at-the-anthill', why: "Bilge lets slip about the treasure at the end of the tour (needs Pirate Tours, Mostly)." },
-  { questId: 'sq-porcelain-support', after: 'ch4-sandpit-drop', planned: 'm66-porcelain-hearts', why: "Clara's follow-up: she asks for Vesper to be stopped, not shattered (m66)." },
+  { questId: 'sq-porcelain-support', after: 'm66-porcelain-hearts', why: "Clara's follow-up: she asks for Vesper to be stopped, not shattered (m66)." },
   { questId: 'sq-weeping-line', after: 'ch4-spade-truce', why: 'The reeve met the player; the dry water line is the town\'s other problem.' },
-  { questId: 'sq-hum-at-three', after: 'ch4-spade-truce', planned: 'm60-the-moles-dig', why: 'The spade truce opened the eastern sand; the dunes hum at three.' },
+  { questId: 'sq-hum-at-three', after: 'm60-the-moles-dig', why: 'The spade truce opened the eastern sand; the dunes hum at three.' },
   { questId: 'sq-hedgeworth-peonys-promise', after: 'ch5-even-cut', why: "Peony opens holes 4 to 8 in the Bottom Garden (E32; needs the Members' Cup). Same temporary gate as the cup." },
 ];
 

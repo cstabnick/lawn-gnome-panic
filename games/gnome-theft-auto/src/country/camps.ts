@@ -57,7 +57,7 @@ export const CAMPS: readonly CampDef[] = [
   { id: 'camp-east-3', name: 'Late Lecture Camp', kind: 'camp', x: 1360, z: 310, yaw: W,
     loot: { item: 'seed-cake', n: 1, prompt: 'Check the biscuit tin' } },
   // south-shore
-  { id: 'camp-south-1', name: 'Reedy Blind', kind: 'blind', x: -1090, z: 960, yaw: N,
+  { id: 'camp-south-1', name: 'Reedy Blind', kind: 'blind', x: -1090, z: 1035, yaw: N,
     loot: { acorns: 13, prompt: 'Check the decoy box' } },
   { id: 'camp-south-2', name: "Old Pellitory's Shack", kind: 'shack', x: -440, z: 1060, yaw: N,
     loot: { acorns: 22, prompt: 'Look in the biscuit tin' } },

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { siteRect } from '../sites';
 import {
   CART_PATHS, CART_SPOTS, CLUBHOUSE, HEDGE_ARCHES, HEDGES, HOLES, KICKED_BOARD, LOST_BALLS, MEMBERS_GATE, MOLEHILLS,
-  PRO_COTTAGE, SHED, TERRACE, YARD, distToLine, inPlay, inYard,
+  MAZE_HEDGES, PRO_COTTAGE, SHED, TERRACE, TURN_GATE, YARD, distToLine, inPlay, inYard,
 } from './types';
 
 const site = siteRect('golf-yard');
@@ -67,5 +67,31 @@ describe('Hedgeworth Links places', () => {
         for (const h of HOLES) expect(Math.hypot(x - h.green.x, z - h.green.z)).toBeGreaterThan(h.green.r + 5);
       }
     }
+  });
+
+  it('maze hedges keep off every hole but 5', () => {
+    for (const m of MAZE_HEDGES) {
+      for (let t = 0; t <= 1; t += 0.1) {
+        const x = m.a[0] + (m.b[0] - m.a[0]) * t, z = m.a[1] + (m.b[1] - m.a[1]) * t;
+        for (const h of HOLES) {
+          if (h.index === 5) continue;
+          expect(distToLine(h.path, x, z).dist, `maze ${x},${z} vs hole ${h.number} fairway`).toBeGreaterThan(h.fairwayWidth / 2 + 1);   // +1: the east wall is 1.2 m clear of hole 6's tee fairway
+          expect(Math.hypot(x - h.green.x, z - h.green.z), `maze ${x},${z} vs hole ${h.number} green`).toBeGreaterThan(h.green.r + 3);
+          expect(Math.max(Math.abs(x - h.tee.x), Math.abs(z - h.tee.z)), `maze ${x},${z} vs hole ${h.number} tee`).toBeGreaterThan(2.5 + 2);
+        }
+      }
+    }
+  });
+
+  it('the Turn Gate opening is on the cart path', () => {
+    // The Bottom Garden path runs (-1140, 822) -> (-1140, 840): it crosses z 829 inside the opening.
+    const p = CART_PATHS.find((q) => q.some(([x, z]) => x === -1140 && z === 822));
+    expect(p).toBeTruthy();
+    const i = p!.findIndex(([x, z]) => x === -1140 && z === 822);
+    const [ax, az] = p![i], [bx, bz] = p![i + 1];
+    expect(Math.min(az, bz)).toBeLessThan(TURN_GATE.z);
+    expect(Math.max(az, bz)).toBeGreaterThan(TURN_GATE.z);
+    const x = ax + ((bx - ax) * (TURN_GATE.z - az)) / (bz - az);
+    expect(Math.abs(x - TURN_GATE.x)).toBeLessThan(TURN_GATE.half);
   });
 });

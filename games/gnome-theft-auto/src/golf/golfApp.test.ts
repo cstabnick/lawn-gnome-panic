@@ -66,6 +66,7 @@ function fakeSave(): GolfSave {
   s.best[0] = 5;
   s.best[2] = 6;
   s.bestRound = 17;
+  s.bestNine = 38;
   s.rounds = 2;
   s.aces = 1;
   s.ballsFound = ['lb-1'];
@@ -117,25 +118,56 @@ describe('Hedgeworth card app', () => {
     const app = getGnomletApp('hedgeworth');
     expect(app?.label).toBe('Hedgeworth');
     expect(app?.group).toBe('fun');
-    expect(app?.detail?.()).toBe('Best round 17 (+1)');
+    expect(app?.detail?.()).toBe('Best nine 38 (+4)');
   });
 
-  it('shows the four holes and the stats', () => {
+  it('shows "No card yet" until a nine-hole round is finished', () => {
+    _resetGnomletApps();
+    registerGolfApp(fakeDeps(emptyGolfSave(), null, []));
+    expect(getGnomletApp('hedgeworth')?.detail?.()).toBe('No card yet');
+  });
+
+  it('shows the nine holes in card order with a total row and the stats', () => {
     const { root } = openApp(fakeDeps(fakeSave(), fakeApi(null, []), []));
     const rows = root.findAll((e) => e.tagName === 'tr');
-    // One header row, then one row per hole.
-    expect(rows).toHaveLength(5);
+    // One header row, then one row per hole (card order 1..9), then the Total row.
+    expect(rows).toHaveLength(11);
     expect(rows[1].text()).toContain('The Mortgage');
     expect(rows[1].text()).toContain('5');
     expect(rows[2].text()).toContain("Vesper's Patience");
+    expect(rows[3].text()).toContain('The Long Week');
     expect(rows[3].text()).toContain('6');
-    expect(rows[4].text()).toContain('–');
-    expect(root.text()).toContain('Par 16.');
+    expect(rows[4].text()).toContain("Peony's Promise");
+    expect(rows[9].text()).toContain('The Ninth');
+    expect(rows[10].text()).toContain('Total');
+    expect(rows[10].text()).toContain('34');
+    // Not every hole has a best, so the Total's best cell is a dash.
+    expect(rows[10].text()).toContain('–');
+    expect(root.text()).toContain('Nine holes, at last. Par 34.');
     expect(root.text()).toContain('Rounds played: 2');
-    expect(root.text()).toContain('Best round: 17 (+1)');
+    expect(root.text()).toContain('Best round: 38 (+4)');
+    expect(root.text()).toContain('Old four-hole card: 17');
     expect(root.text()).toContain('Holes in one: 1');
     expect(root.text()).toContain('Lost balls found: 1 / 8');
     expect(root.text()).toContain('The Kicked Board: still standing');
+  });
+
+  it('sums the bests in the Total row when all nine holes have one', () => {
+    const save = fakeSave();
+    save.best = save.best.map(() => 4);
+    const { root } = openApp(fakeDeps(save, fakeApi(null, []), []));
+    const rows = root.findAll((e) => e.tagName === 'tr');
+    expect(rows[10].text()).toContain('Total');
+    expect(rows[10].text()).toContain('36');
+    expect(rows[10].text()).not.toContain('–');
+  });
+
+  it('shows the old four-hole line only when bestRound is set', () => {
+    const save = fakeSave();
+    save.bestRound = null;
+    const { root } = openApp(fakeDeps(save, fakeApi(null, []), []));
+    expect(root.text()).not.toContain('Old four-hole card');
+    expect(root.text()).toContain('Best round: 38 (+4)');
   });
 
   it('starts hole 1 from the Play button and closes the tablet', () => {

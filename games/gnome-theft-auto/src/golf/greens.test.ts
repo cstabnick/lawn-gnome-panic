@@ -1,4 +1,4 @@
-// Hedgeworth's playing surfaces: on layers (no z-fighting), greens that really tilt, and the four holes' flags.
+// Hedgeworth's playing surfaces: on layers (no z-fighting), greens that really tilt, and the nine holes' flags.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { installFakeDom } from '../testing/fakeDom';
@@ -51,10 +51,10 @@ describe('Hedgeworth course ground', () => {
     for (const [, factors] of byUnits) expect(factors.size).toBe(1);
   });
 
-  it('has four greens whose surfaces rise and tilt', () => {
+  it('has nine greens whose surfaces rise and tilt', () => {
     const greens: THREE.Mesh[] = [];
     flatMeshes().forEach((m) => { if (/^green-\d$/.test(m.name)) greens.push(m); });
-    expect(greens.length).toBe(4);
+    expect(greens.length).toBe(9);
     for (const g of greens) {
       const y = (g.geometry.getAttribute('position') as THREE.BufferAttribute);
       let lo = Infinity, hi = -Infinity;

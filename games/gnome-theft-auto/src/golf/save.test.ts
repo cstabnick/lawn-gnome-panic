@@ -28,7 +28,7 @@ describe('golf save', () => {
     expect(bad.parHoles).toBe(0);
     expect(bad.rounds).toBe(2);
     expect(bad.aces).toBe(0);
-    expect(bad.best).toEqual([null, 3, null, null]);
+    expect(bad.best).toEqual([null, 3, null, null, null, null, null, null, null]);
     expect(bad.bestRound).toBeNull();
     expect(bad.ballsFound).toEqual(['lb-1']);
     expect(bad.molehills).toEqual(['mh-2']);
@@ -43,7 +43,7 @@ describe('golf save', () => {
     expect(m.holesPlayed).toBe(5);
     expect(m.parHoles).toBe(2);
     expect(m.rounds).toBe(1);
-    expect(m.best).toEqual([4, 3, null, 6]);
+    expect(m.best).toEqual([4, 3, null, 6, null, null, null, null, null]);
     expect(m.bestRound).toBe(18);
     expect(m.aces).toBe(1);
     expect(m.ballsFound).toEqual(['lb-1', 'lb-2']);
@@ -65,13 +65,13 @@ describe('golf save', () => {
     expect(d.best[1]).toBeNull();
   });
 
-  it('recordRound counts rounds and keeps the best total', () => {
+  it('recordRound counts rounds and keeps the best nine-hole total', () => {
     const store = createGolfStore(fakeStorage());
     store.recordRound(22);
     store.recordRound(25);
     store.recordRound(19);
     expect(store.data().rounds).toBe(3);
-    expect(store.data().bestRound).toBe(19);
+    expect(store.data().bestNine).toBe(19);
   });
 
   it('breakBoard, findBall and flattenMolehill report new ids once', () => {
@@ -97,7 +97,7 @@ describe('golf save', () => {
     const b = createGolfStore(s);
     expect(b.data().holesPlayed).toBe(1);
     expect(b.data().best[1]).toBe(2);
-    expect(b.data().bestRound).toBe(30);
+    expect(b.data().bestNine).toBe(30);
     expect(b.data().ballsFound).toEqual(['lb-8']);
   });
 
@@ -114,5 +114,38 @@ describe('golf save', () => {
     expect(() => store.breakBoard()).not.toThrow();
     expect(() => store.recordRound(20)).not.toThrow();
     expect(store.data().rounds).toBe(1);
+  });
+
+  it('an E15 four-hole save keeps its records', () => {
+    const raw = '{"v":1,"boardBroken":true,"holesPlayed":7,"parHoles":2,"rounds":1,"best":[4,3,6,5],"bestRound":18,"aces":0,"ballsFound":["lb-1"],"molehills":[]}';
+    const p = parseGolfSave(raw);
+    expect(p.best).toEqual([4, 3, 6, 5, null, null, null, null, null]);
+    expect(p.bestRound).toBe(18);
+    expect(p.bestNine).toBeNull();
+    expect(p.boardBroken).toBe(true);
+    expect(p.holesPlayed).toBe(7);
+    expect(p.parHoles).toBe(2);
+    expect(p.rounds).toBe(1);
+    expect(p.ballsFound).toEqual(['lb-1']);
+  });
+
+  it('recordRound writes bestNine, not bestRound', () => {
+    const s = fakeStorage();
+    s.setItem(GOLF_SAVE_KEY, JSON.stringify({ ...emptyGolfSave(), rounds: 1, bestRound: 18 }));
+    const store = createGolfStore(s);
+    store.recordRound(40);
+    store.recordRound(38);
+    expect(store.data().bestNine).toBe(38);
+    expect(store.data().bestRound).toBe(18);
+    expect(store.data().rounds).toBe(3);
+  });
+
+  it('recordHole sets the ninth hole best and ignores index 9', () => {
+    const store = createGolfStore(fakeStorage());
+    store.recordHole(8, 3, 4);
+    expect(store.data().best[8]).toBe(3);
+    store.recordHole(9, 2, 4);
+    expect(store.data().holesPlayed).toBe(1);
+    expect(store.data().best.length).toBe(HOLES.length);
   });
 });

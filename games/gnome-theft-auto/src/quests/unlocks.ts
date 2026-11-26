@@ -89,6 +89,7 @@ export const SIDE_UNLOCKS: readonly SideUnlock[] = [
   { questId: 'sq-hedgeworth-pro-lesson', after: 'ch3-kiln-resin-ice', why: "Basil wants to see the swing of whoever came through the board (needs Lost Balls). E21 moves it to after m49-loamdeep." },
   { questId: 'sq-hedgeworth-ninth-green', after: 'ch3-tundra-drift-run', why: "Thrift's moles under the ninth green (needs Lost Balls). E21 moves it to after m50-trellisdown-tasting." },
   { questId: 'sq-hedgeworth-members-cup', after: 'ch4-runway-flares', why: "Peony's cup, on the first of the month (needs the pro's lesson). E21 moves it to after m52-the-test-cut." },
+  { questId: 'sq-hedgeworth-peonys-promise', after: 'ch5-even-cut', why: "Peony opens holes 4 to 8 in the Bottom Garden (E32; needs the Members' Cup). Same temporary gate as the cup." },
   // Founders' Green (sportsQuests.ts). Temporary: the schedule has them after #14 m14-drainpipe-court / #15; E20 moves it.
   { questId: 'sq-court-regulars', after: 'ch1-founders-boot', why: "Swish's court is in Founders' Green, open once the player has been through the park. The schedule has it after #14 m14-drainpipe-court / #15; E20 moves it." },
   { questId: 'sq-gutter-bowls-sessions', after: 'ch1-founders-boot', why: "Fennel's Gutter Bowls are in Founders' Green, open once the player has been through the park. The schedule has it after #14 m14-drainpipe-court / #15; E20 moves it." },

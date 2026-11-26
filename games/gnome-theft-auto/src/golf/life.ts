@@ -12,7 +12,7 @@ import { playAt } from '../sound/bus';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import {
-  CLUBHOUSE, GOLF_ORIGIN, HEDGEWORTH_CAST, HOLES, KICKED_BOARD, MOLEHILLS, PEOPLE_SPOTS, TEE_HALF_M, YD,
+  CLUBHOUSE, GOLF_ORIGIN, HEDGEWORTH_CAST, HOLES, KICKED_BOARD, MOLEHILLS, PEOPLE_SPOTS, POTTING_SHED, TEE_HALF_M, YD,
 } from './types';
 
 export interface HedgeworthLife {
@@ -114,11 +114,18 @@ const HOLE_JOKES: Record<number, string> = {
   1: 'The Mortgage: pay it off in four.',
   2: "Vesper's Patience: short, and gone before you know it.",
   3: 'The Long Week: mind the pond. It minds you.',
-  9: 'The Ninth: the other five are on order.',
+  4: "Peony's Promise: kept, eventually.",
+  5: 'The Maze: the hedges know the way.',
+  6: 'The Drip: the birds are judging.',
+  7: 'The Potting Shed: mind the gutter.',
+  8: 'The Rhubarb Patch: it was here first.',
+  9: 'The Ninth: it really is, now.',
 };
 
 const SPRINKLERS: readonly { x: number; z: number; off: number }[] = [
   { x: -1250, z: 456, off: 0 }, { x: -1313, z: 595, off: 7 }, { x: -1155, z: 800, off: 14 }, { x: -1088, z: 618, off: 21 },
+  // Hole 8's fairway side (E32).
+  { x: -1012, z: 920, off: 5 },
 ];
 const SPRAY_N = 30;
 const SPRAY_R = 4;
@@ -140,7 +147,9 @@ export function buildHedgeworthLife(scene: THREE.Scene): HedgeworthLife {
     const dx = h.path[1].x - h.tee.x, dz = h.path[1].z - h.tee.z;
     const l = Math.hypot(dx, dz) || 1;
     // Left of the player who stands behind the tee looking down the hole: (dz, -dx).
-    const sx = h.tee.x + (dz / l) * (TEE_HALF_M + 2.5), sz = h.tee.z + (-dx / l) * (TEE_HALF_M + 2.5);
+    // An elevated tee (the potting shed roof) has its sign on the ground beside the ladder (north of it, clear of the climb).
+    const sx = h.teeY !== undefined ? POTTING_SHED.ladder.x + 1.8 : h.tee.x + (dz / l) * (TEE_HALF_M + 2.5);
+    const sz = h.teeY !== undefined ? POTTING_SHED.ladder.z - 3.2 : h.tee.z + (-dx / l) * (TEE_HALF_M + 2.5);
     const yaw = Math.atan2(-dx, -dz);
     if (teeSignId) pieces.push({ prefab: teeSignId, x: sx, z: sz, yaw });
     const yards = Math.round(pathLength(h.path) / YD);
@@ -268,12 +277,33 @@ export function buildHedgeworthLife(scene: THREE.Scene): HedgeworthLife {
     { model: makeGnome(life, memberLook(0x6b5a3a, 0x8a7a58)), x: -1295, z: 573.2, yaw: 0.2, crouch: true },
     { model: makeGnome(life, memberLook(0x3f5a3a, 0x7a6a48, 'golf-flagstick')), x: -1290.6, z: 573.6, yaw: -0.4, crouch: false },
   ];
+  // The Bottom Garden residents (E32): a member lost in the maze, one fishing a ball out of the Drip.
+  const lostMember = { model: makeGnome(life, memberLook(0x5a3f3f, 0x6a7a58, 'golf-scorecard')), x: -1350, z: 925, yaw: 0.6, crouch: false };
+  const fisher = { model: makeGnome(life, memberLook(0x3f4a6b, 0x8a7a58, 'stick')), x: -1262, z: 918, yaw: Math.atan2(14, 16), crouch: true };
+  members.push(lostMember, fisher);
   members.forEach((m, i) => { m.model.object.name = `hedgeworth-member-${i}`; m.model.object.position.set(m.x, ground(m.x, m.z), m.z); m.model.object.rotation.y = m.yaw; });
 
-  // The mole (only when a mole prefab exists): pops from a molehill every ~30 s and ducks back.
+  // The mole (only when a mole prefab exists): pops from a molehill (cycling) every 25-35 s when the player is near,
+  // rises in 0.4 s, looks left and right for 2 s, ducks back in 0.4 s. Hidden the rest of the time.
   const moleId = firstOf(['mole']);
-  const mole = moleId ? put(life, [moleId], MOLEHILLS[0].x, MOLEHILLS[0].z, { scale: 0.7, y: -0.6 }) : null;
-  const moleBase = mole ? mole.position.y : 0;
+  const mole = moleId ? put(life, [moleId], MOLEHILLS[0].x, MOLEHILLS[0].z, { scale: 1.6, y: -0.4 }) : null;
+  if (mole) { mole.visible = false; mole.name = 'hedgeworth-mole'; }
+  let molePopAt = -1;
+  let moleGround = 0;
+  let moleYaw = 0;
+  let moleNextAt = 25 + Math.random() * 10;
+  let moleIdx = 0;
+
+  // Birds on the giant birdbath's rim (hole 6; the bath is built by bottomGarden.ts, so the height is a guess).
+  const BATH = { x: -1248, z: 934, rim: 2.3, y: 4.2 };
+  const birdIds = ['bird-songbird', 'bird-robin', 'bird-songbird'];
+  const birds = birdIds.map((id, i) => {
+    const a = 0.9 + i * 0.7;
+    const x = BATH.x + Math.sin(a) * BATH.rim, z = BATH.z + Math.cos(a) * BATH.rim;
+    const grp = put(life, [id], x, z, { scale: 1.6, yaw: a + Math.PI / 2, y: BATH.y });
+    if (grp) grp.name = 'hedgeworth-bird';
+    return { grp, base: BATH.y + ground(x, z), phase: 3 + i * 2.3, yaw: a + Math.PI / 2 };
+  });
 
   // ---- Sprinklers -------------------------------------------------------------------------------------------------
   const sprinklerHead = firstOf(['sprinkler-head']);
@@ -329,12 +359,44 @@ export function buildHedgeworthLife(scene: THREE.Scene): HedgeworthLife {
         else if (ph < 8) thrift.model.arms.right.rotation.x = -1.5;
       }
       // The members: one crouched to read the line, one standing with the flag.
+      lostMember.yaw = 0.6 + Math.sin(t * 0.45) * 2.4;
+      fisher.yaw = Math.atan2(14, 16) + Math.sin(t * 0.7) * 0.15;
       for (const m of members) m.model.update(gnomeState(m.x, ground(m.x, m.z), m.z, m.yaw, 0, m.crouch), dt);
+      // The lost member turns on the spot, scorecard up; the fisher sweeps the net across the water.
+      lostMember.model.arms.right.rotation.x = -1.1 + Math.sin(t * 1.3) * 0.1;
+      fisher.model.arms.right.rotation.x = -1.3 + Math.sin(t * 1.6) * 0.45;
+      fisher.model.arms.left.rotation.x = -1.1 + Math.sin(t * 1.6) * 0.3;
+
+      // Birds on the birdbath hop now and then.
+      for (const b of birds) {
+        if (!b.grp) continue;
+        const hop = (t + b.phase) % 7;
+        b.grp.position.y = b.base + (hop < 0.35 ? Math.sin((hop / 0.35) * Math.PI) * 0.25 : 0);
+        b.grp.rotation.y = b.yaw + (hop > 3 && hop < 3.5 ? 0.6 : 0);
+      }
 
       if (mole && moleId) {
-        const ph = t % 30;
-        const up = ph < 4 ? Math.sin((ph / 4) * Math.PI) : 0;
-        mole.position.y = moleBase + up * 0.6;
+        const age = t - molePopAt;
+        if (molePopAt >= 0 && age < 2.8) {
+          const up = age < 0.4 ? age / 0.4 : age < 2.4 ? 1 : 1 - (age - 2.4) / 0.4;
+          mole.visible = true;
+          mole.position.y = moleGround - 0.4 + (up * up * (3 - 2 * up)) * 0.42;
+          mole.rotation.y = moleYaw + (age > 0.4 && age < 2.4 ? Math.sin(((age - 0.4) / 2) * Math.PI * 2) * 0.7 : 0);
+        } else {
+          mole.visible = false;
+          molePopAt = -1;
+          if (t >= moleNextAt) {
+            const h = MOLEHILLS[moleIdx % MOLEHILLS.length];
+            if (Math.hypot(px - h.x, pz - h.z) < 60) {
+              moleIdx++;
+              molePopAt = t;
+              moleNextAt = t + 25 + Math.random() * 10;
+              moleGround = ground(h.x, h.z);
+              moleYaw = Math.atan2(px - h.x, pz - h.z);
+              mole.position.set(h.x + Math.sin(moleYaw) * 0.3, moleGround - 0.4, h.z + Math.cos(moleYaw) * 0.3);
+            }
+          }
+        }
       }
 
       // Sprinklers sweep for 12 s, rest 18 s; spray stays under 1.2 m and within 4 m.

@@ -1471,6 +1471,21 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Sat Down', description: "Sit down at the Flock's Long Vigil. They forgive you. It is a Tuesday.",
     reward: { slot: 'hand', prefabId: 'reed-tea-cup', label: 'Reed Tea Cup' },
   },
+  {
+    id: 'gta-hedgeworth-full-nine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Nine', description: 'Finish all nine holes of Hedgeworth Links in one round.',
+    reward: { slot: 'neck', prefabId: 'turn-rosette', label: 'Turn Rosette' },
+  },
+  {
+    id: 'gta-nine-under-par', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Under the Promise', description: 'Finish a full nine at Hedgeworth under par.',
+    reward: { slot: 'head', prefabId: 'promise-boater', label: 'Promise Boater' },
+  },
+  {
+    id: 'gta-out-of-the-maze', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Out of the Maze', description: "Make par or better on The Maze, Hedgeworth's fifth.",
+    reward: { slot: 'back', prefabId: 'topiary-cape', label: 'Topiary Cape' },
+  },
   // ---- Gnome Theft Auto E24: jobs II (chef, mechanic, comedy stage; games/gnome-theft-auto/src/jobs/workDefs.ts) ----
   {
     id: 'gta-job-chef', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',

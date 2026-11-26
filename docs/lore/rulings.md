@@ -1273,3 +1273,10 @@ continental drizzle that never commits to a downpour. Glazed gnomes do not mind 
 **Ruling:** The Skyway Foot, at the west foot of the Turfton Skyway, run by Ratchet Gaskin for the Carburettors. It is quiet by day and full after dark. Lugnut Lulu, their captain, may turn up there; the night race in #5 `m05-sweepers-wages` stages at the Skyway Foot. The Ring Road time trials stay the Carburettors' illicit run (the-carburettors).
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E20's m05 needs a place for the Carburettors' night meet, and E26 builds it.
+
+## R-226
+
+**Question:** How many holes does Hedgeworth Links have now, and where are 4 to 8?
+**Ruling:** Nine. Holes 4 to 8, promised by Dame Peony every season for as long as anyone has been a member, are built in the Bottom Garden, the Tall One's old bottom garden south of the old south fence, through the Turn Gate: 4 Peony's Promise (par 4, the opening ribbon still strung across the green), 5 The Maze (par 4, the old hedge maze clipped into a hole), 6 The Drip (par 3, a carry over the overflow pool and its giant birdbath), 7 The Potting Shed (par 3, teed off the shed roof) and 8 The Rhubarb Patch (par 4, a dogleg round the vegetable patch). Course par 34. R-194 stands as history: the card said nine for years and the course had four. Play order is 1 to 9, and 9, The Ninth, is still by Thrift's shed. Thrift laid the new holes out by hand over three seasons; Peony named them, Basil Divot none.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E32 builds the missing holes, and the joke that the card was right all along needed an answer that keeps R-194.

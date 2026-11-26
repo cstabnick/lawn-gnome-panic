@@ -11,8 +11,9 @@ import { prefabBox, textPlate } from '../homes/pieces';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import {
-  ARCH_GAP, CART_SHELTER, CLUBHOUSE, FENCE_H, FENCE_INSET, HEDGES, HEDGE_ARCHES, HEDGE_H, HEDGE_T, HOLES, KICKED_BOARD,
-  LOST_BALLS, MEMBERS_GATE, MOLEHILLS, PRO_COTTAGE, SHED, TERRACE, YARD, distToLine, inPlay, inYard,
+  ARCH_GAP, CART_SHELTER, CLUBHOUSE, FENCE_H, FENCE_INSET, HEDGES, HEDGE_ARCHES, HEDGE_H, HOLES, KICKED_BOARD,
+  LOST_BALLS, MAZE_H, MAZE_HEDGES, MEMBERS_GATE, MOLEHILLS, OLD_FENCE, POTTING_SHED, PRO_COTTAGE, SHED, TERRACE, TURN_GATE, YARD,
+  distToLine, inPlay, inYard,
 } from './types';
 
 export interface YardScenery {
@@ -37,11 +38,15 @@ export interface YardPlan {
   planks: Place[];
   hedges: Place[];
   arches: Place[];
+  /** The Turn Gate (open, in the old south fence). */
+  gates: Place[];
   grass: Place[];
   giants: Place[];
   sprinklers: Place[];
   boxes: Box[];
   boardBox: Box;
+  /** Colliders that stand on play on purpose (maze walls, the maze arch, the Turn Gate's posts); also in `boxes`. */
+  deliberate: Box[];
   soft: { x: number; z: number; r: number }[];
 }
 
@@ -83,8 +88,8 @@ function runBoxes(ax: number, az: number, bx: number, bz: number, thick: number,
 
 export function planYard(has: Has): YardPlan {
   const plan: YardPlan = {
-    fence: [], kickedPanels: [], planks: [], hedges: [], arches: [], grass: [], giants: [], sprinklers: [],
-    boxes: [], boardBox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0, h: 0 }, soft: [],
+    fence: [], kickedPanels: [], planks: [], hedges: [], arches: [], gates: [], grass: [], giants: [], sprinklers: [],
+    boxes: [], boardBox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0, h: 0 }, deliberate: [], soft: [],
   };
   const rnd = mulberry32(0x6e4ed6);
   const top = (x: number, z: number, h: number): number => g(x, z) + h;
@@ -113,6 +118,18 @@ export function planYard(has: Has): YardPlan {
   fenceRun(fx1, fz0 + 1, fx1, mg.lo, HALF_PI);    // east: faces +x, three runs round the two gaps
   fenceRun(fx1, mg.hi, fx1, kb.lo, HALF_PI);
   fenceRun(fx1, kb.hi, fx1, fz1 - 1, HALF_PI);
+  // The old south fence (E32): across the yard at OLD_FENCE.z, faces +z (the Bottom Garden), one opening: the Turn Gate.
+  const tg = { lo: TURN_GATE.x - TURN_GATE.half, hi: TURN_GATE.x + TURN_GATE.half };
+  fenceRun(fx0, OLD_FENCE.z, tg.lo, OLD_FENCE.z, 0);
+  fenceRun(tg.hi, OLD_FENCE.z, fx1, OLD_FENCE.z, 0);
+  if (has('turn-gate')) plan.gates.push({ id: 'turn-gate', x: TURN_GATE.x, y: g(TURN_GATE.x, OLD_FENCE.z) - SINK, z: OLD_FENCE.z, yaw: 0 });
+  // No collider across the opening (gnomes and carts drive through); only the two posts.
+  for (const sgn of [-1, 1]) {
+    const px = TURN_GATE.x + 3.1 * sgn;
+    const post = { minX: px - 0.15, maxX: px + 0.15, minZ: OLD_FENCE.z - 0.15, maxZ: OLD_FENCE.z + 0.15, h: top(px, OLD_FENCE.z, 2.2) };
+    plan.boxes.push(post);
+    plan.deliberate.push(post);
+  }
 
   // The Kicked Board: two panels and the one collider across its gap.
   const kw = KICKED_BOARD.half;
@@ -132,7 +149,9 @@ export function planYard(has: Has): YardPlan {
   plan.boxes.push({ minX: fx1 - 0.3, maxX: fx1 + 0.3, minZ: mg.lo, maxZ: mg.hi, h: top(fx1, MEMBERS_GATE.z, FENCE_H) });
 
   // ---- Hedge walls and arches ---------------------------------------------------------------------------------------
-  const hedge = dims('hedgerow', has, { w: 4, h: 1.15, d: 1 });
+  // A tall thin wall (about 1.2 m deep), or the old hedgerow when the catalogue lacks it.
+  const hedgeId = has('hedge-wall') ? 'hedge-wall' : 'hedgerow';
+  const hedge = dims(hedgeId, has, hedgeId === 'hedge-wall' ? { w: 4, h: 3.2, d: 1.2 } : { w: 4, h: 1.15, d: 1 });
   /** Hedge pieces along a line, gaps (distance along, half width) left open, pieces skipped where `keep` is false. */
   const hedgeLine = (a: readonly [number, number], b: readonly [number, number], gaps: { t: number; half: number }[],
     height: number, keep: (x: number, z: number) => boolean): number => {
@@ -159,7 +178,7 @@ export function planYard(has: Has): YardPlan {
       const flush = (): void => {
         if (runStart < 0) return;
         const ax = a[0] + ux * runStart, az = a[1] + uz * runStart, bx = a[0] + ux * runEnd, bz = a[1] + uz * runEnd;
-        plan.boxes.push(...runBoxes(ax, az, bx, bz, Math.min(hedge.d * sc * 0.85, HEDGE_T + 0.6), top(ax, az, height)));
+        plan.boxes.push(...runBoxes(ax, az, bx, bz, hedge.d * sc * 0.9, top(ax, az, height)));
         runStart = -1;
       };
       for (let i = 0; i < n; i++) {
@@ -167,7 +186,7 @@ export function planYard(has: Has): YardPlan {
         const x = a[0] + ux * tc, z = a[1] + uz * tc;
         const ok = keep(x, z) && keep(a[0] + ux * t0, a[1] + uz * t0) && keep(a[0] + ux * t1, a[1] + uz * t1);
         if (!ok) { flush(); continue; }
-        if (has('hedgerow')) plan.hedges.push({ id: 'hedgerow', x, y: g(x, z) - SINK, z, yaw, scale: sc });
+        if (has(hedgeId)) plan.hedges.push({ id: hedgeId, x, y: g(x, z) - SINK, z, yaw, scale: sc });
         count++;
         if (runStart < 0) runStart = t0;
         runEnd = t1;
@@ -196,10 +215,20 @@ export function planYard(has: Has): YardPlan {
     }
     hedgeLine(h.a, h.b, gaps, HEDGE_H, () => true);
   }
+  // The maze on hole 5: every wall solid, the ways through are where the walls end; its entrance is a hedge arch.
+  const mazeFrom = plan.boxes.length;
+  for (const m of MAZE_HEDGES) hedgeLine(m.a, m.b, [], MAZE_H, () => true);
+  const MAZE_ARCH = { x: -1318, z: 857, yaw: 0 };
+  if (has('hedge-arch')) plan.arches.push({ id: 'hedge-arch', x: MAZE_ARCH.x, y: g(MAZE_ARCH.x, MAZE_ARCH.z) - SINK, z: MAZE_ARCH.z, yaw: MAZE_ARCH.yaw, scale: sA });
+  for (const sgn of [-1, 1]) {
+    const lx = MAZE_ARCH.x + Math.cos(MAZE_ARCH.yaw) * 1.45 * sA * sgn, lz = MAZE_ARCH.z - Math.sin(MAZE_ARCH.yaw) * 1.45 * sA * sgn;
+    plan.boxes.push({ minX: lx - 0.65, maxX: lx + 0.65, minZ: lz - 0.65, maxZ: lz + 0.65, h: top(lx, lz, HEDGE_H) });
+  }
+  plan.deliberate.push(...plan.boxes.slice(mazeFrom));
   // A lower hedge band 2 m inside the fence on the north, west and south sides, broken where a cart path comes close.
   const bx0 = fx0 + 2, bx1 = fx1 - 2, bz0 = fz0 + 2, bz1 = fz1 - 2;
   const offPlay = (x: number, z: number): boolean => !inPlay(x, z, 2) && !nearBuilding(x, z, 3);
-  hedgeLine([bx0, bz0], [bx1, bz0], [], 2.4, offPlay);
+  hedgeLine([bx0, bz0], [bx1, bz0], [], 2.4, offPlay);   // lower band: the same wall at height 2.4 (0.9 m deep)
   hedgeLine([bx0, bz1], [bx1, bz1], [], 2.4, offPlay);
   hedgeLine([bx0, bz0 + 4], [bx0, bz1 - 4], [], 2.4, offPlay);
 
@@ -211,7 +240,7 @@ export function planYard(has: Has): YardPlan {
     return true;
   };
   const nearHedge = (x: number, z: number, m: number): boolean => {
-    for (const h of HEDGES) if (distToLine([{ x: h.a[0], z: h.a[1] }, { x: h.b[0], z: h.b[1] }], x, z).dist < m) return true;
+    for (const h of [...HEDGES, ...MAZE_HEDGES]) if (distToLine([{ x: h.a[0], z: h.a[1] }, { x: h.b[0], z: h.b[1] }], x, z).dist < m) return true;
     return false;
   };
   const bandOk = (x: number, z: number): boolean => {
@@ -251,7 +280,8 @@ export function planYard(has: Has): YardPlan {
     { id: 'giant-flower', fb: { w: 1.2, h: 2.5, d: 1.2 } },
   ].filter((k) => has(k.id));
   const giantOk = (x: number, z: number): boolean => inYard(x, z, 5) && !inPlay(x, z, 3) && !nearHedge(x, z, 4) && !nearBuilding(x, z, 4)
-    && !nearTerrace(x, z, 4) && !(x > YARD.maxX - 14 && Math.abs(z - MEMBERS_GATE.z) < 8);
+    && !nearTerrace(x, z, 4) && !(x > YARD.maxX - 14 && Math.abs(z - MEMBERS_GATE.z) < 8)
+    && !(x < -1290 && z > 836);   // the maze block is clipped hedge, not jungle
   const roughOk = (x: number, z: number): boolean => HOLES.every((h) => distToLine(h.path, x, z).dist - h.fairwayWidth / 2 > 10);
   const wanted = 110;
   let tries = 0;
@@ -295,7 +325,7 @@ export function planYard(has: Has): YardPlan {
 }
 
 function nearBuilding(x: number, z: number, m: number): boolean {
-  for (const b of [CLUBHOUSE, PRO_COTTAGE, SHED, CART_SHELTER]) {
+  for (const b of [CLUBHOUSE, PRO_COTTAGE, SHED, CART_SHELTER, POTTING_SHED]) {
     const r = Math.max(b.w, b.d) / 2 + m;
     if (Math.abs(x - b.x) < r && Math.abs(z - b.z) < r) return true;
   }
@@ -341,7 +371,7 @@ const BUILT = (id: string): boolean => !!getPrefab(id);
 export function buildYard(scene: THREE.Scene, opts: { boardBroken: boolean }): YardScenery {
   const plan = planYard(BUILT);
   const missing = ['board-fence-panel', 'kicked-board-panel', 'fence-plank-pile', 'members-gate', 'giant-hosta', 'giant-fern',
-    'giant-foxglove', 'sprinkler-head', 'giant-grass-blade', 'giant-flower', 'hedgerow', 'hedge-arch'].filter((id) => !getPrefab(id));
+    'giant-foxglove', 'sprinkler-head', 'giant-grass-blade', 'giant-flower', 'hedge-wall', 'turn-gate', 'hedge-arch'].filter((id) => !getPrefab(id));
   if (missing.length && !warned) { warned = true; console.warn(`hedgeworth yard: missing prefabs: ${missing.join(', ')}`); }
 
   const root = new THREE.Group();
@@ -352,6 +382,7 @@ export function buildYard(scene: THREE.Scene, opts: { boardBroken: boolean }): Y
   };
   batch(plan.fence, 'hedgeworth-fence', 'prop');
   batch([...plan.hedges, ...plan.arches], 'hedgeworth-hedges', 'tree');
+  batch(plan.gates, 'hedgeworth-gates', 'prop');
   batch(addMowablePlants(plan.grass), 'hedgeworth-grass', 'detail');
   batch(plan.giants, 'hedgeworth-giants', 'tree');
   batch(plan.sprinklers, 'hedgeworth-sprinklers', 'detail');
@@ -384,6 +415,11 @@ export function buildYard(scene: THREE.Scene, opts: { boardBroken: boolean }): Y
   standing.visible = true;
   planks.visible = false;
   if (opts.boardBroken) breakBoard();
+
+  // The Turn Gate's arch board, both faces: the board is 0.16 m deep, standing in the opening at OLD_FENCE.z.
+  const plate = { w: 3.4, h: 0.4, bg: 0x1f3d2a, fg: 0xe8d28a };
+  root.add(textPlate('HOLES 4 TO 8', TURN_GATE.x, g(TURN_GATE.x, OLD_FENCE.z) + 2.5, OLD_FENCE.z - 0.08 - 0.03, Math.PI, plate));
+  root.add(textPlate('THE TURN', TURN_GATE.x, g(TURN_GATE.x, OLD_FENCE.z) + 2.5, OLD_FENCE.z + 0.08 + 0.03, 0, plate));
 
   // The gate's plates, and the two ways in: the members' gravel and everybody's trampled track.
   const fx = YARD.maxX - FENCE_INSET;

@@ -160,6 +160,10 @@ import { GTA_GOLF } from './gta-golf';
 import { GTA_GOLF_PLANTS } from './gta-golf-plants';
 import { GTA_GOLF_GEAR } from './gta-golf-gear';
 import { GTA_GOLF_PROPS } from './gta-golf-props';
+import { GTA_GOLF_NINE_GARDEN } from './gta-golf-nine-garden';
+import { GTA_GOLF_NINE_PROPS } from './gta-golf-nine-props';
+import { GTA_GOLF_NINE_CRITTERS } from './gta-golf-nine-critters';
+import { GTA_GOLF_NINE_GEAR } from './gta-golf-nine-gear';
 import { GTA_DRAINPIPE_COURT } from './gta-drainpipe-court';
 import { GTA_GUTTER_BOWLS } from './gta-gutter-bowls';
 import { GTA_SPORTS_GEAR } from './gta-sports-gear';
@@ -238,6 +242,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR, ...GTA_STREET_RACE_GEAR,
   ...GTA_GOLF, ...GTA_GOLF_PLANTS, ...GTA_GOLF_PROPS, ...GTA_GOLF_GEAR,
+  ...GTA_GOLF_NINE_GARDEN, ...GTA_GOLF_NINE_PROPS, ...GTA_GOLF_NINE_CRITTERS, ...GTA_GOLF_NINE_GEAR,
   ...GTA_DRAINPIPE_COURT, ...GTA_GUTTER_BOWLS, ...GTA_SPORTS_GEAR,
   ...GTA_DINER, ...GTA_MECHANIC, ...GTA_COMEDY,
   ...GTA_CAMPUS_HALLS, ...GTA_CAMPUS_BUILDINGS, ...GTA_ANTHILL_FIELD, ...GTA_PINWHEEL_CAMPUS_PROPS, ...GTA_CAMPUS_PROPS, ...GTA_CAMPUS_GEAR,

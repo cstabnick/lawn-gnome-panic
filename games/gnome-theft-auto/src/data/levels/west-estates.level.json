@@ -236,10 +236,10 @@
       "id": "golf-yard",
       "kind": "slot",
       "x": -30,
-      "z": 620,
+      "z": 692,
       "data": {
         "hw": 180,
-        "hd": 210,
+        "hd": 282,
         "kind": "venue",
         "epic": "E15",
         "flat": true,
@@ -247,11 +247,11 @@
         "anchors": {
           "breach": {
             "dx": 179,
-            "dz": 20
+            "dz": -52
           },
           "approach": {
             "dx": 180,
-            "dz": -120
+            "dz": -192
           }
         }
       }

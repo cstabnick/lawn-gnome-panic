@@ -65,7 +65,7 @@ export const GOLF_STAGES: readonly Stage[] = [
     time: 'day',
     built: 'existing',
     givers: ['peony'],
-    usedBy: [GOLF_QUESTS.membersCup],
+    usedBy: [GOLF_QUESTS.membersCup, GOLF_QUESTS.promise],
     look: 'A mock-Tudor clubhouse, striped parasols over tea tables, a driver propped like a cane against the rail.',
     sounds: 'A teaspoon on china, distant polite applause, a pigeon being ignored.',
     marks: [

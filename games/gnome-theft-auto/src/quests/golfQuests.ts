@@ -1,6 +1,6 @@
 // Hedgeworth Links side quests (E15): Thrift Hosepipe's lost balls and molehills, Basil Divot's lesson and Dame Peony's
 // Members' Cup. They read the golf save (gta-golf-v1) through probes (city/probes.ts). Names and secrets: lore R-193..R-195.
-import { CLUBHOUSE_INTERIOR, GOLF_QUESTS as IDS, HEDGEWORTH_CAST, HOLES, KICKED_BOARD, PEOPLE_SPOTS, YARD } from '../golf/types';
+import { CLUBHOUSE_INTERIOR, GOLF_QUESTS as IDS, HEDGEWORTH_CAST, HOLES, KICKED_BOARD, PEOPLE_SPOTS, TURN_GATE, YARD } from '../golf/types';
 import type { QuestDef } from './types';
 
 const THRIFT = HEDGEWORTH_CAST.thrift.name;
@@ -17,6 +17,7 @@ const FIRST_TEE: [number, number] = [HOLES[0].tee.x, HOLES[0].tee.z];
 const NINTH_GREEN: [number, number] = [HOLES[3].green.x, HOLES[3].green.z];
 /** Where Thrift stands, between his shed door and the ninth green. */
 const SHED_DOOR: [number, number] = [PEOPLE_SPOTS.thrift.x, PEOPLE_SPOTS.thrift.z];
+const HOLE_4_TEE: [number, number] = [HOLES[4].tee.x, HOLES[4].tee.z];
 const BASIL_SPOT: [number, number] = [PEOPLE_SPOTS.basil.x, PEOPLE_SPOTS.basil.z];
 /** Inside the clubhouse, by the honours board on the north wall (local to the room centre). */
 const HONOURS_BOARD: [number, number] = [4, -4];
@@ -220,5 +221,60 @@ export const GOLF_QUESTS: readonly QuestDef[] = [
       ],
     },
     doneText: 'Your score is on the honours board. Peony has not played a hole herself, and will say it is policy.',
+  },
+  {
+    id: IDS.promise,
+    title: "Peony's Promise",
+    giver: 'peony',
+    rewardAcorns: 400,
+    prereq: IDS.membersCup,
+    hoa: 'off',
+    cutscene: {
+      kind: 'dialogue',
+      room: 'street',
+      lines: [
+        { speaker: PEONY, text: 'Holes four to eight, my dear. Open at last. One said next season, and one is a gnome of her word.', look: PEONY_LOOK },
+        { speaker: 'You', text: 'Where are they?' },
+        { speaker: PEONY, text: 'In the Bottom Garden, through the Turn Gate. Mr Hosepipe laid them out by hand. The names are mine.', look: PEONY_LOOK },
+        { speaker: PEONY, text: 'The card has said nine for as long as there has been a card. (a tap of the driver) It was never a joke. It was a forecast.', look: PEONY_LOOK },
+        { speaker: PEONY, text: 'There is a ribbon on the fourth green. Nobody else turned up, so one asks you to cut it. The bank will want to hear about the applause.', look: PEONY_LOOK },
+      ],
+    },
+    objectives: [
+      {
+        kind: 'visit',
+        text: 'Walk through the Turn Gate into the Bottom Garden',
+        at: [TURN_GATE.x, TURN_GATE.z + 4],
+        radius: 4,
+        hint: 'The open gate in the old south fence, below the ninth',
+        toastOnEnter: `${PEONY}: "Mind the gate. It has never once been shut."`,
+      },
+      {
+        kind: 'visit',
+        text: "Cut the ribbon at the fourth green",
+        at: [-1259, 860],
+        radius: 3,
+        hint: "Hole 4's green, at the far west of the Bottom Garden",
+        toastOnEnter: 'Snip. The fourth hole is open. Applause, from the birds.',
+      },
+      {
+        kind: 'probe',
+        text: 'Play one of the new holes (4 to 8)',
+        probe: 'golf-bottom-holes',
+        count: 1,
+        at: HOLE_4_TEE,
+        hint: 'Tee off at any of holes 4 to 8 (E at a tee in the Bottom Garden)',
+      },
+    ],
+    outro: {
+      kind: 'dialogue',
+      room: 'street',
+      lines: [
+        { speaker: PEONY, text: '(dabs an eye with a doily) Five new holes. The committee is moved. One did not think one would see it.', look: PEONY_LOOK },
+        { speaker: THRIFT, text: 'The rhubarb was not part of the plan. The rhubarb has opinions.', look: THRIFT_LOOK },
+        { speaker: PEONY, text: 'We shall not mention the mortgage. It has been told about the garden and it is considering.', look: PEONY_LOOK },
+      ],
+    },
+    doneText: "The ribbon is cut and the Bottom Garden is open. Peony's promise is kept, five holes late.",
   },
 ];

@@ -4,7 +4,7 @@ import { buildPrefab, buildPrefabInstances } from '@lawn/prefabs';
 import { PALETTE, ISLAND_TOPS } from '../config';
 import { GRADIENT, SUN_DIR, toonMat, groundToonMat, addOutline, toonify } from './toon';
 import { surfaceY, kickerHeight, groundAt, pipeY, runY } from '../world';
-import type { Hazard, Island, Kicker, Pipe, Rail, World } from '../world';
+import type { Bumper, Hazard, Island, Kicker, Pipe, Rail, World } from '../world';
 
 export interface WorldView {
   update(dt: number, t: number, camPos: THREE.Vector3, flow: number): void;
@@ -597,6 +597,53 @@ function buildRocks(rocks: Hazard[]): THREE.Group {
   return g;
 }
 
+/** Bumper-wall prefab: 0.6 thick, 1.1 tall, 1 long (along z). Pinball-bumper prefab: cap radius and top height. */
+const WALL_PREFAB = { thick: 0.6, tall: 1.1 };
+const POST_PREFAB = { r: 0.54, top: 1.01 };
+/** Bumper walls are sunk this far into the ground (the slope under a section is never quite flat). */
+const WALL_SINK = 0.35;
+
+/**
+ * Every bumper (free ride): wall sections (the aether-bumper-wall prefab, stretched along each section and pitched with
+ * the ground, with a small gap between sections so no two share a face) and pinball posts (gsr-pinball-bumper).
+ */
+function buildBumpers(bumpers: Bumper[]): THREE.Group {
+  const g = new THREE.Group();
+  const walls = bumpers.filter((b) => b.kind === 'wall');
+  const posts = bumpers.filter((b) => b.kind === 'post');
+  const Z = new THREE.Vector3(0, 0, 1);
+  const up = new THREE.Vector3(0, 1, 0);
+  if (walls.length > 0) {
+    const dir = new THREE.Vector3();
+    const wallMats = walls.map((b) => {
+      dir.set(b.bx - b.ax, b.yb - b.ya, b.bz - b.az);
+      const len = dir.length();
+      dir.normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(Z, dir);
+      const pos = new THREE.Vector3((b.ax + b.bx) / 2, (b.ya + b.yb) / 2 - WALL_SINK, (b.az + b.bz) / 2);
+      const scl = new THREE.Vector3((2 * b.r) / WALL_PREFAB.thick, (b.h + WALL_SINK) / WALL_PREFAB.tall, Math.max(0.5, len - 0.35));
+      return new THREE.Matrix4().compose(pos, q, scl);
+    });
+    const wallGroup = buildPrefabInstances('aether-bumper-wall', wallMats);
+    toonify(wallGroup, 0.03);
+    wallGroup.userData.shared = true;
+    g.add(wallGroup);
+  }
+  if (posts.length > 0) {
+    const q = new THREE.Quaternion();
+    const postMats = posts.map((b, i) => {
+      const k = b.r / POST_PREFAB.r;
+      q.setFromAxisAngle(up, i * 1.7);
+      return new THREE.Matrix4().compose(new THREE.Vector3(b.ax, b.ya - 0.15, b.az), q, new THREE.Vector3(k, k, k));
+    });
+    const postGroup = buildPrefabInstances('gsr-pinball-bumper', postMats);
+    toonify(postGroup, 0.03);
+    postGroup.userData.shared = true;
+    g.add(postGroup);
+  }
+  return g;
+}
+
 /** True for a node under a prefab group (marked userData.shared or userData.prefab): its geometry is the prefab's cache, never disposed. */
 function isShared(o: THREE.Object3D): boolean {
   for (let p: THREE.Object3D | null = o; p; p = p.parent) if (p.userData.shared || p.userData.prefab) return true;
@@ -851,6 +898,7 @@ export function createWorldView(scene: THREE.Scene, w: World): WorldView {
   });
   root.add(buildTrees(w.hazards.filter((hz) => hz.kind === 'tree')));
   root.add(buildRocks(w.hazards.filter((hz) => hz.kind === 'rock')));
+  root.add(buildBumpers(w.bumpers));
 
   // Gate: a hue-cycling torus with a swirling disc in its hole.
   const gate = new THREE.Group();

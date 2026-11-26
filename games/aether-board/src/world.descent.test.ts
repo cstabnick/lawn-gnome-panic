@@ -12,20 +12,23 @@ function fnv(s: string): string {
   return h.toString(16);
 }
 
-// Free ride must not change: fingerprints of the worlds from before Descent existed (hazards left out).
+// The free-ride mountain must not change: fingerprints of the worlds from before Descent existed (hazards and the
+// race course's bumpers left out: they are laid on top of it from their own random stream).
 const CLASSIC: [number, string, number][] = [
   [3, 'e4e0de54', 267421],
   [7, '34ae16c1', 234953],
   [42, '8321ccfb', 234339],
 ];
 
-const DESCENT_KEYS = new Set(['hazards', 'drops', 'theme']);
+const DESCENT_KEYS = new Set(['hazards', 'bumpers', 'drops', 'theme']);
 
 describe('free-ride worlds', () => {
   it('are unchanged by the Descent options', () => {
     for (const [seed, hash, len] of CLASSIC) {
       const w = generateWorld(seed);
-      expect(w.hazards).toEqual([]);
+      // Free ride's race course: rocks and spikes only (no Descent trees), and bumpers.
+      expect(w.hazards.every((hz) => hz.kind === 'rock' || hz.kind === 'spike')).toBe(true);
+      expect(w.bumpers.length).toBeGreaterThan(0);
       expect(w.theme).toBe('aether');
       for (const isl of w.islands) expect(isl.drops).toEqual([]);
       // Keys added for Descent (and side-mountain rails) are left out to verify the base free-ride world is unchanged.

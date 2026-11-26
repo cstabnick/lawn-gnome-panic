@@ -194,6 +194,17 @@ function oneShot(c: AudioContext, e: PhysEvent, dest: AudioNode): void {
       voice(c, dest, osc(c, 'sine', ding, ding, 0.5), 0.5, 0.3, { attack: 0.003 });
       break;
     }
+    case 'bump': {
+      const peak = Math.min(0.5, 0.12 + e.speed / 40);
+      if (e.kind === 'post') {
+        // Pinball ding: two bright tones.
+        [990, 1485].forEach((f, i) => voice(c, dest, osc(c, 'square', f, f, 0.18), 0.18, peak * 0.5, { when: i * 0.04, attack: 0.002 }));
+      } else {
+        voice(c, dest, osc(c, 'sine', 160, 70, 0.14), 0.14, peak);
+        voice(c, dest, noiseOnce(c), 0.08, peak * 0.5, { shape: { type: 'lowpass', f0: 900, f1: 300, q: 1 } });
+      }
+      break;
+    }
     case 'grabStart': {
       voice(c, dest, noiseOnce(c), 0.15, 0.2, {
         shape: { type: 'bandpass', f0: 1000, f1: 2500, q: 1 }, attack: 0.04,

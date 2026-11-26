@@ -6,8 +6,13 @@ import { createPlayer, stepPlayer } from './physics';
 const DT = 1 / SIM_HZ;
 
 /** Rides straight at the current island's exit kicker, never steering in the air. */
-function autopilot(seed: number, seconds: number, pop = false) {
+function autopilot(seed: number, seconds: number, pop = false, course = false) {
   const w = generateWorld(seed);
+  // The terrain tests ride the bare mountain: the race course's obstacles are for players to dodge (course = true keeps them).
+  if (!course) {
+    w.hazards.length = 0;
+    w.bumpers.length = 0;
+  }
   const p = createPlayer(w);
   const events: PhysEvent[] = [];
   let maxIsland = 0;
@@ -108,6 +113,13 @@ describe('riding', () => {
       expect(r.maxSpeed).toBeGreaterThan(20);
     });
   }
+  for (const seed of [1, 3]) {
+    it(`autopilot still gets to the bottom through the race course's obstacles (seed ${seed})`, () => {
+      const r = autopilot(seed, 200, false, true);
+      expect(r.maxIsland).toBeGreaterThanOrEqual(10); // it never dodges: it bails on some rocks and bounces off posts
+      expect(r.events.some((e) => e.e === 'bump')).toBe(true);
+    });
+  }
   it('an ollie on flat-ish ground gets air and lands clean', () => {
     const w = generateWorld(1);
     const p = createPlayer(w);
@@ -187,6 +199,7 @@ describe('halfpipes and falling', () => {
 
   it('riding off the side of an island drops you out of the sky onto the next one, and you land', () => {
     const w = generateWorld(1);
+    w.bumpers.length = 0; // no side walls: they would keep you on (see the bumper tests)
     const p = createPlayer(w);
     const isl = w.islands[0];
     // Ride straight off the right-hand rim.

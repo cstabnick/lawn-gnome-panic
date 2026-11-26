@@ -19,7 +19,7 @@ export const TUNE = {
   carveKeep: 0.9,         // share of sideways speed turned into forward speed while carving (fluid carves)
   rollDrag: 0.025,        // linear, per second
   airDrag: 0.0042,        // quadratic: terminal speed about 35-46 m/s on the island slopes (boost goes past it)
-  maxSpeed: 62,           // soft cap
+  maxSpeed: 43.4,         // soft cap (70 % of the old 62: the race is about lines, not raw speed)
   stickMin: 0.07,         // m: the ground may drop this far below the board in one step and we still stick...
   stickMax: 0.4,          // ...up to this at rest; faster = lifts off crests more easily
   // pop
@@ -40,7 +40,7 @@ export const TUNE = {
   grindSnap: 1.4,         // m: catch distance to a rail
   grindAlign: 0.55,       // |cos| between velocity and rail needed to lock on
   leyAccel: 10,           // ley-lines push you along (m/s²), up to leyMax
-  leyMax: 48,
+  leyMax: 34,             // 70 % of the old 48, with the speed cap
   grindCooldown: 0.35,
   // boost (Shift / RB), fed by flow
   boostAccel: 34,
@@ -334,6 +334,7 @@ export type PhysEvent =
   | { e: 'manualStart'; kind: 'nose' | 'tail' }
   | { e: 'manualEnd'; kind: 'nose' | 'tail'; t: number; fell: boolean } // fell: lost the balance (no bail, the combo goes on)
   | { e: 'boostStart' }
+  | { e: 'bump'; kind: 'wall' | 'post'; speed: number } // bounced off a bumper (speed: m/s into it)
   | { e: 'surf'; on: boolean }                      // Flood Run: started / stopped riding a surge
   | { e: 'blast'; by: 'cannon' | 'geyser' }         // Flood Run: knocked about by a water cannon or a geyser
   | { e: 'island'; id: number }

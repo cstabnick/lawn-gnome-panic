@@ -37,7 +37,7 @@ Each is its own workspace: `index.html`, `vite.config.ts`, `src/main.ts`, `READM
 |---|---|---|---|---|---|---|
 | `sample-dodge` | Sample Dodge | Phaser | 5173 | | | Reference prototype; template for `npm run new` |
 | `sample-3d` | Lawn Gnome Panic | three | 5174 | yes (`lawn-gnome-panic`) | | 3D dodge mowers, collect acorns; battle royale (`src/br`) |
-| `aether-board` | Aether Board | three | 5195 | | | Snowboard floating islands, tricks; `?mode=descent` roguelite, `?mode=flood` water-surge mode (experimental, `src/flood`) |
+| `aether-board` | Aether Board | three | 5195 | | | Snowboard floating islands, tricks; free ride is a timed race to the gate (bumper walls, posts, rocks, spikes); `?mode=descent` roguelite, `?mode=flood` water-surge mode (experimental, `src/flood`) |
 | `faster-than-lawn` | Faster Than Lawn | Phaser | 5181 | | | Real-time-with-pause mower crew battles |
 | `giant-pup` | Giant Pup | three | 5196 | | | Pet sim: feed, bathe, fetch, tricks |
 | `gnaft` | Gnaft | three | 5183 | yes | | Raft survival on a lawn-boat |

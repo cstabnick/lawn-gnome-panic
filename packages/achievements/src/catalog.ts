@@ -1755,6 +1755,31 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Jolly Glazing', description: 'Defeat Slink with another gnome in online co-op.',
     reward: { slot: 'back', prefabId: 'hose-coil-cloak', label: 'Hose-Coil Cloak' },
   },
+  // ---- Aether Board ----
+  {
+    id: 'aether-board-gate',
+    game: 'aether-board',
+    gameTitle: 'Aether Board',
+    title: 'Through the Gate',
+    description: 'Race from the top of the mountain to the aether gate at the bottom.',
+    reward: { slot: 'head', prefabId: 'aether-race-goggles', label: 'Gate-Run Goggles' },
+  },
+  {
+    id: 'aether-board-clean',
+    game: 'aether-board',
+    gameTitle: 'Aether Board',
+    title: 'Clean Line',
+    description: 'Finish a race to the gate without a single bail or fall.',
+    reward: { slot: 'back', prefabId: 'aether-finish-flag', label: 'Finish Flag Pack' },
+  },
+  {
+    id: 'aether-board-fast',
+    game: 'aether-board',
+    gameTitle: 'Aether Board',
+    title: 'Faster Than Falling',
+    description: 'Finish a race to the gate in under 2:20.',
+    reward: { slot: 'neck', prefabId: 'aether-gate-medal', label: 'Gate Medal', exclusive: true },
+  },
 ];
 
 const BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));

@@ -81,6 +81,20 @@ export interface Hazard { kind: HazardKind; x: number; y: number; z: number; r: 
  */
 export interface Drop { al: number; h: number; half: number; lead: number }
 
+/**
+ * A bumper (free ride): a padded wall you bounce off instead of bailing. A capsule: the segment a..b (horizontal) with
+ * radius r, standing h metres up from the ground (ya at a, yb at b). wall: the bowling-lane bumpers along both sides of
+ * a run, which keep you on the mountain; post: a pinball bumper on the run that kicks you away. island: the run it is on.
+ */
+export interface Bumper {
+  kind: 'wall' | 'post';
+  ax: number; az: number; ya: number;
+  bx: number; bz: number; yb: number;
+  r: number;
+  h: number;
+  island: number;
+}
+
 export interface Decor { x: number; y: number; z: number; s: number; kind: 'rock' | 'crystal' | 'cloud'; rot: number }
 
 /**
@@ -115,8 +129,10 @@ export interface World {
   /** Fall below this and the aether catches you (respawn). */
   voidY: number;
   decor: Decor[];
-  /** Descent only (empty in free ride). */
+  /** Rocks and spikes that bail you: Descent's sliders, or free ride's race obstacles. */
   hazards: Hazard[];
+  /** Free ride only (empty in Descent and Flood): side walls and pinball posts you bounce off. */
+  bumpers: Bumper[];
   /** Look: the candy aether plane (free ride) or a snowy pine mountain (Descent). */
   theme: 'aether' | 'snow';
 }
@@ -897,5 +913,121 @@ export function generateWorld(seed: number, hill?: HillParams): World {
   const sz = s0.cz - s0.dz * s0.r * s0.stretch * 0.85;
   const spawn = { pos: new THREE.Vector3(sx, (surfaceY(s0, sx, sz) ?? s0.baseY), sz), heading: Math.atan2(s0.dx, s0.dz) };
   const lowest = islands.reduce((m, o) => Math.min(m, o.baseY - o.slope * o.r * o.stretch), Infinity);
-  return { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor, hazards, theme: hill ? 'snow' : 'aether' };
+  const w: World = { seed, islands, rails, pipes, links, spawn, gate, voidY: Math.min(lowest, gate.pos.y) - 90, decor, hazards, bumpers: [], theme: hill ? 'snow' : 'aether' };
+  if (!hill) addRaceCourse(w);
+  return w;
+}
+
+// ---------------------------------------------------------------- free ride: the race course
+//
+// Free ride is a race to the gate at the bottom. On top of the classic mountain (left exactly as it was: this uses its
+// own random stream) every run gets bumper walls down both sides, pinball posts and bumper bars to bounce off, and
+// rocks and aether spikes that bail you. The jump landings, kickers, rails and the first stretch of the mountain stay
+// clear.
+
+/** Bumper walls: how far out (share of the run's half width), how tall, how thick (capsule radius), segment length. */
+const WALL_SIDE = 0.84;
+const WALL_H = 1.3;
+const WALL_R = 0.45;
+const WALL_SEG = 6;
+
+function addRaceCourse(w: World): void {
+  const rnd = mulberry32((w.seed ^ 0x2545f491) >>> 0);
+  const range = (a: number, b: number): number => a + (b - a) * rnd();
+  const nearRail = (x: number, z: number, d: number): boolean =>
+    w.rails.some((rl) => Math.hypot(x - rl.center.x, z - rl.center.z) < rl.radius + d && rl.pts.some((p) => Math.hypot(x - p.x, z - p.z) < d));
+  const inOther = (id: number, x: number, z: number): boolean => w.islands.some((o) => o.id !== id && insideIsland(o, x, z, 2));
+  const nearPipe = (x: number, z: number): boolean => w.pipes.some((pp) => {
+    const { u, v } = pipeLocal(pp, x, z);
+    return u > -25 && u < pp.len + 25 && Math.abs(v) < pp.halfW + 6;
+  });
+
+  for (const isl of w.islands) {
+    const i = isl.id;
+    const ra = isl.r * isl.stretch;
+    const at = (al: number, sd: number): [number, number] => [isl.cx + isl.dx * al + isl.dz * sd, isl.cz + isl.dz * al - isl.dx * sd];
+    const halfAt = (al: number): number => isl.r * Math.sqrt(Math.max(0.01, 1 - (al / ra) ** 2));
+    const ground = (x: number, z: number): number | null => runY(w, isl, x, z);
+    const onKicker = (x: number, z: number): boolean => isl.kickers.some((k) => kickerShield(k, x, z) > 0);
+    // The 45 m run-up to the exit kicker stays open, so the fast line to the jump is never blocked.
+    const onApproach = (x: number, z: number, r: number): boolean => isl.kickers.some((k) => {
+      if (!k.big) return false;
+      const fx = Math.sin(k.yaw);
+      const fz = Math.cos(k.yaw);
+      const u = (x - k.x) * fx + (z - k.z) * fz;
+      const v = Math.abs((x - k.x) * fz - (z - k.z) * fx);
+      return u > -45 && u < 0 && v < k.width / 2 + 4 + r;
+    });
+
+    // Side walls: a chain of capsules at WALL_SIDE of the half width, from 88 % up the run to 88 % down it. Gaps where
+    // a rail crosses (side-mountain rails go out over the void), at kickers, where another run overlaps, at a chute.
+    for (const sgn of [-1, 1]) {
+      for (let al = -0.88 * ra; al + WALL_SEG <= 0.88 * ra; al += WALL_SEG) {
+        const [ax, az] = at(al, sgn * WALL_SIDE * halfAt(al));
+        const [bx, bz] = at(al + WALL_SEG, sgn * WALL_SIDE * halfAt(al + WALL_SEG));
+        const mx = (ax + bx) / 2;
+        const mz = (az + bz) / 2;
+        const ya = ground(ax, az);
+        const yb = ground(bx, bz);
+        if (ya === null || yb === null) continue;
+        if (nearRail(mx, mz, 4) || onKicker(ax, az) || onKicker(bx, bz) || onKicker(mx, mz)) continue;
+        if (inOther(i, ax, az) || inOther(i, bx, bz) || nearPipe(mx, mz)) continue;
+        w.bumpers.push({ kind: 'wall', ax, az, ya, bx, bz, yb, r: WALL_R, h: WALL_H, island: i });
+      }
+    }
+
+    // Obstacles on the run itself, away from the start, joins, kickers, rails and jump landings.
+    const afterJump = i > 0 && w.links[i - 1] === 'jump';
+    const top = i === 0 ? -ra + 90 : afterJump ? -0.3 * ra : -ra + 40;
+    const bottom = ra - 40;
+    if (bottom - top < 30) continue;
+    const taken: { x: number; z: number; r: number }[] = [];
+    const free = (x: number, z: number, r: number, clear: number): number | null => {
+      if (inOther(i, x, z) || nearPipe(x, z) || nearKicker(isl, x, z) || nearRail(x, z, r + 5)) return null;
+      if (onApproach(x, z, r)) return null;
+      if (taken.some((o) => Math.hypot(x - o.x, z - o.z) < o.r + r + clear)) return null;
+      if (w.hazards.some((o) => Math.hypot(x - o.x, z - o.z) < o.r + r + clear)) return null;
+      return ground(x, z);
+    };
+    const place = (r: number, clear: number, across: number, fn: (x: number, y: number, z: number) => void): void => {
+      for (let att = 0; att < 12; att++) {
+        const al = range(top, bottom);
+        const [x, z] = at(al, range(-across, across) * halfAt(al));
+        const y = free(x, z, r, clear);
+        if (y === null) continue;
+        taken.push({ x, z, r });
+        fn(x, y, z);
+        return;
+      }
+    };
+
+    const span = (bottom - top) / 100; // obstacles per 100 m of run
+    // Pinball posts: bounce you, no bail.
+    for (let n = Math.round(span * range(1.6, 2.4)); n > 0; n--) {
+      const r = range(1.1, 1.6);
+      place(r, 8, 0.6, (x, y, z) => w.bumpers.push({ kind: 'post', ax: x, az: z, ya: y, bx: x, bz: z, yb: y, r, h: 2.2, island: i }));
+    }
+    // Bumper bars: short walls angled across the fall line, to carve round or glance off.
+    for (let n = Math.round(span * range(0.6, 1.1)); n > 0; n--) {
+      const len = range(7, 11);
+      const ang = (rnd() < 0.5 ? 1 : -1) * range(0.5, 1.0); // off the fall line
+      place(len / 2 + 0.5, 8, 0.5, (x, y, z) => {
+        const yaw = Math.atan2(isl.dx, isl.dz) + ang;
+        const hx = Math.sin(yaw) * len / 2;
+        const hz = Math.cos(yaw) * len / 2;
+        const ya = ground(x - hx, z - hz) ?? y;
+        const yb = ground(x + hx, z + hz) ?? y;
+        w.bumpers.push({ kind: 'wall', ax: x - hx, az: z - hz, ya, bx: x + hx, bz: z + hz, yb, r: WALL_R, h: WALL_H, island: i });
+      });
+    }
+    // Rocks (go round) and aether spike clusters (go round or jump them): these bail you.
+    for (let n = Math.round(span * range(1.2, 1.8)); n > 0; n--) {
+      const r = range(1.4, 2.4);
+      place(r, 7, 0.7, (x, y, z) => w.hazards.push({ kind: 'rock', x, y, z, r, h: range(1.2, 2.2), island: i }));
+    }
+    for (let n = Math.round(span * range(0.5, 0.9)); n > 0; n--) {
+      const r = range(1.6, 2.4);
+      place(r, 9, 0.6, (x, y, z) => w.hazards.push({ kind: 'spike', x, y, z, r, h: range(1.6, 2.2), island: i }));
+    }
+  }
 }

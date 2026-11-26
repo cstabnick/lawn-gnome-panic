@@ -9,6 +9,8 @@ import { CAPWOOD_RUN } from './defs/capwoodRun';
 import { RUTBOTTOM } from './defs/rutbottom';
 import { KERB_ROW_CIRCUIT, PARDONLIN_BOUCLE, RING_ROAD_RUN, SALTBUCKET_DASH, SKYWAY_SPRINT } from './defs/streets';
 import { SPEEDWAY } from './track';
+import { ALL_ROUTES } from '../mountainRoutes/routes';
+import { padSurfaceAt } from '../mountainRoutes/pads';
 import { createTrack, type FordHit, type Track } from './trackDef';
 
 export const TRACK_IDS = [
@@ -38,8 +40,12 @@ export const TRACKS: Readonly<Record<TrackId, Track>> = {
 
 /** Every track, in registry order. */
 export const ALL_TRACKS: readonly Track[] = TRACK_IDS.map((id) => TRACKS[id]);
-/** The tracks that shape the ground and own their road surface (every track but the street routes). */
-const GROUND_TRACKS: readonly Track[] = ALL_TRACKS.filter((t) => t.def.relief !== 'none');
+/**
+ * Every Track that shapes the ground and owns its road surface: the race tracks except E26's street routes (relief
+ * 'none', they run on existing roads), then E33's mountain routes (mountainRoutes/routes.ts, not races).
+ * terrain.ts applies their relief in this order; surfaces, fords and scatter keep-out read all of them.
+ */
+export const GROUND_TRACKS: readonly Track[] = [...ALL_TRACKS.filter((t) => t.def.relief !== 'none'), ...ALL_ROUTES];
 
 /** The track with this id (throws on an unknown id). */
 export function trackById(id: string): Track {
@@ -54,7 +60,8 @@ export function trackSurfaceAt(x: number, z: number): SurfaceKind | null {
     const s = t.surfaceAt(x, z);
     if (s) return s;
   }
-  return null;
+  // E33: a pad beside a mountain route (lay-by, café terrace, lookout).
+  return padSurfaceAt(x, z);
 }
 
 /** Ford water (Cap-water) at (x, z) on any track, or null. */

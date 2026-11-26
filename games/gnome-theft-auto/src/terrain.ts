@@ -21,7 +21,8 @@ import { macroAt, reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
-import { ALL_TRACKS, fordWaterAt } from './raceTrack/tracks';
+import { GROUND_TRACKS, fordWaterAt } from './raceTrack/tracks';
+import { applyPadRelief } from './mountainRoutes/pads';
 import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
 import { INTERIOR_FLOOR_Y, INTERIOR_MIN_X } from './interiors/space';
@@ -245,8 +246,10 @@ function buildGrid(): Float32Array {
   }
 
   // The race tracks (raceTrack/tracks.ts): the Speedway and the Dirt Bowl raised on their flattened sites, the Capwood
-  // Run carved into the mountain as a graded ribbon.
-  if (opts.landforms) for (const t of ALL_TRACKS) t.applyRelief(g, N, H, S);
+  // Run carved into the mountain as a graded ribbon; then E33's mountain routes (mountainRoutes/routes.ts), also ribbons.
+  if (opts.landforms) for (const t of GROUND_TRACKS) t.applyRelief(g, N, H, S);
+  // E33: the level pads beside the mountain routes (lay-bys, the café terrace, lookouts), at their road's height.
+  if (opts.landforms) applyPadRelief(g, N, H, S);
   rectFlatten(g, { minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
   // Water (Epic 4, water.ts): carve the river, canal, loch and sea beds into the finished ground; record bridge decks.
   if (waterCarving()) carveWater(g, N, H, S);

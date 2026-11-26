@@ -1306,3 +1306,22 @@ Mabel sends newcomers to them.
 **Ruling:** Hedda Galley runs the Turfton Tattler from a street desk on the Kiln-Shield kerb at the north gate of Founders' Green; the old Tattler tower lost its block to the Green and was never rebuilt, and Hedda says a desk you can see is harder to sue. The parade office is a booth behind City Hall on the z = -120 road, where the Boot float waits between parades. The Carburettors' night meets gather at the west foot of the Skyway, under the Unfinished Span. The Compost Heap's plate convoys leave by the Ring Road north toward the snow line and Mittenholt; a bill of lading names one place and never the route. Chrome-Knuckle Cass never gives a gift: she runs tabs, and a gnome on her tab is repaired free at Pay 'n' Glaze. Tansy owes Sage Ladle forty breakfasts and settles debts with her by lending out help. The photograph in townhouse 404 shows Juniper and Reginald at ten and eight, signed "J. and R."; it is never a joke.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
 **Why:** E20 builds story rows 1-35 (L84, L95, L106) and the writers needed these facts fixed. E21/E22 may take R-230 on.
+
+## R-230
+
+**Question:** Where is Snowcap Rise's real high ground, and what is it called?
+**Ruling:** The Hatbrim, a short range on the north edge between Mittenholt and the High Tarn. Seen from Mittenholt it looks like a hat left on the fence: Old Pate (a bald dome, about 72 m) is the crown's near side, Brim Gap (about 40 m) the dent, and the Bobble (about 105 m) the bobble on top: the highest point in the yard, higher than Snowdrop Slope's mountain (about 85 m). Snow lies on it above about 32 m all year.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 needs a range for the mountain routes, and the lore calls the Rise "the high country" without a peak.
+
+## R-231
+**Question:** Who made the Hatbrim's routes, and who may use them?
+**Ruling:** The Brim Gap Road (cars, two-way, seven or so numbered hairpins) was built by the HOA's Highways Sub-Committee "to plough it", which it has never done. The Hatband is an old goat shelf round the Bobble, bikes and buggies only, kept that way by bollards rather than by the sign. The Brim Walk is waymarked by cairns and nobody owns it. The Spine Cut was blasted through the Highland Spine for the Pinwheel Ridge works, and the Keyhole, a rock arch over the road, was left standing because the surveyor "had not finished measuring it". The Summit Register on the Bobble has been kept since before the HOA, and signing it is a rite: "you were here, and so was your hat".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 builds them and the dressing needs one story.
+
+## R-232
+**Question:** Who keeps the Top Hat, and who is the gnome at the Keyhole?
+**Ruling:** **Velma Crown** keeps the Top Hat, the café at Brim Gap whose roof is a giant black top hat; she serves Gap Tea and Hairpin Buns and counts every car that stops ("Cars today: 3. Buns: 41."). **Plumb Bob** is the surveyor at the Keyhole, who has measured the arch every day for years, waiting to be sure, and has never been sure.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 puts them on screen.

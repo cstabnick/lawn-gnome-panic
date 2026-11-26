@@ -8,6 +8,7 @@ import { skywayColliders } from './colliders';
 import { deckContactsAt } from './deck';
 import { buildSkywayMeshes } from './mesh';
 import { addSkywayRoads } from './roads';
+import { addMountainRoads } from '../mountainRoutes/graph';
 import { buildSkywaySites } from './sites';
 import { SKYWAY } from './skyways';
 
@@ -27,6 +28,8 @@ export function installSkyways(scene: THREE.Scene, world: World): void {
   world.boxes.push(...skywayColliders());
   // The road skyways join the road graph (deck nodes), before traffic, police and the GPS read it.
   addSkywayRoads(world.roads);
+  // E33: the mountain roads (the Brim Gap Road, the Spine Cut) join it too, as ground nodes.
+  addMountainRoads(world.roads);
   for (let i = world.parked.length - 1; i >= 0; i--) {
     const p = world.parked[i];
     if (blockedBySkyway(p.x, p.z)) world.parked.splice(i, 1);

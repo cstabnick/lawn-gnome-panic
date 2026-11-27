@@ -58,4 +58,10 @@ Every task ends in a pull request; no need to ask.
 
 ## Delegating work
 
-This user's plan is small, so default to delegation: plan with the decompose skill, then run each issue with the `haiku-worker` agent, issues of one epic in parallel. Do small fixes yourself only when writing the issue would cost more than the fix.
+This user's plan is small, so delegation is the default: plan with the decompose skill, then run each issue with the `haiku-worker` agent, issues of one epic in parallel.
+
+- **When to delegate.** Any task that changes more than two source files, or more than about 80 lines, goes through the decompose skill. That includes follow-ups and feature work on an existing game, not only new games. Do it yourself only for a fix of one or two files that you can describe in a sentence.
+- **No skipping it because you already read the code.** "I already have the context, so writing the issues costs as much as the code" is the usual excuse, and it is wrong: that reading is what makes the issues cheap to write. Paying for the reading and then also writing all the code yourself is the expensive path.
+- **How to cut feature work on an existing game.** Cut it by file ownership: generation/world, physics or rules, view (meshes), HUD/UI, audio and effects, tests, and shared catalogs (`packages/prefabs`, `packages/achievements`, `docs/lore`). Fix the shared interface first (a type, an event name, a field on the world) and paste it into every issue. If that interface needs code, write it yourself as the foundation (types and stubs only), then launch the rest.
+- **Run them in parallel.** Launch every issue of an epic in one message, as background agents. While they run, do the work that is yours and touches none of their files: docs, lore, README, the PR text. Do not wait idle, and do not edit a file a worker owns.
+- **Your own work** is the plan, the foundation, the end-of-epic check (build, tests, smoke), small fixes to what the workers left, and the commit and PR.

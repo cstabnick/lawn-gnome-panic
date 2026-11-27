@@ -2,6 +2,7 @@
 // so motion is smooth at any frame rate. Click (or pad A) to ride: the pointer locks and the mouse becomes the
 // trick stick. Losing the lock (Esc) pauses.
 // ?mode=descent is the roguelite: pick a hill card, ride it to the gate, crashes cost lives, harder hills pay more.
+import { createAchievementTracker } from '@lawn/achievements';
 import { mountSteamConnect } from '@lawn/gamepad';
 import * as THREE from 'three';
 import { createVolumeButton } from '@arcade/volume';
@@ -31,6 +32,8 @@ import { createFloodForces } from './flood/forces';
 import { createWaterGround } from './flood/surface';
 import { createFloodView } from './flood/view';
 import { createFloodHud } from './flood/hud';
+import { createRace, type RaceFinish } from './race';
+import { createRaceHud } from './race-hud';
 
 // Phones: no pinch zoom, no double-tap zoom, no page scroll (iOS ignores user-scalable=no in the viewport tag).
 // Elements marked data-scroll (the trick book) keep one-finger scrolling.
@@ -119,6 +122,37 @@ if (flood) {
 }
 if (flood) setGroundModifier(createWaterGround(flood));
 if (flood && obstacles) setExternalForces(createFloodForces(flood, obstacles, floodStats, () => flood.time));
+
+// ---------------------------------------------------------------- the race (free ride)
+// Free ride is a race from the top of the mountain to the aether gate at the bottom. Best time per world seed.
+const raceMode = !descentMode && !floodMode;
+const RACE_KEY = `ab-race-best-${world.seed}`;
+const readRaceBest = (): number | null => {
+  try {
+    const v = Number(localStorage.getItem(RACE_KEY));
+    return v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+};
+const race = createRace(world.islands.length, readRaceBest());
+const raceHud = raceMode ? createRaceHud(ui) : null;
+const achievements = createAchievementTracker({ ui });
+/** Under this (s) to the gate: Faster Than Falling. */
+const FAST_RACE_S = 140;
+function raceFinished(r: RaceFinish): void {
+  raceHud?.finish(r);
+  void achievements.unlock('aether-board-gate');
+  if (r.bails === 0) void achievements.unlock('aether-board-clean');
+  if (r.time < FAST_RACE_S) void achievements.unlock('aether-board-fast');
+  if (r.newBest) {
+    try {
+      localStorage.setItem(RACE_KEY, String(r.time));
+    } catch {
+      // private mode: the best just is not kept
+    }
+  }
+}
 
 // ---------------------------------------------------------------- Descent
 const dui = createDescentUi(ui);
@@ -255,7 +289,7 @@ const frameEvents: PhysEvent[] = [];
 let acc = 0;
 let last = performance.now();
 let t = 0;
-(window as unknown as { ab: unknown }).ab = { player, world, combo, input, flood, obstacles, floodStats };
+(window as unknown as { ab: unknown }).ab = { player, world, combo, input, flood, obstacles, floodStats, race };
 
 function frame(): void {
   const now = performance.now();
@@ -298,12 +332,18 @@ function frame(): void {
       stepPlayer(player, stepInp, cmd, world, DT, frameEvents);
       for (let i = before; i < frameEvents.length; i++) {
         // Descent: flying off the end of the last run finishes the hill even if you miss the gate ring.
-        if (descentMode && frameEvents[i].e === 'skyfall' && islandBefore === world.islands.length - 1) frameEvents[i] = { e: 'warp' };
+        // The race too: off the end of the last run is the bottom of the mountain (the gate ring is easy to miss).
+        if ((descentMode || raceMode) && frameEvents[i].e === 'skyfall' && islandBefore === world.islands.length - 1) frameEvents[i] = { e: 'warp' };
         const e = frameEvents[i];
         combo.event(e, player);
         if (e.e === 'respawn' || e.e === 'warp') prevPos.copy(player.pos);
+        if (raceMode) {
+          const fin = race.event(e);
+          if (fin) raceFinished(fin);
+        }
       }
       combo.tick(DT, player);
+      if (raceMode) race.tick(DT);
       acc -= DT;
     }
   }
@@ -333,6 +373,7 @@ function frame(): void {
   audio.update(player, dt, frameEvents);
   hud.update({ p: player, combo: combo.view(), state, device: input.device, stick: inp.stick, trail: recognizer.trail(), trainMode });
   modeSwitch.update(state !== 'playing');
+  raceHud?.update(state === 'playing', race.time, race.best, player.island + 1, world.islands.length);
   if (descentMode) dui.updateHud(run, Math.max(0, combo.view().total - hillStartTotal), run.phase === 'ride');
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

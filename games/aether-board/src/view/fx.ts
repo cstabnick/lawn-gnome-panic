@@ -566,6 +566,17 @@ export function createFx(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ui
             flash(flashBail, 0.25, 0.5);
             break;
           }
+          case 'bump': {
+            // Sparks off the bumper pad: cyan off a wall, yellow and pink off a pinball post.
+            const cols = e.kind === 'post' ? starCols : [C.cyan, C.white];
+            const n = Math.min(24, 6 + Math.round(e.speed * 1.2));
+            for (let i = 0; i < n; i++) {
+              const z = rnd(-1, 1), a = rnd(0, Math.PI * 2), r = Math.sqrt(1 - z * z);
+              const s = rnd(3, 7);
+              emit(pos.x, pos.y + 0.8, pos.z, r * Math.cos(a) * s, Math.abs(z) * s, r * Math.sin(a) * s, 7, 0.5, cols[i % cols.length]);
+            }
+            break;
+          }
           case 'grindStart':
             grindLey = e.ley;
             break;

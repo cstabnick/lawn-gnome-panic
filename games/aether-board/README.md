@@ -12,6 +12,16 @@ your travel (not your board, so spins never whip it).
   right stick does the same, Skate style (A also ollies and starts the game). Hold a grab while you pop for the harder
   versions (double flips, 360 shove-its, ...). In the air, hold grab and point the stick to pick the grab; on a rail,
   the stick picks the grind. Phones: left-thumb joystick, swipe tricks on the right, tap to ollie, BOOST / GRAB buttons.
+- **The race**: free ride is a race from the top of the mountain to the aether gate at the bottom (or off the end of
+  the last run). The clock (top centre) counts riding time only, the best time is kept per world (`?seed=N`), and
+  through the gate the next run starts at once. Achievements: Through the Gate, Clean Line (no bails or falls) and
+  Faster Than Falling (under 2:20, RARE). Code: `race.ts`, `race-hud.ts`.
+- **The race course**: bumper walls down both sides of every run (you bounce off, they keep you on the mountain),
+  bumper bars and pinball posts on the runs (they kick you away), and rocks and aether spikes that bail you. Starts,
+  kicker run-ups, rails and jump landings stay clear. Placed on top of the classic mountain from their own random
+  stream (`addRaceCourse` in `world.ts`), so the mountain itself is unchanged.
+  Free ride's top speed is 70 % of Descent's and Flood Run's (`RACE_SPEED_SCALE` in `config.ts`
+  scales `TUNE.maxSpeed` 62 and `TUNE.leyMax` 48 to 43.4 and 34 when `World.race` is set).
 - The world: islands (some long), kickers, rails, ley-lines through the sky, halfpipe chutes between some islands.
   Fall off and you drop out of the sky onto the next island: no dead ends.
 

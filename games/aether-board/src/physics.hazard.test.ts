@@ -28,7 +28,8 @@ describe('aether spikes', () => {
 
   it('the same ride with no hazards never bails Spiked', () => {
     const w = generateWorld(3);
-    expect(w.hazards.length).toBe(0);
+    w.hazards.length = 0; // free ride's race course has rocks and spikes of its own
+    w.bumpers.length = 0;
     const p = createPlayer(w);
     const ev: PhysEvent[] = [];
     for (let i = 0; i < 4 * SIM_HZ; i++) stepPlayer(p, { ...NO_INPUT, lean: 1 }, null, w, DT, ev);

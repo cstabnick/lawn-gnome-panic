@@ -8,7 +8,7 @@
 // - Landing is judged on board direction (either way round: switch is fine), front/back flips and a board trick
 //   that finished. Smooth landings (moving along the slope) are "perfect" and give a little kick.
 import * as THREE from 'three';
-import { ASSIST, BIG_AIR_S, BOARD_TRICKS, CLOSE_CALL_M, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
+import { ASSIST, BIG_AIR_S, BOARD_TRICKS, CLOSE_CALL_M, RACE_SPEED_SCALE, TUNE, grabFor, grindFor, zoneOf, type Input, type PhysEvent, type Player, type TrickCmd } from './config';
 import { groundAt, nearestOnRail, pipeLocal, railAt, surfaceY, type Ground, type Hazard, type World } from './world';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -109,6 +109,56 @@ function hitHazard(p: Player, w: World): Hazard | null {
     if (Math.hypot(p.pos.x - hz.x, p.pos.z - hz.z) < hz.r + 0.3 && hz.y - 2 < p.pos.y && p.pos.y < hz.y + hz.h) return hz;
   }
   return null;
+}
+
+/** The rider's own radius against a bumper (m). */
+const RIDER_R = 0.45;
+/** How much of the speed into a bumper comes back out: walls guide you along, posts throw you off. */
+const WALL_BOUNCE = 0.45;
+const POST_BOUNCE = 0.9;
+/** Pinball posts add this kick (m/s) away from them on every hit. */
+const POST_KICK = 5;
+
+/**
+ * Bounce off any bumper you are touching (below its top): pushed out of it, and the velocity into it reflected. Walls
+ * along a run keep you on the mountain without killing your speed on a glancing hit; posts kick. No bail either way.
+ * Only the bumpers on the runs around you are checked.
+ */
+function bounceBumpers(p: Player, w: World, ev: PhysEvent[]): void {
+  for (const b of w.bumpers) {
+    if (Math.abs(b.island - p.island) > 1) continue;
+    const ex = b.bx - b.ax;
+    const ez = b.bz - b.az;
+    const ll = ex * ex + ez * ez;
+    const f = ll > 0 ? Math.max(0, Math.min(1, ((p.pos.x - b.ax) * ex + (p.pos.z - b.az) * ez) / ll)) : 0;
+    const qx = b.ax + ex * f;
+    const qz = b.az + ez * f;
+    let nx = p.pos.x - qx;
+    let nz = p.pos.z - qz;
+    const d = Math.hypot(nx, nz);
+    const reach = b.r + RIDER_R;
+    if (d >= reach) continue;
+    const gy = b.ya + (b.yb - b.ya) * f;
+    if (p.pos.y > gy + b.h || p.pos.y < gy - 2) continue;
+    if (d > 1e-4) {
+      nx /= d;
+      nz /= d;
+    } else {
+      // Dead on the centre line: out the way you came.
+      const hl = Math.hypot(p.vel.x, p.vel.z) || 1;
+      nx = -p.vel.x / hl;
+      nz = -p.vel.z / hl;
+    }
+    p.pos.x = qx + nx * (reach + 0.01);
+    p.pos.z = qz + nz * (reach + 0.01);
+    const into = p.vel.x * nx + p.vel.z * nz;
+    if (into >= 0) continue;
+    const post = b.kind === 'post';
+    const k = (1 + (post ? POST_BOUNCE : WALL_BOUNCE)) * -into + (post ? POST_KICK : 0);
+    p.vel.x += nx * k;
+    p.vel.z += nz * k;
+    if (-into > 2) ev.push({ e: 'bump', kind: b.kind, speed: -into });
+  }
 }
 
 const HAZARD_REASON: Record<Hazard['kind'], string> = { spike: 'Spiked', tree: 'Hit a tree', rock: 'Hit a rock' };
@@ -222,11 +272,12 @@ export function stepPlayer(p: Player, inp: Input, cmd: TrickCmd | null, w: World
     const hz = hitHazard(p, w);
     if (hz) spikeBail(p, hz, ev);
   }
+  if (p.mode !== 'grind' && w.bumpers.length > 0) bounceBumpers(p, w, ev);
 
   if (externalForces && p.mode !== 'grind') externalForces(p, w, dt, ev);
 
   // Soft speed cap (flow raises it a little).
-  const cap = TUNE.maxSpeed * (1 + 0.25 * p.flow);
+  const cap = TUNE.maxSpeed * (w.race ? RACE_SPEED_SCALE : 1) * (1 + 0.25 * p.flow);
   const sp = p.vel.length();
   if (sp > cap) p.vel.multiplyScalar(1 - Math.min(0.5, ((sp - cap) / sp) * 3 * dt));
 
@@ -750,7 +801,7 @@ function stepGrind(p: Player, inp: Input, cmd: TrickCmd | null, w: World, dt: nu
   // Gravity along the rail, and the ley-line current.
   const travelY = vTan.y * gr.dir;
   gr.speed += -G * travelY * dt;
-  if (r.ley && gr.speed < TUNE.leyMax) gr.speed += TUNE.leyAccel * dt;
+  if (r.ley && gr.speed < TUNE.leyMax * (w.race ? RACE_SPEED_SCALE : 1)) gr.speed += TUNE.leyAccel * dt;
   if (r.ley) p.flow = Math.min(1, p.flow + 0.05 * dt);
   gr.speed *= 1 - 0.01 * dt;
   if (p.boosting) {

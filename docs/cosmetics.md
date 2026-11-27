@@ -170,3 +170,6 @@ The table lists every achievement, its goal, what it unlocks and whether that it
 | **Long Look** (`gta-long-look`) | gnome-theft-auto | Crack a gnome 60 m away through a scope. | Spotter's Cap (`ammu-spotter-cap`) | Gear: head | RARE |
 | **Through the Velvet Rope** (`gta-gnomecino-visit`) | gnome-theft-auto | Walk into The Gnomecino from Turfton. | Velvet Rope Pass (`velvet-rope-pass`) | Gear: neck |  |
 | **House Money** (`gta-gnomecino-winnings`) | gnome-theft-auto | Walk out of The Gnomecino with more chips than you took in. | House Money Roll (`house-money-roll`) | Gear: hand |  |
+| **Through the Gate** (`aether-board-gate`) | aether-board | Race from the top of the mountain to the aether gate at the bottom. | Gate-Run Goggles (`aether-race-goggles`) | Gear: head |  |
+| **Clean Line** (`aether-board-clean`) | aether-board | Finish a race to the gate without a single bail or fall. | Finish Flag Pack (`aether-finish-flag`) | Gear: back |  |
+| **Faster Than Falling** (`aether-board-fast`) | aether-board | Finish a race to the gate in under 2:20. | Gate Medal (`aether-gate-medal`) | Gear: neck | RARE |

@@ -72,6 +72,13 @@ The goal is a world that feels hand-crafted: details, consistency, tone, feel. C
 5. **Iterate**: editors re-review their group against the previous findings file; repeat until a round finds no
    blockers and only nits. Record each round's counts in the tracking doc.
 
+## Requirements audit (after the editorial review)
+
+Auditors (Opus, one per slice of the source list, e.g. 20 items each) check every source item word for word against
+what shipped: **met**, **partly** (what is missing) or **not**, with evidence (file, dev URL, screenshot, test). Results
+go into `docs/roadmaps/<batch>/review/requirements.md`. Every partly/not item becomes a fix issue or an explicit,
+reasoned deferral recorded in the tracking doc and the PR description. Rerun the audit on the fixed items.
+
 ## Load rules (so no agent drowns)
 
 - A lead owns one epic. If decompose finds more than ~30 issues, the lead stops after the first ~30, commits a working

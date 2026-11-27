@@ -15,7 +15,8 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 All 33 epics merged (+ F1, F2, main). Now: **R1 editorial review** (`gta-batch-3/review/`): 12 editor groups,
 run in two batches of 6, findings in `review/G<n>-*.md`; then the decider on spirit questions, fix epics, re-review
-until only nits remain. Then the finish: demos (media-upload MCP), the PR description, a final merge-conflict check.
+until only nits remain. Then **R2**: an audit of every source item L01–L118 against what shipped (met / partly / not,
+with evidence), and fix epics for the gaps. Then the finish: demos (media-upload MCP), the PR description, a final merge-conflict check.
 
 ## Tracking
 
@@ -58,6 +59,7 @@ with deferred items listed).
 | E32 | Hedgeworth to nine holes | Content | 6 | E15 | merged | epic/E32-golf9 | see log | nine holes, par 34: site extended 145 m south into the Bottom Garden via the Turn Gate; holes 4 Peony's Promise, 5 The Maze, 6 The Drip, 7 The Potting Shed (roof tee), 8 The Rhubarb Patch; old 4-hole saves kept; thinner hedges, mole pops, phone HUD fix; `nine.test.ts` plays all 9; R-226 (renumbered); Peony's Promise unlock moved to ch5-even-cut at merge; Reedy Blind camp moved |
 | E33 | Mountain routes | Content | 6 | E12, E14 | merged | epic/E33-mountains | see log | the Hatbrim range (the Bobble ~105 m, Old Pate, Brim Gap): Brim Gap Road (1.77 km pass road, Top Hat café), the Hatband (0.49 km gravel shelf, World's Edge lookout), the Brim Walk (1.65 km footpath, Summit Register), the Spine Cut (gorge road under the Keyhole arch); drive-along tests; perf flat; R-230..R-232 (renumbered); no coastal clifftop road (terrain can't make cliffs near water), no real tunnels; Brim Walk crosses the band road twice; hairpin chevrons one-way |
 | R1 | Editorial review and polish (editors by content group, decider for disputes, iterate) | Review | 10 | everything | running | review/ |  |  |
+| R2 | Requirements audit: every source item L01–L118 checked against what shipped | Review | 11 | R1 | planned | | | |
 
 ## Cross-cutting cleanup
 
@@ -167,6 +169,7 @@ the European town and the nature preserve.
 | E32 | L115 |
 | E33 | L116 |
 | R1 | L117 |
+| R2 | L118 |
 
 ## Source list (verbatim)
 
@@ -286,6 +289,7 @@ the European town and the nature preserve.
 - L114 allow player to drive over water on jumps
 - L115 (added in session 3) add 5 more holes to the course. make it 9 hole.
 - L116 Add a few different routes on the mountains and such.
+- L118 (added in session 4) once editorial review is done. make a final pass to make sure we met all requirements listed
 - L117 once all work is done. make an spawn subagents to act as editors and review all of this and provide feedback. spawn them by group of content. then proceed with addressing feedback. if somethign cuts against hte spirit, send it to a decider agent to evaluate the pros/cons of both and hte lore and make a decision. I want this to come back really polished and clean. I want the world to feel hand crafted and that requires spending a lot of time on the details making iterative adjustments until it all feels just right. otherwise good work keep going
 
 ## Standing decisions (leads do not ask about these)

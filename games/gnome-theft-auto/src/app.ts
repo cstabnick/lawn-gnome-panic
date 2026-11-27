@@ -6,7 +6,7 @@ import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
 import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere, TIME_LAPSE } from './atmosphere';
 import { forceWeather, getWeather, isWeatherEnabled, onWeather, updateWeather, weatherAt, weatherRegion } from './weather';
-import { WEATHER_LINES, WEATHER_LOOK } from './weather/config';
+import { WEATHER_LINES, WEATHER_LOOK, weatherOvercast } from './weather/config';
 import { createWeatherView } from './weather/render';
 import { initWeatherOptions } from './weather/options';
 import { createWeatherAchievements } from './weather/achievements';
@@ -39,6 +39,7 @@ import { buildTownHomes } from './homes/townHomes';
 import { buildOuterHomes } from './homes/outerHomes';
 import './homes/interiors';
 import { updateHomeWindows } from './homes/pieces';
+import { updateUndersides } from './undersides';
 import { createHomeVisits } from './homes/visits';
 import { createDecorPanel } from './home/decorUi';
 import { installHome, type HomeRuntime } from './home/runtime';
@@ -450,7 +451,7 @@ function weatherFrame(dt: number, x: number, z: number, exposed: boolean): void 
   const on = isWeatherEnabled();
   const look = WEATHER_LOOK[w.kind];
   const onMap = Math.abs(camera.position.x) < WORLD_HALF + 200 && Math.abs(camera.position.z) < WORLD_HALF + 200;
-  atmosphere?.setWeatherLook(on && onMap ? look.overcast * w.intensity : 0, on && onMap ? look.mist * w.intensity : 0);
+  atmosphere?.setWeatherLook(on && onMap ? weatherOvercast(w.kind, w.intensity) : 0, on && onMap ? look.mist * w.intensity : 0);
   weatherView.update(dt, camera, w, { night: atmosphere?.nightFactor() ?? 0, tier: quality.tier, visible: on && onMap });
   weatherAch.update({ dt, weather: w, enabled: on, exposed: exposed && onMap });
 }
@@ -2465,6 +2466,7 @@ function frame(now: number): void {
   const nightF = atmosphere?.nightFactor() ?? 0;
   setTowerNight(nightF);
   updateHomeWindows(nightF);
+  updateUndersides(nightF);
   interiors.update(dt);
   homeRuntime?.update(dt);
   if (!interiorHome) homeVisits.update(player.x, player.z);

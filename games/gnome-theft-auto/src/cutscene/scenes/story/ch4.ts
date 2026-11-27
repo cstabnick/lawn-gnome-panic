@@ -31,10 +31,11 @@ const ST_BRACKEN: Vec2 = [369.4, 47.6];
 const PT = coverage('pip', 'tansy', 1);
 
 /**
- * CHAPTER 4 CLOSER (quest: Nobody Fires the Guard, ends at the armory). Diggs comes out of his retaken armory, reinstated
- * by himself. Up the road come the rides of everyone the HOA ever ticketed: Granny with pie, Bracken on foot with his
- * boots on, Tansy and Pip. Pip asks if a fort is big enough for the brass wrench: "No. ...Close." Then the ground shakes,
- * and the chapter ends on the Grand Combine's first move and Vesper's one-word promise.
+ * Act IV, row 59 outro (quest: Nobody Fires the Guard, ends at the armory doors; dusk). Diggs comes out from the sealed
+ * armory (it opens from below later, row 60). Up the road come the rides of everyone the HOA ever ticketed: Granny
+ * with pie, Bracken on foot with his boots on, Tansy and Pip. Pip asks if this is big enough for the forty-eighth
+ * wrench: "No. ...Close." The hardliner turns, salutes the player and says the Guard is with them. Quiet, no title:
+ * the act goes on (the Combine's wake-up is no longer this scene's button).
  */
 export const SPADE_TRUCE_OUTRO: SceneScript = {
   id: 'spade-truce-outro',
@@ -42,7 +43,7 @@ export const SPADE_TRUCE_OUTRO: SceneScript = {
   music: 'sandpit',
   ambience: 'wind',
   sky: 'golden',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/spade-truce-outro.md', kind: 'chapter-close' },
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/spade-truce-outro.md', kind: 'outro' },
   actors: [
     { id: 'diggs', preset: 'diggs', name: 'Commander Diggs', at: [374, 38.5], yaw: 0 },
     { id: 'player', player: true, at: ST_PLAYER, yaw: towards(ST_PLAYER, ST_DIGGS) },
@@ -58,17 +59,14 @@ export const SPADE_TRUCE_OUTRO: SceneScript = {
     { id: 'tansy-ride', ...rideOf('tansy'), at: TANSY_IN[0], yaw: Math.PI },
     { id: 'pip-ride', ...rideOf('pip'), at: PIP_IN[0], yaw: Math.PI },
   ],
-  props: [
-    { id: 'combine', prefab: 'grand-combine-boss', at: [0, -200], yaw: Math.PI, size: 14, by: 'w', hidden: true },
-  ],
   steps: [
-    // 1. Hook: the armory door bangs open behind him and Diggs walks out into the light, reinstated by himself.
+    // 1. Hook: from the sealed armory behind him, two raps of a fist on steel, then Diggs walks out into the dusk.
     cut(shot('diggs', 'ms', { toward: 'player', side: 20, height: 'low' })),
-    { do: 'sfx', id: 'door', at: 'diggs' },
+    { do: 'sfx', id: 'knock', at: 'diggs', gain: 0.8 },
+    { do: 'sfx', id: 'latch', at: 'diggs', gain: 0.5, async: true },
     { do: 'walk', who: 'diggs', path: [ST_DIGGS], speed: 1.4 },
     { do: 'face', who: 'diggs', at: 'player', s: 0.3 },
-    { do: 'gesture', who: 'diggs', name: 'tipHat', s: 1.0, async: true },
-    { do: 'say', who: 'diggs', text: 'The armory is ours. Spade Guard reinstated, effective immediately.' },
+    { do: 'say', who: 'diggs', text: 'The armory is sealed from Thorne Tower. Not tonight.' },
     ...reaction('player', { toward: 'diggs', gesture: 'nod', size: 'mcu', side: -20, hold: 'pause' }),
     // 2. Engines on the road: everyone the HOA ever ticketed, arriving at once.
     { do: 'sfx', id: 'engine-rev', at: 'pip-ride', gain: 0.8 },
@@ -81,7 +79,7 @@ export const SPADE_TRUCE_OUTRO: SceneScript = {
     { do: 'exit', who: 'tansy', async: true },
     { do: 'exit', who: 'pip' },
     { do: 'spawn', id: 'bracken' },
-    // 3. Bracken walks in, archaic and dry; Diggs counts his army.
+    // 3. Bracken walks in, archaic and dry; Diggs, by the book, takes the boots in stride.
     { do: 'walk', who: 'bracken', path: [ST_BRACKEN], speed: 1.6, async: true },
     { do: 'walk', who: 'granny', path: [ST_GRANNY], speed: 1.2, async: true },
     { do: 'walk', who: 'tansy', path: [ST_TANSY], speed: 1.2, async: true },
@@ -92,7 +90,7 @@ export const SPADE_TRUCE_OUTRO: SceneScript = {
     { do: 'say', who: 'bracken', text: 'The Unmowed are here, Commander. Mostly with their boots on.' },
     { do: 'face', who: 'diggs', at: 'bracken', s: 0.3 },
     cut(shot('diggs', 'mcu', { toward: 'bracken', side: -20, height: 'low' })),
-    { do: 'say', who: 'diggs', text: 'Spade Guard. Unmowed. Carburettors. Cloverfield. In one sandbox.' },
+    { do: 'say', who: 'diggs', text: 'Welcome to Fort Sandpit. Wipe your boots.' },
     // 4. Granny's pie, rung two: the Commander is handed dessert at attention.
     { do: 'face', who: 'granny', at: 'diggs', s: 0.3 },
     cut(shot('granny', 'mcu', { toward: 'diggs', side: 20 })),
@@ -102,37 +100,26 @@ export const SPADE_TRUCE_OUTRO: SceneScript = {
     { do: 'walk', who: 'granny', path: [[372.6, 47.2]], speed: 1.2 },
     { do: 'give', from: 'granny', to: 'diggs', s: 1.0 },
     beat('pause'),
-    // 5. The brass wrench, rung two: a fort is not quite big enough.
+    // 5. The brass wrench, rung two: the Guard is a big win, and still not big enough.
     { do: 'face', who: 'pip', at: 'tansy', s: 0.3 },
     { do: 'face', who: 'tansy', at: 'pip', s: 0.3 },
     cut(PT.single('pip', 'mcu')),
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.0, async: true },
-    { do: 'say', who: 'pip', text: 'We took a fort! Big enough for the brass wrench?' },
+    { do: 'say', who: 'pip', text: 'The Guard is ours! Big enough for the forty-eighth wrench?' },
     cut(PT.single('tansy', 'mcu')),
     { do: 'say', who: 'tansy', text: 'No.' },
     ...reaction('pip', { toward: 'tansy', gesture: 'slump', size: 'mcu', side: 25, hold: 'pause' }),
     cut(PT.single('tansy', 'cu')),
     beat('tiny'),
     { do: 'say', who: 'tansy', text: '...Close.' },
-    // 6. The turn: the ground answers. Music out, everybody turns north-west.
-    { do: 'music', track: null, fade: 0.3 },
-    { do: 'sfx', id: 'boom', gain: 0.6 },
-    { do: 'shake', amp: 0.15, s: 1.5 },
-    { do: 'face', who: 'diggs', at: [300, 0], s: 0.6, async: true },
-    { do: 'face', who: 'tansy', at: [300, 0], s: 0.6, async: true },
-    { do: 'face', who: 'pip', at: [300, 0], s: 0.6, async: true },
-    { do: 'face', who: 'player', at: [300, 0], s: 0.6, async: true },
-    cut(shot('tansy', 'mcu', { side: 10 })),
-    beat('pause'),
-    // 7. The button: the Grand Combine wakes on the meridian. One word of the promise.
-    { do: 'spawn', id: 'combine' },
-    { do: 'cam', shot: { kind: 'dolly', from: up(-7, -216, 1.0), to: up(-5.5, -212.5, 1.3), look: up(0, -200, 6), s: 6, fov: 54 } },
-    { do: 'sfx', id: 'engine-rev', gain: 1.0 },
-    { do: 'shake', amp: 0.06, s: 3 },
-    { do: 'say', who: 'Vesper', hz: 92, music: 'villain', stinger: 'villain', text: 'Tonight, Turfton achieves zero-millimetre perfection.' },
-    { do: 'title', text: 'END OF CHAPTER 4' },
-    { do: 'wait', s: 3 },
-    { do: 'title', text: null },
+    // 6. The button: music out, the dusk goes quiet, and the hardliner salutes the player (his turn, in a gesture).
+    { do: 'music', track: null, fade: 0.8 },
+    { do: 'face', who: 'diggs', at: 'player', s: 0.5 },
+    cut(shot('diggs', 'ms', { toward: 'player', side: -20, height: 'low' })),
+    { do: 'wait', s: 0.8 },
+    { do: 'gesture', who: 'diggs', name: 'tipHat', s: 1.6, async: true },
+    { do: 'say', who: 'diggs', text: 'The Guard stands with you. Effective immediately.' },
+    beat('silence'),
   ],
 };
 

@@ -99,6 +99,11 @@ export const CAST: Record<string, CastPreset> = {
   betony: { look: { hat: 0x1f2f5a, shirt: 0xe8e8ee, pants: 0x3a3a4a, beard: 0xf2f2f2 }, hz: 110, held: 'rolled-chart', scale: 1.42 },
   lovage: { look: { hat: 0x5a1f2a, shirt: 0x2a2a35, pants: 0x1c1c24, beard: 0x8a8a8a, glasses: true }, hz: 94, scale: 1.5 },
   'silt-diver sal': { look: { hat: 0x6b5a3e, shirt: 0x2f4f4f, beard: 0x8a8a7a }, hz: 98, held: 'torch', scale: 1.4 },
+  // E22 act IV cast. Yarrow: characters.md; Burdock/Hector/Velma: their residents' colours (unmown, pardonlin, brimGapPlan).
+  yarrow: { look: { hat: 0x7a7d82, shirt: 0x6b4a2e, pants: 0x3a3228, beard: 0xf4f4f2 }, hz: 100, held: 'ledger-book', scale: 1.5 },
+  'burdock haybright': { look: { hat: 0x6b7a2e, shirt: 0xc2b280, pants: 0x4a4a3a, skin: 0xe8b894, beard: 0xf2f2f0 }, hz: 86, held: 'field-binoculars', scale: 1.46 },
+  hector: { look: { hat: 0x1c1c1c, shirt: 0xfafafa, pants: 0x151515, beard: 0x9e9e9e, glasses: true }, hz: 114, held: 'serving-tray', scale: 1.46 },
+  velma: { look: { hat: 0x1b1b22, shirt: 0xb02a2a, pants: 0x4a3a2c, boots: 0x2a2018, beard: null, dress: true }, hz: 138, held: 'reed-tea-cup', scale: 1.4 },
   'dj moleman': { look: { hat: 0x5a5e68, shirt: 0x3a3a46, pants: 0x4a4e58, skin: 0x7a7e88, beard: null, glasses: true }, hz: 160, scale: 1.25 },
 };
 

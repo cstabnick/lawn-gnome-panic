@@ -26,6 +26,12 @@ Every other dandelion in the yard was weeded, mown or sprayed long ago. The rang
 
 Gnome Theft Auto: the plant, bench and ring of stones in the Long Meadow; the checklist's plant entry (`dandelion`). Ticking every checklist entry earns the Unmown Checklist achievement.
 
+## Everyday
+
+- **Notices:** a small board by the bench reads "One dandelion. Please look. Please leave." A second line, in another hand: "Please do not blow."
+- **Habits:** gnomes bring their hats and set them on their knees. The bench has no back, so that nobody leans into the view. A visitor who sits for more than an hour is brought a cup of tea by a ranger and no questions.
+- **Sayings:** "I went to look at the Last Dandelion and it looked back." "It is one flower. It is also all of them."
+
 ## Loose threads
 
 Whether it will ever go to seed, and who is allowed to blow.

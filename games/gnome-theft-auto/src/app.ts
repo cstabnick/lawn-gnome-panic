@@ -75,6 +75,7 @@ import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
 import { questById } from './quests/defs';
 import { storyGrants, storyMarkers, type StoryGrant } from './quests/storyMarks';
+import { STORY_ROWS } from './quests/storyRows';
 import { PLACE_STYLE } from './mapIcons';
 import { createCritters } from './critters';
 import { createLivingWorld } from './living/runtime';
@@ -310,6 +311,8 @@ let storyBlips: Blip[] = [];
 let storyBlipsAt = -Infinity;
 /** E22 story grants (storyMarks.ts) already applied or checked this session. */
 const storyGrantsSeen = new Set<string>();
+/** E22 "The Whole Story": every main quest of the 70 rows (parts included) finished; checked once a second, unlocked once. */
+let wholeStoryDone = false;
 /** Give one story grant (a deed, or a vehicle when the player has none of that name), toasting only when it gave something. */
 function applyStoryGrant(g: StoryGrant): void {
   let gave = false;
@@ -2645,6 +2648,10 @@ function frame(now: number): void {
       if (storyGrantsSeen.has(g.id)) continue;
       storyGrantsSeen.add(g.id);
       applyStoryGrant(g);
+    }
+    if (!wholeStoryDone && Object.keys(STORY_ROWS).every((id) => saves[id]?.state === 'done')) {
+      wholeStoryDone = true;
+      void achievements.unlock('gta-the-whole-story');
     }
     storyBlips = storyMarkers((id) => saves[id]?.state === 'done').map((m) => ({ x: m.x, z: m.z, color: PLACE_STYLE.story.color, kind: 'story' as const, label: m.label }));
   }

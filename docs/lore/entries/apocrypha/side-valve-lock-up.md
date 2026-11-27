@@ -30,6 +30,15 @@ Tansy also runs the Sling-Lift, an old Fort Sandpit whirligig bought at a surplu
 
 "The Sling-Lift never lands. The pilot says the ground is where the paperwork is."
 
+## Everyday
+
+- Doors: each of the five has a chalk number, and under it a chalk note in Tansy's hand: "1 Dented. 2 Honest. 3 Owes me. 4 Shy. 5 Ask."
+- Notices: "NO SIXTH DOOR"; "ENGINES OFF, KEYS ON THE HOOK, HAT ON THE PEG"; a rota of who has been paid for scrap this week, and who has not.
+- House rule: "A mower is parked once. If you want it twice you want another."
+- Habit: Tansy slaps each door twice when she pulls it down and says its number to it.
+- Saying: "Five doors, six excuses."
+- Small history: the first door was a hen-house door. It is still door 1.
+
 ## Loose threads
 
 Who flies the Sling-Lift. Tansy says it is a cousin; the cousin says it is Tansy.

@@ -26,6 +26,22 @@ Sextant's survey of a level line was meant for the stars. Vesper Thorne's people
 
 Row 46 `m46-starfall-at-the-anthill` p3 The Lens (crack the HOA technicians, take the lens); row 45 sends the player to it. Sextant's staff room is here. Built by E13 at (1258, 158) on the gravel forecourt of the flattened summit (R-200): a white dome with a slit, 18 m across, door facing west. It can be entered (interior `anthill-observatory`): the great brass telescope, and Professor Betony Sextant's desk.
 
+## Everyday
+
+**Notices (inside the dome).**
+- Door note: "BACK AT DUSK. - B.S."
+- Wall chart: "LEVEL LINE. STAR A + STAR B = A STRAIGHT LINE. (DO NOT GIVE TO HOA)."
+- Sugar shelf: "SUGAR RECEIPTS (FEW)."
+
+**Habits.**
+- Professor Sextant reads the stars aloud at dusk to anyone present, and complains that they are exactly where she said.
+- Visitors may use the telescope for free. It counts a different number of stars each time, and sulks.
+- On clear nights the students watch from the forecourt with a flask. The ants watch from the flank, without one.
+
+**Sayings.** "Stand at the top and the whole lawn looks flat. That is the trouble."
+
+**Small history.** The dome was the first thing on the mound the ants did not object to, because it was quiet.
+
 ## Loose threads
 
 What the dome pointed at before the HOA turned it round.

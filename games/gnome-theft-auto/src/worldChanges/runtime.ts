@@ -2,7 +2,7 @@
 // sends its Turfton FM bulletin when it turns on during play. STUB: E18 issue W0 writes the body.
 import type * as THREE from 'three';
 import type { QuestSave } from '../quests/types';
-import { activeWorldChanges, endingOf, worldBulletinKey, worldChangeDef } from './defs';
+import { activeWorldChanges, choiceOf, endingOf, worldBulletinKey, worldChangeDef } from './defs';
 import { worldChangeBuilder, type WorldChangeBuilt } from './registry';
 import './rows';
 
@@ -44,6 +44,7 @@ export function installWorldChanges(deps: WorldChangesDeps): WorldChanges {
     groundY: deps.groundY,
     night: deps.night,
     ending: () => endingOf(deps.saves()),
+    choiceOf: (questId: string) => choiceOf(deps.saves(), questId),
   };
 
   const built = new Map<string, WorldChangeBuilt>();

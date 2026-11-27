@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [the baker, Madame Levain]
 sources: [docs/lore/rulings.md#r-179, games/gnome-theft-auto/src/pardonlin/districts/oldTown.ts, games/gnome-theft-auto/src/pardonlin/activities.ts]
-related: [pardonlin, baguette-trike, pardonlin-baguette-round]
+related: [pardonlin, baguette-trike, pardonlin-baguette-round, brigitte-levains-bakery]
 ---
 
 Pardonlin's baker, and the keeper of the Baguette Round: a morning delivery of long loaves by hand, bike and basket.
@@ -27,6 +27,12 @@ The baker has an opinion about every loaf and a firm view on yours. Her Baguette
 ## In the games
 
 A bakery in the Old Town, off the Rue Haute (near x -1462, z -200). The Baguette Round is a town activity with its own route.
+
+## Everyday
+
+- **Shop signs:** "Bread. Opinions on bread. No refunds on opinions." "Bakery. Today: bread. Tomorrow: also bread." "Loaves, long and longer." (See [her bakery](brigitte-levains-bakery.md).)
+- **Habit:** she measures each baguette with a brass rod, and sets a short one aside for the pigeons, who are not consulted.
+- **Saying:** "Bread is the town's clock."
 
 ## Loose threads
 

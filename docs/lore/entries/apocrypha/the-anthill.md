@@ -26,6 +26,21 @@ The ants are neighbours, not pests: they want sugar and quiet, and say so the on
 
 Row 46 `m46-starfall-at-the-anthill`: p1 Night Class (cross campus to the base), p2 The Sugar Toll (steal sugar from the Trencher and pay the ants), p3 The Lens, final Dean's Leap (drive off the ramp). Site observatory-mound, a 45 m mound centred (1240, 150) (R-200): earth-coloured flanks, a gravel forecourt on the flattened summit, a dirt road spiralling up from the east-band road, and three round wooden ant doors at the foot (north, east, south). Single ants carry sugar cubes in lines and never speak. Dean's Leap sits on the north rim. Side quest `sq-anthill-rent` "Rent for the Landlords": Professor Sextant says the university is late with the sugar; take sugar from the store behind the Trencher to the north door.
 
+## Everyday
+
+**The ants' rent.** The university pays its landlords in sugar, from the store behind the Trencher, carried to the north door at the foot of the mound. The ants count it and sign with a single dot. Rent is due on the last day of the month and has been late for some years: when it is late, the doors are shut, and students say the ants have "closed the library".
+
+**Notices.**
+- In the observatory: "SUGAR RECEIPTS (FEW)."
+- The north door carries no sign. It does not need one.
+
+**Sayings and habits.**
+- "Not termites." Said to anyone new, as soon as possible.
+- Students leave a single sugar cube on the lowest step at night "for the night shift".
+- The ants walk in lines and never speak. A line stopping is read as an opinion.
+
+**Small history.** The mound was a hill when the university began. The ants only admit it was a small hill.
+
 ## Loose threads
 
 How long the ants have been there, and what they were before the mound got this big.

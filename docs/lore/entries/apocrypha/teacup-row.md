@@ -28,6 +28,13 @@ The lane is called Teacup Row because the chairs stand in a line and have never 
 
 The east bank south of the Hatwheel, around x -1522, z 120 (a screenshot spot). Café Pardon is its best-known café; the Sips are its longest customers.
 
+## Everyday
+
+- **Menus (chalkboards on the terraces):** "Croissant: one per customer, per life." "Soup of the day: yesterday's." "Coffee: small, smaller, theoretical." "Tea: ask, wait, apologise." "Baguette: 80 cm. Not 79. We measure." "Sandwich: bread, optionally cheese, always opinion."
+- **Notices:** "Café closed for lunch. Back after lunch." "Lunch 12:00 to 15:00. Dinner 15:01 to lunch." "Special of the day: the table by the window." Street signs read "Teacup Row (No Mugs)" and, further down, "(Still No Mugs)".
+- **Habits:** the Sips sit at the same table; the next table moves one place along each day so that everyone has had the view.
+- **Feud:** every café says it serves the best coffee on the Row. Each has measured it, with its own spoon.
+
 ## Loose threads
 
 Whether any café on the Row has ever closed, or whether they only rotate.

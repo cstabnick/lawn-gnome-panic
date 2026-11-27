@@ -38,13 +38,14 @@ const RUNWAY: QuestDef = {
     },
     {
       kind: 'visit',
-      text: 'Drop the second flare over the northern Dust Flats ridge',
+      text: 'Drop the second flare over the northern Dust Flats ridge, where the Unmowed spotters wait',
       at: [360, -140],
       radius: 30,
       hint: 'Northern Dust Flats',
+      toastOnEnter: 'Second flare away. On the ridge, a boot lifts out of the sage and waves.',
     },
   ],
-  doneText: 'Flares dropped. The Unmowed spotters are in position outside Fort Sandpit.',
+  doneText: 'Both flares are down and the Unmowed spotters are in place. Wally signed Hangar Two over: the Crop Duster is the crew\'s plane now.',
 };
 
 export const STORY: StoryFile = {
@@ -52,12 +53,15 @@ export const STORY: StoryFile = {
   comms: {
     'ch4-runway-flares': {
       0: brief(
-        ['tansy', 'Fort Sandpit. The Spade Guard\'s fort, and the Whirligig\'s pad.'],
-        ['tansy', 'The Unmowed are coming to help. Flares show them where.'],
-        ['tansy', 'Commander Diggs runs the fort. He\'s not ours. Not yet.'],
+        ['wally', 'Wally, on the radio. You scouted the fort and fetched me off my chair. Good.'],
+        ['wally', 'Commander Diggs runs that fort. Fifteen years of orders. He is not ours. Not yet.'],
+        ['tansy', 'Desert Airfield, east along the highway. Clear the two apron guards. 950 acorns.'],
       ),
-      1: call(['pip', 'Crop Duster\'s on the apron! Fly low and drop the flare on the Flats!']),
-      2: call(['bracken', 'We see the first flare. One more, on the north ridge.']),
+      1: call(['wally', 'The Crop Duster is on the apron. Flares are in the hold. Fly low.']),
+      2: call(
+        ['tansy', 'Unmowed spotters need the second flare over the north ridge.'],
+        ['bracken', 'Seen the first one, thank you. We shall watch for the second.'],
+      ),
     },
   },
   plans: { 'ch4-runway-flares': { suite: 'story', expect: 'pass' } },

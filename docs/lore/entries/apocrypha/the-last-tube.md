@@ -20,11 +20,19 @@ Driftwood's tube and ski hut on the beach: tubes to ride, skis to hire, and the 
 
 ## The truth
 
-The hut stands on the sand at (150, 1150), with the tube rack at (150, 1172). Tubes cost 8 acorns and skis 11. The water-skiing course is six buoy gates round (-200, 1312), with the wake ramp at (40, 1312). Driftwood's tow boat takes anyone who pays, and tows gnomes with no boat of their own out onto the Saltwater.
+The hut stands on the sand at (150, 1150), with the tube rack at (150, 1172). Tubes cost 8 acorns and skis 11. The water-skiing course is a slalom of six buoy gates heading east along z 1312 from x -380 to x -30, then a floating wake ramp at (40, 1312); the tow boat waits at the launch (150, 1224). Driftwood's tow boat takes anyone who pays, and tows gnomes with no boat of their own out onto the Saltwater.
 
 ## In the games
 
 The hut is the rental point for the tube run and the water-skiing slalom (E11, row 43 `m43-saltbucket-boardwalk` and the side quest `coast-boardwalk-tubing`). The tow boat is the free ride for gnomes without a boat.
+
+## Everyday
+
+- Price board: tube 8 Acorns; skis 11; "wake ramp: yours to find". Under it: "Refunds: stories only."
+- Notices: "NO TUBES IN THE BOWL"; "IF YOU LOSE YOUR HAT, I'LL LOOK FIRST"; the rack's tags are written on bits of driftwood, with an owner and a date.
+- House rule: "I tow. You hold on."
+- Habit: Driftwood raises one hand to every boat that goes past. They are rarely his.
+- Saying: "The last tube out" for a late decision that works.
 
 ## Loose threads
 

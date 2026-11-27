@@ -23,6 +23,14 @@ The downtown park made from three blocks Vesper Thorne had condemned. Councilwom
 
 Planned (batch 3). Opened at the end of #15 `ch1-founders-boot` (world change W03: ribbon, crowd, bandstand, condemned signs gone). The party for it is #34 `m34-forty-seven-wrenches` (W07, bunting). Epic E01 builds the park from the three downtown park blocks; Gnorwin Clayfoot Park becomes part of it.
 
+## Everyday
+
+- Notices: a council board by the bandstand with the opening hours ("dawn to dusk, hats on"), the bandstand booking sheet (always booked, never used) and a lost-and-found card for one boot, left, size "Founder".
+- Habit: gnomes eat lunch on the grass at noon and brush each crumb into a hat, in case the HOA asks.
+- Habit: the first Monday of the month somebody "re-condemns" the three old plots with a chalk cross, as a joke, and Juniper Vance's clerk rubs it out.
+- Saying: "Three blocks, one lawn, no permit." / "Stand on the grass, it's allowed now."
+- Small history: before the ribbon came down, the blocks carried condemned signs so old that a bird nested in one. The nest stayed.
+
 ## Loose threads
 
 What stood on the three blocks before they were condemned.

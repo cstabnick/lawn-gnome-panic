@@ -23,6 +23,14 @@ The public skate park in Downtown Turfton, made from old Tall-One roof gutters: 
 
 The park stands at (-30, 90), inside Founders' Green. The Long Gutter half-pipe along the south side, the Gutter Bowl with its bank in the north-west, a street section with a kicker, a flat rail, a ledge, a platform with stairs and a handrail, and a downspout rail. Fennel's deck is on legs at the Long Gutter's west end, and the Board Library stands at the north entrance. Four lines from Fennel's list: First Push, Round the Kidney, The Long Gutter, Asphalt's Way Down. Side quest `sq-gutter-bowls-sessions`. Story quest #9 (`m09-where-asphalt-sleeps`): Asphalt the cat is found at the Bowls; skate one line to get the bottlecap back.
 
+## Everyday
+
+- The Board Library's rule ("take one, leave one") is painted on the rack. The four lines on Fennel's list are pinned by the north entrance: First Push, Round the Kidney, The Long Gutter, Asphalt's Way Down.
+- Notices: "NO SKATING WHILE THE BANK IS FULL" (after rain); "MIND THE CAT" on the Long Gutter's lip; a sign-up sheet for the dawn session with only three names on it, all Fennel's, in three hands.
+- Habit: every skater taps the Long Gutter's rim with a knuckle before the first run, for luck.
+- Saying: "Gutter-wise" (to know the line). / "Down the spout and out."
+- Small history: the Round the Kidney bowl was an accident: two gutters were meant to meet and did not, and the gap was filled in by anybody with a bucket of cement, a week at a time.
+
 ## Loose threads
 
 Whether the gutters came off one roof or several.

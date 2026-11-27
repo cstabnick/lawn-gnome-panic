@@ -1800,6 +1800,47 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Nothing Works', description: "Throw everything at the Grand Combine's deck and live to run through the hedge.",
     reward: { slot: 'hand', prefabId: 'golf-umbrella', label: 'Golf Umbrella' },
   },
+  // ---- Gnome Theft Auto: story act IV (E22) ----
+  {
+    id: 'gta-almost-certainly', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Almost Certainly', description: "Fly to the Underspan and back for Hogweed's mortar and a parachute that almost certainly opens.",
+    reward: { slot: 'back', prefabId: 'patched-parachute-pack', label: 'Patched Parachute Pack' },
+  },
+  {
+    id: 'gta-salute-to-a-mole', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salute to a Mole', description: "Escort the Burrowfolk's diggers under Fort Sandpit and see Commander Diggs salute a mole.",
+    reward: { slot: 'neck', prefabId: 'spade-guard-pin', label: 'Spade Guard Pin' },
+  },
+  {
+    id: 'gta-all-hats', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'All Hats at One Table', description: 'Bring every outcast in Turfton to one table at the overlook camp.',
+    reward: { slot: 'back', prefabId: 'patchwork-coalition-cape', label: 'Patchwork Coalition Cape' },
+  },
+  {
+    id: 'gta-hairline', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hairline', description: 'See Clara\'s photograph and hear what she asks of you.',
+    reward: { slot: 'neck', prefabId: 'pressed-leaf-locket', label: 'Pressed Leaf Locket' },
+  },
+  {
+    id: 'gta-last-lift-home', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Last Lift Home', description: 'Drive every friend home on the night before the Even Cut.',
+    reward: { slot: 'hand', prefabId: 'saucer-court-key', label: 'Saucer Court Key' },
+  },
+  {
+    id: 'gta-lollipop-lady', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Lollipop Lady', description: 'Get the fringe out of the Grand Combine\'s way while Hyssop holds the crossing.',
+    reward: { slot: 'hand', prefabId: 'stop-sign-lollipop', label: 'Stop Sign Lollipop' },
+  },
+  {
+    id: 'gta-hat-comes-off', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Hat Comes Off', description: 'Stop Vesper Thorne without shattering him, and take his top hat.',
+    reward: { slot: 'head', prefabId: 'borrowed-top-hat', label: 'Borrowed Top Hat' },
+  },
+  {
+    id: 'gta-the-whole-story', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Story', description: 'Finish every main quest of the story, all seventy.',
+    reward: { slot: 'neck', prefabId: 'finishers-medal', label: "Finisher's Medal" },
+  },
   // ---- Cooking Gnoma ----
   {
     id: 'kitchen-first-cake',

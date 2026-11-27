@@ -34,7 +34,7 @@ export const REGISTER_LINES: readonly string[] = [
   'Wore two hats. Needed three. - M.',
   'You can see the Fence from here. Wish I could not. - anon',
   'Restacked a cairn on the way up. Do not tell the others. - ?',
-  'Page one says "we were here, and so were our hats". Page two says the same, only wetter. - K.',
+  'Page one says "we were here, and so were our hats". Page two says the same, only windier. - K.',
 ];
 
 /** The summit's height on its plaque (the Bobble's top is about 104 m at the summit spot). */

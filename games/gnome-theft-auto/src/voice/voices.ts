@@ -67,6 +67,11 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   ernie: { hz: 86, speed: 0.8, wave: 'saw', style: 'syllables', wobble: 0.25, formant: 0.86 },
   midge: { hz: 156, speed: 1.6, wave: 'square', style: 'letters', range: 1.5, formant: 1.22 },
   cass: { hz: 100, speed: 1.0, wave: 'square', style: 'words', sub: 0.6, formant: 0.94 },
+  // E22 act IV cast ('burdock' below is the Speedway's Burdock, a different gnome: the ranger is 'burdock haybright').
+  'burdock haybright': { hz: 86, speed: 0.7, wave: 'sine', style: 'words', range: 0.35, glide: -0.1, formant: 0.97 },
+  yarrow: { hz: 100, speed: 0.6, wave: 'sine', style: 'words', range: 0.3, formant: 0.89 },
+  hector: { hz: 114, speed: 1.35, wave: 'saw', style: 'letters', range: 0.5, glide: -0.2, breath: 0.1, formant: 1.27 },
+  velma: { hz: 138, speed: 1.45, wave: 'triangle', style: 'syllables', range: 1.5, glide: 0.3, formant: 1.18 },
   // Never seen: the radio voice out of the Loamdeep tunnels (no CAST preset).
   'dj moleman': { hz: 160, speed: 1.1, wave: 'triangle', style: 'letters', range: 1.3, glide: 0.2, breath: 0.2, formant: 1.31 },
   // ---- speakers without a cast preset ----

@@ -34,6 +34,13 @@ A 16 m water path (id `thymes`) running north to south at about x -1600 to -1625
 - Palette: slate-green water, bone stone, pale limes.
 - In the game: the `thymes` water path in `src/data/levels/pardonlin.level.json`, with the `pardonlin` theme in `src/data/regionThemes.json`.
 
+## Everyday
+
+- **Notices:** a board at each bridge gives the rowing hours: Sundays, after the bells, "weather permitting, permission permitting". Pont Neuf is "new" and has been since before the others.
+- **Habits:** on Sundays the Continentals row in pairs, one rowing and one telling the other how. Nobody has finished a Sunday row in the order it began.
+- **Sayings:** "The Thymes is slow so you may finish your sentence." "Cross by the bridge. The bridge has been asked."
+- **Small history:** a swan once went the whole length of the river in an afternoon and was written up in the minutes as "early".
+
 ## Loose threads
 
 Whether the Source has ever been turned off, and what the Continentals would do if it were.

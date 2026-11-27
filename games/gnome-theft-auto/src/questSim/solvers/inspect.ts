@@ -14,6 +14,8 @@ export const inspectSolver: Solver<'inspect'> = {
   kind: 'inspect',
   async solve(obj, ctx: SimCtx, o) {
     const hold = obj.holdSeconds && obj.holdSeconds > 0 ? obj.holdSeconds : 0;
+    // E22: inspecting is done on foot (the runner ignores a player in a vehicle); get out of the last step's ride.
+    if (ctx.player.vehicle) ctx.exit();
     for (const p of obj.points) {
       let [ax, az] = p.at;
       if (p.interior) {

@@ -7,9 +7,9 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-aliases: [Pate's Bothy, the Summit Register]
+aliases: [Pate's Bothy]
 sources: [docs/lore/rulings.md#r-224, games/gnome-theft-auto/src/mountainRoutes/defs/brimWalk.ts]
-related: [hatbrim, high-tarn, band-hamlets]
+related: [hatbrim, high-tarn, band-hamlets, summit-register]
 ---
 
 A footpath over the Hatbrim, waymarked by cairns that somebody keeps stacking and nobody owns. It starts at the band hamlets and climbs past Pate's Bothy, a slate hut on Old Pate, to the Bobble's Summit Register: a book in a tin box, kept since before the HOA.

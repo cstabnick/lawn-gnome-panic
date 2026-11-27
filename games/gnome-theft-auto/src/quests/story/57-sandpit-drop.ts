@@ -48,7 +48,7 @@ const DROP: QuestDef = {
       hint: 'Dust Flats Overlook',
     },
   ],
-  doneText: 'The Whirligig is yours—and Commander Diggs is tearing out of the gate on a Zero-Turn.',
+  doneText: 'The Whirligig is yours, and it joins the crew\'s vehicles. Commander Diggs is tearing out of the gate on a Zero-Turn.',
 };
 
 export const STORY: StoryFile = {
@@ -56,11 +56,12 @@ export const STORY: StoryFile = {
   comms: {
     'ch4-sandpit-drop': {
       0: brief(
-        ['tansy', 'The Whirligig flies. Vesper\'s Combine doesn\'t. That\'s our edge.'],
-        ['pip', 'Over the wall, out of the plane, onto the pad. Easy. Probably.'],
+        ['pip', 'Hogweed fitted the mortar and the parachute rig. The gate has five snipers, so no gate.'],
+        ['pip', 'Fly the Crop Duster over Fort Sandpit and jump. We go in from above.'],
+        ['tansy', 'When the ring goes green over the pad, bail out. Twelve hundred acorns.'],
       ),
-      1: call(['pip', 'You\'re on the pad! Snipers are waking up. Crack them, then lift off!']),
-      2: call(['tansy', 'Bring her home to the overlook. Lower than you think.']),
+      1: call(['tansy', 'Whirligig boarded. Three-hat heat. Snipers are waking up: crack them, then lift off.']),
+      2: call(['pip', 'Diggs is behind you! Bring her to the overlook. Lower than you think.']),
     },
   },
   plans: { 'ch4-sandpit-drop': { suite: 'story', expect: 'pass' } },

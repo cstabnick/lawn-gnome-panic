@@ -78,6 +78,53 @@ export const STORY_MARKS: Readonly<Record<string, StoryMarks>> = {
     items: [{ id: 'stopping-stone', title: 'The Stopping Stone', text: "Elder Bracken's Stone, lent not given: the only thing that ever stopped a machine. Bring it back uncracked." }],
   },
   // E22 rows 54-70 (added by the E22 lead)
+  'm54-the-heist-board': {
+    markers: [{ label: "Wally's caravan", x: 466, z: -76 }],
+    items: [{ id: 'heist-board', title: 'The Heist Board', text: "Tansy's plan: air power, the Whirligig, three sides of Fort Sandpit." }],
+  },
+  'm58-the-reeves-barn': { markers: [{ label: "The reeve's hay barn, Pebblewick", x: 706, z: 34 }] },
+  'm60-the-moles-dig': { markers: [{ label: 'Fort Sandpit dig mouth', x: 392, z: 46 }] },
+  'm61-diggs-medal': {
+    markers: [{ label: "Diggs's bungalow", x: 615, z: 208 }, { label: 'HOA lost-property shed', x: 399.7, z: 58.4 }],
+    items: [{ id: 'diggs-rosters', title: "Diggs's Rosters", text: 'Fifteen years of guard rosters on a bungalow wall, and one empty nail. Not empty now.' }],
+  },
+  'm62-cams-cell': {
+    markers: [{ label: 'The HOA lockup, Double Pot Tunnel', x: 117, z: -97 }],
+    items: [{ id: 'combine-pa-code', title: "The Combine's PA code", text: "Cam's code, and the Combine's route along the meridian on a folded map. He would not say it out loud." }],
+  },
+  'm63-four-taps': {
+    markers: [{ label: 'Café Pardon, Teacup Row', x: -1522.5, z: 143 }],
+    items: [{ id: 'mayors-pen', title: "The Mayor's pen", text: 'The Mulch Club fountain pen that signed the emergency counter-order. Streaky. The ink matches nothing.' }],
+  },
+  'm64-all-hats-p2': {
+    markers: [{ label: 'The Bobble beacon', x: 697, z: -1688 }],
+    items: [{ id: 'bobble-beacon', title: 'The beacon on the Bobble', text: "Hogweed's beacon on the Hatbrim's summit, the highest ground in the yard, to be lit at dawn on the longest day." }],
+  },
+  'm64-all-hats': {
+    markers: [{ label: 'The coalition camp', x: 246, z: 82 }],
+    items: [{ id: 'all-hats', title: 'All hats', text: "Every outcast at one table: the Carburettors, the Underspanners, the Unmowed, the Burrowfolk, the Spade Guard, the Flock and Granny. The Countess's peg waits." }],
+  },
+  'm65-the-countess-relents': {
+    markers: [{ label: 'Ranger Station, the Unmown', x: -1552, z: -1139 }],
+    items: [{ id: 'shield-grate-key', title: 'The Shield Grate Key', text: "A brass key as long as an arm, with the Brassknock crest. It opens the Grand Combine's outer grates." }],
+  },
+  'm66-porcelain-hearts': {
+    markers: [{ label: "Clara's sealed porch", x: -552, z: 42 }],
+    items: [{ id: 'porch-photograph', title: 'The Photograph', text: 'Two gnomes on a porch step; the one in the top hat has a hairline crack under the brim. Clara gave it to you.' }],
+  },
+  'm67-emergency-assessment': {
+    markers: [{ label: 'City Hall side door', x: 9, z: -88 }],
+    items: [{ id: 'side-door-key', title: "Reginald's side-door key", text: 'A service-door key, filed to a quarter-inch. He did not report it.' }],
+  },
+  'm68-lights-out': {
+    items: [{ id: 'pips-toolbox', title: "Pip's toolbox", text: 'His red toolbox, kept shut, on the roof the night before the Even Cut.' }],
+  },
+  'm69-the-combine-wakes': {
+    items: [{ id: 'hyssops-lollipop', title: "Hyssop's lollipop", text: 'Her old crossing-warden stop sign. She held up the Grand Combine with it for one second.' }],
+  },
+  'ch5-even-cut': {
+    items: [{ id: 'vespers-top-hat', title: "Vesper's top hat", text: 'Tall, black, a porcelain band. It came off at the crossing. It hangs on the coalition rail now.' }],
+  },
   'ch4-runway-flares': {
     grants: [
       { id: 'hangar-two-deed', deed: 'air', note: 'Wind-Sock Wally signed Hangar Two over to the crew. Planes you keep live there now.' },

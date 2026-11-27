@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [the Top Hat]
 sources: [docs/lore/rulings.md#r-225, games/gnome-theft-auto/src/mountainRoutes/brimGap.ts]
-related: [velma-crown, brim-gap-road, hatbrim]
+related: [velma-crown, brim-gap-road, hatbrim, brim-gap-hairpins]
 ---
 
 A café in the gap at Brim Gap, under a roof that is a giant black top hat. It serves Gap Tea and Hairpin Buns to drivers coming up the Pass, and it has a tally by the till that counts every car that stops.
@@ -26,6 +26,14 @@ Velma Crown keeps the Top Hat and counts every car. The count is the only honest
 ## In the games
 
 Gnome Theft Auto (E33): the café sits in Brim Gap (near (705, -1585)), beside the Brim Gap Road. Its tally and counter are built in `games/gnome-theft-auto/src/mountainRoutes/brimGap.ts`.
+
+## Everyday
+
+- **The menu board:** "Today: Gap Tea. Hairpin Buns. Today's view: the Bobble (it was there yesterday)." Gap Tea comes in a tin mug and is "as strong as the gradient". A Hairpin Bun is a coiled bun with a currant at each bend; it is eaten from the outside in.
+- **House rules:** "Brakes are not a hat." Drivers who stop leave their hat on the peg; those who do not stop are counted anyway.
+- **Notices:** the tally by the till ("Cars today: 3. Buns: 41."). Signs on the road below read "Up 9%. It means it.", "Falling rocks. Politely." and "Rocks: 14. Warnings: 14."
+- **Hours:** while there is light, and a little after, "for the late ones".
+- **Sayings:** "Two Gap Teas and a bun."
 
 ## Loose threads
 

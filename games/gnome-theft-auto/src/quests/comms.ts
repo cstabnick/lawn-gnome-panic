@@ -82,6 +82,10 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   betony: 'Professor Betony Sextant',
   lovage: 'Dean Lovage Inkwell',
   'silt-diver sal': 'Silt-Diver Sal',
+  yarrow: 'Reeve Yarrow Potsherd',
+  'burdock haybright': 'Head Ranger Burdock Haybright',
+  hector: 'Hector Disdain',
+  velma: 'Velma Crown',
   ...CITY_CALLER_NAMES,
   ...NEWCOMER_CALLER_NAMES,
 };

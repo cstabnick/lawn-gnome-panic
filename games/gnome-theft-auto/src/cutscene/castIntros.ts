@@ -89,6 +89,10 @@ export const CAST_INTROS: Readonly<Record<string, CharacterIntro>> = {
   betony: { name: 'Professor Betony Sextant', role: 'Astronomer, Rootwell.', line: 'Absent-minded and precise. Trails off into figures. As I was saying.', accent: 0x1f2f5a },
   lovage: { name: 'Dean Lovage Inkwell', role: 'Dean of Rootwell.', line: 'Pompous and smooth. Never answers a question. Mind the optics.', accent: 0x5a1f2a },
   'silt-diver sal': { name: 'Silt-Diver Sal', role: 'Under-Deck culvert trader.', line: 'Raspy, damp and bargaining. Wants clean socks and dry matches.', accent: 0x6b5a3e },
+  yarrow: { name: 'Reeve Yarrow Potsherd', role: 'Reeve of Pebblewick.', line: 'Formal and patient. Minutes are kept. Noted.', accent: 0x7a7d82 },
+  'burdock haybright': { name: 'Head Ranger Burdock Haybright', role: 'Head Ranger, the Unmown.', line: 'Counts and watches. Tidies nothing. Twelve species before lunch.', accent: 0x6b7a2e },
+  hector: { name: 'Hector Disdain', role: 'Waiter, Café Pardon.', line: 'Has seen you. Will bring it when he is ready. Never takes an order.', accent: 0x1c1c1c },
+  velma: { name: 'Velma Crown', role: 'Keeps the Top Hat, Brim Gap.', line: 'Brisk and bright. Counts every car that stops. Gap Tea, love?', accent: 0x1b1b22 },
   'dj moleman': { name: 'DJ Moleman', role: 'Mole DJ, Loamdeep.', line: 'Spins from the dark. Nobody has heard him say a word.', accent: 0x5a5e68 },
 };
 

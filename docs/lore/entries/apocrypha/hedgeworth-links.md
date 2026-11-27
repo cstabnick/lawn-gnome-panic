@@ -46,6 +46,13 @@ Built (batch 3, E15), in the E01 site `golf-yard` (coordinates from `golf/types.
 - Cart paths of gravel from the Members' Gate and round the loop; two golf carts sit in the cart shelter beside the clubhouse.
 - Balls lost in the rough to pick up, and four molehills by the ninth green to pat flat.
 
+## Everyday
+
+- **Shops and stalls:** The pro shop sells "clubs, balls, luck (luck not sold)" and closes at "back in five strokes", which means tomorrow. The ball bucket by the Kicked Board is free and says so, then says not to.
+- **Notices:** The Members' Cup is the first of the month, dress tweed. A sign at the course edge reads "Carts on paths. Gnomes on grass. Moles: we do not have moles." Another, at the pond: "No paddling. The mower is working."
+- **Sayings and habits:** "A hole is a hedge you have not met yet." "Replace your divot, and if it was Basil's, replace Basil." Members tap the first tee marker twice before driving, for the card. Nobody has ever said why.
+- **Small history:** The card said nine holes for years while the ground held four, and every season Dame Peony said "next season". The members still say it, as a toast, now the nine are real.
+
 ## Loose threads
 
 Who set the first par, and what the card will say when the course is finally finished.

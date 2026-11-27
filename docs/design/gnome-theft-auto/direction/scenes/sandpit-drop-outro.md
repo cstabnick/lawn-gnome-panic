@@ -98,3 +98,15 @@ No narrator, no captions.
 ## 10. The button
 
 The player, on foot, walks the last few metres toward Diggs while the camera slowly pushes across the safehouse wide and the wind carries the dust through the frame. It is the last image of the standoff, and it sends the player into the truce.
+
+## 11. Act IV revision (E22, row 57)
+
+Day (`sky: 'noon'`), `kind: 'outro'`. Pip holds the `parachute-rig` while he cheers.
+
+- Diggs's first story appearance (before this he is only a voice): `{ do: 'intro', who: 'diggs' }` lands right after
+  "Fifteen years I've guarded that chopper." on the low ms, before the beat of silence.
+- Tansy's answer is now "It's already on, Diggs. We're only borrowing it." (the old "nobody is turning anything on" was
+  false: they had just flown it in).
+- New tell after "Nobody borrows it either.": his hand goes to the brim out of fifteen years of habit, toward the empty
+  gate road (`cloth` foley, `tipHat` on a locked low ms, a `pause`): a salute at nothing, since there is no one left to
+  salute. Tansy, MCU: "Diggs. Stand down." Then the old button (the player walks up, the slow push). Length 50.8 s.

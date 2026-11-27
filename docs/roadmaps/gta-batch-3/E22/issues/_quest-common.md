@@ -41,7 +41,7 @@ existing ones (acts I to III, built by E20 and E21 in the same layout). The user
   `reginald`, `'don compost'`, `'big lou'`, `'mayor mulch'`, `samphire`, `brenda`, `'lugnut lulu'`, `wisteria`,
   `chicory`, `clara`, `hedda`, `bodega`, `hyssop`, `ernie`, `chard`, `betony`, `gary`, `saxifrage`, `peony`, `basil`,
   `thrift`, `driftwood`, `sorrel`, `loam`, `shelldon`; new in E22 (added by the foundation): `yarrow` (Reeve Yarrow
-  Potsherd), `burdock` (Head Ranger Burdock Haybright of the Unmown), `hector` (Hector Disdain, the waiter of Café
+  Potsherd), `'burdock haybright'` (Head Ranger Burdock Haybright of the Unmown; the key `burdock` is a different gnome), `hector` (Hector Disdain, the waiter of Café
   Pardon), `velma` (Velma Crown of the Top Hat café, Brim Gap). Grep `src/cutscene/cast.ts` for the exact keys before
   using one. A cast member's home and workplace: `homeDoor(id)`, `workOf(id)` in `src/homes/data.ts`.
 - Story props (`@lawn/prefabs` ids, E22 foundation, `packages/prefabs/src/catalog/gta-story-act4.ts`): `heist-board`,
@@ -194,7 +194,8 @@ lore ruling, an area hook), say so in your final report: the lead does it.
   dunes and the Hatbrim often fail LOS: raise or move the camera, never delete the shot.
 - Vehicles in scenes: `vehicles: [{ id, kind, at, yaw, keep? }]`; a cast member's own ride via `rideOf('<cast id>')`.
 - World changes: after W15 (m60) Fort Sandpit's gate flies coalition colours; after W16 (m64) the overlook is the
-  coalition camp (tents, a crate table, a hat rail): scenes at the overlook from row 65 on must fit around it (the
+  coalition camp (six tinted tents in a ring of radius 9 round (246, 82), a crate table, a hat rail, an unlit Bobble
+  beacon, a flag, a campfire): scenes at the overlook from row 65 on must fit around it (the
   lead's W16 builder keeps the `dust-safehouse` marks clear) and should show it.
 
 ## Checks (all must pass before you report)

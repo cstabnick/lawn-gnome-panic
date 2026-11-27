@@ -45,13 +45,14 @@ const TRUCE: QuestDef = {
     },
     {
       kind: 'visit',
-      text: 'Reclaim the Fort Sandpit armory inside the gate',
+      text: 'Reach the Fort Sandpit armory doors inside the gate',
       at: [374, 10],
       radius: 12,
       hint: 'Fort Sandpit Armory',
+      toastOnEnter: 'The armory doors are sealed from Thorne Tower. Steel, a keypad, a Vesper sticker. Nobody gets in from this side.',
     },
   ],
-  doneText: 'Spade Guard, Unmowed, Carburettors, and Cloverfield—every crew in four biomes is now aligned against Vesper.',
+  doneText: 'The Spade Guard is with you and Commander Diggs has saluted. The armory stays sealed: that is for the next plan.',
 };
 
 export const STORY: StoryFile = {
@@ -59,11 +60,15 @@ export const STORY: StoryFile = {
   comms: {
     'ch4-spade-truce': {
       0: brief(
-        ['tansy', 'Vesper fired the Spade Guard by phone. Diggs took it personally.'],
-        ['tansy', 'Help him take the armory back. Every free gun in Turfton came out of it.'],
+        ['tansy', 'You stole the Whirligig and hid it in Pebblewick. Now Diggs is on the radio.'],
+        ['diggs', 'Vesper fired the Guard by phone and locked my fort from Thorne Tower.'],
+        ['diggs', 'Follow me to the gate. Nobody fires the Guard. A thousand acorns.'],
       ),
-      1: call(['diggs', 'HOA lockout at my gate. Crack them. Nobody locks the Guard out.']),
-      2: call(['diggs', 'Gate\'s clear. Armory\'s inside. Walk in like you own it. I do.']),
+      1: call(['diggs', 'Three HOA enforcers on my gate. Crack them. Nobody locks the Guard out.']),
+      2: call(
+        ['diggs', 'Gate is clear. The armory is sealed from Thorne Tower. Not tonight.'],
+        ['tansy', 'Diggs is in. The Guard is with us.'],
+      ),
     },
   },
   plans: { 'ch4-spade-truce': { suite: 'story', expect: 'pass' } },

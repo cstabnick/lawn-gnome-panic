@@ -33,6 +33,13 @@ The station is one gnome, a microphone and a very long record shelf. It reaches 
 
 Station `adagio` in `games/gnome-theft-auto/src/radio/adagioStation.ts`, listed in `STATIONS` in `content.ts`. The N key turns to it like the others. Its ads are Café Pardon, Brigitte Levain's bakery and Opera Hall season tickets ("seats not provided").
 
+## Everyday
+
+- **Notices (in the Opera Hall studio):** "On air (slowly)." "Next: silence (recorded). After that: the same silence, live." "Archive: one song, 400 versions." A hall of portraits of Maestro Lento, "Hall of Conductors (all one face)".
+- **The box office:** "Box office (open when it opens)." Season tickets: "seats not provided".
+- **Habits:** the town stops for the Slow Hour; a café that is mid-order stays mid-order. Nobody turns the gramophones up; they lean in instead.
+- **Sayings:** "Please lower your engine." "It was a short piece. It was only four hours."
+
 ## Loose threads
 
 Whether the brass section will ever return. Whether the pigeons on the Opera Hall roof are a nuisance or a chorus.

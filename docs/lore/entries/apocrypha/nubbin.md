@@ -9,12 +9,12 @@ status: draft
 games: [gnome-theft-auto]
 aliases: []
 sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-164]
-related: [the-burrowfolk, loamdeep, old-mother-tumblesoil, the-burrow-door, dj-moleman]
+related: [the-burrowfolk, loamdeep, old-mother-tumblesoil, the-burrow-door, dj-moleman, loamdeep-clans, postern-hall, mister-sift]
 ---
 
 A small young mole with a satchel too big for him: the post runner of Loamdeep, the player's friend among the Burrowfolk, and the one who first got lost above ground.
 
-Home: his family's burrow in Loamdeep. Work: runner for Loamdeep's post.
+Home: his family's burrow in Loamdeep, a Sift household (the post family; `loamdeep-clans`). Work: runner for Loamdeep's post, out of Postern Hall.
 
 ## What gnomes say
 

@@ -24,7 +24,7 @@ The bucket and spade were left by a Tall One long ago and sank to the rim. The t
 
 ## In the games
 
-The south band of the map (code region `south-shore`, x -1400 to 1400, z 900 to 1400), built by E01. Roads: `south-band` runs on from Route South at (0, 870) west, `south-band-east` runs east, and `coast-spur` runs south to the boardwalk. The Saltwater fills the whole south edge (z 1190 to 1390) with a beach at z 1140 to 1190. Saltbucket Boardwalk (0, 1115) is 420 x 50 m, at the end of the coast spur. The Spokewheel stands at (-260, 1100) and the Bathtub Queen lies offshore at (300, 1280).
+The south band of the map (code region `south-shore`, x -1400 to 1400, z 900 to 1400), built by E01. Roads: `south-band` runs on from Route South at (0, 870) west, `south-band-east` runs east, and `coast-spur` runs south to the boardwalk. The Saltwater fills the whole south edge (z 1190 to 1390) with a beach at z 1140 to 1190. Saltbucket Boardwalk (0, 1115) is 420 x 46 m, at the end of the coast spur. The Spokewheel stands at (-260, 1100) and the Bathtub Queen lies moored at the end of Long Spoon Pier at (300, 1268).
 
 Quest rows 32 `m32-driftwoods-chart` (planted from the dune line), 43 `m43-saltbucket-boardwalk`, 44 `m44-the-bathtub-queen`, 64 `m64-all-hats` (By Water) use the region tag `saltbucket-shore`.
 
@@ -35,6 +35,14 @@ Since the second expansion the Saltwater runs the whole south strip, and the ban
 - Motifs: dunes and marram grass; weathered picket fences; palms; bright beach huts.
 - Palette: paper and bone walls, red and sapphire roofs, pink flowers.
 - In the game: theme `south-shore` in `src/data/regionThemes.json`.
+
+## Everyday
+
+- Notices: the shore's tide table is painted on the side of a beach hut, and in chalk beneath it somebody has added "(approx.)" to every line.
+- Habit: gnomes bring a bucket to the beach to put the sea in, and tip it back out before they leave, "so it's even".
+- Saying: "Past the dunes" means anywhere strange. "Bucket-minded" means stubborn.
+- Local drink: salt-sweet tea, with a cube of boiled sugar and a pinch of dune grass.
+- Small history: the bucket's handle was seen above the sand once, in a dry year. The town agreed it must be the right way up now, and fined anyone who looked twice.
 
 ## Loose threads
 

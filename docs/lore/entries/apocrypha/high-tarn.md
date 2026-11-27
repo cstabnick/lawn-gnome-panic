@@ -26,6 +26,13 @@ The board at the jetty gives that warning. A milestone reads "HIGH TARN 1/4". Th
 
 Gnome Theft Auto: the water, jetty, bothy, board and Fell Warden Brisk; the `tarn-diver` and `snowcap-eagle` birds; one of the four places Off the Beaten Lane counts.
 
+## Everyday
+
+- **Notices:** at the jetty: "The High Tarn. Altitude: high. Temperature: no. Swimming at your own regret." The milestone reads "High Tarn 1/4". At the bothy: "Visitors: 3. Sheep: 41."
+- **Habits:** Fell Warden Brisk counts the sheep each morning and the visitors each evening, and has not yet got a total that pleases him. Walkers drink tea on the jetty without testing the water.
+- **Sayings:** "The Tarn is cold on purpose." "The sheep know best, and they stay on the bank."
+- **Small history:** a swimmer once went in off the jetty, left a ring of bubbles and was never named. The warden keeps the oar they left behind.
+
 ## Loose threads
 
 Who the swimmer was.

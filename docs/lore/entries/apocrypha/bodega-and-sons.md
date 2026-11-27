@@ -26,6 +26,15 @@ Hand-painted sign taped over the register: *"BODEGA & SONS (NO SONS, JUST JOHN).
 
 The walk-in interior (R-170, `docs/lore/rulings.md#r-170`) is a narrow shop inside the overturned watering can, on the block at x -90, z 90. The counter sits on the north wall with Asphalt asleep on it, the Acorn-Cola tower that fell over lies where it dropped, and Mossley's abandoned grid-survey table stands by the door.
 
+## Everyday
+
+- Price list on the register: Acorn-Cola 3, lukewarm; Dandelion Fizz 2, warm; spark plug 4, "any size"; pickled clover 1 a spoon; dandelion-silk cigarette 1, loose. A card says "Cold costs extra. We do not have cold."
+- Notices: "CASH OR ACORNS" over the register; "NO SONS, JUST JOHN" beneath; a hand-lettered "CAT ON DUTY. CAT OFF DUTY. SAME CAT."
+- House rule: "Nobody leaves without being asked if they need a spark plug."
+- Hours: open 24 hours, "unless Asphalt needs the crates".
+- Habit: gnomes who walk past touch the watering can's rim for luck on the way out, and John pretends not to see.
+- Saying: "Warm as a Bodega bottle" (reliable, if disappointing).
+
 ## Loose threads
 
 What happened to the original watering-can spout—John uses it as an umbrella stand, though it seems far too big.

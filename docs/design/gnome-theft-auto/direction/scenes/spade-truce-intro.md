@@ -105,3 +105,19 @@ No narrator, no captions.
 ## 10. The button
 
 Pip's bet and Tansy's flat answer, MCU each, with the Zero-Turn gone over the rise behind the player. The last sound is the engine. It is the right last moment because the joke answers the question the scene asked: they are a crew now, and Diggs is already ahead of them.
+
+## 12. Act IV revision (E22, row 59): the bible fix
+
+Day (`sky: 'noon'`), `kind: 'intro'`. The Whirligig is hidden in a Pebblewick barn after row 58, so the scene no longer has
+it at the overlook, and Diggs is no longer standing there: he is on the radio from his own gate.
+
+- Opening: the table radio crackles; Tansy: "The Whirligig is under hay in Pebblewick. So who is on the radio?" (the
+  Previously-beat).
+- Diggs at the gate (cut from the gate's `wide` to his own close shots, so he is never a speck): "Vesper fired the Guard. By
+  phone. Then he locked my fort from Thorne Tower." / "He said, 'Thank you for your service.'" / "...Redundant." (low CU).
+  The villain's voice and stinger are gone from this scene: the news comes in Diggs's mouth.
+- A Tansy line ("Diggs. Are you still there?") breaks his run of lines, then **Diggs** says "Nobody fires the Guard." and,
+  as the sandpit march comes in, "Especially not a guy in a porcelain hat." (Tansy says no part of it.)
+- Pip: "Is he on our side now?" Tansy: "He's on his side. It's next to ours." Diggs: "Follow me to the gate. Three of
+  Vesper's enforcers are on it." and mounts his Zero-Turn, rolling out down the gate road. Button kept: Pip's bet,
+  Tansy's "He already has." (now literally true). Length 48.1 s.

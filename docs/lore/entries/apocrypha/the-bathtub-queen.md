@@ -28,6 +28,14 @@ Row 44 `m44-the-bathtub-queen` (board an HOA barge, deliver its cargo, the Combi
 
 Built by E11: moored at (300, 1268) at the end of Long Spoon Pier, with a walkable deck and a captain's cabin interior. Side quests `coast-bathtub-tours` and `coast-queens-treasure`.
 
+## Everyday
+
+- Tour board on the gangplank: "Pirate tours at noon. Cargo at midnight. Do not mix them up." Tickets 5 Acorns, "plank included".
+- Notices on deck: "Mind the rail. It is not a real rail. It is mine. (Capt. S. Bilge)"; chart in the cabin: "X marks the Queen. The Queen marks the X."; "Tours: noon. Cargo: midnight. Both: honest."
+- Souvenir stall: tin hooks, a rubber seagull and a hat marked "Authentic". Every hat is authentic.
+- Habit: the crew sings the same sea shanty at noon, and a different one at midnight, which is not a shanty.
+- Saying: "Honest as a Queen's hold" (for a hold that has nothing in it, loudly).
+
 ## Loose threads
 
 How a Tall-One bath toy went to sea. Samphire gives three versions and they do not match.

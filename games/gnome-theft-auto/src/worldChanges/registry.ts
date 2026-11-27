@@ -14,6 +14,8 @@ export interface WorldChangeCtx {
   night(): number;
   /** W17: the ending the finale picked ('A' when none was recorded). */
   ending(): 'A' | 'B';
+  /** E22: the option a quest's 'choice' objective picked ('A' when none was recorded), e.g. m62-cams-cell for W19. */
+  choiceOf?(questId: string): 'A' | 'B';
 }
 
 /** One built change. */

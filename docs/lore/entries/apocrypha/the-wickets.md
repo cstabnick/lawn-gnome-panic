@@ -38,6 +38,13 @@ The perimeter fence line x = -1397 separates Trellisdown from Pardonlin. Three r
 - Palette: white paint, bone walls, slate roofs.
 - In the game: the gates are part of the Pardonlin level, `src/data/levels/pardonlin.level.json`.
 
+## Everyday
+
+- **Notices:** a board at each customs hut lists what to declare (hats, opinions, bread) and what to leave undeclared (mowers, "which are not done").
+- **Habits:** the stamp is applied to the hat, not the paper. A gnome stamped in at the Grand Wicket is stamped out at the Harbour Wicket if they are lucky, and otherwise stamped again.
+- **Sayings:** "Wicket, wicket, stamp and go." "Three gates, one smile, no hurry."
+- **Small history:** the white paint is renewed every spring by whichever clerk lost the argument about the colour. The fence panels the gates replaced are still laid flat in the grass, "for the record".
+
 ## Loose threads
 
 What is beyond Pardonlin's own west fence, and whether any gnome has ever been stamped out of the Wickets.

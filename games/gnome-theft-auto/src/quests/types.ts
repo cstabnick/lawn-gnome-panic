@@ -149,7 +149,18 @@ export type ObjectiveDef =
       attackers: number;
       hint: string;
     }
-  | { kind: 'boss-combine'; text: string; startZ: number; endZ: number; hint: string }
+  | {
+      kind: 'boss-combine';
+      text: string;
+      startZ: number;
+      endZ: number;
+      hint: string;
+      /**
+       * E22 (the finale in parts): 'guards' ends when the Porcelain Guard is cracked (no jam); 'jam' spawns no guards and
+       * ends when the player reaches the intake ring. Absent = both, in that order (the pre-E22 single objective).
+       */
+      phase?: 'guards' | 'jam';
+    }
   | {
       kind: 'choice';
       text: string;

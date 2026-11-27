@@ -1,4 +1,4 @@
-// The E20/E21 story stages, one file per row. Only the E20/E21 leads edit this file.
+// The E20/E21 story stages, one file per row. Only the E20/E21/E22 leads edit this file.
 import type { Stage } from '../kit';
 import * as r02 from './s02-roof-on-credit';
 import * as r05 from './s05-sweepers-wages';
@@ -45,8 +45,28 @@ import * as r50 from './s50-trellisdown-tasting';
 import * as r51 from './s51-the-flock-stands';
 import * as r52 from './s52-the-test-cut';
 import * as r53 from './s53-tundra-drift-run';
+import * as r54 from './s54-the-heist-board';
+import * as r55 from './s55-runway-flares';
+import * as r56 from './s56-mortar-for-a-mower';
+import * as r57 from './s57-sandpit-drop';
+import * as r58 from './s58-the-reeves-barn';
+import * as r59 from './s59-spade-truce';
+import * as r60 from './s60-the-moles-dig';
+import * as r61 from './s61-diggs-medal';
+import * as r62 from './s62-cams-cell';
+import * as r63 from './s63-four-taps';
+import * as r64a from './s64a-all-hats';
+import * as r64 from './s64-all-hats';
+import * as r65 from './s65-the-countess-relents';
+import * as r66 from './s66-porcelain-hearts';
+import * as r67 from './s67-emergency-assessment';
+import * as r68 from './s68-lights-out';
+import * as r69 from './s69-the-combine-wakes';
+import * as r70a from './s70a-even-cut';
+import * as r70 from './s70-even-cut';
 
-const FILES = [r02, r05, r07, r09, r10, r11, r12, r13, r14, r15, r17, r19, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30, r31, r32, r33, r34, r35, r36, r37, r38, r39, r40, r41, r42, r43, r44, r45, r46, r47, r48, r49, r50, r51, r52, r53];
+const FILES = [r02, r05, r07, r09, r10, r11, r12, r13, r14, r15, r17, r19, r21, r22, r23, r24, r25, r26, r27, r28, r29, r30, r31, r32, r33, r34, r35, r36, r37, r38, r39, r40, r41, r42, r43, r44, r45, r46, r47, r48, r49, r50, r51, r52, r53,
+  r54, r55, r56, r57, r58, r59, r60, r61, r62, r63, r64a, r64, r65, r66, r67, r68, r69, r70a, r70];
 export const STORY_STAGES: readonly Stage[] = FILES.flatMap((f) => f.STAGES);
 /** Existing stage id -> extra quest ids for its usedBy. */
 export const STORY_STAGE_USES: Readonly<Record<string, readonly string[]>> = (() => {

@@ -8,11 +8,11 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [John]
-sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/brands.md]
-related: [bodega-and-sons, asphalt-the-cat, turfton, clay-mart]
+sources: [docs/design/gnome-theft-auto/world-lore.md, docs/design/gnome-theft-auto/brands.md, docs/design/gnome-theft-auto/characters.md, docs/design/gnome-theft-auto/story-outline.md, games/gnome-theft-auto/src/cutscene/cast.ts, games/gnome-theft-auto/src/cutscene/castIntros.ts]
+related: [bodega-and-sons, asphalt-the-cat, turfton, clay-mart, saucer-court, mossley-inkcap, burt-hoa, cedric-peat, tansy-clayfoot]
 ---
 
-Unflappable 24-hour corner shopkeeper at `x: -60, z: 60`, wearing a faded paper-cup visor and selling lukewarm Acorn-Cola, spark plugs, and dandelion-silk cigarettes.
+Unflappable 24-hour corner shopkeeper at `x: -60, z: 60`, wearing a brown hat with a faded paper-cup visor clipped to its brim and selling lukewarm Acorn-Cola, spark plugs, and dandelion-silk cigarettes.
 
 ## Story: Sweeping Through the Sirens
 
@@ -23,6 +23,16 @@ When Clay-Mart tried to open a superstore across the street, John didn't hire la
 ## What gnomes say
 
 "As long as John's neon sign is buzzing, Turfton hasn't fallen yet."
+
+## The truth
+John is the crew's neutral ground and the player's local shop: no side, owes nobody. He wants the neon sign buzzing and the step swept, and fears the shop going dark (and a second supermarket). Secret: what happened to the "Sons" (nobody asks twice). Home: the flat above Bodega & Sons. Voice: flat, unhurried, mid-pitch, no emotion in any sentence, which is the joke; his tic is stating prices of things that are not for sale ("Acorn-Cola. Lukewarm. Same as always." / "Sirens. Mind the step."). Loves Asphalt the cat and says nothing about it; Mossley, Burt and Cedric all loiter outside and he tolerates them equally; he trusts Tansy because she pays cash.
+
+Arc: a face in the prologue, then Asphalt's rescue (#9); a party guest the player collects (#34); his window stays lit while the crew is away (III); a drive home on the last night (#68), one short exchange at his door: "Sign's on. Go."
+
+## In the games
+
+- Cast look (`src/cutscene/cast.ts`, preset `bodega`): brown hat, green shirt, brown beard, scale 1.42. Intro card (`src/cutscene/castIntros.ts`): "Corner shopkeeper." / "Runs the corner shop, sweeps the step, and never looks up from it."
+- Story rows: #1 prologue-fresh-kiln, #9 m09-where-asphalt-sleeps, #34 forty-seven-wrenches, #68 m68-lights-out. Home in the game: `bodega-front` (`src/homes/data.ts`).
 
 ## Loose threads
 

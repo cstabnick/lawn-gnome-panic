@@ -22,6 +22,14 @@ Wally checks every sale against his clipboard: stall speed, fuel, and whether th
 
 "Wally's lot. Ask for the stall speed before you ask for the price."
 
+## Everyday
+
+- Price board: Dandelion Drifter 2,000, Hedge-Hopper 3,000, Crop Duster 4,000, Sycamore Copter 5,000. Hangar space "by negotiation, and by lid".
+- Notices: "STALL SPEED BEFORE PRICE" painted on the clipboard post; "NO LOOPS BEFORE LUNCH"; "WINDSOCK IS RIGHT. YOU ARE NOT."
+- House rule: "A buyer must say the stall speed out loud and without checking."
+- Habit: Wally licks a finger and holds it up before each sale, then looks at the windsock to see if the finger agrees.
+- Saying: "Down is the part that costs."
+
 ## Loose threads
 
 Which of the planes on the lot Wally has flown himself.

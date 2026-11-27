@@ -28,6 +28,9 @@ export const STORY_ROWS: Readonly<Record<string, number>> = {
   // E21 extended rows.
   'm46-starfall-at-the-anthill-p1': 46, 'm46-starfall-at-the-anthill-p2': 46, 'm46-starfall-at-the-anthill-p3': 46,
   'm52-the-test-cut-p1': 52, 'm52-the-test-cut-p2': 52, 'm52-the-test-cut-p3': 52,
+  // E22 extended rows.
+  'm64-all-hats-p1': 64, 'm64-all-hats-p2': 64, 'm64-all-hats-p3': 64,
+  'ch5-even-cut-p1': 70, 'ch5-even-cut-p2': 70, 'ch5-even-cut-p3': 70,
 };
 
 /** The spine row of a main quest id, or undefined (a side quest, or an id not in the spine). */

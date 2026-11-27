@@ -8,3 +8,5 @@ import './coastAndFort';
 import './sideValve';
 import './party';
 import './mownScar';
+import './coalitionCamp';
+import './epilogue';

@@ -28,6 +28,12 @@ The Continentals regard queueing as the highest form of civic cooperation. The q
 
 A town activity on the Grand Platz. The player joins the end and waits.
 
+## Everyday
+
+- **Notice:** "This queue formed by habit. Please join it." The ticket board on queue post 4 shows "4 of 4,311".
+- **Rules:** a gnome may leave the queue to buy bread, if someone holds the place and the bread is shared with them. A bedroll on the bench counts as a place.
+- **Sayings:** "I was here before the queue." "No. The queue was here before you."
+
 ## Loose threads
 
 What is at the front.

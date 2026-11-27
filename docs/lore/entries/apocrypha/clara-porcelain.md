@@ -8,8 +8,8 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [Clara of Mossy Wood]
-sources: [docs/design/gnome-theft-auto/story.md]
-related: [tall-house-porch, hollow-oak-support-stump, mossy-wood, ride-on-lowrider]
+sources: [docs/design/gnome-theft-auto/story.md, docs/design/gnome-theft-auto/characters.md, docs/design/gnome-theft-auto/story-outline.md, games/gnome-theft-auto/src/cutscene/cast.ts, games/gnome-theft-auto/src/cutscene/castIntros.ts]
+related: [tall-house-porch, hollow-oak-support-stump, mossy-wood, ride-on-lowrider, vesper-thorne, the-unmowed, elder-bracken-gta, sorrel-tillbrook]
 ---
 
 A finely cracked porcelain gnome hiding inside a hollow log near Mossy Wood's boarded-up porch, organizing midnight escapes for fellow Tall House refugees.
@@ -25,6 +25,16 @@ The refugees' padded bunker is in Mossy Wood, beside the standing-stone ring of 
 ## What gnomes say
 
 "Drive slow over speed bumps when Clara's in the passenger seat, or you'll break her heart—and her ribs."
+
+## The truth
+Clara keeps the porcelain refuge and leads escaped Tall House gnomes to safety. She wants every cracked gnome to reach the oak stump, and fears speed bumps and yellow light. Secret: she once shared the porch with Vesper and knows him by his first crack, so she cannot hate him. Home: a hollow log by the Tall House porch; work: the refuge in the hollow oak stump. Elder Bracken gives the refuge ground; Sorrel broadcasts her safe-house hours. Voice: soft, hushed, precise, slightly formal, leaving a line unspoken when it hurts; she counts gently ("Four tonight. Four." / "Slowly, please. We break in the small places.").
+
+Arc: side quests only in acts I-III (the refugee runs); in act IV she shows the player Vesper's old hairline crack and asks that he be stopped, not shattered (#66): "Stop him. Do not break him."
+
+## In the games
+
+- Cast look (`src/cutscene/cast.ts`, preset `clara`): white hat, pale dress, porcelain skin, no beard, holds a porcelain lantern, scale 1.4. Intro card (`src/cutscene/castIntros.ts`): "Keeper of the refuge." / "Leads cracked gnomes to the oak stump. Counts them gently."
+- Story rows: #66 m66-porcelain-hearts (her plea is carried by Pip's call in #70). Home in the game: `tall-house-porch`.
 
 ## Loose threads
 

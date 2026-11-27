@@ -28,6 +28,13 @@ The camp sits on a firm gravel spit, which is why the reeds there are tall and t
 
 Planned (batch 3). The cult-camp site in the Loch Moss area, with the big tent of Mother Saxifrage Wader at its centre and the Standing Lady on a sand mound before it. Quests 25 (`m25-one-leg-to-stand-on`) and 51 (`m51-the-flock-stands`) are set here. E17 builds the camp: the ritual circle, the big tent, grey washing, the tea urn and the rota board. Quests `sq-flock-errands` and `sq-flock-vigil`; achievements "Birds of a Feather" and "Sat Down" (`gta-birds-of-a-feather`, `gta-sat-down`).
 
+## Everyday
+
+- **Shops and stalls:** The tea urn by the big tent serves reed tea (a cup for every wobble, a cup for every thought, free to anyone who stands). A biscuit tin on the urn is marked "FOR THE LADY'S GUESTS", and the guests are always the Flock.
+- **Notices:** The rota board in Plover's chalk: Mon tea (Sedge), Tue NO SITTING, Wed washing (Bulrush), Thu wobble watch (Plover), Fri and Sat Godwit owes tea, Sun stand. A tick-box reads "TODAY IS: TUESDAY / NOT TUESDAY (tick one, carefully)". Grey washing on the line; no pink.
+- **Sayings and habits:** "Stand as you are able." "A wobble is a thought, and a thought is a cup of reed tea." At sundown everyone changes legs together, which is the closest thing the camp has to a clock.
+- **Small history:** The camp was a place to rest. The Lady arrived on the second day, after a delivery went to the wrong address, and was never sent back.
+
 ## Loose threads
 
 Who first stood the flamingo upright, and why she faces west.

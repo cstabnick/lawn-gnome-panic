@@ -27,6 +27,13 @@ Acorns from your own tree are honest acorns, so the oak does not break Turfton's
 
 Built by epic E16 (R-213): x 60..140, z 505..565 in Cloverfield, gate on the west side by the south road. The player buys it at the For Sale board (or in the Ledger app) for 2,200 Acorns: 300 down and the rest as a loan from the First Kiln Bank, 10% on top (see kiln-debt). Eight beds (radishes, carrots, cabbages, pumpkins), a seed rack, a stall by the gate, a run-down farmhouse and barn, and an orchard on the south wall whose apples keep rolling over it. An oak planted on the oak spot grows in about forty minutes, then gives a shake of acorns every ten minutes. Farmer Bramble knows who holds the deed (`sq-windfall-croft-deed`). Region tag `cloverfield`. Not a main-quest location.
 
+## Everyday
+
+- **Shops and stalls:** The gate stall takes whatever the beds give: radishes, carrots, cabbages, pumpkins, at the going rate, and a crate marked "Apples free. Please." under the orchard wall. The seed rack is honest and cheap.
+- **Notices:** The For Sale board at the road has been repainted four times and says "A bargain" in the newest hand. The farmhouse door has a note: "Back at harvest. Fed the cat. Took the cat."
+- **Sayings and habits:** "Plant it, forget it, thank it." Neighbours leave a dropped apple where it lands out of respect, then pick it up. Everyone in Cloverfield has an opinion on the oak and none have planted one.
+- **Small history:** The orchard was planted by the first owner for his wife. The wall was built to keep the apples in. Neither has worked.
+
 ## Loose threads
 
 Why the last owner left.

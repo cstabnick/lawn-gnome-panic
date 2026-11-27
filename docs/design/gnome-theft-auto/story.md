@@ -120,57 +120,31 @@ The Gnomiverse has serious bones. In **Fescue** (*Gnomes of Gnomomia*), gnomes a
 
 ## 6. High-Level Chapters (Acts & Mission Arcs)
 
-### Prologue: *Fresh Out the Kiln* (Turfton)
-- **Beats:** Arrival at `SPAWN`, Pip's botched mower-jacking, escaping the Hat Watch, meeting Tansy at *Side-Valve Salvage*, discovering the glowing Golden Acorn in the stolen mower.
+The main story is built as **70 main quests in four acts** (rows 1-70). The written source of truth is [story-outline.md](story-outline.md); the older five-chapter plan (a prologue and chapters 1-5) is superseded by it wherever they differ, and the per-quest storyboards of the old plan are replaced by the row table in section 9. Places, names and the four parts of the Grand Combine come from the E04 spine and rulings R-158..R-167 and R-229..R-235 in [rulings.md](../../lore/rulings.md).
 
-### Chapter 1: *Acorns & Alibis* (Turfton Downtown)
-- **Focus:** Groundwork, street hustle, paying down your **5,000-Acorn Kiln-Debt** (bought up by *Clay-Mart Collections*), and learning Turfton's grid, guns, and vehicle classes.
-- **Key Beats:**
-  - **Playable Opening Contract — *"First Contract"* (`src/quests/defs.ts`, Live In-Game):** To make fast acorns, Pip sends you to **The Mulch Club** (`x: -16, z: -30`, block `(-30, -30)`). Inside the back room, **Don Compost** taps his armrest three times, lays out three wanted posters, and points: crack the three gold-hatted rogues—**Dandy Dibbler** (Mossy Wood, hiding behind a toadstool with three crates of Don Compost's acorn-cigars and counterfeit "camouflage" gold paint), **Gordie Gravelbottom** (Frostbite Fells, dodging an overdue tab near Thermos Theo's bend with a missing Black Dew tanker manifest), and **Sandy Spadewell** (The Dust Flats, skipping pebbles on the alkali pan and ducking behind cacti whenever a Crop Duster flies over)—earning the *Made Gnome* (`Wiseguy Hat`) reward.
-  - Repossess three "delinquent" Push-Mower Bikes for Tansy (only to realize the owners are Cloverfield farmers being squeezed by the HOA), putting another dent in the Kiln-Debt.
-  - **Vesper's First Visit:** Vesper Thorne personally walks into *Side-Valve Salvage* in spotless porcelain, politely compliments your hat, serves Tansy a 48-hour foreclosure lien, and warns you not to open the Fescue crate containing the **Golden Acorn** ("Seed-Cell").
-  - **City Hall Backroom:** **Councilwoman Juniper Vance** hires you off-the-books to tail **Mayor Barnaby "Two-Coat" Mulch**—catching him secretly signing median-lease kickbacks to Vesper.
-  - Break into the **Turfton Glaze & Tax Office** to steal back Tansy's deed—discovering Vesper's blueprint for **The Grand Combine**, which requires a Fescue **Golden Acorn** as its ignition core.
-- **Climax:** A high-speed getaway through downtown in a stolen **Combine Harvester** (`combine`), smashing through HOA roadblocks while Pip hangs off the ladder firing an SMG.
-- **Escalated Setpiece — *The Gnorwin Clayfoot Boot Float Hijack*:** During Turfton's annual *Founder's Trim Day* parade, you hijack a 30-foot papier-mâché parade float shaped like Gnorwin Clayfoot's mud-caked boot, drifting it sideways through three acorn-pretzel carts while Red Caps and Blue Caps pelting each other accidentally provide cover.
+### Act I: *Fresh Glaze* (rows 1-15)
+- **Question:** Can the player pay their way out, and where do they live?
+- **Where:** Turfton downtown, the Mulch Club's first-contract tour (Mossy Wood, Frostbite Fells, the Dust Flats), the Underspan, Patio Heights, the Even-Estates site, the canal and Route South.
+- **How it goes:** The player arrives fired and owing a Kiln-Debt, takes a loan and a flat at Saucer Court, and runs one small errand after another for people who each want one thing. Vesper Thorne starts as a name on an eviction notice.
+- **How it ends:** *Founder's Boot & The Kangaroo Court* (row 15, three parts) crashes the HOA tribunal, makes Juniper an ally and closes on Vesper's threat. Tension 3 to 6.
 
-### Chapter 2: *Black Dew & Greenbacks* (Cloverfield Farms & Mossy Wood)
-- **Focus:** Leaving the city grid via the `south` and `west` highways (`HIGHWAYS`). Exploring biomes, convoy heists, and Fescue lore.
-- **Key Beats:**
-  - **Cloverfield Farms:** Help Granny Gnertrude defend her acorn silos from HOA "Code Enforcement" squads and settle the rest of your **Kiln-Debt** by hijacking a Black Dew tanker convoy on the `south` highway.
-  - **Vesper's Offer:** At a highway diner, Vesper corners you alone and offers to wipe Tansy's lien *and* give you a patio penthouse if you hand over the **Golden Acorn**—establishing his chillingly reasonable "order over chaos" worldview.
-  - **Mossy Wood:** Track a missing shipment into the deep woods, where **The Unmowed** (Fescue exiles) ambush you with tangled vines and an ancient **Stopping Stone** shard. **Pip** confronts his own Fescue exile when an Elder recognizes his Potsworth glaze and calls him a traitor for loving engines, while **Sorrel Tillbrook** (off-air from *88.7 Fescue Public Radio*) quietly vouches for the crew's nerve.
-  - **The Serious Turn:** **Elder Bracken** shows the protagonist a cracked earthenware tablet: *the Grand Combine Vesper is building—armored with plates welded out at the Compost Heap—isn't a Turfton toy; it's patterned after Fescue's original Mower.* For the first time, the jokes drop. Pip asks quietly: *"Wait... they're really gonna level the whole lawn?"*
-- **Escalated Setpiece — *The Cloverfield Sprinkler Gauntlet*:** Tow Granny Gnertrude's armored acorn silo on a flatbed behind a souped-up Ride-On Mower while weaving through synchronized, high-pressure oscillating sprinklers (spinning out your tires and chipping your glaze!) and dodging Reginald Vance's laser-level squad.
+### Act II: *Turf & Dew* (rows 16-35)
+- **Question:** Will the player take Vesper's deal, and who is paying for his war?
+- **Where:** Cloverfield, Route South, Mossy Wood, Loamdeep, Wader's Rest, Trellisdown, Hedgeworth, the Speedway, the canal, and back to Side-Valve Salvage.
+- **How it goes:** The Kiln-Debt is cleared at the start; from then the player works for the crew. Vesper offers a penthouse at the diner, is refused and keeps the offer open while the HOA tightens every lane. The Cracked Tablet shows the Grand Combine is patterned on Fescue's Mower. Edges of the map are planted: a mole town, a one-legged flock, the Countess's vineyard.
+- **How it ends:** *The Salvage Raid* (row 35, three parts): Cam sells the bench-lock code, Vesper takes the Golden Acorn in person, Pip's arm cracks off, and the crew flees north. Tension 4 to 9.
 
-### Chapter 3: *Cold Clay* (Frostbite Fells)
-- **Focus:** Betrayal, exile, tundra survival, and rebuilding the crew.
-- **Key Beats:**
-  - **The Betrayal & Ambush:** A trusted **Carburettor** lieutenant—bribed by Vesper with an exclusive Patio Heights racing charter—sells out *Side-Valve Salvage*'s location and hands over the **Golden Acorn** ignition core. *Side-Valve Salvage* is raided and hosed down (Tansy slips out using a spare key to the back-alley **Under-Deck** storm drain). In narrative drama (R-016/R-021 gameplay remains non-lethal), Pip's clay arm cracks clean off shielding your escape, and the protagonist flees north via the **Ring Road** (`ring-nw`, where Local 404 leaves potholes deep enough to swallow HOA vans) into **Frostbite Fells**.
-  - **Tundra Hustle:** Hide out in a frozen cabin, run Black Dew drift-smuggling runs across frozen lakes using the default `@lawn/vehicle` handling (or `Simcade` / `Drift Mower` in Options > Cheats > Driving realism) for the remaining loyal Carburettors, and patch Pip's arm back together using **Kiln-Resin** from an abandoned shrine.
-  - **The Plan:** Tansy surfaces via encrypted snail-mail (literally a snail). With Vesper now holding the Golden Acorn to power the Grand Combine, the crew needs **air superiority** and **the Unmowed's Stopping Stone**. That means hitting **The Dust Flats**.
-- **Escalated Setpiece — *The Frozen Birdbath Derby*:** A 12-mower demolition derby across Frostbite Fells' frozen duck pond while HOA snowplows try to salt the ice under your tires and Father Loam cheers from a snowmobile.
+### Act III: *Cold Clay, Far Edges* (rows 36-53)
+- **Question:** Can a broken crew find friends at the edges of the map before the Combine is finished?
+- **Where:** Frostbite Fells, Snowcap Rise, Capwood, Pinwheel Ridge, Rutbottom, Saltbucket Shore, Rootwell, Hedgeworth, Loamdeep, Trellisdown, Wader's Rest.
+- **How it goes:** A radio fished from Pail Pond shows the Combine is built in four parts: power (Pinwheel Ridge), guidance (the Anthill Observatory, Rootwell), money (the Countess at Trellisdown) and the cutting deck (Hedgeworth Links). The player finds each part and a friend in each place: skiers, rally racers, a pirate, a professor, golfers, moles, a flock. The Flock of the One Leg give the date of the test cut.
+- **How it ends:** *The Test Cut* (row 52, four parts): the Combine cuts a line through Hedgeworth and Vesper names the date of the Even Cut over every loudspeaker. Row 53 is the cold-air coda: Bracken lends the Stopping Stone and the crew heads for the Dust Flats. Tension 4 to 8.
 
-### Chapter 4: *Sandpit Protocol* (The Dust Flats: Fort Sandpit & Airfield)
-- **Focus:** Military heist, planes, parachutes, and the Whirligig.
-- **Key Beats:**
-  - **Prep 1 — The Runway:** Sneak into the **Desert Airfield** (`AIRFIELD`) at `x: 480, z: -110`, steal a **Crop Duster** (`plane`), and fly low over the Dust Flats to drop flares for the Unmowed's covert team.
-  - **Prep 2 — Bailout:** Parachute directly into **Fort Sandpit** (`BASE`, `x: 340..408, z: -34..34`) to avoid the main gate's Spade Guard turrets.
-  - **The Heist:** Fight through the sandbox walls, raise **3-Hat Heat**, and lift **The Whirligig** (`whirligig`) off the pad (`padX: 358, padZ: -8`) while Commander Diggs chases you on a Zero-Turn.
-  - **The Truce:** Mid-air, Diggs radios in—Vesper's HOA goons just locked Fort Sandpit's armory remotely and declared the Spade Guard "redundant." Diggs mutters: *"Nobody fires the Guard. Especially not a guy in a porcelain hat."*
-- **Grounded Setpiece — *Airfield Scramble & Hot-Swap Bailout*:** When your Crop Duster takes flak over the Dust Flats, you bail out under your automatic parachute (`E`), land on Fort Sandpit's perimeter wall, and hijack the **Whirligig** off its pad while Diggs pursues (keeping every beat 100% playable on mobile touch and gamepad).
-
-### Chapter 5: *The Even Cut* (Turfton Finale)
-- **Focus:** Multi-angle finale combining driving, shooting, flying, and Fescue's oldest myth.
-- **Key Beats:**
-  - **Pre-Finale Setpiece — *The HOA Tribunal Ambush*:** Vesper drags Tansy's garage and **Councilwoman Juniper Vance** into an emergency kangaroo-court HOA Tribunal in the Turfton Amphitheater. Mid-closing-argument, Pip crashes a Combine Harvester *straight through the jury box*, turning a zoning hearing into a 3-Hat rolling shootout.
-  - Vesper activates **The Grand Combine** (powered by the stolen **Golden Acorn**)—a skyscraper-sized, autonomous harvester rolling down `x = 0` toward downtown Turfton, escorted by HOA enforcers and bribed Hat Watch cruisers.
-  - **Phase 1 (Air):** Pilot the **Crop Duster** / **Whirligig** to strafe the Grand Combine's escort and parachute onto its moving deck (`E` bailout).
-  - **Phase 2 (Deck):** Fight across the Combine's roof while Vesper monologues over the PA system about "eliminating chaos, weeds, and crooked hats forever," culminating in a tense rooftop standoff with Vesper himself.
-  - **Phase 3 (The Jam & The Choice):** Ram the **Fescue Stopping Stone** into the Combine's main intake—honoring Gnorwin Clayfoot's original move—and bail out as the machine locks up. **Player Choice:**
-    - *Ending A — The Unmowed Monument:* Leave the Golden Acorn jammed inside the Combine and turn downtown's scar into wild clover with Elder Bracken and Councilwoman Vance.
-    - *Ending B — Turfton Rewired:* Pull the Golden Acorn back out for Tansy and the Carburettors to power Turfton's grid—keeping the neon, the races, and the noise alive.
-- **Epilogue:** *Side-Valve Salvage* reopens, Commander Diggs drinks at *The Gnomecino*, Mayor Mulch quietly repaints himself a third coat of glossy red to pretend he was on your side the whole time, the Grand Combine's submerged chassis in the Southern Drainage Canal is rumored to still hum on rainy nights, and your phone buzzes with a text from **Club Gnome** about a "small job at a bowling alley."
+### Act IV: *Sandpit Protocol / The Even Cut* (rows 54-70)
+- **Question:** Can a coalition of outcasts take a fort and stop a god-machine, and what will Turfton be?
+- **Where:** The Dust Flats, Fort Sandpit and the Desert Airfield, Pebblewick, the Underspan, Pardonlin, Turfton, the Unmown, the Hatbrim, the center meridian.
+- **How it goes:** The crew steals the Whirligig from Fort Sandpit, turns Commander Diggs and the Spade Guard (the moles dig the armory open), frees or abandons Cam, and gathers every faction at one table in *All Hats* (row 64, four parts). Per R-234: the Mayor is fetched from Café Pardon in Pardonlin (row 63), the Countess's first vine goes to the Unmown (row 65), and the coalition's beacon for the longest day is lit on the Bobble, the Hatbrim's summit (row 64 part 2). Vesper then seizes City Hall and the Combine wakes.
+- **How it ends:** *The Even Cut* (row 70, four parts, final id `ch5-even-cut`): air support, the deck drop, the Gilded Lawn-Throne, then the Stopping Stone jams the machine and the player chooses Ending A (The Unmowed Monument) or B (Turfton Rewired). Vesper is stopped, not shattered. Tension 6 to 10, then 2 in the epilogue.
 
 ---
 
@@ -260,81 +234,97 @@ Each side quest pushes the Gnomiverse's lore forward while keeping the dry, sarc
 
 ## 9. Storyboarded Main Story Quests
 
-### Quest 1: *"Mower's Keepers"* (Chapter 1 — Early Game)
-- **Trigger:** Talk to **Tansy** at *Side-Valve Salvage* (`x: -120, z: 60` area) after the Prologue.
-- **Briefing (Cutscene/Dialogue):**  
-  Tansy is welding a Push-Mower Bike with a kitchen blowtorch.  
-  > **Tansy:** *"The HOA put a 'boot' on three of my client's bikes. Technically it's a giant clothespin, and technically it's illegal for me to touch it. Good thing you're not me."*
-- **Beats:**
-  1. **Go to Downtown Block (`x: 60, z: -60`):** Locate three clamped Push-Mower Bikes guarded by two HOA Enforcers (using `Pistol`s).
-  2. **The Complication:** The moment you hop on the first bike (`E`), a Hat Watch cruiser spawns nearby—someone called in a noise complaint. **Heat jumps to 1 Hat.**
-  3. **Objective:** Drive all three bikes (or tow/clear the lot and ride the target bike) back to *Side-Valve Salvage* while losing the Watch out of `SEEN_DISTANCE` (`30` units).
-  4. **The Twist:** On the third bike's handlebars, you find an HOA eviction notice addressed to **Tansy's own garage**.
-- **Gameplay Systems Used:** `vehicles.ts` (`push-bike`), `police.ts` (1-Hat Watch pursuit + cooling), `weapons.ts` (optional firefight), `hud.ts` (waypoint + objective banner).
+The 70 built main quests, from [story-outline.md](story-outline.md) and `games/gnome-theft-auto/src/quests/story/`. Ids in code format are the saved quest ids: kept quests keep their old ids (`ch1-`, `ch2-`, `ch3-`, `ch4-`, `ch5-` prefixes), new ones are `m<NN>-<slug>`. An extended quest's row id is its **final** part (what a save records as finished); earlier parts are `<id>-p1`, `-p2`, ... chained before it. Rulings R-229..R-235 change a few beats and are noted in the rows they touch. The full beat lists, cast and objective kinds are in the outline.
 
-### Quest 2: *"Dew Run on Route South"* (Chapter 2 — Mid Game Convoy Heist)
-- **Trigger:** Meet **Granny Gnertrude** at her Cloverfield Farmhouse (`south` highway).
-- **Briefing:**  
-  > **Granny Gnertrude:** *"Vesper's boys are draining the Cloverfield Dew-Wells dry. Go park a Combine across the south highway, stop their convoy, and bring me the fuel. And try not to splatter my prize pumpkins—they're load-bearing."*
-- **Beats:**
-  1. **Acquire Heavy Iron:** Steal a **Combine Harvester** (`combine`) from a nearby Cloverfield barn.
-  2. **The Blockade:** Drive onto the `south` highway bend (`[0, 260] -> [-40, 320]`) and block the lane before the HOA convoy timer expires.
-  3. **The Ambush:** Two **Ride-On Mowers** and an armored **Zero-Turn** escort screech to a halt. HOA guards dismount and open fire. Use the Combine as cover and clear them with the `Shotgun` or `Rifle`.
-  4. **The Getaway:** Ditch the wrecked Combine, hop into the lead Dew-Hauler Ride-On, and race back to Granny's barn while dodging a **2-Hat Watch** response.
-- **Climax / Dialogue:** Granny inspects the Dew canister, sniffs it, and grins: *"Pure 87-octane. Now we can cook."*
+### Act I: *Fresh Glaze* (rows 1-15)
 
-### Quest 3: *"The Sandpit Drop"* (Chapter 4 — Late Game Military Heist)
-- **Trigger:** Meet **Tansy** and **Pip** (arm freshly glued with Kiln-Resin) at the **Dust Flats** overlook (`x: 280, z: 40`).
-- **Briefing:**  
-  > **Pip:** *"Okay, hear me out. The gate at Fort Sandpit is guarded by five Spade Guard snipers. So we don't use the gate."*  
-  > **Player:** *(stares blankly)*  
-  > **Pip:** *"We steal a Crop Duster from the airfield, fly over the wall, and jump out without checking if the parachute actually works."*
-- **Beats:**
-  1. **Infiltrate Airfield (`AIRFIELD`, `x: 480, z: -110`):** Sneak or shoot past two Spade Guard patrols on the apron and board a **Crop Duster** (`plane`).
-  2. **Takeoff:** Build airspeed above `stallSpeed` (`22`) down the 170-unit runway (`yaw: Math.PI / 2`) and pull up (`Space`).
-  3. **The Drop:** Fly west toward **Fort Sandpit** (`BASE`, `x: 340..408, z: -34..34`). When the HUD target ring turns green above the base, hit `E` to bail out.
-  4. **Freefall & Landing:** Automatic parachute deploys after ~1s. Steer your glide onto the Whirligig landing pad (`padX: 358, padZ: -8`).
-  5. **The Lift:** Entering Fort Sandpit immediately triggers **2-Hat Heat**; boarding **The Whirligig** (`whirligig`) spikes it to **3-Hat Heat**. Climb straight up (`Space`, `ceiling: 100`) over the sandbox walls while Spade Guard shots ping off the blades, then fly back to the safehouse to clear heat.
-- **Gameplay Systems Used:** `vehicles.ts` (`plane` takeoff/stall, `whirligig` vertical flight), `player.ts` (parachute bailout & glide), `police.ts` (Fort Sandpit guards + 3-Hat Heat).
+| Row | Quest id | Title | Beat |
+|---|---|---|---|
+| 1 | `prologue-fresh-kiln` | Fresh Out the Kiln | Pip botches a Ride-On jacking; follow him to Side-Valve Salvage and meet Tansy. |
+| 2 | `m02-roof-on-credit` | A Roof on Credit | Follow Mabel's cab to the First Kiln Bank for a loan on flat 3B. |
+| 3 | `first-contract` | First Contract | Don Compost's three wanted posters: crack Dibbler, Gravelbottom and Spadewell. |
+| 4 | `ch1-mowers-keepers` | Mower's Keepers | Repo two clamped push-bikes; the eviction notice names Vesper Thorne. |
+| 5 | `m05-sweepers-wages` | Sweeper's Wages | Run a carburettor to the Carburettors' night meet under the Unfinished Span with Cam. |
+| 6 | `ch1-two-coat-tail` | Two-Coat Tail | Tail Mayor Mulch to Patio Heights; photograph the kickback and meet Vesper. |
+| 7 | `m07-even-estates` | Even-Estates | Drive Juniper to the Levelright site and photograph the permits. |
+| 8 | `ch1-tax-break-in` | The Glaze & Tax Break-In | Steal Tansy's deed and the Grand Combine blueprint, smash back in a Buck-Iron Combine. |
+| 9 | `m09-where-asphalt-sleeps` | Where Asphalt Sleeps | Trace Bodega's cat Asphalt by three sightings to the Gutter Bowls. |
+| 10 | `m10-under-the-span` | Under the Span | Trade salvage parts to Hogweed Sprocket for Pip's radio jammer. |
+| 11 | `m11-the-dons-cigars` | The Don's Cigars | Run the Don's acorn-cigar crates past Brenda's toll and an HOA inspection. |
+| 12 | `m12-quarter-inch-at-home` | Quarter-Inch at Home | Forge a pass, swap Reginald's calipers in townhouse 404 and see the Vance photograph. |
+| 13 | `m13-diner-on-route-south` | Diner on Route South | Collect Sage Ladle's debt by serving six plates at the diner rush. |
+| 14 | `m14-drainpipe-court` | Drainpipe Court | Win Pip's toolbox back at the court; Pip says why he left Fescue (the sincere beat, no gag). |
+| 15 | `ch1-founders-boot` | Founder's Boot & The Kangaroo Court | Extended. `-p1` Parade Permits: lift the Boot float's keys. `-p2` Dress Rehearsal: night run through the Even-Estates site. Final: crash the HOA tribunal; Vesper closes the act. |
 
-### Quest 4: *"Founder's Boot & The Kangaroo Court"* (Chapter 1/2 Bridge — Parade Heist & HOA Tribunal Ambush)
-- **Trigger:** Tansy gets served a same-day demolition summons for *Side-Valve Salvage* outside the **Turfton Amphitheater**.
-- **Briefing (Cutscene/Dialogue):**  
-  > **Tansy:** *"Vesper scheduled an emergency HOA zoning hearing during the Founder's Trim Day parade so nobody can protest. He's got Reginald Vance measuring my driveway with brass calipers."*  
-  > **Pip:** *"Okay, hear me out. What if we steal the 30-foot Gnorwin Clayfoot Boot float, fill the toe with fireworks, and park it inside the jury box?"*
-- **Beats:**
-  1. **The Parade Snatch (`x: 0, z: -120`):** Infiltrate the *Founder's Trim Day* parade route on `ROAD_LINES`. Hijack **Gnorwin's Boot Parade Float** while marching-band gnomes scatter (`poseHandsUp`) and Red Caps / Blue Caps accidentally shoot each other across the avenue.
-  2. **Heavy Drift:** Drive the massive, sluggish Boot Float through downtown while dodging **2-Hat Hat Watch** roadblocks and firing the float's confetti-and-acorn horn cannon.
-  3. **The Tribunal Ambush:** Crash the Boot Float straight through the Turfton Amphitheater's cardboard archway mid-verdict. Vesper flees in an armored **Zero-Turn**, leaving **Reginald Vance** and six HOA Enforcers to fight you across the amphitheater benches.
-  4. **The Escape:** Clear the enforcers with the **Leaf-Blower Cannon** (sending Vance's clipboard flying into the upper bleachers), grab Tansy's stamped deed off the podium, and bail out on Pip's getaway **Combine Harvester** before the **4-Hat HOA Van** arrives.
-- **Gameplay Systems Used:** Heavy ramming vehicle physics, multi-faction crossfire (`police.ts` + Red/Blue Caps), arena shootout, 4-Hat HOA escalation.
+### Act II: *Turf & Dew* (rows 16-35)
 
-### Quest 5: *"Kiln-Resin & Black Ice"* (Chapter 3 — Frostbite Fells Survival)
-- **Trigger:** Automatic start after fleeing north up the `north` highway following the *Side-Valve Salvage* raid.
-- **Briefing:**  
-  > **Pip (cradling one clay arm):** *"I'm fine! It's just a hairline fracture! Wait—did I just hear my elbow rattle?"*  
-  > **Father Loam (over radio):** *"Bring him to the Frozen Duck Pond, my children. The Carburettors have Kiln-Resin, but the HOA's salt-plows are already closing the ice."*
-- **Beats:**
-  1. **Low-Visibility Run:** Drive a battered **Push-Mower Bike** (or **Ride-On Lowrider**) through a blinding Frostbite Fells snow-squall while Pip shouts directions from the passenger rack.
-  2. **The Salt-Plow Blockade:** Two HOA snowplows block the bridge to the Frozen Duck Pond. Use **Acorn Mortar** fire to knock their headlights out and slip past on the shoulder.
-  3. **The Frozen Birdbath Derby:** Meet Father Loam and three Carburettor racers on the ice. While Loam mixes the **Kiln-Resin** to glue Pip's arm back on, survive a 90-second demolition derby against six HOA pursuit mowers on zero-traction black ice.
-  4. **The Snail-Mail Reveal:** Just as Pip's arm sets, one of Shelldon's racing snails crawls out of a thermos with a micro-scroll from Tansy: *"Found the Stopping Stone. Meet me in the Dust Flats."*
-- **Gameplay Systems Used:** Low-friction ice handling, timed survival/derby wave defense, escort protection, story radio triggers.
+| Row | Quest id | Title | Beat |
+|---|---|---|---|
+| 16 | `ch2-dew-run` | Dew Run on Route South | Block the highway and hijack the Black Dew convoy for Granny. |
+| 17 | `m17-the-dew-buyer` | The Dew Buyer | Tail the unmarked tanker at dusk west to its buyer at Trellisdown. |
+| 18 | `ch2-sprinkler-gauntlet` | The Cloverfield Sprinkler Gauntlet | Crack the laser-level surveyors and tow Granny's armoured silo through the sprinklers. |
+| 19 | `m19-squall-box-forecast` | The Squall-Box Forecast | Move Rooster's three barometers to three fields without bouncing. |
+| 20 | `ch2-vespers-offer` | Order Over Chaos | Vesper offers the penthouse at the diner; the player refuses and shakes the pursuit. |
+| 21 | `m21-penthouse-viewing` | Penthouse Viewing | View the Double Pot penthouse; Cam is parking cars in an HOA vest. |
+| 22 | `m22-off-air` | Off Air | Tail the HOA van that confiscated Sorrel's rain tapes and take them back. |
+| 23 | `ch2-unmowed-tablet` | The Cracked Tablet | Elder Bracken shows the tablet: the Combine is patterned on Fescue's Mower (sincere, no gag). |
+| 24 | `m24-the-burrow-door` | The Burrow Door | Carry the small mole Nubbin away from his chasers to Loamdeep. |
+| 25 | `m25-one-leg-to-stand-on` | One Leg to Stand On | Stand on one leg through Mother Saxifrage's sermon to get Driftwood's raft back. |
+| 26 | `m26-the-knot-hole` | The Knot-Hole | Drive Pip to the Fence gap to look through the knot-hole (sincere). |
+| 27 | `m27-heap-of-trouble` | Heap of Trouble | Tail an HOA plate convoy north up the Ring Road at night. |
+| 28 | `m28-sibling-rivalry` | Sibling Rivalry | Escort Reginald to the Tattler to confirm the permits; Reginald corrects a spelling. |
+| 29 | `m29-the-kicked-board` | The Kicked Board | Follow the falling golf balls to the loose board and through to Hedgeworth. |
+| 30 | `m30-cams-big-night` | Cam's Big Night | Be Cam's pit crew at the Lost & Found Speedway. |
+| 31 | `m31-granny-cracks` | Granny Cracks | Crack the bailiffs who chipped Granny and drive her smoothly to the Glaze Clinic. |
+| 32 | `m32-driftwoods-chart` | Driftwood's Chart | Tow Driftwood's raft down the Southern Drainage Canal toward the Saltwater. |
+| 33 | `m33-the-bench-lock` | The Bench Lock | Fit the new lock to the bench where the Golden Acorn sleeps; Cam is there. |
+| 34 | `m34-forty-seven-wrenches` | Forty-Seven Wrenches | Fetch the guests for Pip's party at the bay; Cam's call turns it sour. |
+| 35 | `ch3-salvage-raid` | The Salvage Raid | Extended. `-p1` Tuesday: trail Cam's route to the Patio Gate. `-p2` Hold the Bay: the bench lock opens with Cam's code. Final: Vesper takes the acorn in person, Pip's arm cracks off, the crew flees north. |
 
-### Quest 6: *"The Even Cut"* (Chapter 5 — The Finale)
-- **Trigger:** Meet **Tansy**, **Pip**, **Granny Gnertrude**, and **Commander Diggs** at the Dust Flats safehouse with the **Whirligig**, **Crop Duster**, and **Fescue Stopping Stone** secured.
-- **Briefing:**  
-  > **Tansy:** *"Vesper's Grand Combine just crossed `z = -300` on the center meridian. In four minutes it hits downtown, and it's set to zero-millimeter scalp."*  
-  > **Commander Diggs:** *"Spade Guard's with you. Nobody levels my sandbox—or your city—without a permit."*  
-  > **Pip:** *"Let's go jam a god-machine with a rock!"*
-- **Beats:**
-  1. **Phase 1 — Air Support (`x: 0`, moving south):** Pilot the **Whirligig** (or **Crop Duster**) down Turfton's main boulevard while Pip mans the door-mounted **Acorn Mortar**. Destroy four HOA **Code-Enforcement Vans** and two escort Zero-Turns clearing the Combine's path.
-  2. **Phase 2 — The Deck Drop:** When the Grand Combine's outer shield grates open, hover over the moving roof (`speed: 18`) and hit `E` to parachute onto the upper deck while Diggs provides strafing cover.
-  3. **Phase 3 — Deck Firefight:** Fight forward across three rolling tiers of the Combine against Vesper's elite **Porcelain Guard** (armed with `Rifle`s and `Garden-Hose Whip`s) while Vesper monologues over the 40-foot PA horns: *"Look at yourselves! Chipped! Muddy! Unregulated! Tomorrow, Turfton will be silent, smooth, and beige!"*
-  4. **Phase 4 — Boss Showdown (*The Gilded Lawn-Throne*):** On the bridge, Vesper pilots a gold-plated, hydraulic **Lawn-Throne Mech-Mower**. Use **Sprinkler Mines** and heavy gunfire to short out his hydraulics, knock his obsidian top-hat off, and crack his porcelain monocle (sending him fleeing via an emergency escape-glider into a municipal hedge).
-  5. **Phase 5 — The Jam:** Carry the **Fescue Stopping Stone** to the spinning main intake, trigger the cinematic slam, and sprint-parachute off the stern as the Grand Combine's blades lock up with a thunderous *CRUNCH* and the skyscraper-sized machine tips sideways into the southern drainage canal.
-- **Epilogue Cutscene:** Dawn breaks over Turfton. *Side-Valve Salvage* is being rebuilt with Baroness Brenda's lawn chairs, Gnoma is handing out free Acorn-Flour Cakes from her truck, and the protagonist's phone buzzes with a text from **Club Gnome**: *"Heard you're good with heavy machinery. Need a guy for a bowling alley."*
-- **Gameplay Systems Used:** `whirligig` / `plane` air-to-ground combat, moving-vehicle parachute landing, multi-phase boss fight, `stopping-stone` objective carry, full-city **3-Hat + 4-Hat** chaos.
+### Act III: *Cold Clay, Far Edges* (rows 36-53)
+
+| Row | Quest id | Title | Beat |
+|---|---|---|---|
+| 36 | `ch3-kiln-resin-ice` | Kiln-Resin & Black Ice | Fetch Kiln-Resin, crack the salt-plow drivers, survive the Frozen Birdbath Derby. |
+| 37 | `m37-snowdrop-slope` | Snowdrop Slope | Lose the HOA plows on the slope and reach Gentian's lodge. |
+| 38 | `m38-pail-pond` | Pail Pond | Probe the ice for an HOA radio; it shows the Combine is built in four parts. |
+| 39 | `m39-couch-surfing` | Couch Surfing | Sneak back into Turfton in disguise and move Pip into flat 3B. |
+| 40 | `m40-the-capwood-run` | The Capwood Run | Win the mountain race so Lulu's Carburettors back the crew. |
+| 41 | `m41-pinwheel-ridge` | Pinwheel Ridge | Part one, power: free three pinwheels from the HOA cabling. |
+| 42 | `m42-rutbottom-impound` | Rutbottom Impound | Beat the HOA entry on Clary Mudguard's oval to free six impounded rides. |
+| 43 | `m43-saltbucket-boardwalk` | Saltbucket Boardwalk | Reach Driftwood's boardwalk and spot HOA barges at sea (sincere). |
+| 44 | `m44-the-bathtub-queen` | The Bathtub Queen | Board a barge, take its spare blades and outrun the convoy with Captain Bilge. |
+| 45 | `m45-rootwell-admissions` | Rootwell Admissions | Enrol at Rootwell as a mature student and find Betony. |
+| 46 | `m46-starfall-at-the-anthill` | Starfall at the Anthill | Part two, guidance. Extended. `-p1` Night Class. `-p2` The Sugar Toll. `-p3` The Lens. Final: Dean's Leap. |
+| 47 | `m47-hedgeworth-links` | Hedgeworth Links | Beat pro Basil Divot at one hole so Peony will hear the plan. |
+| 48 | `m48-the-groundskeepers-secret` | The Groundskeeper's Secret | Move Thrift's hidden mole family past Basil's trap-line (sincere). |
+| 49 | `m49-loamdeep` | Loamdeep | Do the Burrowfolk's three jobs; Loamdeep takes the crew in. |
+| 50 | `m50-trellisdown-tasting` | Trellisdown Tasting | Part three, money: slip into the Countess's tasting for the ledger; Vesper and the player share a frame. |
+| 51 | `m51-the-flock-stands` | The Flock Stands | Drive the Standing Lady to Hedgeworth with the Flock following on one leg. |
+| 52 | `m52-the-test-cut` | The Test Cut | Part four, the deck. Extended. `-p1` Tee Time. `-p2` Mow Line. `-p3` Against the Deck. Final: Through the Hedge; Vesper names the Even Cut. |
+| 53 | `ch3-tundra-drift-run` | Volatile on Ice | Bracken lends the Stopping Stone; run it to the Dust Flats Overlook past HOA spotters. |
+
+### Act IV: *Sandpit Protocol / The Even Cut* (rows 54-70)
+
+| Row | Quest id | Title | Beat |
+|---|---|---|---|
+| 54 | `m54-the-heist-board` | The Heist Board | Photograph Fort Sandpit's three sides and fetch Wally; Tansy lets Pip run a plan. |
+| 55 | `ch4-runway-flares` | Runway Flares | Clear the airfield apron, steal the Crop Duster and drop flares over the Dust Flats. |
+| 56 | `m56-mortar-for-a-mower` | A Mortar for a Mower | Fly night-low to Hogweed for a mortar and a parachute that almost certainly opens. |
+| 57 | `ch4-sandpit-drop` | The Sandpit Drop | Parachute into Fort Sandpit and steal the Whirligig. |
+| 58 | `m58-the-reeves-barn` | The Reeve's Barn | Fix Pebblewick's pump before the water cut-off; the Whirligig hides in the hay. |
+| 59 | `ch4-spade-truce` | Nobody Fires the Guard | Diggs turns on Vesper; crack the lockout enforcers at the sealed armory. |
+| 60 | `m60-the-moles-dig` | The Moles Dig | Escort the moles to dig under the wall; Diggs salutes the first mole out. |
+| 61 | `m61-diggs-medal` | Diggs's Medal | Fetch Diggs's medal from the HOA lost-property shed (sincere). |
+| 62 | `m62-cams-cell` | Cam's Cell | Break into the HOA lockup; free Cam or leave him (Ending A or B for the epilogue). |
+| 63 | `m63-four-taps` | Four Taps | The Don taps four times; fetch the Mayor from Café Pardon in Pardonlin (R-234) to the Mulch Club to sign. |
+| 64 | `m64-all-hats` | All Hats | Extended. `-p1` By Water. `-p2` By Air: the beacon goes up on the Bobble (R-234). `-p3` By Road. Final: By Root; every cap on one table, Tansy says "All hats." |
+| 65 | `m65-the-countess-relents` | The Countess Relents | Carry her first vine to the Unmown (R-234) for the key to the Combine's shield grates. |
+| 66 | `m66-porcelain-hearts` | Porcelain Hearts | Cross Clara's sealed porch with her (sincere, no gag). |
+| 67 | `m67-emergency-assessment` | Emergency Assessment | Vesper seizes City Hall; fight in with Reginald and free Juniper. |
+| 68 | `m68-lights-out` | Lights Out in Turfton | Dinner in flat 3B, drive each friend home, a hush on the roof the night before. |
+| 69 | `m69-the-combine-wakes` | The Combine Wakes | Dawn: evacuate the Even-Estates site as the Grand Combine leaves the Heap. |
+| 70 | `ch5-even-cut` | The Even Cut | Extended. `-p1` Air Support. `-p2` Deck Drop. `-p3` The Gilded Lawn-Throne. Final: The Jam & The Choice, with the Stopping Stone and Endings A or B. |
 
 ---
 
@@ -376,7 +366,7 @@ Callers (Rooster Weatherby on his windmill, Shelldon "No-Trail" Mucilage, Regina
 - **2-Hat Watch:** *"Two-Hat alert: an unidentified gnome has been seen leaving the Mulch Club by the back door, which is not the door for leaving."*
 - **3-Hat Watch:** *"BREAKING NEWS: an unidentified maniac is drifting a Zero-Turn Racer through downtown Turfton while launching acorns at municipal property!"*
 - **Things the player does** (one bulletin per achievement, repeated at most every 2 minutes): borrowing a mower, the Whirligig, an explosion, a crop-duster take-off, a skydive, the first contract, a townsgnome run over, a snow drift, a cracked gnome. News that happens with nobody driving waits for the next drive (R-029).
-- **Not built:** the 4-Hat "THE HOA" bulletin (the Watch tops out at three, R-028), and Post-Quest and Post-Chapter bulletins (the quests and chapters are not built yet).
+- **Not built:** the 4-Hat "THE HOA" bulletin (the Watch tops out at three, R-028), and Post-Quest and Post-Chapter bulletins (the quests are built; the bulletins are not).
 
 ---
 
@@ -413,7 +403,7 @@ All new toys honor the Gnomiverse's **no-gore fired-clay & garden-scale comedy**
 | **Mid-Air Mower-Jack** | Complete the Crop Duster to Whirligig mid-air grapple transfer. | *Aviator Acorn Goggles* (`head`) |
 | **Snail-Mail Saboteur** | Rig the underground alley snail races for Shelldon. | *Tinfoil Conspiracy Brim* (`head`) |
 | **Dry as a Bone** | Deliver Big Lou's VIP bowler hat without touching a single puddle. | *Microfiber Bowler* (`head`) |
-| **The Even Cut** | Jam the Grand Combine with the Stopping Stone and finish Chapter 5. | *Golden Stopping-Stone Charm* (`neck`) |
+| **The Even Cut** | Jam the Grand Combine with the Stopping Stone and finish the story. | *Golden Stopping-Stone Charm* (`neck`) |
 
 ---
 

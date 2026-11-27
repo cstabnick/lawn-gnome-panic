@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [the Continental garden, pardon]
 sources: [docs/lore/rulings.md#r-170, docs/lore/rulings.md#r-171, docs/lore/rulings.md#r-173, docs/lore/rulings.md#r-174, docs/lore/rulings.md#r-175, docs/lore/rulings.md#r-179, docs/lore/rulings.md#r-180, docs/lore/rulings.md#r-181, games/gnome-theft-auto/src/data/levels/pardonlin.level.json, games/gnome-theft-auto/src/data/regionThemes.json]
-related: [the-thymes, the-wickets, traffic-hat-wardens, trellisdown, the-anthill, hat-watch, bean-tower, grand-platz, unknown-pigeon, teacup-row, cafe-pardon, beetle-market, the-jardin, the-little-gardens, basin-quay, radio-adagio, ottavio-lento]
+related: [the-thymes, the-wickets, traffic-hat-wardens, trellisdown, the-anthill, hat-watch, bean-tower, grand-platz, unknown-pigeon, teacup-row, cafe-pardon, beetle-market, the-jardin, the-little-gardens, basin-quay, radio-adagio, ottavio-lento, pardonlin-old-town, pardonlin-left-bank, the-opera-hall, rue-haute, the-hatwheel, place-du-pot, the-square-of-perpetual-argument, the-folly, brigitte-levains-bakery]
 ---
 
 Another Tall One's garden west of Trellisdown, laid out as a continental formal garden: gravel walks, box-hedge parterres, clipped limes, terracotta pots crammed onto every sill and a long ornamental rill. Its gnomes are the Continentals, and their town is called "pardon", which is also its first word.
@@ -42,6 +42,15 @@ Town activities: queueing for nothing on the Grand Platz, the Baguette Round, si
 - Motifs: box-hedge parterres, clipped limes, gravel walks, terracotta pots, window boxes, bicycles.
 - Palette: bone and paper walls, slate and clay roofs, red and pink flowers.
 - In the game: theme `pardonlin` in `src/data/regionThemes.json`.
+
+## Everyday
+
+- **Shops:** the bakery (Brigitte Levain's, off the Rue Haute) opens when it is morning; the cheese shop, the chemist and the antiques shop keep the Rue Haute; every café on Teacup Row has "the best coffee on the Row" on a board. Nearly every shop closes for lunch, and the signs say so twice ("Harbour closed for lunch. Lunch closed for harbour.").
+- **Notices:** "Forms in triplicate, available in duplicate." "Lost dog. Found dog. Please settle between you." "Strike tomorrow, against the strike of next week." "Mime workshop: silent, but very full." Street signs are renamed in the town's voice: "Rue Haute (Please Be Brief)", "Avenue to the Hatwheel (Allow Several Laps)".
+- **Sayings and habits:** "Pardon" opens every sentence and closes most. Nobody crosses a road without a short queue; the Hatwheel is cycled round once more than strictly needed, "to be sure". Lunch is twelve to three. Dinner is "fifteen-oh-one to lunch".
+- **Food and drink:** baguettes of exactly eighty centimetres, soup "of the day: yesterday's", small, smaller and theoretical coffee.
+- **Feuds:** the Left Bank against the Old Town, over which bank the river is for. Neither bank has asked the river.
+- **History:** the Continentals say the town was laid out in one afternoon and has been apologising since.
 
 ## Loose threads
 

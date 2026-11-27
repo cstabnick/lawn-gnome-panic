@@ -17,10 +17,7 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'ch2-vespers-offer': { suite: 'story', expect: 'pass' },
   'ch3-kiln-resin-ice': { suite: 'story', expect: 'pass' },
   'ch3-tundra-drift-run': { suite: 'story', expect: 'pass' },
-  'ch4-runway-flares': { suite: 'story', expect: 'pass' },
-  'ch4-sandpit-drop': { suite: 'story', expect: 'pass' },
-  'ch4-spade-truce': { suite: 'story', expect: 'pass' },
-  'ch5-even-cut': { suite: 'story', variants: ['A', 'B'], expect: 'pass' },
+  // ch4-runway-flares, ch4-sandpit-drop, ch4-spade-truce, ch5-even-cut: plans live in their story files (quests/story/), E22.
   'sq-grid-truthers': { suite: 'side', expect: 'pass' },
   'sq-porcelain-blues': { suite: 'side', expect: 'pass' },
   'sq-fescue-fugitive': { suite: 'side', variants: ['A', 'B'], expect: 'pass' },

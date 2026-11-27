@@ -1,149 +1,116 @@
 # Director's notes: `even-cut-outro`
 
-The epilogue: the last scene of the game. Watch it at `http://localhost:5312/?no-intro&cutscene=even-cut-outro`.
+The epilogue: the last scene of the game. Re-directed for E22: it now opens with Clara (row 66's plea, paid) and ends on
+the coalition's hat rail instead of the empty spot in the dust (the player picked the hat up in `even-cut-hat`). Watch it
+at `?no-intro&cutscene=even-cut-outro`.
 
 | | |
 | --- | --- |
 | Scene | `even-cut-outro` in `src/cutscene/scenes/story/ch5.ts` |
-| Played by | quest `ch5-even-cut` as its outro, after the Golden Acorn choice (it plays for both endings, so it shows neither) |
-| Kind and length | `chapter-close`, aim 40-80 s; now about 80 s (was 46 s, 19 faults) |
-| Where, when | `meridian-finale`, `side-valve-bay`, `city-hall-steps`, `gnomecino-door`, `bodega-front`, `bus-stop`; the morning after, `sky: 'golden'` |
-| Before / after | before: the jam, Vesper cracked, the choice. After: the free world (and the Club Gnome hook) |
+| Played by | quest `ch5-even-cut` as its outro, after the Golden Acorn choice (it plays for both endings, so it shows neither: W17 draws the clover or the neon after it) |
+| Kind and length | `chapter-close`, aim 40-80 s, fault above 100 (about 92 s: the last scene of seventy rows, one shot per thread) |
+| Where, when | `e70-crossing`, `side-valve-bay`, `city-hall-steps`, `gnomecino-door`, `bodega-front`, `bus-stop`, the coalition camp at the overlook (`dust-safehouse`, W16); dusk on the longest day, `sky: 'golden'` |
+| Before / after | before: `even-cut-hat` and the choice. After: the free world in its epilogue state (W17, W19 Cam's line) and the Club Gnome hook |
 
 ## 1. Purpose in the story
 
-Release (the tension curve's 10 -> 2): every thread gets its last rung, one shot each, in the order the city wakes up.
-Then one last sting so the ending has a threat in it, as a closer must.
+Release (tension 10 -> 2), and every thread's last rung, one shot each, in the order the city settles:
 
-- **Vesper's top hat comes off**: the first picture, his tall black hat in the dust by the jammed intake (the finale knocked
-  it off). The last picture is the same frame with the hat gone.
-- **Reginald's arc**: "...It's uneven." / Juniper: "Good." (they do not look at each other).
-- **The brass wrench**: Tansy hangs it back up: "Forty-eight."
-- **"Okay, hear me out"**: Pip tries one more ("Okay, so, hear me out. There's a bowling alley-"), Tansy: "No." Slump.
-  "...Go on." The last word on their relationship is her letting him talk.
-- **The Mayor's coats**: a third coat of glossy red: "Ding, ding! I was on your side the whole time!"
-- **Diggs** off duty at Big Lou's rope.
-- **Asphalt**: back on the counter, bottlecap and all.
-- **Granny's pie** for the crew; **Mabel's taxi**: "This one's on the house." The player, who refused her in chapter 1:
-  "...Finally."
-- **Club Gnome** texts about a bowling alley (the story bible's hook), which Pip's bowling plan at the bay set up.
-
-The old scene opened with four dead shots in a row, played every line on a wide (Juniper at 11% of the frame), had
-Reginald and the Mayor talk with their backs to the camera, used `comic` stingers twice, and a caption for the wrench.
+- **Vesper, stopped, not shattered** (Clara's plea): Clara comes up the road with her lantern and sits beside him on the
+  throne's step, as two gnomes once sat on a porch step in her photograph. The first shared frame Vesper ever gets (bible:
+  never in a two-shot with the crew until the finale). Two porcelain lanterns side by side: his lamp and hers.
+- **Reginald's arc**: "...It's uneven." / Juniper: "Good." (they never look at each other).
+- **The forty-eighth wrench**: back on the wall. Pip raises a finger for one more plan; "No."; "...Go on."
+- **The Mayor's coats**: the third coat, still wet, "on your side the whole time".
+- **Diggs**: off duty at Big Lou's rope, a drink in his hand; "Then you're in."
+- **Asphalt**: back on the counter.
+- **Granny's pie** (for the crew) and **Mabel's taxi** ("on the house", the player: "...Finally.").
+- **Club Gnome** on Pip's phone: the hook the doneText keeps.
+- **The hat**: the button. Vesper's top hat on the last post of the coalition's hat rail at the overlook, among
+  everybody else's caps. All hats.
 
 ## 2. The player's feeling
 
-- **In:** victory, and a choice just made.
-- **Out:** warmth (the town is crooked, loud and alive), the laugh of each payoff, and a last chill: somebody took the hat.
+- **In:** the choice made. **Out:** home, and a laugh, and the hat where it belongs.
 
 ## 3. Characters: objective, obstacle, tactic
 
 | Character | Objective | Obstacle | Tactic(s) | Change by the end |
 | --- | --- | --- | --- | --- |
-| Juniper | to have the scar on record as uneven | her brother's habits | an order | gets "uneven" |
-| Reginald | to measure honestly | his whole career | calipers, a pause | says it |
-| Tansy | to put the wrench back | Pip's next plan | "No." | "...Go on." |
-| Pip | to pitch the next job | Tansy | "Okay, so, hear me out" | gets to |
-| Mayor Mulch | to be on the winning side | the record | a third coat | |
-| Big Lou / Diggs | the rope / a night off | the rope | two words each | Diggs is in |
-| Granny | to feed the crew | | pie | |
-| Mabel | to finally give the player a ride | | "on the house" | the player gets in, at last |
+| Clara | reach him | years, the porch | sits down; three short lines | she came back |
+| Vesper | — | — | stillness | says her name |
+| Juniper / Reginald | measure / win | each other | agreement as insult | Reginald tells the truth |
+| Tansy / Pip | close up / one more plan | Tansy | "No." | "...Go on." |
+| Mulch, Lou, Diggs, John, Granny, Mabel | one line each | — | their own tics | — |
 
 ## 4. Subtext
 
-- Juniper's "Good." is the Vance double act made sincere: she is proud of him and will not say so.
-- The empty spot where the hat was: Vesper is porcelain, and rumoured to have come from the Tall House. He is not done.
+"It is only a hair. It holds." is Bracken's "It holds." from the jam, now about a gnome. Porcelain does not glue back,
+Vesper believed; a hairline does not need glue.
 
 ## 5. Beat sheet
 
 | # | Time | Beat | What happens |
 | --- | --- | --- | --- |
-| 1 | 0-2 | Hook | The hat in the dust. Wind. |
-| 2 | 2-7 | Reveal | A crane up to the jammed Combine and the Stone in its intake; `turfton-dusk` in. |
-| 3 | 7-20 | The siblings | Juniper: "The Even Cut, he called it. Go on, Reginald. Measure it." He leans in, a beat: "...It's uneven." Juniper, CU: "Good." |
-| 4 | 20-36 | The bay | `turfton`. Tansy hangs the wrench: "Forty-eight." Pip runs in with a plan; "No."; slump; "...Go on." |
-| 5 | 36-40 | City Hall | The Mayor, low, waving, in his third coat. |
-| 6 | 40-47 | The rope | Lou: "Commander. Rope's up." Diggs: "Off duty, Lou." Lou: "Then you're in." |
-| 7 | 47-50 | Bodega | "Asphalt's back on the counter. Bottlecap and all." |
-| 8 | 50-72 | Bus stop | `triumph`. Granny's pie; Mabel's taxi pulls in: "Hop in, dear. This one's on the house." "...Finally." The phone: the Club Gnome text. Pip: "Bowling? What could possibly go wrong." |
-| 9 | 72-80 | Button | Music out. The opening frame again: the hat is gone. A low hum from the Combine; one `mystery` sting. Crane up for THE END, GNOME THEFT AUTO. |
+| 1 | 0-3 | Hook | dusk at the crossing: a lantern coming up the road to a throne with a bare-headed gnome on it |
+| 2 | 3-18 | | Clara and Vesper: "There you are." "...Clara." She sits. "It is only a hair, Vesper." "It holds." Silence |
+| 3 | 18-22 | | the tune comes back slow; the crane over the two lanterns and the stopped machine |
+| 4 | 22-32 | | the siblings measure the scar |
+| 5 | 32-45 | Turn | Side-Valve: "Forty-eight."; Pip's plan, "No.", "...Go on." |
+| 6 | 45-58 | | the Mayor; the Gnomecino rope; Asphalt |
+| 7 | 58-80 | | the bus stop: pie, Mabel, "...Finally.", Club Gnome, "What could possibly go wrong." |
+| 8 | 80-92 | Button | the overlook camp at dusk: the top hat goes on the rail's last post; up and away; THE END |
 
 ## 6. Shot list
 
-| # | Shot | Lens | Move | On | Motivation |
-| --- | --- | --- | --- | --- | --- |
-| 1 | insert `cut` on the hat (`HAT_SHOT`) | 36 | locked | the hat | the payoff, picture first |
-| 2 | `dolly` crane up | 52 | rising | the Combine and the Stone | scale and stillness |
-| 3-5 | `coverage('juniper','reginald',1)` singles; Reginald high (looking down on him) | 35/30 | cut in to CU | the siblings | the measure, the verdict |
-| 6 | `shot('tansy-bay','mcu')` | 35 | locked | the wrench | sincere, one word |
-| 7-10 | `coverage('tansy-bay','pip-bay',1)` | 40/35/30 | handheld on Pip's run | the bay | the last exchange of the crew |
-| 11 | `shot('mulch','mcu',{height:'low'})` | 35 | locked | the Mayor | he poses for cameras that are not there |
-| 12-14 | `coverage('big-lou','diggs-off',1)` | 35 | locked | the rope | two-word sentences |
-| 15a | `cut` insert on Asphalt (`asphalt-cat`), the prologue's framing | 44 | locked | the cat, back | the barometer reads fair, in a picture |
-| 15 | `shot('john','mcu',{toward:'cat'})` | 35 | locked | John | his line confirms it |
-| 16-21 | singles at the kerb (`coverage('player','pip',1)`), a `track` on the taxi | 35/48 | locked / pans | the bus stop | where the game began |
-| 22 | `HAT_SHOT` again | 36 | locked | the empty spot | the match cut is the threat |
-| 23 | `dolly` crane up | 52 | rising | the Combine | end titles |
+A wide from the east kerb on Clara's walk; `coverage('clara', 'vesper')` singles (Vesper `high`), then their two-shot; a
+dolly up and out; the siblings' singles (Reginald `high`), the bay, the Mayor `low`, the rope coverage, the barometer insert
+(the same frame as the intro's cutaway), the bus-stop coverage, the taxi track; at the camp, a close cut on the rail, then
+a dolly up and away for the titles.
 
 ## 7. Dialogue pass
 
 | Who | Line | Note |
 | --- | --- | --- |
-| Juniper | The Even Cut, he called it. Go on, Reginald. Measure it. | names the chapter in passing |
-| Reginald | ...It's uneven. | his arc, after a held lean |
-| Juniper | Good. | no stinger now: deadpan |
-| Tansy | Forty-eight. | the wrench count, paid; replaces the caption |
-| Pip | Okay, so, hear me out. There's a bowling alley- | his catchphrase, varied (not word for word), and the set-up for the text |
+| Clara | There you are. | her register: short, ends early |
+| Vesper | ...Clara. | |
+| Clara | It is only a hair, Vesper. / It holds. | the sincere beat; nothing on top of it |
+| Juniper | The Even Cut, he called it. Go on, Reginald. Measure it. | |
+| Reginald | ...It's uneven. | |
+| Juniper | Good. | |
+| Tansy | Forty-eight. | |
+| Pip | So. There's a bowling alley— | the finger, not the phrase (Tansy has spent it) |
 | Tansy | No. / ...Go on. | |
-| Mayor Mulch | Ding, ding! I was on your side the whole time! | "Ding, ding!" is his tic |
-| Big Lou | Commander. Rope's up. / Then you're in. | two-word sentences |
-| Diggs | Off duty, Lou. | |
+| Mulch | Ding, ding! Third coat! I was on your side the whole time! | |
+| Big Lou / Diggs | Commander. Rope's up. / Off duty, Lou. / Then you're in. | |
 | John | Asphalt's back on the counter. Bottlecap and all. | |
-| Granny | Pie, sugar. For the crew. | pie payoff |
-| Mabel | Hop in, dear. This one's on the house. | taxi payoff |
-| Player | ...Finally. | the straight man, one word |
-| Caption | Club Gnome: "Heard you're good with heavy machinery. Need a gnome for a bowling alley." | the one narration item |
-| Pip | Bowling? What could possibly go wrong. | kept |
-| ~~Tansy~~ | ~~The Even Cut. Everybody gets the same lawn: their own.~~ | the thesis is in the pictures; the phrase moves to Juniper |
-| ~~Caption~~ | ~~Zip-tied lawn chairs, a new pegboard, and one brass wrench...~~ | described the picture |
+| Granny | Pie, sugar. For the crew. | |
+| Mabel | Hop in, dear. This one's on the house. | |
+| Player | ...Finally. | |
+| (caption) | Club Gnome: "Heard you're good with heavy machinery. Need a gnome for a bowling alley." | the one caption |
+| Pip | Bowling? What could possibly go wrong. | the last laugh is Pip's (bible) |
+| ~~the empty hat spot~~ | | cut: the player holds the hat now (Clara's plea); the rail replaces it |
 
 ## 8. Music and sound
 
-| Time | Cue | Why |
-| --- | --- | --- |
-| 0 | `wind`, no music | the morning after is quiet |
-| 2 | `turfton-dusk` | a quiet win |
-| 20 | `turfton` | the crew's world is back |
-| 50 | `triumph` | the bus stop, the free ride |
-| 72 | music out; `engine-rev` low; `mystery` stinger | the hat is gone: the only sting |
+No music for Clara (bed `wind`; footsteps, cloth); `turfton-dusk` after the silence; `turfton` at the bay; `triumph` at the
+bus stop; `turfton-dusk` again at the camp; `triumph` stinger under the titles. Clink (the wrench on its peg, Diggs's
+glass), horn, phone, tap (the hat on the post). Beds change with the place: `wind`, `street`, `room` (Bodega), `wind`.
 
 ## 9. Blocking and vehicles
 
-- Meridian: the Combine prop jammed at (0, -26), the Stopping Stone at (-2, -19), Vesper's hat (`pilgrim-hat`, the tall black
-  buckled hat) at (8.2, -17.4), out of the Combine's shadow, despawned before the last insert. Juniper at (4.6, -13.4) facing the machine; Reginald
-  at (0.8, -16.6) facing the scar.
-- Bay: Tansy at (-155.9, 74.3) facing her wrench wall (`wrench-rack`, the prologue's, at (-157.6, 74.2)) with the wrench for its empty peg; Pip appears at (-146, 69) and runs in to (-153.6, 72.6).
-  Brenda's deck chairs on the apron.
-- City Hall: the Mayor on his mark. Gnomecino: Lou at the rope, Diggs (off-duty shirt) at (67.2, -30.4).
-- Bus stop: the player and Pip on their marks; Granny walks in from (-14, 9) with the pie and gives it to the player;
-  Mabel's yellow taxi drives up the x = 2.5 lane to (2.5, 21). The player ends at the bus stop.
+Vesper bare-headed on the throne at (3.5, -9) in front of the jammed Combine (0, -26); Clara walks from (2.8, 2.5) to the
+throne's step (2.4, -8.0) and sits. Juniper (-6, -12.4) and Reginald (-3.4, -16) by the Stone. The bay, City Hall, rope,
+Bodega and bus-stop blocking as before. At the camp the player stands at (244.5, 89.2) by the hat rail's west post
+(243.6, 87.35): the rail is W16's (coalitionCamp.ts), so the scene only adds the hat.
 
 ## 10. The button
 
-The opening frame, empty: the hat is gone, and the jammed machine hums once. The game ends happy and crooked, with one
-loose thread for the next one.
+A black top hat on a wooden post at the end of a rail of mismatched caps, at dusk, and the camera going up and away over
+the camp. Everyone's hat is on the rail.
 
 ## 11. Self-check
 
-- [x] Want, obstacle, turn: a montage of payoffs, turned by the empty spot.
-- [x] Hook in 3 s (the hat); no opening narration.
-- [x] Lines under 16 words; no coordinates.
-- [x] Voices per the bible.
-- [x] Every speaker framed MS or closer, facing the camera.
-- [x] One side of the line per exchange.
-- [x] One stinger (mystery); no comic stingers.
-- [x] Every running joke's payoff: hat, kazoo (in the intro), wrench, hear-me-out, pie, Mabel, coats, Asphalt.
-- [x] Golden sky.
-- [x] Report OK; removed from the baseline.
-- [x] LOS passes; watched at both sizes.
-- [x] `direction.notes` points here.
+- [x] Clara's beat has no gag and a held silence; one caption; at most one stinger plus the titles.
+- [x] Works for both endings and both Cam choices (W17 and W19 show those after it).
+- [x] `cutscene-report` OK; line of sight passes.

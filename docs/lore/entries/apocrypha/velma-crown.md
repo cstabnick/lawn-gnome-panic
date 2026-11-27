@@ -27,6 +27,11 @@ Velma has kept the Top Hat since the road was built. She counts the cars because
 
 Gnome Theft Auto (E33): she serves at the Top Hat in Brim Gap (near (705, -1585)), beside the Brim Gap Road. Her tally is in `games/gnome-theft-auto/src/mountainRoutes/brimGap.ts`.
 
+## Everyday
+
+- **Habits:** she wipes the counter once a car, whether it needs it or not. She keeps the tally in pencil on the back of the till slip, and rubs out any bun she gives away.
+- **Sayings:** "A car that stops is a car. A car that does not stop is also a car. I count both."
+
 ## Loose threads
 
 Whether she has ever stopped counting. Who she was before the café.

@@ -33,6 +33,14 @@ Since the new management, Pay 'n' Glaze sells more than a coat: sprays, wheels, 
 - The mechanic job (E24): at the Turfton lot, Chrome-Knuckle Cass hands out client work orders (a brief and a parts
   budget); the player glazes the mower and the client rates it. See `pay-n-glaze-work-orders` and R-197.
 
+## Everyday
+
+- Counter board, in hot pink on chrome: "Coat 5 seconds. Pay 5 minutes ago." The price of a coat is posted on a card that is not posted anywhere else.
+- House rule: "No questions about your paint. Your paint will not ask any of yours."
+- Habit: the staff wave off every customer with the same two fingers, which is also how a customer is taught to wave at a Hat Watch cruiser.
+- Saying: "New coat, who dis?" is what you say to the mirror after, and the mirror is mounted by the door for the purpose.
+- Small history: the first branch opened in a lock-up and sold only one colour. The colour is still on sale, and is still the best seller.
+
 ## Loose threads
 
 What chemical solvent lets a coat of enamel dry in five seconds without melting clay.

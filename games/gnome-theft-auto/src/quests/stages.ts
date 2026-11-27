@@ -305,6 +305,11 @@ export const CAST: readonly CastMember[] = [
     routine: "Patrols the Rootwell quad for mature students and takes calls in the Dean's lodge.",
     vehicle: null,
   },
+  {
+    id: 'yarrow', name: 'Reeve Yarrow Potsherd', preset: 'yarrow', home: 'pebblewick-plots', haunts: [],
+    routine: "Keeps the Pebblewick council minutes from the reeve's house on the square and notes everything, in writing.",
+    vehicle: null,
+  },
 ];
 
 // ---- The stages ----------------------------------------------------------------------------------------------------

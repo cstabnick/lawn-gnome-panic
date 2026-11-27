@@ -20,6 +20,7 @@ import { CH5_SCENES } from './story/ch5';
 import { ACT_I_SCENES } from './story/actI';
 import { ACT_II_SCENES } from './story/actII';
 import { ACT_III_SCENES } from './story/actIII';
+import { ACT_IV_SCENES } from './story/actIV';
 import { SPEEDWAY_SCENES } from './speedway';
 import { LAB_SCENES } from './lab';
 
@@ -47,6 +48,7 @@ export const SCENES: Record<string, SceneScript> = {
   ...ACT_I_SCENES,
   ...ACT_II_SCENES,
   ...ACT_III_SCENES,
+  ...ACT_IV_SCENES,
   // The Fizz Cup races: race-<raceId>-intro and race-<raceId>-podium for each race in quests/races.ts.
   ...SPEEDWAY_SCENES,
   // Dev labs (lab.ts): seats, dismounts and held guns, staged to look at.

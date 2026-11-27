@@ -243,7 +243,8 @@ export function passengerRun(
       if (parked && parkedAt && phase === 'wait' && (parked.exploded || parked.sunk) && p?.vehicle !== parked) resetParked();
 
       // The player came on foot (their ride wrecked, or none): a ride turns up beside the pickup.
-      if (phase === 'wait' && p && !p.vehicle && Math.hypot(p.x - px0, p.z - pz0) <= RESCUE_NEAR && !usableNear(RESCUE_RIDE)) {
+      const wrecked = !!p?.vehicle && (p.vehicle.exploded || p.vehicle.sunk);
+      if (phase === 'wait' && p && (!p.vehicle || wrecked) && Math.hypot(p.x - px0, p.z - pz0) <= RESCUE_NEAR && !usableNear(RESCUE_RIDE)) {
         if (parked) resetParked();
         else parkRide(obj.vehicle?.kind ?? 'ride-on', px0 + 4 * Math.cos(faceYaw), pz0 - 4 * Math.sin(faceYaw), faceYaw);
         say(rescueLine(obj.name));
@@ -252,7 +253,7 @@ export function passengerRun(
       if (phase === 'wait') {
         pose(dt, 0);
         const v = playerGroundVehicle();
-        if (v && canStopFor({ ground: true, dist: Math.hypot(v.x - px0, v.z - pz0), radius: obj.radius, speed: v.speed })) {
+        if (v && !v.exploded && !v.sunk && canStopFor({ ground: true, dist: Math.hypot(v.x - px0, v.z - pz0), radius: obj.radius, speed: v.speed })) {
           ride = v;
           phase = 'boarding';
           phaseT = 0;
@@ -263,6 +264,15 @@ export function passengerRun(
       }
 
       if (phase === 'boarding' && ride) {
+        // E22 (fuzz): the ride was wrecked, or the player drove off or got out, while the passenger walked to it: they
+        // walk back to the pickup and wait for the next stop (a fresh ride is found or parked by the 'wait' phase).
+        if (ride.exploded || p?.vehicle !== ride) {
+          ride = null;
+          phase = 'wait';
+          gx = px0;
+          gz = pz0;
+          return;
+        }
         phaseT += dt;
         // Walk toward the vehicle's side (it may have rolled a little).
         const side = exitLocal(ride.spec, passengerCount(ride.spec) > 0 ? 1 : 0);

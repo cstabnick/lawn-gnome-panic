@@ -199,7 +199,7 @@ describe('quest step transitions', () => {
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
     // E20: story rows live in quests/story/ (rows moved there from the chapter files count once).
-    const moved = STORY_QUESTS.filter((q) => ['m02-roof-on-credit', 'ch1-founders-boot', 'ch2-unmowed-tablet', 'ch3-salvage-raid', 'ch3-kiln-resin-ice', 'ch3-tundra-drift-run'].includes(q.id)).length;
+    const moved = STORY_QUESTS.filter((q) => ['m02-roof-on-credit', 'ch1-founders-boot', 'ch2-unmowed-tablet', 'ch3-salvage-raid', 'ch3-kiln-resin-ice', 'ch3-tundra-drift-run', 'ch4-runway-flares', 'ch4-sandpit-drop', 'ch4-spade-truce', 'ch5-even-cut'].includes(q.id)).length;
     expect(QUESTS.length).toBe(93 - moved + STORY_QUESTS.length); // + On the House (E20) + the 3 Dewdrop quests (E18) + the ribbon-cutting side quest (E32) + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
     const ids = new Set<string>();
     for (const q of QUESTS) {
@@ -252,7 +252,7 @@ describe('story campaign registry', () => {
       cur = cur.prereq ? questById(cur.prereq) : undefined;
     }
     expect(chain[chain.length - 1]).toBe('prologue-fresh-kiln');
-    expect(chain.length).toBe(67); // E20: rows 1-35 (39 quests with the extended parts); E21: rows 36-53 (24 with the parts); + the 4 chapter 4-5 quests
+    expect(chain.length).toBe(86); // E20: rows 1-35 (39 quests with the extended parts); E21: rows 36-53 (24 with the parts); E22: rows 54-70 (23 with the parts)
   });
 
   it('preserves first-contract compatibility and includes John Bodega & Asphalt cameos in chapters 1, 3, and 5', () => {

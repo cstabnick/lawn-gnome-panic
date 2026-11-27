@@ -25,7 +25,7 @@ Home: the captain's cabin on the Bathtub Queen. Work: the Bathtub Queen. She kee
 
 ## In the games
 
-Gives row 44 `m44-the-bathtub-queen`; appears in row 64 `m64-all-hats` (p1 By Water) and in the finale. Planned (batch 3). Her cabin is the pirate-ship site (E01).
+Gives row 44 `m44-the-bathtub-queen`; appears in row 64 `m64-all-hats` (p1 By Water) and holds the sea route in the finale, row 70 (`ch5-even-cut`). Planned (batch 3). Her cabin is the pirate-ship site (E01).
 
 ## Loose threads
 

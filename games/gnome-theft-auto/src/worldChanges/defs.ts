@@ -63,13 +63,16 @@ export const WORLD_CHANGES: readonly WorldChangeDef[] = [
     bulletin: 'Turfton FM news: a root stall has opened on Bodega\'s street. The roots are, the buyers say, excellent.' },
   { id: 'W14', title: 'The mown scar', after: ['m52-the-test-cut'], where: "Hedgeworth Links; Wader's Rest",
     bulletin: "Turfton FM news: a clean stripe has appeared across Hedgeworth. Groundskeepers there describe it as 'a little too clean'." },
-  { id: 'W15', title: 'Coalition colours', after: ['ch4-spade-truce'], planned: 'm60-the-moles-dig', where: 'Fort Sandpit gate; Pebblewick water tower',
+  { id: 'W15', title: 'Coalition colours', after: ['m60-the-moles-dig'], where: 'Fort Sandpit gate; Pebblewick water tower',
     bulletin: 'Turfton FM news: the Spade Guard has taken to flying a flag of many colours. The Commander has no comment, and a medal.' },
   { id: 'W16', title: 'All hats', after: ['m64-all-hats'], where: 'Dust Flats overlook; New Puddle marina',
     bulletin: 'Turfton FM news: a great many hats are seen on the Dust Flats. Observers say they all appear to be friends.' },
   { id: 'W17', title: 'After the Even Cut', after: ['ch5-even-cut'], hides: ['W08', 'W02'], where: 'Side-Valve; fringe sites; the downtown scar; Trellisdown; Wader\'s Rest',
     bulletin: 'Turfton FM news: clover is growing on the meridian. The grass is, the council says, uneven. The council says it fondly.',
     bulletinB: 'Turfton FM news: the meridian now lights up at night in a grid. The council is calling it a feature.' },
+  // E22: Cam's epilogue line (row 62's choice): freed, he sweeps the new Green; left for the Watch, his broom waits on a bench.
+  { id: 'W19', title: "Cam's broom", after: ['ch5-even-cut', 'm62-cams-cell'], where: "Founders' Green",
+    bulletin: "Turfton FM news: somebody is sweeping Founders' Green before anybody asked. Nobody is complaining. He apologises anyway." },
 ];
 
 const BY_ID = new Map(WORLD_CHANGES.map((w) => [w.id, w]));
@@ -84,6 +87,11 @@ export function activeWorldChanges(saves: Record<string, QuestSave>): string[] {
   const earned = WORLD_CHANGES.filter((w) => w.after.every((id) => saves[id]?.state === 'done'));
   const hidden = new Set(earned.flatMap((w) => w.hides ?? []));
   return earned.filter((w) => !hidden.has(w.id)).map((w) => w.id);
+}
+
+/** E22: the option any quest's choice picked ('A' when none was recorded). */
+export function choiceOf(saves: Record<string, QuestSave>, questId: string): 'A' | 'B' {
+  return saves[questId]?.ending === 'B' ? 'B' : 'A';
 }
 
 /** W17's variant: the ending the finale's choice picked ('A' when none was recorded). */

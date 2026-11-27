@@ -151,3 +151,18 @@ the joke has landed and the job is theirs.
       and left: the player's own look has a grey beard that covers the face in its close-ups (the player's gnome, not the
       scene); Wally's chair leg rest shows at the bottom of his close-ups (the raised camera keeps his face clear).
 - [x] `direction.notes` points here.
+
+## 12. Act IV revision (E22, row 55)
+
+The scene is no longer the chapter opener: row 54 (the Heist Board) opens act IV, so the crane keeps its picture but the
+`CHAPTER 4` title and the `chapter` stinger are gone (a quiet `whoosh` carries the crane); `direction.kind` is now
+`intro`. It plays at dusk (`sky: 'golden'` for the whole scene, the airfield included).
+
+- Tansy's first line carries the Previously-beat: "Three sides scouted, Wally fetched. Five snipers, one gate. We're not
+  driving in."
+- Wally, with a `static` crackle at his chair (he is on the radio in the briefing), names Diggs in full: "Commander Diggs
+  runs that fort on fifteen years of orders." then a closer MS and "Tell him his tie-downs are loose." The guard's line
+  stays; a new Tansy MCU files it: "Diggs is not ours. Not yet."
+- The golden kazoo ladder is untouched: "Toot." is still the one comic stinger and the button. Length 54.9 s (aim 30-60).
+- Quest comms (row 55): step 0 Wally (Previously, Diggs) and Tansy (place, reward), step 1 Wally (Crop Duster, flares),
+  step 2 Tansy + Bracken ("Seen the first one, thank you").

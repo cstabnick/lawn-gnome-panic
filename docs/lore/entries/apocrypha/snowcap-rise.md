@@ -37,6 +37,21 @@ Since the second expansion the band reaches the north edge, where the High Tarn 
 - Palette: stone and slate walls, slate roofs, sapphire flowers.
 - In the game: theme `north-highlands` in `src/data/regionThemes.json`.
 
+## Everyday
+
+**Shops.** None on the Rise itself: the Lodge at Snowdrop Slope sells the cocoa, Mittenholt sells nothing, and everything else is carried up in a pocket.
+
+**Notices.**
+- A cairn at every road bend carries a flat stone with one number chalked on it: the hats advised.
+- The HOA plow schedule, pinned to the Lodge porch: "Plowing: when it snows. Not plowing: when it does not. Complaints: see Plowing."
+
+**Sayings and habits.**
+- "Two hats, one spare." Every Rise gnome carries a spare hat and lends it without being asked.
+- At noon the whole Rise stops and listens for the pinwheels on the Ridge. If they are quiet, so is everyone else.
+- Local drink: cocoa. Local feud: the Lodge against Mittenholt, about whose mittens the lost mittens are.
+
+**Small history.** The band road was an HOA project to reach the Ridge's cable. It reached the Ridge. It did not reach anywhere else, and the Rise has used it ever since.
+
 ## Loose threads
 
 What the convoys carry up here, and who unloads them.

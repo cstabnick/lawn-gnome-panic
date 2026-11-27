@@ -28,7 +28,7 @@ Wisteria thinks the Combine is a tidy way to settle a lawn, and has funded it as
 
 ## In the games
 
-Planned (batch 3). Glimpsed on the terrace in quest 17 (`m17-the-dew-buyer`); the host of 50 (`m50-trellisdown-tasting`); the changed ally of 65 (`m65-the-countess-relents`), who gives the crew the key to the Combine's shield grates; in the finale of 70 (`ch5-even-cut`).
+Planned (batch 3). Glimpsed on the terrace in quest 17 (`m17-the-dew-buyer`); the host of 50 (`m50-trellisdown-tasting`); the changed ally of 65 (`m65-the-countess-relents`), who gives the crew the key to the Combine's shield grates; at Vesper's side on the terrace in 52 (`m52-the-test-cut`); in the finale of 70 (`ch5-even-cut`).
 
 ## Loose threads
 

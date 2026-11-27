@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { WORLD_HALF } from '../config';
 import { questById } from './defs';
-import { STORY_MARKS, storyItems, storyMarkers } from './storyMarks';
+import { VEHICLES } from '../config';
+import { STORY_MARKS, storyGrants, storyItems, storyMarkers } from './storyMarks';
 
 describe('story marks', () => {
   it('keys are real quest ids', () => {
@@ -31,5 +32,14 @@ describe('story marks', () => {
     expect(storyItems(only('m32-driftwoods-chart')).map((i) => i.title)).toEqual(["Driftwood's chart"]);
     const all = storyMarkers(() => true);
     expect(all.length).toBe(new Set(all.map((m) => m.label)).size);
+  });
+  it('grants (E22) name real vehicle kinds, have unique ids and only appear once their quest is done', () => {
+    const all = storyGrants(() => true);
+    expect(all.length).toBe(new Set(all.map((g) => g.id)).size);
+    for (const g of all) {
+      expect(g.deed || g.vehicle, g.id).toBeTruthy();
+      if (g.vehicle) expect(VEHICLES[g.vehicle.kind], g.id).toBeTruthy();
+    }
+    expect(storyGrants(() => false)).toEqual([]);
   });
 });

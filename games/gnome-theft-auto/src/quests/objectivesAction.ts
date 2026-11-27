@@ -202,7 +202,7 @@ export function bossCombineRun(
   deps.scene.add(bossMesh);
 
   const intakeRing = makeRing(deps.scene, 0, bossZ + 8, 4.5, 0xffd23f);
-  const guards: Npc[] = deps.watch?.spawnSquad('porcelain', [
+  const guards: Npc[] = obj.phase === 'jam' ? [] : deps.watch?.spawnSquad('porcelain', [
     [-2.5, bossZ],
     [2.5, bossZ],
     [0, bossZ - 3],
@@ -218,7 +218,8 @@ export function bossCombineRun(
         ? [obj.text, `Crack Vesper's Porcelain Guards (${alive} left).`]
         : [obj.text, `Jam the Grand Combine's front intake at {{${obj.hint}}}!`];
     },
-    done: () => jammed,
+    // E22: the 'guards' phase ends once the Porcelain Guard is down (the jam is the next part's objective).
+    done: () => jammed || (obj.phase === 'guards' && guards.every((g) => crackedGuards.has(g) || g.state === 'ragdoll')),
     update(dt, px, pz) {
       t += dt;
       if (jammed) return;

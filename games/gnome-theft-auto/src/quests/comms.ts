@@ -82,6 +82,10 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   betony: 'Professor Betony Sextant',
   lovage: 'Dean Lovage Inkwell',
   'silt-diver sal': 'Silt-Diver Sal',
+  yarrow: 'Reeve Yarrow Potsherd',
+  'burdock haybright': 'Head Ranger Burdock Haybright',
+  hector: 'Hector Disdain',
+  velma: 'Velma Crown',
   ...CITY_CALLER_NAMES,
   ...NEWCOMER_CALLER_NAMES,
 };
@@ -184,44 +188,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
   // ch3-salvage-raid: comms live in its story file (quests/story/), E20.
 
   // ch3-kiln-resin-ice, ch3-tundra-drift-run: comms live in their story files (quests/story/), E21.
-  // ---- Chapter 4: the one everybody's plan depends on ----
-  'ch4-runway-flares': {
-    0: brief(
-      ['tansy', 'Fort Sandpit. The Spade Guard\'s fort, and the Whirligig\'s pad.'],
-      ['tansy', 'The Unmowed are coming to help. Flares show them where.'],
-      ['tansy', 'Commander Diggs runs the fort. He\'s not ours. Not yet.'],
-    ),
-    1: call(['pip', 'Crop Duster\'s on the apron! Fly low and drop the flare on the Flats!']),
-    2: call(['bracken', 'We see the first flare. One more, on the north ridge.']),
-  },
-  'ch4-sandpit-drop': {
-    0: brief(
-      ['tansy', 'The Whirligig flies. Vesper\'s Combine doesn\'t. That\'s our edge.'],
-      ['pip', 'Over the wall, out of the plane, onto the pad. Easy. Probably.'],
-    ),
-    1: call(['pip', 'You\'re on the pad! Snipers are waking up. Crack them, then lift off!']),
-    2: call(['tansy', 'Bring her home to the overlook. Lower than you think.']),
-  },
-  'ch4-spade-truce': {
-    0: brief(
-      ['tansy', 'Vesper fired the Spade Guard by phone. Diggs took it personally.'],
-      ['tansy', 'Help him take the armory back. Every free gun in Turfton came out of it.'],
-    ),
-    1: call(['diggs', 'HOA lockout at my gate. Crack them. Nobody locks the Guard out.']),
-    2: call(['diggs', 'Gate\'s clear. Armory\'s inside. Walk in like you own it. I do.']),
-  },
-  // ---- Chapter 5: the hand on the jam ----
-  'ch5-even-cut': {
-    0: brief(
-      ['tansy', 'The Grand Combine is coming down the meridian with the Golden Acorn inside.'],
-      ['tansy', 'Clear his escort. Then the Whirligig, the deck, the Stone in the intake.'],
-      ['granny', 'Cloverfield\'s on the south canal, sugar. Diggs has the rest. Go.'],
-    ),
-    1: call(['pip', 'Escort\'s down! Whirligig\'s warm! Over the Combine and jump!']),
-    2: call(['bracken', 'The intake, child. Gnorwin\'s Stone was made for it. Set it true.']),
-    3: call(['tansy', 'It\'s jammed. Vesper\'s on his throne. Knock the hat off him.']),
-    4: call(['juniper', 'The acorn is loose. Bracken wants a monument. Tansy wants a power grid. Your call.']),
-  },
+  // ch4-runway-flares, ch4-sandpit-drop, ch4-spade-truce, ch5-even-cut (and the finale's parts): comms live in their
+  // story files (quests/story/), E22.
   // ---- Strangers & Freaks ----
   'sq-grid-truthers': {
     0: call(['mossley', 'Four markers, then zero, zero. Walk, don\'t run. Running looks guilty.']),

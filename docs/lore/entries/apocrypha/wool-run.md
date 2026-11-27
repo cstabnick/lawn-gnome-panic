@@ -17,11 +17,11 @@ The ski slalom of Snowdrop Slope: six blue-and-red flag gates from a timber star
 ## What gnomes say
 
 "Miss a gate and it costs you three seconds. Miss two and Gentian costs you the rest."
-"Twenty-six seconds clean. That is Black Diamond. Nobody has had a quiet word about it."
+"Eighteen seconds clean. That is Black Diamond. Nobody has had a quiet word about it."
 
 ## In the games
 
-Built on Snowdrop Slope (E12). A missed gate adds 3 seconds; a clean run in 18 seconds or less is rated Black Diamond. A piste map at the foot shows the Wool Run and the Tea-Tray Run (R-186).
+Built on Snowdrop Slope (E12). The run starts at (-350, -1255) and crosses six gates 30 m apart down to the finish at (-360, -1045); each gate is 7 m wide, alternating x -375 and -350. A missed gate adds 3 seconds; par is 22 seconds, and a clean run in 18 seconds or less is rated Black Diamond (achievement `gta-black-diamond`). A piste map at the foot shows the Wool Run and the Tea-Tray Run (R-186).
 
 ## Loose threads
 

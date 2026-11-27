@@ -21,4 +21,4 @@ An open-air row of plinths along the north wall of Patio Heights: a porcelain ca
 The Fescue Fugitive: a player who walks onto the green and lifts the replica off its plinth sets off an alarm. Two porcelain guards in white and black stand the watch, and the one who speaks warns that porcelain does not glue back. The stone goes out the gate; Granny rings the phone on the spot to name her price.
 
 ## In the games
-Stage `patio-gallery` (dawn). Vesper inspects the astroturf here at 06:00 with her calipers, and Mayor Mulch's kickback handover happens on the green.
+Stage `patio-gallery` (dawn). Vesper inspects the astroturf here at 06:00 with his calipers, and Mayor Mulch's kickback handover happens on the green.

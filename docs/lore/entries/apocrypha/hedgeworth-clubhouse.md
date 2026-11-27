@@ -28,6 +28,13 @@ Behind the trophy case hangs a framed bank notice, hung there so nobody has to l
 
 Built (batch 3, E15): a building at the north-east of the course, with a terrace in front of its south door looking over the first tee. Walk in for the interior (about 22 by 14 m): the pro shop counter, the bar, the honours board, and a trophy cabinet whose trophy is a gold-sprayed flowerpot. Peony's rooms are upstairs. A cart shelter with two golf carts stands beside it. Quest 47 (`m47-hedgeworth-links`) starts here; 52 (`m52-the-test-cut`) has the backers' gala on its terrace.
 
+## Everyday
+
+- **Shops and stalls:** The bar serves tea (free), grub-and-cress sandwiches cut into squares, "the Nineteenth" (a tot of grape-dew in a thimble, three Acorns, no refills) and a house cordial called "Dame Peony's Patience", which is mostly water. Tea is served from the third bell. Silence is extra.
+- **Notices:** The honours board lists "P. Gravelrake x9, B. Divot x1, a mole (disputed)". Pinned by the door: "Tee times are a suggestion from the committee." The framed bank notice behind the trophy case is turned face to the wall so nobody has to read it.
+- **Sayings and habits:** "Not the fairway, the rough, dear." At noon the whole bar stands for one minute for the course's patience, then orders. The members who read the rule on the door read it twice and then order tea.
+- **Small history:** The clubhouse was built mock-Tudor by a gnome who had seen Tudor only on a biscuit tin. The beams are painted on and the painter is still owed.
+
 ## Loose threads
 
 Whose portrait hangs over the bar, and why it is turned to the wall.

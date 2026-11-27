@@ -23,6 +23,15 @@ Engineer of Pinwheel Ridge: lean, oil-stained and a little deaf from the wind, w
 
 Home: the control hut on the ridge (E01 site wind-farm). Work: engineer of Pinwheel Ridge. Planned (batch 3): row 41 (m41-pinwheel-ridge), where she shows the player which three pinwheels to free from the HOA cabling. Her hat is a dented tin pot with wire round the brim.
 
+## Everyday
+
+**The hut.** A tin kettle on a ring, a coil of cable on every hook, a log of wind speeds kept every hour since the Ridge began, and a tin of biscuits "for Lulu, if she comes".
+
+**Habits and sayings.**
+- She answers every knock with "What?" and then, a second later, "Come in."
+- "Wind is free. Cable is not." On a good day she says it twice.
+- She keeps a bar of rust-coloured soap by the door for hands, and a second bar for the pinwheels.
+
 ## Loose threads
 
 What she did before the Ridge, and who taught her to read wind.

@@ -10,8 +10,11 @@ describe('chapterRuns', () => {
     expect(runs[0].questId).toBe('prologue-fresh-kiln');
   });
 
-  it('chapter 5 plays both endings of the choice quest', () => {
+  it('chapter 5 plays the finale parts, then both endings of the choice quest', () => {
     expect(chapterRuns(5)).toEqual([
+      { questId: 'ch5-even-cut-p1' },
+      { questId: 'ch5-even-cut-p2' },
+      { questId: 'ch5-even-cut-p3' },
       { questId: 'ch5-even-cut', variant: 'A' },
       { questId: 'ch5-even-cut', variant: 'B' },
     ]);

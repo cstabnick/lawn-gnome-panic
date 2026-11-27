@@ -7,9 +7,9 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-aliases: [Espalier End, Mittenholt, Dunelow, the outer hamlets]
+aliases: [the outer hamlets, the three hamlets]
 sources: [games/gnome-theft-auto/src/living/config.ts, games/gnome-theft-auto/src/living/hamletEspalier.ts, games/gnome-theft-auto/src/living/hamletMittenholt.ts, games/gnome-theft-auto/src/living/hamletDunelow.ts, games/gnome-theft-auto/src/living/roadside.ts]
-related: [trellisdown, snowcap-rise, saltbucket-shore, the-unmown, turfton]
+related: [trellisdown, snowcap-rise, saltbucket-shore, the-unmown, turfton, espalier-end, mittenholt, dunelow, high-tarn, hatbrim]
 ---
 
 Three small villages on the band roads, settled by gnomes who left Turfton for quieter lawns: **Espalier End**, **Mittenholt** and **Dunelow**. All three post the same sign, "Twinned with nowhere, by request" (R-204).

@@ -8,7 +8,7 @@ status: canon
 games: [gnome-theft-auto]
 aliases: [Moleman, The Mole on the Floor]
 sources: [games/gnome-theft-auto/src/radio/content.ts, packages/music/src/themes/undergroundSet.ts]
-related: [molemans-burrow, the-long-tunnel, under-chorus-hall, subsoil-radio, turfton-fm, cress-caliper, sorrel-tillbrook, rooster-weatherby, shelldon-mucilage, the-carburettors, cloverfield-dew-wells, mole-clans, turfton]
+related: [molemans-burrow, the-long-tunnel, under-chorus-hall, subsoil-radio, turfton-fm, cress-caliper, sorrel-tillbrook, rooster-weatherby, shelldon-mucilage, the-carburettors, cloverfield-dew-wells, mole-clans, turfton, loamdeep-clans, hearth-hall, auntie-crumb]
 ---
 
 The host of 108.0 Subsoil Radio: a mole who plays one long record, from a burrow under Turfton, through speakers he has
@@ -31,6 +31,10 @@ somebody should hold a steady low note under all of it.
 He holds that a tunnel has no gaps in it, so his set does not stop between tunes. It changes colour: a deep, slow
 chord-and-echo room (the dub), a hard rolling floor of drums (the house), a wire of squealing acid. He says the colours
 are the same tunnel at three depths. Each one hands over to the next the way a tunnel opens into a room.
+
+## Family
+
+He is a Crumb by birth, of the family that keeps Hearth Hall in Loamdeep (`loamdeep-clans`): Auntie Crumb is his aunt, the table in Hearth Hall keeps a place labelled "COUSIN (DJ)" for him, and a sign in the Under-Chorus Hall reads "WELCOME HOME, COUSIN". He says "the family wants me home for supper. I am home. It is just further down."
 
 ## Quirks
 

@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [Marshal Clary]
 sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158, docs/lore/rulings.md#r-186, docs/lore/rulings.md#r-187]
-related: [rutbottom-dirt-bowl, the-carburettors, lost-and-found-speedway]
+related: [rutbottom-impound, rutbottom-dirt-bowl, the-carburettors, lost-and-found-speedway]
 ---
 
 Marshal of the Rutbottom Dirt Bowl: a patient, mud-spattered gnome with a chequered flag and a long list of rules, most of which she wrote down so they would stop being argued.
@@ -26,6 +26,14 @@ Home: the starter's tower at the Dirt Bowl. Work: Rutbottom Dirt Bowl. She keeps
 ## In the games
 
 Gives the race in row 42 `m42-rutbottom-impound`. Built (E14): she lives in the starter's tower by the Dirt Bowl start, bellows "Three. Two. Go on, then.", and gives the Knobbly Heat (`race-rutbottom-knobbly`), letting anyone who signs her clipboard take a Knobbly (R-191). Teasel is her older brother (R-190).
+
+## Everyday
+
+**The tower.** Clary lives in the starter's tower at the start line (1124, -526), by a trestle table with the start cards and a flask of tea she has not let go cold in eleven years, because she never leaves the table. The HOA's taped-up rides wait in the pits (see the Rutbottom Impound).
+
+**Habits.** She writes every rule down so it stops being argued. The list is on the tower wall and has a rule about the list.
+
+**Sayings.** "Three. Two. Go on, then."
 
 ## Loose threads
 

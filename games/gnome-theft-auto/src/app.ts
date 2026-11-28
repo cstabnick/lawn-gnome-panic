@@ -33,7 +33,7 @@ import { landmarkBlips, placeBlips } from './mapPois';
 import { createInteractables } from './interactables';
 import { createGnomecinoDoor } from './portal/gnomecinoDoor';
 import { buildRooftops, createInteriors, createRoofLife, currentInterior } from './interiors';
-import { buildDoublePotRoof } from './interiors/showcase/doublePot';
+import { buildDoublePotRoof, DOUBLE_POT_ROOF_ARRIVAL } from './interiors/showcase/doublePot';
 import { buildSaucerCourt } from './homes/saucerCourt';
 import { buildTownHomes } from './homes/townHomes';
 import { buildOuterHomes } from './homes/outerHomes';
@@ -41,6 +41,7 @@ import './homes/interiors';
 import { updateHomeWindows } from './homes/pieces';
 import { createHomeVisits } from './homes/visits';
 import { createDecorPanel } from './home/decorUi';
+import { FLAT_ID } from './home/types';
 import { installHome, type HomeRuntime } from './home/runtime';
 import { createIntroTour } from './introTour';
 import { createCutscene } from './quests/cutscene';
@@ -380,7 +381,8 @@ const aimHud = createAimHud(ui);
 let aimT = 0;
 const npcs = createNpcs(scene, world, fx);
 const vehicles: Vehicle[] = [];
-const traffic = createTraffic(scene, world, (t) => hud.toast(t, 3500));
+// Ambient driver barks are street noise: not heard inside an interior (FX02, G1#13). Quest comms use their own path.
+const traffic = createTraffic(scene, world, (t) => { if (!currentInterior()) hud.toast(t, 3500); });
 /** The camera on the ground plane, for traffic: new cars only appear where it cannot see them. */
 const trafficView = { x: 0, z: 0, dirX: 0, dirZ: 0 };
 const trafficLook = new THREE.Vector3();
@@ -1111,7 +1113,7 @@ const gnomecinoDoor = createGnomecinoDoor({
 buildRooftops(scene, world);
 buildDoublePotRoof(scene);
 const interiors = createInteriors({
-  scene, ui, world, player, hud, play,
+  scene, ui, world, player, hud, play, camera,
   teleport: (x, z, yaw, y) => {
     const hp = player.health;
     player.respawn(x, z, yaw);
@@ -1126,7 +1128,17 @@ const interiors = createInteriors({
 // Homes (E10, src/home/ and src/homes/): Saucer Court and the characters' homes, the player's Flat 3B (loan, furniture,
 // sleep), the Decorate panel, the Home app, and homes found on the map once visited.
 world.boxes.push(...buildSaucerCourt(scene), ...buildTownHomes(scene), ...buildOuterHomes(scene));
-const decor = createDecorPanel({ ui, economy, toast: (t) => hud.toast(t, 3500) });
+const decor = createDecorPanel({
+  ui, economy, toast: (t) => hud.toast(t, 3500),
+  // FX02 (G1#24): a portrait phone sees the flat from above while the Decorate sheet is open.
+  view: (on) => {
+    const flat = on ? interiorById(FLAT_ID) : undefined;
+    // Looking north from high up: the whole 12 x 10 m room fits the phone's width, and the look point sits 6.5 m south
+    // of the room centre so the room shows in the top half, above the sheet.
+    const above = flat ? { x: flat.origin.x, y: 0, z: flat.origin.z + 6.5, radius: 4, centered: true, fixedYaw: Math.PI, fixedPitch: 1.2, distance: 24 } : null;
+    chase.showroom(above);
+  },
+});
 homeRuntime = installHome({
   hud, economy, decor,
   heal: () => { player.health = 1; },
@@ -2899,7 +2911,7 @@ const interiorParam = startParams.get('interior');
 if (interiorParam) {
   setTimeout(() => {
     interiors.enter(interiorParam);
-    if (startParams.get('roof') === '1') setTimeout(() => interiors.leave({ x: 120, y: 9, z: -75, yaw: Math.PI }), 5000);
+    if (startParams.get('roof') === '1') setTimeout(() => interiors.leave({ ...DOUBLE_POT_ROOF_ARRIVAL }), 5000);
   }, 800);
 }
 // Dev / demos (E12): ?winter=wool-run|tea-tray-run puts the player on that run's skis or tea tray at its start line.

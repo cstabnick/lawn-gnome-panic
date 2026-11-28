@@ -8,10 +8,15 @@ import { addInteractSpot } from '../../interactables';
 import { enterInterior } from '../runtime';
 
 export const DOUBLE_POT_INTERIOR = 'double-pot-sales';
-/** Where the lift puts the player on the slab (world, y = slab top). */
-export const DOUBLE_POT_ROOF_ARRIVAL = { x: 120, y: 9, z: -75, yaw: Math.PI } as const;
-/** The lift kiosk on the slab ("Take the lift down"). */
-export const DOUBLE_POT_ROOF_LIFT = { x: 120, y: 9, z: -72.5 } as const;
+/**
+ * Where the lift puts the player on the slab (world, y = slab top): 5.5 m in front of the kiosk's door, facing north
+ * toward the helipad, so the follow camera (about 4.6 m behind) sits in the open between the player and the kiosk.
+ */
+export const DOUBLE_POT_ROOF_ARRIVAL = { x: 120, y: 9, z: -77.5, yaw: Math.PI } as const;
+/** The lift kiosk's footprint on the slab (world): against the south parapet, its door on the north face. `top` is its roof y. */
+export const DOUBLE_POT_ROOF_KIOSK = { minX: 118.8, maxX: 121.2, minZ: -72.0, maxZ: -70.0, top: 11.7 } as const;
+/** The "Take the lift down" spot, just in front of the kiosk door. */
+export const DOUBLE_POT_ROOF_LIFT = { x: 120, y: 9, z: -72.6 } as const;
 
 const BEIGE_TINT = 0xd8c8a8;
 const SWATCHES: { color: number; x: number; z: number }[] = [
@@ -36,14 +41,17 @@ export function installDoublePotRoofLift(): void {
   });
 }
 
-/** The lift kiosk on the helipad slab, scaled so its widest side is 2.4 m. */
+/** The Thorne lift housing on the helipad slab, scaled to the kiosk footprint, door facing north. */
 export function buildDoublePotRoof(scene: THREE.Scene): void {
-  const obj = buildPrefab('cab-rank-booth', { lights: false });
+  const obj = buildPrefab('even-lift-kiosk', { lights: false });
+  obj.name = 'double-pot-lift-kiosk';
   const bb = new THREE.Box3().setFromObject(obj);
-  const dim = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z);
-  const k = dim > 0 ? 2.4 / dim : 1;
+  const wx = bb.max.x - bb.min.x;
+  const k = wx > 0 ? (DOUBLE_POT_ROOF_KIOSK.maxX - DOUBLE_POT_ROOF_KIOSK.minX) / wx : 1;
   obj.scale.setScalar(k);
-  obj.position.set(DOUBLE_POT_ROOF_LIFT.x, DOUBLE_POT_ROOF_LIFT.y + 0.02 - bb.min.y * k, DOUBLE_POT_ROOF_LIFT.z + 0.8);
+  const cx = (DOUBLE_POT_ROOF_KIOSK.minX + DOUBLE_POT_ROOF_KIOSK.maxX) / 2;
+  const cz = (DOUBLE_POT_ROOF_KIOSK.minZ + DOUBLE_POT_ROOF_KIOSK.maxZ) / 2;
+  obj.position.set(cx, DOUBLE_POT_ROOF_LIFT.y + 0.02 - bb.min.y * k, cz);
   obj.rotation.y = Math.PI;
   scene.add(obj);
   installDoublePotRoofLift();

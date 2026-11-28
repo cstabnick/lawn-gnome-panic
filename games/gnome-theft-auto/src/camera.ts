@@ -6,6 +6,7 @@ import type { CameraMode, ChaseCamera, InputState, World } from './types';
 import { angleDiff, insideBox, pushOutOfBoxes } from './collide';
 import { groundAt, heightAt } from './terrain';
 import { isInteriorPoint } from './interiors/space';
+import { CEILING_CLEARANCE, interiorCeiling } from './interiors/ceiling';
 import { deckCeilingAbove } from './highways/deck';
 import { AIM } from './gunMods';
 import { SHAKE_FACTOR, getShakeLevel } from './viewPrefs';
@@ -299,6 +300,9 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       // Under a skyway viaduct (highways/deck.ts): keep the camera below the deck so the player stays in view.
       const ceiling = deckCeilingAbove(placed.x, placed.z, target.y + 0.5);
       if (ceiling !== null && placed.y > ceiling - 0.4) placed.y = Math.max(target.y + 0.6, ceiling - 0.4);
+      // Inside an interior (FX02, D58): on foot, stay under the room's ceiling so a low room never shows what is above it.
+      const roomTop = mode === 'foot' && isInteriorPoint(target.x, target.z) ? interiorCeiling() : null;
+      if (roomTop !== null && placed.y > roomTop - CEILING_CLEARANCE) placed.y = Math.max(target.y + 0.6, roomTop - CEILING_CLEARANCE);
       camera.position.copy(placed);
       // Blend the look direction between the view direction (camera at the look point) and the look point itself.
       const toLook = placed.distanceTo(look);

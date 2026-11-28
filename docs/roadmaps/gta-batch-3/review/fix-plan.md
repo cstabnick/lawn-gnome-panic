@@ -487,3 +487,7 @@ Priority: the decision's priority where one applies, otherwise blocker → must,
 | **total** | **375** |
 
 Assigned by severity: 38 blockers, 238 polish, 98 nits. Spirit findings are all covered by a decision (decisions.md, "Count").
+
+## Carried over from fix epics (orchestrator)
+
+- G6#26 (towers see-through from Windfall Croft): needs tower materials or `cull.ts`; give to FX19 or the round-2 fix.

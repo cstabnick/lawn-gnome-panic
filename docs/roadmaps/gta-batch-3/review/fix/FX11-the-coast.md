@@ -252,3 +252,8 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Shots `a01-entr`, `a02-bwmid`, `a04-bwwest`, `a05-wheel`, `a07-pierbeach`, `b01-ship`, `c01-night-bw`, `c02-night-pier` re-shot and resolved.
 - All 3 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX01 (orchestrator)
+
+- `coast/sign.ts` still paints text its own way: switch it to FX01's `layoutPlate` / `signBoard` (`src/textPlate.ts`).
+- The pier's underside is still a black lid at night: use FX01's `undersideMat()`.

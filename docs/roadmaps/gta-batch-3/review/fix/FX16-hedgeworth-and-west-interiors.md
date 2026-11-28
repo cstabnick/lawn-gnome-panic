@@ -156,3 +156,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - `golf` tests green; hole 6 tee shot shows the water carry.
 - All 1 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX01 (orchestrator)
+
+- `interiors/kit.ts` draws Moleman's "KICK DRUM" sign with its own text code: switch it to FX01's `layoutPlate`.

@@ -73,6 +73,8 @@ export const COAST = {
     periodS: 96,
     /** Boarding platform in front of the lowest gondola (E prompt "Ride the Spokewheel"). */
     board: { x: -260, z: 1106, yaw: Math.PI } as Spot,
+    /** The brass bell on the boarding platform (rung at boarding and at the end of a turn), where Marram stands by it. */
+    bell: { x: -253.5, z: 1110, yaw: Math.PI } as Spot,
     fare: 3,
   },
 

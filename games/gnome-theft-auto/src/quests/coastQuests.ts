@@ -8,13 +8,15 @@ import type { GnomeLook } from '@lawn/gnome';
 import { COAST, COAST_ACH, COAST_QUESTS } from '../coast/config';
 import { installCoastProbes } from '../coast/probes';
 import { QUEEN_CABIN_INTERIOR } from '../coast/pirateShip';
+import { CAST } from '../cutscene/cast';
 import type { GiverDef, QuestDef } from './types';
 
 if (typeof window !== 'undefined') installCoastProbes();
 
-const MARRAM_LOOK: Partial<GnomeLook> = { hat: 0xe8b83a, shirt: 0x2f7f8f, beard: null, hair: { color: 0x6b4a2a, style: 'pigtails' } };
-const DRIFTWOOD_LOOK: Partial<GnomeLook> = { hat: 0x8a7a55, shirt: 0xb0a07a, beard: 0xd8d2c0 };
-const BILGE_LOOK: Partial<GnomeLook> = { hat: 0x2b2b3a, shirt: 0xd8342c, beard: 0xcfcfcf };
+// One look per character everywhere: the cutscene cast presets (cutscene/cast.ts).
+const MARRAM_LOOK: Partial<GnomeLook> = CAST.marram.look;
+const DRIFTWOOD_LOOK: Partial<GnomeLook> = CAST.driftwood.look;
+const BILGE_LOOK: Partial<GnomeLook> = CAST.samphire.look;
 
 const MARRAM = 'Marram Teaspoon';
 const DRIFTWOOD = 'Driftwood';

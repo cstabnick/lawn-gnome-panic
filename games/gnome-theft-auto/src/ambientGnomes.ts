@@ -4,10 +4,12 @@ import * as THREE from 'three';
 import type { GnomeLook, GnomeModel } from '@lawn/gnome';
 import type { VoiceSpec } from '@lawn/mutter';
 import { angleDiff } from './collide';
+import { BUBBLE, clampBubble, pickShown } from './bubbleClamp';
 import { gnomeState, makeGnome } from './gnomes';
 import { speakAt } from './voice/speech';
 import { voiceFor } from './voice/voices';
 import { heightAt } from './terrain';
+import { rooftopSurfaceBelow } from './interiors/rooftops';
 import { createAnimator, type Animator } from './anim/animator';
 import { pickFor } from './anim/index';
 import { WORK_IDS, type AnimId } from './anim/types';
@@ -27,6 +29,22 @@ export interface AmbientGnomeDef {
   voice?: Partial<VoiceSpec>;
   /** The idle loop this gnome plays while it stands about (an anim row id). Default: a stable pick by id. */
   idle?: AnimId;
+  /** Absolute world y of the feet (a deck, a boat). Wins over `surface`. Default: the ground (heightAt). */
+  y?: number;
+  /** 'rooftop': stand on the highest walkable rooftop over (x, z) (interiors/rooftops.ts: the pier, the Queen's deck,
+   *  the boardwalk), falling back to the ground where there is none. */
+  surface?: 'rooftop';
+}
+
+/** The height a resident's feet stand at: `def.y`, else the rooftop under it (surface 'rooftop'), else the ground. */
+export function ambientFeetY(def: Pick<AmbientGnomeDef, 'x' | 'z' | 'y' | 'surface'>): number {
+  if (def.y !== undefined) return def.y;
+  const ground = heightAt(def.x, def.z);
+  if (def.surface === 'rooftop') {
+    const roof = rooftopSurfaceBelow(def.x, def.z, Infinity, true);
+    if (roof !== null && roof > ground) return roof;
+  }
+  return ground;
 }
 
 /** A gnome says its bubble line at most this often (seconds), however often the player walks past. */
@@ -381,7 +399,126 @@ export function makeBubbleSprite(name: string, text: string): THREE.Sprite {
   tex.colorSpace = THREE.SRGBColorSpace;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
   sprite.renderOrder = 20;
+  sprite.frustumCulled = false;
+  sprite.addEventListener('added', () => liveBubbles.add(sprite));
+  sprite.addEventListener('removed', () => liveBubbles.delete(sprite));
+  sprite.onBeforeRender = (renderer, _scene, camera) => fitBubble(sprite, renderer, camera);
   return sprite;
+}
+
+/** Bubble sprites in a scene (for the "nearest two" ranking), and which of them may show this frame. */
+const liveBubbles = new Set<THREE.Sprite>();
+let rankedFrame = -1;
+let rankedShown = new Set<THREE.Sprite>();
+let insetsCache: { top: number; right: number; bottom: number; left: number } | null = null;
+const _bv = new THREE.Vector2();
+const _bp = new THREE.Vector3();
+const _bq = new THREE.Quaternion();
+const _bs = new THREE.Vector3();
+const _bc = new THREE.Vector3();
+
+/** Safe-area insets in px, read once from CSS (zeros without a DOM). */
+function safeInsets(): { top: number; right: number; bottom: number; left: number } {
+  if (insetsCache) return insetsCache;
+  const zero = { top: 0, right: 0, bottom: 0, left: 0 };
+  if (typeof document === 'undefined' || !document.body) return zero;
+  try {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;' +
+      'padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);';
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    insetsCache = {
+      top: parseFloat(cs.paddingTop) || 0, right: parseFloat(cs.paddingRight) || 0,
+      bottom: parseFloat(cs.paddingBottom) || 0, left: parseFloat(cs.paddingLeft) || 0,
+    };
+    probe.remove();
+    return insetsCache;
+  } catch {
+    return zero;
+  }
+}
+
+/** Where a bubble lands on screen after clampBubble (centre and size in px), or null behind the camera. */
+function bubbleRect(s: THREE.Sprite, cam: THREE.PerspectiveCamera, W: number, H: number): { x: number; y: number; w: number; h: number } | null {
+  const p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+  s.matrixWorld.decompose(p, q, sc);
+  const v = p.applyMatrix4(cam.matrixWorldInverse);
+  const d = -v.z;
+  if (d < 0.1) return null;
+  const t = Math.tan((cam.fov * Math.PI) / 360);
+  const ppm = H / (2 * d * t);
+  const cx = (v.x / (d * t * (W / H)) + 1) * 0.5 * W;
+  const cy = (1 - v.y / (d * t)) * 0.5 * H;
+  const r = clampBubble(cx, cy, sc.x * ppm, sc.y * ppm, { w: W, h: H, insets: safeInsets() });
+  if (r.k <= 0) return null;
+  return { x: r.cx, y: r.cy, w: sc.x * ppm * r.k, h: sc.y * ppm * r.k };
+}
+
+/** Per render pass: keep a bubble on screen, capped in size, clear of the HUD corners, hidden when the camera is
+ *  close or the bubble is not among the nearest two. Rewrites the sprite's matrixWorld (three.js reads it right after
+ *  onBeforeRender; the next render rebuilds it from position and scale). */
+function fitBubble(sprite: THREE.Sprite, renderer: THREE.WebGLRenderer, camera: THREE.Camera): void {
+  if (!(camera as THREE.PerspectiveCamera).isPerspectiveCamera) return;
+  const cam = camera as THREE.PerspectiveCamera;
+  const mw = sprite.matrixWorld;
+
+  // Rank the live bubbles once per frame by distance to this camera.
+  const frame = renderer.info.render.frame;
+  if (frame !== rankedFrame) {
+    rankedFrame = frame;
+    const cands: { id: THREE.Sprite; dist: number }[] = [];
+    for (const s of liveBubbles) {
+      if (!s.visible || s.scale.x < 0.01) continue;
+      cands.push({ id: s, dist: _bp.setFromMatrixPosition(s.matrixWorld).distanceTo(_bc.setFromMatrixPosition(cam.matrixWorld)) });
+    }
+    rankedShown = pickShown(cands);
+    // Two bubbles that would overlap on screen read as one smudge (the Flock ring): keep only the nearer one.
+    renderer.getSize(_bv);
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    for (const c of cands.filter((q) => rankedShown.has(q.id)).sort((a, b) => a.dist - b.dist)) {
+      const rect = bubbleRect(c.id, cam, _bv.x, _bv.y);
+      if (!rect) continue;
+      if (placed.some((p) => Math.abs(p.x - rect.x) * 2 < p.w + rect.w && Math.abs(p.y - rect.y) * 2 < p.h + rect.h)) rankedShown.delete(c.id);
+      else placed.push(rect);
+    }
+  }
+
+  mw.decompose(_bp, _bq, _bs);
+  const sw = _bs.x, sh = _bs.y;
+  const camPos = _bc.setFromMatrixPosition(cam.matrixWorld);
+  const near = Math.hypot(_bp.x - camPos.x, _bp.z - camPos.z) < BUBBLE.hideNear;
+  const wantShown = rankedShown.has(sprite) && !near;
+
+  // Ease the fade (about 0.15 s) so a bubble does not pop when it is ranked in or out.
+  const ud = sprite.userData as { fitFade?: number; fitT?: number };
+  const now = performance.now();
+  const gap = ud.fitT === undefined ? 1 : (now - ud.fitT) / 1000;
+  ud.fitT = now;
+  let fade = gap > 0.3 || ud.fitFade === undefined ? (wantShown ? 1 : 0) : ud.fitFade;
+  const step = Math.min(gap, 0.1) / 0.15;
+  fade = wantShown ? Math.min(1, fade + step) : Math.max(0, fade - step);
+  ud.fitFade = fade;
+
+  const hide = (): void => { mw.compose(_bp, _bq.identity(), _bs.set(1e-4, 1e-4, 1e-4)); };
+  const v = _bp.clone().applyMatrix4(cam.matrixWorldInverse);
+  const d = -v.z;
+  if (fade < 0.01 || d < 0.1) return hide();
+
+  renderer.getSize(_bv);
+  const W = _bv.x, H = _bv.y;
+  const t = Math.tan((cam.fov * Math.PI) / 360);
+  const ppm = H / (2 * d * t);
+  const cx = (v.x / (d * t * (W / H)) + 1) * 0.5 * W;
+  const cy = (1 - v.y / (d * t)) * 0.5 * H;
+  const r = clampBubble(cx, cy, sw * ppm, sh * ppm, { w: W, h: H, insets: safeInsets() });
+  if (r.k <= 0) return hide();
+
+  v.x = ((r.cx / W) * 2 - 1) * d * t * (W / H);
+  v.y = (1 - (r.cy / H) * 2) * d * t;
+  v.applyMatrix4(cam.matrixWorld);
+  const k = r.k * fade;
+  mw.compose(v, _bq.identity(), _bs.set(sw * k, sh * k, 1));
 }
 
 /** `defs`: the gnomes to make (default the 26 of AMBIENT_GNOMES; parks/life.ts passes its park townsgnomes). */
@@ -416,10 +553,11 @@ export function createAmbientGnomes(scene: THREE.Scene, defs: readonly AmbientGn
     const def = defs[i];
     const look: GnomeLook = { ...BASE_LOOK, ...def.look };
     const model = makeGnome(scene, look);
-    model.update(gnomeState(def.x, heightAt(def.x, def.z), def.z, def.yaw, 0), 1);
+    const feet = ambientFeetY(def);
+    model.update(gnomeState(def.x, feet, def.z, def.yaw, 0), 1);
 
     const bubble = makeBubbleSprite(def.name, def.bubble);
-    bubble.position.set(def.x, heightAt(def.x, def.z) + 2.25, def.z);
+    bubble.position.set(def.x, feet + 2.25, def.z);
     bubble.scale.set(0.001, 0.001, 1);
     bubble.visible = false;
     scene.add(bubble);
@@ -477,7 +615,8 @@ export function createAmbientGnomes(scene: THREE.Scene, defs: readonly AmbientGn
 
         const targetYaw = want > 0.5 ? Math.atan2(px - e.def.x, pz - e.def.z) : e.def.yaw;
         e.yaw += angleDiff(targetYaw, e.yaw) * Math.min(1, 5 * dt);
-        const gy = heightAt(e.def.x, e.def.z);
+        // Rooftops (decks) can be registered after the residents are made, so the feet are looked up each frame (a grid lookup).
+        const gy = ambientFeetY(e.def);
         // Far gnomes are posed every few frames (animStride.ts); during a live cutscene (px 1e6) every one is posed.
         const step = stepAnimClock(e.clock, dt, px >= 1e5 ? 1 : animStride(d));
         if (step > 0) {

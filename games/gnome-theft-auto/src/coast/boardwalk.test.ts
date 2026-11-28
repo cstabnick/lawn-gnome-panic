@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { rooftopById, rooftopSurfaceBelow } from '../interiors/rooftops';
-import { heightAt } from '../terrain';
+import { groundAt, heightAt } from '../terrain';
 import type { Box } from '../types';
 import { buildBoardwalk } from './boardwalk';
 import { COAST } from './config';
@@ -34,5 +34,25 @@ describe('Saltbucket Boardwalk and Long Spoon Pier', () => {
       ];
       for (const [x, z] of pts) expect(heightAt(x, z), `${id} at ${x},${z}`).toBeLessThan(r.y - 0.05);
     }
+  });
+});
+
+describe('the boardwalk deck is walkable', () => {
+  const R = COAST.boardwalk.rect;
+  const deckTop = heightAt(0, 1115) + COAST.boardwalk.deckLift;
+
+  it('registers the promenade as a rooftop at the deck top', () => {
+    expect(rooftopById('saltbucket-boardwalk')?.y).toBeCloseTo(deckTop, 5);
+  });
+
+  it('stands bodies on the planks, from the ground and from just above', () => {
+    for (const [x, z] of [[0, 1115], [-152, 1112], [R.minX + 20, R.minZ + 1], [R.maxX - 1, R.maxZ - 1]] as const) {
+      expect(groundAt(x, z, heightAt(x, z)), x + ',' + z + ' from the ground').toBeCloseTo(deckTop, 5);
+      expect(groundAt(x, z, deckTop + 0.1), x + ',' + z + ' from above').toBeCloseTo(deckTop, 5);
+    }
+  });
+
+  it('leaves the ground outside the rectangle alone', () => {
+    expect(groundAt(0, R.maxZ + 3, heightAt(0, R.maxZ + 3))).toBeCloseTo(heightAt(0, R.maxZ + 3), 5);
   });
 });

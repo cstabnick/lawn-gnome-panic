@@ -32,12 +32,12 @@ const MAX_FOOTPRINT_STEP = 1.2;
 
 /** Paint each region's landforms promise (at least one cell of each). */
 const PROMISED_PAINT: Partial<Record<Exclude<RegionId, 'turfton'>, PaintKind[]>> = {
-  'dust-flats': ['dirt', 'rock'],
+  'dust-flats': ['dirt'],
   'mossy-wood': ['mud', 'forest'],
-  'frostbite-fells': ['ice', 'rock'],
+  'frostbite-fells': ['ice'],
   'cloverfield-farms': ['mud', 'farm'],
   'tallgrass-commons': ['meadow'],
-  'loch-moss': ['gravel', 'rock'],
+  'loch-moss': ['gravel'],
   'north-highlands': ['meadow', 'snow'],
   'south-shore': ['sand', 'grass'],
   'east-campus': ['grass', 'dirt'],

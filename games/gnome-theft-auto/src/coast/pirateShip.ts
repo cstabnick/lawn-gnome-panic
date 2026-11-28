@@ -6,6 +6,7 @@ import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import type { JobsDeps } from '../jobs/types';
 import type { Box } from '../types';
 import { heightAt } from '../terrain';
+import { CAST } from '../cutscene/cast';
 import { addRooftop, rooftopById } from '../interiors/rooftops';
 import { defineInterior, interiorById } from '../interiors/registry';
 import { COAST } from './config';
@@ -173,7 +174,7 @@ function defineCabin(): void {
         x: 1.2,
         z: 2.4,
         yaw: Math.PI,
-        look: { hat: 0x2b2b3a, shirt: 0xd8342c, beard: 0xcfcfcf },
+        look: CAST.samphire.look,
         line: 'Every cargo is honest. Some of it was just not yet yours.',
       });
       kit.spot({

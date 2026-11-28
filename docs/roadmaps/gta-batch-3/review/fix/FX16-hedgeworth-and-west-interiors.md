@@ -160,3 +160,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 ## Added after FX01 (orchestrator)
 
 - `interiors/kit.ts` draws Moleman's "KICK DRUM" sign with its own text code: switch it to FX01's `layoutPlate`.
+
+## Added after FX03 (orchestrator)
+
+- G6#25 (partly fixed by FX03): the golf tee camera needs to sit higher (`golf/view.ts`). Use FX03's `src/activityMode.ts` for any golf HUD.

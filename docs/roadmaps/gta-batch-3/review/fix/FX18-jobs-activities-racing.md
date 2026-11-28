@@ -270,3 +270,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - The economy curve test covers the six workplace jobs.
 - All 1 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX03 (orchestrator)
+
+- G8#33 (partly fixed by FX03): pull the court camera in (`court/view.ts`). Fishing still needs the touch activity mode (FX03's `src/activityMode.ts`); check with `node tools/gta-touch-check.mjs`.

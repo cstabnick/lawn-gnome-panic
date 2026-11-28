@@ -13,11 +13,14 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 ## Next session starts here
 
-All 33 epics merged (+ F1, F2, main). **R1 round 1 done**: 12 editors (~375 findings `review/G*.md`), decider
-(`review/decisions.md`, GR1–GR10, 59 rulings), triage into 24 fix epics in 8 waves (`review/fix-plan.md`,
-`review/fix/FXnn-*.md`). Now running the fix waves (branches `fix/FXnn`, lead prompt template `review/fix-lead-prompt.md`): merged FX01–FX04, FX06, FX21; FX05 merged; running FX09, FX11, FX12; then re-review
-until only nits remain. Then **R2**: an audit of every source item L01–L118 against what shipped (met / partly / not,
-with evidence), and fix epics for the gaps. Then the finish: demos (media-upload MCP), the PR description, a final merge-conflict check.
+All 33 feature epics merged; PR #372 is mergeable and its description is current (`gta-batch-3/pr-description.md`).
+R1 fix round: merged FX01–FX06, FX21 (7 of 24). When the session ended, leads were running in worktrees under
+`C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`: **FX09** Pardonlin ground, **FX11** the coast (on its
+perf check), **FX12** Snowcap snow. Resume or merge them (`tools/batch-merge.sh`, `tools/renumber-rulings.py` — next
+free ruling R-241, `tools/merge-hunks.py`; check the test command's own exit status), then start the next unblocked
+fix epics from `review/fix-plan.md` with `review/fix-lead-prompt.md` (unblocked now: FX14, FX16, FX17; then FX07,
+FX08, FX10, FX13, FX15, FX18–FX20, FX22–FX24). After every push: `gh pr view 372 --json mergeable`; merge main if it
+moved. Then re-review (R1 round 2), R2 requirements audit, demos, final PR description.
 
 ## Tracking
 

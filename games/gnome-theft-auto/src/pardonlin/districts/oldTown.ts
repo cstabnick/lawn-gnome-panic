@@ -12,8 +12,7 @@ import { emptyPlan, keepClear, local, type DistrictPlan, type PlanProp, type Pla
 
 const PI = Math.PI;
 const TILE = 3;            // the paving grid (m): a tile prefab at scale 1.5 is 2.94 m
-const TILE_SCALE = 1.5;
-const TILE_TOP = 0.12;     // how high a scale 1.5 tile stands: props on tiles are lifted by it
+const TILE_TOP = 0;        // FX09: the paving is a ground decal now, so nothing is lifted onto tiles
 
 /** A post's yaw so that its rope (local +x) runs along (dx, dz). */
 const yawToward = (dx: number, dz: number): number => Math.atan2(-dz, dx);
@@ -145,26 +144,24 @@ export function planOldTown(): DistrictPlan {
     if (o.cup) put('pl-espresso-cup', x - 0.15, z + 0.1, { y: 0.78 });
   };
 
-  /** Lay a rectangle of paving on the 3 m grid from (x0, z0): cobbles on the border, round `cobbleAround`, paving between. */
+  /**
+   * Lay a rectangle of setts on the 3 m grid from (x0, z0), with a ring of cobbles round each of `cobbleAround` (FX09: one
+   * draped ground patch instead of tile props, so no seams, no slab edges). `skip` is kept for the callers' plans.
+   */
+  const ringsLaid = new Set<string>();
   const pave = (
     x0: number, z0: number, nx: number, nz: number,
     o: { cobbleAround?: readonly [number, number, number][]; skip?: readonly (readonly [number, number, number, number])[] } = {},
   ): number => {
-    let n = 0;
-    for (let i = 0; i < nx; i++) {
-      for (let j = 0; j < nz; j++) {
-        const cx = x0 + i * TILE + TILE / 2, cz = z0 + j * TILE + TILE / 2;
-        const f: Footprint = { x: cx, z: cz, w: TILE * 0.98, d: TILE * 0.98, yaw: 0 };
-        if (footprintProblem(f, 1.6) || taken.some((t) => footprintsOverlap(f, t))) continue;
-        if (o.skip?.some(([ax, bx, az, bz]) => cx + TILE / 2 > ax && cx - TILE / 2 < bx && cz + TILE / 2 > az && cz - TILE / 2 < bz)) continue;
-        const border = i === 0 || j === 0 || i === nx - 1 || j === nz - 1;
-        const ring = o.cobbleAround?.some(([ax, az, r]) => Math.hypot(cx - ax, cz - az) < r);
-        props.push({ id: border || ring ? 'euro-cobble-tile' : 'euro-paving-tile', x: cx, z: cz, scale: TILE_SCALE });
-        tiles.push({ x: cx, z: cz });
-        n++;
-      }
+    const w = nx * TILE, d = nz * TILE;
+    plan.ground.push({ kind: 'setts', rect: { x: x0 + w / 2, z: z0 + d / 2, w, d } });
+    for (const [ax, az, r] of o.cobbleAround ?? []) {
+      const k = `${ax},${az}`;
+      if (ringsLaid.has(k)) continue;
+      ringsLaid.add(k);
+      plan.ground.push({ kind: 'cobble', accent: true, circle: { x: ax, z: az, r } });
     }
-    return n;
+    return nx * nz;
   };
 
   // ---- 1. Buildings -------------------------------------------------------------------------------------------------

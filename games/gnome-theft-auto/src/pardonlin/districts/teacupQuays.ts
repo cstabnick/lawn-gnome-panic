@@ -131,20 +131,12 @@ export function planTeacupQuays(): DistrictPlan {
     props.push({ id, x, z });
   };
 
-  // Teacup Row: a paved lane, paving in the middle and cobbles at the edges (the terraces stand on it).
-  for (let z = 112; z <= 256; z += 2) {
-    for (let c = 0; c < 5; c++) tile(c === 0 || c === 4 ? 'euro-cobble-tile' : 'euro-paving-tile', -1527.9 + c * 2, z);
-  }
-  // Place du Pot: a cobbled belt round the roundabout (6 m clear of the ring), and the market square before the hall.
-  for (let gx = -1540; gx <= -1460; gx += 2) {
-    for (let gz = 410; gz <= 490; gz += 2) {
-      const r = Math.hypot(gx - PLACE.x, gz - PLACE.z);
-      if (r > 20 && r < 23.5) tile('euro-cobble-tile', gx, gz, true);
-    }
-  }
-  for (let gx = -1514; gx <= -1486; gx += 2) for (let gz = 354; gz <= 384; gz += 2) tile(((gx + gz) / 2) % 2 === 0 ? 'euro-paving-tile' : 'euro-cobble-tile', gx, gz, true);
-  // The Place du Pot north square, where the Rue Haute meets the quay road.
-  for (let gx = -1520; gx <= -1498; gx += 2) for (let gz = 408; gz <= 426; gz += 2) tile('euro-paving-tile', gx, gz, true);
+  // Teacup Row: a paved lane of setts (the terraces stand on it). FX09: laid ground, not tile props.
+  plan.ground.push({ kind: 'setts', rect: { x: -1523.9, z: 184, w: 10, d: 146 } });
+  // Place du Pot: the ring's own pavement goes all round it; the market square before the hall and the north square.
+  plan.ground.push({ kind: 'setts', rect: { x: -1500, z: 369, w: 30, d: 32 } });
+  plan.ground.push({ kind: 'flags', rect: { x: -1509, z: 416.5, w: 24, d: 19 } });
+  void tile;
 
   // ---- Table sets, dressing ---------------------------------------------------------------------------------------
   let n = 0; // a running count that varies the dressing without random numbers

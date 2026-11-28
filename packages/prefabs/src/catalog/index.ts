@@ -152,6 +152,10 @@ import { GTA_EURO_FLEET_B } from './gta-euro-fleet-b';
 import { GTA_EURO_GEAR } from './gta-euro-gear';
 import { GTA_HOMES } from './gta-homes';
 import { GTA_PARDONLIN_PROPS } from './gta-pardonlin-props';
+import { GTA_PARDONLIN_RIVER } from './gta-pardonlin-river';
+import { GTA_PARDONLIN_MARKET } from './gta-pardonlin-market';
+import { GTA_PARDONLIN_GARDEN } from './gta-pardonlin-garden';
+import { GTA_PARDONLIN_PLATZ } from './gta-pardonlin-platz';
 import { GTA_PARDONLIN_GEAR } from './gta-pardonlin-gear';
 import { GTA_WINTER_RIDES } from './gta-winter-rides';
 import { GTA_WINTER_LODGE } from './gta-winter-lodge';
@@ -247,6 +251,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
   ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES, ...GTA_PARDONLIN_PROPS, ...GTA_PARDONLIN_GEAR,
+  ...GTA_PARDONLIN_RIVER, ...GTA_PARDONLIN_MARKET, ...GTA_PARDONLIN_GARDEN, ...GTA_PARDONLIN_PLATZ,
   ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,

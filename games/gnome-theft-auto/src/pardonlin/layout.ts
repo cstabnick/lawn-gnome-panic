@@ -48,7 +48,8 @@ export const DISTRICTS: readonly District[] = [
   },
   {
     id: 'teacup-quays', name: 'Teacup Row and the Quays',
-    rects: [{ minX: -1595, maxX: -1400, minZ: -8, maxZ: 500 }],
+    // FX09: the river corridor (both quays, the Thymes Walk and the Rive Gauche) is the Quays' too.
+    rects: [{ minX: -1595, maxX: -1400, minZ: -8, maxZ: 500 }, { minX: -1626, maxX: -1595, minZ: -540, maxZ: 1005 }],
     shots: [
       { id: 'tq-1-teacup-row', x: -1522, z: 116, yaw: 0, what: 'Teacup Row, looking south down the café lane' },
       { id: 'tq-2-quay', x: -1584, z: 200, yaw: Math.PI, what: 'the east quay and the Thymes Walk' },

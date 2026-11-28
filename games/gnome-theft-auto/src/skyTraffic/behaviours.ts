@@ -1,4 +1,5 @@
 // The data table of NPC flights (docs/roadmaps/gta-npc-planes.md). Each entry says what flies, where, when, and its route.
+import { ROOTWELL_AIRFIELD } from '../config';
 import { SKY } from './config';
 import { SKY_SOUNDS } from './sounds';
 import { airfieldCircuit, cropPasses, dropRoute, orbitRoute, polyRoute, skyWriterRoute } from './routes';
@@ -8,7 +9,8 @@ import type { Pt, SkyBehaviourDef, SkyBehaviourId, SkyWaypoint } from './types';
 export const DROP_ZONES: readonly Pt[] = [{ x: -60, z: 330 }, { x: 120, z: 430 }, { x: -200, z: 260 }];
 
 /** Where the air ambulance stops to collect a patient. */
-export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 200, z: 320 }, { x: -150, z: -295 }];
+// The second stop sits just east of Even-Estates Plot 2 (E16 construction-2 covers x 170..220, z 300..350).
+export const AMBULANCE_STOPS: readonly Pt[] = [{ x: -300, z: 40 }, { x: 230, z: 336 }, { x: -150, z: -295 }];
 
 export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
   {
@@ -19,6 +21,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 0, z: 0 },
     radius: 700,
     cooldown: 30,
+    presence: { onFor: [100, 140], offFor: [180, 300] },
     priority: 10,
     repeat: 'loop',
     startAirborne: true,
@@ -36,10 +39,25 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 480, z: -110 },
     radius: 600,
     cooldown: 60,
+    presence: { onFor: [150, 240], offFor: [90, 180] },
     priority: 6,
     repeat: 'loop',
     startAirborne: false,
     route: (c) => airfieldCircuit(c.airfield, { x: c.airfield.x - 40, z: c.airfield.z - 22, yaw: c.airfield.yaw }),
+  },
+  {
+    id: 'rootwell-circuit',
+    title: 'Rootwell Aeronautics Circuit',
+    kind: 'hedge-hopper',
+    sound: SKY_SOUNDS.sport,
+    anchor: { x: ROOTWELL_AIRFIELD.x, z: ROOTWELL_AIRFIELD.z },
+    radius: 600,
+    cooldown: 75,
+    presence: { onFor: [120, 200], offFor: [120, 240] },
+    priority: 6,
+    repeat: 'loop',
+    startAirborne: false,
+    route: () => airfieldCircuit(ROOTWELL_AIRFIELD, { x: 1250, z: 545, yaw: Math.PI / 2 }),
   },
   {
     id: 'crop-duster',
@@ -49,6 +67,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 40, z: 440 },
     radius: 650,
     cooldown: 45,
+    presence: { onFor: [120, 200], offFor: [120, 240] },
     priority: 7,
     repeat: 'loop',
     startAirborne: true,
@@ -63,6 +82,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 0, z: 0 },
     radius: 600,
     cooldown: 60,
+    presence: { onFor: [120, 200], offFor: [120, 240] },
     priority: 5,
     repeat: 'loop',
     startAirborne: true,
@@ -83,6 +103,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 220, z: 160 },
     radius: 750,
     cooldown: 90,
+    presence: { onFor: [90, 150], offFor: [150, 270] },
     priority: 4,
     repeat: 'loop',
     startAirborne: true,
@@ -97,6 +118,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: 0, z: 0 },
     radius: 3000,
     cooldown: 90,
+    presence: { onFor: [90, 150], offFor: [150, 300] },
     priority: 8,
     repeat: 'rebuild',
     startAirborne: true,
@@ -128,6 +150,7 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
     anchor: { x: -450, z: 520 },
     radius: 700,
     cooldown: 120,
+    presence: { onFor: [180, 300], offFor: [180, 360] },
     priority: 3,
     repeat: 'loop',
     startAirborne: true,
@@ -168,6 +191,48 @@ export const SKY_BEHAVIOURS: readonly SkyBehaviourDef[] = [
         { x: 630, z: 30, agl: 80, speed: 30 },
       ];
     },
+  },
+  {
+    id: 'preserve-survey',
+    title: 'Unmown Bird Survey',
+    kind: 'dandelion-drifter',
+    sound: SKY_SOUNDS.balloon,
+    anchor: { x: -900, z: -1520 },
+    radius: 600,
+    cooldown: 150,
+    presence: { onFor: [120, 200], offFor: [240, 360] },
+    priority: 3,
+    repeat: 'loop',
+    startAirborne: true,
+    route: () => polyRoute([{ x: -1300, z: -1550 }, { x: -800, z: -1600 }, { x: -500, z: -1500 }, { x: -1000, z: -1450 }], 40, 5),
+  },
+  {
+    id: 'coast-patrol',
+    title: 'Saltbucket Coast Patrol',
+    kind: 'hedge-hopper',
+    sound: SKY_SOUNDS.sport,
+    anchor: { x: 0, z: 1250 },
+    radius: 900,
+    cooldown: 120,
+    presence: { onFor: [90, 150], offFor: [150, 240] },
+    priority: 4,
+    repeat: 'loop',
+    startAirborne: true,
+    route: () => polyRoute([{ x: -1400, z: 1250 }, { x: 0, z: 1250 }, { x: 1400, z: 1250 }, { x: 0, z: 1250 }], 60, 30),
+  },
+  {
+    id: 'snowcap-sightseer',
+    title: 'Snowcap Sightseeing',
+    kind: 'sycamore-copter',
+    sound: SKY_SOUNDS.copter,
+    anchor: { x: 1000, z: -1600 },
+    radius: 700,
+    cooldown: 120,
+    presence: { onFor: [120, 200], offFor: [120, 240] },
+    priority: 5,
+    repeat: 'loop',
+    startAirborne: true,
+    route: () => orbitRoute({ x: 1000, z: -1600 }, 250, 90, 16, 12),
   },
 ];
 

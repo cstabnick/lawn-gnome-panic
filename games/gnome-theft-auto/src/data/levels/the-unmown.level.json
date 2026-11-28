@@ -1,0 +1,279 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "the-unmown",
+  "name": "the Unmown",
+  "bounds": {
+    "w": 1600,
+    "d": 900
+  },
+  "base": {
+    "id": "gta-preserve-scatter",
+    "version": 1,
+    "seed": 2802,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "unmown-lane",
+      "kind": "road",
+      "points": [
+        [
+          -400,
+          480
+        ],
+        [
+          -480,
+          440
+        ],
+        [
+          -540,
+          380
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "trail/unmown-loop",
+      "kind": "road",
+      "points": [
+        [
+          -560,
+          328
+        ],
+        [
+          -600,
+          150
+        ],
+        [
+          -500,
+          0
+        ],
+        [
+          -300,
+          40
+        ],
+        [
+          -150,
+          30
+        ],
+        [
+          100,
+          -60
+        ],
+        [
+          250,
+          40
+        ],
+        [
+          450,
+          60
+        ],
+        [
+          670,
+          -60
+        ],
+        [
+          700,
+          40
+        ]
+      ],
+      "width": 4
+    },
+    {
+      "id": "trail/reedmere-boardwalk",
+      "kind": "road",
+      "points": [
+        [
+          -300,
+          40
+        ],
+        [
+          -200,
+          -20
+        ],
+        [
+          -100,
+          -60
+        ],
+        [
+          0,
+          -20
+        ],
+        [
+          100,
+          -60
+        ]
+      ],
+      "width": 3
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "water/reedmere",
+      "kind": "water",
+      "x": -150,
+      "z": -155,
+      "data": {
+        "w": 220,
+        "d": 100
+      }
+    },
+    {
+      "id": "unmown-ranger-station",
+      "kind": "slot",
+      "x": -560,
+      "z": 350,
+      "data": {
+        "hw": 25,
+        "hd": 20,
+        "kind": "building",
+        "epic": "E31",
+        "flat": true,
+        "label": "Unmown Ranger Station",
+        "anchors": {
+          "door": {
+            "dx": 20,
+            "dz": 20,
+            "yaw": 0
+          },
+          "trailhead": {
+            "dx": 0,
+            "dz": -22
+          }
+        }
+      }
+    },
+    {
+      "id": "unmown-wetland",
+      "kind": "slot",
+      "x": -150,
+      "z": -150,
+      "data": {
+        "hw": 160,
+        "hd": 80,
+        "kind": "water",
+        "epic": "E31",
+        "flat": false,
+        "label": "Reedmere"
+      }
+    },
+    {
+      "id": "unmown-meadow",
+      "kind": "slot",
+      "x": 440,
+      "z": -140,
+      "data": {
+        "hw": 220,
+        "hd": 120,
+        "kind": "natural",
+        "epic": "E31",
+        "flat": false,
+        "label": "the Long Meadow"
+      }
+    },
+    {
+      "id": "unmown-old-wood",
+      "kind": "slot",
+      "x": -670,
+      "z": -60,
+      "data": {
+        "hw": 110,
+        "hd": 150,
+        "kind": "natural",
+        "epic": "E31",
+        "flat": false,
+        "label": "Oldroot Wood"
+      }
+    },
+    {
+      "id": "unmown-hide-1",
+      "kind": "slot",
+      "x": -50,
+      "z": -50,
+      "data": {
+        "hw": 6,
+        "hd": 6,
+        "kind": "building",
+        "epic": "E31",
+        "flat": false,
+        "label": "Reedmere Hide"
+      }
+    },
+    {
+      "id": "unmown-hide-2",
+      "kind": "slot",
+      "x": 440,
+      "z": 10,
+      "data": {
+        "hw": 6,
+        "hd": 6,
+        "kind": "building",
+        "epic": "E31",
+        "flat": false,
+        "label": "Meadow Hide"
+      }
+    },
+    {
+      "id": "unmown-hide-3",
+      "kind": "slot",
+      "x": -700,
+      "z": 170,
+      "data": {
+        "hw": 6,
+        "hd": 6,
+        "kind": "building",
+        "epic": "E31",
+        "flat": false,
+        "label": "Wood Hide"
+      }
+    }
+  ],
+  "data": {
+    "region": "preserve",
+    "ground": 7313992,
+    "surface": "grass",
+    "batch": "preserve-scenery",
+    "border": [
+      [
+        -800,
+        600
+      ],
+      [
+        -400,
+        600
+      ],
+      [
+        -400,
+        100
+      ],
+      [
+        800,
+        100
+      ],
+      [
+        800,
+        -300
+      ],
+      [
+        -800,
+        -300
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-preserve-relief",
+        "version": 1,
+        "params": {
+          "swell": 3,
+          "swellScale": 200,
+          "hummocks": 1.2,
+          "hummockScale": 40
+        }
+      }
+    }
+  }
+}

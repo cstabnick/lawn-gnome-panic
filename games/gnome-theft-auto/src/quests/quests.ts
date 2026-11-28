@@ -3,23 +3,32 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { notifySaveChanged } from '../saveHook';
-import { mergeQuestSaves, parseSavesJson } from './questSave';
+import { catchUpHeld, isBeforeTheEvenCut, mergeQuestSaves, migrateFinaleSave, parseSavesJson } from './questSave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 import type { Blip, Npc, World } from '../types';
 import { GIVERS, QUESTS } from './defs';
 import { SCENES } from '../cutscene/scenes';
+import { interiorById, interiorToWorld } from '../interiors/registry';
+import { currentInterior } from '../interiors/runtime';
 import { airDropRun, bossCombineRun, choiceRun, surviveDerbyRun } from './objectivesAction';
 import { chaseFollowRun, convoyAmbushRun, stealDeliverRun } from './objectivesDrive';
 import { tessieBuoysRun, tessieSightingsRun } from './objectivesTessie';
 import { tessieEscortRun, tessieRideRun } from './objectivesTessieEscort';
 import { raceRun } from './objectivesRace';
 import { checkpointsRun, probeRun } from './objectivesCity';
+import { passengerRun } from './objectivesPassenger';
+import { inspectRun } from './objectivesInspect';
+import { beatsDone, isPaced, sidePacing } from './pacing';
 import { checkUnlock, ensureBeat } from './tessieUnlock';
-import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockedSideIds, unlockMet } from './unlocks';
+import { MAIN_COLOR, OBJECTIVE_COLOR, sideColor, unlockMet } from './unlocks';
 import { TESSIE } from '../config';
+import { createQuestPins, recoverVehicleNear } from './questPins';
+import type { QuestPins } from './questPins';
+import { hoaCap, hoaPolicyFor } from './hoaPolicy';
 import type { CutsceneRequest, CutsceneSpec, GiverDef, ObjectiveDef, QuestDef, QuestDeps, QuestSave, Run, TargetDef } from './types';
 
 export type { QuestDeps, Run };
@@ -77,13 +86,26 @@ export interface Quests {
   pinGiver(id: string | null): void;
   /** Hide every giver marker (beam, star, ring, badge) while a cutscene plays. */
   setMarkersHidden?(hidden: boolean): void;
+  /**
+   * E23 L101: the player was just cracked (app.ts, after the death beat, instead of waking at the hospital door). With a
+   * quest active: retries its step from the checkpoint (which places the player) and returns true. Else false.
+   */
+  onPlayerDown?(): boolean;
+  /** E23 L101: retry the active step from its checkpoint after a short "Retrying…" beat. False when no quest is active. */
+  retryActive?(reason: string): boolean;
+  /** E23 L101: the active quest's pins (vehicles, NPCs, props, the player's quest ride). */
+  pins?: QuestPins;
 }
 
 type Maker = (obj: never, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) => Run;
 
+/** A target snaps to a walk point only this near its `near` spot (E21: the far edges have few walk points, and a
+ *  target 500 m from its spot is worse than one stood exactly where the quest put it). */
+const WALK_SNAP_MAX = 30;
+
 const nearestWalk = (world: World, x: number, z: number): { x: number; z: number } => {
   let best = { x, z };
-  let bd = Infinity;
+  let bd = WALK_SNAP_MAX;
   for (const p of world.walkPoints) {
     const d = Math.hypot(p.x - x, p.z - z);
     if (d < bd) { bd = d; best = p; }
@@ -189,6 +211,14 @@ const crackRun = (obj: Extract<ObjectiveDef, { kind: 'crack' }>, deps: QuestDeps
     },
     blips: () => [...live.values()].map((e) => ({ x: e.npc.x, z: e.npc.z, color: TARGET_COLOR, quest: e.def.name })),
     cracked: () => [...cracked],
+    // E23 L102 (fuzz): a target that left the world without being cracked can never be cracked: retry the step, which
+    // spawns the targets still missing (cracked ones stay cracked).
+    failed() {
+      for (const e of live.values()) {
+        if (!deps.npcs.list.includes(e.npc)) return `${e.def.name} slipped away! The targets are back in place.`;
+      }
+      return null;
+    },
     cleanup() {
       for (const e of live.values()) {
         e.npc.model.object.remove(e.marker);
@@ -240,7 +270,25 @@ function buildHoseVisual(scene: THREE.Scene, x: number, z: number): HoseVisual {
   return { group, leftSeg, rightSeg, bulge, valve };
 }
 
+/** A giver with x, z and exit in world coordinates (interior givers are local to their room). */
+export function worldGiver(g: GiverDef): GiverDef {
+  if (!g.interior) return g;
+  const [x, z] = interiorToWorld(g.interior, g.x, g.z);
+  const [ex, ez] = interiorToWorld(g.interior, g.exit.x, g.exit.z);
+  return { ...g, x, z, exit: { ...g.exit, x: ex, z: ez } };
+}
+
+/** Where a giver shows on the map: its door while the player is outside its interior. */
+function giverBlipPos(g: GiverDef): { x: number; z: number } {
+  if (g.interior && currentInterior() !== g.interior) {
+    const d = interiorById(g.interior)?.def.door;
+    if (d) return { x: d.x, z: d.z };
+  }
+  return { x: g.x, z: g.z };
+}
+
 const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void): Run => {
+  const at: [number, number] = obj.interior ? interiorToWorld(obj.interior, obj.at[0], obj.at[1]) : obj.at;
   let reached = false;
   /** An arrival scene is playing: the step completes when it ends. */
   let arriving = false;
@@ -251,10 +299,10 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
     flatLayer(new THREE.MeshBasicMaterial({ color: 0xffd23f, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false }), LAYER.marker),
   );
   ring.rotation.x = -Math.PI / 2;
-  placeOnGround(ring, obj.at[0], obj.at[1], 0.08, true);
+  placeOnGround(ring, at[0], at[1], 0.08, true);
   deps.scene.add(ring);
 
-  const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, obj.at[0], obj.at[1]) : null;
+  const hose = obj.prop === 'hose' ? buildHoseVisual(deps.scene, at[0], at[1]) : null;
   let hoseKinked = false;
 
   return {
@@ -270,10 +318,10 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
         mistTimer -= dt;
         if (mistTimer <= 0) {
           mistTimer = 0.28;
-          deps.fx?.waterJet?.(obj.at[0], 0.45, obj.at[1]);
+          deps.fx?.waterJet?.(at[0], 0.45, at[1]);
         }
       }
-      if (!reached && !arriving && Math.hypot(px - obj.at[0], pz - obj.at[1]) <= obj.radius) {
+      if (!reached && !arriving && Math.hypot(px - at[0], pz - at[1]) <= obj.radius) {
         const script = obj.scene ? SCENES[obj.scene] : undefined;
         if (obj.scene && !script) console.warn(`[cutscene] visit: unknown scene ${obj.scene}`);
         if (script && !deps.cutscene.active) {
@@ -298,8 +346,8 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
           hose.bulge.scale.set(2.1, 1.9, 2.1);
           hose.bulge.position.set(-0.45, 0.45, 0);
           hose.valve.rotation.z = 0.5;
-          deps.fx?.waterJet?.(obj.at[0], 0.6, obj.at[1]);
-          deps.fx?.confetti?.(obj.at[0], 0.7, obj.at[1]);
+          deps.fx?.waterJet?.(at[0], 0.6, at[1]);
+          deps.fx?.confetti?.(at[0], 0.7, at[1]);
           deps.play('splash');
           const lingering = hose.group;
           setTimeout(() => deps.scene.remove(lingering), 3500);
@@ -309,7 +357,11 @@ const visitRun = (obj: Extract<ObjectiveDef, { kind: 'visit' }>, deps: QuestDeps
       }
     },
     onCracked() {},
-    blips: () => (reached ? [] : [{ x: obj.at[0], z: obj.at[1], color: TARGET_COLOR, quest: obj.hint }]),
+    blips: () => {
+      if (reached) return [];
+      const door = obj.interior && currentInterior() !== obj.interior ? interiorById(obj.interior)?.def.door : undefined;
+      return [{ x: door ? door.x : at[0], z: door ? door.z : at[1], color: TARGET_COLOR, quest: obj.hint }];
+    },
     cracked: () => [],
     cleanup() {
       deps.scene.remove(ring);
@@ -336,8 +388,8 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     surviveDerbyRun(obj, deps, changed, say)) as unknown as Maker,
   'boss-combine': ((obj: Extract<ObjectiveDef, { kind: 'boss-combine' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     bossCombineRun(obj, deps, changed, say)) as unknown as Maker,
-  choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
-    choiceRun(obj, deps, changed, say)) as unknown as Maker,
+  choice: ((obj: Extract<ObjectiveDef, { kind: 'choice' }>, deps: QuestDeps, save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    choiceRun(obj, deps, save, changed, say)) as unknown as Maker,
   'tessie-sightings': ((obj: Extract<ObjectiveDef, { kind: 'tessie-sightings' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     tessieSightingsRun(obj, deps, changed, say)) as unknown as Maker,
   'tessie-buoys': ((obj: Extract<ObjectiveDef, { kind: 'tessie-buoys' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
@@ -352,6 +404,10 @@ const OBJECTIVE_KINDS: Record<ObjectiveDef['kind'], Maker> = {
     checkpointsRun(obj, deps, changed, say)) as unknown as Maker,
   probe: ((obj: Extract<ObjectiveDef, { kind: 'probe' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
     probeRun(obj, deps, changed, say)) as unknown as Maker,
+  passenger: ((obj: Extract<ObjectiveDef, { kind: 'passenger' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    passengerRun(obj, deps, changed, say)) as unknown as Maker,
+  inspect: ((obj: Extract<ObjectiveDef, { kind: 'inspect' }>, deps: QuestDeps, _save: QuestSave, changed: () => void, say: (t: string) => void) =>
+    inspectRun(obj, deps, changed, say)) as unknown as Maker,
 };
 
 export { mergeQuestSaves };
@@ -361,6 +417,8 @@ export { mergeQuestSaves };
 export function isQuestAvailable(q: QuestDef, saves: Record<string, QuestSave>): boolean {
   if (saves[q.id]) return false;
   if (!unlockMet(q.id, saves)) return false;
+  // D7 (FX21): an old save's catch-up rows come one at a time, in story order.
+  if (catchUpHeld(q.id, saves)) return false;
   if (!q.prereq) return true;
   return saves[q.prereq]?.state === 'done';
 }
@@ -380,7 +438,10 @@ export function summarizeQuestSaves(text: string): string {
 function loadSaves(): Record<string, QuestSave> {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    return parseSavesJson(raw);
+    const saves = parseSavesJson(raw);
+    // E22: a save from before the finale was split into parts resumes in the right part.
+    if (migrateFinaleSave(saves)) storeSaves(saves);
+    return saves;
   } catch {
     return {};
   }
@@ -396,8 +457,9 @@ function storeSaves(s: Record<string, QuestSave>): void {
 export function createQuests(
   deps: QuestDeps,
   questList: readonly QuestDef[] = QUESTS,
-  giversMap: Record<string, GiverDef> = GIVERS,
+  giversArg: Record<string, GiverDef> = GIVERS,
 ): Quests {
+  const giversMap: Record<string, GiverDef> = Object.fromEntries(Object.entries(giversArg).map(([k, g]) => [k, worldGiver(g)]));
   const saves = loadSaves();
   let activeId: string | null = null;
 
@@ -408,6 +470,7 @@ export function createQuests(
     dirty ||= unlocked;
     if (!dirty) return;
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     if (unlocked) deps.onTessieUnlock?.();
   }
@@ -416,6 +479,10 @@ export function createQuests(
   /** Runners whose lines depend on the moment (in a boat or not, near or far) are re-read this often, seconds. */
   let trackerRefreshT = 0;
   let lastLines = '';
+  /** E23 L101: pinned vehicles/NPCs/props and the player's quest ride; seconds until a pending retry; wreck-recovery timer. */
+  const pins = createQuestPins();
+  let retryIn = 0;
+  let rideWreckT = 0;
 
   let clockT = 0;
   /** One giver's 3D marker parts. `kind` is the colour they were last set to. */
@@ -436,6 +503,7 @@ export function createQuests(
       new THREE.MeshBasicMaterial({ color: MAIN_COLOR, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, fog: false }),
     );
     beam.position.set(g.x, heightAt(g.x, g.z) + 45, g.z);
+    trackBeam(beam, heightAt(g.x, g.z), 90);
     deps.scene.add(beam);
 
     const star = makeMarker();
@@ -456,10 +524,20 @@ export function createQuests(
     marks.set(g.id, { g, beam, star, ring, main, side });
   }
 
+  let pacing = sidePacing(saves, questList);
+  let offeredSet = new Set(pacing.offered);
+  function refreshPacing(): void {
+    pacing = sidePacing(saves, questList);
+    offeredSet = new Set(pacing.offered);
+  }
   const waitingAt = (id: string): boolean => activeId === null && questList.some((qd) => qd.giver === id && isQuestAvailable(qd, saves));
-  /** The kind of the quest a giver offers next (the one interact() plays). */
+  const isMarked = (qd: QuestDef): boolean => isQuestAvailable(qd, saves) && (markerKind(qd) === 'main' || !isPaced(qd.id) || offeredSet.has(qd.id));
+  /** A giver that gets a map mark: has a main quest, an unpaced side quest or an offered side quest ready. */
+  const markedAt = (id: string): boolean => activeId === null && questList.some((qd) => qd.giver === id && isMarked(qd));
+  /** The kind of the quest a giver offers next (main first, then an offered side quest). */
   const giverKind = (id: string): 'main' | 'side' => {
-    const next = questList.find((qd) => qd.giver === id && isQuestAvailable(qd, saves));
+    const mine = questList.filter((qd) => qd.giver === id && isMarked(qd));
+    const next = mine.find((qd) => markerKind(qd) === 'main') ?? mine[0] ?? questList.find((qd) => qd.giver === id && isQuestAvailable(qd, saves));
     return next ? markerKind(next) : 'side';
   };
   const giverColor = (id: string): string => (giverKind(id) === 'main' ? MAIN_COLOR : sideColor(id));
@@ -495,13 +573,59 @@ export function createQuests(
       save,
       () => {
         storeSaves(saves);
+        refreshPacing();
         notifySaveChanged();
         refreshTracker();
         stepCheck(q);
       },
       (t) => deps.hud.toast(t, 3200),
     );
+    // E23 L101: each step saves a checkpoint (a resumed save keeps its own) and applies its Hat Watch policy.
+    const p = deps.player;
+    if (p && save.checkpoint?.step !== save.step) {
+      save.checkpoint = { step: save.step, x: p.x, z: p.z, yaw: p.yaw };
+      storeSaves(saves);
+      refreshPacing();
+    }
+    deps.watch?.setCap?.(hoaCap(hoaPolicyFor(q, save.step)));
     refreshTracker();
+  }
+
+  /** E23 L101: put the step back at its checkpoint (player, ride, watch), keeping the crack progress. */
+  function doRetry(): void {
+    if (!activeId) return;
+    const q = quest(activeId);
+    const save = saves[activeId];
+    if (!q || !save) return;
+    retryIn = 0;
+    run?.cleanup();
+    run = null;
+    const p = deps.player;
+    if (p?.vehicle) {
+      const v = p.vehicle;
+      p.exit();
+      v.driver = 'none';
+    }
+    // The runner may have removed its own vehicle (the one the player rode): forget it before recovering the ride.
+    if (deps.vehicles) pins.prune(deps.vehicles);
+    const cp = save.checkpoint ?? (p ? { step: save.step, x: p.x, z: p.z, yaw: p.yaw } : null);
+    if (cp) {
+      deps.placePlayer(cp.x, cp.z, cp.yaw);
+      const ride = pins.ride();
+      if (ride) recoverVehicleNear(ride, cp.x, cp.z, deps.world);
+    }
+    deps.watch?.clear();
+    startStep(q);
+    deps.hud.toast('Back at the start of: ' + q.objectives[save.step].text, 3500);
+  }
+
+  function retryActive(reason: string): boolean {
+    if (!activeId) return false;
+    if (retryIn > 0) return true;
+    deps.hud.banner('RETRYING…', 1500);
+    deps.hud.toast(reason, 3500);
+    retryIn = 1.5;
+    return true;
   }
 
   /** After progress: go on to the next objective, or finish the quest. */
@@ -512,6 +636,7 @@ export function createQuests(
     save.cracked = [];
     if (save.step < q.objectives.length) {
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       tessieCheck();
       noticeUnlocks();
@@ -537,7 +662,12 @@ export function createQuests(
     run = null;
     activeId = null;
     save.state = 'done';
+    save.doneAt = beatsDone(saves, questList);
+    pins.releaseAll();
+    retryIn = 0;
+    deps.watch?.setCap?.(null);
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     tessieCheck();
     noticeUnlocks();
@@ -565,7 +695,8 @@ export function createQuests(
         deps.economy.payDebt(Math.min(reward, debtLeft));
       }
     }
-    deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
+    // D7 (FX21): an act IV row played after the finale is old news; Turfton FM stays on W17's world.
+    if (!isBeforeTheEvenCut(q.id, saves)) deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
 
     const announce = (): void => {
       deps.hud.banner('CONTRACT COMPLETE', 3500);
@@ -612,21 +743,24 @@ export function createQuests(
     pinned = null;
     saves[q.id] = { state: 'active', step: 0, cracked: [] };
     storeSaves(saves);
+    refreshPacing();
     notifySaveChanged();
     tessieCheck();
     activeId = q.id;
     startStep(q);
     deps.onObjectiveStart?.(q, 0);
+    if (deps.player) deps.ensureRideNear?.(deps.player.x, deps.player.z, q);
   }
 
   // The table beat (unlocks.ts) and an old save's rolled beat unlock Tessie at once; `?tessie=now` forces it.
   tessieCheck(!!deps.tessieNow, true);
   // What is already open at load gets no notice.
-  for (const id of unlockedSideIds(saves)) known.add(id);
+  for (const id of pacing.offered) known.add(id);
 
   /** Queue a notice for each side quest that just opened (not Tessie, which has onTessieUnlock). The first is 4.5 s out, each next 3 s after the previous. */
   function noticeUnlocks(): void {
-    for (const id of unlockedSideIds(saves)) {
+    refreshPacing();
+    for (const id of pacing.offered) {
       if (known.has(id)) continue;
       known.add(id);
       if (id === TESSIE.questId || !quest(id)) continue;
@@ -668,7 +802,7 @@ export function createQuests(
         if (q) deps.onSideUnlock?.(q, giversMap[q.giver]);
       }
       for (const m of marks.values()) {
-        const waiting = waitingAt(m.g.id);
+        const waiting = markedAt(m.g.id);
         const kind = giverKind(m.g.id);
         if (m.kind !== kind) {
           m.kind = kind;
@@ -691,6 +825,30 @@ export function createQuests(
         m.side.position.y = bob;
       }
       run?.update(dt, px, pz);
+      if (activeId) {
+        const pl = deps.player;
+        const pv = pl?.vehicle;
+        if (pv && !pv.exploded && pv !== pins.ride() && !pv.questOwned) pins.setRide(pv);
+        if (deps.vehicles) pins.prune(deps.vehicles);
+        const ride = pins.ride();
+        if (pl && ride && (ride.exploded || ride.sunk) && pl.vehicle !== ride) {
+          rideWreckT += dt;
+          if (rideWreckT >= 3) {
+            rideWreckT = 0;
+            recoverVehicleNear(ride, pl.x, pl.z, deps.world);
+            deps.hud.toast('Your ride is back beside you.', 3000);
+          }
+        } else {
+          rideWreckT = 0;
+        }
+        if (retryIn > 0) {
+          retryIn -= dt;
+          if (retryIn <= 0) doRetry();
+        } else if (run && !deps.cutscene.active) {
+          const why = run.failed?.();
+          if (why) retryActive(why);
+        }
+      }
       trackerRefreshT -= dt;
       if (run && trackerRefreshT <= 0) {
         trackerRefreshT = 0.5;
@@ -709,16 +867,16 @@ export function createQuests(
     blips() {
       const out: Blip[] = [];
       for (const g of Object.values(giversMap)) {
-        if (!waitingAt(g.id)) continue;
+        if (!markedAt(g.id)) continue;
         const kind = giverKind(g.id);
-        out.push({ x: g.x, z: g.z, color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
+        out.push({ ...giverBlipPos(g), color: kind === 'main' ? MAIN_COLOR : sideColor(g.id), quest: g.name, kind });
       }
       if (run) out.push(...run.blips().map((b) => ({ ...b, kind: 'objective' as const })));
       return out;
     },
 
     hint() {
-      const waiting = Object.values(giversMap).filter((g) => waitingAt(g.id));
+      const waiting = Object.values(giversMap).filter((g) => markedAt(g.id));
       const main = waiting.find((g) => giverKind(g.id) === 'main');
       if (main) return `A contract is waiting at ${main.name}.`;
       if (waiting.length > 0) return `A side job is waiting at ${waiting[0].name}.`;
@@ -786,9 +944,13 @@ export function createQuests(
       if (!activeId) return false;
       run?.cleanup();
       run = null;
+      pins.releaseAll();
+      retryIn = 0;
+      deps.watch?.setCap?.(null);
       delete saves[activeId];
       activeId = null;
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       deps.hud.setObjective(null);
       deps.hud.toast('Quest abandoned.', 3000);
@@ -801,9 +963,21 @@ export function createQuests(
       if (!q || !saves[activeId]) return false;
       saves[activeId].cracked = [];
       storeSaves(saves);
+      refreshPacing();
       notifySaveChanged();
       startStep(q);
+      const ride = pins.ride();
+      if (ride && deps.player) recoverVehicleNear(ride, deps.player.x, deps.player.z, deps.world);
       deps.hud.toast('Objective step restarted.', 3000);
+      return true;
+    },
+
+    pins,
+    retryActive,
+    onPlayerDown() {
+      if (!activeId) return false;
+      deps.hud.toast('Cracked! Retrying the step.', 3500);
+      doRetry();
       return true;
     },
 
@@ -825,7 +999,7 @@ export function createQuests(
           pinned = null;
           return null;
         }
-        return { x: g.x, z: g.z, color: giverColor(g.id), label: g.name };
+        return { ...giverBlipPos(g), color: giverColor(g.id), label: g.name };
       }
       return null;
     },

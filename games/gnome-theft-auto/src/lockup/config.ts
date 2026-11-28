@@ -26,7 +26,7 @@ export const LOCKUP = {
   scrapValue: 60,
   delivery: {
     /** Acorns per Sling-Lift call. */
-    fee: 40,
+    fee: 70,
     /** Seconds after a delivery lands before the next can be called. */
     cooldownS: 45,
     /** Safe-spot search around the player: ring distances (m) and the vehicle's clear radius. */
@@ -41,13 +41,13 @@ export const LOCKUP = {
     /** Aircraft (Hangar Two). Rotor craft and the balloon are lowered on clear flat ground like a mower, with a wider
      *  clear radius; fixed-wing craft need a take-off strip (findStripSpot), else they go to the Desert Airfield. */
     air: {
-      fee: 80,
+      fee: 140,
       clearRadius: 4.5,
       maxSlope: 0.25,
       strip: { radius: 4, length: 60, minDist: 8, maxDist: 60, searchMax: 160, maxSlope: 0.12, maxWater: 0.05 },
     },
     /** Boats (the Mossbank Boathouse): lowered onto open water at least minDepth deep near the player. */
-    water: { fee: 60, clearRadius: 3.2, minDepth: 1.0, minDist: 4, maxDist: 40, searchMax: 160 },
+    water: { fee: 100, clearRadius: 3.2, minDepth: 1.0, minDist: 4, maxDist: 40, searchMax: 160 },
   },
   sling: {
     /** The chopper is the Whirligig prefab (whirligig-mower, a rotor pivot named 'rotor') at this scale. */
@@ -86,7 +86,7 @@ export const ESTATES = {
     siteId: 'hangar-two',
     name: 'Hangar Two',
     /** Acorns. Sold by Wind-Sock Wally. */
-    price: 1200,
+    price: 1800,
     /** Prefab (packages/prefabs gta-hangar-boathouse.ts): 24 wide, 14 deep, 9 tall, open on +z, roller door rolled up. */
     prefab: 'hangar-two',
     /** East of the old hangar (428, -64), same line, door facing the runway. */
@@ -109,7 +109,7 @@ export const ESTATES = {
     siteId: 'mossbank-boathouse',
     name: 'Mossbank Boathouse',
     /** Acorns. Let by Driftwood, who keeps the Loch Moss dock. */
-    price: 800,
+    price: 1200,
     /** Prefab (gta-hangar-boathouse.ts; its origin is the post feet, the deck top 2.5 above): 10 wide, 16 deep, a slip, open on +z (to the loch),
      *  a back door 2.2 wide in the middle of the back wall. Origin = walkway deck top, centre of the footprint. */
     prefab: 'boathouse',

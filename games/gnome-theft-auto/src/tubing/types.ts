@@ -49,7 +49,12 @@ export interface TubeState {
   fallen: boolean;
   /** Seconds until the next hop is allowed. */
   hopT: number;
+  /** 'ski': water-skis (tow-ski vehicle), else a tube. */
+  mode: TowMode;
 }
+
+/** What rides the rope: a tube, or water-skis (tow-ski vehicle). */
+export type TowMode = 'tube' | 'ski';
 
 /** What stepTube reports for one step. */
 export type TubeEvent =
@@ -119,6 +124,73 @@ export const TOW = {
   snapDist: 40,
 } as const;
 
+/** The tow tuning fields tow.ts reads (TOW has the same keys; SKI and the tube tuning are built from it). */
+export interface TowTuning {
+  k: number;
+  c: number;
+  drag: number;
+  leanForce: number;
+  leanRate: number;
+  gravity: number;
+  hopV: number;
+  hopCooldown: number;
+  launch: number;
+  floatY: number;
+  sideFast: number;
+  sideRisk: number;
+  tooFast: number;
+  fastRisk: number;
+  riskDrain: number;
+  hardLanding: number;
+  throwUp: number;
+}
+
+/** Water-skis: carve harder, wider side limit, lower wave launch, lighter hops, skimming just above the water. */
+export const SKI: TowTuning = {
+  k: TOW.k,
+  c: TOW.c,
+  drag: 0.8,
+  leanForce: 13,
+  leanRate: 5,
+  gravity: TOW.gravity,
+  hopV: 4.2,
+  hopCooldown: 0.8,
+  launch: 0.6,
+  floatY: 0.05,
+  sideFast: 13,
+  sideRisk: TOW.sideRisk,
+  tooFast: 30,
+  fastRisk: TOW.fastRisk,
+  riskDrain: TOW.riskDrain,
+  hardLanding: 0.45,
+  throwUp: TOW.throwUp,
+};
+
+const TUBE: TowTuning = {
+  k: TOW.k,
+  c: TOW.c,
+  drag: TOW.drag,
+  leanForce: TOW.leanForce,
+  leanRate: TOW.leanRate,
+  gravity: TOW.gravity,
+  hopV: TOW.hopV,
+  hopCooldown: TOW.hopCooldown,
+  launch: TOW.launch,
+  floatY: TOW.floatY,
+  sideFast: TOW.sideFast,
+  sideRisk: TOW.sideRisk,
+  tooFast: TOW.tooFast,
+  fastRisk: TOW.fastRisk,
+  riskDrain: TOW.riskDrain,
+  hardLanding: TOW.hardLanding,
+  throwUp: TOW.throwUp,
+};
+
+/** The tuning for a mode: SKI for 'ski', else the tube tuning (TOW's values). */
+export function towTuning(mode: TowMode): TowTuning {
+  return mode === 'ski' ? SKI : TUBE;
+}
+
 /** What app.ts calls on the tubing runtime (tubing/runtime.ts installTubing). */
 export interface Tubing {
   /** True when `v` is a tube this client tows as its rider: app.ts must not step it (stepRider does). */
@@ -136,7 +208,7 @@ export interface Tubing {
   /** Driving a boat: tow line out or in. Null or the reason it cannot. */
   setTow(on: boolean): string | null;
   /** Tow line out: add an NPC rider in the next free slot. */
-  addNpcRider(): string | null;
+  addNpcRider(mode?: TowMode): string | null;
   /** On foot or in water near a remote boat with its tow line out: spawn a tube behind it, sit on it, ask to hook on. */
   hopOn(): string | null;
   /** Spawn a free-floating tube by the player (rental). */
@@ -146,9 +218,11 @@ export interface Tubing {
 
 export interface TubingDebug {
   /** As a driver: tow line out, slots (player id / 'npc' / null), shared score, gates. */
-  tow: { on: boolean; slots: (number | 'npc' | null)[]; score: number; gates: number } | null;
-  /** As a rider: who tows me, my slot, my points, fallen. */
-  ride: { host: number | null; slot: number; points: number; fallen: boolean; air: number } | null;
+  tow: { on: boolean; slots: (number | 'npc' | null)[]; score: number; gates: number; course: string } | null;
+  /** As a rider: who tows me, my slot, my points, fallen, tube or skis. */
+  ride: { host: number | null; slot: number; points: number; fallen: boolean; air: number; mode: TowMode } | null;
+  /** Driftwood's tow boat (solo play at the Last Tube) is out. */
+  driftwood: boolean;
   /** Ropes drawn this frame. */
   ropes: number;
 }

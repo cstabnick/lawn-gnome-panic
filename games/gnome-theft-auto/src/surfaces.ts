@@ -1,9 +1,9 @@
 // Surface classification and driving-feel multipliers for Gnome Theft Auto.
-import { AIRFIELD, CITY_HALF, HIGHWAYS, ROAD_LINES, ROAD_WIDTH, biomeAt } from './config';
+import { AIRFIELD, CITY_HALF, HIGHWAYS, ROAD_LINES, ROAD_WIDTH, ROOTWELL_AIRFIELD, biomeAt } from './config';
 import { paintedSurfaceAt } from './terrainPaint';
 import type { VehicleKind, World } from './types';
 import { bridgeDeckAt, waterDepthAt } from './water';
-import { onTrackRoad } from './raceTrack/track';
+import { fordWaterAt, trackSurfaceAt } from './raceTrack/tracks';
 
 export type SurfaceKind = 'asphalt' | 'ice' | 'snow' | 'sand' | 'mud' | 'grass' | 'farm' | 'rock' | 'dirt' | 'gravel' | 'water';
 
@@ -99,10 +99,14 @@ export function surfaceAt(
   let kind: SurfaceKind;
   // Terrain paint (trails, rock, river mud, the regions' own paint); null while the terrain is flat.
   const painted = paintedSurfaceAt(x, z);
-  if (waterDepthAt(x, z) > 0.05 && bridgeDeckAt(x, z) === null) {
+  let track: SurfaceKind | null = null;
+  if ((waterDepthAt(x, z) > 0.05 && bridgeDeckAt(x, z) === null) || fordWaterAt(x, z)) {
     kind = 'water';
-  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD) || onTrackRoad(x, z)) {
+  } else if (onCityRoad(x, z) || onHighway(x, z) || onAirfieldRunway(x, z, world.airfield ?? AIRFIELD) || onAirfieldRunway(x, z, ROOTWELL_AIRFIELD)) {
     kind = 'asphalt';
+  } else if ((track = trackSurfaceAt(x, z))) {
+    // A race track's road (raceTrack/tracks.ts): asphalt at the Speedway, dirt at Rutbottom and on the Capwood Run.
+    kind = track;
   } else if ((x - BIRDBATH_X) ** 2 + (z - BIRDBATH_Z) ** 2 <= BIRDBATH_RADIUS * BIRDBATH_RADIUS) {
     kind = 'ice';
   } else if (painted) {

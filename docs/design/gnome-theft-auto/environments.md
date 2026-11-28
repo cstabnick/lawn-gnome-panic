@@ -82,6 +82,7 @@ open map. Build them from `@lawn/prefabs` first; anything a prefab cannot expres
 | Quest | Chapter | Stages |
 |---|---|---|
 | Fresh Out the Kiln `prologue-fresh-kiln` | 1 | `bus-stop`, `side-valve-bay`, `bodega-front`, `clay-mart-lot` |
+| A Roof on Credit `m02-roof-on-credit` | 1 | `side-valve-bay`, `bodega-front` |
 | First Contract `first-contract` | 1 | `mulch-club-door`, `unmowed-hollow`, `birdbath-basin` |
 | Mower's Keepers `ch1-mowers-keepers` | 1 | `side-valve-bay`, `picnic-median` |
 | Two-Coat Tail `ch1-two-coat-tail` | 1 | `city-hall-steps`, `bodega-front`, `patio-gate`, `patio-gallery` |
@@ -109,7 +110,56 @@ open map. Build them from `@lawn/prefabs` first; anything a prefab cannot expres
 | The Porcelain Support Group `sq-porcelain-support` | side | `unmowed-hollow`, `tall-house-porch` |
 | The Great Hose-Pipe Tax Revolt `sq-hose-revolt` | side | `patio-gate`, `putting-green`, `greenhouse-strip`, `brenda-throne` |
 | Big Lou's Dry-Hat Embargo `sq-big-lou-embargo` | side | `side-valve-bay`, `gnomecino-door` |
+| The Weeping Line `sq-weeping-line` | side | `pebblewick-plots` |
+| The Hum at Three `sq-hum-at-three` | side | `pebblewick-tower` |
+| The Wobbly Gondola `coast-spokewheel-gondola` | side | `coast-spokewheel` |
+| Tubing the Long Spoon `coast-boardwalk-tubing` | side | `coast-last-tube` |
+| Pirate Tours, Mostly `coast-bathtub-tours` | side | `coast-pier` |
+| The Queen's Treasure `coast-queens-treasure` | side | `coast-pier` |
+| Kerbside Rounds `city-kerbside-rounds` | side | `city-hall-steps`, `bodega-front`, `greenhouse-strip`, `kerb-exchange` |
+| Impound Run `city-impound-run` | side | `clay-mart-lot`, `pay-n-glaze`, `kerb-exchange` |
+| Glow-Band Express `city-glow-band-express` | side | `amphitheater`, `greenhouse-strip`, `kerb-exchange` |
+| Penthouse Exclusive `city-penthouse-exclusive` | side | `kerb-exchange` |
+| The Skyway Job `city-skyway-robbery` | side | `clay-mart-lot`, `kerb-exchange` |
+| Good Neighbour `nc-good-neighbour` | side | `bus-stop` |
+| Strike a Pose `nc-strike-a-pose` | side | `bus-stop` |
+| The Wheel and the Kit `nc-wheel-and-kit` | side | `bus-stop` |
+| Store It, Call It `nc-lockup` | side | `bus-stop` |
+| Mind the Verges `nc-mind-the-verges` | side | `bus-stop` |
+| The Bent Pin `nc-bent-pin` | side | `bus-stop` |
+| Up on the Skyway `nc-skyway` | side | `bus-stop` |
+| Odd Jobs `nc-odd-jobs` | side | `bus-stop` |
+| Wings Over the Flats `nc-take-off` | side | `bus-stop` |
+| Sky Spotting `nc-sky-spotting` | side | `bus-stop` |
+| Tuft & Tally `nc-tuft-and-tally` | side | `bus-stop` |
+| Last Stop, Pebblewick `nc-last-stop-pebblewick` | side | `bus-stop` |
+| Reedwatch `nc-reedwatch` | side | `bus-stop` |
+| Hangar and Boathouse `nc-hangar-and-boathouse` | side | `bus-stop` |
+| Throw a Party (online) `nc-party` | side | `bus-stop` |
 | The Loch Moss Monster `sq-tessie` | side | `loch-dock`, `tessie-nest`, `loch-open-water` |
+| Fizz Cup: Rookie Mow-Down `race-rookie-mowdown` | side | `speedway-pits` |
+| Fizz Cup: Low & Loud Derby `race-lowrider-derby` | side | `speedway-pits` |
+| Fizz Cup: Snail-Coach Endurance `race-snail-endurance` | side | `speedway-pits` |
+| Fizz Cup: The Final `race-fizz-cup-final` | side | `speedway-pits` |
+| Snowdrop Sled Trials `sq-snowdrop-sled-trials` | side | `gentian` |
+| Lines on Pail Pond `sq-pail-pond-lines` | side | `theo-pond` |
+| Rutbottom: Knobbly Heat `race-rutbottom-knobbly` | side | `rutbottom-tower` |
+| Rutbottom Heats `sq-rutbottom-heats` | side | `rutbottom-pits` |
+| The Capwood Run: Open Stage `race-capwood-open` | side | `capwood-paddock` |
+| The Cap Count `sq-capwood-cap-count` | side | `capwood-warden` |
+| Kerb Row Warm-Up `sr-kerb-row` | side | `street-skyway-foot` |
+| Skyway Midnight `sr-skyway-midnight` | side | `street-skyway-foot` |
+| La Boucle de Pardonlin `sr-boucle` | side | `street-pardonlin` |
+| The Saltbucket Dash `sr-saltbucket-dash` | side | `street-saltbucket` |
+| The Ring Road Run `sr-ring-road` | side | `street-skyway-foot` |
+| Lost Balls `sq-hedgeworth-lost-balls` | side | `thrift` |
+| A Lesson from the Pro `sq-hedgeworth-pro-lesson` | side | `basil` |
+| The Ninth Green `sq-hedgeworth-ninth-green` | side | `thrift` |
+| Members' Cup `sq-hedgeworth-members-cup` | side | `peony` |
+| The Lost Essay `sq-rootwell-lost-essay` | side | `lovage` |
+| Rent for the Landlords `sq-anthill-rent` | side | `betony` |
+| Night Shift at Levelright `sq-levelright-night-shift` | side | `chard` |
+| The Croft by the Silo `sq-windfall-croft-deed` | side | `bramble` |
 
 ## The cast: where they live, what they drive
 
@@ -148,6 +198,10 @@ open map. Build them from `@lawn/prefabs` first; anything a prefab cannot expres
 | **Silt-Diver Sal** `sal` | `culvert-under-deck` | - | walks | Fishes acorns and magazines out of the storm grates with a magnet on a string; knows every pipe of the Under-Deck. |
 | **Neon-Moth Nina** `nina` | `greenhouse-strip` | `gnomecino-door` | push-bike: Push-Mower Bike strung with fairy lights, glow tyres and violet underglow. (`nina-bike` at (53, -40)) | Sells glow-stick hat-bands from a flowerpot stoop under the grow-lamps all night, shoos the giant moth off the Gnomecino sign. |
 | **Turncoat Cam** `turncoat-cam` | `side-valve-bay` | `patio-gate` | zero-turn: Chameleon-finish Zero-Turn with a fin spoiler, bought with the reward money. (`cam-zero-turn` at (161, -127)) | Used to sweep the Side-Valve bay; after chapter 3 races for a Patio Heights charter and parks at the gate. |
+| **Dorrit "Dot" Pennywort** `dot` | `kerb-exchange` | `bus-stop` | walks | Opens the Exchange with the first snail-coach, punches a ticket for every job, eats lunch on the bus-stop bench, closes when the board is empty, which it never is. |
+| **Hedda Galley** `hedda` | `kerb-exchange` | `city-hall-steps` | walks | Reads every job slip on the Exchange board before the first coffee, then walks the Hall steps with a pencil behind one ear. |
+| **Union Boss "Big Wrench" Grout** `grout` | `clay-mart-lot` | - | walks | Holds the morning shift meeting in the Clay-Mart returns yard, then sits on the loading dock with a thermos until the van is loaded. |
+| **Mabel Kerbstone** `mabel` | `bus-stop` | - | walks | Drives the one Turfton Taxi; every fare ends at the Central Bus Stop. |
 
 Glaze looks (Pay 'n' Glaze loadouts, `Partial<Loadout>`) are in `CAST[].vehicle.glaze`.
 
@@ -183,13 +237,14 @@ Who builds what: `src/landscaping.ts` (Turfton garden blocks), `src/scenery.ts` 
 pieces and signature props by theme), `src/settlements.ts` (house clusters with drives, fences and yards along the
 outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so a new piece never lands on a mark.
 
+
 ## Stages by region
 
 ## Turfton
 
 ### Snail-Coach Stop, Downtown `bus-stop`
 
-**Where:** Turfton, centre (-9, 17), radius 12 m, facing E. **Default time:** day. **Built:** in the world, plus stage set dressing. **Quest giver marker:** `pip-spawn`. **Used by:** `prologue-fresh-kiln`, `intro-tour`.
+**Where:** Turfton, centre (-9, 17), radius 12 m, facing E. **Default time:** day. **Built:** in the world, plus stage set dressing. **Quest giver marker:** `pip-spawn`, `newcomers-club`. **Used by:** `prologue-fresh-kiln`, `intro-tour`, `nc-good-neighbour`, `nc-strike-a-pose`, `nc-wheel-and-kit`, `nc-lockup`, `nc-mind-the-verges`, `nc-bent-pin`, `nc-skyway`, `nc-odd-jobs`, `nc-take-off`, `nc-sky-spotting`, `nc-tuft-and-tally`, `nc-last-stop-pebblewick`, `nc-reedwatch`, `nc-hangar-and-boathouse`, `nc-party`.
 
 **Looks:** A kerbside snail-coach stop on the west pavement of the x = 0 road: a bench, a timetable signpost, a flowerpot and a Clay-Mart billboard over the shelter, the Gnoma truck down the road.
 
@@ -249,7 +304,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Side-Valve Salvage Bay `side-valve-bay`
 
-**Where:** Turfton, centre (-150, 72), radius 15 m, facing N. **Default time:** day. **Built:** in the world, plus stage set dressing. **Inside:** the off-map cutscene room `side-valve`. **Quest giver marker:** `side-valve`. **Used by:** `prologue-fresh-kiln`, `ch1-mowers-keepers`, `ch1-tax-break-in`, `ch1-founders-boot`, `ch3-salvage-raid`, `sq-mulch-pyramid`, `sq-big-lou-embargo`.
+**Where:** Turfton, centre (-150, 72), radius 15 m, facing N. **Default time:** day. **Built:** in the world, plus stage set dressing. **Inside:** the off-map cutscene room `side-valve`. **Quest giver marker:** `side-valve`. **Used by:** `prologue-fresh-kiln`, `m02-roof-on-credit`, `ch1-mowers-keepers`, `ch1-tax-break-in`, `ch1-founders-boot`, `ch3-salvage-raid`, `sq-mulch-pyramid`, `sq-big-lou-embargo`.
 
 **Looks:** An open-fronted repair bay in a grey concrete block at the back of the apron, a workbench under a tarp, a smoking orange Zero-Turn parked nose to the bay, a cracked yard of mown stripes and a rolled hose reel.
 
@@ -285,7 +340,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Turfton City Hall Steps `city-hall-steps`
 
-**Where:** Turfton, centre (14, -69), radius 12 m, facing S. **Default time:** day. **Built:** new: exists through its stage set dressing. **Quest giver marker:** `city-hall`. **Used by:** `ch1-two-coat-tail`, `ch5-even-cut`, `sq-hoa-audit`.
+**Where:** Turfton, centre (14, -69), radius 12 m, facing S. **Default time:** day. **Built:** new: exists through its stage set dressing. **Quest giver marker:** `city-hall`. **Used by:** `ch1-two-coat-tail`, `ch5-even-cut`, `sq-hoa-audit`, `city-kerbside-rounds`.
 
 **Looks:** A new stone City Hall built on the north-east block, a stone plaque over the steps, two capture flagpoles, flowerpots and a lectern on a forecourt of fresh paving; ribbon bunting along the front.
 
@@ -320,7 +375,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Bodega & Sons, Old Brick Quarter `bodega-front`
 
-**Where:** Turfton, centre (-76, 90), radius 12 m, facing E. **Default time:** night. **Built:** in the world, plus stage set dressing. **Quest giver marker:** `strangers`. **Used by:** `sq-grid-truthers`, `sq-hoa-audit`, `sq-mulch-pyramid`, `sq-snail-rigging`, `prologue-fresh-kiln`, `ch1-two-coat-tail`, `ch3-salvage-raid`, `ch5-even-cut`.
+**Where:** Turfton, centre (-76, 90), radius 12 m, facing E. **Default time:** night. **Built:** in the world, plus stage set dressing. **Quest giver marker:** `strangers`. **Used by:** `sq-grid-truthers`, `sq-hoa-audit`, `sq-mulch-pyramid`, `sq-snail-rigging`, `prologue-fresh-kiln`, `m02-roof-on-credit`, `ch1-two-coat-tail`, `ch3-salvage-raid`, `ch5-even-cut`, `city-kerbside-rounds`.
 
 **Looks:** A corner grocer in old brick with a neon window of Bodega & Sons on the east face, a folding survey table on the pavement, a crate with a sleeping cat, push-bikes chained by the wall and a mulch-spreader at the kerb.
 
@@ -356,7 +411,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Shelldon's Dumpster Alley `shelldon-alley`
 
-**Where:** Turfton, centre (-80, 72), radius 12 m, facing N. **Default time:** dawn. **Built:** new: exists through its stage set dressing. **Used by:** `sq-snail-rigging`.
+**Where:** Turfton, centre (-80, 72), radius 12 m, facing N. **Default time:** dawn. **Built:** new: exists through its stage set dressing. **Quest giver marker:** `strangers-shelldon`. **Used by:** `sq-snail-rigging`.
 
 **Looks:** A grass strip behind the z = 60 road, with two green dumpsters, a lettuce bed, a wicker basket, a stack of crates and a retired snail-coach he lives in, the Bodega block to the south.
 
@@ -569,7 +624,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Turfton Amphitheater `amphitheater`
 
-**Where:** Turfton, centre (-90, -88), radius 26 m, facing S. **Default time:** day. **Built:** in the world, plus stage set dressing. **Used by:** `ch1-founders-boot`.
+**Where:** Turfton, centre (-90, -88), radius 26 m, facing S. **Default time:** day. **Built:** in the world, plus stage set dressing. **Used by:** `ch1-founders-boot`, `city-glow-band-express`.
 
 **Looks:** A sunken grass amphitheater with a raised dais and a back wall at the north end, curved stone seat tiers rising to the south, two HOA TRIBUNAL banners, a judge's lectern and a megaphone statue.
 
@@ -577,6 +632,9 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Who is there (marks):**
 - `reginald` at (-90, -98) facing S, stand (1.2 m up): on the dais, citing Municipal Code §404-B with calipers
+- `toadstool` at (-93, -98) facing S, stand (1.2 m up): on the dais beside Reginald, holding a flat HOA clipboard
+- `toadstool` at (-87, -98) facing S, stand (1.2 m up): on the dais beside Reginald, arms folded
+- `nina` at (-85, -81) facing W, stand: on the arena floor, glow-stick in hand, sizing up the player
 - `hoa-bailiff` at (-82, -84) facing NW, stand: holds the door to the arena and checks the crowd
 - `hoa-bailiff` at (-98, -84) facing NE, stand: stands guard by the west tiers
 - `hoa-bailiff` at (-90, -70) facing N, stand: watches the road beyond the jury box
@@ -633,7 +691,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Greenhouse Strip after dark `greenhouse-strip`
 
-**Where:** Turfton, centre (50, -40), radius 16 m, facing E. **Default time:** night. **Built:** in the world, plus stage set dressing. **Used by:** `nightlife`, `sq-hose-revolt`.
+**Where:** Turfton, centre (50, -40), radius 16 m, facing E. **Default time:** night. **Built:** in the world, plus stage set dressing. **Used by:** `nightlife`, `sq-hose-revolt`, `city-kerbside-rounds`, `city-glow-band-express`.
 
 **Looks:** A strip of glasshouses under grow-lamps, with glass arches over the x = 60 road, a flowerpot stoop selling glow-sticks, neon signs and mushroom lamps in violet and green.
 
@@ -673,8 +731,8 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 **Who is there (marks):**
 - `hoa-enforcer` at (53, -56) facing E, stand: guards the first clamped bike with a clipboard
 - `hoa-enforcer` at (67, -64) facing W, stand: guards the second clamped bike, arms folded
-- `red-cap` at (72, -72) facing SW, stand: glares across the crossing from the Red Cap kerb
-- `blue-cap` at (82, -70) facing W, stand: glares across the crossing from the Blue Cap kerb
+- `red-cap` at (67, -67) facing SW, stand: glares across the crossing from the Red Cap kerb
+- `blue-cap` at (82, -66) facing W, stand: glares across the crossing from the Blue Cap kerb
 - `player` at (56, -52) facing NE, stand: stands on the kerb with the crossing ahead
 
 **What they do while idle (walks):**
@@ -724,7 +782,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Clay-Mart returns yard, Industrial `clay-mart-lot`
 
-**Where:** Turfton, centre (-130, 150), radius 18 m, facing E. **Default time:** day. **Built:** in the world, plus stage set dressing. **Used by:** `sq-hoa-audit`, `prologue-fresh-kiln`.
+**Where:** Turfton, centre (-130, 150), radius 18 m, facing E. **Default time:** day. **Built:** in the world, plus stage set dressing. **Used by:** `sq-hoa-audit`, `prologue-fresh-kiln`, `city-impound-run`, `city-skyway-robbery`.
 
 **Looks:** The narrow returns yard on the east side of the Clay-Mart building: stacked bricks and crates, a wheelbarrow, a cola vending machine by the returns window, Burt's decommissioned van parked in primer.
 
@@ -732,6 +790,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Who is there (marks):**
 - `burt` at (-128, 152) facing E, sit: on his van step with a coffee, rereading an old citation
+- `grout` at (-124, 146) facing W, stand: arms folded in the yard, eyeing the player
 - `clay-mart-clerk` at (-135, 144) facing E, stand: leans on the returns window with a clipboard
 - `player` at (-130, 146) facing NW, stand: stands in the yard holding a Kiln-Debt receipt
 
@@ -753,7 +812,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 ### Pay 'n' Glaze bay `pay-n-glaze`
 
-**Where:** Turfton, centre (90, 136), radius 12 m, facing S. **Default time:** day. **Built:** already in the world. **Used by:** `pay-n-glaze-shop`.
+**Where:** Turfton, centre (90, 136), radius 12 m, facing S. **Default time:** day. **Built:** already in the world. **Used by:** `pay-n-glaze-shop`, `city-impound-run`.
 
 **Looks:** A ring of spray-bay walls at the Pay 'n' Glaze shop, open to the z = 120 road, with paint splashes on the concrete and a shop front glowing behind.
 
@@ -761,6 +820,7 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Who is there (marks):**
 - `glaze-tech` at (94, 150) facing NW, work: sprays a coat of primer on the bay floor with a spray gun
+- `pip` at (84, 141) facing NE, lean: leans on the bay wall, keys spinning on one finger
 - `player` at (88, 138) facing S, stand: waits at the bay entrance with the keys
 
 **What they do while idle (walks):**
@@ -812,6 +872,27 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 **Cameras:** `wide` (establishing: the jammed combine, the rings and the whirligig on the crossing); `two-shot` (over the player's shoulder onto Vesper kneeling by the intake); `arrival` (arrival: watching the whirligig come down on its pull-up mark).
 
 **Set dressing (prefabs):** 4 x `team-banner`, `stopping-stone`, 3 x `crate`.
+
+### The Kerbside Exchange, Central Bus Stop `kerb-exchange`
+
+**Where:** Turfton, centre (-14, 45), radius 12 m, facing W. **Default time:** day. **Built:** new: exists through its stage set dressing. **Quest giver marker:** `kerb-exchange`. **Used by:** `city-kerbside-rounds`, `city-impound-run`, `city-glow-band-express`, `city-penthouse-exclusive`, `city-skyway-robbery`.
+
+**Looks:** A cork notice-board covered in job slips, a folding office desk with a ticket punch and a stool, a flower-pot, a bench on the pavement, and the snail-coach bus stop up the road.
+
+**Sounds:** A ticket punch clacking, pinned paper flapping on the board, snail-coach air brakes up the road.
+
+**Who is there (marks):**
+- `dot` at (-12, 45) facing E, sit: behind the desk, punching a ticket for every job on the board
+- `player` at (-8, 45) facing W, stand: stands at the desk with a Kiln-Debt receipt
+- `client` at (-12, 49) facing NE, stand: holds a crumpled job slip and waits for the punch
+- `hedda` at (-15, 42) facing S, stand: reads the job slips on the board with a pencil
+
+**What they do while idle (walks):**
+- `dot` (back and forth, 2 points, 0.9 m/s, 4 s stops): walks from the desk to the board to pin a slip, and back
+
+**Cameras:** `wide` (establishing: the board, the desk and the bus stop up the road); `two-shot` (over the player's shoulder onto Dot and the client); `board` (close on the notice-board and its job slips).
+
+**Set dressing (prefabs):** `notice-board`, `office-desk`, `chair`, `flower-pot`, `bench`.
 
 ## Cloverfield Farms
 
@@ -1015,8 +1096,8 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 **Sounds:** Canal water slapping the raft, a fishing reel clicking, a gull, the combine idling on the bank.
 
 **Who is there (marks):**
-- `driftwood` at (55, 230) facing N, sit (0.4 m up): sits on the turf-raft, a fishing line over the canal
-- `player` at (52, 220) facing S, stand: stands on the bank, rope in hand
+- `driftwood` at (55, 227) facing NW, sit (0.4 m up): sits on the turf-raft, a fishing line over the canal
+- `player` at (52, 220) facing SE, stand: stands on the bank, rope in hand
 
 **Vehicles:**
 - `raft-dinghy`: parked walnut-dinghy at (47, 231) facing E, Driftwood's: a walnut-shell dinghy tied up by the raft
@@ -1057,6 +1138,20 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 **Cameras:** `wide` (establishing: the trailer, the dinghy and the field); `two-shot` (over the hitch onto the player and Driftwood); `arrival` (watching the combine pull up at the trailer).
 
 **Set dressing (prefabs):** `wooden-cart`, `walnut-dinghy`, `deck-chair`, `fishing-rod`, `tin-pail`.
+
+### Windfall Croft, outside the west gate `bramble`
+
+**Where:** Cloverfield Farms, centre (57, 545), radius 10 m, facing E. **Default time:** day. **Built:** already in the world. **Quest giver marker:** `bramble`. **Used by:** `sq-windfall-croft-deed`.
+
+**Looks:** A leaning farm fence, a For Sale board, apples rolling over the wall, the oak beyond the barn.
+
+**Sounds:** Wind in the apple trees, a distant cow, nothing else.
+
+**Who is there (marks):**
+- `bramble` at (57, 545) facing E, stand: in a patched hat, looking at the ground
+- `player` at (59, 545) facing W, stand: walks up the road
+
+**Cameras:** `fence` (from inside the fence onto Bramble and the road).
 
 ## Mossy Wood
 
@@ -1240,6 +1335,34 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Set dressing (prefabs):** `stool`, `gsr-telescope-stand`.
 
+### The Skyway Foot, the organiser's pitch `street-skyway-foot`
+
+**Where:** Mossy Wood, centre (-293, -64), radius 10 m, facing SE. **Default time:** night. **Built:** new: exists through its stage set dressing. **Quest giver marker:** `street-skyway-foot`. **Used by:** `sr-kerb-row`, `sr-skyway-midnight`, `sr-ring-road`.
+
+**Looks:** Open ground under the west foot of the Skyway, a clipboard on a folding table, a hand-lettered start board and a chalk grid on the tarmac.
+
+**Sounds:** Engines idling under the ramp, a radio playing the wrong station, Ratchet tapping a pen on the table.
+
+**Who is there (marks):**
+- `ratchet` at (-293, -64) facing S, stand: behind the clipboard table, arms folded
+- `player` at (-291, -61) facing NW, stand: walks up from the grid side
+
+**Cameras:** `foot` (from the grid onto Ratchet at the table).
+
+### Even-Estates Plot 1, outside the west gate `chard`
+
+**Where:** Mossy Wood, centre (-323, -117), radius 10 m, facing W. **Default time:** dusk. **Built:** already in the world. **Quest giver marker:** `chard`. **Used by:** `sq-levelright-night-shift`.
+
+**Looks:** Beige-and-pale-blue hoardings with a gap for the gate, a crane painted "Level Is Kind", a caravan with one lit window.
+
+**Sounds:** A far hammer, a mixer turning over, a spirit level tapped on a post.
+
+**Who is there (marks):**
+- `chard` at (-323, -117) facing E, stand: with a spirit level under one arm, checking something by eye
+- `player` at (-321, -117) facing W, stand: walks up from the road
+
+**Cameras:** `gate` (from the road onto Chard and the gate behind him).
+
 ## Frostbite Fells
 
 ### The Frozen Birdbath Basin `birdbath-basin`
@@ -1378,6 +1501,20 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Cameras:** `wide` (establishing: the pull-off on the ring road at night); `two-shot` (over the player's shoulder onto the waiting Zero-Turn); `arrival` (watching the pull-up mark on the ring road).
 
+### The Capwood Run, start paddock `capwood-paddock`
+
+**Where:** Frostbite Fells, centre (80, -758), radius 14 m, facing E. **Default time:** day. **Built:** already in the world. **Quest giver marker:** `capwood-lulu`. **Used by:** `race-capwood-open`.
+
+**Looks:** A flat paddock of churned snow and mud, a hand-painted START board and a row of hatchbacks with their numbers taped on.
+
+**Sounds:** Idling engines, a boom box, Lulu revving to be heard.
+
+**Who is there (marks):**
+- `lulu` at (80, -758) facing E, stand: leaning on a lowrider bonnet
+- `player` at (86, -758) facing W, stand: walks over from the grid
+
+**Cameras:** `paddock` (from the grid onto Lulu in the paddock).
+
 ## The Dust Flats
 
 ### The Overlook safehouse, Dust Flats `dust-safehouse`
@@ -1510,6 +1647,59 @@ outer roads). All three keep clear of every stage spot (`src/stageClear.ts`), so
 
 **Cameras:** `wide` (establishing: the pad inside the walls, the whirligig and the armory beyond); `two-shot` (over the player's shoulder towards the pad); `overhead` (high over the pad, looking straight down on the whirligig).
 
+### Lost & Found Speedway, pit lane and grid `speedway-pits`
+
+**Where:** The Dust Flats, centre (742, -380), radius 45 m, facing S. **Default time:** day. **Built:** already in the world. **Quest giver marker:** `speedway`. **Used by:** `race-rookie-mowdown`, `race-lowrider-derby`, `race-snail-endurance`, `race-fizz-cup-final`.
+
+**Looks:** A paved circuit on the alkali pan: a chequered gantry over the start line, a Tall-One ruler for a pit wall, pit garages and a pink Pay 'n' Glaze on the apron, a podium behind the race desk, and grandstands built from a giant book stack and a sneaker packed with fans.
+
+**Sounds:** Crowd murmur from the grandstands, idling mowers on the grid, Burdock's whistle, tyres squealing out of the last corner.
+
+**Who is there (marks):**
+- `burdock` at (742, -393) facing S, stand: at the race desk with his chequered tea towel over one shoulder
+- `player` at (742, -388) facing N, stand: walks up the pit lane to the desk
+- `pit-crew` at (723, -393) facing S, work: kneels by a tyre stack in front of a garage
+
+**What they do while idle (walks):**
+- `pit-crew` (back and forth, 2 points, 1.1 m/s, 4 s stops): rolls a tyre between two garages
+
+**Vehicles:**
+- `speedway-pull-up`: pull-up ride-on at (760, -386) facing E: stops in the pit lane by the garages
+- `speedway-exit`: exit ride-on at (800, -384) facing E: out of the pit lane towards turn one
+
+**Drive paths:**
+- `approach`: approach, ride-on, (790, 48) to (783, -355) (5 points, off-road): north up the dirt road from the east-outer highway onto the main straight
+
+**Cameras:** `desk` (from the pit lane onto Burdock at the desk, the podium behind him); `grid` (from the outside of the main straight down the grid to the gantry).
+
+### Pebblewick, the dry plots on Weeping Lane `pebblewick-plots`
+
+**Where:** The Dust Flats, centre (612, 140), radius 16 m, facing N. **Default time:** day. **Built:** already in the world. **Quest giver marker:** `pebblewick-plots`. **Used by:** `sq-weeping-line`.
+
+**Looks:** Furrowed pepper plots behind wattle fences, a dark tube weeping along each bed, a scarecrow and a windmill turning over adobe roofs.
+
+**Sounds:** Windmill creak, a rake in dry soil, a hen somewhere, the drip of the Weeping Line.
+
+**Who is there (marks):**
+- `purslane` at (612, 147) facing N, stand: leaning on her rake at the edge of the plots
+- `player` at (612, 141) facing S, stand: walks down the gap between the houses from Weeping Lane
+
+**Cameras:** `plots` (from Weeping Lane down the gap onto Purslane and the plots).
+
+### Pebblewick, the foot of the water tower `pebblewick-tower`
+
+**Where:** The Dust Flats, centre (708, 170), radius 10 m, facing E. **Default time:** day. **Built:** already in the world. **Quest giver marker:** `pebblewick-tower`. **Used by:** `sq-hum-at-three`.
+
+**Looks:** A tin water tower on four legs over the hen pen, Mallow's map of arrows pinned to a leg, the dunes beyond the fence to the east.
+
+**Sounds:** Hens, the tank ticking in the heat, wind over the dunes.
+
+**Who is there (marks):**
+- `mallow` at (712, 171) facing W, stand: at the foot of the tower with her map of arrows
+- `player` at (706, 170) facing E, stand: comes round the Green to the tower
+
+**Cameras:** `tower` (from the edge of the Green onto Mallow under the tower).
+
 ## Loch Moss
 
 ### Loch Moss dock `loch-dock`
@@ -1628,9 +1818,13 @@ The stages marked new were built in the world from `@lawn/prefabs` set dressing 
 - **The Downtown Slug Paddock** `snail-paddock` at (26, -12): `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `picket-fence` x1.5, `veggie-bed` x1.5, `market-stall` x1.5, `crate`
 - **Vesper's Patio Heights gallery** `patio-gallery` at (150, -152): `lobby-pedestal`, `lobby-pedestal`, `lobby-pedestal`, `porcelain-cat`, `golden-remote`, `stopping-stone` x3, `painting` x2, `gsr-gazebo-urn` x1.6, `gsr-topiary-hedge` x1.5, `gsr-topiary-hedge` x1.5, `gsr-topiary-hedge` x1.5, `gsr-topiary-hedge` x1.5
 - **Vesper's Putting-Green Country Club** `putting-green` at (198, -198): `capture-flagpole` x1.2, `capture-flagpole` x1.2, `gsr-cafe-table` x1.2, `chair`, `chair`, `bench` x1.5, `lawn-sprinkler` x2, `lawn-sprinkler` x2, `gsr-topiary-hedge` x1.5, `gsr-topiary-hedge` x1.5
+- **The Kerbside Exchange, Central Bus Stop** `kerb-exchange` at (-14, 45): `notice-board`, `office-desk`, `chair`, `flower-pot`, `bench` x1.2
 - **The Route South Acorn Diner** `south-highway-diner` at (16, 264): `gsr-bldg-acorn-diner` x5, `gsr-roadside-diner-sign` x3, `gsr-cafe-table` x1.2, `chair` x1.4, `chair` x1.4, `gta-vending-cola` x1.4, `signpost` x2
 - **Rooster Weatherby's windmill** `rooster-windmill` at (9, 402): `gta-windmill` x5, `water-trough` x2, `hay-bale` x2, `hay-bale` x2, `hay-bale` x2, `lawn-sprinkler` x2, `lawn-sprinkler` x2
 - **Cloverfield South Barn** `south-barn` at (30, 446): `barn` x4, `silo` x4, `hay-bale` x2, `hay-bale` x2, `wooden-fence` x2
 - **Driftwood's lawn-boat trailer** `driftwood-trailer` at (26, 458): `wooden-cart` x3, `walnut-dinghy` x1.2, `deck-chair` x1.4, `fishing-rod` x2, `tin-pail`
 - **88.7 Fescue Public Radio booth** `sorrel-radio-booth` at (-380, 58): `table` x1.4, `gsr-cassette-deck` x1.4, `gsr-boombox` x1.4, `chair` x1.4, `gsr-radio-dish` x1.6, `gsr-tape-bank` x1.4, `crate` x1.6, `crate` x1.6, `crate` x1.6
 - **The Overlook safehouse, Dust Flats** `dust-safehouse` at (276, 44): `adobe-hut`, `table` x1.4, `rolled-scroll` x2, `hq-tent` x3, `crate` x1.6, `crate` x1.6, `crate` x1.6, `gta-dew-barrel` x1.4, `gta-dew-barrel` x1.4, `campfire` x2, `team-banner` x1.6
+- **The Skyway Foot, the organiser's pitch** `street-skyway-foot` at (-293, -64): 
+- **Quai de la Boucle, the closed road** `street-pardonlin` at (-1728, -93): 
+- **The Saltbucket Lay-By, the sand pitch** `street-saltbucket` at (979, 141): 

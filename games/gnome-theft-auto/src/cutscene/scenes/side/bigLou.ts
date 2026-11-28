@@ -47,9 +47,11 @@ export const BIG_LOU_INTRO: SceneScript = {
     { do: 'face', who: 'lou', at: 'p1', s: 0.3 },
     cut(ROPE.single('lou', 'mcu', { height: 'low' })),
     { do: 'say', who: 'lou', text: 'Felt.' },
+    { do: 'sfx', id: 'cloth', at: 'lou', gain: 0.6, async: true },
     { do: 'gesture', who: 'lou', name: 'point', s: 1.2, async: true },
     { do: 'say', who: 'lou', text: 'Not fleece.' },
     cut(shot('p1', 'ms', { toward: 'lou', side: -30 })),
+    { do: 'sfx', id: 'gulp', at: 'p1', async: true },
     { do: 'gesture', who: 'p1', name: 'facepalm', s: 1.6 },
     beat('beat'),
     // 3. The turn: the Mayor pushes up the queue to the rope.
@@ -73,6 +75,7 @@ export const BIG_LOU_INTRO: SceneScript = {
     cut(TALK.single('you', 'mcu')),
     { do: 'say', who: 'you', text: 'What\'s the job?' },
     beat('beat'),
+    { do: 'sfx', id: 'paper', at: 'lou', gain: 0.7, async: true },
     cut(TALK.single('lou', 'mcu', { height: 'low' })),
     { do: 'say', who: 'lou', text: 'Red Caps took my crate. Forty towels. Bring it back. Dry.' },
     { do: 'wait', s: 1.0 },
@@ -109,14 +112,15 @@ export const BIG_LOU_VIP: SceneScript = {
     { do: 'say', who: 'you', text: 'Nobody touch the bonnet.' },
     beat('beat'),
     // 3. Lou on the phone, the car in shot: the voice is off screen.
-    cut({ kind: 'cut', pos: above(-96, -54, 1.4), look: 'vip', fov: 36 }),
+    // E09: a slow drift on the car instead of a fourth identical cut.
+    cut({ kind: 'dolly', from: above(-96, -54, 1.4), to: above(-95, -53, 1.4), look: 'vip', s: 4, fov: 36 }),
     { do: 'say', who: 'Big Lou', text: 'Bring it round. Not a speck of mud on that car.', sfx: 'phone' },
     beat('pause'),
     cut({ kind: 'cut', pos: above(-84, -49, 1.6), look: 'you', fov: 32 }),
     { do: 'say', who: 'you', text: 'On it.' },
     beat('beat'),
-    // 4. The button: the car, lit, waiting for the drive.
-    cut({ kind: 'cut', pos: above(-98, -46, 3.5), look: 'vip', fov: 48 }),
+    // 4. The button: the car, lit, waiting for the drive (a slow pull back, not a repeat of the opening wide).
+    cut({ kind: 'dolly', from: above(-98, -46, 3.5), to: above(-100, -45, 3.8), look: 'vip', s: 3, fov: 48 }),
     { do: 'wait', s: 1.4 },
   ],
 };
@@ -145,6 +149,7 @@ export const BIG_LOU_OUTRO: SceneScript = {
     { do: 'walk', who: 'lou', path: [[65, -33]], speed: 1.0 },
     { do: 'caption', text: null },
     { do: 'face', who: 'lou', at: 'zt', s: 0.4 },
+    { do: 'sfx', id: 'tap', at: 'lou', gain: 0.6, async: true },
     cut(TALK.single('lou', 'mcu', { height: 'low' })),
     { do: 'say', who: 'lou', text: 'Hm.' },
     { do: 'say', who: 'lou', text: 'Not a speck.' },
@@ -161,6 +166,7 @@ export const BIG_LOU_OUTRO: SceneScript = {
     { do: 'say', who: 'lou', text: 'Dusty is a word for other people.' },
     { do: 'hold', who: 'lou', prop: 'microfiber-bowler' },
     cut(TALK.single('lou', 'mcu', { height: 'low' })),
+    { do: 'sfx', id: 'cloth', at: 'lou', async: true },
     { do: 'give', from: 'lou', to: 'you', prop: 'microfiber-bowler', s: 1.2 },
     { do: 'stinger', id: 'triumph' },
     { do: 'say', who: 'lou', text: 'Keep it dry.' },

@@ -2,7 +2,7 @@
 // songs/<station>.ts; compose.ts turns it into notes (pure, tested), build.ts plays it with the Subsoil mix.
 import type { ModeName } from '@lawn/music';
 
-export type RadioStation = 'blade' | 'fpr' | 'beats';
+export type RadioStation = 'blade' | 'fpr' | 'beats' | 'adagio';
 
 /**
  * Chord voices.
@@ -14,14 +14,15 @@ export type RadioStation = 'blade' | 'fpr' | 'beats';
  * - strings: a slow string section (soft attack). Fescue Public.
  * - musicBox: a music box, best arpeggiated (`comp.arp`). Fescue Public.
  * - nylon: a plucked nylon guitar, best arpeggiated. Fescue Public, Compliance Beats.
+ * - harpsichord: a bright plucked harpsichord with no sustain (arpeggiate it, or comp often). Radio Adagio.
  */
-export type ChordVoice = 'crunch' | 'brass' | 'organ' | 'rhodes' | 'piano' | 'strings' | 'musicBox' | 'nylon';
+export type ChordVoice = 'crunch' | 'brass' | 'organ' | 'rhodes' | 'piano' | 'strings' | 'musicBox' | 'nylon' | 'harpsichord';
 
 /** Bass voices: a sine sub, a plucked upright (jazz), a picked electric (rock), a resonant acid saw (big beat). */
-export type BassVoice = 'sub' | 'upright' | 'picked' | 'acid';
+export type BassVoice = 'sub' | 'upright' | 'picked' | 'acid' | 'cello';
 
 /** Lead (melody) voices. 'none' leaves the tune out (an instrumental bed). */
-export type LeadVoice = 'sax' | 'vibes' | 'flute' | 'bell' | 'guitar' | 'whistle' | 'clarinet' | 'none';
+export type LeadVoice = 'sax' | 'vibes' | 'flute' | 'bell' | 'guitar' | 'whistle' | 'clarinet' | 'violin' | 'oboe' | 'none';
 
 /**
  * Drum kits. break: a hard, compressed funky breakbeat (big beat). rock: a straight rock kit. brush: brushes and a

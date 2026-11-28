@@ -16,6 +16,8 @@ const VILLAGE_CX = 160;
 const VILLAGE_CZ = -720;
 const DECK_CX = 330;
 const DECK_CZ = -640;
+/** Height of the bear-deck prefab's plank top above its base. */
+const DECK_TOP = 0.25;
 
 export const SNOWMAN_COUNT = 14;
 const SNOWMAN_RISE_NIGHT = 0.6;
@@ -80,7 +82,7 @@ interface Sgnowme {
 }
 interface FellsState {
   t: number; lastNight: number; lastSmashEvent: number; lastBearEvent: number;
-  snowmen: Snowman[]; sgnowmes: Sgnowme[]; cabins: Box[]; bears: Critter[]; village: { x: number; z: number };
+  deckTop: number; snowmen: Snowman[]; sgnowmes: Sgnowme[]; cabins: Box[]; bears: Critter[]; village: { x: number; z: number };
 }
 
 // Per-runtime state: the RegionLife object is a shared constant, so a runtime's own state is kept by key.
@@ -134,7 +136,7 @@ export const fellsLife: RegionLife = {
   init(rt) {
     const st: FellsState = {
       t: 0, lastNight: 0, lastSmashEvent: -Infinity, lastBearEvent: -Infinity,
-      snowmen: [], sgnowmes: [], cabins: [], bears: [], village: { x: VILLAGE_CX, z: VILLAGE_CZ },
+      deckTop: 0, snowmen: [], sgnowmes: [], cabins: [], bears: [], village: { x: VILLAGE_CX, z: VILLAGE_CZ },
     };
     states.set(rt, st);
 
@@ -184,10 +186,39 @@ export const fellsLife: RegionLife = {
 
     // 3. Polar bears in a row of deck chairs on the sun deck, facing south.
     const deck = openSpot(DECK_CX, DECK_CZ, 2, REGION, rt.world) ?? { x: DECK_CX, z: DECK_CZ };
+    // A timber deck under the chairs (prefab 'bear-deck', 22 x 6 m, top 0.25 m, open at +z). Its base sits at the
+    // highest ground under it so no corner is sunk; the chairs and bears stand on its top.
+    let deckTop = 0;
+    if (getPrefab('bear-deck')) {
+      let base = -Infinity;
+      for (let i = -4; i <= 4; i++) for (let j = -1; j <= 1; j++) base = Math.max(base, heightAt(deck.x + i * 2.75, deck.z + j * 3));
+      const planks = buildPrefab('bear-deck', { lights: false });
+      planks.position.set(deck.x, base, deck.z);
+      rt.scene.add(planks);
+      deckTop = base + DECK_TOP;
+      // Two parasols behind the chairs, and a cool box of sardines at the east end.
+      for (const [dx, tint] of [[-6, 0xd9473b], [6, 0xf0c244]] as const) {
+        const um = critterMesh('beach-umbrella', 2.6, tint);
+        um.position.set(deck.x + dx, deckTop, deck.z - 1.6);
+        um.rotation.z = dx < 0 ? 0.06 : -0.06;
+        rt.scene.add(um);
+      }
+      const cool = critterMesh('bait-cooler', 1.8);
+      cool.position.set(deck.x + 9.6, deckTop, deck.z - 1.4);
+      cool.rotation.y = -0.4;
+      rt.scene.add(cool);
+      for (const [dx, dz, ry] of [[10.5, -0.4, 0.8], [9.6, -0.1, -0.3]] as const) {
+        const tin = critterMesh('sardine-tin', 2);
+        tin.position.set(deck.x + dx, deckTop, deck.z + dz);
+        tin.rotation.y = ry;
+        rt.scene.add(tin);
+      }
+    }
+    st.deckTop = deckTop;
     for (let i = 0; i < 5; i++) {
       const x = deck.x + (i - 2) * 4, z = deck.z;
       const chair = critterMesh('deck-chair', 1.2);
-      chair.position.set(x, heightAt(x, z), z);
+      chair.position.set(x, deckTop || heightAt(x, z), z);
       chair.rotation.y = 0;
       rt.scene.add(chair);
       st.bears.push(rt.spawn('polar-bear', x, z, { region: REGION, group: 'fells-bears', mode: 'script', yaw: 0 }));
@@ -282,7 +313,7 @@ export const fellsLife: RegionLife = {
 
     // Polar bears: pinned to their chairs. A shrug lifts the arms and turns the head; otherwise a slow idle.
     for (const c of st.bears) {
-      c.y = heightAt(c.x, c.z) + 0.36;
+      c.y = (st.deckTop || heightAt(c.x, c.z)) + 0.36;
       const obj = c.object;
       const shrugT = Number(c.data.shrugT ?? 0);
       if (shrugT > 0) {
@@ -306,7 +337,8 @@ export const fellsLife: RegionLife = {
   },
 
   onHit(rt, c, _cause, _fromX, _fromZ) {
-    if (c.kind !== 'polar-bear') return false;
+    // Only the deck's own bears: the Snowcap bears (critters/snowcap.ts) shrug through their own life.
+    if (c.kind !== 'polar-bear' || c.group !== 'fells-bears') return false;
     const st = states.get(rt);
     const now = st?.t ?? 0;
     const shrugT = Number(c.data.shrugT ?? 0);

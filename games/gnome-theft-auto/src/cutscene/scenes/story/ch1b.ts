@@ -66,6 +66,8 @@ export const TWO_COAT_INTRO: SceneScript = {
     // Hook: Juniper, on the statement, before anyone has moved.
     cut(shot('juniper', 'mcu')),
     { do: 'say', who: 'juniper', text: 'Citizens. The grass is growing at a healthy, legal height.' },
+    cut(shot('juniper', 'cu')),
+    { do: 'intro', who: 'juniper' },
     // One reporter question, covered from the Councilwoman's side.
     cut(PRESS.single('press-a', 'mcu')),
     { do: 'say', who: 'press-a', text: 'Councilwoman, what about the medians?' },
@@ -73,6 +75,7 @@ export const TWO_COAT_INTRO: SceneScript = {
     { do: 'say', who: 'juniper', text: 'The medians are in very capable hands. Mayor, the scissors.' },
     // The Mayor poses for cameras that are not there. Juniper does not look.
     cut(MAYOR_COV.single('mayor', 'ms')),
+    { do: 'sfx', id: 'snap', at: 'press-b', gain: 0.5, async: true },
     { do: 'gesture', who: 'mayor', name: 'cheer', s: 1.4, async: true },
     beat('pause'),
     { do: 'say', who: 'mayor', text: 'Snip! Fresh paint, fresh paving, fresh promises!' },
@@ -81,6 +84,7 @@ export const TWO_COAT_INTRO: SceneScript = {
     { do: 'say', who: 'juniper', text: 'My brother Reginald calls me The Trowel. For once, he has a point.' },
     // The Mayor climbs onto his candy-red Ride-On and putters off east (the tail starts here).
     cut(MAYOR_COV.single('mayor', 'mcu')),
+    { do: 'sfx', id: 'bell', at: 'mayor', gain: 0.5, async: true },
     { do: 'say', who: 'mayor', text: 'Ta-ta, Trowel! Ding, ding!' },
     { do: 'enter', who: 'mayor', vehicle: 'mayor-ride' },
     { do: 'cam', shot: { kind: 'track', pos: up(30, -52, 3), who: 'mayor-ride', fov: 50 } },
@@ -90,6 +94,7 @@ export const TWO_COAT_INTRO: SceneScript = {
     // The turn and the objective: one place name, in her voice.
     cut(shot('juniper', 'mcu')),
     { do: 'say', who: 'juniper', text: 'He is off to Patio Heights. Follow him and photograph the handover.' },
+    { do: 'sfx', id: 'cloth', at: 'juniper', gain: 0.5, async: true },
     { do: 'give', from: 'juniper', to: 'player', prop: 'field-camera' },
     cut(JPLAYER.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'Why me?' },
@@ -123,7 +128,7 @@ export const TWO_COAT_HANDOVER: SceneScript = {
   actors: [
     { id: 'player', player: true, at: PATIO_PLAYER.at, yaw: PATIO_PLAYER.yaw },
     { id: 'vesper', preset: 'vesper', at: PATIO_VESPER, yaw: towards(PATIO_VESPER, PATIO_MAYOR) },
-    { id: 'mayor', name: 'Mayor Mulch', look: MAYOR_LOOK, at: PATIO_MAYOR, yaw: towards(PATIO_MAYOR, PATIO_VESPER) },
+    { id: 'mayor', preset: 'mayor mulch', name: 'Mayor Mulch', look: MAYOR_LOOK, at: PATIO_MAYOR, yaw: towards(PATIO_MAYOR, PATIO_VESPER) },
     { id: 'guard-a', name: 'HOA Bodyguard', look: GUARD_LOOK, at: PATIO_GUARD_A.at, yaw: towards(PATIO_GUARD_A.at, PATIO_PLAYER.at) },
     { id: 'guard-b', name: 'HOA Bodyguard', look: GUARD_LOOK, at: PATIO_GUARD_B.at, yaw: PATIO_GUARD_B.yaw },
   ],
@@ -135,6 +140,9 @@ export const TWO_COAT_HANDOVER: SceneScript = {
     // Hook: the Mayor's line over the ledger.
     cut(LEDGER.single('mayor', 'mcu')),
     { do: 'say', who: 'mayor', text: 'The median leases, Vesper. Every one signed in ink. Mostly.' },
+    cut(LEDGER.single('mayor', 'cu')),
+    { do: 'intro', who: 'mayor' },
+    { do: 'sfx', id: 'paper', at: 'mayor', gain: 0.5, async: true },
     { do: 'give', from: 'mayor', to: 'vesper', prop: 'ledger' },
     { do: 'give', from: 'vesper', to: 'mayor', prop: 'sealed-letter', s: 1 },
     // Vesper, first seen: the villain stinger and his theme. Low, alone, still. Rung one of the coats ladder.
@@ -143,6 +151,7 @@ export const TWO_COAT_HANDOVER: SceneScript = {
     cut(LEDGER.single('vesper', 'mcu', { height: 'low' })),
     { do: 'say', who: 'vesper', text: 'A second coat, Barnaby? Streaky.' },
     // The flash, from the player's camera: a hedge-level cut, then the Mayor is caught.
+    { do: 'sfx', id: 'rustle', at: 'player', gain: 0.5, async: true },
     cut({ kind: 'cut', pos: up(147.5, -143.5, 1.0), look: 'vesper', fov: 50 }),
     { do: 'sfx', id: 'shutter' },
     { do: 'shake', amp: 0.03, s: 0.3 },
@@ -160,6 +169,7 @@ export const TWO_COAT_HANDOVER: SceneScript = {
     cut(LEDGER.single('vesper', 'cu', { height: 'low' })),
     { do: 'gesture', who: 'vesper', name: 'tipHat', s: 1.2 },
     { do: 'say', who: 'vesper', text: 'Nice hat.' },
+    { do: 'intro', who: 'vesper' },
     { do: 'music', track: 'chase', fade: 0.5 },
     { do: 'walk', who: 'guard-a', path: [[149, -148]], run: true, async: true },
     { do: 'walk', who: 'guard-b', path: [[150, -150]], run: true, async: true },
@@ -186,6 +196,7 @@ export const TWO_COAT_OUTRO: SceneScript = {
   steps: [
     // Hook: the photos change hands.
     cut(spot('city-hall-steps', 'two-shot')),
+    { do: 'sfx', id: 'paper', at: 'player', gain: 0.5, async: true },
     { do: 'give', from: 'player', to: 'juniper', prop: 'field-camera' },
     { do: 'walk', who: 'player', path: [[4.5, -70.5]], speed: 1.2, async: true },
     cut(shot('juniper', 'mcu', { toward: 'player' })),
@@ -196,12 +207,14 @@ export const TWO_COAT_OUTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'track', pos: up(10, -58.5, 2), who: 'van', fov: 50 } },
     { do: 'drive', vehicle: 'van', path: CITY_HALL_ARRIVAL, speed: 12 },
     cut(shot('juniper', 'mcu', { toward: 'player' })),
+    { do: 'sfx', id: 'latch', at: 'van', gain: 0.5, async: true },
     { do: 'exit', who: 'reginald' },
     { do: 'walk', who: 'reginald', path: [[11, -63.5], [10, -64.5]], speed: 1.8 },
     // Reginald, measuring, shot from above. The siblings never look at each other: both face the player's side of the lawn.
     cut(shot('reginald', 'ms', { height: 'high', toward: 'player' })),
     { do: 'gesture', who: 'reginald', name: 'think', s: 1.4 },
     { do: 'say', who: 'reginald', text: 'Juniper. Your grass is a quarter-inch proud.' },
+    { do: 'intro', who: 'reginald' },
     cut(shot('juniper', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'juniper', text: 'Reginald. Your boss is a crook.' },
     // Enforcing: the one time he is shot from below.
@@ -210,6 +223,7 @@ export const TWO_COAT_OUTRO: SceneScript = {
     cut(shot('juniper', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'juniper', text: 'Then write it, Reginald. Slowly.' },
     // Button: he gets in his van, and the Trowel has the last word as it pulls away.
+    { do: 'sfx', id: 'latch', at: 'van', gain: 0.5, async: true },
     { do: 'enter', who: 'reginald', vehicle: 'van' },
     { do: 'cam', shot: { kind: 'track', pos: up(14, -58.5, 2), who: 'van', fov: 50 } },
     { do: 'drive', vehicle: 'van', path: [[14, -62.5], [0, -62.5], [-50, -62.5]], speed: 14, arrive: false },

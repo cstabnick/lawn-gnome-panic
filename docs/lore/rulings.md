@@ -817,3 +817,648 @@ as one gnome in two places.
 **Ruling:** Yes, by the shift. Kerbstone Cabs (Mabel Kerbstone), Pigeon-Drop's ground crew (Sorting-Office Sid), Wally's Charters (Wind-Sock Wally) and the Loch Moss Steamer Co. (Purser Tolly) hire any gnome, pay in Acorns per job and keep a ledger of levels. The Kerbside Exchange's contracts stay separate one-off jobs. A gnome can ride as another gnome's cab fare (online); the company covers the fare. Tubing on Loch Moss is for fun, not a job: tubes are rented at the Mossbank rack.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-23.
 **Why:** the user asked for convincing sim jobs (taxi, courier, pilot, boat driver) and tubing that work online.
+
+## R-158
+
+**Question:** Gnome Theft Auto adds an ocean at the south of the map. Is there a sea, and how does it sit with the Puddle Sea?
+**Ruling:** Yes. South of the Puddle Sea a line of dunes stands between the fresh water and **the Saltwater**, a real sea with swell and salt. The shore is **Saltbucket Shore**, a seaside town built round a giant sunk bucket and spade, with **Saltbucket Boardwalk**, **Long Spoon Pier**, **the Spokewheel** (a Tall-One bicycle wheel turned into a ferris wheel with teacup gondolas) and the pirate ship **the Bathtub Queen** (a Tall-One bath toy gone to sea, captained by Samphire Bilge). Most Turfton gnomes have never seen the Saltwater and say "the Big Puddle" when they mean it. What lies across it, and whether it is a Tall One's sea at all, stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for an ocean region with a boardwalk, ferris wheel and pirate ship; Driftwood's "Big Puddle" gives the gnomes a word for it.
+
+## R-159
+
+**Question:** Where is the research university and its observatory, and what is the hill it sits on?
+**Ruling:** **Rootwell University** stands in the far east, past the Dust Flats: twelve buildings round a quad, and an airstrip, **Rootwell Field**. Its observatory sits on **the Anthill**, a giant ant mound, not a termite mound. The ants still live inside and are the landlords: the university pays rent in sugar, and the ants close the doors when it is late. The drive-off ramp on its side is **Dean's Leap**. Ants are neighbours, not pests (canon: every pest wants something; the ants want sugar and quiet).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a research university with an observatory on a giant ant-hill or termite mound with a ramp; one ruling settles which.
+
+## R-160
+
+**Question:** What lies north of Frostbite Fells, and what grows the toadstool forest?
+**Ruling:** The high country north of the Fells is **Snowcap Rise**: **Snowdrop Slope** (the ski hill, rope tow and sledding run, kept by Gentian Bootlace at **the Woolly Sock Lodge**), **Pail Pond** (a frozen lake over a sunk Tall-One pail, ice-fishing huts, polar bears who are very relaxed), **Capwood** (a forest of giant toadstools) and **Pinwheel Ridge** (giant garden pinwheels that make Turfton's electricity). Capwood grows over a Tall-One woodpile buried long ago; its warden, Chanterelle Stook, fines anyone who bruises a cap. The rally route through it is **the Capwood Run**; its fords run with **Cap-water**, which is thick and slow and never floods an engine. Why the woodpile was buried stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a ski hill, ice fishing, a toadstool forest, a rally route with special water that cannot waterlog a car, and wind turbines.
+
+## R-161
+
+**Question:** The golf course is reached by breaking through a fence into someone else's yard. Whose yard?
+**Ruling:** Another Tall One's garden, west of Tallgrass Commons, reached through **the Kicked Board**, a loose fence board. The gnomes call the garden **Hedgeworth**. Its gnomes talk about "over the fence" the way Turfton talks about Fescue. **Hedgeworth Links** is a nine-hole course among hedges, tall grass and giant plants, run from **the Hedgeworth Clubhouse** by Dame Peony Gravelrake, with Basil Divot as pro and Thrift Hosepipe as groundskeeper. It is not Vesper's Patio Country Club; Vesper holds Hedgeworth's mortgage. Who the neighbour Tall One is, and whether they know there is a hole in the fence, stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a golf course added by breaking through a fence into someone else's yard.
+
+## R-162
+
+**Question:** Who owns the vineyard and the mansion?
+**Ruling:** **Trellisdown** is old-money hill country west of Mossy Wood. **Trellisdown Vineyard** and **Brassknock Manor** belong to Countess Wisteria Brassknock, whose family holds Turfton's oldest charter. The vines make **grape-dew**, a sweet pressing gnomes sip at weddings and tastings (it is not Black Dew and runs no engine). The Brassknocks have quietly funded the HOA for years; in the story the Countess is the money behind the Grand Combine until she learns its line runs through her own vines. Her head gardener is Chicory Snips.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a vineyard and mansion; tying them to the HOA's money gives act III a fourth part of the Combine to find.
+
+## R-163
+
+**Question:** The user asked for a cult. What is it?
+**Ruling:** **The Flock of the One Leg**, a harmless camp of gnomes at **Wader's Rest**, reeds near Loch Moss, who stand on one leg before **the Standing Lady**, a giant pink plastic lawn flamingo. Their rules are absurd (one leg at sermons, no sitting on Tuesdays, pink is for the Lady only) and their leader is Mother Saxifrage Wader. They prophesy "the Even Cut, on the longest day", which turns out to be a true date. No real-world religion, no violence, nothing worse than a sore ankle. Not related to the Evil Shadow Gnome Cultist of the Cursed House. Whether the Lady ever moved on her own stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** a cult that is funny, a little ominous and ends gently, per the E17 brief.
+
+## R-164
+
+**Question:** Who are the moles under the west edge of Mossy Wood, and how do gnomes see them?
+**Ruling:** **The Burrowfolk**, small gentle moles who live in **Loamdeep**, a town of halls and tunnels entered by **the Burrow Door** at the west edge of Mossy Wood. They are kind, shy, a little formal, and almost always misread: gnomes treat them as pests that eat roots (they eat grubs and keep roots alive), and Tall Ones blame them for every lump in a lawn. Old Mother Tumblesoil keeps Loamdeep; Nubbin is a young mole who runs the post. DJ Moleman is one of them by birth but lives apart, in his own burrow under Turfton. The Burrowfolk say their great-greats came "from under the Fence, running": whether they are a clan that fled Fescue's shaking (see the Fescue entry `mole-clans`) stays a loose thread. Moles do not wear hats, except Moleman's on his antenna.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for an underground society of cute, misunderstood moles with DJ Moleman.
+
+## R-165
+
+**Question:** Who lives under the highway?
+**Ruling:** **The Underspanners**, a commune of brilliant, slightly unhinged inventors living in **the Underspan**, the shade under the Skyway's Unfinished Span. They hold that anything built on the ground is already obsolete, refuse permits on principle, and will build anything for scrap. Their leader is Hogweed Sprocket. They are Local 404's estranged cousins (the union poured the Span; the Underspanners moved in when it stopped). They built **the Dewdrop**, a clear rolling ball a gnome runs inside like a hamster.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for a crazy, radical but brilliant society under the highway, and a bubble vehicle.
+
+## R-166
+
+**Question:** What are the new downtown and fringe places, and what does the player's flat cost?
+**Ruling:** **Thorne Even-Estates** is Vesper's HOA-approved beige housing, built by **Levelright Construction** (foreman Chard Levelright) on three fringe sites. **The Double Pot** is Thorne Lawn & Order's 2x1 tower over the street (the Double Pot Tunnel runs under it), the Even-Estates sales floor and, later, the HOA lockup. **Founders' Green** is the park made from three blocks Vesper had condemned, rezoned by Juniper Vance after the Founder's Trim Day tribunal; it includes Gnorwin's statue. **Drainpipe Court** (basketball) and **the Gutter Bowls** (skate park) are public. The player's flat is **flat 3B, Saucer Court**, loaned by the First Kiln Bank (loan officer Parsley Inkpot) for 1,500 Acorns added to the Kiln-Debt ledger; the bank keeps the ledger, Clay-Mart only sold the original debt. The player's farm, if bought, is **Windfall Croft** in Cloverfield.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for construction sites, a downtown park, a mega block with a tunnel, a court, a skate park, and a home loaned to the player that adds to the debt.
+
+## R-167
+
+**Question:** Gnome Theft Auto's main story grows from 17 quests to 70. What is the shape, and what is the Grand Combine made of?
+**Ruling:** Four acts: I Fresh Glaze (Turfton, 1-15), II Turf & Dew (farms, woods and first reaches, 16-35), III Cold Clay, Far Edges (36-53), IV Sandpit Protocol / The Even Cut (54-70). The Grand Combine is built in four parts at the edges of the map: the cutting deck (tested on Hedgeworth Links), the guidance or "Even Line" (computed at the Anthill Observatory), the power (taken from Pinwheel Ridge) and the money (Countess Brassknock). The Golden Acorn is still its ignition core. The finale keeps both endings; Vesper is stopped, not shattered. The outline is `docs/design/gnome-theft-auto/story-outline.md`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the user asked for 70 main quests with more character development and quests that explore the whole world.
+
+## R-168
+
+**Question:** Where exactly do the batch-3 places stand, and where does the ground differ from the story plan (E04 spine)?
+**Ruling:** The four bands and their roads: **Snowcap Rise** is the north band (`north-band`, `north-band-east`); **Saltbucket Shore** the south band (`south-band`, `south-band-east`, `coast-spur`); **Rootwell** the east band (`east-band`, `east-band-south`, `runway-spur`); **Trellisdown** the west band (`west-band`, `west-band-south`). The band roads join into one ring road round the old map. **Drainpipe Court** and **the Gutter Bowls** are inside **Founders' Green**. **The Underspan's** ground is beside the Unfinished Span at (580, -26). **Wader's Rest** is in Trellisdown, about 400 m west of Loch Moss, not on its shore. Slot ids in `src/sites.ts` stay as they are and carry these names as labels.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** E01 built the ground after E04 named the places.
+
+## R-169
+
+**Question:** Where does Turfton property come from, and how is it paid for?
+**Ruling:** Property in Turfton is bought on a loan. The First Kiln Bank's ledger (R-166) carries the Kiln-Debt balance and each property loan as separate lines: "added to the Kiln-Debt ledger" in R-166 means booked on that ledger beside the Kiln-Debt balance, never added to the balance itself. Paying off Kiln-Debt does not clear a property loan, and the reverse.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-24.
+**Why:** the GTA economy (E08) sells property on a loan (flat 3B, Windfall Croft) and needs one rule for where the money sits, so the Kiln-Debt story beats and the "paid off" moment keep their meaning.
+
+## R-170
+
+**Question:** What can a gnome walk into in Turfton, and what is inside?
+**Ruling:** Four walk-in interiors. **Bodega & Sons** (block x -90, z 90; the game's block placement wins over the older "x -60, z 60" in the entry) is a narrow shop inside the overturned watering can, with the counter on the north wall, Asphalt asleep on the counter, the Acorn-Cola tower that fell over and was never restacked, and Mossley's abandoned grid-survey table. **The Mulch Club** lobby is entered by the members' side door on the south face (the front door on the east face still leads to Don Compost's back room for quests): velvet booths, the cloakroom with the brass plaque "NO SIRENS. NO WET HATS. NO TALKING.", a hat-check gnome, a silent bodyguard at the back-room door, and a card game abandoned the moment somebody spoke. **Flat 3B, Saucer Court** is the player's loaned flat, empty on move-in (a bedroll, moving crates, the bank's notice on the wall); furnishing is E10's. **The Thorne Even-Estates sales floor** is inside the Double Pot, door in the Double Pot Tunnel: a beige scale model of an Even-Estate, HOA posters, a bin of rejected colours, and a lift to the roof.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L36 asked for building interiors.
+
+## R-171
+
+**Question:** Which roofs can a gnome stand on, and where do helicopters land?
+**Ruling:** Every flat downtown tower roof is walkable behind a waist-high parapet. The tunnel-roof slab between the Double Pot's two halves is the **Thorne Helipad**, Thorne Lawn & Order's pad, reached by copter or by the sales floor's lift. Towers with a helipad crown (the Pigeon-Drop Depot among them) take a copter too. Roofs are reached only by air or by a lift: gnomes do not climb.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L75 asked to land on buildings and run around.
+
+## R-172
+
+**Question:** What is Pardonlin, who lives there, and how do the Wickets work?
+**Ruling:** **Pardonlin** is another Tall One's garden west of Trellisdown, laid out as a continental formal garden: gravel walks, box-hedge parterres, clipped limes, terracotta pots and a long ornamental rill. Its gnomes are **the Continentals**, polite to a fault ("pardon" is the town's name and its first word), who take long lunches, have strong opinions on bread, queue for everything, cycle everywhere and have a dozen ways to say "it is not done". Districts: the old town on the east bank, the Left Bank on the west, **the Jardin** (the formal garden to the north), the Little Gardens (allotments) and **Pardonlin Basin** with **Basin Quay** to the south. The old perimeter fence still stands between Trellisdown and Pardonlin; where the three roads cross it, the Continentals took out fence panels and hung proper gates, each with a customs hut that stamps a visitor's hat: **the Grand Wicket** (on Vineyard Lane, z -30), **the North Wicket** (z -500) and **the Harbour Wicket** (z 1000). Turfton gnomes once thought the fence was the end of the world; the Continentals think the same of theirs. What lies beyond Pardonlin's own west fence stays a loose thread. Reserved for later, to be named but not yet built: **the Bean Tower** (a giant Tall-One bean-pole wigwam, the town's landmark), **the Grand Platz** (main square), **Teacup Row** (cafe street), **Radio Adagio** (the classical-music station) and **the Beetle Market**.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion adds a formal-garden town west of Trellisdown; a satirical continental mash with no real cities or nationalities by name.
+
+## R-173
+
+**Question:** What is the Thymes, and how do its bridges and source work?
+**Ruling:** **The Thymes** is the Tall One's garden rill: a slow green river running north to south through Pardonlin into Pardonlin Basin. It rises at a garden tap at the north end of the Jardin, called **the Source**. Its bridges, from north to south, are **Pont Nord**, **Pont Neuf**, **Pont Sud** and **the Basin Bridge**.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion needs a river through the town, with a named source and bridges for the player to find.
+
+## R-174
+
+**Question:** What is the Unmown, and why did the Tall One stop mowing it?
+**Ruling:** **The Unmown** is the north-west corner the Tall One stopped mowing years ago, now a nature preserve kept by rangers from **the Unmown Ranger Station**. It holds the waist-high meadow (**the Long Meadow**), reed beds (**Reedmere**), old trees (**Oldroot Wood**) and three bird hides. Gnomes find it frightening and wonderful at once: a place no mower goes. The HOA hates it, since it is the opposite of the Even Cut. A rusting mower the grass swallowed sits at the entrance. Why the Tall One stopped mowing stays a loose thread.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion's wild north-west corner needs a home, and a place the HOA cannot mow gives the Even Cut something to argue with.
+
+## R-175
+
+**Question:** What are roundabouts doing in Turfton, and how do gnomes drive them?
+**Ruling:** The Continentals brought roundabouts to the Tall One's lawn; Turfton built two on its ring road: **Trellis Cross** and **the Anthill Ring**. Traffic goes round anticlockwise. Gnomes who have never used one go round three times. Pardonlin's own are **the Hatwheel** (six roads, the great roundabout) and **Place du Pot** (the small one).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** roundabouts are the one foreign import the Continentals have given Turfton's ring road, and the anticlockwise joke is the gag.
+
+## R-176
+
+**Question:** Who are the gnomes in tall striped hats who stand in the middle of busy crossings?
+**Ruling:** **The traffic-hat wardens** are HOA wardens in tall striped hats who stand on a podium in the middle of a busy crossing and wave one road through while holding the other with a stop/go paddle. Named wardens: **Sedge Pennyroyal** (Turfton, the hospital crossing), **Burnet Gatepost** (by the Mulch Club), **Agrimony Kerb** (the south crossing) and **Lupin Pardoux** (Pardonlin High Street, on loan from the Continentals, who think the HOA's hats are too short). They are not Hat Watch: the wardens never chase anyone, and the Hat Watch never directs traffic.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion's roundabouts and busy crossings need someone to direct traffic, and the HOA's hats need a second use.
+
+## R-177
+
+**Question:** Where do the second expansion's places stand, and what happens to the bands at the edge?
+**Ruling:** **Pardonlin** is x -1800 to -1400, z -900 to 1100, west of Trellisdown. **The Unmown** is in the north-west, at x -1800 to -200, z -1800 to -1400, plus x -1800 to -1400, z -1400 to -900. The bands are pushed out to the edge: **Snowcap Rise** reaches the north edge (the High Tarn), **Rootwell** reaches the east edge (Rootwell Field Station), and **Saltbucket Shore** (the Saltwater) runs the whole south strip. The world is now 3600 m across, with the perimeter fence at 1795. The map's old edge stays a loose thread, and R-168 still names the band roads.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the second expansion moves the edges of the world out, and the entries need one place to read where things are.
+
+## R-178
+
+**Question:** Does the Yard have weather, and what is the white stuff that falls on the Fells and Snowcap Rise?
+**Ruling:** Yes. Rain, mist, cloud and snow pass over the Yard in fronts; most gnomes blame the Tall Ones' sprinkler for
+the rain and say so out loud. On Frostbite Fells the locals call falling snow **frost glaze** and will correct you; on
+Snowcap Rise they just call it snow. Saltbucket Shore gets sea mist off the Saltwater, and Pardonlin's rain is a
+continental drizzle that never commits to a downpour. Glazed gnomes do not mind getting wet.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Gnome Theft Auto's weather (batch 3, E06) needs toast lines and achievements that fit the setting, and the Fells'
+"It is frost glaze, not snow" joke has to survive real snowfall.
+
+## R-179
+
+**Question:** Gnome Theft Auto's mowers can now skip across deep water when they hit it fast, and run straight through small bushes and rose beds. R-050 and R-140 say deep water sinks a mower. What changes?
+**Ruling:** Nothing in R-050 or R-140 is undone: a mower that is slow in deep water still conks out and sinks. But a mower that hits deep water fast, off a jump or flat out, skips across it like a flat stone, bouncing and throwing spray, for as long as its speed lasts; once it slows it sinks as before. Gnomes call it "skipping", and the Skipping-Stone Pendant is the proof that you did it on purpose. Small bushes, rose bushes, flowering bushes and allotment beds give way under a mower and grow back (the mowing rules); hedgerows, hedge arches, topiary and trees do not. Flattening six big shrubs in a row is "shrub bowling", and the Shrub Disguise is what the gardeners who saw it wear afterwards so you cannot find them.
+**Applies to:** gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** L113 and L114 ask for bushes to be run over and for driving over water on jumps; the water rule needs a footing that keeps sinking as the end of every skim.
+
+## R-180
+
+**Question:** Where does everybody live, and who can visit?
+**Ruling:** Every named gnome has a home. Some are known places, with a door, a plate and a lit window; some are never shown (a cot, a back room) and stay unacknowledged. Homes are private: in the online game nobody visits another player's flat, because each player's Flat 3B is their own. Gnomes put their names on plates, not on maps, so a home only goes on the player's map once they have stood at its door.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Epic E10 (homes) builds a dozen doors and needs one rule for what is shown, what is private and what the map knows.
+
+## R-181
+
+**Question:** Who sells the furniture for Flat 3B?
+**Ruling:** **Gnome & Garden Furnishings** sells it: a flat-pack firm that delivers to Saucer Court, "stairs extra, free". Nothing they sell is ever assembled, and the instructions are a single diagram of a gnome looking worried. No other brand or entry covered furniture sellers.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E10 lets the player furnish Flat 3B and the catalogue needs a seller.
+
+## R-182
+
+**Question:** What is Pardonlin's satire, and how far does it go?
+**Ruling:** Pardonlin is a gentle Paris, London and Berlin mash: cafés and boulevards, queues and rain-or-shine drizzle, bureaucratic calm and bicycles. No real city, brand, composer or nationality is ever named; the Continentals are the Continentals. The joke is always affectionate and never mean: they are polite, proud, unhurried and quietly absurd. Its four seasons are queues, long lunches, strikes and bread (the Baguette Round marks the morning, the lunch marks the day, a strike marks the week, and nobody is sure when a queue began). Pardonlin's entries (the Bean Tower, the Grand Platz, the Unknown Pigeon, Teacup Row, Café Pardon, the Beetle Market, the Jardin, the Little Gardens, Basin Quay and their residents) are apocrypha, draft, and fair game to extend in this voice.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E30 builds Pardonlin as a town, and a dozen writers need one rule for how far the satire goes.
+
+## R-183
+
+**Question:** Is Pardonlin an HOA town, and who enforces its rules?
+**Ruling:** No. The Continentals have rules, but they are older and politer than the HOA's, and nobody enforces them. A rule in Pardonlin is a thing that is "not done"; breaking it earns a sigh, not a fine. There are no wardens in Pardonlin's own lanes: Lupin Pardoux on Pardonlin High Street is the HOA's, lent to the Continentals (R-176), and they think his hat is short. The Jardin's clipped parterre is not the Even Cut either: it is a pattern held by its head gardener, and the HOA has no say in it. The Wickets stamp the hat and send the gnome on.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** a town of clipped hedges and queues invites a reading as an HOA enclave, and Pardonlin's difference from Turfton is the joke.
+
+## R-184
+
+**Question:** Where is Radio Adagio on the dial, and who can hear it?
+**Ruling:** **Radio Adagio** (96.1, classical, from the Opera Hall on the Left Bank, id `radio-adagio`) is a bonus station: it is not on the dial of every car radio in the Yard, and it is not heard by tuning to it from afar. It is heard in and near Pardonlin on foot (from the Opera Hall horn speaker, the café gramophones, the bandstand and the Beetle Market's stall radio), and on any car radio while the car is in or near Pardonlin. Leave the region and the signal fades. Its conductor, Maestro Ottavio Lento (id `ottavio-lento`), is its only on-air voice. No real composers or pieces are named.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the station should feel like a place's own sound, not a fourth genre every driver always has.
+
+## R-185
+
+**Question:** Gnome Theft Auto builds the Saltwater (E11). How does it join the Puddle Sea, what is water-skiing to a gnome, and can you go aboard the Bathtub Queen?
+**Ruling:** The Puddle Sea drains south through **the Saltcut**, a channel the tide dug through the dunes (Driftwood claims he dug it with a teaspoon; nobody has checked); boats pass from the loch all the way to the sea. The Puddle Sea stays fresh; the salt starts at the Saltcut's mouth (R-158 holds: the Saltwater is the real thing, and Driftwood was right about the "Big Puddle"). **Water-skiing** is a Saltbucket invention: two planks and a rope behind a boat, rented with tubes at **the Last Tube**, Driftwood's hut on the beach; on the open sea Driftwood tows anyone who pays. A floating **wake ramp** off the slalom is the boardwalk's favourite way to crack a gnome. **The Spokewheel** turns once every ninety-six seconds whatever anyone does; riders pay Marram three acorns and come down where they went up. **The Bathtub Queen** lies moored at the end of Long Spoon Pier, gangplank down: anyone may walk her deck and the captain's cabin is open to guests of the captain. She does sail, but only at night and never while anyone is watching (sailing is not shown in the game yet).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E11 builds the sea, the channel, the ski runtime, the wheel ride and a boardable ship, and needs names and rules that fit R-158.
+
+## R-186
+
+**Question:** Why is there skiing in a garden, and how does it work on Snowcap Rise?
+**Ruling:** Snowdrop Slope is where gnomes ski and sled because the Tall Ones' winter left a long white bank there and gnomes never waste a bank. **The Bootlace Tow** pulls anyone up the east side: knotted bootlaces on cotton-reel pulleys, with cotton-reel handles to hang on to, and it hauls skiers and sledders alike. **The Wool Run** is the ski slalom: six blue-and-red flag gates from a timber start hut to an orange finish banner; a missed gate costs 3 seconds, and a clean run in 18 seconds or less is called "Black Diamond". **The Tea-Tray Run** is the straight sled lane down the west side; the sleds are round Tall-One tin tea trays with a painted rose, which gnomes call "rose shields". Falls are tumbles, never cracks: nobody is hurt on snow (R-021, R-049). The Woolly Sock Lodge rents skis and tea trays, sells Hot Cocoa (warming) and sells a tray to keep. Gentian Bootlace teaches the snowplough out front.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Epic E12 builds the ski hill, and the tow, the courses and the sleds need names and one rule for what a fall is.
+
+## R-187
+
+**Question:** How does ice fishing work on Pail Pond, and what about the pail's handle?
+**Ruling:** Anyone may drill a hole with a hand auger; the ice never cracks under anybody, and a hole refreezes when a fifth is drilled. Fish come up through a hole, are measured, carded on a nibble-clip and slipped back down: nothing is kept hungry or hurt (R-021, R-049). Thermos Theo keeps a red shanty on the ice and lends a Bent-Pin Twig Rod to anyone without one. The pond's cold-water fish are Pail Perch, Woolly Minnow, Lantern Burbot (bites at night) and Frostjaw Char (bites in falling snow; wants a Split-Cane Rod or better). The bears are paid in sardines, and an empty sardine tin sits by the holes. The giant pail's handle now sticks out of the ice at the edge, the handle of "the Rim"; gnomes found it and still do not know what it is for.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E12 adds ice fishing and the old "nobody has found the handle" joke has to be settled without ending it.
+
+## R-188
+
+**Question:** Where are the polar bears, and what do they do?
+**Ruling:** There are nine in all. Five lounge on the Fells' sun deck, now signposted "BEAR DECK". Four are on Snowcap Rise: one asleep on Pail Pond's ice, one turning slowly in an inner tube on the ice, one fishing a hole from a stool, and one on the Lodge's porch bench with a mug of cocoa. Their call is a long contented yawn. They never speak, and nothing upsets them: a shot, a ram or a shove gets a shrug. Standing beside all nine earns the "Bear Hug" achievement.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E12 adds the four Snowcap bears and a sign for the Fells' five, and they must stay the calmest creatures in Turfton (R-040).
+
+## R-189
+
+**Question:** Do the Cap-water fords on the Capwood Run flood an engine?
+**Ruling:** No. Cap-water, the thick slow water that seeps out of Capwood's buried Tall-One woodpile, soaks a mower's engine only a little: enough to slow it, never enough to sputter or stall. Ordinary water elsewhere still floods (the "waterlogged mowers" ruling stands). In game: `WATERLOG.fordCap`.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 puts two Cap-water fords on the Capwood Run, and the rally must drag without drowning anyone's mower.
+
+## R-190
+
+**Question:** Who is Two-Ton Teasel, and how is he related to Clary?
+**Ruling:** Two-Ton Teasel is Teasel Mudguard. His family name is Mudguard; he is Marshal Clary Mudguard's older brother, a Fizz Cup racer, and he wants a rematch on the dirt (side quest Rutbottom Heats). She has never let him win a start.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 gives Teasel a side quest at the Dirt Bowl, and the quest needs a family tie to the Marshal.
+
+## R-191
+
+**Question:** What is the Knobbly, and how does a player get one?
+**Ruling:** The Knobbly Dirt-Mower is a push-mower bike rebuilt for dirt by Rutbottom's mechanics: knobbly tyres, long forks, a number plate. It is sold at the dealer, and parked at the Dirt Bowl gate for anyone who signs Clary's clipboard (nobody checks the clipboard).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14's Knobbly Heat (`race-rutbottom-knobbly`) needs a dirt bike the player can reach without the impound.
+
+## R-192
+
+**Question:** Why do Capwood's caps glow, and what does Section Nine cover?
+**Ruling:** Capwood's caps glow faintly after dark (spores, not magic: gnomes argue about this). The brightest glow is the Great Ring, a fairy ring of toadstools round a clearing. Bruising a cap is a fine under Section Nine of the Warden's rules.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E14 lights Capwood at night and places the Great Ring, and the Warden's fines need a rule to cite.
+
+## R-193
+
+**Question:** How long is a yard at Hedgeworth Links, and what units does its card use?
+**Ruling:** Hedgeworth is measured in gnome yards, half a Tall-One yard (0.5 m). Every distance on its card, its signs and the pro's advice is in gnome yards, and a good drive goes about 200 of them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E15 plays Gnome Golf's real ball flight in a yard 360 by 420 m, so the course has to be measured in units a gnome can walk.
+
+## R-194
+**Question:** How many holes does Hedgeworth Links have, and why does the card say nine?
+**Ruling:** Hedgeworth Links has four holes, numbered 1, 2, 3 and 9 on the card: The Mortgage (par 4), Vesper's Patience (par 3), The Long Week (par 5, Hosepipe Pond on the dogleg) and The Ninth (par 4, by Thrift's shed and the Kicked Board). Peony numbers them so because "a nine-hole course" reads better on the mortgage papers, and everyone calls the course nine holes, including the scorecard's heading. Course par 16.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the brief's lore said nine holes; E15 built four on the land there is, and the joke keeps both.
+
+## R-195
+**Question:** How does a gnome get into Hedgeworth, what is the Members' Gate, and what happens to a ball lost in the pond?
+**Ruling:** The only public way into Hedgeworth is the Kicked Board, a loose board in the neighbour's fence on the side facing the road, which a mower or a kick breaks through and which stays broken (Thrift has stopped propping it shut). The Members' Gate beside the cart path is always locked; its plaque says MEMBERS ONLY and nobody living has the key. Balls lost in Hosepipe Pond are fetched by the pond mower, a paddling mower that is Hedgeworth's cousin of Gnome Golf's sea mower; a lost ball costs a stroke and is played again from where it was struck.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E15 builds the fence, the gate and the water hazard, and each needs one rule for how it is entered or lost.
+
+## R-196
+
+**Question:** What does the Acorn Diner serve, and why is the stew "grub-free"?
+**Ruling:** The diner serves eight dishes (see `acorn-diner-menu`). The stew is grub-free: it is, and nobody asks. The capitals in "Grub-Free Root Stew" are a reassurance, not a joke.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's chef job needs a fixed menu, and the stew's name invites a gag the diner never makes.
+
+## R-197
+**Question:** Who customises client mowers at Pay 'n' Glaze, and how are they paid?
+**Ruling:** A mechanic does it, paid per car by the shop. The client pays for parts, within the budget on their work order. The "Signature Series" loyalty re-stamp still applies to every job.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's mechanic job needs to say where the pay and the parts money come from.
+
+## R-198
+**Question:** How does comedy work in Pardonlin?
+**Ruling:** Le Petit Groan's audience grades rather than laughs. Heckling is a recognised art. Tomatoes are thrown underarm only, by custom.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E24's comedy job needs a room that reacts without ever laughing.
+
+## R-199
+
+**Question:** How is Rootwell University laid out as built, and what can a gnome enter?
+**Ruling:** The twelve buildings stand round a quad lawn, with the founder's statue at its centre: a bronze gnome holding out a plumb bob. North: the Long Shelf (library) and Plumbob Hall (flat roof with a helipad; a plumb bob hangs under the clock tower's arch). South: Tilth Hall (lectures; its roof can be walked, by stairs from inside) and the Crucible Block (labs). East: the Trencher (refectory; the sugar store is behind it), the Cold Frame Club and the Cloche (glasshouse). Further out: Bedstraw House, Bodger's Shed, the Heap Barn, Wicket Lodge on the drive, the Clod (a small pitch between two grandstands) and the Dean's lodge, which faces the quad. The Long Shelf, the Crucible Block and Tilth Hall can be entered; the rest are looked at. Students walk the quad and the university bell rings. Everything is built at gnome scale from stone, clay brick and slate.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the campus, and the layout, the statue and which doors open need one answer.
+
+## R-200
+**Question:** What is the Anthill as built, who lives in it, and what is Dean's Leap?
+**Ruling:** The Anthill is a 45 m mound with earth-coloured flanks and a flattened summit under a gravel forecourt, with the Anthill Observatory on top. A dirt road spirals up from the east-band road. Three round wooden ant doors stand at the foot (north, east, south). The ants are only ever seen singly or in lines, each carrying a sugar cube, and they never speak; a shut door means the rent is late. **Dean's Leap** is a wedge ramp on the north rim of the summit that throws a car north toward the campus. Nobody remembers who cut it; the Dean says it was a wheelchair ramp for a very ambitious professor. Landing it earns "Not Termites".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the mound, its doors and the ramp, and the ants must stay silent landlords (R-159).
+
+## R-201
+**Question:** What is Rootwell Field as built, and how can there be four aircraft when the department has one working plane?
+**Ruling:** The Field has a 420 m north-south runway with edge lights lit at night, an apron, a pad, a hangar, the "very small tower" (a brick stalk with a glazed cab) and an orange-and-white windsock. On the apron stand two Crop Dusters, a Hedge-Hopper and a Sycamore Copter. The department owns one airworthy plane on paper, the Hedge-Hopper; the other three are "on loan from Wally" and are the four students' coursework, which Wally would like back. The Hedge-Hopper flies circuits from the Field ("Rootwell Aeronautics Circuit"), and Wally's Charters sometimes fly a visiting professor in. Landing on the runway earns "Touch and Go".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 puts four aircraft on the apron against the older "one working plane and four students" joke, which should survive.
+
+## R-202
+**Question:** How is Pinwheel Ridge built: how many pinwheels, what colours, and who lives there?
+**Ruling:** Ten giant garden pinwheels, numbered 1 to 10 from west to east, stand 30 m apart along the crest, coloured red, yellow and blue in turn. Each is on a white-and-red mast with a ladder and always turns, facing south. Ragwort Coilspring keeps a control hut on the north flank below the crest, with a substation beside it, and a gravel service track runs up from the north-band-east road. They power lamps and neon, never engines (R-160). Flying along the ridge between them earns "Windfall".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E13 builds the ridge and its count, order and colours need to be fixed for the quests and the achievement.
+
+## R-203
+
+**Question:** Who enforces the Unmown's rules, and what can the HOA do there?
+**Ruling:** Nobody. The Unmown's rules (no mowing, no thinking about mowing, hats off to the herons) are kept by politeness alone; the rangers ask, they never fine or arrest. The HOA may visit on Tuesdays but may not enjoy it, and may look but not measure: an inspector in the preserve is "off duty" with a personal ruler. Hats the HOA leaves behind go in the lost-hat box at the Ranger Station.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E31's Unmown station, rangers and Mr. Pettigrew needed one rule for how the preserve is policed.
+
+## R-204
+**Question:** Who settled Espalier End, Mittenholt and Dunelow, and what makes them gnome places?
+**Ruling:** The outer hamlets were settled by gnomes who left Turfton for quieter lawns. Each keeps one odd custom (Espalier End its topiary judging, Mittenholt its left mittens, Dunelow its gull-judged sandcastles), a timetable that does not commit, and the same sign, "Twinned with nowhere, by request". Buses, in all three, exist in principle.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E31's three hamlets and the High Tarn needed a shared origin and a running joke.
+
+## R-205
+**Question:** Do the new E31 birds count toward the life list?
+**Ruling:** Yes. The Reedmere Bittern, Marsh Harrier, Meadow Cuckoo, Thymes Kingfisher, Pond Mallard, Shore Cormorant, Snowcap Eagle and High Tarn Diver are ordinary species of the birding life list, ticked the same way as any other, and the Unmown checklist reads the same list. The Fresh Feathers achievement counts five of them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the birds had to be either list birds or a separate system; one list is simpler.
+
+## R-206
+**Question:** What happens when a gnome bumps the new small wildlife (hare, hedgehog, fox, frog, dragonfly)?
+**Ruling:** R-021 applies to them as to every creature: nothing dies. A creature that is knocked over or run into tumbles, gets up and carries on, with the usual indignation.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** keeps the preserve's animals within the no-gore rule.
+
+## R-207
+
+**Question:** Where does Turfton's rubbish go, and who collects it?
+**Ruling:** Bin crews from the Turfton Bin Depot collect it by lorry and tip it into the Compost Heap. Spills are an HOA offence, fined against the crew's pay.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's garbage job needs a destination for the load and a reason neatness is pay.
+
+## R-208
+**Question:** Who fights fires in Turfton?
+**Ruling:** A volunteer brigade from Fire Station No. 1. Clay gnomes fear fire less than falls, but sheds and toadstools burn. Water comes from kerb hydrants.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's firefighter job needs a crew, a stake and a water source.
+
+## R-209
+**Question:** What is Gnomazon in Gnome Theft Auto?
+**Ruling:** A parody parcel company with one fulfilment centre, FC-1. Its manager-bots are earnest, not sinister. Associates are paid per parcel, with no tips.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E25's warehouse job needs a company that satirises warehouse work without being cruel.
+
+## R-210
+
+**Question:** Where are the Thorne Even-Estates sites as built, and what is on each?
+**Ruling:** Three Levelright sites stand at the edge of Turfton: Plot 1 at (-295, -120) on the west fringe by Mossy Wood (Chard's caravan is here, and the night-shift side quest starts at its gate), Plot 2 at (195, 325) on the south-east fringe by Route South, and Plot 3 at (1050, 250) out in Rootwell. Each has pale-blue-and-beige hoardings with the gate facing the nearest road, a row of identical empty beige show-homes (three; four at Plot 3), one half-built house of mushroom-stem girders in scaffolding, a bucket crane (Levelright's tower crane lifts with a garden bucket) painted "Level Is Kind", a materials yard, a site caravan and crews in acorn-cap hard hats walking a loop. The show-homes are identical and empty on purpose: the sites are built to be seen, a house a day, and nobody moves in. This replaces the older "north-west, south-east and south fringe" and "built by E01" wording.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds the sites, and their places, count and contents need one answer.
+
+## R-211
+**Question:** How are Trellisdown Vineyard and Brassknock Manor laid out as built, and is Chicory a he or a she?
+**Ruling:** The vineyard covers the hill at (-1140, -170), x -1290..-990, z -280..-60: rows run east-west with a path up the middle, the gate is on the south edge at (-1140, -61) facing vineyard-lane, Chicory's lodge is just inside at (-1172, -78), the press-house stands at (-1105, -95) with the first vine on its west wall, frost-pots stand among the rows and the crooked row is at z -205, east of the path. The manor lies across vineyard-lane to the south, x -1210..-1090, z -10..90: gate on the north wall at (-1150, -9), a gravel drive and a fountain, then the house (46 x 18 m, centre (-1150, 31)) facing north so its raised terrace looks over the vines. It has seven chimneys and a front door with the great brass knocker, which nobody answers. The way in is the back door on the south side, into the tasting hall, where Footman Pell stands. A row of rooms is shut and the ledger room is locked. Gardens lie behind. Chicory Snips is "he" everywhere; the vineyard entry's one "she" was a slip.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds both places, which replaces the rough coordinates in the old entries, and the pronoun needed settling.
+
+## R-212
+**Question:** What are the red deer and hill goats, and are they pests or quarry?
+**Ruling:** Both, and it is one animal. Herds of red deer (a stag, hinds and a fawn) graze the empty country of Trellisdown, Snowcap Rise, Loch Moss, Cloverfield and Rootwell, and bolt from gnomes, mowers and gunshots. Hill goats do the same on Snowcap Rise and the Fells' north flank. The Trellisdown Red Deer is also a Tuft & Tally quarry west of the vineyard (tuft: red-deer winter tuft; keepsake: a shed antler tine). A knocked-over deer gets up offended and leaves. Nothing dies (R-021, R-049).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 puts herds in the countryside and the Lodge already lists a deer quarry; they must be the same animals.
+
+## R-213
+**Question:** How does a gnome buy Windfall Croft, what grows there, and why does an oak that drops acorns not break Turfton's money?
+**Ruling:** The croft (x 60..140, z 505..565 in Cloverfield, gate on the west side by the south road) is bought at the For Sale board or in the Ledger app for 2,200 Acorns: 300 down, and the rest as a loan from the First Kiln Bank beside the Kiln-Debt (R-169), 10% on top. It has eight beds (radishes, carrots, cabbages, pumpkins), a seed rack, a stall by the gate, a run-down farmhouse and barn, and an orchard on the south wall whose apples keep rolling over it. An oak planted on the oak spot takes about forty minutes to grow and then gives a shake of acorns every ten minutes. Acorns from your own tree are honest acorns: nobody mints them. The HOA has a form for it, which nobody has found. Farmer Bramble knows who holds the deed (side quest `sq-windfall-croft-deed`).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 builds the farm, and a tree that makes the currency needed an in-world answer.
+
+## R-214
+**Question:** Who owns the hunters' camps in the empty country, and why is there a tin of acorns at each?
+**Ruling:** About 26 small camps stand in the empty country of every outer region: tents, shared camps round a fire, shacks, deer stands, duck blinds on loch and coast shores and tuft-drying racks, some with a hunter asleep by the fire. They belong to Tuft & Tally licence holders (Hazel Mattock's lodge, R-141). By custom each leaves a tin of acorns or a snack for the next walker, and fills it again later. Nobody takes the tin for more than one pass, and nobody has been told to.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E16 scatters camps across the map, and who they belong to and why they give things away needed one answer.
+
+## R-215
+
+**Question:** How big is Drainpipe Court?
+**Ruling:** It plays by Gnomerena rules (GBA GJAM: two on two, twos and threes, turbo, shoves) on a court sized for street gnomes: the Gnomerena's court and hoop scaled by four fifths, so the rim is 2.44 m for a 1 m gnome (the Gnomerena's gnomes are a quarter bigger). Both hoops are drainpipe hoops with no net. Pickup games go to 11; a grudge match goes to 7.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the game reuses GBA GJAM's simulation and keeps its proportions.
+
+## R-216
+**Question:** What is a skateboard in Turfton?
+**Ruling:** A wooden deck on four wheels, ridden standing, on anything paved; grass stops it. It is slower than any mower and has no place in traffic law (the Hat Watch pretends it is not there, as at Kilnside Rec's old skate corner, which stays). Spare boards live in the Board Library at the Gutter Bowls: take one, leave one.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** the board is ridable anywhere without becoming a vehicle class.
+
+## R-217
+**Question:** Are skate tricks the same in Turfton as in the Aether?
+**Ruling:** The names and the scoring of tricks (ollie, kickflip, grabs, grinds, combos) are the same everywhere gnomes ride boards. Nothing else connects the Gutter Bowls to the Aether or its Splash-Back Skaters.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** Gnome Theft Auto shares Aether Board's trick tables and scoring.
+
+## R-218
+
+**Question:** What are the Burrowfolk like, and who gets them wrong?
+**Ruling:** The Burrowfolk are small (about knee-high to a gnome), gentle and misread. Gnomes treat them as pests and the Tall Ones blame them for lumps; neither is at home in Loamdeep. Moles wear no hats, except DJ Moleman's antenna hat. They say "if it pleases you" and mean it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds Loamdeep and needs one consistent mole.
+
+## R-219
+**Question:** How is Loamdeep laid out, and what do the moles pay?
+**Ruling:** Loamdeep is one big hall-and-tunnel interior under the Burrow Door, with six halls: the Mother's Hall, Rootway Hall, Lamplight Hall, Postern Hall, Hearth Hall and Under-Chorus Hall. The mole jobs (Root Run, Lamplighter, Post Sorting, Dig a Nook) pay in Acorns that the Burrowfolk find in the soil.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 needs the halls and the pay fixed for the jobs and quests.
+
+## R-220
+**Question:** What does DJ Moleman look like in Gnome Theft Auto, and does he ever visit Loamdeep?
+**Ruling:** A mole in no costume: an antenna with a trilby on top, headphones round his neck. After the quest `sq-loamdeep-under-chorus` he comes up the Long Tunnel from his own burrow and plays the Under-Chorus, so the family's wish that he would visit comes true. His transmitter stays unexplained.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 puts Moleman on screen for the first time and needs his look and his visit settled.
+
+## R-221
+**Question:** How is Wader's Rest laid out?
+**Ruling:** The Standing Lady faces west on her sand mound; the big tent faces her across the ritual circle. Everything in the camp is grey, because pink is for her only, so her likeness on the shrine inside the tent is white. Nobody turns their back on her to eat.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds the camp and needs one layout and one colour rule.
+
+## R-222
+**Question:** Where does the Underspan stop, and what is the Roost?
+**Ruling:** The Underspan stays inside its site beside the Unfinished Span and never goes under the deck. The Roost, a scaffold deck above it, is the only way "up", and it is not allowed (the HOA cites it as "unauthorised verticality"). The Chute is the way back down.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E17 builds the Underspan and its Updraft and needs its limits fixed.
+
+## R-223
+
+**Question:** Is street racing legal in Turfton, and what does the Hat Watch do about it?
+**Ruling:** It is not legal and not quite illegal. The Hat Watch notices the meets and rarely chases: the Skyway Foot has been officially told it is a car boot sale. A race through live traffic can still draw a wanted star if the driver is careless. Pardonlin's Boucle is the exception: a licensed closed-road event under Commissaire Aurelie Fonce, with no Watch interest at all. The HOA files street racing as "Verge Activity, miscellaneous". The questline's rival is Sable Throttlewick, whose brother's lowrider the Watch impounded; her record arc ends on the Ring Road.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E26 puts racing on real roads and the games need one answer for how much heat it draws.
+
+## R-224
+**Question:** How do wagers work at the street-race meets?
+**Ruling:** Each meet has a bookie who takes wagers in Acorns on a pickup race: 25, 100 or 250, or a friendly for nothing. A winner is paid twice the stake and a loser forfeits it. Nobody takes IOUs. Tuppence Pomfret keeps the Skyway Foot's book, Monsieur Bastien Pipette Pardonlin's (a "small envelope"), and Shingle Nan Trimm the Saltbucket lay-by's (a bucket, from a deckchair).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E26's pickup races need one rule for stakes, with a voice per meet.
+
+## R-225
+**Question:** Where is the Carburettors' night meet, and who runs it?
+**Ruling:** The Skyway Foot, at the west foot of the Turfton Skyway, run by Ratchet Gaskin for the Carburettors. It is quiet by day and full after dark. Lugnut Lulu, their captain, may turn up there; the night race in #5 `m05-sweepers-wages` stages at the Skyway Foot. The Ring Road time trials stay the Carburettors' illicit run (the-carburettors).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E20's m05 needs a place for the Carburettors' night meet, and E26 builds it.
+
+## R-226
+
+**Question:** How many holes does Hedgeworth Links have now, and where are 4 to 8?
+**Ruling:** Nine. Holes 4 to 8, promised by Dame Peony every season for as long as anyone has been a member, are built in the Bottom Garden, the Tall One's old bottom garden south of the old south fence, through the Turn Gate: 4 Peony's Promise (par 4, the opening ribbon still strung across the green), 5 The Maze (par 4, the old hedge maze clipped into a hole), 6 The Drip (par 3, a carry over the overflow pool and its giant birdbath), 7 The Potting Shed (par 3, teed off the shed roof) and 8 The Rhubarb Patch (par 4, a dogleg round the vegetable patch). Course par 34. R-194 stands as history: the card said nine for years and the course had four. Play order is 1 to 9, and 9, The Ninth, is still by Thrift's shed. Thrift laid the new holes out by hand over three seasons; Peony named them, Basil Divot none.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E32 builds the missing holes, and the joke that the card was right all along needed an answer that keeps R-194.
+
+## R-227
+
+**Question:** What is the Dewdrop, and can anyone buy one?
+**Ruling:** The Dewdrop is Hogweed Sprocket's clear rolling ball, ridden from a seat that stays upright inside. It is an
+Underspan prototype, not a dealer vehicle: a gnome gets one only by finishing Hogweed's three Dewdrop jobs, and a
+replacement is sold only at his workshop (400 Acorns), with a handwritten ownership form. The HOA has no category for it
+and cites it, when it cites it at all, as "unauthorised roundness".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 adds the bubble-mobile (L54) and needs where it comes from and who sells it fixed.
+
+## R-228
+**Question:** How does Turfton change as the story moves, who tells the town, and who hands out the hobby stamps?
+**Ruling:** Changes after a run of story events are public and stay: signs go up, notices come down, a roof is mended, a
+bay is boarded. Each one is reported once in a Turfton FM news bulletin, in the station's dry voice. Changes follow
+what the crew has done, not the calendar; nothing reverts except Side-Valve's seizure, which ends with the finale. The
+hobby teachers (Wenna Gudgeon, Hazel Mattock, Dunnock Pell) hand out their own Newcomers' Card stamps at their counters;
+Mabel sends newcomers to them.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E18 builds the world changes (L68) and moves the hobby intros (L66) to the teachers.
+
+## R-229
+**Question:** The act I-II story (E20) puts places and habits on screen the lore has not fixed. Where does the Tattler work now that Founders' Green took its block, where is the parade office, what do the Skyway night meets, the Heap's convoys and Cass's tab mean, and what of the Vance siblings' photograph?
+**Ruling:** Hedda Galley runs the Turfton Tattler from a street desk on the Kiln-Shield kerb at the north gate of Founders' Green; the old Tattler tower lost its block to the Green and was never rebuilt, and Hedda says a desk you can see is harder to sue. The parade office is a booth behind City Hall on the z = -120 road, where the Boot float waits between parades. The Carburettors' night meets gather at the west foot of the Skyway, under the Unfinished Span. The Compost Heap's plate convoys leave by the Ring Road north toward the snow line and Mittenholt; a bill of lading names one place and never the route. Chrome-Knuckle Cass never gives a gift: she runs tabs, and a gnome on her tab is repaired free at Pay 'n' Glaze. Tansy owes Sage Ladle forty breakfasts and settles debts with her by lending out help. The photograph in townhouse 404 shows Juniper and Reginald at ten and eight, signed "J. and R."; it is never a joke.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E20 builds story rows 1-35 (L84, L95, L106) and the writers needed these facts fixed. E21/E22 may take R-230 on.
+
+## R-230
+
+**Question:** Where is Snowcap Rise's real high ground, and what is it called?
+**Ruling:** The Hatbrim, a short range on the north edge between Mittenholt and the High Tarn. Seen from Mittenholt it looks like a hat left on the fence: Old Pate (a bald dome, about 72 m) is the crown's near side, Brim Gap (about 40 m) the dent, and the Bobble (about 105 m) the bobble on top: the highest point in the yard, higher than Snowdrop Slope's mountain (about 85 m). Snow lies on it above about 32 m all year.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 needs a range for the mountain routes, and the lore calls the Rise "the high country" without a peak.
+
+## R-231
+**Question:** Who made the Hatbrim's routes, and who may use them?
+**Ruling:** The Brim Gap Road (cars, two-way, seven or so numbered hairpins) was built by the HOA's Highways Sub-Committee "to plough it", which it has never done. The Hatband is an old goat shelf round the Bobble, bikes and buggies only, kept that way by bollards rather than by the sign. The Brim Walk is waymarked by cairns and nobody owns it. The Spine Cut was blasted through the Highland Spine for the Pinwheel Ridge works, and the Keyhole, a rock arch over the road, was left standing because the surveyor "had not finished measuring it". The Summit Register on the Bobble has been kept since before the HOA, and signing it is a rite: "you were here, and so was your hat".
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 builds them and the dressing needs one story.
+
+## R-232
+**Question:** Who keeps the Top Hat, and who is the gnome at the Keyhole?
+**Ruling:** **Velma Crown** keeps the Top Hat, the café at Brim Gap whose roof is a giant black top hat; she serves Gap Tea and Hairpin Buns and counts every car that stops ("Cars today: 3. Buns: 41."). **Plumb Bob** is the surveyor at the Keyhole, who has measured the arch every day for years, waiting to be sure, and has never been sure.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-25.
+**Why:** E33 puts them on screen.
+
+## R-233
+
+**Question:** The act III story (E21) dates two things and names people and habits at the far edges. When is the Grand Combine's test, and when the Even Cut? Who are the Carburettors who stayed, and what do the Fells, Capwood, the coast and Rootwell add?
+**Ruling:** The Combine tests its deck at Hedgeworth on the night of the backers' gala (the Flock know it and Mother Saxifrage gives it); the Even Cut itself is on the longest day, and Vesper names it over every loudspeaker in Turfton that same night. Most of the Carburettors signed the HOA charter for the free tyres; the three who stayed with Lugnut Lulu are Big-End Bertha, Dipstick Dunstan and Fanbelt Fennimore. Warden Chanterelle Stook fines eleven acorns a bruised cap, and the Great Ring is what Capwood calls its clearing. The salt-plows that hunt the crew north are HOA vans with blades. Driftwood and the crew talk by tin-can phone; the three HOA barges are black watering-can steamers sailing bow west in convoy, and Captain Samphire Bilge holds that everything on the Bathtub Queen is a lie except the smuggling. Rootwell's ants are its landlords and are paid in sugar; Dean Lovage Inkwell signed the HOA work order that took Professor Sextant's lens, chalked "B. Sextant" on its ring. The HOA's linemen and marshals (Pumice, Grit and Lime at the test) are hired by the day. Tansy's scroll says only that Vesper builds the Combine in parts at the edges and the crew must find friends there; the Dust Flats are named later, by Tansy's ridge call. Elder Bracken lends the Stopping Stone and does not give it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-26.
+**Why:** E21 builds story rows 36-53 (L45, L83, L84, L95) and the writers needed these facts fixed; the outline gave the test and the Even Cut the same day. E33 may take a number in parallel; renumber at merge.
+
+## R-234
+
+**Question:** Act IV (E22, rows 54-70) has to put the second expansion in play: Pardonlin, the Unmown and the Hatbrim. Where do they come into the story, and what does the crew get for keeps?
+**Ruling:** Three changes to the outline. (1) Row 63, Four Taps: when the Don names his price, Mayor Barnaby "Two-Coat" Mulch is not at his residence but at a terrace table of Café Pardon in Pardonlin, where no HOA letter can be served past the Wickets (R-183); his second coat is drying in the continental sun and Hector Disdain has not taken his order in three days. The player drives him from Pardonlin to the Mulch Club. (2) Row 65, The Countess Relents: the Countess's first vine goes to the Unmown, the one corner no mower goes (R-174), not to Granny's greenhouse; Head Ranger Burdock Haybright takes it in at the Ranger Station and writes it in the book. Chicory Snips still loads it and waters it. (3) Row 64 part 2, By Air: the coalition's signal for the longest day is a beacon on the Bobble, the Hatbrim's summit, because it is the highest ground in the yard and the only range the HOA never named (see the hatbrim entry); Wally flies the Crop Duster up to it and Hogweed builds the fire, and it is lit at dawn on the day of the Even Cut. Also: after Runway Flares, Wind-Sock Wally signs Hangar Two over to the crew and the Crop Duster is the crew's plane; Marshal Clary signs the impounded Knobbly over after the Rutbottom impound (row 42).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-26.
+**Why:** E22 builds story rows 54-70 and must use every place the batch built (the brief: "the whole world in play"); the outline was written before the second expansion existed.
+
+## R-235
+
+**Question:** The final lore pass (E22, L86) read every batch-3 person and place against the character bible and the game. Which contradictions did it settle, and what new canon did it fix?
+**Ruling:** (1) **Vesper Thorne is "he"** in every lore entry and game line, as in the character bible; the older "she" lines were slips (fixed in his entry and in the patio-gallery and route-south-acorn-diner entries). (2) **For a Gnome Theft Auto person, the character bible wins over a lore entry** unless canon or a ruling says otherwise, and the game's CAST preset is what players see for a look: Juniper and Reginald Vance are dearest enemies, not estranged; Turncoat Cam wears the pale cap of his preset; Lugnut Lulu wears an orange hat and a black dress. (3) **Same-name gnomes are separate people** throughout the apocrypha: Dr Clod Furrow and Dr Cress of Rootwell are not Cress Caliper; Pip Tussock (junior ranger) and Pip Pearsley are not Pip Potsworth; Dunstan Cairn is not Dipstick Dunstan; Cass Pedal is not Chrome-Knuckle Cass; the Speedway's Burdock is not Head Ranger Burdock Haybright. "Two-Ton Teasel" is Teasel Mudguard, Clary's brother (R-190). Big-End Bertha, Dipstick Dunstan and Fanbelt Fennimore have no surnames. (4) **The code's numbers are canon:** Hangar Two costs 1800 acorns and the Mossbank Boathouse 1200; the Sling-Lift costs 70 for a mower, 140 for an aircraft and 100 for a boat; there are 26 hunters' camps (the Thermos Stand is a deer stand, Damp Socks Camp a tent); the Rutbottom Dirt Bowl's corners and jumps have the names in the code. (5) **The Burrowfolk are five families**, each with a hall and a job: the Tumblesoils (the Mother's Hall: they keep Loamdeep), the Tamps (Rootway: roots), the Delves (Lamplight: lamps), the Sifts (Postern: the post) and the Crumbs (Hearth: supper and digging); the Under-Chorus Hall belongs to nobody. DJ Moleman is a Crumb, Nubbin a Sift, Pim and Pod are Delves. (6) **The Flock** keep the rule of no sitting on Tuesdays; Sister Rail's "sitting is for Tuesday" is her own inversion, kept because she never sits. (7) **The coalition** is the Coalition of All Hats; its flag is a patchwork of every faction's cap colour; at the overlook camp the Flock's one pink tent is the Standing Lady's tent for the day. (8) **The Even Line** is a level line computed at the Anthill with Professor Sextant's lens; it enters Turfton on the meridian and crosses the Countess's first vine. (9) **Act IV facts the quests fixed:** Reeve Yarrow's hay barn stands at the south of Pebblewick (706, 34) and hides the Whirligig; Wind-Sock Wally's caravan stands on the Desert Airfield apron (466, -76); the HOA logged Diggs's medal (a tin star on a green ribbon) as lost property, and he stayed at Fort Sandpit in case the garden's makers came back; the Don's fifth tap means yes; Café Pardon's gramophone plays Radio Adagio; the Grand Combine sleeps the night before the Even Cut in the Compost Heap's yard and its line runs through the Even-Estates. (10) The Compost Heap is in Turfton's fringe (R-072's "Mossy Wood" forge is the Heap's old name for its back lot).
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** L86 asked for a final pass over the extended world's lore; the pass found these contradictions between entries, the bible and the code, and the act IV writers fixed these facts.
+
+## R-236
+
+**Question:** The menial-lore pass (E22, L86 part 2) wrote the everyday life of the extended world: prices, menus, habits and small history. Which of its inventions are canon?
+**Ruling:** The `## Everyday` sections and the everyday entries written in this pass (e.g. the-boardwalk-stalls, brigitte-levains-bakery, wallys-caravan, lost-property-shed, pebblewick-town-bell, reeves-minutes) are canon for the apocrypha where no code contradicts them; where a sign or price exists in the game, the game wins. Fixed in particular: Bodega & Sons sells Acorn-Cola at 3 acorns (lukewarm), Dandelion Fizz at 2 and spark plugs at 4; the Gnomecino's chips are 5, 25 and 100. The Even-Estates show-homes are sold as "Even", "Evener" and "Evenest" and are the same house. Rootwell's ants are paid their rent in sugar on the last day of the month, counted at the Anthill's north door; a late month is called "the ants have closed the library". Warden Chanterelle fines 11 acorns a bruised cap and 4 a licked one, either payable with a sincere apology, and cites rules by number only. The Rutbottom "impound" is the pits, where the HOA tapes rides in place; only Marshal Clary's flag releases them. The HOA lost-property shed outside Fort Sandpit's gate (about (398, 58)) is kept by Clerk Rubric and Clerk Docket. The Pebblewick bell is tin, cast from seed-tin lids, and rings once a day for news and once for any water that arrives; Reeve Yarrow's minutes run to 41 volumes, every sitting headed "Present: the town." At the coalition camp moles hang a digging helmet on the hat rail (moles wear no hats), Hogweed his welding goggles and Granny her garden straw hat; Nubbin is a Corporal of the Spade Guard since row 60.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** L86 asked for menial lore for the extended world; the writers needed these details fixed so later text agrees with them.
+
+## R-237
+
+**Question:** Dunelow's deckchair board priced the hire at "50p", but the currency everywhere in the Yard is Acorns (G3#28). Which is canon?
+**Ruling:** Deckchair hire at Dunelow is **1 Acorn**, "falling over included". There are no pence in the Yard; every price is in Acorns.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** R1 editorial review G3#28 (FX01): a small fact, so the lore follows the corrected sign (GR1).
+
+## R-238
+
+**Question:** The stunt ramps were all one black-and-cyan kit (D21). What does each ramp look like, and what do its signs say?
+**Ruling:** Each ramp is built from its place: the Turfton Park Fountain Vault in Gnorwin Clayfoot Park is timber with a turf top, and the council has put a sign beside it that reads "NO RAMPING (PLEASE)"; Dean's Leap is old planks over packed earth, with a faded painted wheelchair symbol on the slope (the Dean's story that it was a wheelchair ramp for a very ambitious professor) and a brass plate reading "DONATED BY THE CLASS OF ——" (the year was never engraved); the desert, wood and farm ramps are packed earth with tyre piles; the city ramps are painted plywood on steel, the Clay-Mart ramp is the shop's steel loading ramp, and the Frostbite Ice Ridge is packed snow on timber. Every ramp carries a painted white lip line and yellow chevrons. The cyan glow is not on any ramp: it is only the ring the player sees while a stunt is under way.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** FX04 (D21) dressed the ramps to their places; the signs' words and the ramps' materials are small facts the lore should agree with.
+
+## R-239
+
+**Question:** The R1 editorial review (G3#1-3) found the coast's people standing in the planks or beside the decks, and Driftwood, Marram and Captain Bilge in different colours in each place. Where does everyone stand, and what do they wear?
+**Ruling:** (1) **Everyone stands ON the decks:** the Saltbucket Boardwalk's promenade is a walkable deck like the pier's, and Spun Sugar Sal, the player and the cars stand on its planks. (2) **Reel Ruth fishes from the Long Spoon Pier's handle**, at the west rail about (297, 1176), facing out to sea; she wears a mustard oilskin sou'wester, a navy jumper, glasses and her grey beard (no longer Driftwood's teal and sand). (3) **The Bathtub Queen has a deck crew besides her captain:** Mopsy Brine, the deckhand, who mops the same planks every day and takes it personally when the sea puts the wet back, and Pennant Pru, the lookout at the bow, who reports the HOA on the horizon and is told, each time, that it is a hedge. (4) **Driftwood, Marram Teaspoon and Captain Samphire Bilge wear their cast looks everywhere:** Driftwood a teal hat and sand shirt, Marram a yellow hat and teal shirt with pigtails, Bilge a navy hat and dark brown coat; the cutscene preset is the look in quests, on the boardwalk and in the captain's cabin.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** R1 editorial review G3#1, G3#2, G3#3 (FX06): positions and colours of named people changed in the game, so the lore follows (GR1).
+
+## R-240
+
+**Question:** The HOA lockup stood in the Double Pot Tunnel's traffic lane from game start, #21's "penthouse" viewing played on a rainy street, and the Reeve's hay barn stood across the east highway (G1#1, G10#6, GR3). Where are these places now?
+**Ruling:** (1) The lockup's door is a beige door in the tunnel's west wall at about (111, -98), "HOA HOLDING (WAIT HERE)" over it and a loudspeaker over that; it is there from the start. (2) In #62 Cam is held in the **holding yard**: a chain-link pen with a bunk on the pavement in front of that door (the cells behind it are never seen), put up for the night and gone when the row is done. (3) #21's viewing is held on the **roof garden** of the Double Pot slab: a beige table, beige chairs and beige planters beside the helipad, reached by the sales-floor lift; the key choice is made back down in the tunnel. (4) The Reeve's hay barn stands at about (709, 22), north of the east highway, its doors facing the road; its yard with the hay (706, 47) is across the road.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** R1 editorial review FX05 (D3, D5, GR3): story dressing may not stand on a road, so these positions change and the lore follows (GR1).
+
+## R-241
+
+**Question:** The boardwalk deck was 46 m deep and its stalls stood at z 1100 (G3#6). What are its size and the stalls' places now?
+**Ruling:** Saltbucket Boardwalk is a deck 410 x 30 m: x -200 to 210, z 1102 to 1132 (it was 420 x 46 m; the west end is trimmed from -210 to -200 where the ground rises above the planks). The freed strips north and south are sand again. The six stalls stand along the north edge at z 1105.5 (x -150, -95, -40, 40, 95, 150) with their fronts to the promenade; a south row of rides and kiosks (helter-skelter, Punch booth, mini carousel, ice-cream kiosk, shell grotto) faces them across a walkway kept open the whole length. The entrance is at (0, 1100) and the stairs to the sand are still at x -120, 0 and 120.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14, G3#6) narrowed and re-laid the deck; `coast/config.ts` (`COAST.boardwalk`) and `coast/promenade.ts` are the fixed point (GR1).
+
+## R-242
+**Question:** The town is "built round a giant sunk bucket" but players never saw one (G3#5). Where is it, and what stands in the dune?
+**Ruling:** The bucket's rim is about 40 m across, centred at (0, 1028), and breaks the sand in two arcs either side of the coast spur; its handle arches about 14 m over the spur as the town's gateway, so the road into Saltbucket runs under the bucket's handle. The Tall One's spade is stuck blade-down in a dune at (-60, 1045), leaning a little. They are scenery, not a place: nobody has ever been inside.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14, G3#5) built them (`COAST.bucket`, `COAST.spade`, `coast/dunes.ts`); signature images change the game, but their numbers are lore facts now (GR1).
+
+## R-243
+**Question:** Where are the dunes, and how far does the sand reach?
+**Ruling:** The dune band lies between the bucket and the boardwalk at z about 1026 to 1062, with clumps of marram grass (denser on the crests and the landward side) and a weathered picket fence along its southern foot at z about 1071 to 1074, in runs with gaps. The coast spur's sand path keeps a gap of 9 m either side of x = 0. Sand, not grass, reaches z 1000 within about 460 m of the spur, so the dunes are the edge of the lawn and not a stripe on it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14) moved the band north so the boardwalk's flat site does not flatten it; `COAST.dunes` and `coast/dunes.ts` are the fixed point (GR1).
+
+## R-244
+**Question:** Who keeps the stalls (G3#7, G3#15)?
+**Ruling:** Five new people, one to a stall besides Sal, each standing behind the counter at z 1109.5: **Gil Brinewater** (Plank & Pickle, x -97; "The fork is the expensive part"), **Tam Tinsley** (Tin Shy, x -45; sulks when somebody wins, "I am in a very good mood"), **Dot Scoopwell** (Scoop & Spade, x 38; "whichever is left"), **Madame Limpet** (The Lucky Limpet, x 93; the strip always says "Something will turn up") and **Penny Stubbs** (Marram's Office, x 148; counts the change, has read every stub twice). Spun Sugar Sal keeps her own stall at x -152. The stallholders' noon swap is kept.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#7, G3#15) put a keeper in each stall (`coast/stalls.ts` `STALL_KEEPERS`); the people are new, so the lore records them (GR1).
+
+## R-245
+**Question:** Where is Captain Bilge when she is not in her cabin, and where is the treasure chest (G3#4, G3#14)?
+**Ruling:** Captain Samphire Bilge stands at the head of Long Spoon Pier at (300, 1168), facing up the beach, beside a chalk A-board of tour times ("PIRATE TOURS / Noon. Also noon. / Midnight is cargo. Not a tour."); she is hidden while the player is inside her cabin. The chest of the queen's treasure sits at the foot of her bed.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#4, G3#14): `BILGE` in `coast/life.ts`, the board in `coast/pier.ts`, `COAST.ship.treasureLocal` (GR1).
+
+## R-246
+**Question:** What is the boardwalk tubing side quest called (G3#16)?
+**Ruling:** `coast-boardwalk-tubing` is titled **"The Buoy Run"**: Driftwood has set a new slalom of buoy gates out past the boardwalk, and when it is done his rack is the player's "at a friend's price". Its giver is Driftwood.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#16) titled the quest in `quests/coastQuests.ts`; the lore follows (GR1).
+
+## R-247
+**Question:** Which way does the Last Tube face, and what changed at the Spokewheel (G3#19, G3#17, G3#15)?
+**Ruling:** Driftwood's hut at (150, 1150) has its door to the sea, where customers come back from the water; the price board (tubes 8, skis 11, "Wake ramp: yours to find"; on its back "Driftwood tows. Driftwood is not sorry."), the refunds note and the rack face the sea too, and "NO TUBES IN THE BOWL" stands at the water's edge (back: "The bowl is east. We checked."). The Spokewheel has a brass bell on its boarding platform at (-253.5, 1110), rung at boarding and at the end of a turn, with Marram beside it; after "The Wobbly Gondola" the wheel is free ("Marram waves you through. Within reason.").
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#19, G3#17, G3#15): `tubing/view.ts` `buildLastTube`, `COAST.spokewheel.bell`, `coast/spokewheel.ts` (GR1).
+
+## R-248
+**Question:** Where does the Saltcut meet the sea, and which stop of Pirate Tours is on the pier bowl (G3#26, G3#31)?
+**Ruling:** The Saltcut bends on its way down from the Puddle Sea (out east to about x 752, then back west) and meets the Saltwater at about (728, 1200); a daymark, a painted post, stands on its east bank at (743, 1186), by the tour's stop three at (746, 1186). The four stops of "Pirate Tours, Mostly" are: the Queen's anchor on the beach (360, 1175); the head of the pier handle (300, 1165); the mouth of the Saltcut; and the pier bowl (300, 1250), where the Hat Watch patrol noses about the gangplank. The report-back is in Bilge's cabin.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#26, G3#31): `data/levels/south-shore.level.json` (path `saltcut`), `coast/beachScenes.ts` (`DAYMARK`), `quests/coastQuests.ts` (GR1).
+
+## R-249
+**Question:** Who else lives on the promenade and the sand, and what is on the horizon (G3#13, G3#15)?
+**Ruling:** New named gnomes. On the promenade (standing on the planks, facing what they watch): **Winkle and Agatha Dunmore** at the coin telescope (about (-55, 1129)), **Hob Pennywhistle** and **Little Pip** at the carousel (about (29, 1121); Hob is "the one holding the coat"), **Old Fenn** and **Mabel Crumb** at the Punch booth (about (-90, 1121)), and **Tuppence**, third in a queue of one (90, 1121). Tuppence is not Tuppence Pomfret, and Winkle Dunmore is not Winkle Pennant (R-235: same-name gnomes are separate). On the beach: **Hessian Nap**, who hires out deckchairs at Dunelow (-594, 1164.5), **Old Skerrick**, who pushes the winch that hauls a rowing boat up the sand (-936, 1159.5), and **Winkle Pennant**, who has named all the crabs at the rock pool (-852, 1165). The two kilometres of strand also hold small scenes (a picnic behind windbreaks, a wreck rib, groynes at x 385 to 590, an upturned boat, nets drying east of the Saltcut, sandcastle works, a sign "BEACH CLOSED (By the HOA. The sea disagrees.)" at (957, 1158), the treasure X at (-520, 1170) with its hole and a boot). One fishing smack works slowly back and forth along the horizon line at about z 1560 and is never reached.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#13, G3#15) added these people and scenes (`coast/promenade.ts` `PROMENADE_FOLK`, `coast/beachScenes.ts` `BEACH_FOLK`, `boatTraffic.ts`); the lore records them (GR1).
+
+## R-250
+
+**Question:** Snowcap Rise was a green daisy meadow round an iced pond, greener than Frostbite Fells below it (G4#1, G4#2, D12), and the Wool Run took eighteen seconds (D26). How white is the Rise, why is Capwood green, and where does the Wool Run start?
+**Ruling:** (1) **The Rise is under snow** everywhere above the band road. Where it meets greener ground at its edges the snow thins to a patchy frost, and it lies deepest round Pail Pond and Snowdrop Slope. (2) **Capwood's rotting woodpile warms the hollow, so the caps grow where the snow won't lie.** The forest floor is green inside a ring of frost, and that warmth is why a toadstool forest stands in the snow at all. (3) **Mittenholt clears its own green.** The hamlet keeps its green swept every morning; the frost comes back by noon and is swept again. (4) **The Wool Run starts at the top of Snowdrop Slope**, by the top of the Bootlace Tow, and swings across the whole slope; the short course below the old start is **the Nursery**, where Gentian Bootlace teaches the snowplough, and its times are kept apart. The Tea-Tray Run stays short. (5) **Velma Crown's Top Hat at Brim Gap** is the one place on the Rise that sells anything besides cocoa: tea, buns and the view.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review FX12 (D12, D26, G4#32): the Rise's name and lore promise snow, so the game changed (GR1); the thaw gives Capwood a reason to exist; the run and the shop list are small facts the lore follows.
+
+## R-251
+
+**Question:** The R1 editorial review (G2#1-4, G2#10, D9) found Pardonlin's streets lined with lawn verges, its blocks empty inside, the Grand Platz bare and the Thymes level with the grass. What is Pardonlin's ground made of?
+**Ruling:** (1) **Wall to wall:** every street in Pardonlin has a granite kerb and a pale limestone pavement out to the house fronts; the squares are granite setts with cobble rings round their fountains and statues, and grass is kept for the Jardin, the gardens and the backyards. (2) **Lanes:** the blocks of the Old Town, the Left Bank and Teacup Row are cut by crooked cobbled lanes (the Ruelle des Pas Perdus, "The steps are found. The way is not.", the Passage des Violons, the Ruelle de la Tasse and others) with houses close on both sides and small courtyards. (3) **The Grand Platz** has a paved heart round the fountain and the bandstand (a carousel with its own queue, a flower market, news kiosks, café terraces, toy boats on the fountain and a crowd round Marcel) inside a gravel ring of plane trees in a quincunx. (4) **The Thymes** runs through town about 1.8 m below its dressed-stone quays, between iron railings, with river stairs every hundred and some metres, houseboats, péniches and a rowing boat sunk "for sale" moored at the walls, the bouquinistes' green boxes on the Thymes Walk, stone parapets and lamps on the bridges, the love-lock railing on the Pont Neuf ("The bridge is spoken for"), and a swans' nest on a quay stair; the Jardin's stretch keeps a low mossy bank.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#1-4 and G2#10 (FX09, D9): Pardonlin's signature image is a European town, so the game changed (GR1); the lore records what it now looks like.
+
+## R-252
+**Question:** Where is Le Petit Groan's street entrance (G2#15)?
+**Ruling:** Le Petit Groan's door is a red cellar door under a stone arch in the plain east wall of the south-west corner café on the Grand Platz, beside a wooden cellar hatch, with the banner "LE PETIT GROAN. Laughter by appointment." over it and tonight's bill on a chalkboard. There is no stair well in the open square.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#15 (FX09): a position in the build, so the lore follows (GR1).
+
+## R-253
+**Question:** What do the Beetle Market, Radio Adagio's forecourt, the Jardin and Basin Quay look like (G2#7, #8, #9, #26)?
+**Ruling:** (1) **The Beetle Market** is a cobbled square of striped-canopy stalls, one trade per cluster (cheese, beetles in jars, bric-a-brac, books, records, prints, old hats, bread, produce), along a crooked central aisle hung with bunting; Madame Rabais haggles over a beetle that is not negotiable. (2) **Radio Adagio's forecourt** is paved to the Boulevard's kerb, with a ticket kiosk whose queue is one cellist, posters for the Fifth (Act 1 of 3, of 3), a cellist waiting at the stage door and the Maestro's maroon scooter, "resting". (3) **The Jardin** is planted in pleached limes along its gravel axes, with a rill court, a rose walk and terracotta urns, kept by Hubert Secateur ("PLEASE DO NOT PRUNE THE PRUNERS."). (4) **Basin Quay** has a stone edge with bollards, a slipway, a pontoon, a harbourmaster's hut ("Office hours: high tide. The Basin has no tide."), nets and crates, boats on the water, and terraces along the west and south banks.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#7, #8, #9, #26 (FX09): small facts and dressing of named places in the build, so the lore follows (GR1).

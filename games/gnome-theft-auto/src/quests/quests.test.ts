@@ -12,6 +12,7 @@ import { pushOutOfBoxes } from '../collide';
 import { EVENT_BULLETINS } from '../radio/content';
 import { buildWorld } from '../world';
 import { GIVERS, QUESTS, questById } from './defs';
+import { STORY_QUESTS } from './story';
 import { SCENES } from '../cutscene/scenes';
 import type { SceneScript } from '../cutscene/script';
 
@@ -130,7 +131,8 @@ describe('quest step transitions', () => {
       unlock: vi.fn(),
       play: vi.fn(),
       economy: {
-        state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false }),
+        state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false, loans: [] }),
+      borrow: () => true, payLoan: () => 0, totalOwed: () => 5000,
         earn: (amt) => earned.push(amt),
         spend: () => true,
         payDebt: (amt) => { paid.push(amt); return amt; },
@@ -196,7 +198,9 @@ describe('quest step transitions', () => {
 
 describe('story campaign registry', () => {
   it('registers all 17 story quests, 11 side quests, the 5 Kerbside Exchange city contracts, the Tessie quest, the 4 Speedway races and the 2 Pebblewick side quests with unique IDs, valid givers, acyclic prereqs, and in-bounds coordinates', () => {
-    expect(QUESTS.length).toBe(55); // + the 15 Newcomers' Card tutorials
+    // E20: story rows live in quests/story/ (rows moved there from the chapter files count once).
+    const moved = STORY_QUESTS.filter((q) => ['m02-roof-on-credit', 'ch1-founders-boot', 'ch2-unmowed-tablet', 'ch3-salvage-raid', 'ch3-kiln-resin-ice', 'ch3-tundra-drift-run', 'ch4-runway-flares', 'ch4-sandpit-drop', 'ch4-spade-truce', 'ch5-even-cut'].includes(q.id)).length;
+    expect(QUESTS.length).toBe(93 - moved + STORY_QUESTS.length); // + On the House (E20) + the 3 Dewdrop quests (E18) + the ribbon-cutting side quest (E32) + the 5 street-race side quests (E26) + the 7 society side quests (E17) + the 2 countryside side quests (E16) + the 2 court/skate side quests (E19) + A Roof on Credit (E10) + the 15 Newcomers' Card tutorials + the 4 Saltbucket coast quests (E11) + the 2 winter side quests (E12) + the 4 dirt quests (E14) + the 4 Hedgeworth side quests (E15) + the 2 Rootwell side quests (E13)
     const ids = new Set<string>();
     for (const q of QUESTS) {
       expect(ids.has(q.id)).toBe(false);
@@ -248,14 +252,14 @@ describe('story campaign registry', () => {
       cur = cur.prereq ? questById(cur.prereq) : undefined;
     }
     expect(chain[chain.length - 1]).toBe('prologue-fresh-kiln');
-    expect(chain.length).toBe(16);
+    expect(chain.length).toBe(86); // E20: rows 1-35 (39 quests with the extended parts); E21: rows 36-53 (24 with the parts); E22: rows 54-70 (23 with the parts)
   });
 
   it('preserves first-contract compatibility and includes John Bodega & Asphalt cameos in chapters 1, 3, and 5', () => {
     const fc = questById('first-contract');
     expect(fc).toBeDefined();
     expect(fc!.giver).toBe('mulch-club');
-    expect(fc!.prereq).toBeUndefined();
+    expect(fc!.prereq).toBe('m02-roof-on-credit'); // E20: the flat comes first (outline row 3)
     const crack = fc!.objectives[0];
     expect(crack.kind).toBe('crack');
     if (crack.kind === 'crack') {
@@ -347,7 +351,9 @@ describe('story campaign registry', () => {
         failures.push(`${label} at [${x}, ${z}] (r=${r}) hits box -> pushed [${p.x.toFixed(1)}, ${p.z.toFixed(1)}]`);
       }
     };
+    // Givers and visits inside an E05 interior use local room coordinates: the world's boxes do not apply to them.
     for (const g of Object.values(GIVERS)) {
+      if (g.interior) continue;
       check(`giver:${g.id}`, g.x, g.z, 0.8);
     }
     for (const q of QUESTS) {
@@ -357,7 +363,7 @@ describe('story campaign registry', () => {
           check(`${tag}.spawnAt`, o.spawnAt[0], o.spawnAt[1], 1.8);
           check(`${tag}.dropAt`, o.dropAt[0], o.dropAt[1], 2.0);
         } else if (o.kind === 'visit') {
-          check(`${tag}.at`, o.at[0], o.at[1], 1.0);
+          if (!o.interior) check(`${tag}.at`, o.at[0], o.at[1], 1.0);
         } else if (o.kind === 'choice') {
           check(`${tag}.optionA`, o.optionA.at[0], o.optionA.at[1], 1.0);
           check(`${tag}.optionB`, o.optionB.at[0], o.optionB.at[1], 1.0);

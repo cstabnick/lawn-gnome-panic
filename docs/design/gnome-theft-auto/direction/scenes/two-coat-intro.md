@@ -147,3 +147,4 @@ the first rung of her ladder, and the one refusal the player will think about wh
 ## Review pass (planner)
 
 Watched at 960x600. Mabel's two lines were framed from inside her own taxi (a black frame): they are now a still shot from the steps side of the kerb, looking at her in the driver's seat.
+Intro card: Juniper, on a cu after her statement. Mabel already gets hers in roof-on-credit-intro.

@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { WATER } from './config';
 import { bedAt, heightAt, resetTerrainOptions, setTerrainOptions, terrainFlat, waterAt } from './terrain';
 import {
-  BODIES, COURSES, bodyLevel, bridgeDeckAt, bridges, canalLocks, carveWater, courseProfile, onWaterCourse,
+  BODIES, COURSES, bodyLevel, bridgeDeckAt, bridges, canalLocks, carveWater, courseProfile, onWaterCourse, waterDepthAt,
 } from './water';
 
 afterAll(() => resetTerrainOptions());
@@ -62,7 +62,8 @@ describe('water on the shipped ground', () => {
   it('bridges every road crossing at the road height; boats see the river under the deck', () => {
     const list = bridges();
     expect(list.map((b) => `${b.course} x ${b.road}`).sort()).toEqual(
-      ['canal x south', 'river-farm x ring-se', 'river-ravine x ring-sw', 'river-ravine x west', 'river-upper x ring-nw'],
+      ['canal x south', 'river-farm x ring-se', 'river-ravine x ring-sw', 'river-ravine x west', 'river-upper x ring-nw',
+        'saltcut x south-band-east', 'thymes x pl-pont-neuf', 'thymes x pl-pont-nord', 'thymes x pl-pont-sud', 'thymes x pl-quai-bassin'],
     );
     for (const b of list) {
       expect(bridgeDeckAt(b.x, b.z)).toBe(b.deck);
@@ -78,7 +79,7 @@ describe('water on the shipped ground', () => {
     for (const b of bridges()) {
       const surface = waterAt(b.x, b.z)!.surface;
       const clearance = WATER.bridgeClearance[b.course] ?? WATER.bridgeClearance.default;
-      expect(b.deck - surface, b.id).toBeGreaterThanOrEqual(clearance - 1e-6);
+      expect(b.deck - surface, b.id).toBeGreaterThanOrEqual(clearance - 1e-4); // float32 grid heights
       const s = Math.sin(b.yaw), c = Math.cos(b.yaw);
       const at = (a: number): number => heightAt(b.x + s * a, b.z + c * a);
       const end = b.length / 2;
@@ -144,5 +145,37 @@ describe('water on a tilted grid (north high, bumpy)', () => {
     }
     checkDownhill();
     resetTerrainOptions();
+  });
+});
+
+describe('the Saltwater and the Saltcut (E11)', () => {
+  it('lies below the Puddle Sea and below the boardwalk ground', () => {
+    const level = bodyLevel('water/saltwater')!;
+    expect(level).toBeLessThan(bodyLevel('water/puddle-sea')!);
+    for (let x = -200; x <= 200; x += 50) {
+      for (let z = 1100; z <= 1130; z += 10) {
+        expect(heightAt(x, z), `ground at ${x},${z}`).toBeGreaterThan(level + 3);
+      }
+    }
+  });
+
+  it('is deep at sea, shallow at the north shore, and dry on the beach', () => {
+    expect(waterDepthAt(0, 1400)).toBeGreaterThanOrEqual(5);
+    expect(waterDepthAt(-1000, 1450)).toBeGreaterThanOrEqual(5);
+    expect(waterDepthAt(1000, 1450)).toBeGreaterThanOrEqual(5);
+    expect(waterDepthAt(0, 1250)).toBeGreaterThanOrEqual(1.5);
+    expect(waterDepthAt(300, 1280)).toBeGreaterThanOrEqual(1.5);
+    expect(waterDepthAt(0, 1150)).toBe(0);
+  });
+
+  it('connects the Puddle Sea to the Saltwater through the Saltcut', () => {
+    const p = courseProfile('saltcut');
+    expect(p).not.toBeNull();
+    expect(Math.abs(p!.surface[0] - bodyLevel('water/puddle-sea')!)).toBeLessThan(1e-6);
+    expect(p!.surface[p!.surface.length - 1]).toBeGreaterThanOrEqual(bodyLevel('water/saltwater')!);
+    const n = p!.surface.length;
+    for (let k = 3; k < n - 3; k++) {
+      expect(waterDepthAt(p!.x[k], p!.z[k]), `saltcut sample ${k}`).toBeGreaterThanOrEqual(1.2);
+    }
   });
 });

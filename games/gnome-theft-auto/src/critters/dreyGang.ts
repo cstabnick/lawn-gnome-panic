@@ -35,7 +35,7 @@ const RIDE_SPEED = 9;
 const RIDE_TURN = 1.5;
 const RIDE_DONE = 12;
 const RIDER_GAP = 0.4;
-const STEAL_KINDS: readonly VehicleKind[] = ['ride-on', 'push-bike', 'zero-turn', 'lowrider', 'mulch-spreader'];
+const STEAL_KINDS: readonly VehicleKind[] = ['ride-on', 'push-bike', 'zero-turn', 'lowrider', 'mulch-spreader', 'dirt-bike'];
 
 const groups: SpawnGroup[] = DREY_DENS.map((d): SpawnGroup => ({
   id: d.id, kind: 'squirrel', region: 'cloverfield-farms', x: d.x, z: d.z, count: d.silo ? 8 : 6, spread: 4, leash: 14,

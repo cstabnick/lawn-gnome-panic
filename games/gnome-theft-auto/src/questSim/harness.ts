@@ -66,6 +66,9 @@ const economyFacade: Economy = {
   chargeHospital: () => currentEconomy!.chargeHospital(),
   inFraudZone: (x, z) => currentEconomy!.inFraudZone(x, z),
   onPlayerRagdollImpact: (s, x, z) => currentEconomy!.onPlayerRagdollImpact(s, x, z),
+  borrow: (id, name, a) => currentEconomy!.borrow(id, name, a),
+  payLoan: (id, a) => currentEconomy!.payLoan(id, a),
+  totalOwed: () => currentEconomy!.totalOwed(),
 };
 
 // Live probe state (city/install.ts registers these getters in the game; the headless sim owns them here).

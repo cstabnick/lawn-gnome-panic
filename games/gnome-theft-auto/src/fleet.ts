@@ -42,6 +42,12 @@ export const FLEET: readonly FleetEntry[] = [
     pitch: [1.15, 1.35], speedMult: 1.06 },
   { id: 'zero-turn-thumper', kind: 'zero-turn', name: 'Thumper Zero-Turn', replaces: ['zero-turn'], weight: 0.3,
     pitch: [0.65, 0.8], accelMult: 1.1 },
+  { id: 'ranger-buggy-head', kind: 'ranger-buggy', name: "Head Ranger's Buggy", replaces: ['ranger-buggy'], weight: 0.3,
+    tints: [0x4f6b3a, 0x6b5a3a], pitch: [0.9, 1.05] },
+  { id: 'shell-camper-grand-spiral', kind: 'shell-camper', name: 'Grand Spiral Camper', replaces: ['shell-camper'], weight: 0.3,
+    pitch: [0.7, 0.85], speedMult: 0.9 },
+  { id: 'cone-van-soft-serve', kind: 'cone-van', name: 'Soft-Serve Special', replaces: ['cone-van'], weight: 0.3,
+    tints: [0xf7c6d9, 0xc6e8f7, 0xfff1b8], pitch: [1.05, 1.2] },
 ];
 
 /** The entry with this id, or undefined. */

@@ -11,6 +11,7 @@ import type { Box } from './types';
 import { heightAt } from './terrain';
 import { onWaterCourse } from './water';
 import { stageKeepOut } from './stageClear';
+import { nearTrack } from './raceTrack/tracks';
 import { LANDSCAPE, featureHeightAt, macroMaskAt, type LandscapeFeature } from './landforms/macro';
 import { distToPolyline, valueNoise } from './landforms/noise';
 import { themeAt, themeSize, type RegionTheme } from './regionThemes';
@@ -32,6 +33,8 @@ const CITY_GROW = 40;
 const EDGE = 880;
 /** Keep clear of any highway centre line (road half width plus 3). */
 const ROAD_CLEAR = ROAD_WIDTH / 2 + 3;
+/** Keep trees and rocks this far outside the barriers of every ground track and mountain route (raceTrack nearTrack). */
+const TRACK_CLEAR = 2;
 /** Keep clear of water (margin on each course). */
 const WATER_MARGIN = 4;
 /** Roadsides and signature props start this far outside the city square. */
@@ -215,6 +218,8 @@ export function planScenery(existing: readonly Box[], stageKeep: readonly Box[] 
    */
   const placeSolid = (id: string, x: number, z: number, yaw: number, scale: number, trunk: boolean): void => {
     if (full() || !openGround(x, z) || highwayGap(x, z) < ROAD_CLEAR) return;
+    // G4#16: the landscape belts never stand a pine or a boulder on a race road or a mountain route (the Capwood Run's summit).
+    if (nearTrack(x, z, TRACK_CLEAR)) return;
     const y = heightAt(x, z);
     let r: Rect, top: number, collide: boolean;
     if (trunk) {

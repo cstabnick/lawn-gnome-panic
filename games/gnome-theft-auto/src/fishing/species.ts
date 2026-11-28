@@ -25,7 +25,7 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
   },
   {
     id: 'fish-stripy-perch', name: 'Stripy Perch', rarity: 'common', size: [12, 35], waters: ['loch', 'canal'],
-    baits: { 'glitter-spinner': 1.8, 'acorn-crumb': 1.3 }, fight: 'darter', difficulty: 1, minRod: 0, value: 5,
+    baits: { 'glitter-spinner': 1.8, 'acorn-crumb': 1.3 }, weather: { rain: 1.5 }, fight: 'darter', difficulty: 1, minRod: 0, value: 5,
     prefab: 'fish-stripy-perch', blurb: 'Wears its stripes like a referee and argues every call.',
   },
   {
@@ -57,7 +57,7 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
   },
   {
     id: 'fish-pebble-loach', name: 'Pebble Loach', rarity: 'common', size: [6, 15], waters: ['river', 'canal'],
-    baits: { dough: 1.5, 'acorn-crumb': 1.5 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
+    baits: { dough: 1.5, 'acorn-crumb': 1.5 }, weather: { rain: 2.2 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
     prefab: 'fish-pebble-loach', blurb: 'Looks exactly like a pebble until the pebble swims off.',
   },
   {
@@ -75,9 +75,34 @@ export const FISH_SPECIES: readonly FishSpecies[] = [
     regions: ['frostbite-fells'], weather: { snow: 2 }, fight: 'steady', difficulty: 2, minRod: 0, value: 13,
     prefab: 'fish-frostfin', blurb: 'Fins as clear as icicles. Feels cold even through mittens.',
   },
+  // ---- Pail Pond and the ice holes of Snowcap Rise --------------------------------------------------------------------
+  {
+    id: 'fish-pail-perch', name: 'Pail Perch', rarity: 'common', size: [10, 28], waters: ['ice'],
+    regions: ['north-highlands', 'frostbite-fells'], weather: { snow: 1.3 }, fight: 'darter', difficulty: 1, minRod: 0,
+    value: 6, prefab: 'fish-pail-perch',
+    blurb: 'Has lived in a pail its whole life and thinks the world is round and tin.',
+  },
+  {
+    id: 'fish-woolly-minnow', name: 'Woolly Minnow', rarity: 'common', size: [4, 10], waters: ['ice'],
+    regions: ['north-highlands', 'frostbite-fells'], baits: { 'sock-fly': 2.5 }, fight: 'steady', difficulty: 1,
+    minRod: 0, value: 3, prefab: 'fish-woolly-minnow',
+    blurb: 'Knitted itself a jumper for the winter and will not discuss it.',
+  },
+  {
+    id: 'fish-lantern-burbot', name: 'Lantern Burbot', rarity: 'uncommon', size: [30, 70], waters: ['ice'],
+    regions: ['north-highlands', 'frostbite-fells'], times: { 'Neon Night': 3, Dusk: 1.6, Noon: 0.3 }, fight: 'sulker',
+    difficulty: 3, minRod: 0, value: 16, prefab: 'fish-lantern-burbot',
+    blurb: 'Carries its own lamp under the chin and sulks in the dark until someone admires it.',
+  },
+  {
+    id: 'fish-frostjaw-char', name: 'Frostjaw Char', rarity: 'rare', size: [35, 80], waters: ['ice'],
+    regions: ['north-highlands', 'frostbite-fells'], weather: { snow: 3, clear: 0.6 }, fight: 'runner', difficulty: 4,
+    minRod: 1, value: 34, prefab: 'fish-frostjaw-char',
+    blurb: 'Bites with a jaw of frost and leaves a small snowman on the bank as a receipt.',
+  },
   {
     id: 'fish-gudgeon', name: 'Gudgeon', rarity: 'common', size: [8, 18], waters: ['river', 'canal'],
-    baits: { dough: 1.4 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
+    baits: { dough: 1.4 }, weather: { rain: 1.8 }, fight: 'steady', difficulty: 1, minRod: 0, value: 4,
     prefab: 'fish-gudgeon', blurb: 'Will bite anything, twice. The first fish of every gnome who ever held a rod.',
   },
   // ---- The Southern Drainage Canal ----------------------------------------------------------------------------------

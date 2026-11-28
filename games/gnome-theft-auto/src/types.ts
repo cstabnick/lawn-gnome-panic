@@ -8,6 +8,7 @@ import type { MountPose } from './mount';
 import type { GlazeRig, Loadout } from '@lawn/glaze';
 import type { GunLoadout, ModdedGun } from './gunMods';
 import type { AirSpec, AirState } from './craft/model';
+import type { SkimState } from './skim';
 
 export type VehicleKind =
   | 'push-bike'
@@ -43,7 +44,36 @@ export type VehicleKind =
   | 'sycamore-copter'
   | 'dandelion-drifter'
   // Tubing (tubing/, docs/roadmaps/gta-sim-jobs-and-tubing.md): an inflatable tube towed behind a boat, or paddled.
-  | 'tow-tube';
+  | 'tow-tube'
+  // E11 coast (tubing/ ski mode, coast/spokewheel.ts): water-skis towed behind a boat; a Spokewheel gondola the player
+  // rides as a passenger (the coast runtime moves it, nothing to steer).
+  | 'tow-ski'
+  | 'spoke-gondola'
+  // European rides (E29, euroRides.ts; prefabs in packages/prefabs/src/catalog/gta-euro-fleet*.ts): small city vehicles of the
+  // European yard. In town traffic now and then, mostly European inside the zone E28/E30 register with setEuroZone.
+  | 'euro-hatch'
+  | 'deux-pots'
+  | 'wespa'
+  | 'baguette-trike'
+  | 'crepe-van'
+  // Winter sports (E12, winter/): a tea-tray sled and a pair of skis on Snowdrop Slope; winter/runtime.ts steps them (slideRider.ts).
+  | 'tea-tray-sled'
+  | 'snow-skis'
+  // E19 the Gutter Bowls (skate/): a wooden skateboard, ridden anywhere; skate/runtime.ts steps it (skate/board.ts).
+  | 'skateboard'
+  // Dirt country (E14): the Knobbly Dirt-Mower.
+  | 'dirt-bike'
+  // E31 living world: the Unmown Ranger Buggy, the Snail-Shell Camper (tourists on the band roads), the Saltbucket
+  // ice-cream van. Civilian traffic and parked spots (living/); prefabs in packages/prefabs gta-living-rides.ts.
+  | 'ranger-buggy'
+  | 'shell-camper'
+  | 'cone-van'
+  // E18 the Dewdrop (dewdrop/): Hogweed Sprocket's clear hamster ball, rolled from inside; unlocked by sq-dewdrop-3.
+  | 'bubble-mobile'
+  // E25 jobs III (workplaces/garbage, workplaces/firefighter): the Bin Lorry (pivot 'arm', the lift arm on the kerb
+  // side) and the Watering-Can Pumper (pivots 'ladder', 'nozzle'). Spawned by their jobs; never in traffic.
+  | 'bin-lorry'
+  | 'fire-engine';
 export type GunKind =
   | 'pistol'
   | 'smg'
@@ -55,10 +85,17 @@ export type GunKind =
   | 'dandelion-grenade'
   | 'trip-mine';
 /** loch = Loch Moss (north-west corner), parkland = Tallgrass Commons (south-west corner). Same strings as levels.ts RegionBiome. */
-export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland';
+export type BiomeId = 'city' | 'desert' | 'forest' | 'tundra' | 'farmland' | 'loch' | 'parkland' | 'highland' | 'coast' | 'campus' | 'estate'
+  | 'continental' | 'preserve';
 
 /** Static collider: an axis-aligned box on the ground, h tall. Flyers above h pass over it. */
-export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number }
+/**
+ * A collider: an axis-aligned box from minX..maxX, minZ..maxZ, up to height h. With `shape: 'round'` it is a vertical
+ * cylinder instead, centred on the box centre with radius min(width, depth) / 2 (make one with `roundBox` in collide.ts):
+ * round prefabs (trunks, silos, towers, fountains) then do not snag a vehicle on a square corner padded to the diagonal.
+ * Code that reads the min/max fields directly still sees the bounding square, which is the conservative answer.
+ */
+export interface Box { minX: number; maxX: number; minZ: number; maxZ: number; h: number; shape?: 'round' }
 
 /** One placed vending machine. `object` is the prefab group (origin on the ground, rotation.y = yaw, front/chute on its local +z); `box` is its collider in world.boxes. */
 export interface VendingSpot {
@@ -76,6 +113,11 @@ export interface RoadNode {
   /** Set on a node on an elevated deck: that skyway's id (highways/roads.ts). Unset = a ground node. Its height is
    *  nodeY(n) (deck top or land); use nearestRoadNode / roadY there rather than a 2D search and heightAt. */
   deck?: string;
+  /** Set on a node on a roundabout ring (roundabouts.ts): the ring's road path id. */
+  ring?: string;
+  /** Neighbour ids this node may not be driven to (a one-way ring link the wrong way; roundabouts.ts canDrive). The
+   *  link itself stays in `links` both ways (drawing, segment lists); only driving and route search skip it. */
+  noDrive?: number[];
 }
 export interface RoadGraph {
   nodes: RoadNode[];
@@ -156,8 +198,11 @@ export interface VehicleSpec {
   accel: number;
   /** Turn rate at full steer, radians/s (ground vehicles scale it down at very low speed). */
   turnRate: number;
-  /** Collision circle radius. */
+  /** Bounding radius (about half the length): culling, the camera, spawn spacing, bump thresholds. Ground vehicles with a
+   *  `halfWidth` collide as a capsule instead (collide.ts vehicleCapsule); without one they collide as this circle. */
   radius: number;
+  /** Half the body's width, metres (measured from the built prefab). The collision capsule's radius is halfWidth + 0.05 (D36). */
+  halfWidth?: number;
   /** Where the rider's feet go, in the vehicle root's local space (after scaling). */
   seat: [number, number, number];
   /** Passenger seats for online riders (seat 1 is [0]), same space as `seat`. Absent: the driver rides alone. */
@@ -179,6 +224,8 @@ export interface VehicleSpec {
   mountStyle?: MountStyle;
   /** A boat (boats.ts stepBoat drives it, it floats on waterAt). */
   boat?: boolean;
+  /** The rider stands instead of sitting (skis, E12): player.ts draws the gnome upright at the seat. */
+  stand?: boolean;
   /** Boats: how deep the hull sits below the water surface, metres (the prefab's y = 0 is the keel). */
   draft?: number;
   /** Aircraft on the air-and-sea handling model (craft/flight.ts stepAir): its regime and numbers. flies is true too. The
@@ -241,6 +288,11 @@ export interface Vehicle {
   hornCooldown?: number;
   /** True for quest/event-controlled NPC vehicles so ambient traffic.ts never hijacks or recycles them. */
   questOwned?: boolean;
+  /**
+   * E23 L101: the player's quest ride (quests/questPins.ts setRide): traffic cleanup never removes it while the quest
+   * runs. Unlike questOwned it does not make the vehicle "spoken for" (the player can still store it in the Lock-Up).
+   */
+  questPinned?: boolean;
   /** Nitro boost meter (0..100) and active state. */
   boost?: number;
   boostActive?: boolean;
@@ -269,6 +321,8 @@ export interface Vehicle {
   waterlog?: number;
   /** True while flooded: the engine has stalled and gives no drive until it dries below WATERLOG.restartAt. */
   waterlogStalled?: boolean;
+  /** Skimming across deep water at speed (skim.ts, E27 L114). Absent, or active: false, when not skimming. */
+  skim?: SkimState;
   /** Aircraft with spec.air: attitude and flight state (craft/flight.ts). Created by createVehicle. */
   air?: AirState;
 }
@@ -337,6 +391,10 @@ export interface Input {
   refresh(): void;
   /** Change the label of the touch enter/exit button (e.g. "Steal", "Exit", hidden when null). */
   setEnterLabel(label: string | null): void;
+  /** R1 FX03 activity mode: keep only these cluster buttons (and the stick or not); null gives the mode's buttons back. */
+  setActivity(t: import('./activityMode').TouchActivity | null): void;
+  /** D30: the gun is put away (activityMode.activityHidesGun()): hide Guns / Reload / Aim / Fire on foot. */
+  setHolstered(on: boolean): void;
 }
 
 /** 'chute' is free fall and parachuting (the touch controls match 'foot', without Jump). */
@@ -353,14 +411,26 @@ export interface ChaseCamera {
     mode: CameraMode,
     input: InputState,
     world: World,
-    extra?: { boost?: boolean; airborne?: boolean },
+    extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number }; size?: { radius: number; height: number } },
   ): void;
+  // update: `extra.size` is the driven vehicle's bounding radius and body height (camera.ts vehicleFrame): drive and fly
+  // frame big vehicles from further back and higher up (G7#2). Absent: the fixed view.
+  // update: `extra.eye` is the world point of the gnome's eyes (on foot: head height; seated: the seat plus head height).
+  // While firstPerson is on and eye is given, the camera sits there; without eye it falls back to the chase view.
   /** Unit vector of the camera's forward direction (the crosshair ray goes from the camera along it). */
   aimDir(out: THREE.Vector3): THREE.Vector3;
   /** Kick the view up by `pitch` radians (gun recoil); it settles back by itself within a fraction of a second. */
   kick(pitch: number): void;
-  /** Add camera trauma shake (decays smoothly). */
+  /** Add camera trauma shake (decays smoothly). Scaled inside by SHAKE_SCALE and the Options "Screen shake" level (viewPrefs.ts). */
   shake?(amount: number): void;
+  /**
+   * First-person view on or off (the V key, the eye touch button and the Options row drive it through app.ts). While on,
+   * `update` places the camera at the gnome's eyes (or the driver's seat) instead of the chase position. Cutscenes, the
+   * showroom and mount sequences call setFirstPerson(false) / restore it themselves.
+   */
+  setFirstPerson(on: boolean): void;
+  /** True while the first-person view is on. */
+  readonly firstPerson: boolean;
   /** Orbit this showroom target (the Pay 'n' Glaze shop's vehicle) while set; null returns to the normal views. */
   /** Orbit this target (the Pay 'n' Glaze showroom). `centered` keeps it mid-screen (no room made for the shop sheet); `distance` overrides the orbit distance. null leaves the showroom. */
   showroom(target: { x: number; y: number; z: number; radius: number; centered?: boolean; distance?: number } | null): void;
@@ -380,6 +450,8 @@ export interface Player {
   grounded: boolean;
   /** 1 = dry, 0 = Washed Out. */
   health: number;
+  /** Jump speed multiplier this frame (bag fun items, fizz). Absent = 1. */
+  jumpMult?: number;
   vehicle: Vehicle | null;
   /** The seat in `vehicle`: 0 = driver, 1.. = a passenger seat (see seats.ts). */
   seat: number;
@@ -388,6 +460,8 @@ export interface Player {
   updateFoot(input: InputState, camYaw: number, dt: number, world: World): void;
   /** Keep the model seated on this.vehicle (sitting pose). `lean` is the weight-shift roll in radians, + = towards the rider's right. */
   updateRiding(dt: number, lean?: number, horn?: boolean): void;
+  /** Re-place the seated gnome after its vehicle moved again later in the frame (no animation step). */
+  reseat?(): void;
   /** Draws the gnome for one frame of a mount sequence (see mount.ts). The vehicle is not set until the gnome is seated. `v` and
    *  `seat`: the vehicle being got into or out of, so a seated gnome holds its wheel and lets go of it smoothly (driverHands.ts). */
   drawMount(pose: MountPose, dt: number, v?: Vehicle, seat?: number): void;
@@ -585,6 +659,16 @@ export interface Traffic {
   debugGhosts?(): readonly { id: number; kind: VehicleKind; x: number; z: number; live: boolean; from: number; to: number }[];
   /** The NPC driver leaves v (rider model removed, v.driver = 'none'). Returns where they stand, their look and where they were headed (an errand, "to the park for a picnic"), or null if none. */
   ejectDriver(v: Vehicle): { x: number; z: number; look: GnomeLook; reason: string | null } | null;
+  /**
+   * The NPC driver whose head is hit by a bullet at (x, y, z): a sphere of radius 0.45 at the rider's head (seat + head
+   * height). Returns the vehicle, or null. Cops are not traffic drivers and never match.
+   */
+  driverAt?(x: number, y: number, z: number): Vehicle | null;
+  /**
+   * Crack v's NPC driver: like ejectDriver (rider removed, v.driver = 'none', the car leaves the population) but the car
+   * rolls to a stop where it is. Returns where the cracked gnome falls and its look, or null when v has no NPC driver.
+   */
+  crackDriver?(v: Vehicle): { x: number; z: number; look: GnomeLook } | null;
   /** Dispatch a multi-vehicle convoy along a sequence of road node IDs. */
   spawnConvoy(routeNodes: number[], kinds: VehicleKind[], vehicles: Vehicle[]): Vehicle[];
   /**
@@ -620,6 +704,32 @@ export interface Watch {
   knockArea?(x: number, z: number, radius: number, force: number, up: number, fromX: number, fromZ: number): number;
   /** Eject the officer driver when the player steals a pursuit mower or HOA van. */
   ejectPursuitDriver?(v: Vehicle): void;
+  /**
+   * E23 L103: cap heat at `cap` (0 = no Hat Watch at all: heat held at 0, officers and pursuits leave) until called with
+   * null. addHeat never goes past the cap while it is set. Quests set it per step (quests/hoaPolicy.ts).
+   */
+  setCap?(cap: number | null): void;
+  /** E23 L103: the search area and evade progress the HUD draws, or null at heat < 1. */
+  search?(): WatchSearch | null;
+}
+
+/** E23 L103: where the Hat Watch is looking for the player, and how close they are to losing a level. */
+export interface WatchSearch {
+  /** Centre of the search area (the player's last seen point), world x/z. */
+  x: number;
+  z: number;
+  /** Radius, m (WATCH.searchRadius + WATCH.searchRadiusPerLevel * (level - 1)). */
+  r: number;
+  /** A unit has line of sight to the player right now. */
+  seen: boolean;
+  /** The player is inside the search circle. */
+  inside: boolean;
+  /** 0..1: progress to losing the current level (0 while seen; fills with unseen time, then with cooled heat). */
+  evade: number;
+  /** Current level (Math.floor(heat)). */
+  level: number;
+  /** Seconds until dispatched units arrive (0 = they are here). */
+  dispatchIn: number;
 }
 
 /**
@@ -635,11 +745,21 @@ export interface Blip {
    * orange crosshair), drawn where it is, with no edge arrow and no `quest` label needed. 'speedway' = the Lost & Found
    * Speedway (chequered flag) and 'glaze' = a Pay 'n' Glaze station (pink drop): places drawn like 'shop', with `label`
    * on the big map. The other place kinds (`PoiKind` in mapIcons.ts: hospital, salvage, whirligig, casino, mart, tower,
-   * stage, airfield) are drawn the same way, each with its own icon. Absent: the plain gold pin other systems use.
+   * stage, airfield) are drawn the same way, each with its own icon. 'home' = a character's home the player has visited, or
+   * the player's own flat (homes/visits.ts). Absent: the plain gold pin other systems use.
    */
   kind?: 'main' | 'side' | 'objective' | 'taxi' | 'shop' | 'speedway' | 'glaze'
     | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart' | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
-    | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
+    | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
+    | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home'
+    // Winter sports (E12, winter/): Snowdrop Slope + the Woolly Sock Lodge, the Bear Deck, Pail Pond ice fishing.
+    | 'ski' | 'bears' | 'icefish'
+    // Hedgeworth Links (E15, golf/).
+    | 'golf'
+    // Founders' Green sports (E19): Drainpipe Court (court/), the Gutter Bowls (skate/).
+    | 'court' | 'skate' | 'story'
+    // Rootwell (E13, campus/).
+    | 'campus' | 'observatory' | 'windfarm';
 }
 
 /** The route the HUD draws to the active waypoint: a polyline in world x/z, from the player to the target. */
@@ -653,6 +773,8 @@ export interface HudRoute {
 export interface HudState {
   /** 0..4 watch level. */
   heat: number;
+  /** E23 L103: the Hat Watch search area and evade meter (watch.search()), null / absent at heat < 1. */
+  search?: WatchSearch | null;
   /** 0..1. */
   health: number;
   /** Rounds in the magazine and the magazine size. */
@@ -710,6 +832,8 @@ export interface Hud {
   callout?(title: string, sub?: string): void;
   /** Brief camera shutter flash. */
   flash?(): void;
+  /** The big map: open / close it, or open it centred on a world point at `scale` screen px per world unit (clamped). */
+  bigMap?: { open(): void; close(): void; isOpen(): boolean; zoomTo(x: number, z: number, scale: number): void };
 }
 
 export type Sfx = 'squirt' | 'crack' | 'steal' | 'door' | 'alarm' | 'whistle' | 'washed' | 'bump' | 'gunshot' | 'shotgun' | 'reload' | 'chute' | 'handbrake' | 'handbrake-release' | 'boom' | 'boost' | 'stunt' | 'splash' | 'shutter' | 'smash' | 'drink' | 'hoa-shot' | 'gnome-hit' | 'player-crack';

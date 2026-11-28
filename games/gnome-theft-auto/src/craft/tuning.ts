@@ -18,10 +18,10 @@ export interface CraftStatDef {
 }
 
 export const CRAFT_STATS: readonly CraftStatDef[] = [
-  { id: 'engine', name: 'Engine', blurb: 'More pull: quicker off the line and up to speed.', air: true, sea: true, step: 0.08, prices: [120, 260, 480] },
-  { id: 'topSpeed', name: 'Top Speed', blurb: 'A little more at the top end.', air: true, sea: true, step: 0.05, prices: [150, 320, 600] },
-  { id: 'handling', name: 'Handling', blurb: 'Turns tighter (and a boat slips less).', air: true, sea: true, step: 0.07, prices: [100, 220, 420] },
-  { id: 'lift', name: 'Lift', blurb: 'Climbs faster; a plane flies slower before it stalls.', air: true, sea: false, step: 0.08, prices: [130, 280, 520] },
+  { id: 'engine', name: 'Engine', blurb: 'More pull: quicker off the line and up to speed.', air: true, sea: true, step: 0.08, prices: [210, 460, 840] },
+  { id: 'topSpeed', name: 'Top Speed', blurb: 'A little more at the top end.', air: true, sea: true, step: 0.05, prices: [260, 560, 1050] },
+  { id: 'handling', name: 'Handling', blurb: 'Turns tighter (and a boat slips less).', air: true, sea: true, step: 0.07, prices: [175, 390, 740] },
+  { id: 'lift', name: 'Lift', blurb: 'Climbs faster; a plane flies slower before it stalls.', air: true, sea: false, step: 0.08, prices: [230, 490, 910] },
 ];
 
 export const NO_TUNE: CraftTune = { engine: 0, topSpeed: 0, handling: 0, lift: 0 };

@@ -1,5 +1,6 @@
 // Tubing: the Loch Moss buoy run. A time trial for the boat: pass the gates in order (between each pair of buoys),
 // riders on tow share the score. Pure: gates as data, crossing tests on segments.
+import { COAST } from '../coast/config';
 
 export interface BuoyGate {
   /** Centre of the gate, on open water. */
@@ -22,6 +23,43 @@ export const BUOY_GATES: readonly BuoyGate[] = [
   { x: -738.1, z: -643, yaw: 3.1416, width: 12 },
   { x: -738.1, z: -687, yaw: 2.0945, width: 12 },
 ];
+/** A tow course: an ordered list of gates, a run through them scores the tow. */
+export interface TowCourse {
+  id: string;
+  name: string;
+  gates: readonly BuoyGate[];
+}
+
+export const LOCH_COURSE: TowCourse = { id: 'loch-moss', name: 'Loch Moss buoy run', gates: BUOY_GATES };
+
+/** The Saltwater slalom (COAST.slalom): gates along x heading east (+x), buoys alternating north and south of the line. */
+export const OCEAN_GATES: readonly BuoyGate[] = (() => {
+  const s = COAST.slalom;
+  const out: BuoyGate[] = [];
+  for (let i = 0; i < s.gates; i++) {
+    const x = s.startX + (i * (s.endX - s.startX)) / (s.gates - 1);
+    const z = s.z + (i % 2 === 0 ? -s.swing : s.swing);
+    out.push({ x, z, yaw: Math.PI / 2, width: s.width });
+  }
+  return out;
+})();
+
+export const OCEAN_COURSE: TowCourse = { id: 'saltwater', name: 'Saltwater slalom', gates: OCEAN_GATES };
+
+export const TOW_COURSES: readonly TowCourse[] = [LOCH_COURSE, OCEAN_COURSE];
+
+/** The course whose first gate is nearest (x, z). */
+export function courseNear(x: number, z: number): TowCourse {
+  let best = TOW_COURSES[0];
+  let bestD = Infinity;
+  for (const c of TOW_COURSES) {
+    const g = c.gates[0];
+    const d = Math.hypot(g.x - x, g.z - z);
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  return best;
+}
+
 /** Where the run starts: the first gate. A run that has not passed a gate for this long is reset, s. */
 export const RUN_TIMEOUT_S = 90;
 /** Points per gate for everyone on the tow; a finished run adds FINISH_POINTS. */
@@ -66,7 +104,9 @@ function crosses(ax: number, az: number, bx: number, bz: number, cx: number, cz:
 
 /** The boat moved from (ax, az) to (bx, bz) this step. Returns 'gate' (passed the next gate), 'finish', 'reset'
  *  (timed out: back to gate 0) or null. Rules: roadmap issue 1.4. */
-export function stepRun(r: RunState, ax: number, az: number, bx: number, bz: number, dt: number): 'gate' | 'finish' | 'reset' | null {
+export function stepRun(
+  r: RunState, ax: number, az: number, bx: number, bz: number, dt: number, gates: readonly BuoyGate[] = BUOY_GATES,
+): 'gate' | 'finish' | 'reset' | null {
   if (r.finished) return null;
   r.sinceGate += dt;
   if (r.next > 0) r.t += dt;
@@ -74,14 +114,14 @@ export function stepRun(r: RunState, ax: number, az: number, bx: number, bz: num
     Object.assign(r, newRun());
     return 'reset';
   }
-  const g = BUOY_GATES[r.next];
+  const g = gates[r.next];
   const [p, q] = buoysOf(g);
   const forward = (bx - ax) * Math.sin(g.yaw) + (bz - az) * Math.cos(g.yaw) > 0;
   if (!crosses(ax, az, bx, bz, p.x, p.z, q.x, q.z) || !forward) return null;
   if (r.next === 0) r.t = 0;
   r.next++;
   r.sinceGate = 0;
-  if (r.next === BUOY_GATES.length) {
+  if (r.next === gates.length) {
     r.finished = true;
     r.time = r.t;
     return 'finish';

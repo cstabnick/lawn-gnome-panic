@@ -124,3 +124,4 @@ is a compliment.
 - [x] Night scene lit: `sky: 'golden'`.
 - [x] Checker: all shots pass; the camera-in-actor fault is fixed (the flash moved to 147.5, -143.5).
 - [x] `direction.notes` points here.
+Intro cards: Mayor Mulch on a cu after the ledger line; Vesper right after "Nice hat." (before the chase music).

@@ -5,7 +5,7 @@ import { DAY, NIGHT, TWILIGHT, ALWAYS, WIND_ANY, WIND_STILL, WIND_GUSTY } from '
 export const BIRDS: readonly BirdSpecies[] = [
   {
     id: 'turfton-pigeon', name: 'Turfton Rooftop Pigeon', group: 'city', rarity: 'common',
-    regions: { turfton: 3, 'cloverfield-farms': 0.5 }, time: DAY, wind: WIND_ANY,
+    regions: { turfton: 3, 'cloverfield-farms': 0.5, pardonlin: 2.5, 'south-shore': 1, 'east-campus': 1 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-pigeon', tint: 0x8a8f99, trim: 0x5f6670, scale: 1, size: 0.45,
     flight: 'flap', speed: 7, altitude: 10, perches: ['roof', 'ground', 'fence'], flock: [4, 10], shy: 6,
     call: { kind: 'coo', hz: 420, slide: 0.9, notes: 3, note: 0.28, gap: 0.32 }, callEvery: [6, 12], ambient: true,
@@ -14,7 +14,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'gutter-sparrow', name: 'Gutter Sparrow', group: 'city', rarity: 'common',
-    regions: { turfton: 2, 'cloverfield-farms': 1.5, 'tallgrass-commons': 0.5, 'dust-flats': 0.5 }, time: DAY, wind: WIND_STILL,
+    regions: { turfton: 2, 'cloverfield-farms': 1.5, 'tallgrass-commons': 0.5, 'dust-flats': 0.5, 'south-shore': 0.8, pardonlin: 1.5 }, time: DAY, wind: WIND_STILL,
     prefab: 'bird-songbird', tint: 0x9a7350, trim: 0x6b4a2e, scale: 0.6, size: 0.25,
     flight: 'bound', speed: 6, altitude: 5, perches: ['fence', 'ground', 'roof'], flock: [3, 8], shy: 5,
     call: { kind: 'chirp', hz: 3200, slide: 1.1, notes: 4, note: 0.06, gap: 0.12 }, callEvery: [3, 7], ambient: true,
@@ -23,7 +23,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'commons-starling', name: 'Commons Starling', group: 'songbird', rarity: 'common',
-    regions: { 'tallgrass-commons': 2, 'cloverfield-farms': 2, turfton: 1 }, time: TWILIGHT, wind: WIND_ANY,
+    regions: { 'tallgrass-commons': 2, 'cloverfield-farms': 2, turfton: 1, 'west-estates': 1, 'south-shore': 1 }, time: TWILIGHT, wind: WIND_ANY,
     prefab: 'bird-songbird', tint: 0x2b2f3a, trim: 0x3f4a5c, scale: 0.65, size: 0.3,
     flight: 'flap', speed: 9, altitude: 14, perches: ['tree', 'roof', 'fence'], flock: [10, 18], shy: 8,
     call: { kind: 'warble', hz: 2400, slide: 1.4, notes: 6, note: 0.08, gap: 0.1 }, callEvery: [4, 8], ambient: true,
@@ -32,7 +32,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'loch-gull', name: 'Loch Gull', group: 'seabird', rarity: 'common',
-    regions: { 'loch-moss': 3, turfton: 0.8 }, time: DAY, wind: WIND_GUSTY,
+    regions: { 'loch-moss': 3, turfton: 0.8, 'south-shore': 3, pardonlin: 0.5 }, time: DAY, wind: WIND_GUSTY,
     prefab: 'bird-gull', tint: 0xf2f2f0, trim: 0x9aa3ad, scale: 1.2, size: 0.6,
     flight: 'soar', speed: 8, altitude: 14, perches: ['water', 'shore', 'roof'], flock: [2, 6], shy: 9,
     call: { kind: 'screech', hz: 1500, slide: 0.7, notes: 3, note: 0.22, gap: 0.3 }, callEvery: [5, 10], ambient: true,
@@ -41,7 +41,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'hedge-robin', name: 'Hedge Robin', group: 'songbird', rarity: 'common',
-    regions: { 'mossy-wood': 2, 'cloverfield-farms': 1.5, 'tallgrass-commons': 1, turfton: 0.6 },
+    regions: { 'mossy-wood': 2, 'cloverfield-farms': 1.5, 'tallgrass-commons': 1, turfton: 0.6, 'north-highlands': 0.5, 'east-campus': 1.5, 'west-estates': 2, pardonlin: 1, 'the-unmown': 1 },
     time: { Dawn: 1, Morning: 1, Noon: 0.8, 'Golden Hour': 1, Dusk: 0.6 }, wind: WIND_STILL,
     prefab: 'bird-robin', tint: 0x8a6a4a, trim: 0x6e5236, scale: 0.6, size: 0.28,
     flight: 'flap', speed: 6, altitude: 4, perches: ['fence', 'tree', 'ground'], flock: [1, 2], shy: 5,
@@ -51,7 +51,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'mossy-wren', name: 'Mossy Wren', group: 'songbird', rarity: 'uncommon',
-    regions: { 'mossy-wood': 3 }, time: DAY, wind: WIND_STILL,
+    regions: { 'mossy-wood': 3, 'the-unmown': 1 }, time: DAY, wind: WIND_STILL,
     prefab: 'bird-songbird', tint: 0x7a5a3a, trim: 0x5a4028, scale: 0.45, size: 0.2,
     flight: 'bound', speed: 5, altitude: 3, perches: ['ground', 'fence', 'tree'], flock: [1, 1], shy: 4,
     call: { kind: 'trill', hz: 4200, slide: 1, notes: 12, note: 0.03, gap: 0.045 }, callEvery: [5, 10],
@@ -60,7 +60,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'acorn-tit', name: 'Acorn Tit', group: 'songbird', rarity: 'common',
-    regions: { 'mossy-wood': 2, 'tallgrass-commons': 1.5, turfton: 0.4 }, time: DAY, wind: WIND_ANY,
+    regions: { 'mossy-wood': 2, 'tallgrass-commons': 1.5, turfton: 0.4, 'east-campus': 2, 'west-estates': 1, 'the-unmown': 1 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-songbird', tint: 0xe8c840, trim: 0x4a7ab8, scale: 0.5, size: 0.22,
     flight: 'bound', speed: 6, altitude: 5, perches: ['tree', 'fence'], flock: [3, 6], shy: 4,
     call: { kind: 'chirp', hz: 4000, slide: 0.85, notes: 3, note: 0.08, gap: 0.15 }, callEvery: [3, 7],
@@ -69,7 +69,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'dandelion-finch', name: 'Dandelion Finch', group: 'songbird', rarity: 'common',
-    regions: { 'tallgrass-commons': 3, 'cloverfield-farms': 1 }, time: DAY, wind: WIND_STILL,
+    regions: { 'tallgrass-commons': 3, 'cloverfield-farms': 1, 'the-unmown': 1.5 }, time: DAY, wind: WIND_STILL,
     prefab: 'bird-songbird', tint: 0xe8c33a, trim: 0x2b2b2b, scale: 0.5, size: 0.22,
     flight: 'bound', speed: 7, altitude: 6, perches: ['fence', 'ground', 'tree'], flock: [4, 9], shy: 5,
     call: { kind: 'warble', hz: 3400, slide: 1.2, notes: 5, note: 0.07, gap: 0.09 }, callEvery: [3, 6], ambient: true,
@@ -78,7 +78,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'tallgrass-skylark', name: 'Tallgrass Skylark', group: 'songbird', rarity: 'uncommon',
-    regions: { 'tallgrass-commons': 2.5, 'cloverfield-farms': 1 },
+    regions: { 'tallgrass-commons': 2.5, 'cloverfield-farms': 1, 'the-unmown': 2.5 },
     time: { Dawn: 1, Morning: 1.2, Noon: 0.8 }, wind: WIND_STILL,
     prefab: 'bird-songbird', tint: 0xa88a62, trim: 0x7a6040, scale: 0.55, size: 0.25,
     flight: 'hover', speed: 5, altitude: 12, perches: ['ground'], flock: [1, 2], shy: 6,
@@ -88,7 +88,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'reed-heron', name: 'Grey Reed Heron', group: 'wader', rarity: 'uncommon',
-    regions: { 'loch-moss': 2.5, 'mossy-wood': 0.3 }, time: DAY, wind: WIND_ANY,
+    regions: { 'loch-moss': 2.5, 'mossy-wood': 0.3, pardonlin: 1, 'the-unmown': 1, 'west-estates': 0.4, 'south-shore': 0.4 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-wader', tint: 0x9aa0a8, trim: 0x6b7480, scale: 1.6, size: 1.1,
     flight: 'glide', speed: 6, altitude: 12, perches: ['shore', 'water', 'tree'], flock: [1, 1], shy: 12,
     call: { kind: 'croak', hz: 260, slide: 0.8, notes: 1, note: 0.4, gap: 0.5 }, callEvery: [10, 20],
@@ -97,7 +97,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'loch-sandpiper', name: 'Loch Sandpiper', group: 'wader', rarity: 'common',
-    regions: { 'loch-moss': 3 }, time: DAY, wind: WIND_ANY,
+    regions: { 'loch-moss': 3, 'south-shore': 2, 'the-unmown': 1 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-wader', tint: 0xb8a080, trim: 0x7a6650, scale: 0.55, size: 0.3,
     flight: 'flap', speed: 8, altitude: 5, perches: ['shore', 'ground'], flock: [3, 8], shy: 6,
     call: { kind: 'whistle', hz: 3000, slide: 1.2, notes: 3, note: 0.09, gap: 0.13 }, callEvery: [4, 8],
@@ -106,7 +106,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'lawn-flamingo', name: 'Lawn Flamingo', group: 'comical', rarity: 'rare',
-    regions: { 'dust-flats': 1, 'loch-moss': 1, turfton: 0.3 }, time: DAY, wind: WIND_STILL,
+    regions: { 'dust-flats': 1, 'loch-moss': 1, turfton: 0.3, 'west-estates': 1 }, time: DAY, wind: WIND_STILL,
     prefab: 'bird-flamingo', tint: 0xf28ab0, trim: 0xe0607f, scale: 1.4, size: 1.3,
     flight: 'flap', speed: 7, altitude: 12, perches: ['shore', 'water', 'ground'], flock: [1, 3], shy: 10,
     call: { kind: 'honk', hz: 520, slide: 0.85, notes: 2, note: 0.18, gap: 0.24 }, callEvery: [8, 16],
@@ -115,7 +115,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'verge-kestrel', name: 'Verge Kestrel', group: 'raptor', rarity: 'uncommon',
-    regions: { 'cloverfield-farms': 2, 'tallgrass-commons': 2, turfton: 0.4 }, time: DAY, wind: WIND_GUSTY,
+    regions: { 'cloverfield-farms': 2, 'tallgrass-commons': 2, turfton: 0.4, 'the-unmown': 1.5, 'north-highlands': 0.8, 'west-estates': 1, 'south-shore': 0.6 }, time: DAY, wind: WIND_GUSTY,
     prefab: 'bird-raptor', tint: 0xb86a3a, trim: 0x8a4a2a, scale: 0.8, size: 0.45,
     flight: 'hover', speed: 8, altitude: 14, perches: ['tree', 'fence', 'roof'], flock: [1, 1], shy: 10,
     call: { kind: 'kek', hz: 2600, slide: 1, notes: 5, note: 0.07, gap: 0.1 }, callEvery: [8, 16],
@@ -124,7 +124,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'fells-buzzard', name: 'Fells Buzzard', group: 'raptor', rarity: 'uncommon',
-    regions: { 'frostbite-fells': 2, 'mossy-wood': 1 }, time: DAY, wind: WIND_GUSTY,
+    regions: { 'frostbite-fells': 2, 'mossy-wood': 1, 'north-highlands': 2, 'west-estates': 0.6 }, time: DAY, wind: WIND_GUSTY,
     prefab: 'bird-raptor', tint: 0x6b4a32, trim: 0x4a3222, scale: 1.2, size: 0.7,
     flight: 'soar', speed: 7, altitude: 22, perches: ['tree', 'ground'], flock: [1, 2], shy: 14,
     call: { kind: 'screech', hz: 1800, slide: 0.6, notes: 1, note: 0.7, gap: 0.8 }, callEvery: [10, 18],
@@ -142,7 +142,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'barn-owl', name: 'Barn Owl', group: 'owl', rarity: 'uncommon',
-    regions: { 'cloverfield-farms': 2.5, 'tallgrass-commons': 0.8, 'dust-flats': 0.8 }, time: NIGHT, wind: WIND_STILL,
+    regions: { 'cloverfield-farms': 2.5, 'tallgrass-commons': 0.8, 'dust-flats': 0.8, 'west-estates': 0.8, 'the-unmown': 1 }, time: NIGHT, wind: WIND_STILL,
     prefab: 'bird-owl', tint: 0xf2e6cc, trim: 0xc9a36b, scale: 1, size: 0.5,
     flight: 'glide', speed: 5, altitude: 6, perches: ['roof', 'tree', 'fence'], flock: [1, 1], shy: 8,
     call: { kind: 'screech', hz: 1200, slide: 0.9, notes: 1, note: 0.8, gap: 1 }, callEvery: [10, 18],
@@ -151,7 +151,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'tawny-owl', name: 'Tawny Owl', group: 'owl', rarity: 'common',
-    regions: { 'mossy-wood': 3, turfton: 0.4 }, time: NIGHT, wind: WIND_STILL,
+    regions: { 'mossy-wood': 3, turfton: 0.4, 'east-campus': 0.8, 'the-unmown': 1.5, pardonlin: 0.5 }, time: NIGHT, wind: WIND_STILL,
     prefab: 'bird-owl', tint: 0x8a5a32, trim: 0x6b4224, scale: 1, size: 0.5,
     flight: 'glide', speed: 5, altitude: 8, perches: ['tree', 'roof'], flock: [1, 2], shy: 8,
     call: { kind: 'hoot', hz: 420, slide: 0.92, notes: 3, note: 0.35, gap: 0.55 }, callEvery: [8, 14],
@@ -169,7 +169,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'loch-puffin', name: 'Loch Puffin', group: 'seabird', rarity: 'uncommon',
-    regions: { 'loch-moss': 2 }, time: DAY, wind: WIND_GUSTY,
+    regions: { 'loch-moss': 2, 'south-shore': 1 }, time: DAY, wind: WIND_GUSTY,
     prefab: 'bird-puffin', tint: 0x1e1e22, trim: 0x1e1e22, scale: 0.7, size: 0.3,
     flight: 'swim', speed: 9, altitude: 4, perches: ['water', 'shore'], flock: [2, 5], shy: 7,
     call: { kind: 'croak', hz: 180, slide: 1.1, notes: 3, note: 0.2, gap: 0.25 }, callEvery: [8, 14],
@@ -187,7 +187,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'snow-bunting', name: 'Snow Bunting', group: 'songbird', rarity: 'common',
-    regions: { 'frostbite-fells': 3 }, time: DAY, wind: WIND_ANY,
+    regions: { 'frostbite-fells': 3, 'north-highlands': 2 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-songbird', tint: 0xf2f2f2, trim: 0x3a3a3a, scale: 0.55, size: 0.25,
     flight: 'bound', speed: 7, altitude: 4, perches: ['ground', 'roof', 'fence'], flock: [6, 14], shy: 6,
     call: { kind: 'chirp', hz: 3600, slide: 1.15, notes: 3, note: 0.07, gap: 0.1 }, callEvery: [3, 6], ambient: true,
@@ -196,7 +196,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'fells-ptarmigan', name: 'Fells Ptarmigan', group: 'comical', rarity: 'uncommon',
-    regions: { 'frostbite-fells': 2 }, time: ALWAYS, wind: WIND_ANY,
+    regions: { 'frostbite-fells': 2, 'north-highlands': 1.5 }, time: ALWAYS, wind: WIND_ANY,
     prefab: 'bird-pigeon', tint: 0xeef0f2, trim: 0xd8dce0, scale: 1.15, size: 0.5,
     flight: 'flap', speed: 7, altitude: 3, perches: ['ground'], flock: [2, 5], shy: 5,
     call: { kind: 'croak', hz: 220, slide: 0.9, notes: 4, note: 0.12, gap: 0.16 }, callEvery: [6, 12],
@@ -223,7 +223,7 @@ export const BIRDS: readonly BirdSpecies[] = [
   },
   {
     id: 'hat-magpie', name: 'Hat-Pinching Magpie', group: 'comical', rarity: 'uncommon',
-    regions: { turfton: 1.5, 'mossy-wood': 1, 'cloverfield-farms': 1 }, time: DAY, wind: WIND_ANY,
+    regions: { turfton: 1.5, 'mossy-wood': 1, 'cloverfield-farms': 1, 'east-campus': 1, pardonlin: 1 }, time: DAY, wind: WIND_ANY,
     prefab: 'bird-longtail', tint: 0x1c1c20, trim: 0xf2f2f2, scale: 0.8, size: 0.45,
     flight: 'flap', speed: 7, altitude: 8, perches: ['roof', 'tree', 'fence', 'ground'], flock: [1, 3], shy: 7,
     call: { kind: 'kek', hz: 1400, slide: 0.9, notes: 6, note: 0.06, gap: 0.09 }, callEvery: [5, 10],
@@ -256,6 +256,78 @@ export const BIRDS: readonly BirdSpecies[] = [
     call: { kind: 'chime', hz: 660, slide: 0.75, notes: 4, note: 0.6, gap: 0.5 }, callEvery: [10, 18],
     hint: 'Said to be seen on the Loch Moss shore on Neon Night.',
     blurb: 'Stands in the shallows under the lights and does not reflect them. Nobody has asked why.',
+  },
+  {
+    id: 'reedmere-bittern', name: 'Reedmere Bittern', group: 'wader', rarity: 'rare',
+    regions: { 'the-unmown': 2.5, 'loch-moss': 0.5 }, time: TWILIGHT, wind: WIND_STILL,
+    prefab: 'bird-wader', tint: 0xb89a62, trim: 0x6e5636, scale: 1.1, size: 0.8,
+    flight: 'glide', speed: 5, altitude: 5, perches: ['shore', 'water'], flock: [1, 1], shy: 16,
+    call: { kind: 'croak', hz: 110, slide: 0.85, notes: 2, note: 0.7, gap: 0.9 }, callEvery: [12, 22],
+    hint: 'Hidden in the reeds of Reedmere at dawn and dusk, when the air is still. Listen for it first.',
+    blurb: 'Booms across the marsh like a very large gnome blowing across a very large bottle. Looks like a reed.',
+  },
+  {
+    id: 'marsh-harrier', name: 'Marsh Harrier', group: 'raptor', rarity: 'uncommon',
+    regions: { 'the-unmown': 2, 'west-estates': 1, 'loch-moss': 0.8 }, time: DAY, wind: WIND_GUSTY,
+    prefab: 'bird-raptor', tint: 0x6e4e34, trim: 0xe8d8b0, scale: 1.2, size: 0.7,
+    flight: 'glide', speed: 6, altitude: 6, perches: ['ground', 'tree', 'fence'], flock: [1, 1], shy: 12,
+    call: { kind: 'kek', hz: 1900, slide: 0.8, notes: 4, note: 0.09, gap: 0.14 }, callEvery: [10, 18],
+    hint: 'Skimming low over the Unmown and the Loch Moss reeds on windy days.',
+    blurb: 'Patrols the reeds at hedge height with its wings in a V, like a very polite inspector from the HOA.',
+  },
+  {
+    id: 'meadow-cuckoo', name: 'Meadow Cuckoo', group: 'songbird', rarity: 'uncommon',
+    regions: { 'the-unmown': 2, 'west-estates': 1, 'tallgrass-commons': 0.8 }, time: { Dawn: 1, Morning: 1.2 }, wind: WIND_ANY,
+    prefab: 'bird-longtail', tint: 0x8a909a, trim: 0x5a606a, scale: 0.8, size: 0.4,
+    flight: 'flap', speed: 8, altitude: 8, perches: ['tree', 'fence'], flock: [1, 1], shy: 9,
+    call: { kind: 'whistle', hz: 650, slide: 0.8, notes: 2, note: 0.3, gap: 0.42 }, callEvery: [6, 12],
+    hint: 'In the trees at the edge of the Unmown and Trellisdown, early in the morning.',
+    blurb: 'Says its own name twice, then lets someone else raise its chicks. Always very well turned out.',
+  },
+  {
+    id: 'thymes-kingfisher', name: 'Thymes Kingfisher', group: 'songbird', rarity: 'rare',
+    regions: { pardonlin: 1.5, 'the-unmown': 1, 'mossy-wood': 0.5 }, time: DAY, wind: WIND_STILL,
+    prefab: 'bird-songbird', tint: 0x1fb6ff, trim: 0xf28a2a, scale: 0.5, size: 0.22,
+    flight: 'flap', speed: 12, altitude: 2, perches: ['water', 'tree', 'shore'], flock: [1, 1], shy: 8,
+    call: { kind: 'whistle', hz: 3900, slide: 1.2, notes: 2, note: 0.08, gap: 0.12 }, callEvery: [8, 14],
+    hint: 'A blue flash low over the river Thymes in Pardonlin, and over the quiet water of the Unmown.',
+    blurb: 'A streak of electric blue that is gone before you lift the glasses. Everybody sees it; nobody sees it well.',
+  },
+  {
+    id: 'pond-mallard', name: 'Pond Mallard', group: 'waterfowl', rarity: 'common',
+    regions: { 'loch-moss': 2, pardonlin: 2, 'the-unmown': 1.5, turfton: 0.8, 'west-estates': 0.8 }, time: ALWAYS, wind: WIND_ANY,
+    prefab: 'bird-swan', tint: 0x2e8a4a, trim: 0x7a5232, scale: 0.6, size: 0.4,
+    flight: 'swim', speed: 8, altitude: 5, perches: ['water', 'shore'], flock: [2, 6], shy: 7,
+    call: { kind: 'quack', hz: 520, slide: 0.8, notes: 3, note: 0.12, gap: 0.2 }, callEvery: [5, 10],
+    hint: 'Paddling on any pond, the Thymes or the Loch Moss shallows, at any hour.',
+    blurb: 'Quacks at the gnome, then at the pond, then at nothing. Has strong opinions about bread.',
+  },
+  {
+    id: 'shore-cormorant', name: 'Shore Cormorant', group: 'seabird', rarity: 'common',
+    regions: { 'south-shore': 2.5, 'loch-moss': 0.6 }, time: DAY, wind: WIND_ANY,
+    prefab: 'bird-puffin', tint: 0x1a1d22, trim: 0x2a3036, scale: 1.2, size: 0.6,
+    flight: 'swim', speed: 8, altitude: 4, perches: ['water', 'shore'], flock: [1, 4], shy: 8,
+    call: { kind: 'croak', hz: 160, slide: 0.85, notes: 2, note: 0.25, gap: 0.35 }, callEvery: [8, 14],
+    hint: 'On the posts and rocks of Saltbucket Shore, by day, with its wings held out.',
+    blurb: 'Stands with its wings spread out to dry, like a coat on a hanger. It is never told it can put them away.',
+  },
+  {
+    id: 'snowcap-eagle', name: 'Snowcap Eagle', group: 'raptor', rarity: 'rare',
+    regions: { 'north-highlands': 2, 'frostbite-fells': 0.6 }, time: DAY, wind: WIND_GUSTY,
+    prefab: 'bird-raptor', tint: 0x4a3322, trim: 0xd4a437, scale: 1.8, size: 1.1,
+    flight: 'soar', speed: 8, altitude: 30, perches: ['ground', 'tree'], flock: [1, 1], shy: 20,
+    call: { kind: 'screech', hz: 2200, slide: 0.6, notes: 2, note: 0.5, gap: 0.7 }, callEvery: [14, 24],
+    hint: 'Circling high over Snowcap Rise on windy days. Look up, and then a bit further up.',
+    blurb: 'Looks down on the gnome from a great height, in every sense. Seems quite fond of the view, though.',
+  },
+  {
+    id: 'tarn-diver', name: 'High Tarn Diver', group: 'waterfowl', rarity: 'rare',
+    regions: { 'north-highlands': 1.5 }, time: { Dawn: 1, Morning: 1, Dusk: 0.8 }, wind: WIND_STILL,
+    prefab: 'bird-swan', tint: 0x3a3f48, trim: 0xf4f4f2, scale: 0.7, size: 0.5,
+    flight: 'swim', speed: 7, altitude: 4, perches: ['water'], flock: [1, 2], shy: 14,
+    call: { kind: 'whistle', hz: 700, slide: 1.5, notes: 2, note: 0.7, gap: 0.9 }, callEvery: [14, 24],
+    hint: 'Out on the still water of the High Tarn at dawn, in the morning and at dusk.',
+    blurb: 'Its call carries over the whole Tarn like a sad flute. It is not sad. It just likes the echo.',
   },
 ];
 

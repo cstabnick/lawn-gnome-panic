@@ -7,10 +7,14 @@ import { pushOutOfBoxes } from '../collide';
 import { VEHICLES } from '../config';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 import type { Blip, Vehicle } from '../types';
-import { createVehicle, removeVehicle, repairVehicle, syncVehicleMesh } from '../vehicles';
+import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
+import { restoreVehicle } from './questPins';
 import type { CheckpointDef, ObjectiveDef, QuestDeps, Run } from './types';
 import { readProbe } from '../city/probes';
+import { interiorById, interiorToWorld } from '../interiors/registry';
+import { currentInterior } from '../interiors/runtime';
 
 const GATE_COLOR = 0xffd23f;
 const BLIP_COLOR = '#ff7a00';
@@ -67,6 +71,7 @@ function buildGate(g: CheckpointDef, from: [number, number]): THREE.Group {
     new THREE.MeshBasicMaterial({ color: GATE_COLOR, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }),
   );
   beacon.position.set(x, ground + (g.height ?? 0) + 20, z);
+  trackBeam(beacon, ground + (g.height ?? 0), 40);
   group.add(beacon);
   return group;
 }
@@ -78,6 +83,8 @@ export function checkpointsRun(
   say: (t: string) => void,
 ): Run {
   const n = obj.points.length;
+  /** A gate with its position in world coordinates (interior gates are local to their room). */
+  const world = (g: CheckpointDef): CheckpointDef => (g.interior ? { ...g, at: interiorToWorld(g.interior, g.at[0], g.at[1]) } : g);
   let next = 0;
   let t = 0;
   let startedAt: number | null = null;
@@ -93,6 +100,8 @@ export function checkpointsRun(
     const p = pushOutOfBoxes(vx, vz, VEHICLES[obj.vehicle.kind].radius + 0.5, deps.world.boxes, 0);
     rideAt = [p.x, p.z, yaw];
     ride = createVehicle(deps.scene, obj.vehicle.kind, p.x, p.z, yaw);
+    // E23 L101: the job's ride is the quest's while the job runs: traffic cleanup and parking leave it be.
+    ride.questOwned = true;
     deps.vehicles.push(ride);
   }
 
@@ -105,8 +114,8 @@ export function checkpointsRun(
   const showGate = (px: number, pz: number): void => {
     if (gateFor === next || doneFlag) return;
     disposeMesh(deps.scene, gateMesh);
-    const prev: [number, number] = next > 0 ? obj.points[next - 1].at : [px, pz];
-    gateMesh = buildGate(obj.points[next], prev);
+    const prev: [number, number] = next > 0 ? world(obj.points[next - 1]).at : [px, pz];
+    gateMesh = buildGate(world(obj.points[next]), prev);
     deps.scene.add(gateMesh);
     gateFor = next;
   };
@@ -135,12 +144,12 @@ export function checkpointsRun(
       }
 
       // A wrecked (or too damaged) ride: a fresh one at the start, and the run starts over.
-      if (ride && rideAt && (ride.exploded || (obj.maxDamage !== undefined && 1 - ride.hp > obj.maxDamage))) {
+      if (ride && rideAt && (ride.exploded || ride.sunk || (obj.maxDamage !== undefined && 1 - ride.hp > obj.maxDamage))) {
         if (deps.player?.vehicle === ride) {
           deps.player.exit();
           ride.driver = 'none';
         }
-        repairVehicle(ride);
+        restoreVehicle(ride);
         ride.x = rideAt[0];
         ride.z = rideAt[1];
         ride.yaw = rideAt[2];
@@ -153,7 +162,7 @@ export function checkpointsRun(
       const p = deps.player;
       if (!needsRide()) {
         const y = p?.vehicle ? p.vehicle.y : (p?.y ?? 0);
-        const g = obj.points[next];
+        const g = world(obj.points[next]);
         if (gateHit(g, px, y, pz, heightAt(g.at[0], g.at[1]))) {
           if (next === 0) {
             startedAt = t;
@@ -180,12 +189,18 @@ export function checkpointsRun(
       if (doneFlag) return [];
       if (needsRide() && ride) return [{ x: ride.x, z: ride.z, color: BLIP_COLOR, quest: ride.spec.name }];
       const g = obj.points[next];
-      return [{ x: g.at[0], z: g.at[1], color: BLIP_COLOR, quest: g.label }];
+      if (g.interior && currentInterior() !== g.interior) {
+        const d = interiorById(g.interior)?.def.door;
+        if (d) return [{ x: d.x, z: d.z, color: BLIP_COLOR, quest: g.label }];
+      }
+      const w = world(g);
+      return [{ x: w.at[0], z: w.at[1], color: BLIP_COLOR, quest: g.label }];
     },
     cracked: () => [],
     cleanup() {
       disposeMesh(deps.scene, gateMesh);
       gateMesh = null;
+      if (ride) ride.questOwned = false;
       if (ride && deps.vehicles && deps.player?.vehicle !== ride) {
         const idx = deps.vehicles.indexOf(ride);
         if (idx >= 0) deps.vehicles.splice(idx, 1);

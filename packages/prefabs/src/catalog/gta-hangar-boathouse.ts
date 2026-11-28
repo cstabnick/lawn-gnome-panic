@@ -83,7 +83,7 @@ export const GTA_HANGAR_BOATHOUSE: readonly PrefabDef[] = [
   },
   {
     id: 'windsock-quiver', name: 'Windsock Quiver', category: 'trinket', uses: ['wear-back'],
-    wear: { at: [0, -0.08, 0], scale: 0.85 },
+    wear: { at: [0, -0.11, 0.01], scale: 0.68 },
     tags: ['quiver', 'windsock', 'tube', 'back', 'striped', 'airfield', 'strap', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Windsock Quiver. A wooden tube worn on the back with an orange and white striped windsock poking out of the top, held by a leather strap. Worn on the back like the Spare Tyre Pack.',
     examine: [
@@ -103,6 +103,7 @@ export const GTA_HANGAR_BOATHOUSE: readonly PrefabDef[] = [
   },
   {
     id: 'cork-key-float', name: 'Cork Key Float', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, 0, 0.05] },
     tags: ['cork', 'float', 'key', 'neck', 'cord', 'boat', 'harbour', 'brass', 'buoy', 'reward', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Cork Key Float. A cord round the neck with a fat round cork float at the chest and one brass key hanging below it. Starts at the neck like the Lock-Up Key Lanyard.',
     examine: [

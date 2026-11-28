@@ -128,3 +128,4 @@ Fescue is nothing to you, hold this), and it is a physical gag at tension 5, whe
 - [x] Report OK; removed from `pacing.baseline.ts`.
 - [x] `npm test` passes; watched at desktop and phone size.
 - [x] `direction.notes` points here.
+Intro cards: Tansy after her wrench count; Turncoat Cam on his own mcu right after Tansy names him.

@@ -47,6 +47,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     { do: 'drive', vehicle: 'convoy', path: [[2.5, 236], [2.5, 120]], speed: 14, async: true },
     { do: 'drive', vehicle: 'tanker', path: [[2.5, 262], [2.5, 120]], speed: 12, async: true },
     { do: 'wait', s: 1.2 },
+    { do: 'sfx', id: 'engine-rev', at: 'tanker', gain: 0.5, async: true },
     { do: 'horn', vehicle: 'tanker', async: true },
     { do: 'wait', s: 1.8 },
     // 2. The chapter card, over the road.
@@ -61,6 +62,7 @@ export const DEW_RUN_INTRO: SceneScript = {
     // 4. Pulling up at the barn: the player and Pip get out, and Granny is on her porch.
     { do: 'cam', shot: spot(YARD, 'arrival') },
     { do: 'music', track: 'warm', fade: 2 },
+    { do: 'sfx', id: 'latch', at: 'ride', gain: 0.5, async: true },
     { do: 'exit', who: 'player' },
     { do: 'exit', who: 'pip' },
     { do: 'face', who: 'player', at: 'granny', s: 0.4, async: true },
@@ -68,6 +70,8 @@ export const DEW_RUN_INTRO: SceneScript = {
     // 5. The briefing. Granny's lines, the player's question, Pip's delight, then the turn.
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Tansy said you\'d come. Vesper\'s boys are draining my Dew-Wells dry.' },
+    cut(BRIEF.single('granny', 'cu', { height: 'high' })),
+    { do: 'intro', who: 'granny' },
     cut(BRIEF.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'What\'s it worth?' },
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
@@ -78,6 +82,10 @@ export const DEW_RUN_INTRO: SceneScript = {
     cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'sfx', id: 'thud' },
     beat('pause'),
+    // Bramble, first framed: the farmer who heard the well go.
+    cut(shot('bramble', 'mcu', { toward: 'granny' })),
+    { do: 'intro', who: 'bramble' },
+    cut(BRIEF.single('granny', 'mcu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Dry as a biscuit. So here\'s the plan.' },
     cut(BRIEF.single('granny', 'cu', { height: 'high' })),
     { do: 'say', who: 'granny', text: 'Borrow a Buck-Iron Combine and block the South Highway.' },
@@ -136,6 +144,7 @@ export const DEW_RUN_OUTRO: SceneScript = {
     cut(shot('granny', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'granny', text: 'Now we can cook.' },
     // 3. The letter. Music out, Pip reads it in silence first; then the line, and the player's face takes it.
+    { do: 'sfx', id: 'paper', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'pip', prop: 'sealed-letter' },
     { do: 'music', track: null, fade: 0.6 },
     cut(PAYOFF.single('pip', 'cu')),
@@ -147,7 +156,13 @@ export const DEW_RUN_OUTRO: SceneScript = {
     { do: 'music', track: 'warm', fade: 2 },
     cut(PAYOFF.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'We\'re legitimate! ...Don\'t tell anyone.' },
+    // The Kiln-Debt is clear; the flat's loan is not.
+    cut(shot('granny', 'mcu', { toward: 'player' })),
+    { do: 'say', who: 'granny', text: 'Kiln-Debt\'s clear, sugar. The flat\'s loan is still yours to carry.' },
+    cut(PAYOFF.single('pip', 'mcu')),
+    { do: 'say', who: 'pip', text: 'Right. The flat. Landlords have no sense of occasion.' },
     // 4. Granny gives the player tea; Bramble leaves his tease, framed square to the camera.
+    { do: 'sfx', id: 'pour', at: 'granny', gain: 0.5, async: true },
     { do: 'give', from: 'granny', to: 'player', prop: 'espresso-cup' },
     cut(shot('granny', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'granny', text: 'Tea, sugar. Dew makes everybody thirsty.' },

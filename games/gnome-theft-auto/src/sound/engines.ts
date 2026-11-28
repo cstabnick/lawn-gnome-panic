@@ -49,6 +49,15 @@ const TABLE: Record<string, EngineSoundDef> = {
   'push-bike': { silent: true, gain: 0 },
   // Tubing (tubing/): towed or paddled, no engine.
   'tow-tube': { silent: true, gain: 0 },
+  'tow-ski': { silent: true, gain: 0 },
+  'spoke-gondola': { silent: true, gain: 0 },
+  // Winter sports (winter/): gravity only.
+  'tea-tray-sled': { silent: true, gain: 0 },
+  'snow-skis': { silent: true, gain: 0 },
+  // The Gutter Bowls (skate/): wheels, no engine (skate/runtime.ts plays the roll).
+  skateboard: { silent: true, gain: 0 },
+  // The Dewdrop (dewdrop/): a hamster ball rolls quietly.
+  'bubble-mobile': { wave: 'drone', idleHz: 14, maxHz: 36, gears: 0, bright: 0.15, rough: 0.1, gain: 0.55, curve: 0.9 },
   tessie: { silent: true, gain: 0 },
 
   // Mowers.
@@ -84,6 +93,22 @@ const TABLE: Record<string, EngineSoundDef> = {
   'lawn-roller': { wave: 'chug', idleHz: 10, maxHz: 22, gears: 0, bright: 0.2, rough: 0.8, gain: 1.1, curve: 1.2 },
   'teacup-trundler': { wave: 'buzz', idleHz: 34, maxHz: 80, gears: 0, bright: 0.6, rough: 0.2, gain: 0.75, curve: 0.9 },
   'barrow-buggy': { wave: 'buzz', idleHz: 30, maxHz: 95, gears: 0, bright: 0.55, rough: 0.55, gain: 0.85, curve: 0.8, misfire: 0.3 },
+
+  // European rides.
+  'euro-hatch': { wave: 'buzz', idleHz: 30, maxHz: 110, gears: 4, bright: 0.55, rough: 0.25, gain: 0.85 },
+  'deux-pots': { wave: 'chug', idleHz: 20, maxHz: 70, gears: 4, bright: 0.4, rough: 0.6, gain: 0.95, curve: 1.05, misfire: 0.1 },
+  wespa: { wave: 'buzz', idleHz: 40, maxHz: 160, gears: 3, bright: 0.85, rough: 0.45, gain: 0.9, curve: 0.85, misfire: 0.15 },
+  // Dirt country (E14): a small buzzy two-stroke, revvier and rougher than the Wespa.
+  'dirt-bike': { wave: 'buzz', idleHz: 38, maxHz: 150, gears: 3, bright: 0.8, rough: 0.55, gain: 0.9, curve: 0.8, misfire: 0.2 },
+  'baguette-trike': { wave: 'buzz', idleHz: 36, maxHz: 120, gears: 2, bright: 0.7, rough: 0.6, gain: 0.85, misfire: 0.25 },
+  'crepe-van': { wave: 'rumble', idleHz: 15, maxHz: 50, gears: 3, bright: 0.3, rough: 0.5, gain: 1.05, curve: 1.1 },
+  // E31 rides: the ranger buggy is a buzzy little petrol, the camper a slow wheezy diesel, the cone van a mid diesel.
+  'ranger-buggy': { wave: 'buzz', idleHz: 32, maxHz: 125, gears: 3, bright: 0.65, rough: 0.4, gain: 0.9, curve: 0.9, misfire: 0.1 },
+  'shell-camper': { wave: 'rumble', idleHz: 12, maxHz: 42, gears: 3, bright: 0.25, rough: 0.7, gain: 1.05, curve: 1.15, misfire: 0.15 },
+  'cone-van': { wave: 'rumble', idleHz: 16, maxHz: 55, gears: 3, bright: 0.35, rough: 0.4, gain: 1.0, curve: 1.05 },
+  // E25 work vehicles: a low rough diesel lorry, a brighter Pumper.
+  'bin-lorry': { wave: 'rumble', idleHz: 11, maxHz: 38, gears: 3, bright: 0.2, rough: 0.6, gain: 1.1, curve: 1.15 },
+  'fire-engine': { wave: 'rumble', idleHz: 18, maxHz: 64, gears: 4, bright: 0.6, rough: 0.35, gain: 1.05 },
   'golf-cart': {
     wave: 'electric', idleHz: 25, maxHz: 95, gears: 0, bright: 0.25, rough: 0.02, gain: 0.75,
     whine: 0.55, whineRatio: 7, idleLevel: 0.2, noise: 0.1,

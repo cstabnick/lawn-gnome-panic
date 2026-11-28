@@ -268,4 +268,34 @@ export const GTA_TOWERS: readonly PrefabDef[] = [
       { s: 'cone', d: [0.85, 0.55], at: [0, 1.425, 0], rot: [0, 45, 0], c: 'tint', seg: 4 },           // pyramid roof, sunk 0.05
     ],
   },
+  {
+    id: 'even-lift-kiosk', name: 'Even-Estates Lift Kiosk', category: 'prop', uses: ['place'],
+    tags: ['lift', 'elevator', 'kiosk', 'thorne', 'even-estates', 'beige', 'door', 'call', 'button', 'gta'], emoji: [],
+    footprint: { r: 1.2, h: 2.7 },
+    about: 'Gnome Theft Auto: the Even-Estates Lift Kiosk. A beige lift housing 2.4 x 2.0 m and 2.7 m tall, with a brushed-metal double door, a glowing call button, a THORNE sign plate and a floor-indicator light. Front faces +z, the door side. Fixed colours, no tint.',
+    examine: [
+      'A beige box as tall as two gnomes, with brushed metal doors, one glowing call button and a dark sign plate over the frame.',
+      'Saying: every floor the lift visits looks exactly like the last, so the gnomes have stopped asking which one they are on.',
+      'Tip: stand back from the doors when they open. They open at the speed of a gnome who has decided, on principle, not to hurry.',
+      'Joke: the lift plays one single note on arrival, the same note for every floor, which the Estates count as a feature.',
+      'A card under the call button says the colour is Even-Estates Beige, the only shade the Estates have ever approved.',
+      'The floor light above the sign has one lamp for every floor, and all of them glow at once, which nobody has explained.',
+    ],
+    parts: [
+      { s: 'box', d: [2.2, 0.1, 1.8], at: [0, 0.05, 0], c: 'stone-dark' },                             // darker plinth
+      { s: 'box', d: [2.4, 2.5, 2.0], at: [0, 1.3, 0], c: 0xd8c8a8 },                                   // beige body, sunk into the plinth
+      { s: 'box', d: [2.5, 0.12, 2.1], at: [0, 2.6, 0], c: 0xc9b996 },                                 // roof slab, overhangs 0.05, sunk 0.01
+      { s: 'box', d: [0.54, 2.0, 0.05], at: [-0.29, 1.1, 1.0], c: 'steel' },                          // door leaves, front 1.025
+      { s: 'box', d: [0.54, 2.0, 0.05], at: [0.29, 1.1, 1.0], c: 'steel' },
+      { s: 'box', d: [0.02, 2.0, 0.05], at: [0, 1.1, 1.0], c: 'ink' },                                 // dark gap between the leaves
+      { s: 'box', d: [0.06, 1.98, 0.05], at: [-0.6, 1.09, 1.0], c: 'iron-dark' },                     // door frame
+      { s: 'box', d: [0.06, 1.98, 0.05], at: [0.6, 1.09, 1.0], c: 'iron-dark' },
+      { s: 'box', d: [1.26, 0.08, 0.05], at: [0, 2.14, 1.0], c: 'iron-dark' },                         // frame lintel
+      { s: 'box', d: [0.24, 0.5, 0.04], at: [0.95, 1.2, 1.0], c: 'steel' },                           // call-button panel
+      { s: 'ball', d: [0.045], at: [0.95, 1.2, 1.03], c: 'flame', glow: true, seg: 6 },               // glowing call button
+      { s: 'box', d: [1.1, 0.2, 0.06], at: [0, 2.32, 1.0], c: 'slate' },                              // dark THORNE sign plate
+      { s: 'box', d: [0.7, 0.06, 0.03], at: [0, 2.32, 1.03], c: 'chalk' },                            // lighter inset bar
+      { s: 'box', d: [0.14, 0.06, 0.03], at: [0, 2.5, 1.03], c: 'spark', glow: true },                // floor-indicator light
+    ],
+  },
 ];

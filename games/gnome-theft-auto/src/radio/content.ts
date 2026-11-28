@@ -5,12 +5,15 @@
 
 import type { Place } from '../config';
 import { RADIO_SONGS } from './music/songs';
+import { STORY_BULLETINS } from '../quests/story';
+import { ADAGIO_STATION } from './adagioStation';
+import { WORLD_CHANGES, worldBulletinKey } from '../worldChanges/defs';
 
 /** A station's playlist: the titles and artists of its songs (the music itself is songs/<station>.ts). */
-const playlist = (id: 'blade' | 'fpr' | 'beats'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
+const playlist =(id: 'blade' | 'fpr' | 'beats' | 'adagio'): Song[] => RADIO_SONGS[id].map(({ title, artist }) => ({ title, artist }));
 
-export type StationId = 'blade' | 'fpr' | 'beats' | 'under';
-export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground';
+export type StationId = 'blade' | 'fpr' | 'beats' | 'under' | 'adagio';
+export type MusicTheme = 'big-beat' | 'lullaby' | 'jazz' | 'underground' | 'classical';
 
 /** One line of talk, a caller's exchange or a bulletin: who is speaking (shown as a label) and what they say. */
 export interface Line {
@@ -208,6 +211,8 @@ export const STATIONS: readonly Station[] = [
       { who: 'SHELLDON "No-Trail" MUCILAGE (on the line)', text: 'I\'m leaving a message in your tunnel on a snail. — MOLEMAN: Shelldon, the tunnel is eleven miles long. — SHELLDON: He has a good sense of time.' },
     ],
   },
+  // ---- E30: Pardonlin's classical station (radio/adagioStation.ts) ----
+  ADAGIO_STATION,
 ];
 
 /** Shared commercials, played in any station's ad break (after its own). */
@@ -259,8 +264,21 @@ export const HEAT_BULLETINS: Readonly<Record<1 | 2 | 3 | 4, readonly Line[]>> = 
   ],
 };
 
+/** World-change news (worldChanges/defs.ts WORLD_CHANGES): one bulletin per change, plus W17's Ending B line. */
+function worldChangeBulletins(): Record<string, readonly Line[]> {
+  const out: Record<string, readonly Line[]> = {};
+  // The table's text opens "Turfton FM news: ..."; the other bulletins here do not, so the prefix is dropped.
+  const body = (text: string) => text.replace(/^Turfton FM news: /, '').replace(/^./, (c) => c.toUpperCase());
+  for (const w of WORLD_CHANGES) {
+    if (w.bulletin) out[worldBulletinKey(w.id)] = [{ who: 'BULLETIN', text: body(w.bulletin) }];
+    if (w.bulletinB) out[worldBulletinKey(w.id, 'B')] = [{ who: 'BULLETIN', text: body(w.bulletinB) }];
+  }
+  return out;
+}
+
 /** Bulletins for things the player does, keyed by the achievement id that marks it. The radio plays them only while on. */
 export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
+  ...worldChangeBulletins(),
   'gta-borrowed': [
     { who: 'BULLETIN', text: 'A Ride-On has been "borrowed" from outside the Gnomecino. The owner says the borrower was very polite and took the hat with them.' },
     { who: 'BULLETIN', text: 'A Push-Mower Bike has left the Greenhouse Strip at a speed the owner describes as "considerate". The owner would like the bike back.' },
@@ -506,6 +524,8 @@ export const EVENT_BULLETINS: Readonly<Record<string, readonly Line[]>> = {
     { who: 'BULLETIN', text: 'A gnome outran a bee swarm through Tallgrass Commons and got clear. The bees have gone home. Nobody is hurt, and nobody is sure whose hat was in the hive.' },
     { who: 'BULLETIN', text: 'Good news from the Commons: the swarm lost interest at the far fence and went home. The gnome who outran them is asking for a bigger hat.' },
   ],
+  // E20: the story rows' own bulletins (quests/story/<NN>-*.ts `bulletins`).
+  ...Object.fromEntries(Object.entries(STORY_BULLETINS).map(([id, lines]) => [id, lines.map((text) => ({ who: 'BULLETIN', text }))])),
 };
 
 /** Traffic reports built from the map's places (the errands from R-026), so the report is always somewhere the player can go. */

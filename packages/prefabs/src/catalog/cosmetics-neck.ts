@@ -267,6 +267,42 @@ export const COSMETICS_NECK: PrefabDef[] = [
     ],
   },
   {
+    id: 'trellisdown-cravat', name: 'Trellisdown Cravat', category: 'trinket', uses: ['wear-neck'],
+    tags: ['cravat', 'silk', 'old-money', 'estate', 'trellisdown', 'pink', 'neck', 'reward'], emoji: [],
+    about: 'A puffed pink silk cravat with a brass pin, as worn on the terraces of Trellisdown.',
+    examine: [
+      'A puffed pink silk cravat tied high at the throat and held with a small brass pin.',
+      'Saying: in Trellisdown a cravat is not worn, it is displayed.',
+      'Tip: tie it before the grape-dew is poured; nobody ties a good knot after.',
+      'Joke: the pin is solid brass, which is the only solid thing anyone in Brassknock Manor has said all year.',
+      'Old money keeps its cravats in a drawer of their own, folded by somebody else.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.19, 0.025], at: [0, 0.03, -0.04], rot: [90, 0, 0], c: 'pink', seg: 12 },
+      { s: 'ball', d: [0.05], at: [0, 0.03, 0.15], scale: [1.2, 1, 0.6], c: 'pink', seg: 8 },
+      { s: 'box', d: [0.05, 0.07, 0.015], at: [0, 0.035, 0.16], c: 'pink' },
+      { s: 'ball', d: [0.01], at: [0, 0.035, 0.18], c: 'brass', seg: 6 },
+    ],
+  },
+  {
+    id: 'roundabout-rosette', name: 'Roundabout Rosette', category: 'trinket', uses: ['wear-neck'],
+    wear: { at: [0, -0.04, 0] },
+    tags: ['rosette', 'arrow', 'roundabout', 'ring', 'badge', 'neck', 'pardonlin', 'reward', 'continental'], emoji: [],
+    about: 'A round red rosette on a pin with a white arc ring and an arrow going anticlockwise, the badge of a driver who has been all the way round.',
+    examine: [
+      'A round red rosette with a white ring round its edge, and a small arrow on the ring pointing anticlockwise.',
+      'Saying: go all the way round the roundabout once, and you will never again take the first exit you see.',
+      'Tip: keep the arrow pointing the way you came. Anticlockwise is the only direction a roundabout forgives.',
+      'Joke: the rosette is awarded for going all the way round, which is a longer journey than most gnomes admit.',
+      'Pinned to the chest, it looks very proud, and it has never once been given a reason to be.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.06, 0.06, 0.02], at: [0, 0.07, 0.15], rot: [90, 0, 0], c: 'red', seg: 12 },   // rosette disc
+      { s: 'ring', d: [0.045, 0.01, 270], at: [0, 0.07, 0.17], c: 'white', seg: 10 },              // arrow ring
+      { s: 'cone', d: [0.03, 0.05], at: [0, 0.115, 0.17], rot: [0, 0, 90], c: 'white', seg: 6 },  // arrowhead, anticlockwise
+    ],
+  },
+  {
     id: 'trick-chalk-pendant', name: 'Blue Chalk Pendant', category: 'trinket', uses: ['wear-neck'],
     tags: ['chalk', 'cube', 'pendant', 'pool', 'billiards', 'neck', 'reward'], emoji: [],
     about: 'A cube of blue billiard chalk hung on a cord round the neck. Reward for clearing a Challenge.',

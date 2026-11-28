@@ -1,27 +1,182 @@
-// Stage set dressing: the prefab props each story/side-quest stage lists in `set` (src/quests/stages.ts), built once at
-// game start as one static batch, with their solid colliders added to the world's boxes. Kept out of buildWorld so the
-// golden layout test stays pinned. `?stagesets=0` leaves it out; `?stagemarks` adds buildStageMarks' debug shapes.
+// Stage set dressing: the prefab props each story/side-quest stage lists in `set` (src/quests/stages.ts), with their
+// solid colliders in the world's boxes. Kept out of buildWorld so the golden layout test stays pinned. `?stagesets=0`
+// leaves it out, `?stagesets=all` shows every set at once (screenshots, zfight); `?stagemarks` adds buildStageMarks'
+// debug shapes.
+//
+// GR3 (FX05): a story stage's set (quests/stages/story/) is quest-scoped. It is built at game start but only shown, and
+// only solid, while its window is open (stageSetWindow): one of its quests is active, or one of their scenes is playing
+// (an intro plays before its quest is taken; an outro after it is done). A prop marked `always` is part of the place
+// itself and stays; a stage marked `setStays` keeps its set once a quest is done. Permanent traces of a beat go through
+// worldChanges/, not through here. Side-quest and region stages keep their sets for good, as before.
 import * as THREE from 'three';
 import type { StaticPrefabPlacement } from '@lawn/prefabs';
 import { buildStaticCells } from './cull';
-import { STAGES, stageSetBoxes } from './quests/stages';
+import { STAGES, setPropBox, stageSetBoxes } from './quests/stages';
+import { STORY_STAGES } from './quests/stages/story';
+import type { Stage } from './quests/stages/kit';
+import type { QuestDef, QuestSave } from './quests/types';
 import { heightAt } from './terrain';
 import type { Box } from './types';
 
-/** Builds every stage's `set` props (one static batch) and pushes their solid colliders into `boxes`. */
-export function buildStageSets(scene: THREE.Scene, boxes: Box[]): { group: THREE.Group; count: number } {
-  const placements: StaticPrefabPlacement[] = [];
+/** What the window test reads: the quest engine's journal (quests.getJournal()). */
+export interface StageJournal {
+  activeId: string | null;
+  saves: Record<string, QuestSave>;
+}
+
+/** One stage's quest window: the quest ids it belongs to and the scene ids those quests play. */
+export interface StageWindow {
+  quests: readonly string[];
+  scenes: ReadonlySet<string>;
+  /** Keep the set once any of its quests is done (a world change keeps it). */
+  stays: boolean;
+}
+
+/** The story stages (quests/stages/story/), with the usedBy ids other rows added to them. */
+export function storyStages(): Stage[] {
+  const ids = new Set(STORY_STAGES.map((s) => s.id));
+  return STAGES.filter((s) => ids.has(s.id));
+}
+
+/** Every string a quest def holds (scene ids among them), for the scene -> quest map. */
+function stringsOf(v: unknown, out: Set<string>, depth = 0): void {
+  if (depth > 8 || v === null || v === undefined) return;
+  if (typeof v === 'string') out.add(v);
+  else if (Array.isArray(v)) for (const x of v) stringsOf(x, out, depth + 1);
+  else if (typeof v === 'object') for (const x of Object.values(v as Record<string, unknown>)) stringsOf(x, out, depth + 1);
+}
+
+/**
+ * The windows of the quest-scoped stages (story stages with at least one quest in `usedBy`). A stage whose usedBy names
+ * no known quest keeps its set for good (it has no window to open).
+ */
+export function stageWindows(quests: readonly QuestDef[], stages: readonly Stage[] = storyStages()): Map<string, StageWindow> {
+  const byId = new Map(quests.map((q) => [q.id, q] as const));
+  const scenesOf = new Map<string, Set<string>>();
+  const out = new Map<string, StageWindow>();
+  for (const s of stages) {
+    const qs = s.usedBy.filter((id) => byId.has(id));
+    if (qs.length === 0) continue;
+    const scenes = new Set<string>(s.usedBy.filter((id) => !byId.has(id)));
+    for (const q of qs) {
+      let mine = scenesOf.get(q);
+      if (!mine) {
+        mine = new Set();
+        stringsOf(byId.get(q), mine);
+        scenesOf.set(q, mine);
+      }
+      for (const id of mine) scenes.add(id);
+    }
+    out.set(s.id, { quests: qs, scenes, stays: !!s.setStays });
+  }
+  return out;
+}
+
+/** Is this window open: a quest of it active, one of its scenes playing, or (setStays) one of its quests done? */
+export function windowOpen(w: StageWindow, journal: StageJournal, sceneId: string | null): boolean {
+  if (sceneId && w.scenes.has(sceneId)) return true;
+  for (const q of w.quests) {
+    const st = journal.saves[q]?.state;
+    if (journal.activeId === q || st === 'active') return true;
+    if (w.stays && st === 'done') return true;
+  }
+  return false;
+}
+
+export interface StageSets {
+  /** Every stage set prop built (shown or not). */
+  count: number;
+  /** The quest-scoped sets' journal source, once the quest engine exists (app.ts). */
+  bind(journal: () => StageJournal): void;
+  /** A scene starts (its id) or ends (null): its stages' sets show at once. */
+  scene(id: string | null): void;
+  /** Per frame: re-checks the windows twice a second. */
+  update(dt: number): void;
+  /** The quest-scoped stage ids shown now (tests, debug). */
+  shown(): string[];
+}
+
+const CHECK_EVERY = 0.5;
+
+/**
+ * Builds every stage's `set` props: the permanent ones (side and region stages, `always` props) in one static batch
+ * with their colliders pushed into `boxes`, each quest-scoped story set as its own hidden group whose colliders go into
+ * `boxes` only while it is shown. `all`: show every set for good (?stagesets=all).
+ */
+export function buildStageSets(scene: THREE.Scene, boxes: Box[], quests: readonly QuestDef[] = [], opts: { all?: boolean } = {}): StageSets {
+  const windows = opts.all ? new Map<string, StageWindow>() : stageWindows(quests);
+  const place = (p: Stage['set'][number]): StaticPrefabPlacement => (
+    { id: p.prefab, x: p.at[0], y: heightAt(p.at[0], p.at[1]) + (p.lift ?? 0), z: p.at[1], yaw: p.yaw, scale: p.scale ?? 1 }
+  );
+  const fixed: StaticPrefabPlacement[] = [];
+  const fixedBoxes: Box[] = [];
+  const scoped: { id: string; w: StageWindow; group: THREE.Group; boxes: Box[]; on: boolean }[] = [];
+  let count = 0;
   for (const s of STAGES) {
+    const w = windows.get(s.id);
+    const mine: StaticPrefabPlacement[] = [];
+    const mineBoxes: Box[] = [];
     for (const p of s.set) {
-      placements.push({ id: p.prefab, x: p.at[0], y: heightAt(p.at[0], p.at[1]) + (p.lift ?? 0), z: p.at[1], yaw: p.yaw, scale: p.scale ?? 1 });
+      count++;
+      const box = p.solid ? setPropBox(p) : null;
+      if (!w || p.always) {
+        fixed.push(place(p));
+        if (box) fixedBoxes.push(box);
+      } else {
+        mine.push(place(p));
+        if (box) mineBoxes.push(box);
+      }
+    }
+    if (w && mine.length) {
+      const group = buildStaticCells(mine, { lights: false, name: `stage-set:${s.id}` });
+      group.visible = false;
+      scene.add(group);
+      scoped.push({ id: s.id, w, group, boxes: mineBoxes, on: false });
     }
   }
-  if (placements.length === 0) return { group: new THREE.Group(), count: 0 };
-  const group = buildStaticCells(placements, { lights: false, name: 'stage-sets' });
-  scene.add(group);
-  boxes.push(...stageSetBoxes());
-  return { group, count: placements.length };
+  if (fixed.length) scene.add(buildStaticCells(fixed, { lights: false, name: 'stage-sets' }));
+  boxes.push(...fixedBoxes);
+
+  let journal: (() => StageJournal) | null = null;
+  let sceneId: string | null = null;
+  let acc = CHECK_EVERY;
+  const check = (): void => {
+    const j = journal?.() ?? { activeId: null, saves: {} };
+    for (const s of scoped) {
+      const on = windowOpen(s.w, j, sceneId);
+      if (on === s.on) continue;
+      s.on = on;
+      s.group.visible = on;
+      if (on) boxes.push(...s.boxes);
+      else {
+        for (const b of s.boxes) {
+          const i = boxes.indexOf(b);
+          if (i >= 0) boxes.splice(i, 1);
+        }
+      }
+    }
+  };
+  return {
+    count,
+    bind(fn) { journal = fn; check(); },
+    scene(id) { sceneId = id; check(); },
+    update(dt) {
+      acc += dt;
+      if (acc < CHECK_EVERY) return;
+      acc = 0;
+      check();
+    },
+    shown: () => scoped.filter((s) => s.on).map((s) => s.id),
+  };
 }
+
+/** No stage sets (?stagesets=0). */
+export function noStageSets(): StageSets {
+  return { count: 0, bind() {}, scene() {}, update() {}, shown: () => [] };
+}
+
+/** Every stage set's colliders, whether shown now or not (keep-outs for scenery placed at build time). */
+export { stageSetBoxes };
 
 const LIFT = 0.15;
 

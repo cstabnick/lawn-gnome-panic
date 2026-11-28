@@ -53,7 +53,8 @@ export type PerkId =
   | 'hopper-pass'
   | 'hide-regular'
   | 'estate-agent'
-  | 'party-favour';
+  | 'party-favour'
+  | 'glaze-on-the-house';
 
 export interface PerkDef {
   id: PerkId;
@@ -104,6 +105,7 @@ export const PERKS: readonly PerkDef[] = [
   { id: 'hide-regular', questId: 'nc-reedwatch', name: 'Reedwatch Regular', text: 'New birds and bird photos pay 20% more.' },
   { id: 'estate-agent', questId: 'nc-hangar-and-boathouse', name: "Tansy's Word", text: 'Hangar Two and the Mossbank Boathouse cost 10% less.' },
   { id: 'party-favour', questId: 'nc-party', name: 'Party Favour', text: 'Acorn-Flour Cake costs 10% less.' },
+  { id: 'glaze-on-the-house', questId: 'sq-on-the-house', name: "Cass's Tab", text: "Pay 'n' Glaze repairs are free." },
 ];
 
 const BY_ID = new Map<string, PerkDef>(PERKS.map((p) => [p.id, p]));
@@ -285,6 +287,7 @@ export const PRICE_PERKS: readonly { perk: PerkId; reasons: readonly string[]; s
   { perk: 'sling-regular', reasons: ['Sling-Lift'], scale: 0.85 },
   { perk: 'staff-discount', reasons: ['Turfton Taxi'], scale: 0.85 },
   { perk: 'slipway-regular', reasons: ["Wingwright's Slipway"], scale: 0.9 },
+  { perk: 'glaze-on-the-house', reasons: ["Pay 'n' Glaze repair"], scale: 0 },
   { perk: 'hopper-pass', reasons: ['Pebblewick Hopper'], scale: 0.5 },
   { perk: 'estate-agent', reasons: ['Hangar Two', 'Mossbank Boathouse'], scale: 0.9 },
   { perk: 'party-favour', reasons: ['Acorn-Flour Cake'], scale: 0.9 },

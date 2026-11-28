@@ -26,6 +26,12 @@ The Hopper is the one bus in the Flats that has never broken down on the Route E
 
 A bus stop by the road in Pebblewick. It takes the player to Turfton's Central Bus Stop for 8 Acorns.
 
+## Everyday
+
+- **Notices:** the stop's board lists the fare (8 Acorns to Turfton's Central Bus Stop) and the timetable: "Whenever you ask it to."
+- **Habits:** the driver sounds the horn once at the bell and once at the well. Passengers sit left on the way out and right on the way back, "for the view and for balance".
+- **Sayings:** "We have a bell, a bus and a reeve."
+
 ## Loose threads
 
 Who drives the Hopper when the reeve is away.

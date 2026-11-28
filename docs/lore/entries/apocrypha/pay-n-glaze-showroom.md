@@ -27,6 +27,14 @@ When a gnome drives in, the pot takes the mower out the back. The mower goes in 
 
 "The pot's not the shop. The shop's the bit out the back, and you don't ask about the bit out the back."
 
+## Everyday
+
+- Spray-can rack with the finish names on the caps: Primer Grey, Pillar Box, Puddle Blue, Gloat Gold, Gravy and Nothing To See Here. The last one is the best seller.
+- Counter sign, buzzing in dots and dashes: Nina reads it out and it always says the same thing: "Ask about our loyalty number."
+- Notices: "NO FLAMES NEAR THE SPRAY" over the door; the rinse buckets are labelled by hat colour; a card for the pot's one dent: "Original. Not for sale."
+- Habit: customers say goodbye to the pot as it takes their mower, then get embarrassed and pretend they were whistling.
+- Saying: "Go in the front, come out the back, pay at the middle."
+
 ## Loose threads
 
 Where the workshop yard is, and how big it is inside the pot. Whether the pot has a back door, or only the one the mower uses.

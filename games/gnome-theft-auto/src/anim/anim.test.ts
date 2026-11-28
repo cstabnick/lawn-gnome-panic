@@ -17,12 +17,13 @@ import { BIT_ANIMS } from './bits';
 import { REACT_C_ANIMS } from './reactsC';
 import { SOCIAL_ANIMS } from './social';
 import { DRIVE_ANIMS } from './drive';
+import { VARIANT_ANIMS } from './variants';
 import { ANIMS, ANIM_TABS, animById, listAnims, pairOf, pickFor, upperBodyOnly } from './index';
 import { createAnimator, BLEND } from './animator';
 import { createPlayerEmote } from './playerEmote';
 import {
   DANCE_IDS, EMOTE_B_IDS, EMOTE_IDS, HUNT_IDS, IDLE_IDS, REACT_B_IDS, REACT_IDS, RIDE_IDS, ROLE_IDS, WORK_IDS,
-  STYLE_IDS, MOOD_IDS, BIT_IDS, REACT_C_IDS, SOCIAL_IDS, DRIVE_IDS, JOB_IDS, PAIR_GAP,
+  STYLE_IDS, MOOD_IDS, BIT_IDS, REACT_C_IDS, SOCIAL_IDS, DRIVE_IDS, JOB_IDS, PAIR_GAP, VARIANT_IDS,
   type AnimDef, type AnimPart,
 } from './types';
 
@@ -91,6 +92,11 @@ checkRows('bit', BIT_ANIMS, BIT_IDS, 'bit');
 checkRows('reactC', REACT_C_ANIMS, REACT_C_IDS, 'react');
 checkRows('social', SOCIAL_ANIMS, SOCIAL_IDS, 'social');
 checkRows('drive', DRIVE_ANIMS, DRIVE_IDS, 'drive');
+for (const cat of ['style', 'bit', 'react'] as const) {
+  const rows = VARIANT_ANIMS.filter((a) => a.category === cat);
+  const ids = VARIANT_IDS.filter((id) => rows.some((r) => r.id === id));
+  checkRows('variant-' + cat, rows, ids, cat);
+}
 
 describe('round 3 rules', () => {
   it('walk/run styles and moods ride the walk cycle: onMove, loop, no legs', () => {
@@ -101,6 +107,15 @@ describe('round 3 rules', () => {
       expect(a.loop, a.id).toBe(true);
       expect(a.parts.includes('legL') || a.parts.includes('legR'), a.id).toBe(false);
       expect(upperBodyOnly(a)).toBe(true);
+    }
+  });
+  it('the six variant walks and runs ride the walk cycle: onMove, loop, no legs', () => {
+    const walks = VARIANT_ANIMS.filter((a) => a.category === 'style');
+    expect(walks.length).toBe(6);
+    for (const a of walks) {
+      expect(a.onMove, a.id).toBe(true);
+      expect(a.loop, a.id).toBe(true);
+      expect(a.parts.includes('legL') || a.parts.includes('legR'), a.id).toBe(false);
     }
   });
   it('drive rows move only the left arm and the body, and stay out of the menu', () => {
@@ -127,7 +142,7 @@ describe('the table', () => {
     const all = [
       ...EMOTE_IDS, ...DANCE_IDS, ...IDLE_IDS, ...REACT_IDS, ...WORK_IDS,
       ...EMOTE_B_IDS, ...REACT_B_IDS, ...ROLE_IDS, ...HUNT_IDS, ...RIDE_IDS,
-      ...STYLE_IDS, ...MOOD_IDS, ...BIT_IDS, ...REACT_C_IDS, ...SOCIAL_IDS, ...DRIVE_IDS, ...JOB_IDS,
+      ...STYLE_IDS, ...MOOD_IDS, ...BIT_IDS, ...REACT_C_IDS, ...SOCIAL_IDS, ...DRIVE_IDS, ...JOB_IDS, ...VARIANT_IDS,
     ];
     expect(new Set(all).size).toBe(all.length);
     expect(ANIMS.map((a) => a.id).sort()).toEqual([...all].sort());

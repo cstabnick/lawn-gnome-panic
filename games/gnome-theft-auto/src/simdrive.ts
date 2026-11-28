@@ -2,20 +2,22 @@
 // the vehicle's profile and setup (handling.ts). Traffic and the flyers (Crop Duster, Whirligig) stay arcade.
 // "Driving realism" is a CHEAT in Options (options.ts): the default is the Casual sim; Arcade brings back the original flat model.
 // Online play works: remote players see the driven vehicle's broadcast pose (see main.ts).
-import { VehicleController, qRotate, qYaw, v3, type TuningValues } from '@lawn/vehicle';
+import { VehicleController, qRotate, qYaw, v3, type GroundProbe, type TuningValues, type VehicleInput } from '@lawn/vehicle';
 import { play } from './audio';
-import { angleDiff, clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
+import { angleDiff, clampToWorld, sweepCapsuleBoxes, vehicleCapsule, wallBounce } from './collide';
 import {
   DEFAULT_MODE_ID, TUNES, clampSetup, profileFor, riderLean, stockSetup, tuneById, vehicleConfig, type Tune,
 } from './handling';
 import type { InputState, Vehicle, VehicleKind, VehicleSpec, World } from './types';
 import { groundAt, terrainFlat, terrainProbe } from './terrain';
-import { CRASH_MIN, CRASH_SCALE, damageVehicle } from './vehicles';
+import { hopVelocity, SKIM, skimSurfaceAt, stepSkim } from './skim';
+import { CRASH_MIN, CRASH_SCALE, damageVehicle, knockParts } from './vehicles';
+import { DEBRIS } from './debris';
 import { notifySaveChanged } from './saveHook';
 
 export { TUNES, type Tune } from './handling';
 
-const params = new URLSearchParams(location.search);
+const params = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
 
 // ---- Driving mode (realism), saved per browser ---------------------------------------------------------------------------
 // A new key: the old `gta-sim-tune` (from the ?drive=sim proof of concept) may hold a mode picked while trying it out.
@@ -49,7 +51,7 @@ export function setTune(id: string): Tune {
   return current;
 }
 
-// ---- Garage: each vehicle's setup (the 11 knobs), stock until changed. No UI yet; ?debug exposes it as __gta.garage ------------
+// ---- Garage: each vehicle's setup (the 11 knobs), stock until changed. Edited in the Handling modal (garages.ts) and Pay 'n' Glaze's Handling tab; ?debug exposes it as __gta.garage ------------
 const garage: Partial<Record<VehicleKind, Partial<TuningValues>>> = (() => {
   try { return JSON.parse(readStore(GARAGE_KEY) ?? '{}') as Partial<Record<VehicleKind, Partial<TuningValues>>>; } catch { return {}; }
 })();
@@ -79,15 +81,53 @@ export interface SimDrive {
   lastX: number; lastZ: number; lastSpeed: number;
   /** Seconds spent tipped past TIPPED_DEG; the chassis is stood back up after RIGHT_AFTER. */
   tippedT: number;
+  /** Seconds with no wheel on the ground (SIM_AIR), and seconds of landing settle left. */
+  airT?: number;
+  settleT?: number;
 }
 
 /** The chassis config for one vehicle model in the current mode, with its saved setup and the loadout's ride height (-1..1). */
 export const mowerConfig = (spec: VehicleSpec, tune: Tune = current, rideHeight = 0) =>
   vehicleConfig(spec, tune, getSetup(spec.kind), rideHeight);
 
+/**
+ * VehicleController.place() finds the road by casting down from 50 m above the spot, so a car standing on the street
+ * under a skyway deck was set ON the deck (and an NPC chassis made under one climbed up to it). While placing, the cast
+ * starts at most this far above the ground we mean (placeCap), so a deck higher up is never reached.
+ */
+const PLACE_LIFT = 1.5;
+let placeCap: number | null = null;
+/** On while a chassis is skimming (or fast enough to start): deep water is a flat ground the wheels can ride on (skim.ts). */
+let skimPlane = false;
+const GUARDED_PROBE: GroundProbe = {
+  cast(origin, dir, maxDist) {
+    const o = placeCap !== null && origin.y > placeCap ? { x: origin.x, y: placeCap, z: origin.z } : origin;
+    const hit = terrainProbe().cast(o, dir, maxDist);
+    if (!skimPlane || dir.y > -1e-6) return hit;
+    const surface = skimSurfaceAt(o.x, o.z);
+    if (surface === null || o.y < surface) return hit;
+    const t = (surface - o.y) / dir.y;
+    if (t > maxDist || (hit && hit.distance <= t)) return hit;
+    return { distance: t, normal: { x: 0, y: 1, z: 0 }, point: { x: o.x + dir.x * t, y: surface, z: o.z + dir.z * t } };
+  },
+};
+/** ctrl.place at (x, groundY, z), with the ground search kept to the level of groundY. */
+function placeOn(ctrl: VehicleController, x: number, groundY: number, z: number, yaw: number, speed: number): void {
+  placeCap = groundY + PLACE_LIFT;
+  try { ctrl.place(v3(x, groundY, z), yaw, speed); } finally { placeCap = null; }
+}
+
 export function createSimDrive(v: Vehicle): SimDrive {
-  const ctrl = new VehicleController(mowerConfig(v.spec, current, v.look?.rideHeight ?? 0), { ground: terrainProbe() });
-  ctrl.place(v3(v.x, groundAt(v.x, v.z, v.y), v.z), v.yaw, v.speed);
+  return createChassis(v, current, getSetup(v.spec.kind), v.look?.rideHeight ?? 0);
+}
+
+/**
+ * A sim chassis for `v` with an explicit mode, setup and ride height (createSimDrive uses the player's current mode and
+ * saved setup; npcChassis.ts uses the Casual tune and the stock setup, whatever the player picked).
+ */
+export function createChassis(v: Vehicle, tune: Tune, setup: TuningValues, rideHeight = 0): SimDrive {
+  const ctrl = new VehicleController(vehicleConfig(v.spec, tune, setup, rideHeight), { ground: GUARDED_PROBE });
+  placeOn(ctrl, v.x, groundAt(v.x, v.z, v.y), v.z, v.yaw, v.speed);
   const sd: SimDrive = { ctrl, px: v.x, py: 0, pz: v.z, qx: 0, qy: 0, qz: 0, qw: 1, lastX: v.x, lastZ: v.z, lastSpeed: v.speed, tippedT: 0 };
   writePose(v, sd);
   return sd;
@@ -104,6 +144,7 @@ function writePose(v: Vehicle, sd: SimDrive): void {
   v.x = sd.px;
   v.z = sd.pz;
   v.y = groundAt(v.x, v.z, sd.py);
+  if (v.skim?.active) v.y = Math.max(v.y, skimSurfaceAt(v.x, v.z) ?? v.y);
   v.yaw = qYaw(p.quat);
   v.speed = sd.ctrl.telemetry.forwardSpeed;
   sd.lastX = v.x;
@@ -118,8 +159,60 @@ const SIM_FLOOR = 0.08;
 const TIPPED_DEG = 70;
 const RIGHT_AFTER = 1.5;
 
+/**
+ * Airtime and landing tuning for every sim chassis (the player's and NPCs'), L55. The controller runs real 9.81 gravity
+ * (its tyre loads and springs are tuned for that), so jumps off ramps hang: while no wheel touches the ground the chassis
+ * gets `airGravity` m/s^2 of extra pull. On the frame the wheels touch down after a jump, the body's upward velocity is
+ * multiplied by `landingRebound` (and keeps doing so for `landingSettle` seconds), so it does not bounce back up.
+ * E14's dirt bike and rally jumps rely on these numbers.
+ */
+export const SIM_AIR = {
+  /** Extra downward acceleration while airborne (m/s^2), on top of the controller's 9.81. */
+  airGravity: 9,
+  /** Upward body velocity kept on touchdown (0..1, 1 = unchanged). */
+  landingRebound: 0.25,
+  /** Seconds after touchdown during which landingRebound keeps applying. */
+  landingSettle: 0.35,
+};
+
+/** Extra pull while airborne, and the short settle after a jump lands (SIM_AIR). */
+function applyAir(sd: SimDrive, dt: number): void {
+  const body = sd.ctrl.body;
+  const wheels = sd.ctrl.telemetry.groundedWheels;
+  if (wheels === 0) {
+    body.vel.y -= SIM_AIR.airGravity * dt;
+    sd.airT = (sd.airT ?? 0) + dt;
+    return;
+  }
+  if ((sd.airT ?? 0) >= 0.15) sd.settleT = SIM_AIR.landingSettle;
+  sd.airT = 0;
+  if ((sd.settleT ?? 0) > 0) {
+    sd.settleT = Math.max(0, (sd.settleT ?? 0) - dt);
+    if (body.vel.y > 0) body.vel.y *= SIM_AIR.landingRebound;
+    const k = (1 + SIM_AIR.landingRebound) / 2;
+    body.angVel.x *= k;
+    body.angVel.z *= k;
+  }
+}
+
 /** Step the player's sim-driven vehicle for one frame: game input in, game-space pose out. Returns true on the frame a tipped vehicle is stood back up. */
 export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: number, world: World): boolean {
+  const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
+  return stepChassis(v, sd, {
+    steer: inp.moveX,
+    throttle: Math.max(0, inp.moveY),
+    brake: Math.max(0, -inp.moveY),
+    handbrake: inp.lift > 0 ? 1 : 0,
+    source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
+  }, dt, world);
+}
+
+/**
+ * Step any sim chassis one frame from controller input (steer -1..1, throttle/brake/handbrake 0..1; brake from rest
+ * reverses): world collision, bump stop, righting, then the game pose (v.x/y/z/yaw/speed). Shared by the player
+ * (stepSimDrive) and NPC cars (npcChassis.ts). Returns true on the frame a tipped vehicle is stood back up.
+ */
+export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: number, world: World): boolean {
   const body = sd.ctrl.body;
   // Anything the game did to the vehicle since last frame (a bump pushed it, or slowed it): carry it into the body.
   const dx = v.x - sd.lastX;
@@ -130,26 +223,39 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
     body.vel.x *= k; body.vel.z *= k;
   }
 
-  const binary = !inp.pad && (inp.moveX === 0 || Math.abs(inp.moveX) === 1);
   const x0 = body.pos.x, z0 = body.pos.z;
-  sd.ctrl.update(dt, {
-    steer: inp.moveX,
-    throttle: Math.max(0, inp.moveY),
-    brake: Math.max(0, -inp.moveY),
-    handbrake: inp.lift > 0 ? 1 : 0,
-    source: inp.pad ? 'gamepad' : binary ? 'keyboard' : 'stick',
-  });
+  const hSpeed = Math.hypot(body.vel.x, body.vel.z);
+  const skimIn = !v.spec.flies && !v.spec.boat && !v.sunk && !v.exploded;
+  const wasSkimming = skimIn && !!v.skim?.active;
+  skimPlane = skimIn && (wasSkimming || hSpeed >= SKIM.enterSpeed);
+  try {
+    sd.ctrl.update(dt, wasSkimming ? { ...input, throttle: 0, steer: input.steer * SKIM.steer } : input);
+  } finally { skimPlane = false; }
+  applyAir(sd, dt);
+  if (skimIn) {
+    const moved = Math.hypot(body.pos.x - x0, body.pos.z - z0);
+    if (stepSkim(v, hSpeed, body.pos.y - sd.ctrl.rideHeight, moved, dt)) {
+      const drag = SKIM.dragPerS ** dt;
+      body.vel.x *= drag; body.vel.z *= drag;
+      if (v.skim?.event === 'bounce') {
+        body.vel.y += hopVelocity(hSpeed);
+        body.vel.x *= SKIM.hopKeep; body.vel.z *= SKIM.hopKeep;
+      }
+    }
+  }
 
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
-  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, groundAt(body.pos.x, body.pos.z, body.pos.y));
+  // The altitude is the chassis's own height, not the terrain under it: a car flying over a wall (a ramp jump) clears it (L16).
+  const sw = sweepCapsuleBoxes(x0, z0, body.pos.x, body.pos.z, v.yaw, vehicleCapsule(v.spec), world.boxes, Math.max(groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.y - sd.ctrl.rideHeight));
   if (sw.hit) {
     body.pos.x = sw.x; body.pos.z = sw.z;
     const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);
     body.vel.x = b.vx; body.vel.z = b.vz;
     body.angVel.y *= 0.6;
-    if (b.impact > 6) play('bump');
+    if (b.impact > 6 && v.driver === 'player') play('bump');
     if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
+    knockParts(v, -sw.nx, -sw.nz, b.impact);
   }
   const kept = clampToWorld(body.pos.x, body.pos.z, world.half, v.spec.radius);
   if (kept.hit) { body.pos.x = kept.x; body.pos.z = kept.z; body.vel.x *= 0.5; body.vel.z *= 0.5; }
@@ -166,7 +272,11 @@ export function stepSimDrive(v: Vehicle, sd: SimDrive, inp: InputState, dt: numb
   sd.tippedT = tilt > TIPPED_DEG ? sd.tippedT + dt : 0;
   let righted = false;
   if (sd.tippedT > RIGHT_AFTER) {
-    sd.ctrl.place(v3(body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z), qYaw(body.quat), 0);
+    // A roll-over knocks parts off the side the body is tipped toward (its up vector, projected on the ground).
+    const upDir = qRotate(body.quat, v3(0, 1, 0));
+    const ul = Math.hypot(upDir.x, upDir.z);
+    if (ul > 1e-3) for (let i = 0; i < 2; i++) knockParts(v, upDir.x / ul, upDir.z / ul, 2 * DEBRIS.knockMin);
+    placeOn(sd.ctrl, body.pos.x, groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.z, qYaw(body.quat), 0);
     sd.tippedT = 0;
     righted = true;
   }

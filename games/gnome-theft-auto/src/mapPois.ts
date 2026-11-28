@@ -11,6 +11,8 @@ import { skywayDefs } from './highways/deck';
 import { kindOf, SKYWAY_SITES } from './highways/skyways';
 import { landmarkPlaces } from './towers';
 import { TOWN } from './outskirts/town';
+import { CAMPUS, OBSERVATORY, ROOTWELL_FIELD } from './campus/types';
+import { BURROW_DOOR, UNDERSPAN, WADERS_REST } from './societies/config';
 import { PARKS } from './parks/blocks';
 import { EDGE_LABELS, EDGE_NAMES, type EdgeId } from './fringe/belt';
 import type { Blip } from './types';
@@ -57,8 +59,29 @@ export function placeBlips(): Blip[] {
     ...stunts,
     at('skyway', 255, -130, 'East Beltway'),
     ...SKYWAY_SITES.map((s) => at('works', s.x, s.z, s.name)),
-    ...PARKS.map((p) => at('park', p.x, p.z, p.name)),
+    // One blip per park name: Founders' Green is three PARKS rows (L92).
+    ...PARKS.filter((p, i) => PARKS.findIndex((q) => q.name === p.name) === i).map((p) => at('park', p.x, p.z, p.name)),
     ...(Object.keys(EDGE_NAMES) as EdgeId[]).map((id) => at('edge', EDGE_LABELS[id].x, EDGE_LABELS[id].z, EDGE_NAMES[id])),
+    // Pardonlin, the Unmown and the roads between them (E28). Kinds reuse existing ones: town, park, edge, skyway.
+    at('town', -1600, -100, 'Pardonlin'),
+    at('park', -1000, -1600, 'The Unmown'),
+    at('park', -1560, -1150, 'Unmown Ranger Station'),
+    at('park', -1600, 1040, 'Pardonlin Basin'),
+    at('edge', -1400, -30, 'The Grand Wicket'),
+    at('edge', -1400, -500, 'North Wicket'),
+    at('edge', -1400, 1000, 'Harbour Wicket'),
+    at('skyway', -1555, -30, 'The Hatwheel'),
+    at('skyway', -950, -30, 'Trellis Cross'),
+    at('skyway', 940, 40, 'The Anthill Ring'),
+    // Rootwell (E13): the university, the Anthill Observatory, Rootwell Field (kind 'airfield') and Pinwheel Ridge.
+    at('campus', CAMPUS.quadCentre.x, CAMPUS.quadCentre.z, 'Rootwell University'),
+    at('observatory', OBSERVATORY.dome.x, OBSERVATORY.dome.z, 'The Anthill Observatory'),
+    at('airfield', ROOTWELL_FIELD.runway.x, ROOTWELL_FIELD.runway.z, 'Rootwell Field'),
+    at('windfarm', 850, -1200, 'Pinwheel Ridge'),
+    // E17 societies (societies/config.ts): kinds reuse existing ones.
+    at('town', UNDERSPAN.hogweed.x, UNDERSPAN.hogweed.z, 'The Underspan'),
+    at('town', WADERS_REST.centre.x, WADERS_REST.centre.z, "Wader's Rest"),
+    at('home', BURROW_DOOR.door.x, BURROW_DOOR.door.z, 'The Burrow Door (Loamdeep)'),
   ];
 }
 

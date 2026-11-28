@@ -8,6 +8,7 @@ import type {
   CamShot, CameraSample, LineTiming, Point, SceneFrame, ScenePath, SceneScript, ScriptVehicle, ShotSize, StageEnv,
   Step, Target, TimedStep, Timeline, Vec3,
 } from './script';
+import { INTRO_SECONDS } from './script';
 import { lineTiming } from './textSpeed';
 
 /** A vehicle-local point (x = left, z = nose) turned to the world ground, for a vehicle at (x, z) facing yaw. */
@@ -235,13 +236,16 @@ export function compile(script: SceneScript, timing: LineTiming = lineTiming()):
         break;
       }
       case 'cam':
-        ts.dur = step.shot.kind === 'dolly' || step.shot.kind === 'orbit' ? step.shot.s : 0;
+        ts.dur = step.shot.kind === 'dolly' || step.shot.kind === 'orbit' ? step.shot.s : step.shot.kind === 'frame' && step.shot.push ? step.shot.push.s : 0;
         break;
       case 'shake':
         ts.dur = step.s;
         break;
       case 'fade':
         ts.dur = step.s;
+        break;
+      case 'intro':
+        ts.dur = step.s ?? INTRO_SECONDS;
         break;
       default:
         break;
@@ -358,7 +362,7 @@ function shotCamera(frame: SceneFrame, shot: CamShot, elapsed: number): Omit<Cam
     case 'track':
       return { pos: shot.pos, look: pointOf(frame, shot.who), fov: shot.fov ?? DEFAULT_FOV, target: shot.who };
     case 'frame':
-      return frameCamera(frame, shot);
+      return frameCamera(frame, shot, elapsed);
   }
 }
 
@@ -378,9 +382,16 @@ export const SHOT_SIZES: Record<ShotSize, { fill: number; fov: number; lookAt: n
 export const GNOME_HEIGHT = 1.3;
 
 /** The 'frame' shot: camera placed by shot size round an actor, off its eyeline to `toward`, or over `over`'s shoulder. */
-function frameCamera(frame: SceneFrame, shot: Extract<CamShot, { kind: 'frame' }>): Omit<CameraSample, 'step' | 'shake'> {
+function frameCamera(frame: SceneFrame, shot: Extract<CamShot, { kind: 'frame' }>, elapsed = 0): Omit<CameraSample, 'step' | 'shake'> {
   const a = frame.actors[shot.who];
-  const spec = SHOT_SIZES[shot.size];
+  let spec = SHOT_SIZES[shot.size];
+  if (shot.push) {
+    // A push-in (or pull-out): the size eases from `size` to `push.to` over `push.s` seconds.
+    const u = shot.push.s > 0 ? clamp01(elapsed / shot.push.s) : 1;
+    const e = u * u * (3 - 2 * u);
+    const to = SHOT_SIZES[shot.push.to];
+    spec = { fill: lerp(spec.fill, to.fill, e), fov: lerp(spec.fov, to.fov, e), lookAt: lerp(spec.lookAt, to.lookAt, e) };
+  }
   const fov = shot.fov ?? spec.fov;
   if (!a) return { pos: [0, 1.6, 4], look: [0, 1, 0], fov, target: shot.who };
   const head = a.head;
@@ -431,6 +442,7 @@ export function sampleFrame(tl: Timeline, t: number, env: StageEnv): SceneFrame 
     say: null,
     title: script.title ?? null,
     caption: null,
+    intro: null,
     fade: 0,
   };
   const { actors, vehicles, props } = frame;
@@ -627,6 +639,9 @@ export function sampleFrame(tl: Timeline, t: number, env: StageEnv): SceneFrame 
       case 'caption':
         frame.caption = st.text;
         break;
+      case 'intro':
+        if (running) frame.intro = { step: i, who: st.who, t: elapsed, dur: ts.dur };
+        break;
       case 'fade':
         fade = running ? lerp(fade, st.to, clamp01(elapsed / st.s)) : st.to;
         break;
@@ -682,4 +697,40 @@ export function scenePaths(tl: Timeline, env: StageEnv): ScenePath[] {
     out.push({ who: g.who, kind: g.kind, vehicleKind: g.vehicleKind, step: index, points });
   });
   return out;
+}
+
+// ---- GR6: scene weather and key light ---------------------------------------------------------------------------------
+
+/**
+ * The weather a world scene plays in (SceneScript.weather): the scene's own pick, else rain under a 'rain' / 'storm'
+ * bed, snow under a 'snow' bed, else clear. null: keep the world's weather (a room stage, or `weather: 'world'`).
+ */
+export function sceneWeather(script: SceneScript): Exclude<SceneScript['weather'], 'world' | undefined> | null {
+  if (script.stage.kind !== 'world') return null;
+  const w = script.weather;
+  if (w === 'world') return null;
+  if (w) return w;
+  if (script.ambience === 'rain' || script.ambience === 'storm') return 'rain';
+  if (script.ambience === 'snow') return 'snow';
+  return 'clear';
+}
+
+/** 0..1: how much of a key light (SceneKeyLight from / until) is on at scene time t, eased over 0.8 s each way. */
+export function keyLightLevel(from: number | undefined, until: number | undefined, t: number): number {
+  const EASE = 0.8;
+  const on = from === undefined ? 1 : Math.min(1, Math.max(0, (t - from) / EASE));
+  const off = until === undefined ? 1 : Math.min(1, Math.max(0, (until - t) / EASE));
+  return Math.min(on, off);
+}
+
+/**
+ * Does a scene want the camera-side face fill (SceneScript.faceFill)? `night` is the world's own night factor (0 day ..
+ * 1 night), used when the scene holds no `sky`. Rooms are lit by their own lamps, so they never get one unless asked.
+ */
+export function wantsFaceFill(script: SceneScript, night: number): boolean {
+  if (script.faceFill === false) return false;
+  if (script.faceFill !== undefined) return true;
+  if (script.stage.kind !== 'world') return false;
+  if (script.sky) return script.sky !== 'noon';
+  return night > 0.35;
 }

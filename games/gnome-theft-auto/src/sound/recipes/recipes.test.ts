@@ -1,10 +1,11 @@
 // Every built-in world sound has a recipe that schedules and stops its sources within the duration it returns.
 // Run one table: npx vitest run src/sound/recipes -t vehicles   (or combat, critters, world)
 import { describe, expect, it } from 'vitest';
-import { COMBAT_SOUNDS, CRITTER_SOUNDS, STEP_SOUNDS, VEHICLE_SOUNDS, WORLD_SOUNDS, type Recipe } from '../ids';
+import { COMBAT_SOUNDS, CRITTER_SOUNDS, REGION_SOUNDS, STEP_SOUNDS, VEHICLE_SOUNDS, WORLD_SOUNDS, type Recipe } from '../ids';
 import { createFakeAudio } from '../testing/fakeAudio';
 import { COMBAT_RECIPES } from './combat';
 import { CRITTER_RECIPES } from './critters';
+import { REGION_RECIPES } from './regions';
 import { VEHICLE_RECIPES } from './vehicles';
 import { WORLD_RECIPES } from './world';
 
@@ -13,6 +14,7 @@ const TABLES: [string, readonly string[], Partial<Record<string, Recipe>>][] = [
   ['combat', COMBAT_SOUNDS, COMBAT_RECIPES],
   ['critters', CRITTER_SOUNDS, CRITTER_RECIPES],
   ['world', [...STEP_SOUNDS, ...WORLD_SOUNDS], WORLD_RECIPES],
+  ['regions', REGION_SOUNDS, REGION_RECIPES],
 ];
 
 for (const [name, ids, table] of TABLES) {

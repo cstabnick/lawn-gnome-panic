@@ -35,7 +35,45 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   hedda: { hz: 124, wave: 'square', style: 'syllables', speed: 1.1, formant: 0.93 },
   nina: { hz: 136, wave: 'triangle', speed: 1.5, glide: 0.25, wobble: 0.15, formant: 1.25 },
   grout: { hz: 74, wave: 'sine', style: 'words', speed: 0.6, sub: 1, formant: 0.8 },
-
+  // Hedgeworth Links (golf/types.ts HEDGEWORTH_CAST). Two formants differ from the brief to keep the
+  // (wave, style, formant) combinations unique, which the test forbids: peony 1.12 (1.1 matches thermos theo),
+  // basil 1.02 (1.0 matches granny).
+  peony: { hz: 104, speed: 1.05, range: 0.7, glide: -0.1, formant: 1.12 },
+  basil: { hz: 128, speed: 1.25, range: 1.4, wave: 'triangle', formant: 1.02 },
+  thrift: { hz: 74, speed: 0.7, breath: 0.25, style: 'words', wave: 'triangle', formant: 0.85 },
+  // Founders' Green regulars (sports/types.ts SPORTS_CAST). Formants nudged off the default 1 where a voice would
+  // otherwise repeat an existing (wave, style, formant) combination.
+  cardoon: { hz: 118, speed: 1.2, range: 1.2, formant: 0.98 },
+  lintel: { hz: 136, speed: 1.35, glide: 0.2, formant: 1.08 },
+  pansy: { hz: 150, speed: 1.1, formant: 1.04 },
+  benchley: { hz: 78, speed: 0.75, breath: 0.2, formant: 0.87 },
+  fennel: { hz: 124, speed: 0.85, range: 0.8, formant: 1.02 },
+  moss: { hz: 96, speed: 0.9, range: 0.5, formant: 0.97 },
+  pebble: { hz: 168, speed: 1.3, range: 1.5, formant: 1.14 },
+  // Batch 3 cast (E20). Each (wave, style, rounded formant) is unique; hz matches cutscene/cast.ts.
+  'don compost': { hz: 72, speed: 0.55, wave: 'sine', style: 'words', sub: 1, formant: 0.78 },
+  parsley: { hz: 98, speed: 0.7, wave: 'sine', breath: 0.2, range: 0.4, formant: 1.07 },
+  hyssop: { hz: 130, speed: 1.4, wave: 'square', range: 1.6, glide: 0.5, formant: 1.13 },
+  chard: { hz: 84, speed: 0.6, wave: 'saw', breath: 0.15, wobble: 0.1, range: 0.3, formant: 0.83 },
+  hogweed: { hz: 120, speed: 1.5, wave: 'triangle', range: 1.8, wobble: 0.3, formant: 0.96 },
+  gary: { hz: 100, speed: 0.85, wave: 'square', style: 'syllables', range: 0.3, glide: -0.3, formant: 1.16 },
+  sage: { hz: 112, speed: 0.75, wave: 'sine', range: 0.6, formant: 0.91 },
+  frank: { hz: 90, speed: 0.6, wave: 'triangle', style: 'syllables', glide: -0.4, formant: 0.88 },
+  chicory: { hz: 96, speed: 0.7, wave: 'sine', style: 'syllables', glide: -0.2, formant: 0.98 },
+  wisteria: { hz: 106, speed: 0.6, wave: 'triangle', style: 'syllables', range: 0.8, wobble: 0.1, formant: 1.09 },
+  nubbin: { hz: 170, speed: 1.3, wave: 'sine', style: 'syllables', range: 1.2, formant: 1.35 },
+  tumblesoil: { hz: 118, speed: 0.6, wave: 'sine', wobble: 0.3, breath: 0.2, formant: 1.18 },
+  saxifrage: { hz: 108, speed: 0.7, wave: 'triangle', style: 'words', range: 0.5, wobble: 0.2, formant: 1.03 },
+  ernie: { hz: 86, speed: 0.8, wave: 'saw', style: 'syllables', wobble: 0.25, formant: 0.86 },
+  midge: { hz: 156, speed: 1.6, wave: 'square', style: 'letters', range: 1.5, formant: 1.22 },
+  cass: { hz: 100, speed: 1.0, wave: 'square', style: 'words', sub: 0.6, formant: 0.94 },
+  // E22 act IV cast ('burdock' below is the Speedway's Burdock, a different gnome: the ranger is 'burdock haybright').
+  'burdock haybright': { hz: 86, speed: 0.7, wave: 'sine', style: 'words', range: 0.35, glide: -0.1, formant: 0.97 },
+  yarrow: { hz: 100, speed: 0.6, wave: 'sine', style: 'words', range: 0.3, formant: 0.89 },
+  hector: { hz: 114, speed: 1.35, wave: 'saw', style: 'letters', range: 0.5, glide: -0.2, breath: 0.1, formant: 1.27 },
+  velma: { hz: 138, speed: 1.45, wave: 'triangle', style: 'syllables', range: 1.5, glide: 0.3, formant: 1.18 },
+  // Never seen: the radio voice out of the Loamdeep tunnels (no CAST preset).
+  'dj moleman': { hz: 160, speed: 1.1, wave: 'triangle', style: 'letters', range: 1.3, glide: 0.2, breath: 0.2, formant: 1.31 },
   // ---- speakers without a cast preset ----
   narrator: { hz: 130, wave: 'triangle', speed: 0.8, range: 0.6, glide: -0.3, bright: 2200, formant: 0.95 },
   'mayor mulch': { hz: 108, range: 1.8, speed: 1.2, wave: 'square', formant: 0.8 },
@@ -51,6 +89,16 @@ export const VOICES: Readonly<Record<string, VoiceSpec>> = {
   dock: { hz: 90, wave: 'sine', style: 'words', speed: 0.8 },
   marigold: { hz: 124, wave: 'triangle', glide: 0.2, formant: 0.85, speed: 1.0 },
   tattler: { hz: 136, wave: 'square', speed: 1.45, glide: 0.3, formant: 1.3 },
+  // Act III (E21). 'thermos theo' and 'dj moleman' are above.
+  gentian: { hz: 124, speed: 1.45, wave: 'square', style: 'words', range: 1.7, glide: 0.35, formant: 1.04 },
+  chanterelle: { hz: 120, speed: 1.1, wave: 'square', style: 'letters', range: 0.35, q: 10, formant: 1.37 },
+  ragwort: { hz: 114, speed: 0.95, wave: 'sine', style: 'letters', range: 0.3, glide: -0.2, formant: 0.97 },
+  clary: { hz: 90, speed: 0.75, wave: 'saw', style: 'words', range: 0.4, glide: -0.5, sub: 0.8, formant: 0.89 },
+  marram: { hz: 138, speed: 1.7, wave: 'triangle', style: 'letters', range: 1.8, glide: 0.4, formant: 1.17 },
+  samphire: { hz: 82, speed: 0.8, wave: 'saw', style: 'syllables', range: 1.9, wobble: 0.15, sub: 0.9, formant: 0.81 },
+  betony: { hz: 110, speed: 0.85, wave: 'triangle', style: 'letters', range: 1.2, breath: 0.1, glide: -0.3, formant: 1.01 },
+  lovage: { hz: 94, speed: 0.7, wave: 'sine', style: 'words', range: 0.9, wobble: 0.1, formant: 0.93 },
+  'silt-diver sal': { hz: 98, speed: 1.3, wave: 'saw', style: 'letters', breath: 0.35, wobble: 0.2, formant: 0.84 },
 };
 
 type Wave = NonNullable<VoiceSpec['wave']>;

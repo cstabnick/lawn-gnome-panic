@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import type { Economy } from './economy';
 import type { Blip, Fx, Hud, Player, Sfx, Vehicle, Watch, World } from './types';
+import { buildPrefab } from '@lawn/prefabs';
 import { heightAt } from './terrain';
 
 const SPEED_TRAP_TRIGGER_DIST = 14;
@@ -12,8 +13,21 @@ const SPEED_TRAP_HEAT = 0.5;
 
 const SPRINKLER_CYCLE = 9;
 const SPRINKLER_ACTIVE_DURATION = 3.5;
+const SPRINKLER_TELEGRAPH = 0.8; // the head wobbles this long before each spray
 const SPRINKLER_RADIUS = 2.6;
-const SPRINKLER_LAUNCH_VY = 6.5;
+const SPRINKLER_LAUNCH_VY = 4.5;
+const SPRINKLER_HEAD_SCALE = 2.2;
+const SPRINKLER_LIFT = 0.02; // the head's base sits just above the ground plane, never inside it
+
+// Spray droplets: a short low fan. The peak height above the nozzle is SPRAY_PEAK (about 1.5 m off the ground in total).
+export const SPRAY_DROPLETS = 24;
+const SPRAY_GRAVITY = 9.8;
+export const SPRAY_PEAK = 1.4;
+const SPRAY_VY_MAX = Math.sqrt(2 * SPRAY_GRAVITY * SPRAY_PEAK);
+const SPRAY_NOZZLE_Y = 0.1;
+const SPRAY_SPEED = 2.4;
+const SPRAY_SPIN_RATE = 1.6;
+const SPRAY_RADIUS = 0.06;
 
 const MICRO_ENCOUNTER_RADIUS = 9;
 const MICRO_ENCOUNTER_COOLDOWN = 25;
@@ -28,7 +42,12 @@ interface SprinklerGeyser {
   x: number;
   z: number;
   phaseOffset: number;
-  jet: THREE.Mesh;
+  head: THREE.Group;
+  spray: THREE.InstancedMesh;
+  pos: Float32Array; // droplet positions, local to the nozzle: x y z per droplet
+  vel: Float32Array; // droplet velocities: x y z per droplet
+  spin: number;
+  live: boolean; // true while a spray is running
   toastCooldown: number;
 }
 
@@ -112,34 +131,73 @@ function buildSpeedCamera(scene: THREE.Scene, x: number, z: number, yaw: number)
   return { x, z, cooldown: 0 };
 }
 
-function buildSprinkler(scene: THREE.Scene, x: number, z: number, phaseOffset: number): SprinklerGeyser {
-  const group = new THREE.Group();
-  group.position.set(x, heightAt(x, z), z);
+const sprayDummy = new THREE.Object3D();
 
-  const head = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.32, 0.44, 0.25, 10),
-    new THREE.MeshLambertMaterial({ color: 0x3b7a57 }),
-  );
-  head.position.y = 0.12;
+/** Put droplet i back at the nozzle, flung out along the fan's current angle with a varied rise (never above SPRAY_PEAK). */
+function launchDroplet(sp: SprinklerGeyser, i: number): void {
+  const angle = sp.spin + (i / SPRAY_DROPLETS) * Math.PI * 2;
+  const rise = 0.6 + 0.4 * ((i * 0.37) % 1);
+  const speed = SPRAY_SPEED * (0.8 + 0.2 * ((i * 0.61) % 1));
+  const o = i * 3;
+  sp.pos[o] = 0;
+  sp.pos[o + 1] = SPRAY_NOZZLE_Y;
+  sp.pos[o + 2] = 0;
+  sp.vel[o] = Math.cos(angle) * speed;
+  sp.vel[o + 1] = SPRAY_VY_MAX * rise;
+  sp.vel[o + 2] = Math.sin(angle) * speed;
+}
+
+function buildSprinkler(scene: THREE.Scene, x: number, z: number, phaseOffset: number): SprinklerGeyser {
+  const ground = heightAt(x, z);
+  const group = new THREE.Group();
+  group.position.set(x, ground, z);
+  scene.add(group);
+
+  const head = buildPrefab('lawn-sprinkler', { scale: SPRINKLER_HEAD_SCALE });
+  head.position.y = SPRINKLER_LIFT;
   group.add(head);
 
-  const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.18, 0.12, 8),
-    new THREE.MeshLambertMaterial({ color: 0xd9a738 }),
+  // One instanced mesh for the whole fan. It sits at the nozzle in world space, so it does not wobble with the head.
+  const spray = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(SPRAY_RADIUS, 6, 4),
+    new THREE.MeshLambertMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.8 }),
+    SPRAY_DROPLETS,
   );
-  cap.position.y = 0.28;
-  group.add(cap);
+  spray.position.set(x, ground, z);
+  spray.frustumCulled = false;
+  spray.visible = false;
+  scene.add(spray);
 
-  const jet = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.85, 4.4, 12),
-    new THREE.MeshLambertMaterial({ color: 0x7ce8ff, transparent: true, opacity: 0.65 }),
-  );
-  jet.position.y = 2.3;
-  jet.visible = false;
-  group.add(jet);
+  const sp: SprinklerGeyser = {
+    x,
+    z,
+    phaseOffset,
+    head,
+    spray,
+    pos: new Float32Array(SPRAY_DROPLETS * 3),
+    vel: new Float32Array(SPRAY_DROPLETS * 3),
+    spin: 0,
+    live: false,
+    toastCooldown: 0,
+  };
+  for (let i = 0; i < SPRAY_DROPLETS; i++) launchDroplet(sp, i);
+  return sp;
+}
 
-  scene.add(group);
-  return { x, z, phaseOffset, jet, toastCooldown: 0 };
+/** Step the fan's droplets (allocation-free): gravity, landing respawns at the nozzle, then write the instance matrices. */
+function updateSpray(sp: SprinklerGeyser, dt: number): void {
+  for (let i = 0; i < SPRAY_DROPLETS; i++) {
+    const o = i * 3;
+    sp.vel[o + 1] -= SPRAY_GRAVITY * dt;
+    sp.pos[o] += sp.vel[o] * dt;
+    sp.pos[o + 1] += sp.vel[o + 1] * dt;
+    sp.pos[o + 2] += sp.vel[o + 2] * dt;
+    if (sp.pos[o + 1] <= 0) launchDroplet(sp, i);
+    sprayDummy.position.set(sp.pos[o], sp.pos[o + 1], sp.pos[o + 2]);
+    sprayDummy.updateMatrix();
+    sp.spray.setMatrixAt(i, sprayDummy.matrix);
+  }
+  sp.spray.instanceMatrix.needsUpdate = true;
 }
 
 function buildMicroProp(scene: THREE.Scene, spot: (typeof MICRO_SPOTS)[number]): MicroEncounter {
@@ -231,9 +289,23 @@ export function createEncounters(
         if (sp.toastCooldown > 0) sp.toastCooldown = Math.max(0, sp.toastCooldown - dt);
         const phase = (elapsed + sp.phaseOffset) % SPRINKLER_CYCLE;
         const active = phase < SPRINKLER_ACTIVE_DURATION;
-        sp.jet.visible = active;
-        if (!active) continue;
-        sp.jet.scale.y = 0.85 + 0.25 * Math.sin(elapsed * 18 + sp.phaseOffset);
+        const warning = !active && phase >= SPRINKLER_CYCLE - SPRINKLER_TELEGRAPH;
+        // Telegraph: the head shudders for the last SPRINKLER_TELEGRAPH seconds before it fires.
+        sp.head.rotation.z = warning ? Math.sin(elapsed * 40 + sp.phaseOffset) * 0.1 : 0;
+        sp.spray.visible = active;
+        if (!active) {
+          sp.live = false;
+          sp.head.rotation.y = 0;
+          continue;
+        }
+        if (!sp.live) {
+          // Each spray starts fresh from the nozzle.
+          sp.live = true;
+          for (let i = 0; i < SPRAY_DROPLETS; i++) launchDroplet(sp, i);
+        }
+        sp.spin += dt * SPRAY_SPIN_RATE;
+        sp.head.rotation.y = sp.spin;
+        updateSpray(sp, dt);
 
         for (const v of vehicles) {
           if (v.spec.flies || v.exploded) continue;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { groundHeight, pushOutOfBoxes, sweepCircleBoxes, wallBounce } from './collide';
+import { capsuleGap, groundHeight, insideBox, pushOutOfBoxes, roundBox, sweepCapsuleBoxes, sweepCircleBoxes, vehicleCapsule, wallBounce } from './collide';
+import { VEHICLES } from './config';
 import type { Box } from './types';
 
 describe('swept circle vs boxes', () => {
@@ -77,5 +78,83 @@ describe('rooftop groundHeight', () => {
   it('ignores roofs taller than maxY + step tolerance', () => {
     expect(groundHeight(20, 20, 0.35, boxes, 12)).toBe(12);
     expect(groundHeight(12, 12, 0.35, boxes, 0)).toBe(0);
+  });
+});
+
+describe('round colliders (Box.shape round)', () => {
+  it('a circle slides round a round box instead of catching on its bounding square corner', () => {
+    const boxes = [roundBox(0, 0, 2, 5)];
+    // (2.4, 2.4) is inside the square grown by r (corner at (2, 2)) but clear of the circle (distance 3.39 > 3).
+    expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(false);
+    const p = pushOutOfBoxes(2, 0.5, 1, boxes, 0);
+    expect(p.hit).toBe(true);
+    expect(Math.hypot(p.x, p.z)).toBeCloseTo(3, 6);
+    expect(Math.hypot(p.nx, p.nz)).toBeCloseTo(1, 6);
+  });
+
+  it('insideBox and groundHeight treat a round box as a circle', () => {
+    const boxes = [roundBox(0, 0, 2, 5)];
+    expect(insideBox(1.9, 1, 0, boxes)).toBe(true);
+    expect(insideBox(1.6, 1, 1.6, boxes)).toBe(false);
+    expect(groundHeight(1.6, 1.6, 0.1, boxes, 10)).toBeLessThan(5);
+    expect(groundHeight(0.5, 0.5, 0.1, boxes, 10)).toBe(5);
+  });
+
+  it('a square box keeps its old behaviour (no shape field)', () => {
+    const boxes: Box[] = [{ minX: -2, maxX: 2, minZ: -2, maxZ: 2, h: 5 }];
+    expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(true);
+  });
+});
+
+describe('vehicle capsule (D36)', () => {
+  const box = (minX: number, maxX: number, minZ: number, maxZ: number): Box => ({ minX, maxX, minZ, maxZ, h: 3 });
+
+  it('vehicleCapsule: width from halfWidth, ends reach spec.radius', () => {
+    const van = vehicleCapsule(VEHICLES['hoa-van']);
+    expect(van.r).toBeCloseTo(1.24, 5);
+    expect(van.off).toBeCloseTo(0.86, 5);
+    const bike = vehicleCapsule(VEHICLES['dirt-bike']);
+    expect(bike.r).toBeCloseTo(0.43, 5);
+    expect(bike.off).toBeCloseTo(0.47, 5);
+    const flyer = Object.values(VEHICLES).find((s) => s.halfWidth === undefined)!;
+    expect(vehicleCapsule(flyer)).toEqual({ r: flyer.radius, off: 0 });
+  });
+
+  it('off 0 equals sweepCircleBoxes on the thin wall', () => {
+    const wall = [box(-5, 5, 0, 0.2)];
+    const a = sweepCapsuleBoxes(0, -1.2, 0, 1.4, 0, { r: 0.9, off: 0 }, wall, 0);
+    expect(a).toEqual(sweepCircleBoxes(0, -1.2, 0, 1.4, 0.9, wall, 0));
+  });
+
+  it('a dirt bike threads a 1.2 m gap', () => {
+    const walls = [box(-5, -0.6, 0, 0.4), box(0.6, 5, 0, 0.4)];
+    const s = sweepCapsuleBoxes(0, -3, 0, 3, 0, vehicleCapsule(VEHICLES['dirt-bike']), walls, 0);
+    expect(s.hit).toBe(false);
+    expect(s.z).toBeCloseTo(3, 5);
+  });
+
+  it('a van slides along a wall within 0.15 m of its body', () => {
+    const wall = [box(2, 4, -50, 50)];
+    const x0 = 2 - 1.19 - 0.1;
+    const s = sweepCapsuleBoxes(x0, 0, x0 + 0.5, 10, 0, vehicleCapsule(VEHICLES['hoa-van']), wall, 0);
+    expect(2 - (s.x + 1.19)).toBeLessThanOrEqual(0.15);
+    expect(s.z).toBeGreaterThan(9);
+  });
+
+  it('a capsule turned 90 degrees is pushed out by its length, not its width', () => {
+    const wall = [box(2, 4, -50, 50)];
+    const c = vehicleCapsule(VEHICLES['hoa-van']);
+    const s = sweepCapsuleBoxes(0, 0, 1, 0, Math.PI / 2, c, wall, 0);
+    expect(s.hit).toBe(true);
+    expect(s.x).toBeCloseTo(2 - c.r - c.off, 2);
+  });
+
+  it('capsuleGap measures segment to segment', () => {
+    const c = { r: 1, off: 2 };
+    const g = capsuleGap(0, 0, 0, c, 5, 0, 0, c);
+    expect(g.dist).toBeCloseTo(5, 5);
+    expect(g.nx).toBeCloseTo(1, 5);
+    const h = capsuleGap(0, 0, 0, c, 0, 5, 0, c); // nose to tail
+    expect(h.dist).toBeCloseTo(1, 5);
   });
 });

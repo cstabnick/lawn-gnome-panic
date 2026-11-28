@@ -32,16 +32,19 @@ describe('vehicle solvers', () => {
     }
   }, 60_000);
 
-  it('chase-follow: prologue-fresh-kiln objective 0 keeps up with the leader', async () => {
-    const obj = objOf('prologue-fresh-kiln', 'chase-follow', 0);
-    const s = await objectiveSession(sim, obj);
-    try {
-      await chaseFollowSolver.solve(obj, s, { questId: TEST_QUEST, step: 0, budget: 600 });
-      expect(stepDone(s, TEST_QUEST, 0)).toBe(true);
-    } finally {
-      s.dispose();
-    }
-  }, 60_000);
+  // The trail follower (2.5 s behind the leader, one 12 s lag episode) finishes every follow quest with no long stall.
+  for (const [questId, index] of [['prologue-fresh-kiln', 0], ['ch1-two-coat-tail', 0], ['ch4-spade-truce', 0], ['sq-hum-at-three', undefined]] as const) {
+    it(`chase-follow: ${questId} finishes with the trail follower`, async () => {
+      const obj = objOf(questId, 'chase-follow', index);
+      const s = await objectiveSession(sim, obj);
+      try {
+        await chaseFollowSolver.solve(obj, s, { questId: TEST_QUEST, step: 0, budget: 600 });
+        expect(stepDone(s, TEST_QUEST, 0)).toBe(true);
+      } finally {
+        s.dispose();
+      }
+    }, 120_000);
+  }
 
   it('convoy-ambush: ch2-dew-run clears the escorts and delivers, or reports a game bug', async () => {
     const obj = objOf('ch2-dew-run', 'convoy-ambush');

@@ -35,6 +35,7 @@ export const SKYWAY_JOB_INTRO: SceneScript = {
   steps: [
     // Establishing: the board, the desk and the stop. Dot points at the board while Grout steps up.
     { do: 'cam', shot: stageCut(EXCHANGE, 'wide') },
+    { do: 'sfx', id: 'paper', at: 'dot', async: true },
     { do: 'gesture', who: 'dot', name: 'point', s: 1.2, async: true },
     { do: 'wait', s: 1.5 },
     cut(TALK.single('grout', 'mcu')),
@@ -49,7 +50,8 @@ export const SKYWAY_JOB_INTRO: SceneScript = {
     { do: 'say', who: 'you', text: 'Then we take the Skyway.' },
     cut(TALK.single('grout', 'mcu')),
     { do: 'say', who: 'grout', text: 'Beat the van to the east off-ramp. Simple.' },
-    // Dot, from behind her desk, with the kerb-side vehicle as her pointing point.
+    // Dot, from behind her desk, with the kerb-side vehicle as her pointing point; the keys jingle first.
+    { do: 'sfx', id: 'keys', at: 'dot', async: true },
     cut(DOT_TALK.single('dot', 'mcu')),
     { do: 'say', who: 'dot', text: 'Zero-Turn\'s at the kerb. Racing stripe. Don\'t scratch it.' },
     cut(DOT_TALK.single('you', 'mcu')),
@@ -78,6 +80,7 @@ export const SKYWAY_JOB_OUTRO: SceneScript = {
   steps: [
     // Establishing: the yard at golden hour, the van pulled up, and the hand-over at once.
     { do: 'cam', shot: stageCut(YARD, 'wide') },
+    { do: 'sfx', id: 'paper', at: 'you', async: true },
     { do: 'give', from: 'you', to: 'grout', prop: 'ledger', s: 1.2 },
     cut(TALK.single('grout', 'mcu')),
     { do: 'say', who: 'grout', text: 'Ledger. Every penny of the strike fund.' },
@@ -93,6 +96,7 @@ export const SKYWAY_JOB_OUTRO: SceneScript = {
     cut(TALK.single('grout', 'mcu')),
     { do: 'say', who: 'grout', text: 'The Skyway\'s paid for, brother. Every lane of it.' },
     cut(shot('burt', 'mcu', { toward: 'grout' })),
+    { do: 'sfx', id: 'clink', at: 'burt', async: true },
     { do: 'gesture', who: 'burt', name: 'cheer', s: 1.6 },
     beat('pause'),
   ],

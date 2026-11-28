@@ -15,9 +15,10 @@
 /** sea: the host's wave clock and sea state (online/seaSync.ts, docs/roadmaps/gta-water-waves.md). */
 /** park: stationary vehicles that were moved, taken, damaged, stored or left behind (online/parkSync.ts,
  *  docs/roadmaps/gta-multiplayer-audit.md). */
-export const SYS = { quarry: 0, flock: 1, sky: 2, event: 3, sling: 4, act: 5, cab: 6, pax: 7, tow: 8, sea: 9, park: 10 } as const;
+/** race: each player's street-race / race-mode lobby and progress (online/raceSync.ts, docs/roadmaps/gta-batch-3/E26/contracts.md). */
+export const SYS = { quarry: 0, flock: 1, sky: 2, event: 3, sling: 4, act: 5, cab: 6, pax: 7, tow: 8, sea: 9, park: 10, race: 11 } as const;
 export type SysCode = (typeof SYS)[keyof typeof SYS];
-export const SYS_COUNT = 11;
+export const SYS_COUNT = 12;
 
 export type WireMsg =
   | { o: 'ent'; y: SysCode; t: number; e: number[][]; s?: [number, string][]; g?: number[] }

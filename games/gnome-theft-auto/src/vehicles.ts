@@ -3,20 +3,22 @@ import * as THREE from 'three';
 import { buildPrefab, colorOf, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
 import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
-import { clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
+import { capsuleGap, clampToWorld, sweepCapsuleBoxes, vehicleCapsule, wallBounce } from './collide';
 import { seatPos } from './seats';
 import { coverLift } from './seatCover';
 import { surfaceAt } from './surfaces';
 import { aboveGround, groundAt, heightAt, normalAt } from './terrain';
 import { floatHeight, initBoat, stepBoat } from './boats';
 import { checkSink } from './swim';
+import { hopVelocity, SKIM, skimSurfaceAt, stepSkim } from './skim';
 import { GLAZE_KINDS, isCraftKind } from './glazeStore';
-import { initAir } from './craft/flight';
+import { initAir, PLANE_REVERSE_FRAC } from './craft/flight';
 import { stepAircraft } from './craft/aircraft';
 import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
+import { bodyRollOf, stepBodyRoll } from './bodyRoll';
 import { poseControl, registerDriveControls } from './driveGrips';
 import { clearWaterlog, waterlogSpeedMult } from './waterlog';
-import { stripLooseParts } from './debris';
+import { forgetLostParts, hideLostParts, restoreLostParts, stripLooseParts } from './debris';
 import {
   attachLoadout, buildGlazeBody, defaultLoadout, normalizeLoadout, resolveBodyPrefab, setWheelPose, type GlazeRig, type Loadout,
 } from '@lawn/glaze';
@@ -35,6 +37,8 @@ interface Pivots {
   handle?: THREE.Object3D;
   steer?: THREE.Object3D;
   reel?: THREE.Object3D;
+  /** The Dewdrop's clear ball: rolls with the distance driven while the seat frame stays upright. */
+  ball?: THREE.Object3D;
   rotor?: THREE.Object3D;
   tailRotor?: THREE.Object3D;
   /** A fixed-wing plane's propeller (spins about its local z axis). */
@@ -56,6 +60,8 @@ const ROTOR_SPIN_DOWN = ROTOR_SPIN / 2;
 const PROP_SPIN = 40;
 const PROP_SPIN_DOWN = PROP_SPIN / 2;
 const WHEEL_RADIUS = 0.3;
+/** The Dewdrop's ball radius in world metres (prefab 0.73 x scale 1.5), so the roll matches the distance driven. */
+const BALL_ROLL_RADIUS = 1.1;
 /** A wall hit below this speed (units/s) does no damage; above it, each unit of speed over costs 1/CRASH_SCALE of the hit points. */
 export const CRASH_MIN = 5;
 export const CRASH_SCALE = 45;
@@ -81,6 +87,7 @@ function capturePivots(body: THREE.Object3D, rotorSpin: number, propSpin: number
     handle,
     steer,
     reel: body.getObjectByName('reel'),
+    ball: body.getObjectByName('ball'),
     rotor: body.getObjectByName('rotor'),
     tailRotor: body.getObjectByName('tail-rotor'),
     prop: body.getObjectByName('prop'),
@@ -102,9 +109,17 @@ export interface PartsHooks {
   beforeDamage(v: Vehicle, body: THREE.Group, fromLevel: number, toLevel: number): void;
   /** v was just blown up (explodeVehicle), before its materials are charred. */
   exploded(v: Vehicle): void;
+  /** A hard hit on v's side (nx, nz), a unit direction from the vehicle centre toward the hit, at `impact` m/s. */
+  knock?(v: Vehicle, nx: number, nz: number, impact: number): void;
 }
 let partsHooks: PartsHooks | null = null;
 export function setPartsHooks(h: PartsHooks | null): void { partsHooks = h; }
+
+/** A hard hit on v's side (nx, nz) toward the hit: a loose part may come off there (the hooks decide). Exploded wrecks skip it. */
+export function knockParts(v: Vehicle, nx: number, nz: number, impact: number): void {
+  if (v.exploded) return;
+  partsHooks?.knock?.(v, nx, nz, impact);
+}
 
 /** Damage level for a hit-point fraction: with n stages, hp 1 is level 0 and the levels split the rest evenly (0 hp = wrecked). */
 export function damageLevelFor(hp: number, stages: number): number {
@@ -122,6 +137,8 @@ function applyDamageLevel(v: Vehicle, level: number): void {
   stripLooseParts(body);
   // setPrefabDamage rebuilt the body's children: dress them again.
   v.rig?.apply();
+  // Parts knocked off earlier stay off through the rebuild.
+  hideLostParts(v);
   v.damage = level;
   // The rebuilt model has new pivot objects: pick them up again (keeping the rotor and propeller spin).
   pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
@@ -170,10 +187,23 @@ export function explodeVehicle(v: Vehicle): void {
   });
 }
 
+/** Mend some hit points (0..1 scale), capped at 1; the model steps back down the damage levels it no longer has (E08 Rust Oil). */
+export function mendVehicle(v: Vehicle, amount: number): void {
+  if (amount <= 0 || v.exploded) return;
+  v.hp = Math.min(1, v.hp + amount);
+  const stages = prefabDamageLevels(getPrefab(v.spec.prefab)!);
+  if (stages === 0) return;
+  const level = damageLevelFor(v.hp, stages);
+  if (level !== v.damage) applyDamageLevel(v, level);
+}
+
 /** Back to new: full hit points and the undamaged model. */
 export function repairVehicle(v: Vehicle): void {
   v.hp = 1;
   clearWaterlog(v);
+  // Knocked-off parts come back on repair: show them (a repair at damage 0 does not rebuild), then forget them.
+  restoreLostParts(v);
+  forgetLostParts(v);
   if (v.damage !== 0) applyDamageLevel(v, 0);
 }
 
@@ -230,10 +260,23 @@ function buildHeadlights(radius: number): THREE.Group {
   return g;
 }
 
-/** Switch every vehicle's headlights to `on` (dusk and night); `forceOn` is one vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview). */
-export function setVehicleHeadlights(vehicles: Vehicle[], on: boolean, forceOn: Vehicle | null = null): void {
+/** Night factors over which headlights come on, one vehicle at a time (L02): each vehicle's own threshold is in here. */
+export const HEADLIGHT_DUSK: readonly [number, number] = [0.3, 0.6];
+
+/** The night factor at which vehicle `id` switches its lamps on: a fixed hash of the id spread over HEADLIGHT_DUSK. Pure. */
+export function headlightThreshold(id: number): number {
+  const h = Math.sin(id * 12.9898 + 78.233) * 43758.5453;
+  return HEADLIGHT_DUSK[0] + (HEADLIGHT_DUSK[1] - HEADLIGHT_DUSK[0]) * (h - Math.floor(h));
+}
+
+/**
+ * Headlights by the night factor (0 day .. 1 night): each vehicle switches on at its own threshold (headlightThreshold),
+ * so lamps come on one by one over dusk instead of all at once. Pass 1 to light every lamp, 0 for none. `forceOn` is one
+ * vehicle shown lit regardless (the Pay 'n' Glaze showroom's beam preview).
+ */
+export function setVehicleHeadlights(vehicles: Vehicle[], night: number, forceOn: Vehicle | null = null): void {
   for (const v of vehicles) {
-    if (v.headlights) v.headlights.visible = (on || v === forceOn) && !v.exploded;
+    if (v.headlights) v.headlights.visible = (night >= headlightThreshold(v.id) || v === forceOn) && !v.exploded;
   }
 }
 
@@ -249,7 +292,7 @@ export function setDoorOpen(v: Vehicle, pivot: string, open: number): void {
 const dressed = (spec: Vehicle['spec']): boolean => GLAZE_KINDS.includes(spec.kind);
 
 /** The four kinds the game always tinted with the caller's colour; the other dressed kinds keep their prefab's own colours, whatever tint a caller passes (it was never drawn for them). */
-const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider', 'golf-cart'];
+const TINTED_KINDS: readonly string[] = ['push-bike', 'ride-on', 'zero-turn', 'lowrider', 'golf-cart', 'dirt-bike'];
 
 /** The paint a dressed vehicle starts in: the tinted kinds wear the caller's tint (else the first mower tint); the rest wear their prefab's own tint, so they look exactly as before. */
 function stockPaint(spec: Vehicle['spec'], tint?: number): number {
@@ -363,10 +406,13 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   const g = groundAt(v.x, v.z, v.y);
   const air = v.y - g > 0.05;
 
-  // Throttle. Planes never reverse: brakes stop them at zero.
+  // Throttle. In the air planes never reverse; on the ground, nearly stopped, the brake backs them up slowly.
+  const backMax = PLANE_REVERSE_FRAC * spec.maxSpeed;
   if (c.throttle > 0) v.speed = Math.min(spec.maxSpeed, v.speed + spec.accel * c.throttle * dt);
-  else if (c.throttle < 0) v.speed = Math.max(0, v.speed - 1.5 * spec.accel * dt);
-  else v.speed *= Math.pow(air ? 0.93 : 0.5, dt);
+  else if (c.throttle < 0) {
+    if (!air && v.speed <= 1) v.speed = Math.max(-backMax, v.speed - 0.15 * spec.accel * -c.throttle * dt);
+    else v.speed = Math.max(0, v.speed - 1.5 * spec.accel * dt);
+  } else v.speed *= Math.pow(air ? 0.93 : 0.5, dt);
 
   // Vertical. Lift authority grows from 0 at 0.7 stall to full at stall.
   const auth = clamp((v.speed - 0.7 * stall) / (0.3 * stall), 0, 1);
@@ -394,9 +440,13 @@ function stepPilotedPlane(v: Vehicle, c: DriveControls, dt: number): void {
   }
 
   // Steering: no turning while nearly stopped, and none on the ground below speed 3.
-  const gate = !air && v.speed < 3 ? 0 : clamp(v.speed / stall, 0, 1);
-  v.yaw -= c.steer * spec.turnRate * dt * gate;
+  const aSpeed = Math.abs(v.speed);
+  const gate = !air ? (aSpeed >= 3 ? clamp(aSpeed / stall, 0, 1) : aSpeed > 0.3 ? 0.35 : 0) : clamp(v.speed / stall, 0, 1);
+  v.yaw -= c.steer * spec.turnRate * dt * gate * (v.speed < 0 ? -1 : 1);
 }
+
+/** Arcade ground vehicles in the air (ramp jumps, hops): downward pull in m/s^2. Landing snaps to the ground, no bounce. */
+export const ARCADE_AIR = { gravity: 30 };
 
 /** Every vehicle that is not a piloted plane: ground vehicles, the Whirligig, and unpiloted flyers. */
 function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void {
@@ -408,7 +458,18 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
   const maxSpd = spec.maxSpeed * (surf?.speedMult ?? 1) * (boostOn ? 1.32 : 1) * waterlogSpeedMult(v);
   const acc = spec.accel * (surf?.accelMult ?? 1) * (boostOn ? 1.6 : 1);
   const turnRate = spec.turnRate * (surf?.turnMult ?? 1);
-  const g = groundAt(v.x, v.z, v.y);
+  let g = groundAt(v.x, v.z, v.y);
+
+  // Skimming across deep water at speed (skim.ts): the water surface is the floor, no engine drive, speed bleeds, hops.
+  let skimming = false;
+  if (!flying && !v.sunk && !v.exploded) {
+    skimming = stepSkim(v, Math.abs(v.speed), v.y, Math.abs(v.speed) * dt, dt);
+    if (skimming) {
+      g = Math.max(g, skimSurfaceAt(v.x, v.z) ?? g);
+      if (v.skim?.event === 'bounce') { v.vy = hopVelocity(v.speed); v.speed *= SKIM.hopKeep; }
+      v.speed *= SKIM.dragPerS ** dt;
+    }
+  }
 
   // Vertical (flyers only).
   if (flying) {
@@ -420,7 +481,7 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
     else if (v.y >= ceiling) { v.y = ceiling; v.vy = 0; }
   } else if (v.y > g || v.vy > 0) {
     // Lowrider hydraulic hop / trip-mine fling arc on ground vehicles.
-    v.vy -= 22 * dt;
+    v.vy -= ARCADE_AIR.gravity * dt;
     v.y += v.vy * dt;
     if (v.y <= g) {
       v.y = g;
@@ -440,7 +501,9 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
   // Forward / reverse / coasting. A flyer only gets its throttle above the pad (it can lift off from the pad, nothing more).
   const drag = flying ? FLY.drag : GROUND_DRAG;
   const canDrive = !flying || aboveGround(v.x, v.y, v.z) > 0.3;
-  if (c.throttle > 0 || boostOn) {
+  if (skimming && c.throttle >= 0) {
+    // No engine drive and no coasting drag on the water: only the skim drag above slows it.
+  } else if (c.throttle > 0 || boostOn) {
     const th = boostOn ? Math.max(0.85, c.throttle) : c.throttle;
     if (canDrive) v.speed = Math.min(maxSpd, v.speed + acc * th * dt);
   } else if (c.throttle < 0) {
@@ -455,7 +518,7 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 
   // Steering: the yaw rate needs grip from rolling speed, except the zero-turn and flyers, which always have it.
   const grip = spec.kind === 'zero-turn' || flying ? 1 : Math.min(1, Math.abs(v.speed) / 4);
-  v.yaw -= c.steer * turnRate * dt * grip * Math.sign(v.speed || 1);
+  v.yaw -= c.steer * turnRate * dt * grip * (skimming ? SKIM.steer : 1) * Math.sign(v.speed || 1);
 
   // Lateral surface slide on ice, snow, or loose sand when turning at speed.
   if (surf && surf.lateralGrip < 0.95 && Math.abs(v.speed) > 4 && Math.abs(c.steer) > 0.1) {
@@ -471,24 +534,26 @@ function stepOther(v: Vehicle, c: DriveControls, dt: number, world: World): void
 /** Move along forward, collide with boxes (flyers above a box pass over it), then keep inside the world. */
 function moveVehicle(v: Vehicle, dt: number, world: World): void {
   // A ground vehicle that is not airborne (before the move) follows the hill after it.
-  const grounded = !v.spec.flies && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
+  const grounded = !v.spec.flies && !v.skim?.active && v.vy <= 0 && aboveGround(v.x, v.y, v.z) <= 0.15;
   const x0 = v.x, z0 = v.z;
   // Move along forward + any lateral surface slide. y stays where the vertical step left it.
   v.x += (Math.sin(v.yaw) * v.speed + (v.slideX ?? 0)) * dt;
   v.z += (Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0)) * dt;
 
   // Collide with boxes along the whole move (flyers above a box pass over it), then keep inside the world.
-  const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+  const sw = sweepCapsuleBoxes(x0, z0, v.x, v.z, v.yaw, vehicleCapsule(v.spec), world.boxes, v.y);
   v.x = sw.x;
   v.z = sw.z;
   if (sw.hit) {
     const vel = { x: Math.sin(v.yaw) * v.speed + (v.slideX ?? 0), z: Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0) };
-    const b = wallBounce(vel.x, vel.z, sw.nx, sw.nz);
+    // The Dewdrop is a rubbery ball: it rebounds off walls and kerbs keeping about 45% of the speed.
+    const b = v.kind === 'bubble-mobile' ? wallBounce(vel.x, vel.z, sw.nx, sw.nz, 0.45, 0.2) : wallBounce(vel.x, vel.z, sw.nx, sw.nz);
     v.speed = b.vx * Math.sin(v.yaw) + b.vz * Math.cos(v.yaw);
     v.slideX = 0;
     v.slideZ = 0;
     if (v.driver === 'player' && b.impact > 6) play('bump');
     if (b.impact > CRASH_MIN) damageVehicle(v, (b.impact - CRASH_MIN) / CRASH_SCALE);
+    knockParts(v, -sw.nx, -sw.nz, b.impact);
   }
   const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
   v.x = kept.x;
@@ -501,6 +566,8 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
 const suspensionBodies = new WeakMap<Vehicle, SuspensionBody>();
 const suspensionOut = { heave: 0, pitch: 0, roll: 0 };
 const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
+const bankQ = new THREE.Quaternion();
+const BANK_AXIS = new THREE.Vector3(0, 0, 1);
 
 /** Frame number from beginVehicleFrame (0 until app.ts calls it: then every sync steps, as in tests). */
 let meshFrame = 0;
@@ -526,10 +593,13 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     roll = v.steerVis * 0.35;
     pitch = clamp(v.speed / spec.maxSpeed, -1, 1) * 0.15;
   }
+  // Visual body roll (bodyRoll.ts, D31): a two-wheeler banks into the turn, a soft car without a rig rolls a little.
+  const bank = !spec.flies && !spec.boat ? bodyRollOf(v).bank : 0;
   if (v.sim) {
     const s = v.sim;
     v.object.position.set(s.px, s.py, s.pz);
     v.object.quaternion.set(s.qx, s.qy, s.qz, s.qw);
+    if (bank !== 0) v.object.quaternion.multiply(bankQ.setFromAxisAngle(BANK_AXIS, bank));
   } else {
     v.object.position.set(v.x, v.y, v.z);
     // A boat pitches and rolls on the water (boats.ts); a ground vehicle on a slope tilts onto the ground normal.
@@ -545,7 +615,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
         roll = Math.atan2(-(n.x * c - n.z * s), n.y);
       }
     }
-    v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+    v.object.rotation.set(pitch, v.yaw, roll + bank, 'YXZ');
   }
 
   // A second timed sync of the same vehicle in one frame (traffic.ts or police.ts syncs its cars, then app.ts syncs every
@@ -555,6 +625,8 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     if (syncedAt.get(v) === meshFrame) return;
     syncedAt.set(v, meshFrame);
   }
+
+  if (dt > 0 && !spec.flies && !spec.boat) stepBodyRoll(v, dt);
 
   // An online driver's steering is not sent: read it off their turn rate (yaw -= steer * turnRate * dt), so their wheel turns and
   // their gnome's hands turn with it.
@@ -589,6 +661,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
         dt, speed: v.speed, yaw: v.yaw, groundY: v.y,
         grounded: !spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15, hop,
       }, suspensionOut);
+      suspensionOut.roll += bodyRollOf(v).shell;
       v.rig.setSuspension(suspensionOut);
     }
   }
@@ -611,6 +684,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
   if (p.handle) poseControl(p.handle, v.kind, v.steerVis);
   if (p.steer) poseControl(p.steer, v.kind, v.steerVis);
   if (p.blade) p.blade.rotation.y = v.wheelSpin;
+  if (p.ball) p.ball.rotation.x = (v.wheelSpin * WHEEL_RADIUS) / BALL_ROLL_RADIUS;
   if (p.reel) {
     if (v.kind === 'mulch-spreader') p.reel.rotation.y += dt * (Math.abs(v.speed) > 0.5 ? 8 : 1.5);
     else p.reel.rotation.x = v.wheelSpin;
@@ -673,17 +747,24 @@ function kick(v: Vehicle, dx: number, dz: number, spinKick: number): void {
   k.spin = Math.max(-SPIN_MAX, Math.min(SPIN_MAX, k.spin + spinKick));
 }
 
+/** Game-time clock (ms) for the crash-damage debounce (Vehicle.lastHit). Starts high so a fresh lastHit of 0 never blocks. */
+let bumpClockMs = 1e6;
+
 /**
  * Push overlapping vehicles apart (heavier moves less), then trade momentum along the contact normal: a combine barely
  * notices a push-bike, which gets thrown back, slid sideways and spun; two equals bounce off each other. A hit off-centre
  * (the contact is nearer a vehicle's front than its middle) also turns it. Ground distance and height both matter.
  */
 export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
+  // The crash-damage debounce runs on game time (E27): it used performance.now(), so a slow or loaded machine (fewer
+  // frames per wall second) took more damage per simulated minute, and headless sims gave different answers per run.
+  if (Number.isFinite(dt) && dt > 0) bumpClockMs += dt * 1000;
   for (let i = 0; i < list.length; i++) {
     const a = list[i];
     for (let j = i + 1; j < list.length; j++) {
       const b = list[j];
-      const rr = a.spec.radius + b.spec.radius;
+      const ca = vehicleCapsule(a.spec), cb = vehicleCapsule(b.spec);
+      const rr = ca.r + cb.r;
       if (Math.abs(a.y - b.y) >= 1.5) continue;
 
       // Relative position of b from a now (p1) and at the start of the frame (p0), from the frame's velocities.
@@ -696,18 +777,22 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
       const seg2 = sgx * sgx + sgz * sgz;
       const t = seg2 > 1e-12 ? Math.max(0, Math.min(1, -(p0x * sgx + p0z * sgz) / seg2)) : 0;
       const cxp = p0x + sgx * t, czp = p0z + sgz * t;
+      const gap = capsuleGap(a.x, a.z, a.yaw, ca, b.x, b.z, b.yaw, cb);
+      const crossed = Math.hypot(cxp, czp) < rr;
+      if (gap.dist >= rr && !crossed) continue;
+
+      // Contact normal (from a to b): the capsules' closest points; when only the centres crossed this frame (a tunnel), from p0.
+      let nx = gap.nx;
+      let nz = gap.nz;
+      let overlap = rr - gap.dist;
       const d = Math.hypot(p1x, p1z);
-      if (d >= rr && Math.hypot(cxp, czp) >= rr) continue;
-
-      // Contact normal (from a to b): from p0 when the centres crossed this frame, otherwise from p1.
-      let nx = 1;
-      let nz = 0;
-      const p0l = Math.hypot(p0x, p0z);
-      if ((p0x * p1x + p0z * p1z < 0 || d < 1e-6) && p0l > 1e-6) { nx = p0x / p0l; nz = p0z / p0l; }
-      else if (d > 1e-6) { nx = p1x / d; nz = p1z / d; }
-
-      const sep = p1x * nx + p1z * nz;
-      const overlap = rr - sep;
+      if (gap.dist >= rr || p0x * p1x + p0z * p1z < 0 || d < 1e-6) {
+        const p0l = Math.hypot(p0x, p0z);
+        if (p0l > 1e-6) {
+          nx = p0x / p0l; nz = p0z / p0l;
+          overlap = rr - (p1x * nx + p1z * nz);
+        }
+      }
 
       const ma = a.spec.mass;
       const mb = b.spec.mass;
@@ -746,13 +831,16 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
       // Damage follows the closing speed along the contact normal (before the bump), so grazing a car going the same way
       // costs nothing. The heavier vehicle hurts the lighter one more.
       const closing = Math.max(0, closingN);
-      const now = performance.now();
+      const now = bumpClockMs;
       if (closing > CRASH_MIN && now - Math.max(a.lastHit, b.lastHit) > 400) {
         const dmg = (closing - CRASH_MIN) / (CRASH_SCALE * 1.4);
         damageVehicle(a, dmg * (2 * mb) / total);
         damageVehicle(b, dmg * (2 * ma) / total);
         a.lastHit = now;
         b.lastHit = now;
+        // The normal points from a to b: a is hit on its b side (+n), b on its a side (-n).
+        knockParts(a, nx, nz, closing);
+        knockParts(b, -nx, -nz, closing);
         if (a.driver === 'player' || b.driver === 'player') play('bump');
       }
     }
@@ -770,13 +858,14 @@ export function stepKnock(list: Vehicle[], dt: number, world: World): void {
     v.x += k.x * dt;
     v.z += k.z * dt;
     v.yaw += k.spin * dt;
-    const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+    const sw = sweepCapsuleBoxes(x0, z0, v.x, v.z, v.yaw, vehicleCapsule(v.spec), world.boxes, v.y);
     v.x = sw.x;
     v.z = sw.z;
     if (sw.hit) {
       const b = wallBounce(k.x, k.z, sw.nx, sw.nz);
       k.x = b.vx;
       k.z = b.vz;
+      knockParts(v, -sw.nx, -sw.nz, b.impact);
     }
     const kept = clampToWorld(v.x, v.z, world.half, v.spec.radius);
     v.x = kept.x;
@@ -882,6 +971,7 @@ export function setVehicleLook(v: Vehicle, look: Loadout): void {
   if (!v.rig) {
     // Boats and aircraft have no glaze rig: a new paint re-tints the prefab body.
     if (isCraftKind(v.kind) && next.paint !== before) repaintVehicle(v, next.paint);
+    hideLostParts(v);
     return;
   }
   v.rig.set(next);
@@ -891,4 +981,6 @@ export function setVehicleLook(v: Vehicle, look: Loadout): void {
     const old = pivotsById.get(v.id);
     pivotsById.set(v.id, capturePivots(body, old?.rotorSpin ?? 0, old?.propSpin ?? 0));
   }
+  // A re-dress must not bring back parts knocked off.
+  hideLostParts(v);
 }

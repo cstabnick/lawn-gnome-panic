@@ -2,7 +2,7 @@
 // Plain DOM, no framework. Every widget returns a detached element; the caller appends it.
 import type { Loadout } from '@lawn/glaze';
 import { getPrefab, prefabIconElement } from '@lawn/prefabs';
-import type { VehicleKind } from './types';
+import type { Vehicle, VehicleKind } from './types';
 
 /** What a shop panel gets: the draft loadout being edited and the ways to change it. */
 export interface PanelCtx {
@@ -15,6 +15,12 @@ export interface PanelCtx {
   patch(p: Partial<Loadout>): void;
   /** Acorns in the wallet. */
   acorns(): number;
+  /** The vehicle on the stage (the one the player drove in). Set by both shops (Pay 'n' Glaze, Wingwright's Slipway). */
+  vehicle?(): Vehicle;
+  /** Take Acorns for a service the panel sells on its own (the Repair tab); false when the player cannot pay. */
+  spend?(amount: number, reason: string): boolean;
+  /** A short message on the game HUD. */
+  toast?(text: string): void;
 }
 
 /**

@@ -1,0 +1,427 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "north-highlands",
+  "name": "Snowcap Rise",
+  "bounds": {
+    "w": 3200,
+    "d": 900
+  },
+  "base": {
+    "id": "gta-highland-scatter",
+    "version": 1,
+    "seed": 1101,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "trail/high-tarn-path",
+      "kind": "road",
+      "points": [
+        [
+          1060,
+          -150
+        ],
+        [
+          1075,
+          -280
+        ],
+        [
+          1072,
+          -410
+        ]
+      ],
+      "width": 3
+    },
+    {
+      "id": "north-band",
+      "kind": "road",
+      "points": [
+        [
+          20,
+          280
+        ],
+        [
+          10,
+          190
+        ],
+        [
+          -150,
+          185
+        ],
+        [
+          -480,
+          190
+        ],
+        [
+          -800,
+          200
+        ],
+        [
+          -950,
+          200
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "north-band-east",
+      "kind": "road",
+      "points": [
+        [
+          10,
+          190
+        ],
+        [
+          40,
+          90
+        ],
+        [
+          60,
+          -170
+        ],
+        [
+          400,
+          -180
+        ],
+        [
+          700,
+          -145
+        ],
+        [
+          1060,
+          -150
+        ],
+        [
+          1060,
+          50
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "unmown-road",
+      "kind": "road",
+      "points": [
+        [
+          -950,
+          200
+        ],
+        [
+          -1150,
+          170
+        ],
+        [
+          -1400,
+          130
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "trail/pinwheel-track",
+      "kind": "road",
+      "points": [
+        [
+          850,
+          -140
+        ],
+        [
+          835,
+          -125
+        ],
+        [
+          862,
+          -110
+        ],
+        [
+          858,
+          -93
+        ],
+        [
+          845,
+          -102
+        ],
+        [
+          780,
+          -102
+        ],
+        [
+          705,
+          -102
+        ]
+      ],
+      "width": 6
+    },
+    {
+      "id": "trail/pinwheel-track-east",
+      "kind": "road",
+      "points": [
+        [
+          845,
+          -102
+        ],
+        [
+          920,
+          -102
+        ],
+        [
+          995,
+          -102
+        ]
+      ],
+      "width": 6
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "water/high-tarn",
+      "kind": "water",
+      "x": 975,
+      "z": -460,
+      "data": {
+        "w": 130,
+        "d": 80
+      }
+    },
+    {
+      "id": "ski-hill",
+      "kind": "slot",
+      "x": -350,
+      "z": -25,
+      "data": {
+        "hw": 110,
+        "hd": 175,
+        "kind": "venue",
+        "epic": "E12",
+        "flat": false,
+        "label": "Snowdrop Slope",
+        "anchors": {
+          "top": {
+            "dx": 0,
+            "dz": -155
+          },
+          "bottom": {
+            "dx": 0,
+            "dz": 165
+          },
+          "lift-base": {
+            "dx": 60,
+            "dz": 160
+          }
+        }
+      }
+    },
+    {
+      "id": "woolly-sock-lodge",
+      "kind": "slot",
+      "x": -447,
+      "z": 130,
+      "data": {
+        "hw": 11,
+        "hd": 10,
+        "kind": "venue",
+        "epic": "E12",
+        "flat": true,
+        "parent": "ski-hill",
+        "label": "the Woolly Sock Lodge"
+      }
+    },
+    {
+      "id": "ice-lake",
+      "kind": "slot",
+      "x": -640,
+      "z": 90,
+      "data": {
+        "hw": 90,
+        "hd": 70,
+        "kind": "water",
+        "epic": "E12",
+        "flat": true,
+        "label": "Pail Pond"
+      }
+    },
+    {
+      "id": "toadstool-forest",
+      "kind": "slot",
+      "x": 250,
+      "z": -30,
+      "data": {
+        "hw": 150,
+        "hd": 100,
+        "kind": "natural",
+        "epic": "E14",
+        "flat": false,
+        "label": "Capwood"
+      }
+    },
+    {
+      "id": "wind-farm",
+      "kind": "slot",
+      "x": 850,
+      "z": -50,
+      "data": {
+        "hw": 150,
+        "hd": 45,
+        "kind": "natural",
+        "epic": "E13",
+        "flat": false,
+        "label": "Pinwheel Ridge"
+      }
+    },
+    {
+      "id": "snowcap-high-tarn",
+      "kind": "slot",
+      "x": 1000,
+      "z": -450,
+      "data": {
+        "hw": 120,
+        "hd": 80,
+        "kind": "water",
+        "epic": "E31",
+        "flat": false,
+        "label": "the High Tarn"
+      }
+    },
+    {
+      "id": "giver/gentian",
+      "kind": "giver",
+      "x": -430,
+      "z": 143,
+      "data": {
+        "exit": {
+          "dx": 3,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/theo-pond",
+      "kind": "giver",
+      "x": -608,
+      "z": 106,
+      "data": {
+        "exit": {
+          "dx": 2,
+          "dz": 2,
+          "yaw": 0
+        }
+      }
+    },
+    {
+      "id": "giver/capwood-warden",
+      "kind": "giver",
+      "x": 360,
+      "z": -99,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": -5,
+          "yaw": 3.141592653589793
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "highland",
+    "ground": 8359786,
+    "surface": "grass",
+    "batch": "highland-scenery",
+    "border": [
+      [
+        -1400,
+        250
+      ],
+      [
+        1800,
+        250
+      ],
+      [
+        1800,
+        -650
+      ],
+      [
+        -200,
+        -650
+      ],
+      [
+        -200,
+        -250
+      ],
+      [
+        -1400,
+        -250
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-highland-relief",
+        "version": 1,
+        "params": {
+          "swell": 4,
+          "swellScale": 240,
+          "crags": 5,
+          "cragScale": 90
+        }
+      },
+      "features": [
+        {
+          "id": "pond/pail-pond",
+          "kind": "pond",
+          "points": [
+            [
+              -640,
+              90
+            ]
+          ],
+          "r": 62
+        },
+        {
+          "id": "snowfield/snowdrop-slope",
+          "kind": "snowfield",
+          "points": [
+            [
+              -350,
+              -150
+            ],
+            [
+              -350,
+              152
+            ]
+          ],
+          "r": 108
+        },
+        {
+          "id": "thaw/capwood",
+          "kind": "thaw",
+          "points": [
+            [
+              150,
+              -30
+            ],
+            [
+              350,
+              -30
+            ]
+          ],
+          "r": 92
+        },
+        {
+          "id": "thaw/mittenholt-green",
+          "kind": "thaw",
+          "points": [
+            [
+              550,
+              -225
+            ]
+          ],
+          "r": 16
+        }
+      ]
+    }
+  }
+}

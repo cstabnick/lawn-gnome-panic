@@ -6,8 +6,8 @@ Watch it at `http://localhost:5310/?no-intro&cutscene=tablet-intro`.
 | --- | --- |
 | Scene | `tablet-intro` in `src/cutscene/scenes/story/ch2d.ts` |
 | Played by | quest `ch2-unmowed-tablet` ("The Cracked Tablet") as its intro, given at the Unmowed Hollow |
-| Kind and length | `intro`, aim 30-60 s; now 36 s at Normal text speed (was 37.4 s, 14 faults) |
-| Where, when | stage `unmowed-hollow` (dusk, the standing-stone ring) with the insert; `sorrel-radio-booth` for her one wide (night, rain) |
+| Kind and length | `intro`, aim 30-60 s; now 36 s at Normal text speed, no faults (E20 row 23 rewrite) |
+| Where, when | stage `unmowed-hollow` only (dusk, `sky: 'golden'`, the standing-stone ring) with the insert; Sorrel stands in the hollow from the first frame (she brought Pip and the player west in row 22) |
 | Before / after | before: the player was sent up the west highway by the radio bulletin. After: the drive back to Turfton for the Compost Heap welders (the chapter 2 crack objective) |
 
 ## 1. Purpose in the story
@@ -52,10 +52,10 @@ Timings at Normal text speed (from the checker, 36.2 s total).
 | 1 | 0-3.9 | Hook | Bracken rises on a low MCU facing the camera, staff in hand: "A Potsworth in Mossy Wood, reeking of Black Dew!" |
 | 2 | 3.9-5.1 | Reaction | Pip, MCU: he slumps. Silence (the `pause` beat). |
 | 3 | 5.1-11.3 | Setup (the accusation) | Bracken, low MCU: "Your cousin Wendel is regent of Fescue." Then "You traded the old soil for Stink-Gro and engines." |
-| 4 | 11.3-12.5 | Turn | Booth wide (Sorrel stands, headphones off), a cut into the hollow: she steps in. |
+| 4 | 11.3-12.5 | Turn | Sorrel, already in the hollow, steps between them: a cut to her MCU. |
 | 5 | 12.5-17.5 | Turn (Sorrel) | Sorrel MCU: "Steady, Elder. Show them the tablet." The insert: the tablet and the Stopping Stone beside it, a slow dolly in (2.6 s). |
 | 6 | 17.5-31.7 | Want and obstacle | Sorrel: the copy of Fescue's original, "the one in the Shed, three thousand years old." Bracken, MS low: only a Fescue Stopping Stone can jam it; clear the welders at the Compost Heap, bring the rig here. |
-| 7 | 31.7-36.2 | Button | Sorrel, close: "After this, 88.7 is playing forty-five minutes of rain on terracotta." |
+| 7 | 31.7-36.0 | Button | Sorrel, close: "Go carefully. It is heavier than it looks." (the plates and the tablet; no gag) |
 
 The turn is at about 60% (the tablet insert, 11-17 s, is the scene's picture-turn; Sorrel's arrival). The button is the
 dry schedule line in the last 5 s on her CU.
@@ -67,7 +67,6 @@ dry schedule line in the last 5 s on her CU.
 | 1 | `BP.single('bracken','mcu',{height:'low'})` | 35, low | locked | Bracken | the accusation is shot from below: he stands higher than the others |
 | 2 | `BP.single('pip','mcu')` | 35, eye | locked | Pip | reaction: the slump |
 | 3 | `BP.single('bracken','mcu',{height:'low'})` | 35, low | locked | Bracken | the two Wendel lines, one shot |
-| 4 | `spot('sorrel-radio-booth','two-shot')` | 46 | locked | the booth | establishing: she stands, headphones off (no line) |
 | 5 | `BS.single('sorrel','mcu')` | 35 | locked | Sorrel | she steps in and speaks: the eyeline to Bracken |
 | 6 | `dolly` on the tablet and the stone, from (-348.5, 30.5, 2.2) | 42 | slow in, 2.6 s | the insert | the shape is shown before it is explained |
 | 7 | `BS.single('sorrel','mcu')` | 35 | locked | Sorrel | the copy and the three thousand years |
@@ -85,13 +84,14 @@ No crossings.
 | Pip | (nothing) | `slump`: the first time he goes quiet |
 | Bracken | Your cousin Wendel is regent of Fescue. | split from the old 17-word line |
 | Bracken | You traded the old soil for Stink-Gro and engines. | split from the old 17-word line |
-| ~~Narrator~~ | ~~Sorrel Tillbrook, mid-broadcast, pulls off her headphones.~~ | cut: described the picture. Shown instead: she stands in the booth, then steps into the hollow |
+| ~~Narrator~~ | ~~Sorrel Tillbrook, mid-broadcast, pulls off her headphones.~~ | cut: described the picture. She is in the hollow from the first frame |
 | Sorrel | Steady, Elder. Show them the tablet. | kept |
 | Sorrel | Vesper's Grand Combine is copied from Fescue's original. | split from the old 17-word line (9 words) |
 | Sorrel | The one in the Shed, three thousand years old. | Sorrel never says "mower" |
 | Bracken | Only a Fescue Stopping Stone can jam it. | kept |
 | Bracken | Clear his welders at the Compost Heap. Bring their rig here. | split from the old 19-word line; one place name |
-| Sorrel | After this, 88.7 is playing forty-five minutes of rain on terracotta. | the button; "Let's move" cut (the aside is the better last line) |
+| Sorrel | Go carefully. It is heavier than it looks. | the button, gentle, no gag (the old rain-on-terracotta aside is cut: the rain was played in row 22) |
+| Bracken | (intro card) | Bracken's first story appearance: the card after his first line, 2.8 s (L105); Sorrel's card is in `m22-off-air-intro` |
 
 Names checked: `npm run lore -- find "Stopping Stone"` (the Fescue relic, R-071 and the finale), `Grand Combine`
 (Vesper's machine), `Shed` (the Fescue original; Sorrel's euphemism). The Compost Heap welders are the chapter 2 crack
@@ -102,7 +102,7 @@ objective (`quests/chapter2.ts`).
 | Time | Cue | Why |
 | --- | --- | --- |
 | 0.0 | `forest` ambience, `fescue` music | Mossy Wood's folk; the first line is a hook, not narration |
-| 11.3 | the booth wide, then the hollow again: music and ambience unchanged (`fescue`, `forest`) | the one-wide booth is a cut in place, not a new location |
+| 3.9 | the `intro` stinger on Bracken's card | L105: first story appearance |
 
 No stingers: the scene is a briefing with a turn, not a reveal. The tablet insert (14.9 s, a slow dolly with a 2.6 s
 wait) runs with no line under it.
@@ -112,8 +112,7 @@ wait) runs with no line under it.
 - Bracken at his ring mark (-364, 40), facing the fire (-352, 36); `held: null` so the Stopping Stone lies by the
   tablet, not in his hand. Camera for his accusation is on Pip's side of their line, low.
 - Pip at (-341, 41), facing Bracken. Slumps in place.
-- Sorrel: starts at the radio booth mark (-375, 47), stands (the booth wide), is despawned and respawned at the hollow
-  mark (-346, 44) facing Bracken (the teleport is hidden by the cut).
+- Sorrel: at the hollow mark (-346, 44) from the first frame, facing Bracken (no booth, no teleport).
 - Tablet (`stone-plaque`) at (-355, 39), Stopping Stone (`stopping-stone`, size 0.6) at (-352.6, 38.2), both hidden
   until the insert.
 - The player is hidden at (-344, 38): the scene does not show them (the quest's exit is (-345, 34) as before).
@@ -121,9 +120,8 @@ wait) runs with no line under it.
 
 ## 10. The button
 
-Sorrel's dry aside on her close shot: "After this, 88.7 is playing forty-five minutes of rain on terracotta." It is
-the right last moment because it is a character coping with a schedule, not a gag from the camera, and it lands on
-the one thing the player will remember walking out (the radio, Sorrel).
+Sorrel's gentle line on her close shot: "Go carefully. It is heavier than it looks." It is the right last moment because
+the quest is sincere (tension 8) and the line is a character's care, not a gag; it also sets up the heavy outro.
 
 ## 11. Self-check
 

@@ -1,5 +1,5 @@
-// Quest Journal: J key overlay (and the More menu's 'journal' action) showing Active, Available, Locked and Completed quests,
-// with Abandon and Restart Step recovery controls, and the perk (perks.ts) each side quest unlocks. Available quests pin their giver as the map waypoint. Appended to #ui,
+// Quest Journal: J key overlay (and the More menu's 'journal' action) showing Active, Open, Later and Completed quests,
+// with Abandon and Restart Step recovery controls, and the perk (perks.ts) each side quest unlocks. Open quests pin their giver as the map waypoint. Appended to #ui,
 // never mutating #ui itself.
 import { placeName } from '../city/places';
 import { KEYS } from '../keys';
@@ -7,9 +7,14 @@ import { perkActive, perkForQuest } from '../perks';
 import { registerAction } from '../ui/actions';
 import { fillHint } from '../ui/glyphs';
 import type { Hud } from '../types';
+import { isPaced, sidePacing } from './pacing';
+import { isBeforeTheEvenCut } from './questSave';
 import { isQuestAvailable, type Quests } from './quests';
+import { previouslyLine } from './story/previously';
+import { rewardChip } from './story/rewards';
+import { storyItems } from './storyMarks';
 import type { QuestDef } from './types';
-import { MAIN_COLOR, SIDE_UNLOCKS, sideColor, unlockMet, unlockRule } from './unlocks';
+import { MAIN_COLOR, sideColor, unlockRule } from './unlocks';
 
 const CSS = `
 #gta-journal{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 16px) calc(env(safe-area-inset-left) + 16px);background:rgba(8,10,14,.76);font-family:system-ui,sans-serif;color:#fff;pointer-events:auto;}
@@ -19,15 +24,22 @@ const CSS = `
 #gta-journal .j-title{font-size:18px;font-weight:800;color:#ffd23f;letter-spacing:.04em;}
 #gta-journal .j-close{width:44px;height:44px;border-radius:10px;border:0;background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer;}
 #gta-journal .j-tabs{display:flex;gap:6px;}
-#gta-journal .j-tab{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 12px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+#gta-journal .j-tab{flex:1 1 0;min-width:0;min-height:44px;padding:0 3px;border-radius:10px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:700 11px system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
 #gta-journal .j-tab[data-tab="available"]{flex-grow:1.5;}
-#gta-journal .j-tab[data-tab="locked"]{flex-grow:1.1;}
+#gta-journal .j-tab[data-tab="later"]{flex-grow:1.1;}
 #gta-journal .j-tab[data-tab="done"]{flex-grow:1.7;}
+#gta-journal .j-tab[data-tab="items"]{flex-grow:1;}
 #gta-journal .j-tab.on{border-color:#ffd23f;background:rgba(255,210,63,.2);color:#ffd23f;}
 #gta-journal .j-body{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;}
 #gta-journal .j-item{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;}
 #gta-journal button.j-item{cursor:pointer;min-height:44px;}
 #gta-journal .j-item-title{font-size:14px;font-weight:800;color:#ffd23f;display:flex;justify-content:space-between;gap:8px;}
+#gta-journal .j-item-title > span:first-child{min-width:0;}
+#gta-journal .j-right{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;align-items:center;flex:0 1 auto;max-width:60%;}
+#gta-journal .j-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(255,210,63,.16);border:1px solid rgba(255,210,63,.55);color:#ffe9a8;font-size:12px;font-weight:700;line-height:1.4;white-space:normal;text-align:right;}
+#gta-journal .j-prev{font-size:13px;font-style:italic;line-height:1.4;color:#e8e3d4;opacity:.95;margin-top:6px;padding-left:8px;border-left:2px solid rgba(255,210,63,.45);}
+#gta-journal .j-frame{font-style:normal;font-weight:800;color:#ffd23f;}
+#gta-journal .j-section{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ffd23f;}
 #gta-journal .j-item-sub{font-size:12px;opacity:.85;margin-top:3px;line-height:1.35;}
 #gta-journal .j-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
 #gta-journal .j-act{min-height:44px;padding:0 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:700 13px system-ui,sans-serif;cursor:pointer;}
@@ -35,12 +47,19 @@ const CSS = `
 #gta-journal .j-empty{padding:18px 8px;text-align:center;font-size:13px;opacity:.75;}
 `;
 
-type Tab = 'active' | 'available' | 'locked' | 'done';
+type Tab = 'active' | 'available' | 'later' | 'done' | 'items';
+type Snap = ReturnType<Quests['getJournal']>;
 
 /** The Story or Side tag for a quest: '★ Ch.N' in the story gold, '? Side' in the colour of the giver who offers it. */
 function tagHtml(q: QuestDef): string {
   if (q.chapter !== undefined) return `<span style="color:${MAIN_COLOR}">★ Ch.${q.chapter}</span>`;
   return `<span style="color:${sideColor(q.giver)}">? Side</span>`;
+}
+
+/** The reward chip (rewards.ts), or '' when there is nothing to show. */
+function chipHtml(q: QuestDef): string {
+  const text = rewardChip(q).text;
+  return text ? `<span class="j-chip">${text}</span>` : '';
 }
 
 export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): { isOpen(): boolean; toggle(): void; close(): void } {
@@ -59,8 +78,9 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
       <div class="j-tabs">
         <button type="button" class="j-tab on" data-tab="active">Active</button>
         <button type="button" class="j-tab" data-tab="available">Available</button>
-        <button type="button" class="j-tab" data-tab="locked">Locked</button>
+        <button type="button" class="j-tab" data-tab="later">Later</button>
         <button type="button" class="j-tab" data-tab="done">Completed</button>
+        <button type="button" class="j-tab" data-tab="items">Items</button>
       </div>
       <div class="j-body"></div>
     </div>
@@ -82,19 +102,49 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     return `<div class="j-item-sub">🎁 ${done ? 'Perk' : 'Unlocks'}: <b>${p.name}</b>${state}: ${p.text}</div>`;
   };
 
+  /** One takeable quest: tap to pin its giver as the waypoint and close. Used by the Open and Later tabs. */
+  function offerButton(q: QuestDef, snap: Snap): HTMLButtonElement {
+    const g = snap.givers[q.giver];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'j-item';
+    const pinnedHere = snap.pinned === q.giver;
+    b.innerHTML = `
+      <div class="j-item-title"><span>${q.title}</span><span class="j-right">${tagHtml(q)}${chipHtml(q)}</span></div>
+      <div class="j-item-sub">Giver: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
+      ${perkHtml(q, false)}
+    `;
+    b.addEventListener('click', () => {
+      quests.pinGiver(q.giver);
+      close();
+      hud.toast(`Waypoint set: ${g?.name ?? q.giver}. Follow the dotted route on the map.`, 4500);
+    });
+    return b;
+  }
+
   function render(): void {
     const snap = quests.getJournal();
     body.innerHTML = '';
 
-    const avail = snap.quests.filter((q) => isQuestAvailable(q, snap.saves));
-    const locked = snap.quests.filter((q) => unlockRule(q.id) && !unlockMet(q.id, snap.saves))
-      .sort((a, b) => SIDE_UNLOCKS.findIndex((u) => u.questId === a.id) - SIDE_UNLOCKS.findIndex((u) => u.questId === b.id));
+    const pace = sidePacing(snap.saves, snap.quests);
+    const offeredSet = new Set(pace.offered);
+    const availAll = snap.quests.filter((q) => isQuestAvailable(q, snap.saves));
+    const storyAvail = availAll.filter((q) => q.chapter !== undefined && !isBeforeTheEvenCut(q.id, snap.saves));
+    const storyBefore = availAll.filter((q) => q.chapter !== undefined && isBeforeTheEvenCut(q.id, snap.saves));
+    const sideAvail = availAll.filter((q) => q.chapter === undefined && (!isPaced(q.id) || offeredSet.has(q.id)));
+    const sideOrder = [
+      ...pace.offered.map((id) => sideAvail.find((q) => q.id === id)).filter((q): q is QuestDef => !!q),
+      ...sideAvail.filter((q) => !offeredSet.has(q.id)),
+    ];
+    const avail = [...storyAvail, ...sideOrder, ...storyBefore];
+    const later = pace.later.map((id) => snap.quests.find((q) => q.id === id)).filter((q): q is QuestDef => !!q);
     const doneList = snap.quests.filter((q) => snap.saves[q.id]?.state === 'done');
     const labels: Record<Tab, string> = {
       active: 'Active',
       available: `Open ${avail.length}`,
-      locked: `Locked ${locked.length}`,
+      later: `Later ${later.length}`,
       done: `Done ${doneList.length}/${snap.quests.length}`,
+      items: 'Items',
     };
     for (const tb of tabBtns) {
       const key = tb.dataset.tab as Tab;
@@ -110,11 +160,16 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         return;
       }
       const g = snap.givers[q.giver];
+      const prev = previouslyLine(q, snap.saves);
+      // D7: the "Before the Even Cut:" frame reads as a heading over the narrator's line.
+      const framed = prev?.replace(/^(Before the Even Cut:)\s*/, '<b class="j-frame">$1</b> ');
+      const prevLine = framed ? `<div class="j-prev">${framed}</div>` : '';
       const box = document.createElement('div');
       box.className = 'j-item';
       box.innerHTML = `
-        <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
+        <div class="j-item-title"><span>${q.title}</span><span class="j-right">${tagHtml(q)}${chipHtml(q)}</span></div>
         <div class="j-item-sub">From: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
+        ${prevLine}
         ${perkHtml(q, false)}
         ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${fillHint(stripTags(l))}</div>`).join('')}
       `;
@@ -137,6 +192,12 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     }
 
     if (tab === 'available') {
+      if (pace.later.length > 0) {
+        const line = document.createElement('div');
+        line.className = 'j-item-sub';
+        line.textContent = `Side jobs on offer: ${sideOrder.length}/${pace.cap}. More wait on the Later shelf.`;
+        body.appendChild(line);
+      }
       if (snap.pinned) {
         const clear = document.createElement('button');
         clear.type = 'button';
@@ -150,48 +211,62 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         empty.className = 'j-empty';
         empty.textContent = 'Nothing on offer right now. Keep playing the story to open more.';
         body.appendChild(empty);
-        return;
       }
-      const ordered = [...avail.filter((q) => q.chapter !== undefined), ...avail.filter((q) => q.chapter === undefined)];
-      for (const q of ordered) {
-        const g = snap.givers[q.giver];
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'j-item';
-        const pinnedHere = snap.pinned === q.giver;
-        b.innerHTML = `
-          <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
-          <div class="j-item-sub">Giver: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
-          ${perkHtml(q, false)}
-        `;
-        b.addEventListener('click', () => {
-          quests.pinGiver(q.giver);
-          close();
-          hud.toast(`Waypoint set: ${g?.name ?? q.giver}. Follow the dotted route on the map.`, 4500);
-        });
-        body.appendChild(b);
+      for (const q of [...storyAvail, ...sideOrder]) body.appendChild(offerButton(q, snap));
+      if (storyBefore.length > 0) {
+        const head = document.createElement('div');
+        head.className = 'j-section';
+        head.textContent = 'Before the Even Cut';
+        body.appendChild(head);
+        const sub = document.createElement('div');
+        sub.className = 'j-item-sub';
+        sub.textContent = "From before the finale. The world has moved on; the story hasn't forgotten.";
+        body.appendChild(sub);
+        for (const q of storyBefore) body.appendChild(offerButton(q, snap));
+      }
+      const coming: string[] = [];
+      for (const id of pace.upcoming) {
+        const q = snap.quests.find((x) => x.id === id);
+        const rule = unlockRule(id);
+        if (!q || !rule) continue;
+        const after = snap.quests.find((x) => x.id === rule.after);
+        coming.push(`<div class="j-item-sub">• ${q.title} · after "${after?.title ?? rule.after}"</div>`);
+      }
+      if (coming.length > 0) {
+        const box = document.createElement('div');
+        box.className = 'j-item';
+        box.innerHTML = `<div class="j-item-title"><span>Coming up</span></div>${coming.join('')}`;
+        body.appendChild(box);
       }
       return;
     }
 
-    if (tab === 'locked') {
-      if (locked.length === 0) {
-        body.innerHTML = '<div class="j-empty">Nothing locked: every side quest is open.</div>';
+    if (tab === 'later') {
+      const intro = document.createElement('div');
+      intro.className = 'j-item-sub';
+      intro.textContent = 'Still open. Their givers will take you on any time; tap one to set a waypoint.';
+      body.appendChild(intro);
+      if (later.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'j-empty';
+        empty.textContent = 'Nothing on the shelf.';
+        body.appendChild(empty);
         return;
       }
-      for (const q of locked) {
-        const rule = unlockRule(q.id);
-        const after = rule ? snap.quests.find((x) => x.id === rule.after) : undefined;
-        const afterText = after
-          ? (after.chapter !== undefined ? `Ch.${after.chapter}: "${after.title}"` : `"${after.title}"`)
-          : (rule?.after ?? '');
+      for (const q of later) body.appendChild(offerButton(q, snap));
+      return;
+    }
+
+    if (tab === 'items') {
+      const items = storyItems((id) => snap.saves[id]?.state === 'done');
+      if (items.length === 0) {
+        body.innerHTML = '<div class="j-empty">No story items yet.</div>';
+        return;
+      }
+      for (const it of items) {
         const box = document.createElement('div');
         box.className = 'j-item';
-        box.innerHTML = `
-          <div class="j-item-title"><span>🔒 ${q.title}</span><span>${tagHtml(q)}</span></div>
-          <div class="j-item-sub">Opens after ${afterText}</div>
-          ${perkHtml(q, false)}
-        `;
+        box.innerHTML = `<div class="j-item-title"><span>${it.title}</span></div><div class="j-item-sub">${it.text}</div>`;
         body.appendChild(box);
       }
       return;

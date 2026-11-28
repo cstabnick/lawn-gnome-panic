@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getPrefab } from '@lawn/prefabs';
-import { PLANT_KINDS, mowableAt } from './kinds';
+import * as THREE from 'three';
+import { buildPrefab, getPrefab } from '@lawn/prefabs';
+import { PLANT_KINDS, mowableAt, plantKind } from './kinds';
+
+/** Unscaled height (m) of a prefab, measured the way the kinds table comments record it. */
+function unscaledHeight(id: string): number {
+  return new THREE.Box3().setFromObject(buildPrefab(id, { lights: false })).max.y;
+}
 
 describe('plant kinds table', () => {
   it('names real prefabs, once each', () => {
@@ -28,5 +34,14 @@ describe('plant kinds table', () => {
     expect(mowableAt('hedgerow', 1)).toBe(false);
     expect(mowableAt('topiary-cone', 1)).toBe(false);
     expect(mowableAt('not-a-plant', 0.1)).toBe(false);
+  });
+
+  it('mows the park rose bushes, allotment beds and Pebblewick flowering bushes', () => {
+    for (const id of ['rose-bush', 'flowering-bush', 'allotment-bed']) {
+      expect(plantKind(id)?.mowable, id).toBe(true);
+      const h = unscaledHeight(id);
+      expect(h, id).toBeLessThanOrEqual(1.8);
+      expect(mowableAt(id, h), id).toBe(true);
+    }
   });
 });

@@ -27,7 +27,7 @@ export const DANCE_IDS = ['dance-jig', 'dance-robot', 'dance-disco', 'dance-flai
 /** Standing about, sitting and sleeping: what an idle townsgnome does between walks. */
 export const IDLE_IDS = [
   'look-around', 'stretch', 'yawn', 'scratch-head', 'tap-foot', 'hands-on-hips', 'cross-arms', 'sit-ground', 'sleep',
-  'lean-back', 'think',
+  'lean-back', 'think', 'one-leg',
 ] as const;
 /** Reactions: fear, pain, falls. */
 export const REACT_IDS = ['cower', 'panic', 'stumble', 'hurt', 'knockdown', 'get-up', 'dizzy', 'flinch'] as const;
@@ -113,6 +113,20 @@ export type DriveAnimId = (typeof DRIVE_IDS)[number];
  *  (category 'bit'), riding a tow tube and cheering on one (category 'ride'). */
 export const JOB_IDS = ['hail-cab', 'carry-parcel', 'tube-ride', 'tube-cheer'] as const;
 export type JobAnimId = (typeof JOB_IDS)[number];
+/**
+ * Batch 3 (E09, L63): variants of the most-seen animations, so they are not identical every time (rows in variants.ts,
+ * none in the emote menu). Plain-walk overlays (category 'style', onMove): walk-easy, walk-brisk, walk-amble. Flee-run
+ * overlays (category 'style', onMove): run-cover-head, run-look-back, run-arms-up. Player standing fidgets (category
+ * 'bit'): idle-weight-shift, idle-hat-adjust, idle-look-back. Horn startles (category 'react'): startle-hop,
+ * startle-spin. Near-miss anger (category 'react'): fist-wave-both, stomp-off. Spectator cheers (category 'react'):
+ * cheer-jump, cheer-whistle.
+ */
+export const VARIANT_IDS = [
+  'walk-easy', 'walk-brisk', 'walk-amble', 'run-cover-head', 'run-look-back', 'run-arms-up',
+  'idle-weight-shift', 'idle-hat-adjust', 'idle-look-back', 'startle-hop', 'startle-spin', 'fist-wave-both', 'stomp-off',
+  'cheer-jump', 'cheer-whistle',
+] as const;
+export type VariantAnimId = (typeof VARIANT_IDS)[number];
 export type EmoteAnimId = (typeof EMOTE_IDS)[number];
 export type EmoteBAnimId = (typeof EMOTE_B_IDS)[number];
 export type ReactBAnimId = (typeof REACT_B_IDS)[number];
@@ -125,7 +139,7 @@ export type ReactAnimId = (typeof REACT_IDS)[number];
 export type WorkAnimId = (typeof WORK_IDS)[number];
 export type AnimId = EmoteAnimId | DanceAnimId | IdleAnimId | ReactAnimId | WorkAnimId
   | EmoteBAnimId | ReactBAnimId | RoleAnimId | HuntAnimId | RideAnimId
-  | StyleAnimId | MoodAnimId | BitAnimId | ReactCAnimId | SocialAnimId | DriveAnimId | JobAnimId;
+  | StyleAnimId | MoodAnimId | BitAnimId | ReactCAnimId | SocialAnimId | DriveAnimId | JobAnimId | VariantAnimId;
 
 export type AnimCategory =
   'emote' | 'dance' | 'idle' | 'react' | 'work' | 'role' | 'hunt' | 'ride' | 'style' | 'bit' | 'social' | 'drive';

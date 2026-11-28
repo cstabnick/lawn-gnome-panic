@@ -11,7 +11,159 @@ export const CYCLE_SECONDS = 360;
 /** Starting phase in 'auto' mode: bright morning-noon (0 = dawn/midnight, 0.25 = noon, 0.5 = golden, 0.75 = night). */
 export const INITIAL_PHASE = 0.22;
 
-const MOTE_COUNT = 260;
+/** Which of the 4 atlas cells a mote uses: 0 round glow, 1 petal, 2 leaf, 3 seed fluff. Night is always the glow.
+ *  The mote shader mirrors this (floor(seed * 4), night > 0.5 gives 0). */
+export function moteCell(seed: number, night: number): number {
+  if (night > 0.5) return 0;
+  return Math.min(3, Math.max(0, Math.floor(seed * 4)));
+}
+
+/** 128 x 128 atlas, 2 x 2 cells of 64 px, each with a transparent margin. Null where there is no DOM (node tests). */
+function createMoteAtlas(): THREE.Texture | null {
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  const cell = (n: number, draw: () => void): void => {
+    g.save();
+    g.translate((n % 2) * 64 + 32, Math.floor(n / 2) * 64 + 32);
+    draw();
+    g.restore();
+  };
+  // 0: soft round glow
+  cell(0, () => {
+    const r = g.createRadialGradient(0, 0, 0, 0, 0, 30);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.arc(0, 0, 30, 0, Math.PI * 2);
+    g.fill();
+  });
+  // 1: petal, a soft ellipse a touch pink
+  cell(1, () => {
+    g.rotate(-0.5);
+    const r = g.createRadialGradient(0, 0, 2, 0, 0, 26);
+    r.addColorStop(0, 'rgba(255,248,250,1)');
+    r.addColorStop(0.7, 'rgba(255,226,236,0.95)');
+    r.addColorStop(1, 'rgba(255,214,228,0)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.ellipse(0, 0, 26, 14, 0, 0, Math.PI * 2);
+    g.fill();
+  });
+  // 2: leaf, pointed ellipse with a darker mid vein
+  cell(2, () => {
+    g.rotate(-0.6);
+    g.fillStyle = 'rgba(236,244,196,0.96)';
+    g.beginPath();
+    g.moveTo(-28, 0);
+    g.quadraticCurveTo(0, -20, 28, 0);
+    g.quadraticCurveTo(0, 20, -28, 0);
+    g.fill();
+    g.strokeStyle = 'rgba(170,190,110,0.9)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(-27, 0);
+    g.lineTo(22, 0);
+    g.stroke();
+  });
+  // 3: seed fluff, a tiny core with faint radiating strands
+  cell(3, () => {
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = 1.2;
+    g.lineCap = 'round';
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2 + 0.2;
+      g.beginPath();
+      g.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+      g.lineTo(Math.cos(a) * 28, Math.sin(a) * 28);
+      g.stroke();
+    }
+    const r = g.createRadialGradient(0, 0, 0, 0, 0, 8);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(1, 'rgba(255,255,255,0.1)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.arc(0, 0, 8, 0, Math.PI * 2);
+    g.fill();
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Soft tumbling sprite points: capped size, faded out near the camera, fog aware. */
+function createMoteMaterial(tex: THREE.Texture | null): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      {
+        uColor: { value: new THREE.Color(0xffffff) },
+        uOpacity: { value: 0.3 },
+        uSize: { value: 0.25 },
+        uScale: { value: 400 },
+        uTime: { value: 0 },
+        uNight: { value: 0 },
+        uMap: { value: tex },
+      },
+    ]),
+    vertexShader: `
+      uniform float uSize;
+      uniform float uScale;
+      uniform float uTime;
+      attribute float aSeed;
+      varying float vNear;
+      varying float vSeed;
+      varying float vAngle;
+      #include <fog_pars_vertex>
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = min(uSize * uScale / -mv.z, 22.0);
+        vNear = smoothstep(0.8, 3.0, -mv.z);
+        vSeed = aSeed;
+        vAngle = aSeed * 6.2832 + uTime * (0.6 + aSeed) * (aSeed > 0.5 ? 1.0 : -1.0);
+        vec4 mvPosition = mv;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      uniform float uNight;
+      uniform sampler2D uMap;
+      varying float vNear;
+      varying float vSeed;
+      varying float vAngle;
+      #include <fog_pars_fragment>
+      void main() {
+        vec2 q = gl_PointCoord - 0.5;
+        float cs = cos(vAngle);
+        float sn = sin(vAngle);
+        vec2 p = vec2(cs * q.x - sn * q.y, sn * q.x + cs * q.y) + 0.5;
+        if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0) discard;
+        float cell = uNight > 0.5 ? 0.0 : min(3.0, floor(vSeed * 4.0));
+        float col = mod(cell, 2.0);
+        float row = floor(cell / 2.0);
+        vec2 uv = vec2((col + p.x) * 0.5, 1.0 - (row + p.y) * 0.5);
+        vec4 t = texture2D(uMap, uv);
+        gl_FragColor = vec4(uColor * t.rgb, t.a * uOpacity * vNear);
+        if (gl_FragColor.a < 0.01) discard;
+        #include <fog_fragment>
+      }`,
+  });
+}
+
+/** Ambient motes (dust, pollen, fireflies). L05: fewer and fainter than before (was 260 at full opacity). */
+const MOTE_COUNT = 180;
+/** Every biome's mote opacity is scaled by this (L05). */
+export const MOTE_OPACITY_SCALE = 0.75;
 const MOTE_SPAN = 64;
 const MOTE_HALF = MOTE_SPAN * 0.5;
 const MOTE_HEIGHT = 18;
@@ -317,6 +469,38 @@ const BIOME_PROFILES: Record<BiomeId, BiomeAtmosphereProfile> = {
     vz: 0.6,
     swirl: 1.15,
   },
+  // Batch 3 bands (E01): placeholder profiles; the epics that fill each band tune them.
+  highland: {
+    skyTint: 0xb8d4ee, skyWeight: 0.24, fogTint: 0xc6dcef, fogWeight: 0.3, fogNearMult: 0.92, fogFarMult: 0.94,
+    moteColorDay: 0xf0f6ff, moteColorNight: 0xbcd6f5, moteOpacityDay: 0.5, moteOpacityNight: 0.4, moteSize: 0.26,
+    vx: 2.4, vy: -0.6, vz: 0.8, swirl: 1.1,
+  },
+  coast: {
+    skyTint: 0xa8dcef, skyWeight: 0.22, fogTint: 0xc4e6ef, fogWeight: 0.32, fogNearMult: 0.9, fogFarMult: 0.92,
+    moteColorDay: 0xfdfbf2, moteColorNight: 0xa8d8f0, moteOpacityDay: 0.45, moteOpacityNight: 0.35, moteSize: 0.25,
+    vx: 3.2, vy: 0.2, vz: -1.4, swirl: 1.0,
+  },
+  campus: {
+    skyTint: 0xa6d6f0, skyWeight: 0.1, fogTint: 0xb4dcef, fogWeight: 0.12, fogNearMult: 0.98, fogFarMult: 0.98,
+    moteColorDay: 0xfff6dc, moteColorNight: 0xb8dcff, moteOpacityDay: 0.3, moteOpacityNight: 0.4, moteSize: 0.24,
+    vx: 0.5, vy: 0.2, vz: 0.3, swirl: 0.7,
+  },
+  estate: {
+    skyTint: 0xe8d8a0, skyWeight: 0.16, fogTint: 0xe6dcae, fogWeight: 0.2, fogNearMult: 0.96, fogFarMult: 0.96,
+    moteColorDay: 0xfff0c8, moteColorNight: 0xd8d0a0, moteOpacityDay: 0.45, moteOpacityNight: 0.4, moteSize: 0.26,
+    vx: 0.8, vy: 0.3, vz: 0.4, swirl: 0.9,
+  },
+  // E28: Pardonlin (a soft, slightly hazy continental afternoon) and the Unmown (pollen-heavy meadow air).
+  continental: {
+    skyTint: 0xd8c8b0, skyWeight: 0.14, fogTint: 0xd6d0c4, fogWeight: 0.2, fogNearMult: 0.95, fogFarMult: 0.95,
+    moteColorDay: 0xfff4e0, moteColorNight: 0xd0c8f0, moteOpacityDay: 0.3, moteOpacityNight: 0.35, moteSize: 0.22,
+    vx: 0.4, vy: 0.2, vz: 0.3, swirl: 0.6,
+  },
+  preserve: {
+    skyTint: 0xc8e0a8, skyWeight: 0.16, fogTint: 0xcfe2b8, fogWeight: 0.22, fogNearMult: 0.94, fogFarMult: 0.95,
+    moteColorDay: 0xfff8b0, moteColorNight: 0xc8f0a0, moteOpacityDay: 0.6, moteOpacityNight: 0.5, moteSize: 0.28,
+    vx: 0.9, vy: 0.4, vz: 0.5, swirl: 1.2,
+  },
 };
 
 export function wrapPhase(phase: number): number {
@@ -429,12 +613,91 @@ export function computeAtmosphereState(
   };
 }
 
+/**
+ * Weather dimming (E06, src/weather/): `overcast` 0..1 greys the sky and fog and dims the sun; `mist` 0..1 pulls the
+ * fog in. Pure; applied after the time-of-day and biome blend.
+ */
+export function applyWeatherLook(s: AtmosphereState, overcast: number, mist: number): AtmosphereState {
+  const o = Math.max(0, Math.min(1, overcast));
+  const m = Math.max(0, Math.min(1, mist));
+  if (o === 0 && m === 0) return s;
+  const grey = (hex: number, dark: number): number => {
+    const r = (hex >> 16) & 0xff;
+    const g = (hex >> 8) & 0xff;
+    const b = hex & 0xff;
+    const l = Math.min(247, Math.round((r * 0.3 + g * 0.55 + b * 0.15) * dark));
+    return (l << 16) | (l << 8) | (l + 8);
+  };
+  const fogMist = lerpHex(s.fogHex, grey(s.fogHex, 1.05), m * 0.6);
+  return {
+    ...s,
+    skyHex: lerpHex(s.skyHex, grey(s.skyHex, 0.82), o * 0.7),
+    fogHex: lerpHex(fogMist, grey(fogMist, 0.85), o * 0.55),
+    fogNear: s.fogNear * (1 - 0.3 * o) * (1 - 0.75 * m),
+    fogFar: s.fogFar * (1 - 0.25 * o) * (1 - 0.55 * m),
+    sunIntensity: s.sunIntensity * (1 - 0.55 * o),
+    hemiIntensity: s.hemiIntensity * (1 - 0.18 * o),
+  };
+}
+
+/** Time-lapse handle (E06, L11): `seconds` is how long the scrub takes (0 when the sky was already there). */
+export interface TimeLapse {
+  seconds: number;
+  done: Promise<void>;
+}
+
+/** A time of day as a phase: the fixed modes' phases, or a phase number (wrapped). */
+export function targetPhase(target: Exclude<TimeMode, 'auto'> | number): number {
+  return typeof target === 'number' ? wrapPhase(target) : effectivePhase(0, target);
+}
+
+/** Forward distance from phase `a` to phase `b`, in [0, 1). */
+export function forwardDelta(a: number, b: number): number {
+  return wrapPhase(b - a);
+}
+
+/** Signed shortest distance from phase `a` to phase `b`, in [-0.5, 0.5). */
+export function shortestDelta(a: number, b: number): number {
+  const d = wrapPhase(b - a);
+  return d >= 0.5 ? d - 1 : d;
+}
+
+/** Cutscene time-lapse (L11): seconds to scrub into a scene's `sky`, and back to world time when it ends. */
+export const TIME_LAPSE = { inSeconds: 2.6, outSeconds: 1.6 } as const;
+
+/** Below this phase distance a lapse is skipped (the sky is already there). */
+export const LAPSE_MIN_DELTA = 0.03;
+
 export interface AtmosphereController {
   update(dt: number, focusX: number, focusZ: number, biome: BiomeId, airborneOrFlying?: boolean): void;
+  /** Like update, but the world clock does not advance (frozen cutscenes: the sky still animates a time-lapse). */
+  render(dt: number, focusX: number, focusZ: number, biome: BiomeId): void;
   nightFactor(): number;
   timeLabel(): TimeLabel;
   setMode(mode: TimeMode): void;
   getMode(): TimeMode;
+  /** The world clock's phase (0..1; 0.25 noon, 0.5 golden, 0.75 night). A fixed mode ignores it, but it is kept. */
+  getPhase(): number;
+  /** Set the world clock's phase (no animation). */
+  setPhase(phase: number): void;
+  /** The phase the sky was last drawn at (a fixed mode's phase, or a time-lapse's). */
+  displayPhase(): number;
+  /**
+   * Visual only (L11): scrub the drawn sky forward (wrapping) to `target` over `seconds`, then hold it there until
+   * releaseLapse. The world clock is untouched. Returns seconds 0 (and holds at once) when the sky is already there.
+   */
+  timeLapseTo(target: Exclude<TimeMode, 'auto'> | number, seconds: number): TimeLapse;
+  /** Scrub the drawn sky back (the shortest way) to the world's own time over `seconds`, then drop the hold. */
+  releaseLapse(seconds: number): TimeLapse;
+  /** True while a time-lapse holds or scrubs the drawn sky away from world time. */
+  lapsing(): boolean;
+  /**
+   * Intentional world-time change (e.g. E10's "sleep until night"): scrub the sky forward to `target` over `seconds`,
+   * then set the world clock there. A fixed time mode is switched to 'auto' so the new time shows.
+   */
+  advanceWorldTime(target: Exclude<TimeMode, 'auto'> | number, seconds?: number): TimeLapse;
+  /** Weather dimming (src/weather/): see applyWeatherLook. Eased in over about a second. */
+  setWeatherLook(overcast: number, mist: number): void;
 }
 
 function wrapCoord(v: number, center: number, halfSpan: number): number {
@@ -452,6 +715,18 @@ export function createAtmosphere(
 ): AtmosphereController {
   let mode: TimeMode = 'auto';
   let phase = INITIAL_PHASE;
+  // Time-lapse (L11): a drawn phase that scrubs from `from` by `delta` over `dur`, then holds ('in'), or ends (a release
+  // or an advance). null with no hold = the sky shows world time.
+  let lapse: {
+    from: number; delta: number; t: number; dur: number; kind: 'in' | 'release' | 'advance'; target: number;
+    resolve: () => void;
+  } | null = null;
+  let lapseHold: number | null = null;
+  let lastDisplay = effectivePhase(INITIAL_PHASE, 'auto');
+  let wantOvercast = 0;
+  let wantMist = 0;
+  let curOvercast = 0;
+  let curMist = 0;
   let clock = 0;
   let currentNight = 0;
   let currentLabel: TimeLabel = timeLabelForPhase(INITIAL_PHASE);
@@ -497,16 +772,64 @@ export function createAtmosphere(
   const moteGeo = new THREE.BufferGeometry();
   const posAttr = new THREE.BufferAttribute(positions, 3);
   moteGeo.setAttribute('position', posAttr);
-  const moteMat = new THREE.PointsMaterial({
-    color: BIOME_PROFILES.city.moteColorDay,
-    size: BIOME_PROFILES.city.moteSize,
-    transparent: true,
-    opacity: BIOME_PROFILES.city.moteOpacityDay,
-    depthWrite: false,
-  });
+  const seedAttr = new Float32Array(MOTE_COUNT);
+  for (let i = 0; i < MOTE_COUNT; i++) seedAttr[i] = seeds[i] / (Math.PI * 2);
+  moteGeo.setAttribute('aSeed', new THREE.BufferAttribute(seedAttr, 1));
+  const moteMat = createMoteMaterial(createMoteAtlas());
+  (moteMat.uniforms.uColor.value as THREE.Color).setHex(BIOME_PROFILES.city.moteColorDay);
+  moteMat.uniforms.uSize.value = BIOME_PROFILES.city.moteSize;
+  moteMat.uniforms.uOpacity.value = BIOME_PROFILES.city.moteOpacityDay;
+  let moteScale = 0;
   const motes = new THREE.Points(moteGeo, moteMat);
   motes.frustumCulled = false;
   scene.add(motes);
+
+  /** Advance the lapse by dt and return the phase to draw. */
+  function stepDisplay(dt: number): number {
+    const world = effectivePhase(phase, mode);
+    if (lapse) {
+      lapse.t += dt;
+      const k = smoothstep(lapse.t / Math.max(1e-6, lapse.dur));
+      // A release chases the world's own (moving) time: re-aim at it every frame.
+      if (lapse.kind === 'release') lapse.delta = shortestDelta(lapse.from, world);
+      if (lapse.t >= lapse.dur) {
+        const done = lapse;
+        lapse = null;
+        if (done.kind === 'in') lapseHold = done.target;
+        else if (done.kind === 'advance') {
+          phase = done.target;
+          lapseHold = null;
+        } else lapseHold = null;
+        done.resolve();
+        return done.kind === 'in' ? done.target : effectivePhase(phase, mode);
+      }
+      return wrapPhase(lapse.from + lapse.delta * k);
+    }
+    return lapseHold ?? world;
+  }
+
+  function startLapse(kind: 'in' | 'release' | 'advance', target: number, seconds: number, forward: boolean): TimeLapse {
+    if (lapse) {
+      lapse.resolve();
+      lapse = null;
+    }
+    const from = lastDisplay;
+    const delta = forward ? forwardDelta(from, target) : shortestDelta(from, target);
+    let resolve: () => void = () => {};
+    const done = new Promise<void>((r) => { resolve = r; });
+    if (Math.abs(delta) < LAPSE_MIN_DELTA || seconds <= 0) {
+      if (kind === 'in') lapseHold = target;
+      else if (kind === 'advance') {
+        phase = target;
+        lapseHold = null;
+      } else lapseHold = null;
+      resolve();
+      return { seconds: 0, done };
+    }
+    lapseHold = null;
+    lapse = { from, delta, t: 0, dur: seconds, kind, target, resolve };
+    return { seconds, done };
+  }
 
   function update(
     dt: number,
@@ -514,14 +837,21 @@ export function createAtmosphere(
     focusZ: number,
     biome: BiomeId,
     airborneOrFlying = false,
+    advanceClock = true,
   ): void {
     const safeDt = Math.max(0, Math.min(dt, 0.25));
     clock += safeDt;
-    if (mode === 'auto') {
+    if (mode === 'auto' && advanceClock) {
       phase = wrapPhase(phase + safeDt / CYCLE_SECONDS);
     }
 
-    const state = computeAtmosphereState(phase, mode, biome);
+    const scrubbing = lapse !== null;
+    const display = stepDisplay(safeDt);
+    lastDisplay = display;
+    const weatherK = Math.min(1, safeDt * 2.5);
+    curOvercast = lerpNum(curOvercast, wantOvercast, weatherK);
+    curMist = lerpNum(curMist, wantMist, weatherK);
+    const state = applyWeatherLook(computeAtmosphereState(display, 'auto', biome), curOvercast, curMist);
     currentNight = state.nightFactor;
     currentLabel = state.label;
 
@@ -529,7 +859,8 @@ export function createAtmosphere(
       ? Math.min(VIEW.cameraFar - 30, state.fogFar * 1.25)
       : state.fogFar;
 
-    const blend = initialized ? Math.min(1, safeDt * 2.8) : 1;
+    // A time-lapse scrubs fast: follow it exactly instead of easing behind it.
+    const blend = initialized && !scrubbing ? Math.min(1, safeDt * 2.8) : 1;
     initialized = true;
 
     curSkyHex = lerpHex(curSkyHex, state.skyHex, blend);
@@ -553,6 +884,7 @@ export function createAtmosphere(
     sunColor.setHex(state.sunColorHex);
     sun.color.copy(sunColor);
     sun.intensity = state.sunIntensity;
+    sun.shadow.intensity = 1 - 0.55 * Math.min(1, curOvercast);
     sun.position.set(
       focusX + state.sunDir[0] * 120,
       state.sunDir[1] * 120,
@@ -573,13 +905,22 @@ export function createAtmosphere(
     curVz = lerpNum(curVz, bp.vz, blend);
     curSwirl = lerpNum(curSwirl, bp.swirl, blend);
     curMoteSize = lerpNum(curMoteSize, bp.moteSize, blend);
-    const targetOpacity = lerpNum(bp.moteOpacityDay, bp.moteOpacityNight, state.nightFactor);
+    const targetOpacity = lerpNum(bp.moteOpacityDay, bp.moteOpacityNight, state.nightFactor) * MOTE_OPACITY_SCALE;
     curMoteOpacity = lerpNum(curMoteOpacity, targetOpacity, blend);
     targetMoteColor.setHex(lerpHex(bp.moteColorDay, bp.moteColorNight, state.nightFactor));
-    moteColor.copy(moteMat.color).lerp(targetMoteColor, blend);
-    moteMat.color.copy(moteColor);
-    moteMat.size = curMoteSize;
-    moteMat.opacity = curMoteOpacity;
+    moteColor.copy(moteMat.uniforms.uColor.value as THREE.Color).lerp(targetMoteColor, blend);
+    (moteMat.uniforms.uColor.value as THREE.Color).copy(moteColor);
+    moteMat.uniforms.uSize.value = curMoteSize;
+    moteMat.uniforms.uOpacity.value = curMoteOpacity;
+    moteMat.uniforms.uTime.value = clock;
+    moteMat.uniforms.uNight.value = state.nightFactor;
+    if (typeof window !== 'undefined') {
+      const sc = (window.innerHeight * Math.min(2, window.devicePixelRatio || 1)) / 2;
+      if (sc !== moteScale) {
+        moteScale = sc;
+        moteMat.uniforms.uScale.value = sc;
+      }
+    }
 
     for (let i = 0; i < MOTE_COUNT; i++) {
       const idx = i * 3;
@@ -604,12 +945,32 @@ export function createAtmosphere(
   }
 
   return {
-    update,
+    update: (dt, x, z, b, air = false) => update(dt, x, z, b, air, true),
+    render: (dt, x, z, b) => update(dt, x, z, b, false, false),
     nightFactor: () => currentNight,
     timeLabel: () => currentLabel,
     setMode: (next: TimeMode) => {
       mode = next;
     },
     getMode: () => mode,
+    getPhase: () => phase,
+    setPhase: (p: number) => {
+      phase = wrapPhase(p);
+    },
+    displayPhase: () => lastDisplay,
+    timeLapseTo: (target, seconds) => startLapse('in', targetPhase(target), seconds, true),
+    releaseLapse: (seconds) => {
+      if (!lapse && lapseHold === null) return { seconds: 0, done: Promise.resolve() };
+      return startLapse('release', effectivePhase(phase, mode), seconds, false);
+    },
+    lapsing: () => lapse !== null || lapseHold !== null,
+    advanceWorldTime: (target, seconds = 2) => {
+      mode = 'auto';
+      return startLapse('advance', targetPhase(target), seconds, true);
+    },
+    setWeatherLook: (overcast: number, mist: number) => {
+      wantOvercast = overcast;
+      wantMist = mist;
+    },
   };
 }

@@ -3,7 +3,7 @@
 import { firstPad } from '@lawn/gamepad';
 import { KEYS } from '../keys';
 import type { RiderPhase } from './cabCalls';
-import type { JobId } from './types';
+import type { JobId, WorkJobId } from './types';
 
 export interface BoardRow {
   job: JobId;
@@ -25,8 +25,29 @@ export interface BoardRow {
   earned: number;
 }
 
+/** One on-foot workplace card (chef, mechanic, comedian) in the Workplaces section. */
+export interface WorkRow {
+  job: WorkJobId;
+  title: string;
+  icon: string;
+  employer: string;
+  blurb: string;
+  level: number;
+  levelTitle: string;
+  xpInto: number;
+  xpNeed: number;
+  done: number;
+  earned: number;
+  perks: string[];
+  place: string;
+  /** The HUD route is pointing at this workplace. */
+  routed: boolean;
+}
+
 export interface BoardView {
   rows: BoardRow[];
+  /** The on-foot workplaces (Workplaces section). */
+  work: WorkRow[];
   /** My player-cab call (rider side). */
   cab: { phase: RiderPhase; driver: string | null; dest: string | null };
   /** Where a cab can take me. */
@@ -45,6 +66,10 @@ export interface BoardActions {
   callCab(dest: string): void;
   cancelCab(): void;
   takeCall(key: string): void;
+  /** Route the HUD to a workplace ("Show me"). */
+  routeWork(job: WorkJobId): void;
+  /** Drop the workplace route ("Stop route"). */
+  clearRoute(): void;
 }
 
 export interface JobBoard {
@@ -101,6 +126,40 @@ function btn(label: string, onClick: () => void, extra = ''): HTMLButtonElement 
   b.type = 'button';
   b.addEventListener('click', () => onClick());
   return b;
+}
+
+function workCard(r: WorkRow, actions: BoardActions): HTMLElement {
+  const c = el('div', 'gta-jb-card');
+  const top = el('div', 'gta-jb-top');
+  const names = el('div', 'gta-jb-names');
+  names.append(el('div', 'gta-jb-name', r.title), el('div', 'gta-jb-emp', r.employer));
+  top.append(el('span', 'gta-jb-icon', r.icon), names);
+
+  const xp = el('div', 'gta-jb-xp');
+  const fill = el('div', 'gta-jb-xpf');
+  const pct = r.xpNeed <= 0 ? 100 : Math.max(0, Math.min(100, (r.xpInto / r.xpNeed) * 100));
+  fill.style.width = `${pct}%`;
+  xp.append(fill);
+
+  c.append(
+    top,
+    el('div', 'gta-jb-lv', `${r.levelTitle} · level ${r.level}`),
+    xp,
+    el('div', 'gta-jb-stats', `${r.done} done · ${r.earned} 🌰 earned`),
+    el('div', 'gta-jb-blurb', r.blurb),
+  );
+  if (r.perks.length > 0) {
+    const ul = el('ul', 'gta-jb-perks');
+    for (const p of r.perks) ul.append(el('li', '', p));
+    c.append(ul);
+  }
+  c.append(el('div', 'gta-jb-stats', `Where: ${r.place}`));
+  if (r.routed) {
+    c.append(btn('Stop route', () => actions.clearRoute()));
+  } else {
+    c.append(btn('Show me', () => actions.routeWork(r.job)));
+  }
+  return c;
 }
 
 function card(r: BoardRow, actions: BoardActions): HTMLElement {
@@ -195,6 +254,11 @@ export function createJobBoard(ui: HTMLElement, actions: BoardActions): JobBoard
     const v = view;
     if (!v) return;
     const nodes: HTMLElement[] = v.rows.map((r) => card(r, actions));
+
+    if (v.work.length > 0) {
+      nodes.push(el('div', 'gta-jb-sec', 'Workplaces'));
+      for (const w of v.work) nodes.push(workCard(w, actions));
+    }
 
     nodes.push(el('div', 'gta-jb-sec', 'Call a cab'));
     if (!v.online) {

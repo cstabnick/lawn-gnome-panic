@@ -1,0 +1,338 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "south-shore",
+  "name": "Saltbucket Shore",
+  "bounds": {
+    "w": 3600,
+    "d": 900
+  },
+  "base": {
+    "id": "gta-coast-scatter",
+    "version": 1,
+    "seed": 1102,
+    "params": {}
+  },
+  "stamps": [
+    {"op": "gauss", "x": -990.0, "z": -100.8, "sigma": 9.3, "amount": 1.8},
+    {"op": "gauss", "x": -962.6, "z": -98.2, "sigma": 5.9, "amount": 2.7},
+    {"op": "gauss", "x": -947.3, "z": -93.8, "sigma": 7.2, "amount": 2.5},
+    {"op": "gauss", "x": -923.8, "z": -96.2, "sigma": 8.0, "amount": 1.6},
+    {"op": "gauss", "x": -862.7, "z": -98.4, "sigma": 5.3, "amount": 1.6},
+    {"op": "gauss", "x": -836.7, "z": -104.3, "sigma": 6.6, "amount": 2.3},
+    {"op": "gauss", "x": -819.4, "z": -101.5, "sigma": 5.0, "amount": 3.0},
+    {"op": "gauss", "x": -797.5, "z": -95.9, "sigma": 9.7, "amount": 2.2},
+    {"op": "gauss", "x": -776.2, "z": -106.3, "sigma": 5.1, "amount": 1.4},
+    {"op": "gauss", "x": -732.6, "z": -93.4, "sigma": 9.2, "amount": 1.6},
+    {"op": "gauss", "x": -712.2, "z": -97.9, "sigma": 9.9, "amount": 3.0},
+    {"op": "gauss", "x": -686.2, "z": -92.6, "sigma": 6.3, "amount": 1.7},
+    {"op": "gauss", "x": -633.2, "z": -100.2, "sigma": 8.5, "amount": 1.7},
+    {"op": "gauss", "x": -608.9, "z": -95.7, "sigma": 5.9, "amount": 3.2},
+    {"op": "gauss", "x": -589.3, "z": -108.0, "sigma": 6.9, "amount": 1.9},
+    {"op": "gauss", "x": -517.3, "z": -101.7, "sigma": 6.5, "amount": 1.5},
+    {"op": "gauss", "x": -489.9, "z": -104.6, "sigma": 8.2, "amount": 2.4},
+    {"op": "gauss", "x": -473.3, "z": -106.8, "sigma": 8.9, "amount": 3.0},
+    {"op": "gauss", "x": -459.6, "z": -102.1, "sigma": 7.9, "amount": 2.3},
+    {"op": "gauss", "x": -439.5, "z": -94.1, "sigma": 9.8, "amount": 1.6},
+    {"op": "gauss", "x": -396.1, "z": -96.2, "sigma": 9.1, "amount": 1.7},
+    {"op": "gauss", "x": -367.2, "z": -98.3, "sigma": 6.0, "amount": 3.2},
+    {"op": "gauss", "x": -347.6, "z": -104.2, "sigma": 5.5, "amount": 1.9},
+    {"op": "gauss", "x": -167.2, "z": -104.8, "sigma": 5.2, "amount": 2.4},
+    {"op": "gauss", "x": -137.9, "z": -104.3, "sigma": 5.1, "amount": 3.6},
+    {"op": "gauss", "x": -120.1, "z": -104.2, "sigma": 10.0, "amount": 4.2},
+    {"op": "gauss", "x": -91.9, "z": -101.4, "sigma": 8.7, "amount": 3.8},
+    {"op": "gauss", "x": -73.6, "z": -109.3, "sigma": 8.4, "amount": 2.5},
+    {"op": "gauss", "x": -58.0, "z": -106.0, "sigma": 7.5, "amount": 3.9},
+    {"op": "gauss", "x": 58.0, "z": -109.0, "sigma": 7.0, "amount": 3.3},
+    {"op": "gauss", "x": 47.9, "z": -114.6, "sigma": 7.6, "amount": 3.4},
+    {"op": "gauss", "x": 60.3, "z": -105.4, "sigma": 9.8, "amount": 2.4},
+    {"op": "gauss", "x": 124.0, "z": -113.3, "sigma": 6.5, "amount": 2.4},
+    {"op": "gauss", "x": 152.3, "z": -110.8, "sigma": 8.3, "amount": 4.1},
+    {"op": "gauss", "x": 176.3, "z": -101.4, "sigma": 6.0, "amount": 4.1},
+    {"op": "gauss", "x": 204.1, "z": -113.8, "sigma": 6.9, "amount": 2.4},
+    {"op": "gauss", "x": 266.8, "z": -113.3, "sigma": 8.6, "amount": 2.7},
+    {"op": "gauss", "x": 286.9, "z": -106.0, "sigma": 6.4, "amount": 4.2},
+    {"op": "gauss", "x": 307.8, "z": -108.8, "sigma": 6.6, "amount": 3.0},
+    {"op": "gauss", "x": 346.8, "z": -103.1, "sigma": 5.2, "amount": 1.6},
+    {"op": "gauss", "x": 373.0, "z": -107.6, "sigma": 5.1, "amount": 2.2},
+    {"op": "gauss", "x": 399.9, "z": -97.9, "sigma": 6.2, "amount": 2.8},
+    {"op": "gauss", "x": 420.0, "z": -92.7, "sigma": 8.1, "amount": 2.5},
+    {"op": "gauss", "x": 444.3, "z": -107.8, "sigma": 6.0, "amount": 1.4},
+    {"op": "gauss", "x": 504.1, "z": -92.9, "sigma": 6.1, "amount": 1.9},
+    {"op": "gauss", "x": 525.1, "z": -96.8, "sigma": 10.0, "amount": 3.1},
+    {"op": "gauss", "x": 541.1, "z": -100.8, "sigma": 7.1, "amount": 1.8},
+    {"op": "gauss", "x": 599.4, "z": -95.3, "sigma": 6.9, "amount": 1.9},
+    {"op": "gauss", "x": 628.4, "z": -96.4, "sigma": 7.3, "amount": 3.1},
+    {"op": "gauss", "x": 655.1, "z": -93.6, "sigma": 8.2, "amount": 1.8},
+    {"op": "gauss", "x": 865.6, "z": -103.4, "sigma": 5.4, "amount": 1.5},
+    {"op": "gauss", "x": 890.7, "z": -99.0, "sigma": 8.2, "amount": 2.4},
+    {"op": "gauss", "x": 908.3, "z": -104.7, "sigma": 6.9, "amount": 3.2},
+    {"op": "gauss", "x": 935.7, "z": -104.8, "sigma": 9.8, "amount": 2.4},
+    {"op": "gauss", "x": 957.3, "z": -92.5, "sigma": 7.5, "amount": 1.4}
+  ],
+  "paths": [
+    {
+      "id": "south-band",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -280
+        ],
+        [
+          0,
+          -190
+        ],
+        [
+          -300,
+          -150
+        ],
+        [
+          -700,
+          -140
+        ],
+        [
+          -950,
+          -160
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "south-band-east",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -190
+        ],
+        [
+          400,
+          -150
+        ],
+        [
+          800,
+          -150
+        ],
+        [
+          950,
+          -190
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "coast-spur",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -190
+        ],
+        [
+          0,
+          -90
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "harbour-road",
+      "kind": "road",
+      "points": [
+        [
+          -950,
+          -160
+        ],
+        [
+          -1180,
+          -154
+        ],
+        [
+          -1400,
+          -150
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "saltcut",
+      "kind": "water",
+      "points": [
+        [
+          700,
+          -268
+        ],
+        [
+          715,
+          -200
+        ],
+        [
+          735,
+          -120
+        ],
+        [
+          752,
+          -75
+        ],
+        [
+          748,
+          -30
+        ],
+        [
+          732,
+          15
+        ],
+        [
+          728,
+          55
+        ]
+      ],
+      "width": 14
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "ocean",
+      "kind": "slot",
+      "x": 0,
+      "z": 340,
+      "data": {
+        "hw": 1790,
+        "hd": 300,
+        "kind": "water",
+        "epic": "E11",
+        "flat": false,
+        "label": "the Saltwater"
+      }
+    },
+    {
+      "id": "beach",
+      "kind": "slot",
+      "x": 0,
+      "z": 15,
+      "data": {
+        "hw": 1790,
+        "hd": 25,
+        "kind": "natural",
+        "epic": "E11",
+        "flat": false,
+        "label": "Saltbucket Shore beach"
+      }
+    },
+    {
+      "id": "boardwalk",
+      "kind": "slot",
+      "x": 0,
+      "z": -35,
+      "data": {
+        "hw": 210,
+        "hd": 25,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": true,
+        "label": "Saltbucket Boardwalk",
+        "anchors": {
+          "entrance": {
+            "dx": 0,
+            "dz": -25,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "ferris-wheel",
+      "kind": "slot",
+      "x": -260,
+      "z": -50,
+      "data": {
+        "hw": 30,
+        "hd": 30,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": true,
+        "label": "the Spokewheel"
+      }
+    },
+    {
+      "id": "pirate-ship",
+      "kind": "slot",
+      "x": 300,
+      "z": 130,
+      "data": {
+        "hw": 40,
+        "hd": 25,
+        "kind": "venue",
+        "epic": "E11",
+        "flat": false,
+        "parent": "ocean",
+        "label": "the Bathtub Queen"
+      }
+    },
+    {
+      "id": "water/saltwater",
+      "kind": "water",
+      "x": 0,
+      "z": 340,
+      "data": {
+        "w": 3580,
+        "d": 600
+      }
+    }
+  ],
+  "data": {
+    "region": "coast",
+    "ground": 14271887,
+    "surface": "sand",
+    "batch": "coast-scenery",
+    "border": [
+      [
+        -1400,
+        -250
+      ],
+      [
+        1400,
+        -250
+      ],
+      [
+        1400,
+        -50
+      ],
+      [
+        1800,
+        -50
+      ],
+      [
+        1800,
+        650
+      ],
+      [
+        -1800,
+        650
+      ],
+      [
+        -1800,
+        -50
+      ],
+      [
+        -1400,
+        -50
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-coast-relief",
+        "version": 1,
+        "params": {
+          "dunes": 2.5,
+          "duneScale": 70,
+          "swell": 2,
+          "swellScale": 300
+        }
+      }
+    }
+  }
+}

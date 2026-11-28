@@ -56,6 +56,7 @@ function denialBeat(): SceneScript['steps'] {
     ...reaction('pip', { toward: 'player', gesture: 'clutch', size: 'mcu', side: -25 }),
     { do: 'say', who: 'pip', text: '...Hairline.' },
     // Father Loam walks over from his snowmobile and the frost bells come in on his first line.
+    { do: 'sfx', id: 'crunch', at: 'loam', gain: 0.5, async: true },
     { do: 'walk', who: 'loam', path: [[0, -338]], speed: 1.4 },
     { do: 'music', track: 'frost', fade: 1.5 },
     ...loamScene(),
@@ -74,6 +75,7 @@ function loamScene(): SceneScript['steps'] {
     cut(L.single('loam', 'ms')),
     { do: 'say', who: 'loam', text: 'The Chapel threw me out for preaching on a snowmobile. The Kiln keeps no grudges.' },
     // The button: Pip sits down by the Zero-Turn, quiet for once, and asks.
+    { do: 'sfx', id: 'creak', at: 'pip', gain: 0.5, async: true },
     { do: 'gesture', who: 'pip', name: 'sit', s: 1.0 },
     { do: 'face', who: 'pip', at: 'loam', s: 0.3 },
     cut(L.single('pip', 'mcu')),
@@ -96,7 +98,7 @@ export const KILN_RESIN_INTRO: SceneScript = {
   music: 'frost',
   ambience: 'wind',
   sky: 'golden',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/kiln-resin-intro.md' },
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/kiln-resin-intro.md', kind: 'intro' },
   actors: [
     { id: 'player', player: true, ...markOf(BASIN, 'player') },
     { id: 'loam', preset: 'loam', held: 'clay-jar', ...markOf(BASIN, 'loam') },
@@ -120,10 +122,21 @@ export const KILN_RESIN_INTRO: SceneScript = {
 function hook(): SceneScript['steps'] {
   const L = coverage('loam', 'pip', 1);
   return [
+    // The Previously: the basin at dusk, Pip shivering on his bench, one sleeve empty.
+    cut(spot(BASIN, 'wide')),
+    { do: 'sfx', id: 'cloth', at: 'pip', gain: 0.5, async: true },
+    { do: 'gesture', who: 'pip', name: 'flinch', s: 1.2, async: true },
+    beat('pause'),
+    cut(L.single('loam', 'mcu')),
+    { do: 'say', who: 'loam', text: 'The shop, the Acorn, the arm. The Kiln takes in threes.' },
+    { do: 'intro', who: 'loam', s: 2.8 },
+    // Pip, small on the bench, takes it in.
+    ...reaction('pip', { toward: 'loam', gesture: 'flinch', size: 'mcu', hold: 'pause' }),
+    // The empty jar: upended over the stove.
     cut(L.single('loam', 'mcu')),
     { do: 'sfx', id: 'knock', at: 'loam' },
     { do: 'gesture', who: 'loam', name: 'lean', s: 1.0, async: true },
-    { do: 'say', who: 'loam', text: 'The jar is empty, and the Kiln is not a patient god.' },
+    { do: 'say', who: 'loam', text: 'And the jar is empty. The Kiln is not a patient god.' },
     cut(L.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'How empty? A-little-bit empty?' },
     cut(L.single('loam', 'mcu')),
@@ -131,7 +144,7 @@ function hook(): SceneScript['steps'] {
     { do: 'gesture', who: 'loam', name: 'lean', s: 1.0, async: true },
     beat('pause'),
     cut(L.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: 'Okay. Very empty.' },
+    { do: 'say', who: 'pip', text: "Okay. Very empty. I'm not shivering. These are my regular teeth." },
   ];
 }
 
@@ -164,64 +177,95 @@ function arrangeBasin(): SceneScript['steps'] {
     cut(M),
     { do: 'say', who: 'loam', text: 'Bring me the resin. Then hold the basin while it sets.' },
     cut(L.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: "Ninety seconds? I've glued a hat in less." },
+    { do: 'say', who: 'pip', text: "Ninety seconds? I've glued a hat in less. Warmer, though." },
     ...reaction('player', { toward: 'pip', gesture: 'nod', size: 'mcu', hold: 'pause' }),
     { do: 'walk', who: 'player', path: [[1, -336]], speed: 1.2 },
   ];
 }
 
 /**
- * Kiln-Resin outro: the scroll from Thermos Theo's barrel at the north highway. Pip's resin arm is done.
- * A sincere beat (no jokes until Pip is coping), then the snail-mail from Tansy.
+ * Kiln-Resin outro (night): Thermos Theo's barrel on the north highway. Pip's resin arm is done: a sincere beat (no
+ * jokes until Pip is coping), then Shelldon's snail brings Tansy's scroll (the Combine is built in parts, out at the
+ * edges; the crew must find friends there), and a plow's headlamps sweep past the bend: the road north is next.
  */
+const PT = coverage('pip', 'player', 1);
+
 export const KILN_RESIN_OUTRO: SceneScript = {
   id: 'kiln-resin-outro',
   stage: { kind: 'world' },
   music: 'warm',
   ambience: 'wind',
-  sky: 'golden',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/kiln-resin-outro.md' },
+  sky: 'night',
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/kiln-resin-outro.md', kind: 'outro' },
   actors: [
     { id: 'player', player: true, ...markOf(CAMP, 'player') },
-    { id: 'theo', name: 'Thermos Theo', look: { hat: 0x9e3b2a, shirt: 0x4a5a6a, beard: 0xdddddd }, ...markOf(CAMP, 'theo') },
+    { id: 'theo', preset: 'thermos theo', ...markOf(CAMP, 'theo') },
     { id: 'pip', preset: 'pip', at: [48, -349], yaw: -Math.PI / 2 },
+  ],
+  vehicles: [
+    // L95: an HOA plow on the ring road, headlamps sweeping the bend, slowing and not stopping. Theo's camp is known.
+    { id: 'plow', ...carMark(BLOCKADE, 'salt-plow-1'), at: [118, -296], yaw: -2.1, headlights: true, hidden: true },
   ],
   props: [
     { id: 'snail', prefab: 'riding-snail', at: [36, -333], yaw: 0.5, size: 0.6, by: 'h', hidden: true },
+    { id: 'lamp', prefab: 'torch', at: [41.5, -347], yaw: 0, size: 1.2, by: 'h' },
   ],
   steps: [
-    // The hook: Theo pours at the barrel.
+    // 1. Hook: Theo pours at the barrel, the lamp low and yellow on the snow.
     { do: 'cam', shot: spot(CAMP, 'wide') },
+    { do: 'sfx', id: 'pour', at: 'theo', gain: 0.6, async: true },
     { do: 'gesture', who: 'theo', name: 'lean', s: 1.0 },
+    { do: 'sfx', id: 'clink', at: 'theo', gain: 0.5, async: true },
     cut(shot('theo', 'mcu', { toward: 'player' })),
     { do: 'say', who: 'theo', text: 'Acorn-broth. Burns the throat, warms the soul.' },
-    // Pip flexes the new arm. No line for a beat.
+    { do: 'intro', who: 'theo', s: 2.8 },
+    // 2. Pip flexes the new arm. No line for a beat.
     cut(shot('pip', 'mcu', { toward: 'player' })),
     { do: 'gesture', who: 'pip', name: 'wave', s: 1.6 },
     beat('pause'),
-    // The sincere beat: music out, close singles on one side of the line, one held silence.
+    // 3. The sincere beat: music out, close singles on one side of the line, one held silence.
     { do: 'music', track: null, fade: 0.6 },
     ...sincere(),
     { do: 'music', track: 'warm', fade: 1.5 },
-    // The snail-mail: the scroll, and the note as the scene's only caption.
+    // 4. The snail-mail: the scroll, and the note as the scene's only caption.
     { do: 'spawn', id: 'snail' },
     { do: 'stinger', id: 'mystery' },
+    { do: 'sfx', id: 'bell', at: 'snail', gain: 0.4, async: true },
     cut({ kind: 'cut', pos: up(33, -329, 1.2), look: 'snail', fov: 44 }),
     beat('pause'),
     cut(shot('theo', 'mcu', { toward: 'player', side: -25 })),
-    { do: 'say', who: 'theo', text: "Post's here." },
+    { do: 'say', who: 'theo', text: "Post's here. Shelldon's best, and slowest." },
     { do: 'hold', who: 'theo', prop: 'rolled-scroll' },
+    { do: 'sfx', id: 'paper', at: 'theo', gain: 0.6, async: true },
     { do: 'give', from: 'theo', to: 'player', prop: 'rolled-scroll', s: 1.2 },
     cut(shot('player', 'mcu', { toward: 'theo' })),
-    { do: 'caption', text: 'Found the Stopping Stone. Dust Flats. Bring Pip. Bring snacks. - T.' },
+    { do: 'caption', text: 'Vesper builds the Combine in parts, out at the edges. Find friends there. - T.' },
     beat('pause'),
     beat('pause'),
     beat('pause'),
     { do: 'caption', text: null },
-    // The button: Pip, coping and proud, reading over the player's shoulder.
-    cut(shot('pip', 'ms', { toward: 'player', side: 25 })),
-    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.2, async: true },
-    { do: 'say', who: 'pip', text: 'It\'s from Tansy. She said bring Pip. By name.' },
+    // 5. Pip reads it aloud and takes it badly, then well.
+    cut(PT.single('pip', 'ms')),
+    { do: 'say', who: 'pip', text: "'Parts. Out at the edges. Find friends there.' Friends. Out there." },
+    { do: 'gesture', who: 'pip', name: 'shrug', s: 1.0, async: true },
+    cut(PT.single('player', 'mcu')),
+    { do: 'say', who: 'player', text: 'We have Theo.' },
+    cut(shot('theo', 'mcu', { toward: 'player', side: -25 })),
+    { do: 'say', who: 'theo', text: 'You have a barrel. Which is more than most.' },
+    // 6. The turn: headlamps sweep the bend. The plows know where the camp is.
+    { do: 'spawn', id: 'plow' },
+    { do: 'sfx', id: 'engine-rev', at: 'plow', gain: 0.35, async: true },
+    { do: 'drive', vehicle: 'plow', path: [[118, -296], [88, -314], [70, -318]], speed: 7, arrive: false, async: true },
+    { do: 'stinger', id: 'danger' },
+    cut({ kind: 'cut', pos: up(52, -330, 1.3), look: up(92, -312, 1.2), fov: 46 }),
+    beat('pause'),
+    cut(shot('theo', 'mcu', { toward: 'player', side: -25 })),
+    { do: 'face', who: 'theo', at: [0, -420], s: 0.5, async: true },
+    { do: 'say', who: 'theo', text: "They know my bend. Not safe past morning. North's the road, up Snowcap Rise." },
+    // 7. Button: Pip, steadier, flexing the glued fingers at the dark.
+    cut(PT.single('pip', 'ms')),
+    { do: 'gesture', who: 'pip', name: 'cheer', s: 1.0, async: true },
+    { do: 'say', who: 'pip', text: "North, then. I'll bring the arm. It's the warmest thing I own." },
     beat('pause'),
   ],
 };

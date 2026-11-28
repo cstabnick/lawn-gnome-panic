@@ -13,7 +13,8 @@ export type SpeciesId =
   | 'snow-hare'
   | 'mallard'
   | 'harvest-mouse'
-  | 'pheasant';
+  | 'pheasant'
+  | 'deer';
 
 /**
  * What a species does once fully alarmed:
@@ -170,6 +171,16 @@ export const SPECIES: readonly HuntSpecies[] = [
     hint: 'Struts the Cloverfield hedgerows by day and calls like a creaky gate. Bursts into the air when you get close.',
     blurb: 'All tail and no patience. The farmers say a pheasant is a hen that read one book about itself.',
   },
+  {
+    id: 'deer', name: 'Trellisdown Red Deer', plural: 'Trellisdown Red Deer', region: 'west-estates',
+    prefab: 'deer-hind', scale: 1, radius: 0.7, height: 1.6, walk: 1.1, run: 9.5, turn: 3,
+    hear: 34, sight: 18, style: 'run', fleeSeconds: 9, downTime: 7, puff: 0xa8743f,
+    call: 'hunt-deer', callEvery: [8, 16], stride: 0.9, print: 'paw', printColor: 0x3a2a1a, active: 'always',
+    tuft: { id: 'tuft-deer', name: 'Red-deer winter tuft', price: 26, color: 0xa8743f },
+    keepsake: { id: 'keep-deer', name: 'Shed antler tine', price: 110, chance: 0.12, color: 0xe8dcc0 },
+    hint: 'Grazes the empty Trellisdown pasture west of the vineyard at dawn and dusk. Barks once and is gone: come up slowly, downwind, on foot.',
+    blurb: 'Tall, red and polite about it. A deer knocked over stands up, looks at you as if you had trodden on a row, and leaves.',
+  },
 ];
 
 export const SPECIES_BY_ID: Readonly<Record<SpeciesId, HuntSpecies>> = Object.fromEntries(
@@ -208,6 +219,8 @@ export const HUNT_SPOTS: readonly HuntSpot[] = [
   { species: 'harvest-mouse', x: -700, z: 700, count: 3, spread: 10, leash: 30 },
   { species: 'pheasant', x: 170, z: 520, count: 4, spread: 10, leash: 40 },
   { species: 'pheasant', x: -120, z: 640, count: 3, spread: 10, leash: 40 },
+  { species: 'deer', x: -1290, z: -440, count: 3, spread: 12, leash: 60 },
+  { species: 'deer', x: -1240, z: -840, count: 3, spread: 12, leash: 60 },
 ];
 
 /** Tuning. Distances in world units (1 = a gnome's height), times in seconds. */

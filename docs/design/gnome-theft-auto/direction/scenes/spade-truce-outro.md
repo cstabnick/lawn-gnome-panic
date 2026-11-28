@@ -119,3 +119,18 @@ deadline, which is what a chapter closer owes the next chapter.
 - [x] Report OK; removed from the baseline.
 - [x] LOS test passes; watched at both sizes.
 - [x] `direction.notes` points here.
+
+## 12. Act IV revision (E22, row 59)
+
+Dusk (`sky: 'golden'`), `kind: 'outro'`: this is no longer the chapter close, because rows 60-70 follow. The armory is
+**sealed from Thorne Tower**, not retaken (row 60 opens it from below), so:
+
+- The hook is two raps of a fist on steel (`knock`, `latch`) and Diggs walking out: "The armory is sealed from Thorne
+  Tower. Not tonight." (was "The armory is ours...").
+- Cut: Diggs's "Spade Guard. Unmowed. Carburettors. Cloverfield. In one sandbox." (the coalition forms in row 64) is now
+  "Welcome to Fort Sandpit. Wipe your boots." (Bracken's boots gag lands).
+- Pip: "The Guard is ours! Big enough for the forty-eighth wrench?" Tansy: "No." ... "...Close." (the wrench ladder is
+  unchanged in rung).
+- The Grand Combine reveal, the boom, Vesper's "Tonight" line and the `END OF CHAPTER 4` title are cut (the act's
+  momentum is the next rows' job). New button: music out, Diggs turns, salutes the player (`tipHat` on a low ms) and says
+  "The Guard stands with you. Effective immediately.", then a held silence. Length 47.7 s.

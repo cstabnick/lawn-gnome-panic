@@ -83,6 +83,7 @@ export const GTA_FLEET: readonly PrefabDef[] = [
   // ---- Spark Plug Pendant: a plug on a cord (neck) -------------------------------------------------------------------
   {
     id: 'spark-plug-pendant', name: 'Spark Plug Pendant', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.25, 0] },
     tags: ['pendant', 'necklace', 'spark', 'plug', 'cord', 'mower', 'gta'], emoji: [],
     about: 'Gnome Theft Auto: the Spark Plug Pendant. A white ceramic spark plug with a steel hex and a copper tip, hung on a cord loop. Worn on the neck, hanging at the chest.',
     examine: [
@@ -117,6 +118,64 @@ export const GTA_FLEET: readonly PrefabDef[] = [
       { s: 'ring', d: [0.11, 0.035], at: [0, 0.19, -0.12], c: 'black', seg: 10, name: 'tyre' },
       { s: 'cyl', d: [0.04, 0.04, 0.03], at: [0, 0.19, -0.12], rot: [90, 0, 0], c: 'steel', seg: 8, name: 'hub' },
       { s: 'box', d: [0.03, 0.36, 0.02], at: [0.09, 0.19, 0.02], c: 'leather-dark', mirror: true, name: 'strap' },
+    ],
+  },
+  // ---- Spent Acorn Shell: the husk and cap of a fired acorn round (gun casings, Gnome Theft Auto) -------------------
+  {
+    id: 'acorn-shell', name: 'Spent Acorn Shell', category: 'prop', uses: ['place'],
+    tags: ['acorn', 'shell', 'casing', 'ammo', 'spent', 'gta', 'debris'], emoji: [],
+    tint: 0x8a5a2b,
+    about: 'Gnome Theft Auto: the Spent Acorn Shell. The empty husk and cupule cap of a fired acorn round, about 4 cm long. Lies on its side.',
+    examine: [
+      'An open acorn husk, hollow at one end, with its cupule cap still stuck on the back and a crack along one side.',
+      'Saying: a shell that has gone off has done its job, and the gnome who fired it will be the first to say so.',
+      'Tip: gather your shells after a fight. A gnome who counts his ammo is a gnome who does not run dry in the middle of a skirmish.',
+      'Joke: the Tall Ones call these "brass", which makes no sense, because acorns have never been brass in their lives.',
+      'The crack goes straight through the husk, which means it was a good shot and went through whatever was in the way.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.018, 0.018, 0.04], at: [0, 0.02, 0], c: 'tint', seg: 8, name: 'husk' },
+      { s: 'ring', d: [0.02, 0.006], at: [0, 0.036, 0], c: 'leather-dark', seg: 8, name: 'cap' },
+    ],
+  },
+  // ---- Pulled-Over Cap: reward for cracking gnomes at the wheel (achievement gta-driver-down) -----------------------
+  {
+    id: 'pulled-over-cap', name: 'Pulled-Over Cap', category: 'armor', uses: ['wear-head'],
+    tags: ['cap', 'hat', 'peaked', 'stop', 'traffic', 'warden', 'head', 'reward', 'gta'], emoji: [],
+    about: 'Gnome Theft Auto: a navy peaked cap with a red stop disc badge on the front. Reward for the Pulled Over achievement. Plain colours, no tint.',
+    examine: [
+      'A navy peaked cap with a stiff crown, a black peak and a little red stop disc pinned to the front.',
+      'Saying: a gnome at the wheel is going somewhere, and a gnome in this cap decides whether they get there.',
+      'Tip: tip the peak to the drivers you let pass. The ones you do not let pass will not be looking.',
+      'Joke: the HOA asked to borrow it for a parking review and gave it back with three warnings stapled to the lining.',
+      'The stop disc has a dent in it. Nobody says how, and the cap does not say either.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.14, 0.15, 0.09], at: [0, 0.045, 0], c: 0x1f2a4a, seg: 10 },
+      { s: 'cyl', d: [0.17, 0.16, 0.03], at: [0, 0.105, 0], c: 0x1f2a4a, seg: 10 },
+      { s: 'box', d: [0.2, 0.014, 0.1], at: [0, 0.007, 0.13], c: 'black' },
+      { s: 'cyl', d: [0.03, 0.03, 0.008], at: [0, 0.07, 0.15], rot: [90, 0, 0], c: 'red', seg: 8 },
+    ],
+  },
+  // ---- Acorn-Shell Bandolier: reward for leaving 500 shells (achievement gta-shell-collector) ------------------------
+  {
+    id: 'acorn-shell-bandolier', name: 'Acorn-Shell Bandolier', category: 'armor', uses: ['wear-back'],
+    tags: ['bandolier', 'acorn', 'shell', 'belt', 'strap', 'ammo', 'back', 'reward', 'gta'], emoji: [],
+    about: 'Gnome Theft Auto: a leather strap worn on the back with a row of spent acorn shells in loops. Reward for the Shell Shock achievement. Plain colours, no tint.',
+    examine: [
+      'A broad leather strap with a row of loops, each holding a spent acorn shell, polished by a lot of handling.',
+      'Saying: an acorn fired is an acorn spent, and a gnome who keeps the shells has kept count of every one.',
+      'Tip: do not run with it unbuckled. The shells rattle, and every gnome in Turfton turns round to look.',
+      'Joke: the squirrels think it is a lunch belt and follow the wearer home with great hope and no luck.',
+      'One loop near the buckle is empty. The wearer says it is for the next one, and means it.',
+    ],
+    parts: [
+      { s: 'box', d: [0.06, 0.32, 0.02], at: [0, 0.16, 0], rot: [0, 0, 35], c: 'leather' },
+      { s: 'cyl', d: [0.016, 0.016, 0.04], at: [-0.06, 0.08, 0.02], rot: [0, 0, 35], c: 0x8a5a2b, seg: 6 },
+      { s: 'cyl', d: [0.016, 0.016, 0.04], at: [-0.02, 0.14, 0.02], rot: [0, 0, 35], c: 0x8a5a2b, seg: 6 },
+      { s: 'cyl', d: [0.016, 0.016, 0.04], at: [0.02, 0.2, 0.02], rot: [0, 0, 35], c: 0x8a5a2b, seg: 6 },
+      { s: 'cyl', d: [0.016, 0.016, 0.04], at: [0.06, 0.26, 0.02], rot: [0, 0, 35], c: 0x8a5a2b, seg: 6 },
+      { s: 'box', d: [0.05, 0.04, 0.025], at: [0.09, 0.3, 0.005], c: 'brass' },
     ],
   },
 ];

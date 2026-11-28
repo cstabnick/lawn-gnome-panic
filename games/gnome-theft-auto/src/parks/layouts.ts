@@ -5,6 +5,7 @@ import { emptyPlan, type DressPlan } from '../cityScenery/types';
 import { PARKS, type ParkId } from './blocks';
 import { parkCtx, type ParkCtx } from './kit';
 import { layoutBandstandGreen, layoutGnorwin, layoutKilnsideRec } from './layoutA';
+import { layoutGnorwinCourts, layoutGnorwinSkate } from './layoutC';
 import { layoutClayfootRose, layoutMallardMere, layoutPureLoam } from './layoutB';
 
 const LAYOUTS: Record<ParkId, (c: ParkCtx) => void> = {
@@ -14,6 +15,8 @@ const LAYOUTS: Record<ParkId, (c: ParkCtx) => void> = {
   'mallard-mere': layoutMallardMere,
   'clayfoot-rose': layoutClayfootRose,
   'pure-loam': layoutPureLoam,
+  'gnorwin-courts': layoutGnorwinCourts,
+  'gnorwin-skate': layoutGnorwinSkate,
 };
 
 export function planParks(site: Site): DressPlan {

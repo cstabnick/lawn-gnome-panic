@@ -1,6 +1,7 @@
 // Fishing: who bites (weighted by water, region, time, weather, bait, rod and hot spot), how big, and how soon. Pure.
 import { FISH_SPECIES, FISH_SPOTS } from './species';
 import { FISH, RARITY_WEIGHT } from './types';
+import { weatherAt as skyAt } from '../weather';
 import type { BaitDef, FishSpecies, FishSpot, FishWater, FishWeather, RegionId, TimeLabel } from './types';
 
 export interface PickCtx {
@@ -14,9 +15,17 @@ export interface PickCtx {
   spot: FishSpot | null;
 }
 
-/** Turfton has no weather system: Frostbite Fells is 'snow'; Loch Moss at Dawn or Morning is 'mist'; else 'clear'. */
+/**
+ * The fishing weather at a region and time. Frostbite Fells is always 'snow' (frost glaze stays on the ice). Else the
+ * real weather from src/weather/: snow or rain above intensity 0.15, or mist. Else Loch Moss at Dawn or Morning is 'mist'
+ * (the old morning mist). Else 'clear' ('cloud' counts as clear).
+ */
 export function weatherAt(region: RegionId, time: TimeLabel): FishWeather {
   if (region === 'frostbite-fells') return 'snow';
+  const w = skyAt(region);
+  if (w.kind === 'snow' && w.intensity > 0.15) return 'snow';
+  if (w.kind === 'rain' && w.intensity > 0.15) return 'rain';
+  if (w.kind === 'mist') return 'mist';
   if (region === 'loch-moss' && (time === 'Dawn' || time === 'Morning')) return 'mist';
   return 'clear';
 }

@@ -12,7 +12,11 @@ import type { Fx, Sfx, Vehicle, World } from './types';
 
 // ---- Kinds ------------------------------------------------------------------------------------------------------
 
-export type CritterKind = 'cow' | 'sheep' | 'pig' | 'hen' | 'squirrel' | 'polar-bear' | 'bee';
+export type CritterKind = 'cow' | 'sheep' | 'pig' | 'hen' | 'squirrel' | 'polar-bear' | 'bee'
+  // E31 (living world): small wild animals for the Unmown and the outer bands (no deer: E16 owns those).
+  | 'hare' | 'hedgehog' | 'fox' | 'frog' | 'duck' | 'crab' | 'butterfly' | 'dragonfly'
+  // E16 (critters/countryside.ts): red deer (hind, stag, fawn) and hill goats.
+  | 'deer' | 'stag' | 'fawn' | 'goat';
 
 export interface CritterSpec {
   /** @lawn/prefabs id of the body. Named pivots the runtime animates when present: body, head, tail, leg-0..leg-3, wing-0, wing-1. */
@@ -40,6 +44,10 @@ export interface CritterSpec {
   flyHeight?: number;
   /** Never flees, never chases, never wanders by itself (the Fells' polar bears). Its RegionLife moves it if at all. */
   calm?: boolean;
+  /** E31: may wander on water (ducks): floats at the water surface, no wing flapping. */
+  swims?: boolean;
+  /** E31: hops while moving (frogs, hares): the body bounces up to this height (metres). */
+  hop?: number;
 }
 
 export const CRITTER_SPECS: Record<CritterKind, CritterSpec> = {
@@ -50,6 +58,20 @@ export const CRITTER_SPECS: Record<CritterKind, CritterSpec> = {
   squirrel: { prefab: 'squirrel', scale: 1, radius: 0.4, height: 0.75, walk: 2.4, run: 9.5, turn: 6, scareFoot: 0, scareVehicle: 10, puff: 0xb5651d, downTime: 1.8 },
   'polar-bear': { prefab: 'polar-bear', scale: 1, radius: 1.0, height: 1.7, walk: 0, run: 0, turn: 0.8, scareFoot: 0, scareVehicle: 0, puff: 0xffffff, downTime: 0, calm: true },
   bee: { prefab: 'bee', scale: 1, radius: 0.35, height: 0.5, walk: 2.5, run: 8.5, turn: 7, scareFoot: 0, scareVehicle: 0, puff: 0xf2c230, downTime: 1.2, flyHeight: 1.6 },
+  // E31 small wildlife. Prefabs: hunt-* exist (hunting quarry); critter-* are in packages/prefabs gta-living-critters.ts.
+  hare: { prefab: 'critter-hare', scale: 1, radius: 0.35, height: 0.5, walk: 1.6, run: 10, turn: 6, scareFoot: 9, scareVehicle: 18, puff: 0xb08a5a, downTime: 1.6, hop: 0.25 },
+  hedgehog: { prefab: 'hunt-hedgehog', scale: 1, radius: 0.3, height: 0.3, walk: 0.5, run: 1.2, turn: 2.5, scareFoot: 0, scareVehicle: 0, puff: 0x6b5236, downTime: 3 },
+  fox: { prefab: 'hunt-fox', scale: 1, radius: 0.45, height: 0.6, walk: 1.5, run: 9, turn: 4, scareFoot: 12, scareVehicle: 20, puff: 0xd2691e, downTime: 1.8 },
+  frog: { prefab: 'critter-frog', scale: 1, radius: 0.15, height: 0.15, walk: 0.8, run: 3, turn: 6, scareFoot: 2.5, scareVehicle: 6, puff: 0x5a8a3a, downTime: 1, hop: 0.3 },
+  duck: { prefab: 'hunt-mallard', scale: 1, radius: 0.3, height: 0.4, walk: 0.7, run: 3.5, turn: 3, scareFoot: 5, scareVehicle: 10, puff: 0x7a6a50, downTime: 1.4, swims: true },
+  crab: { prefab: 'critter-crab', scale: 1, radius: 0.2, height: 0.15, walk: 0.9, run: 3.5, turn: 5, scareFoot: 2.5, scareVehicle: 6, puff: 0xd0502a, downTime: 1.2 },
+  butterfly: { prefab: 'critter-butterfly', scale: 1, radius: 0.15, height: 0.2, walk: 1.2, run: 3.5, turn: 8, scareFoot: 0, scareVehicle: 0, puff: 0xf2a0d0, downTime: 0.8, flyHeight: 1.1 },
+  dragonfly: { prefab: 'critter-dragonfly', scale: 1, radius: 0.15, height: 0.15, walk: 2.5, run: 7, turn: 9, scareFoot: 0, scareVehicle: 0, puff: 0x3ab0c8, downTime: 0.8, flyHeight: 0.8 },
+  // E16: deer graze in herds and bolt early (a gnome on foot at 14, a vehicle at 30); goats only mind what is very close.
+  deer: { prefab: 'deer-hind', scale: 1, radius: 0.7, height: 1.6, walk: 1.1, run: 9, turn: 3, scareFoot: 14, scareVehicle: 30, puff: 0xa8743f, downTime: 2.5 },
+  stag: { prefab: 'deer-stag', scale: 1, radius: 0.8, height: 2.3, walk: 1.0, run: 9.5, turn: 2.6, scareFoot: 12, scareVehicle: 30, puff: 0x8a5a2b, downTime: 2.8 },
+  fawn: { prefab: 'deer-fawn', scale: 1, radius: 0.45, height: 1.0, walk: 1.3, run: 8, turn: 4, scareFoot: 14, scareVehicle: 30, puff: 0xc89060, downTime: 2 },
+  goat: { prefab: 'goat', scale: 1, radius: 0.55, height: 1.1, walk: 0.9, run: 5, turn: 3.5, scareFoot: 3, scareVehicle: 12, puff: 0xeeeae0, downTime: 2 },
 };
 
 // ---- Critters ---------------------------------------------------------------------------------------------------
@@ -118,6 +140,8 @@ export interface CritterCtx {
   world: World;
   /** 0 day .. 1 night (atmosphere.nightFactor()). */
   night: number;
+  /** Rounds in the player's held gun's magazine: a drop since last frame means a shot went off (deer bolt). */
+  ammo?: number;
 }
 
 /** Ids passed to CritterDeps.event. app.ts sends each to Turfton FM (only if radio/content.ts has a bulletin for it). */
@@ -356,7 +380,7 @@ export function createCritters(scene: THREE.Scene, world: World, deps: CritterDe
       let nx = c.x + Math.sin(c.yaw) * step;
       let nz = c.z + Math.cos(c.yaw) * step;
       if (!c.spec.flyHeight) {
-        if (waterAt(nx, nz)) { c.speed = 0; return d; }
+        if (!c.spec.swims && waterAt(nx, nz)) { c.speed = 0; return d; }
         const p = pushOutOfBoxes(nx, nz, c.spec.radius, world.boxes, c.y);
         nx = p.x;
         nz = p.z;
@@ -393,7 +417,7 @@ export function createCritters(scene: THREE.Scene, world: World, deps: CritterDe
       const a = rnd() * Math.PI * 2;
       const r = Math.sqrt(rnd()) * c.leash;
       const gx = c.homeX + Math.cos(a) * r, gz = c.homeZ + Math.sin(a) * r;
-      if (regionAt(gx, gz) !== c.region || (!c.spec.flyHeight && waterAt(gx, gz))) continue;
+      if (regionAt(gx, gz) !== c.region || (!c.spec.flyHeight && !c.spec.swims && waterAt(gx, gz))) continue;
       c.goalX = gx;
       c.goalZ = gz;
       return;
@@ -480,7 +504,10 @@ export function createCritters(scene: THREE.Scene, world: World, deps: CritterDe
         break;
     }
     if (c.mode !== 'down' && c.tip > 0) c.tip = Math.max(0, c.tip - tipRate);
-    if (c.mode !== 'script') c.y = heightAt(c.x, c.z) + (c.spec.flyHeight ?? 0);
+    if (c.mode !== 'script') {
+      const w = c.spec.swims ? waterAt(c.x, c.z) : null;
+      c.y = w ? w.surface : heightAt(c.x, c.z) + (c.spec.flyHeight ?? 0);
+    }
   }
 
   function pivotsOf(o: THREE.Group): Pivots {
@@ -526,6 +553,7 @@ export function createCritters(scene: THREE.Scene, world: World, deps: CritterDe
     const flap = c.spec.flyHeight ? Math.sin(ctx.time * 60 + c.phase) * 0.7 : c.mode === 'flee' ? Math.sin(c.phase * 3) * 0.6 : 0;
     p.wings.forEach((w, k) => { w.rotation.z = (k === 0 ? 1 : -1) * flap; });
     if (c.spec.flyHeight) o.position.y += Math.sin(ctx.time * 3 + c.phase) * 0.15;
+    if (c.spec.hop) o.position.y += Math.abs(Math.sin(c.phase * 0.8)) * c.spec.hop * moving;
   }
 
   // Spawn every group once, at the open spot nearest its centre.
@@ -537,7 +565,7 @@ export function createCritters(scene: THREE.Scene, world: World, deps: CritterDe
         const a = rnd() * Math.PI * 2;
         const r = Math.sqrt(rnd()) * g.spread;
         let x = centre.x + Math.cos(a) * r, z = centre.z + Math.sin(a) * r;
-        if (!CRITTER_SPECS[g.kind].flyHeight && !isOpen(x, z, CRITTER_SPECS[g.kind].radius, g.region, world)) { x = centre.x; z = centre.z; }
+        if (!CRITTER_SPECS[g.kind].flyHeight && !CRITTER_SPECS[g.kind].swims && !isOpen(x, z, CRITTER_SPECS[g.kind].radius, g.region, world)) { x = centre.x; z = centre.z; }
         const c = rt.spawn(g.kind, x, z, { region: g.region, group: g.id, leash: g.leash });
         c.homeX = centre.x;
         c.homeZ = centre.z;

@@ -31,16 +31,18 @@ const TABLE = coverage('tansy', 'pip', 1);
 const FIELD_TALK = coverage('wally', 'guard-a', 1);
 
 /**
- * CHAPTER 4 OPENER (quest: Runway Flares, giver Dust Flats Overlook). A crane over the Dust Flats to Fort Sandpit,
- * the title card, the crew at the safehouse map table, a cut to the airfield where Wally reads the windsock, then
- * Pip toots his golden kazoo. The player ends on foot at the overlook.
+ * Act IV, second row (quest: Runway Flares, giver Dust Flats Overlook; dusk). A crane over the Dust Flats to Fort
+ * Sandpit, the crew at the safehouse map table (the board is done: three sides scouted, Wally fetched), a cut to the
+ * airfield where Wally, a radio crackling by his chair, names Commander Diggs, then Pip toots his golden kazoo. The player ends on foot
+ * at the overlook.
  */
 export const RUNWAY_INTRO: SceneScript = {
   id: 'runway-intro',
   stage: { kind: 'world' },
   music: 'sandpit',
   ambience: 'wind',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/runway-intro.md', kind: 'chapter-open' },
+  sky: 'golden',
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/runway-intro.md', kind: 'intro' },
   actors: [
     { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', at: TANSY.at, yaw: TANSY.yaw, held: 'stopping-stone' },
     { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: PIP.at, yaw: PIP.yaw, held: 'ammu-golden-kazoo' },
@@ -52,18 +54,17 @@ export const RUNWAY_INTRO: SceneScript = {
     { id: 'duster', kind: 'plane', at: DUSTER.at, yaw: DUSTER.yaw },
   ],
   steps: [
-    // 1. Hook and the chapter question, in a picture: the crane over the Dust Flats onto Fort Sandpit's walls.
+    // 1. Hook and the act's question, in a picture: the crane over the Dust Flats onto Fort Sandpit's walls at dusk.
     { do: 'cam', shot: { kind: 'dolly', from: up(214, -70, 64), to: up(246, -14, 44), look: up(330, -6, 6), lookTo: up(366, 4, 10), s: 9, fov: 54 } },
-    { do: 'stinger', id: 'chapter' },
-    { do: 'title', text: 'CHAPTER 4 — SANDPIT PROTOCOL' },
+    { do: 'sfx', id: 'whoosh', gain: 0.4, async: true },
     { do: 'wait', s: 3 },
-    { do: 'title', text: null },
     // 2. The safehouse. Tansy has the plan and the problem.
     { do: 'cam', shot: spot(SAFE, 'wide') },
+    { do: 'sfx', id: 'paper', at: 'tansy', gain: 0.5, async: true },
     { do: 'gesture', who: 'tansy', name: 'lean', s: 1.5, async: true },
     { do: 'wait', s: 2 },
     cut(TABLE.single('tansy', 'mcu')),
-    { do: 'say', who: 'tansy', text: 'Five snipers on the wall. One gate. We\'re not driving in.' },
+    { do: 'say', who: 'tansy', text: 'Three sides scouted, Wally fetched. Five snipers, one gate. We\'re not driving in.' },
     // Pip runs in from his mark to the table: a moving MS, then the line.
     cut(shot('pip', 'ms', { toward: 'tansy', side: -40, handheld: 0.02 })),
     { do: 'walk', who: 'pip', path: [PIP_TABLE], run: true },
@@ -78,14 +79,19 @@ export const RUNWAY_INTRO: SceneScript = {
     // 3. The airfield: Wally in his lawn chair, the windsock, and a guard who walks up to him.
     { do: 'cam', shot: spot(FIELD, 'wide') },
     { do: 'gesture', who: 'wally', name: 'sit', s: 0.3 },
+    { do: 'sfx', id: 'static', at: 'wally', gain: 0.4, async: true },
     { do: 'walk', who: 'guard-a', path: [[552, -107]], speed: 2, async: true },
     { do: 'wait', s: 3 },
     cut(FIELD_TALK.single('wally', 'mcu', { height: 'high' })),
     { do: 'say', who: 'wally', text: 'Wind west, four knots. Stall speed twenty-two.' },
-    beat('tiny'),
-    { do: 'say', who: 'wally', text: 'Tell Commander Diggs his tie-downs are loose.' },
+    { do: 'say', who: 'wally', text: 'Commander Diggs runs that fort on fifteen years of orders.' },
+    cut(FIELD_TALK.single('wally', 'ms')),
+    { do: 'say', who: 'wally', text: 'Tell him his tie-downs are loose.' },
     cut(FIELD_TALK.single('guard-a', 'mcu')),
     { do: 'say', who: 'guard-a', text: 'Nobody tells the Commander anything, Wally.' },
+    // Tansy files it: the Commander is the problem under the problem.
+    cut(TABLE.single('tansy', 'mcu')),
+    { do: 'say', who: 'tansy', text: 'Diggs is not ours. Not yet.' },
     // 4. Back at the table: the kazoo, a running joke on its second rung.
     cut(TABLE.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'Ammu-Gnation bolt-on. Forty acorns.' },
@@ -117,10 +123,11 @@ export const SANDPIT_DROP_INTRO: SceneScript = {
   stage: { kind: 'world' },
   music: 'heist',
   ambience: 'wind',
-  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/sandpit-drop-intro.md' },
+  sky: 'golden',
+  direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/sandpit-drop-intro.md', kind: 'intro' },
   actors: [
     { id: 'tansy', preset: 'tansy', name: 'Tansy Clayfoot', at: TANSY.at, yaw: TANSY.yaw },
-    { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: PIP.at, yaw: PIP.yaw, held: 'ammu-golden-kazoo' },
+    { id: 'pip', preset: 'pip', name: 'Pip Potsworth', at: PIP.at, yaw: PIP.yaw, held: 'parachute-rig' },
     { id: 'player', player: true, at: PLAYER_END, yaw: -2.36 },
     { id: 'sniper-w', name: 'Spade Guard Sniper', look: SPADE, at: SNIPER_W.at, yaw: SNIPER_W.yaw },
     { id: 'sniper-e', name: 'Spade Guard Sniper', look: SPADE, at: SNIPER_E.at, yaw: SNIPER_E.yaw },
@@ -132,19 +139,24 @@ export const SANDPIT_DROP_INTRO: SceneScript = {
     // 1. Hook: Pip bounces to the table; the first line lands at the table; then the player's blank stare.
     cut(TABLE.single('pip', 'ms')),
     { do: 'walk', who: 'pip', path: [PIP_TABLE], speed: 2.5 },
+    { do: 'sfx', id: 'paper', at: 'pip', gain: 0.6, async: true },
     cut(TABLE.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: 'Okay. Okay. Hear me out.' },
-    ...reaction('player', { toward: 'pip', hold: 'pause' }),
-    // 2. The plan, in Pip's voice: no gate, no parachute check.
+    { do: 'say', who: 'pip', text: 'Okay, okay. Hear me out.' },
+    // Tansy, one word, the old reflex; then she lets him say it anyway (her change this act).
+    cut(TABLE.single('tansy', 'mcu')),
+    { do: 'say', who: 'tansy', text: 'Don\'t.' },
     cut(TABLE.single('pip', 'mcu')),
+    beat('tiny'),
     { do: 'say', who: 'pip', text: 'Five snipers watch the gate. So we don\'t use the gate.' },
+    ...reaction('tansy', { toward: 'pip', size: 'mcu', hold: 'pause' }),
+    // 2. The plan, in Pip's voice: no gate, Hogweed's rig, no parachute check.
     cut(TABLE.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: 'Crop Duster over the wall. Jump out. Don\'t check the parachute.' },
+    { do: 'say', who: 'pip', text: 'Crop Duster over the wall. Jump out. Hogweed\'s rig, the almost-certainly one.' },
     cut(TABLE.single('player', 'mcu')),
-    { do: 'say', who: 'player', text: 'Why not check it?' },
+    { do: 'say', who: 'player', text: 'Should I check it?' },
     cut(TABLE.single('pip', 'mcu')),
-    { do: 'say', who: 'pip', text: 'Morale.' },
-    // 3. Tansy takes over the plan: three clauses.
+    { do: 'say', who: 'pip', text: 'Don\'t. Morale.' },
+    // 3. Tansy takes over the plan: three clauses. She runs the details; it is his plan.
     cut(TABLE.single('tansy', 'mcu')),
     { do: 'say', who: 'tansy', text: 'Land on the pad. Take the Whirligig. Fly it home.' },
     // 4. The picture: the fort pad, the Whirligig on its mark, the snipers on the wall; a reveal; a sniper turns.
@@ -152,6 +164,7 @@ export const SANDPIT_DROP_INTRO: SceneScript = {
     { do: 'stinger', id: 'reveal' },
     { do: 'wait', s: 1.5 },
     { do: 'cam', shot: shot('sniper-w', 'ms', { height: 'low', toward: 'sniper-e' }) },
+    { do: 'sfx', id: 'cloth', at: 'sniper-w', gain: 0.5, async: true },
     { do: 'face', who: 'sniper-w', at: 'sniper-e', s: 0.6 },
     { do: 'wait', s: 1.2 },
     // 5. Back at the table: Tansy's verdict on the ticket.

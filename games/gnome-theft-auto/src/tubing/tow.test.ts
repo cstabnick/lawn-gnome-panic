@@ -1,7 +1,7 @@
 // Tow physics: a tube pulled by a boat on a rope, lean swings, hops, falls, determinism, scoring.
 import { describe, expect, it } from 'vitest';
-import { hookPoint, newScore, newTube, scoreStep, stepTube } from './tow';
-import { TOW } from './types';
+import { hookPoint, newScore, newTube, rampKick, scoreStep, stepTube } from './tow';
+import { SKI, TOW, towTuning } from './types';
 import type { BoatPose, Sea, TubeEvent, TubeInput, TubeState } from './types';
 
 const FLAT: Sea = { surface: () => 0, slope: (_x, _z, out) => { out.x = 0; out.z = 0; } };
@@ -140,5 +140,63 @@ describe('scoring', () => {
     scoreStep(sc, t, { t: 'fell', vx: 0, vy: 4, vz: 10 }, DT);
     expect(sc.falls).toBe(1);
     expect(sc.dist).toBe(0);
+  });
+});
+
+describe('water-skis', () => {
+  it('newTube defaults to a tube; a ski rides SKI.floatY above the surface', () => {
+    const b = boatAt(0, 0);
+    expect(newTube(b, 0, FLAT).mode).toBe('tube');
+    const s = newTube(b, 0, FLAT, 'ski');
+    expect(s.mode).toBe('ski');
+    expect(s.y).toBeCloseTo(SKI.floatY, 6);
+  });
+
+  it('a ski towed straight at 14 m/s on a flat sea never falls in 20 s', () => {
+    let b: BoatPose = { x: 0, z: 0, yaw: 0, speed: 14, radius: 2.5 };
+    const t = newTube(b, 0, FLAT, 'ski');
+    let fell = false;
+    for (let i = 0; i < 20 / DT; i++) {
+      const ev = stepTube(t, b, STILL, FLAT, DT);
+      if (ev?.t === 'fell') fell = true;
+      b = { ...b, z: b.z + 14 * DT };
+    }
+    expect(fell).toBe(false);
+    expect(t.fallen).toBe(false);
+  });
+
+  it('the tube tuning is TOW and skis carve harder with a wider side limit', () => {
+    expect(towTuning('tube').leanForce).toBe(TOW.leanForce);
+    expect(SKI.sideFast).toBeGreaterThan(TOW.sideFast);
+  });
+
+  describe('the wake ramp', () => {
+    const ramp = { x: 40, z: 1312, yaw: Math.PI / 2, length: 6, width: 4, kick: 7.5 };
+    const rider = (x: number, z: number, vx: number) => {
+      const t = newTube(boatAt(0, 0), 0, FLAT, 'ski');
+      return Object.assign(t, { x, z, vx, vz: 0, y: 0, vy: 0, air: 0, fallen: false });
+    };
+
+    it('kicks a rider in the middle of the ramp moving 8 m/s along it', () => {
+      const t = rider(40, 1312, 8);
+      expect(rampKick(t, ramp)).toBe(true);
+      expect(t.vy).toBe(ramp.kick);
+    });
+
+    it('does not kick a rider moving backwards along the ramp', () => {
+      const t = rider(40, 1312, -8);
+      expect(rampKick(t, ramp)).toBe(false);
+      expect(t.vy).toBe(0);
+    });
+
+    it('does not kick a rider 10 m to the side', () => {
+      expect(rampKick(rider(40, 1322, 8), ramp)).toBe(false);
+    });
+
+    it('does not kick a fallen rider', () => {
+      const t = rider(40, 1312, 8);
+      t.fallen = true;
+      expect(rampKick(t, ramp)).toBe(false);
+    });
   });
 });

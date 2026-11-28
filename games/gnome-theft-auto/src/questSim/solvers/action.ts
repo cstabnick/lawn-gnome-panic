@@ -103,6 +103,11 @@ export const bossCombineSolver: Solver<'boss-combine'> = {
       if (ctx.squad.includes(g)) ctx.shoot(g);
     }
 
+    // E22: the 'guards' phase is done once the squad is down (the runner reports it at the next frame).
+    if (obj.phase === 'guards') {
+      await runUntil(ctx, { questId: opts.questId, step: opts.step, budget: opts.budget, what: 'boss-combine guards' }, async () => {});
+      return;
+    }
     // Guards are down: stand at the intake until the runner jams the combine.
     let since: number | null = null;
     await runUntil(ctx, { questId: opts.questId, step: opts.step, budget: opts.budget, what: 'boss-combine' }, async () => {

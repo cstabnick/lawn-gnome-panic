@@ -10,6 +10,7 @@ function fakeFlock(id: number, mode: FlockMode = 'flying'): Flock {
   return {
     id, species: BIRDS[0], members: [], mode, modeT: 0, x: 0, y: 0, z: 0, heading: 0, tx: 0, ty: 0, tz: 0,
     targetKind: 'ground', homeX: 0, homeZ: 0, callT: 0, sinceFlush: 0, acc: 0,
+    wanderT: 0, wanderYaw: 0, wanderAlt: 0, circleR: 1, circleDir: 1,
   } as Flock;
 }
 

@@ -2,6 +2,7 @@
 import type { Vehicle, World } from '../../types';
 import type { Finding, SimCtx, Solver } from '../types';
 import { SimFail } from '../types';
+import { followStats } from '../../quests/followWatchdog';
 import { getInto, nearestVehicle, objectiveBlips, runUntil, travelTo, waitFor } from '../util';
 
 /** Findings for every spot (x, z) outside the playable area (world.half). */
@@ -52,16 +53,30 @@ export const stealDeliverSolver: Solver<'steal-deliver'> = {
   kind: 'steal-deliver',
   async solve(obj, ctx, opts) {
     const [sx, sz] = obj.spawnAt;
-    await waitFor(ctx, () => nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40) !== null, 2);
-    const target = nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40);
+    // The target is at its pickup, or wherever it was left (a retry, a bail): the quest's own quest-owned car of that kind
+    // under an objective blip, else the one near the pickup.
+    const find = (): Vehicle | null => {
+      if (ctx.player.vehicle?.kind === obj.vehicleKind && ctx.player.vehicle.questOwned) return ctx.player.vehicle;
+      for (const b of objectiveBlips(ctx)) {
+        const v = nearestVehicle(ctx, b.x, b.z, obj.vehicleKind, 6);
+        if (v && v.questOwned) return v;
+      }
+      return nearestVehicle(ctx, sx, sz, obj.vehicleKind, 40);
+    };
+    await waitFor(ctx, () => find() !== null, 2);
+    let target = find();
     if (!target) {
-      throw new SimFail('bug', `steal-deliver: no ${obj.vehicleKind} spawned near ${sx}, ${sz}`);
+      throw new SimFail('bug', `steal-deliver: no ${obj.vehicleKind} at its pickup ${sx}, ${sz} or under an objective blip`);
     }
     await getInto(ctx, target, 'steal-deliver: take the target');
     await travelTo(ctx, obj.dropAt[0], obj.dropAt[1], 'deliver');
     await runUntil(ctx, { questId: opts.questId, step: opts.step, budget: opts.budget, what: 'steal-deliver' }, async () => {
       // The runner only delivers while the player drives the target: climb back in if the car was left behind.
-      if (ctx.player.vehicle !== target) await getInto(ctx, target, 'steal-deliver: back into the target');
+      if (ctx.player.vehicle !== target) {
+        target = find() ?? target!;
+        await getInto(ctx, target, 'steal-deliver: back into the target');
+        await travelTo(ctx, obj.dropAt[0], obj.dropAt[1], 'deliver (again)');
+      }
     });
   },
   check(obj, world, questId, step) {
@@ -80,11 +95,28 @@ export const chaseFollowSolver: Solver<'chase-follow'> = {
     await waitFor(ctx, () => findLeader(ctx) !== null, 2);
     const leader = findLeader(ctx);
     if (!leader) throw new SimFail('bug', `chase-follow: no quest-owned ${obj.leaderKind} leader near the objective`);
+    // A realistic follower: always where the leader was TRAIL_S seconds ago (a trail of breadcrumbs), plus one lag episode
+    // (stand still LAG_S seconds, once) so the leader has to wait for the player.
+    const TRAIL_S = 2.5;
+    const LAG_AT = 10;
+    const LAG_S = 12;
+    const crumbs: { t: number; x: number; z: number }[] = [];
+    const t0 = ctx.now();
     await runUntil(ctx, { questId: opts.questId, step: opts.step, budget: opts.budget, what: 'chase-follow' }, () => {
-      ctx.useCheat('instantTravel', 'chase: kept 6 m behind the leader');
-      // Keep 6 m behind the leader's nose-to-tail line (forward = (sin yaw, cos yaw)).
-      ctx.teleport(leader.x - Math.sin(leader.yaw) * 6, leader.z - Math.cos(leader.yaw) * 6);
+      const now = ctx.now();
+      crumbs.push({ t: now, x: leader.x, z: leader.z });
+      while (crumbs.length > 2 && crumbs[1].t <= now - TRAIL_S) crumbs.shift();
+      const elapsed = now - t0;
+      if (elapsed >= LAG_AT && elapsed < LAG_AT + LAG_S) {
+        return; // standing still: the player falls behind
+      }
+      ctx.useCheat('instantTravel', 'chase: trails the leader by 2.5 s');
+      ctx.teleport(crumbs[0].x, crumbs[0].z);
     });
+    const stats = followStats();
+    if (stats && stats.maxStall > 20) {
+      throw new SimFail('bug', `chase-follow: the leader stalled for ${stats.maxStall.toFixed(1)}s (more than 20s) without progress`);
+    }
   },
   check(obj, world, questId, step) {
     return offWorld(questId, step, world, obj.waypoints.map(([x, z], i) => ({ name: `waypoint ${i}`, x, z })));

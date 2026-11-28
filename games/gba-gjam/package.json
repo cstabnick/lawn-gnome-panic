@@ -21,6 +21,7 @@
     "@lawn/achievements": "*",
     "@lawn/cloudsave": "*",
     "@lawn/gnome": "*",
+    "@lawn/jam": "*",
     "@lawn/mp": "*",
     "@lawn/prefabs": "*",
     "@lawn/sync": "*",

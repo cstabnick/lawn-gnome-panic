@@ -43,7 +43,7 @@ const SIGN_REWARD = 50;
 export const GOLDEN_ACORN_SPOTS: readonly CollectibleSpot[] = [
   // Turfton (city)
   { id: 'acorn-city-1', x: -30, z: 16 },
-  { id: 'acorn-city-2', x: 18, z: 42 },
+  { id: 'acorn-city-2', x: 9, z: 37 },
   { id: 'acorn-city-3', x: -150, z: 72 },
   { id: 'acorn-city-4', x: 90, z: 134 },
   { id: 'acorn-city-5', x: -190, z: 190 },
@@ -68,7 +68,7 @@ export const GOLDEN_ACORN_SPOTS: readonly CollectibleSpot[] = [
   // Cloverfield Farms (farmland) — first two lie inside Biscuit's Nap crater (80, 380) r=24
   { id: 'acorn-farm-1', x: 68, z: 376 },
   { id: 'acorn-farm-2', x: 92, z: 386 },
-  { id: 'acorn-farm-3', x: -80, z: 332 },
+  { id: 'acorn-farm-3', x: -76, z: 332 },
   { id: 'acorn-farm-4', x: 55, z: 223 },
   { id: 'acorn-farm-5', x: 30, z: 520 },
 ];

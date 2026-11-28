@@ -23,7 +23,7 @@ export const KEYS = {
   enterExit: 'KeyE',
   /** Tap: next gun. Hold: the weapon wheel (weaponWheel.ts). */
   switchGun: 'KeyQ',
-  /** Open and close the More menu (ui/moreMenu.ts): phone, emotes, journal, map, party, journals, options... Tab used to duplicate holding Q. */
+  /** Open and close the Gnomlet tablet (gnomlet/gnomlet.ts): phone apps, emotes, journal, map, party, journals, options... Tab used to duplicate holding Q. */
   more: 'Tab',
   /** Open the Ammu-Gnation Pocket Kit: fit gun mods anywhere on foot (gunModKit.ts). */
   modKit: 'KeyK',
@@ -64,6 +64,10 @@ export const KEYS = {
   confirm: 'Enter',
   /** Sim jobs (jobs/hud.ts): the job action (accept a call, drop cargo, next fare). */
   jobAction: 'KeyI',
+  /** First-person view on / off (camera.ts setFirstPerson, viewPrefs.ts). Every letter is taken; F5 as in many PC games (default prevented). */
+  firstPerson: 'F5',
+  /** The bag (bag/runtime.ts): eat the quick-use snack. The bag itself opens from the More menu or the phone. */
+  snack: 'Digit1',
 } as const;
 
 export type KeyAction = keyof typeof KEYS;

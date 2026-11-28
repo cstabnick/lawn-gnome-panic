@@ -235,6 +235,14 @@ function makeChord(T: Tone, keep: Keep, kind: ChordVoice): PolyVoice {
       s.connect(lp);
       return { out: lp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, t, v) };
     }
+    case 'harpsichord': {
+      // Plucked and bright, no sustain: a doubled sawtooth through a closing low-pass, the boom taken off.
+      const hp = keep(new T.Filter(220, 'highpass'));
+      const lp = keep(new T.Filter(4200, 'lowpass')).connect(hp);
+      const s = poly(keep(new T.PolySynth(T.Synth, { oscillator: { type: 'fatsawtooth', count: 2, spread: 8 }, envelope: { attack: 0.001, decay: 0.45, sustain: 0, release: 0.3 } })), -22);
+      s.connect(lp);
+      return { out: hp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, t, v) };
+    }
     case 'nylon': {
       const lp = keep(new T.Filter(2400, 'lowpass'));
       const s = poly(keep(new T.PolySynth(T.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.003, decay: 0.7, sustain: 0, release: 0.5 } })), -13);
@@ -282,6 +290,15 @@ function makeBass(T: Tone, keep: Keep, kind: BassVoice): MonoVoice {
       }));
       s.volume.value = -12;
       return { out: s, play: (t, n, d, v) => s.triggerAttackRelease(n, d, clock(t), v) };
+    }
+    case 'cello': {
+      // A bowed low string: a bow attack, a warm saw under a low filter, a little vibrato.
+      const lp = keep(new T.Filter(900, 'lowpass'));
+      const s = keep(new T.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.09, decay: 0.2, sustain: 0.75, release: 0.35 } }));
+      s.volume.value = -15;
+      s.connect(lp);
+      keep(new T.LFO({ frequency: 5, min: -7, max: 7 })).connect(s.detune).start();
+      return { out: lp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, clock(t), v) };
     }
     case 'acid': {
       const drive = keep(new T.Distortion(0.25));
@@ -351,6 +368,26 @@ function makeLead(T: Tone, keep: Keep, kind: Exclude<LeadVoice, 'none'>): MonoVo
       const s = keep(new T.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.7, release: 0.25 } }));
       s.volume.value = -14;
       s.connect(lp);
+      return { out: lp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, clock(t), v) };
+    }
+    case 'violin': {
+      // A solo violin: bowed saw, an open bandpassed body, a slow bow attack and a singing vibrato.
+      const lp = keep(new T.Filter(5200, 'lowpass'));
+      const bp = keep(new T.Filter({ frequency: 2400, type: 'bandpass', Q: 0.7 })).connect(lp);
+      const s = keep(new T.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.08, decay: 0.15, sustain: 0.8, release: 0.3 } }));
+      s.volume.value = -14;
+      s.connect(bp);
+      vibrato(s, 14, 5.6);
+      return { out: lp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, clock(t), v) };
+    }
+    case 'oboe': {
+      // A reedy double reed: a narrow pulse through a nasal bandpass.
+      const lp = keep(new T.Filter(4000, 'lowpass'));
+      const bp = keep(new T.Filter({ frequency: 1500, type: 'bandpass', Q: 2.2 })).connect(lp);
+      const s = keep(new T.Synth({ oscillator: { type: 'pulse', width: 0.2 }, envelope: { attack: 0.04, decay: 0.1, sustain: 0.75, release: 0.18 } }));
+      s.volume.value = -13;
+      s.connect(bp);
+      vibrato(s, 6, 5);
       return { out: lp, play: (t, n, d, v) => s.triggerAttackRelease(n, d, clock(t), v) };
     }
     case 'clarinet': {

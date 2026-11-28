@@ -3,23 +3,25 @@ import {
   createArcArchitectBot,
   createChampionV1Bot,
   createChampionV2Bot,
+  createClassicBot,
   createFireFeederBot,
   createHybridAceBot,
   createLockdownCounterBot,
   createShoveHoundBot,
-} from './bots';
-import { createClassicBot } from './classicBot';
+  setBotFactory,
+  type BotController,
+  type BotPresetId,
+  type BotSlotAssignment,
+  type CreateBotOptions,
+} from '@lawn/jam';
 import { DEFAULT_REMOTE_BOT_URL, RemoteBotController } from './remoteBot';
 import { loadBotScript } from './scriptLoader';
 import classicJamScript from './scripts/classic-jam.js?raw';
 import downtownSniperScript from './scripts/downtown-sniper.js?raw';
 import rimRusherScript from './scripts/rim-rusher.js?raw';
-import type { BotController, BotPresetId, BotSlotAssignment } from './types';
 
-export * from './types';
-export * from './snapshot';
-export * from './classicBot';
-export * from './bots';
+// The headless basketball (types, snapshot, classic + preset bots) lives in @lawn/jam.
+export * from '@lawn/jam';
 export * from './scriptLoader';
 export * from './remoteBot';
 
@@ -48,11 +50,6 @@ export const BOT_PRESET_LABELS: Record<BotPresetId, string> = {
   'remote-http': 'Python / Remote HTTP',
   'custom-script': 'Custom JS Script (Worker)',
 };
-
-export interface CreateBotOptions {
-  onError?: (err: string) => void;
-  onRemoteStatus?: (connected: boolean, detail?: string) => void;
-}
 
 export function createBotFromAssignment(
   assignment: BotSlotAssignment | undefined,
@@ -89,3 +86,6 @@ export function createBotFromAssignment(
     onError: opts.onError,
   });
 }
+
+// Every JamSimulation built in the game uses scripts, Worker and remote bots through this factory.
+setBotFactory(createBotFromAssignment);

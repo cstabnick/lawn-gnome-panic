@@ -51,9 +51,9 @@ describe('craft tuning', () => {
   });
 
   it('tuneCost sums the prices bought; lowering costs nothing', () => {
-    expect(tuneCost(NO_TUNE, { ...NO_TUNE, engine: 2 })).toBe(380);
+    expect(tuneCost(NO_TUNE, { ...NO_TUNE, engine: 2 })).toBe(670);
     expect(tuneCost({ ...NO_TUNE, engine: 2 }, NO_TUNE)).toBe(0);
-    expect(tuneCost(NO_TUNE, { ...NO_TUNE, lift: 1 })).toBe(130);
+    expect(tuneCost(NO_TUNE, { ...NO_TUNE, lift: 1 })).toBe(230);
   });
 
   it('statsFor filters by regime', () => {

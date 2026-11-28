@@ -61,6 +61,13 @@ The server and a copy of the site run on the whale-net Kubernetes cluster, deplo
 
 Any build can be pointed at another server with `?mp=wss://host/ws` in the page URL.
 
+### Public URL / ports
+
+The pods listen on 8080 (nginx site, platform, matchmaker) but the public address is `https://gnome.whalenet.app` on 443.
+Never build a public URL from the listen port. `deploy/nginx.conf` sets `absolute_redirect off`, so `/admin/profiler`
+redirects to `/admin/profiler/` with a relative `Location` (nginx otherwise emits `https://host:8080/...`). The platform
+service emits no redirects; the client builds sign-in URLs from `location.origin`.
+
 ### Logging, tracing and metrics (OpenTelemetry)
 
 All three images follow the whale-net logging standard (whale-net/everything `docs/LOGGING_ENV_VARS.md`).

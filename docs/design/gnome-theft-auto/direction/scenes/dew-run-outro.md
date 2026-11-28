@@ -135,3 +135,4 @@ the next favour. It is the sincere register of the chapter, so it is held and no
 - [x] Golden-hour stage; no night scene.
 - [x] Checker: 35.3 s, all shots pass, no faults (`scenecheck.dev.test.ts`).
 - [x] `direction.notes` points here.
+New exchange after "We're legitimate!": Granny says the Kiln-Debt is clear but the flat's loan is still the player's; Pip groans about it.

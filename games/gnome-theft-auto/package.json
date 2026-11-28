@@ -14,6 +14,7 @@
     "mp-audit": "vitest run --config vitest.slow.config.ts",
     "cutscene-report": "vitest run src/cutscene/pacing.test.ts",
     "quest-sim": "node ../../tools/quest-sim.mjs --headless",
+    "quest-fuzz": "node ../../tools/quest-fuzz.mjs",
     "quest-sim:e2e": "node ../../tools/quest-sim.mjs",
     "quest-sim:suites": "vitest run --config vitest.sim.config.ts"
   },
@@ -25,6 +26,8 @@
     "@lawn/gamepad": "*",
     "@lawn/glaze": "*",
     "@lawn/gnome": "*",
+    "@lawn/golf": "*",
+    "@lawn/jam": "*",
     "@lawn/level": "*",
     "@lawn/mp": "*",
     "@lawn/music": "*",
@@ -34,6 +37,7 @@
     "@lawn/portal": "*",
     "@lawn/prefabs": "*",
     "@lawn/profiler": "*",
+    "@lawn/trickboard": "*",
     "@lawn/vehicle": "*",
     "sam-js": "^0.3.1",
     "three": "0.187.0"

@@ -66,6 +66,7 @@ export const VESPERS_OFFER_INTRO: SceneScript = {
     { do: 'spawn', id: 'ride' },
     { do: 'cam', shot: { kind: 'track', pos: up(-14, 324, 3), who: 'ride', fov: 50 } },
     { do: 'horn', vehicle: 'ride', async: true },
+    { do: 'sfx', id: 'engine-rev', at: 'ride', gain: 0.4, async: true },
     { do: 'drive', vehicle: 'ride', path: DEW.slice(2), speed: 12, async: true },
     { do: 'wait', s: 1.0 },
     // 2. Granny, in her own close-up, on the pearl paint.
@@ -79,6 +80,7 @@ export const VESPERS_OFFER_INTRO: SceneScript = {
     { do: 'face', who: 'chauffeur', at: 'granny', s: 0.3 },
     // 4. The handover, wide enough to see the letter change hands.
     cut(spot('granny-barn', 'two-shot')),
+    { do: 'sfx', id: 'paper', at: 'chauffeur', gain: 0.5, async: true },
     { do: 'give', from: 'chauffeur', to: 'granny', prop: 'sealed-letter', s: 1.2 },
     { do: 'face', who: 'granny', at: 'chauffeur', s: 0.4 },
     // 5. The invitation, read in Vesper's voice over Granny's face.
@@ -103,6 +105,7 @@ export const VESPERS_OFFER_INTRO: SceneScript = {
     { do: 'walk', who: 'granny', path: [[-22, 335]], run: true },
     cut(shot('player', 'ms', { toward: 'granny' })),
     { do: 'face', who: 'granny', at: 'player', s: 0.4 },
+    { do: 'sfx', id: 'clatter', at: 'granny', gain: 0.4, async: true },
     { do: 'give', from: 'granny', to: 'player', prop: 'gta-shotgun', s: 1.2 },
     { do: 'gesture', who: 'player', name: 'cheer', s: 0.8 },
     // 8. Button: Granny's line on her close-up, then the player's look.
@@ -140,6 +143,7 @@ export const VESPER_DINER: SceneScript = {
   steps: [
     // 1. Hook: the player arrives at the booth and crosses their arms.
     cut(shot('player', 'mcu')),
+    { do: 'sfx', id: 'chair', at: 'player', gain: 0.5, async: true },
     { do: 'gesture', who: 'player', name: 'crossArms', s: 0.6 },
     beat('beat'),
     // 2. Vesper at the booth, low, alone in frame; the first line carries his one villain stinger.
@@ -179,6 +183,7 @@ export const VESPER_DINER: SceneScript = {
     { do: 'despawn', id: 'vesper' },
     { do: 'lights', vehicle: 'ride', on: true },
     { do: 'horn', vehicle: 'ride' },
+    { do: 'sfx', id: 'engine-rev', at: 'ride', gain: 0.5, async: true },
     { do: 'drive', vehicle: 'ride', path: [[30, 262], [8, 272], [-6.7, 270]], speed: 12, arrive: false, async: true },
     // 8. Button: the guards closing on the diner, the player inside the frame.
     { do: 'wait', s: 1.4 },

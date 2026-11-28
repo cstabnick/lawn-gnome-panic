@@ -2,11 +2,13 @@
 // systems that run it (quests.ts, cutscene.ts) know nothing about any one quest, so a new quest is a new entry in defs.ts.
 import type * as THREE from 'three';
 import type { GnomeLook } from '@lawn/gnome';
+import type { Loadout } from '@lawn/glaze';
 import type { Economy } from '../economy';
 import type { Blip, Fx, Hud, Npc, Npcs, Player, Sfx, Traffic, Vehicle, VehicleKind, Watch, World } from '../types';
 import type { ScenePlayOptions } from '../cutscene/director';
 import type { SceneScript } from '../cutscene/script';
 import type { LiveWorld } from '../cutscene/liveArea';
+import type { TrackId } from '../raceTrack/tracks';
 
 export type CutsceneRoom =
   | 'mulch-club'
@@ -33,6 +35,8 @@ export interface GiverDef {
   room: CutsceneRoom;
   /** Optional single-character icon on the 3D ground marker ('D', 'P', 'T', 'G', 'B', '!'). */
   letter?: string;
+  /** When set, x, z and exit is local to this interior (E05 src/interiors/registry.ts), metres from its room centre; the map marker shows at the interior's door while the player is outside. */
+  interior?: string;
 }
 
 /** A gnome to be cracked. `near` is snapped to the closest place gnomes walk. Missing look colours are random. */
@@ -90,7 +94,7 @@ export type ObjectiveDef =
    * Reach a place. `scene`: a SCENES id played the moment the player arrives (the story happening where it happens);
    * the step completes when it ends, then heatOnEnter / toastOnEnter apply.
    */
-  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string }
+  | { kind: 'visit'; text: string; at: [number, number]; radius: number; hint: string; heatOnEnter?: number; toastOnEnter?: string; prop?: 'hose'; scene?: string; interior?: string }
   | {
       kind: 'steal-deliver';
       text: string;
@@ -103,6 +107,8 @@ export type ObjectiveDef =
       maxDamage?: number;
       squeakPulse?: boolean;
       banter?: string[];
+      /** Pay 'n' Glaze look for the vehicle: the same one a cutscene dressed it in, so the car does not lose its mods. */
+      loadout?: Partial<Loadout>;
     }
   | {
       kind: 'chase-follow';
@@ -143,7 +149,18 @@ export type ObjectiveDef =
       attackers: number;
       hint: string;
     }
-  | { kind: 'boss-combine'; text: string; startZ: number; endZ: number; hint: string }
+  | {
+      kind: 'boss-combine';
+      text: string;
+      startZ: number;
+      endZ: number;
+      hint: string;
+      /**
+       * E22 (the finale in parts): 'guards' ends when the Porcelain Guard is cracked (no jam); 'jam' spawns no guards and
+       * ends when the player reaches the intake ring. Absent = both, in that order (the pre-E22 single objective).
+       */
+      phase?: 'guards' | 'jam';
+    }
   | {
       kind: 'choice';
       text: string;
@@ -163,8 +180,18 @@ export type ObjectiveDef =
   /**
    * A race at the Speedway: go to the grid, get into the race vehicle waiting in the last slot, wait for the lights, and
    * finish `laps` laps in position `mustPlace` or better. Losing puts everyone back on the grid for another go.
+   * `trackId` picks the track (absent = 'lost-and-found', the Speedway); on a track whose `closed` is false (a
+   * point-to-point run) `laps` must be 1. `timeAchievement`: unlocked when the player finishes within `mustPlace`
+   * in under `seconds` of race time.
    */
-  | { kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number }
+  | {
+      kind: 'race'; text: string; raceId: string; vehicle: VehicleKind; laps: number; rivals: RaceRival[]; mustPlace: number; hint: string; tint?: number;
+      trackId?: TrackId; timeAchievement?: { seconds: number; id: string };
+      /** E26: hold the sky at night from the grid to the result (the old sky mode comes back at cleanup). */
+      night?: boolean;
+      /** E26: a closed-road event: traffic is kept off the route while the race runs, cones mark the route's gates. */
+      closedRoad?: boolean;
+    }
   // ---- The Turfton city contracts (quests/cityQuests.ts): runner in objectivesCity.ts ----
   /**
    * A run through checkpoints in order: a courier round, the Skyway job, a fly-by of Thorne Tower. The clock (`seconds`)
@@ -188,7 +215,65 @@ export type ObjectiveDef =
    * `probe` (city/probes.ts) has risen by `count` (default 1) since the step started, or with `absolute` when it reads
    * at least `count`. `at` puts a map blip (and the route) on the place to do it.
    */
-  | { kind: 'probe'; text: string; probe: string; count?: number; absolute?: boolean; at?: [number, number]; hint: string };
+  | { kind: 'probe'; text: string; probe: string; count?: number; absolute?: boolean; at?: [number, number]; hint: string }
+  // ---- E20 story kinds (runners in objectivesPassenger.ts and objectivesInspect.ts) ----
+  /**
+   * L58 pick-up and drop-off: a named character waits at `pickup` (a home door, a workplace, homes/data.ts homeDoor /
+   * workOf); the player pulls up in any ground vehicle and stops, the character climbs in (seated, or out of sight on a
+   * one-seat mower), rides along (`banter` lines toast on the way), and gets out at `dropAt`, walking to the door. With
+   * `vehicle` a ride is parked beside the pickup when the step starts. `maxDamage` (0..1 of hp lost since pickup):
+   * past it the passenger refuses to ride on (the step fails and the engine retries from its checkpoint).
+   * `who` is a CAST key (cutscene/cast.ts) for the look; `look` overrides it.
+   */
+  | {
+      kind: 'passenger';
+      text: string;
+      who: string;
+      name: string;
+      look?: Partial<GnomeLook>;
+      pickup: [number, number];
+      dropAt: [number, number];
+      radius: number;
+      hint: string;
+      vehicle?: { kind: VehicleKind; at: [number, number, number] };
+      maxDamage?: number;
+      banter?: string[];
+      /** Toast when the passenger gets in / gets out. */
+      onBoard?: string;
+      onDrop?: string;
+    }
+  /**
+   * Look closely at things on foot: walk to each point and press (or hold, `holdSeconds`) the action button there: E /
+   * Space / gamepad A, or the on-screen 44 px button that appears in range. Photograph a permit, read a barometer, look
+   * through a knot-hole, stand on one leg through a sermon, test a lock. Points are done in any order unless `ordered`.
+   * `prop` (a @lawn/prefabs id) is built at each point while it is pending. `scene` (a SCENES id) plays once the last
+   * point is done, before the step completes.
+   */
+  | {
+      kind: 'inspect';
+      text: string;
+      points: InspectPoint[];
+      /** Button label, e.g. 'Photograph', 'Look', 'Hold'. */
+      verb: string;
+      holdSeconds?: number;
+      ordered?: boolean;
+      hint: string;
+      scene?: string;
+    };
+
+/** One point of an 'inspect' objective. */
+export interface InspectPoint {
+  at: [number, number];
+  /** Tracker / toast label, e.g. "Permit 2 of 3: the show-home gate". */
+  label: string;
+  /** Toast once done (the line that gives the player the context). */
+  note?: string;
+  prop?: string;
+  /** Metres within which the button shows (default 3). */
+  radius?: number;
+  /** When set, `at` is local to this interior (E05). */
+  interior?: string;
+}
 
 /** One gate of a 'checkpoints' objective. */
 export interface CheckpointDef {
@@ -203,6 +288,8 @@ export interface CheckpointDef {
   height?: number;
   /** Shown in the tracker and the toast, e.g. "Skyway deck over Ring Road North-East". */
   label: string;
+  /** When set, `at` is local to this interior (E05 src/interiors/registry.ts), metres from its room centre; the map marker shows at the interior's door while the player is outside. */
+  interior?: string;
 }
 
 /** A rival driver in a 'race' objective. */
@@ -247,6 +334,11 @@ export interface QuestDef {
   chapter?: number;
   /** Acorn reward on completion (defaults to 250). */
   rewardAcorns?: number;
+  /**
+   * GR4 (FX21): the story so far, one line in the narrator's voice (the spine's journal line), shown on the journal's
+   * Active card; never spoken. Story rows get theirs from quests/story/previously.ts (PREVIOUSLY) when this is absent.
+   */
+  previously?: string;
   /** Turfton FM bulletin id triggered on completion (defaults to quest id). */
   radioBulletin?: string;
   /** Plays when the quest is taken. */
@@ -269,6 +361,25 @@ export interface QuestDef {
   demo?: boolean;
   /** Toast on completion. */
   doneText: string;
+  /**
+   * E23 L103: the Hat Watch while this quest runs (every step). 'off' = no Hat Watch at all (heat held at 0, quest heat
+   * ignored); { cap: n } = heat cannot pass n; 'free' = no limit. Absent = the default for the step's kind
+   * (quests/hoaPolicy.ts).
+   */
+  hoa?: HoaPolicy;
+  /** E23 L103: per-step override of `hoa`, objective index -> policy (like `beats`). */
+  hoaSteps?: Readonly<Record<number, HoaPolicy>>;
+}
+
+/** E23 L103: how much Hat Watch a quest step allows. See QuestDef.hoa and quests/hoaPolicy.ts. */
+export type HoaPolicy = 'off' | 'free' | { cap: number };
+
+/** E23 L101: where a step restarts after a failure (the player's spot when the step began). */
+export interface QuestCheckpoint {
+  step: number;
+  x: number;
+  z: number;
+  yaw: number;
 }
 
 /** Saved progress. */
@@ -280,6 +391,16 @@ export interface QuestSave {
   cracked: string[];
   /** The TESSIE.unlockKey entry only: the rolled trigger beat, "<questId>#<step>" (see tessieUnlock.ts). */
   beat?: string;
+  /** E23 L101: the active step's checkpoint (set when the step starts; the auto retry puts the player back here). */
+  checkpoint?: QuestCheckpoint;
+  /**
+   * E18 side-quest pacing (pacing.ts): how many main quests were done when this quest finished. Set by the engine on
+   * completion; absent in older saves. A follow-up in a chain (its `prereq` is this quest) is offered for OFFER_WINDOW
+   * main quests counted from here.
+   */
+  doneAt?: number;
+  /** E18 world changes (W17): the ending a 'choice' objective picked, 'A' (optionA) or 'B' (optionB). Absent = A. */
+  ending?: 'A' | 'B';
 }
 
 /** Dependencies provided to the quest engine and objective runners. */
@@ -318,6 +439,12 @@ export interface QuestDeps {
    * off this (quests/comms.ts).
    */
   onObjectiveStart?: (q: QuestDef, step: number) => void;
+  /**
+   * E03 L09: a quest just started in play (its intro scene is over) and the player may need a ride. app.ts wires this
+   * to `ensureRideNear` (quests/ensureRide.ts), which calls the Lock-Up Sling-Lift for the player's own vehicle when none
+   * is close. E08 may re-point it.
+   */
+  ensureRideNear?: (x: number, z: number, q: QuestDef) => void;
 }
 
 /** One running objective. */
@@ -332,4 +459,12 @@ export interface Run {
   cleanup(): void;
   /** A SCENES id to play when this (last) objective ends the quest, e.g. the chosen ending of a 'choice'. */
   outro?(): string | undefined;
+  /** Debug: chase-follow stall stats, read by the quest sim. */
+  followStats?(): { maxStall: number; waited: number };
+  /**
+   * E23 L101: a reason when this step can no longer be finished as it stands (a required NPC is gone for good, the
+   * vehicle it needs is wrecked and it has no recovery of its own); the engine then retries the step from its checkpoint.
+   * null / absent = fine. Read every frame.
+   */
+  failed?(): string | null;
 }

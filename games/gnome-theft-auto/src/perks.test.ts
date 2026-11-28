@@ -107,7 +107,7 @@ describe('PERKS table', () => {
       'rebel-pension': true, 'audit-paperwork': true, 'thick-glaze': true, 'rookie-plate': true,
       'carb-contacts': true, 'shelldon-odds': true, 'fizz-sponsor': true,
       'conductor-punch': true, 'impound-key': true, 'glow-band': true, 'press-pass': true, 'union-card': true, 'weeping-line': true, 'combine-hum': true,
-      'neighbour-badge': true, 'showoff': true, 'scrap-eye': true, 'sling-regular': true, 'verge-volunteer': true, 'bent-pin-regular': true, 'skyway-regular': true, 'staff-discount': true, 'slipway-regular': true, 'pigeon-tip': true, 'lodge-regular': true, 'hopper-pass': true, 'hide-regular': true, 'estate-agent': true, 'party-favour': true,
+      'neighbour-badge': true, 'showoff': true, 'scrap-eye': true, 'sling-regular': true, 'verge-volunteer': true, 'bent-pin-regular': true, 'skyway-regular': true, 'staff-discount': true, 'slipway-regular': true, 'pigeon-tip': true, 'lodge-regular': true, 'hopper-pass': true, 'hide-regular': true, 'estate-agent': true, 'party-favour': true, 'glaze-on-the-house': true,
     };
     const ids = PERKS.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);

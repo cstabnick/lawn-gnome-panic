@@ -28,6 +28,21 @@ export const GTA_SAVE_KEYS = [
   'gta-outskirts-v1', // outskirts/save.ts: Pebblewick (visited, counters, souvenirs, wishing well, the night knock)
   'gta-mowing-v1', // flora/rewards.ts: plants mowed (total, Lawn Service cuts, per kind)
   'gta-odd-rides-v1', // oddRides.ts: odd rides driven (Sunday Driver)
+  'gta-inventory-v1', // inventory.ts: the bag (snacks and fun items, counts)
+  'gta-ownership-v1', // ownership.ts: properties bought, Kiln-Shield policies, written-off insured vehicles
+  'gta-position-v1', // positionSave.ts: where the player last stood (restored on the next start, E07 L70)
+  'gta-gnomeybird-v1', // gnomlet/apps/gnomeyBird.ts: Gnomey Bird best score
+  'gta-home-v1', // home/layout.ts: Flat 3B furniture layout, stored pieces, wall and floor colours (E10)
+  'gta-homes-visited-v1', // homes/visits.ts: character homes the player has stood at (E10 House Call)
+  'gta-winter-v1', // winter/save.ts: Snowdrop Slope best times, runs, sled owned, ice catches, bears hugged (E12)
+  'gta-golf-v1', // golf/save.ts: Hedgeworth Links board, holes, rounds, bests, aces, lost balls, molehills (E15)
+  'gta-sports-v1', // sports/save.ts: Founders' Green sports, pickup games, shootarounds, the skateboard, combo and line bests (E19)
+  'gta-rootwell-v1', // campus/achievements.ts: Rootwell University doors visited (E13 First Class Honours)
+  'gta-farm-v1', // farm/runtime.ts: Windfall Croft's beds, oak, crate, chosen seed, counters (E16)
+  'gta-country-v1', // country/achievements.ts: estate sites, hunter camps and deer seen, the manor door (E16)
+  'gta-camp-loot-v1', // country/campsBuild.ts: when each hunter camp's tin was last emptied (E16)
+  'gta-societies-v1', // societies/save.ts: mole job shifts and bests, DJ Moleman's visit, Updraft rides, sermons stood (E17)
+  'gta-racing-v1', // streetRace/save.ts: race best times, runs, wins, wagers (E26)
 ] as const;
 export type GtaSaveKey = (typeof GTA_SAVE_KEYS)[number];
 

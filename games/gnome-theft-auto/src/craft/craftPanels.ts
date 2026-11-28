@@ -10,9 +10,9 @@ import { getCraftTune } from './craftTuneStore';
 import { MAX_TUNE_LEVEL, NO_TUNE, statMult, statsFor, type CraftStatDef } from './tuning';
 
 /** Panel ids the Slipway shows (the Glaze built-ins are skipped: they dress rigged ground vehicles). */
-export const CRAFT_PANEL_IDS: readonly string[] = ['craft-paint', 'craft-tune'];
+export const CRAFT_PANEL_IDS: readonly string[] = ['craft-paint', 'craft-tune', 'repair'];
 /** Acorns for a new coat of paint on a boat or aircraft. */
-export const CRAFT_PAINT_PRICE = 60;
+export const CRAFT_PAINT_PRICE = 100;
 /** The colours the Paint tab offers. */
 export const CRAFT_SWATCHES: readonly { name: string; hex: number }[] = [
   { name: 'Poppy Red', hex: 0xc8342c },

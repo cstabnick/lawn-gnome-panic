@@ -167,6 +167,16 @@ export interface Flock {
   sinceFlush: number;
   /** Accumulated dt for throttled (far) stepping; birding.ts owns it. */
   acc: number;
+  /** Seconds to the next wander re-roll (flying). */
+  wanderT: number;
+  /** Radians, added to the steering heading while flying far from the target. */
+  wanderYaw: number;
+  /** Metres, added to the cruise altitude while flying far from the target. */
+  wanderAlt: number;
+  /** Multiplier on the circling radius. */
+  circleR: number;
+  /** Circling direction: 1 = counter-clockwise (the original), -1 = clockwise. */
+  circleDir: 1 | -1;
 }
 
 /** A spot to settle on. */

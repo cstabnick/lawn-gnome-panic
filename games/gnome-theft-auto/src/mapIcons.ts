@@ -4,7 +4,9 @@ import type { Blip } from './types';
 
 export type PlaceKind = 'shop' | 'speedway' | 'glaze' | 'hospital' | 'salvage' | 'whirligig' | 'casino' | 'mart'
   | 'tower' | 'stage' | 'airfield' | 'skyway' | 'hangar' | 'boathouse'
-  | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge';
+  | 'lockup' | 'lodge' | 'hide' | 'tackle' | 'onramp' | 'works' | 'exchange' | 'town' | 'park' | 'edge'
+  | 'dealer-car' | 'dealer-boat' | 'dealer-air' | 'home' | 'ski' | 'bears' | 'icefish' | 'golf' | 'campus' | 'observatory' | 'windfarm'
+  | 'court' | 'skate' | 'story';
 
 /** Legend name and badge colour per place (the legend lists them in this order). */
 export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: string }>> = {
@@ -32,6 +34,20 @@ export const PLACE_STYLE: Readonly<Record<PlaceKind, { name: string; color: stri
   town: { name: 'Pebblewick (town)', color: '#b8743a' },
   park: { name: 'Park', color: '#3f9a4a' },
   edge: { name: 'City edge', color: '#6b4a2e' },
+  'dealer-car': { name: "Burl's Forecourt (buy vehicles)", color: '#d1495b' },
+  'dealer-boat': { name: "Driftwood's Boat Yard (buy boats)", color: '#1f8fa6' },
+  'dealer-air': { name: "Wally's Wing Lot (buy aircraft)", color: '#5b6fd1' },
+  home: { name: 'Homes (visited)', color: '#c97b4a' },
+  ski: { name: 'Snowdrop Slope (ski, sled)', color: '#3a7bd5' },
+  bears: { name: 'Polar bears (very chill)', color: '#9fb8c8' },
+  icefish: { name: 'Pail Pond (ice fishing)', color: '#4fb3c8' },
+  golf: { name: 'Hedgeworth Links (golf)', color: '#4caf50' },
+  campus: { name: 'Rootwell University', color: '#8b1e2b' },
+  observatory: { name: 'Observatory', color: '#2b3f7a' },
+  windfarm: { name: 'Pinwheel Ridge', color: '#e0a21b' },
+  court: { name: 'Drainpipe Court (basketball)', color: '#e0702a' },
+  skate: { name: 'The Gutter Bowls (skate park)', color: '#3a7ac0' },
+  story: { name: 'Story place', color: '#e6b422' },
 };
 
 /** Places that pin to the minimap's rim when they are off it (services you drive to). */
@@ -370,6 +386,134 @@ export function drawPlaceIcon(g: CanvasRenderingContext2D, x: number, y: number,
         g.lineTo(x + (u + 0.35) * s, y - 0.8 * s);
         g.stroke();
       }
+      break;
+    }
+    case 'dealer-car': {
+      // A price tag: a pentagon tag pointing right, with a hole near its flat end (the hole takes the badge colour).
+      glyphPoly(g, x, y, s, [[-0.9, -0.5], [0.1, -0.5], [0.9, 0], [0.1, 0.5], [-0.9, 0.5]]);
+      g.fillStyle = color;
+      g.beginPath();
+      g.arc(x - 0.5 * s, y, 0.16 * s, 0, TAU);
+      g.fill();
+      break;
+    }
+    case 'dealer-boat': {
+      // A sailboat: a triangle sail on a mast over a hull trapezoid.
+      glyphPoly(g, x, y, s, [[0, -0.95], [0, 0.05], [-0.75, 0.05]]);
+      glyphPoly(g, x, y, s, [[-0.95, 0.2], [0.95, 0.2], [0.6, 0.7], [-0.6, 0.7]]);
+      break;
+    }
+    case 'dealer-air': {
+      // A plane seen from above: a fuselage bar crossed by a wing bar, with a small tail bar.
+      glyphRect(g, x, y, s, -0.12, -1, 0.24, 2);
+      glyphRect(g, x, y, s, -1, -0.15, 2, 0.25);
+      glyphRect(g, x, y, s, -0.4, 0.7, 0.8, 0.18);
+      break;
+    }
+    case 'home': {
+      // A little house: a square body under a triangle roof, with a door.
+      glyphPoly(g, x, y, s, [[0, -1], [1, -0.1], [-1, -0.1]]);
+      glyphRect(g, x, y, s, -0.7, -0.1, 1.4, 1);
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, -0.18, 0.2, 0.36, 0.7);
+      break;
+    }
+    case 'ski': {
+      // Two crossed skis.
+      g.beginPath();
+      g.moveTo(x - 0.8 * s, y - 0.9 * s);
+      g.lineTo(x + 0.8 * s, y + 0.9 * s);
+      g.moveTo(x + 0.8 * s, y - 0.9 * s);
+      g.lineTo(x - 0.8 * s, y + 0.9 * s);
+      g.stroke();
+      break;
+    }
+    case 'bears': {
+      // A bear's face: a round head with two round ears.
+      g.beginPath();
+      g.arc(x, y + 0.15 * s, 0.65 * s, 0, TAU);
+      g.arc(x - 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
+      g.arc(x + 0.55 * s, y - 0.5 * s, 0.28 * s, 0, TAU);
+      g.fill();
+      break;
+    }
+    case 'golf': {
+      // A flag on a pole, with a small cup of ground under it.
+      glyphRect(g, x, y, s, -0.35, -1, 0.2, 2);
+      glyphPoly(g, x, y, s, [[-0.15, -1], [0.95, -0.5], [-0.15, 0]]);
+      glyphRect(g, x, y, s, -0.9, 0.8, 1.4, 0.2);
+      break;
+    }
+    case 'icefish': {
+      // A fish over a round hole.
+      glyphPoly(g, x, y, s, [[-0.9, 0], [0.3, -0.5], [0.3, 0.5]]);
+      glyphPoly(g, x, y, s, [[0.3, 0], [0.9, -0.45], [0.9, 0.45]]);
+      break;
+    }
+    case 'campus': {
+      // A mortarboard: a flat diamond cap with a tassel line hanging off one corner.
+      glyphPoly(g, x, y, s, [[0, -0.7], [1, -0.15], [0, 0.4], [-1, -0.15]]);
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, 0.55, -0.1, 0.12, 0.8);
+      g.fillStyle = WHITE;
+      glyphRect(g, x, y, s, 0.5, 0.7, 0.22, 0.2);
+      break;
+    }
+    case 'observatory': {
+      // A half-dome with a slit across it, on a base line.
+      g.beginPath();
+      g.arc(x, y + 0.3 * s, 0.9 * s, Math.PI, 0);
+      g.fill();
+      g.fillStyle = color;
+      glyphRect(g, x, y, s, -0.1, -0.8, 0.2, 0.9);
+      g.fillStyle = WHITE;
+      glyphRect(g, x, y, s, -1, 0.4, 2, 0.22);
+      break;
+    }
+    case 'windfarm': {
+      // A four-vane garden pinwheel: four white triangles turning round the centre.
+      glyphPoly(g, x, y, s, [[0, 0], [0, -0.85], [0.6, -0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [0.85, 0], [0.6, 0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [0, 0.85], [-0.6, 0.6]]);
+      glyphPoly(g, x, y, s, [[0, 0], [-0.85, 0], [-0.6, -0.6]]);
+      break;
+    }
+    case 'court': {
+      // A basketball: an orange disc ringed in white, with two dark seam curves.
+      g.fillStyle = color;
+      g.beginPath();
+      g.arc(x, y, 0.95 * s, 0, TAU);
+      g.fill();
+      g.strokeStyle = WHITE;
+      g.lineWidth = Math.max(1, lw * 0.5);
+      g.stroke();
+      g.strokeStyle = OUTLINE;
+      g.beginPath();
+      g.arc(x - 1.1 * s, y, 0.9 * s, -0.9, 0.9);
+      g.moveTo(x + 1.1 * s + 0.9 * s * Math.cos(Math.PI - 0.9), y + 0.9 * s * Math.sin(Math.PI - 0.9));
+      g.arc(x + 1.1 * s, y, 0.9 * s, Math.PI - 0.9, Math.PI + 0.9);
+      g.stroke();
+      break;
+    }
+    case 'skate': {
+      // A skateboard seen from above: a white bar with four wheel dots.
+      glyphRect(g, x, y, s, -0.5, -1, 1, 2);
+      g.fillStyle = color;
+      for (const [u, v] of [[-0.6, -0.7], [0.6, -0.7], [-0.6, 0.7], [0.6, 0.7]] as const) {
+        g.beginPath();
+        g.arc(x + u * s, y + v * s, 0.16 * s, 0, TAU);
+        g.fill();
+      }
+      break;
+    }
+    case 'story': {
+      // A ring with a dot: a place the story pointed you to.
+      g.beginPath();
+      g.arc(x, y, 0.9 * s, 0, TAU);
+      g.stroke();
+      g.beginPath();
+      g.arc(x, y, 0.3 * s, 0, TAU);
+      g.fill();
       break;
     }
   }

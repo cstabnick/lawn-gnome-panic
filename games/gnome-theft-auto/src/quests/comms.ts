@@ -9,6 +9,8 @@ import { BASE_SPEAKER_LOOK, CAST } from '../cutscene/cast';
 import { voiceFor } from '../voice/voices';
 import { CITY_CALLER_NAMES, CITY_COMMS } from './commsCity';
 import { NEWCOMER_CALLER_NAMES, NEWCOMER_COMMS } from './commsNewcomers';
+import { STORY_COMMS } from './story';
+import { GLAZE_COMMS } from './glazeQuests';
 
 export interface CommsLine {
   /** A CAST key (cutscene/cast.ts) or another speaker key from CALLER_NAMES. */
@@ -44,6 +46,46 @@ export const CALLER_NAMES: Readonly<Record<string, string>> = {
   bramble: 'Bramble',
   shelldon: 'Shelldon',
   wally: 'Wind-Sock Wally',
+  cardoon: 'Cardoon "Swish" Trowelly',
+  fennel: 'Fennel Gripwax',
+  thrift: 'Thrift Hosepipe',
+  peony: 'Dame Peony Gravelrake',
+  basil: 'Basil Divot',
+  'don compost': 'Don Compost',
+  parsley: 'Parsley Inkpot',
+  hyssop: 'Hyssop Doormat',
+  'turncoat cam': 'Turncoat Cam',
+  'mayor mulch': 'Mayor Mulch',
+  'lugnut lulu': 'Lugnut Lulu',
+  chard: 'Chard Levelright',
+  hogweed: 'Hogweed Sprocket',
+  gary: 'Gate-Guard Gary',
+  sage: 'Sage Ladle',
+  frank: 'Fence-Post Frank',
+  chicory: 'Chicory Snips',
+  wisteria: 'Countess Wisteria',
+  'rooster weatherby': 'Rooster Weatherby',
+  nubbin: 'Nubbin',
+  tumblesoil: 'Old Mother Tumblesoil',
+  saxifrage: 'Mother Saxifrage',
+  ernie: 'Ash-Shovel Ernie',
+  midge: 'Squeaky-Clean Midge',
+  cass: 'Chrome-Knuckle Cass',
+  'dj moleman': 'DJ Moleman',
+  gentian: 'Gentian Bootlace',
+  'thermos theo': 'Thermos Theo',
+  chanterelle: 'Warden Chanterelle',
+  ragwort: 'Ragwort Coilspring',
+  clary: 'Marshal Clary',
+  marram: 'Marram Teaspoon',
+  samphire: 'Captain Samphire',
+  betony: 'Professor Betony Sextant',
+  lovage: 'Dean Lovage Inkwell',
+  'silt-diver sal': 'Silt-Diver Sal',
+  yarrow: 'Reeve Yarrow Potsherd',
+  'burdock haybright': 'Head Ranger Burdock Haybright',
+  hector: 'Hector Disdain',
+  velma: 'Velma Crown',
   ...CITY_CALLER_NAMES,
   ...NEWCOMER_CALLER_NAMES,
 };
@@ -79,6 +121,7 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['pip', 'The Mulch Club is Don Compost\'s. He doesn\'t talk. He taps.'],
       ['pip', 'Three gold hats owe him Acorns. Crack them and he pays your debt down.'],
       ['pip', 'Clay-Mart owns your Kiln-Debt. Five thousand. This is how you start.'],
+      ['pip', 'And the bank owns your flat now. Tap faster.'],
     ),
   },
   'ch1-mowers-keepers': {
@@ -98,7 +141,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['juniper', 'Vesper runs the HOA. My brother Reginald measures lawns for him.'],
     ),
     2: call(['juniper', 'You were seen. Deal with his guards. Keep the camera dry.']),
-    3: call(['juniper', 'City Hall. The side door. Reginald uses the front.']),
+    3: call(['juniper', 'Post him a copy, his own letterbox. Let him find out at breakfast.']),
+    4: call(['juniper', 'City Hall. The side door. Reginald uses the front.']),
   },
   'ch1-tax-break-in': {
     0: brief(
@@ -109,15 +153,8 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
     1: call(['pip', 'Auditors down! Vault\'s inside. Deed first, snacks second.']),
     2: call(['tansy', 'That Combine in his yard is Vesper\'s. Bring it to my bay. Loudly.']),
   },
-  'ch1-founders-boot': {
-    0: brief(
-      ['tansy', 'Founder\'s Trim Day. Gnorwin\'s Boot rolls in the parade.'],
-      ['tansy', 'Gnorwin Clayfoot, first king of Fescue. Allegedly my great-great-something.'],
-      ['tansy', 'Vesper\'s tribunal is at the Amphitheater. Put the Boot in the jury box.'],
-    ),
-    1: call(['pip', 'Boot\'s in the jury box! Reginald is very upset. Crack his Enforcers!']),
-    2: call(['tansy', 'Four hats on your tail. Bring the Combine home. The stamp\'s inked.']),
-  },
+  // ch1-founders-boot: comms live in its story file (quests/story/), E20.
+
   // ---- Chapter 2: debt paid, and the first refusal ----
   'ch2-dew-run': {
     0: brief(
@@ -142,81 +179,17 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
       ['granny', 'Listen to him. Say no. Then run.'],
     ),
     1: call(['granny', 'Porcelain Guards. They don\'t bend, so make them crack.']),
-    2: call(
-      ['sorrel', 'This is Sorrel Tillbrook, 88.7 Fescue Public. Elder Bracken asks you west.'],
-      ['sorrel', 'Mossy Wood. Bring Pip. He won\'t want to come.'],
-    ),
+    // E20: Sorrel's call moved to m22-off-air; the gate step is Granny's now (outline row 20).
+    2: call(['granny', 'Lose the hats at the West Highway Gate. Then go home and say nothing.']),
   },
-  'ch2-unmowed-tablet': {
-    0: brief(
-      ['sorrel', 'The Unmowed are the gnomes who never let a mower in.'],
-      ['sorrel', 'Vesper\'s welders are plating his Grand Combine at the Compost Heap.'],
-      ['sorrel', 'The Elder wants their plates. He says they are his to melt.'],
-    ),
-    2: call(['bracken', 'The plate rig. Bring it to the hollow. Do not drive on the moss.']),
-  },
+  // ch2-unmowed-tablet: comms live in its story file (quests/story/), E20.
+
   // ---- Chapter 3: the player is the one others lean on ----
-  'ch3-salvage-raid': {
-    0: call(
-      ['tansy', 'Cam sold us. Get Pip out. I\'ll draw them off.'],
-      ['tansy', 'Father Loam, up in Frostbite Fells, mends cracked clay. Go north.'],
-    ),
-    1: call(['tansy', 'Ring Road, northwest. Lose the cordon. Don\'t come back for me.']),
-    2: call(['pip', 'Take my Zero-Turn. You drive. I\'m, uh, short an arm.']),
-  },
-  'ch3-kiln-resin-ice': {
-    0: brief(
-      ['loam', 'Kiln-Resin, from the northern shrine. Without it, the boy\'s arm stays in a sack.'],
-      ['loam', 'The HOA salts the road to keep pilgrims off it. Crack the plow crew.'],
-    ),
-    2: call(['loam', 'Ninety seconds while it sets. Keep them off the basin, my child.']),
-    3: call(['pip', 'It set! Arm\'s on! Thermos Theo says there\'s post for us. Snail post!']),
-  },
-  'ch3-tundra-drift-run': {
-    0: brief(
-      ['pip', 'Tansy\'s hiding in the Dust Flats, at the overlook. She\'s got the Stone!'],
-      ['pip', 'Loam packed the barrels in ice. Very volatile. Drive like it\'s soup.'],
-    ),
-    1: call(['tansy', 'HOA spotters on the ridge. Crack them before they phone it in.']),
-  },
-  // ---- Chapter 4: the one everybody's plan depends on ----
-  'ch4-runway-flares': {
-    0: brief(
-      ['tansy', 'Fort Sandpit. The Spade Guard\'s fort, and the Whirligig\'s pad.'],
-      ['tansy', 'The Unmowed are coming to help. Flares show them where.'],
-      ['tansy', 'Commander Diggs runs the fort. He\'s not ours. Not yet.'],
-    ),
-    1: call(['pip', 'Crop Duster\'s on the apron! Fly low and drop the flare on the Flats!']),
-    2: call(['bracken', 'We see the first flare. One more, on the north ridge.']),
-  },
-  'ch4-sandpit-drop': {
-    0: brief(
-      ['tansy', 'The Whirligig flies. Vesper\'s Combine doesn\'t. That\'s our edge.'],
-      ['pip', 'Over the wall, out of the plane, onto the pad. Easy. Probably.'],
-    ),
-    1: call(['pip', 'You\'re on the pad! Snipers are waking up. Crack them, then lift off!']),
-    2: call(['tansy', 'Bring her home to the overlook. Lower than you think.']),
-  },
-  'ch4-spade-truce': {
-    0: brief(
-      ['tansy', 'Vesper fired the Spade Guard by phone. Diggs took it personally.'],
-      ['tansy', 'Help him take the armory back. Every free gun in Turfton came out of it.'],
-    ),
-    1: call(['diggs', 'HOA lockout at my gate. Crack them. Nobody locks the Guard out.']),
-    2: call(['diggs', 'Gate\'s clear. Armory\'s inside. Walk in like you own it. I do.']),
-  },
-  // ---- Chapter 5: the hand on the jam ----
-  'ch5-even-cut': {
-    0: brief(
-      ['tansy', 'The Grand Combine is coming down the meridian with the Golden Acorn inside.'],
-      ['tansy', 'Clear his escort. Then the Whirligig, the deck, the Stone in the intake.'],
-      ['granny', 'Cloverfield\'s on the south canal, sugar. Diggs has the rest. Go.'],
-    ),
-    1: call(['pip', 'Escort\'s down! Whirligig\'s warm! Over the Combine and jump!']),
-    2: call(['bracken', 'The intake, child. Gnorwin\'s Stone was made for it. Set it true.']),
-    3: call(['tansy', 'It\'s jammed. Vesper\'s on his throne. Knock the hat off him.']),
-    4: call(['juniper', 'The acorn is loose. Bracken wants a monument. Tansy wants a power grid. Your call.']),
-  },
+  // ch3-salvage-raid: comms live in its story file (quests/story/), E20.
+
+  // ch3-kiln-resin-ice, ch3-tundra-drift-run: comms live in their story files (quests/story/), E21.
+  // ch4-runway-flares, ch4-sandpit-drop, ch4-spade-truce, ch5-even-cut (and the finale's parts): comms live in their
+  // story files (quests/story/), E22.
   // ---- Strangers & Freaks ----
   'sq-grid-truthers': {
     0: call(['mossley', 'Four markers, then zero, zero. Walk, don\'t run. Running looks guilty.']),
@@ -263,6 +236,10 @@ export const COMMS: Readonly<Record<string, Readonly<Record<number, CommsCall>>>
   },
   ...CITY_COMMS,
   ...NEWCOMER_COMMS,
+  // E20: the story rows' own comms (quests/story/), last so a rewritten row's file wins over its old entry above.
+  ...STORY_COMMS,
+  // E20 L106: Chrome-Knuckle Cass's "On the House" (glazeQuests.ts).
+  ...GLAZE_COMMS,
 };
 
 /** The call for objective `step` of a quest, if it has one. */

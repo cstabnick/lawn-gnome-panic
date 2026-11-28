@@ -1,8 +1,10 @@
 // Parts that fall off damaged mowers: which parts a stage hides, loose tyres stripped, and thrown pieces landing and fading.
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { buildPrefab } from '@lawn/prefabs';
-import { DEBRIS, createDebris, hiddenBetween, stripLooseParts } from './debris';
+import {
+  DEBRIS, createDebris, forgetLostParts, hiddenBetween, hideLostParts, looseParts, stripLooseParts,
+} from './debris';
 import { heightAt } from './terrain';
 import type { Vehicle } from './types';
 
@@ -81,5 +83,85 @@ describe('createDebris', () => {
     for (let i = 0; i < 15; i++) thrown += debris.burst(fakeVehicle().v);
     expect(thrown).toBeGreaterThan(DEBRIS.max);
     expect(debris.count()).toBeLessThanOrEqual(DEBRIS.max);
+  });
+});
+
+/** A vehicle-like object with named parts: mirror-l on +x, exhaust on -x, a wheel and a seat (never loose). */
+function partVehicle(extraMirrors = 0): Vehicle {
+  const object = new THREE.Group();
+  const add = (name: string, x: number, z: number) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2));
+    m.name = name;
+    m.position.set(x, 0.5, z);
+    object.add(m);
+  };
+  add('mirror-l', 1, 0);
+  add('exhaust', -1, 0);
+  add('wheel-0', 0, 1);
+  add('seat', 0, -1);
+  for (let i = 0; i < extraMirrors; i++) add(`mirror-x${i}`, 0.5, 0.5 + i * 0.1);
+  return { x: 0, y: 0, z: 0, yaw: 0, speed: 0, object, spec: { prefab: 'none', scale: 1 } } as unknown as Vehicle;
+}
+
+function showAll(v: Vehicle): void {
+  v.object.traverse((o) => { o.visible = true; });
+}
+
+function findPart(v: Vehicle, name: string): THREE.Object3D {
+  return v.object.getObjectByName(name)!;
+}
+
+describe('knockParts', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('lists the loose parts and never the wheel or seat', () => {
+    const names = looseParts(partVehicle()).map((o) => o.name).sort();
+    expect(names).toEqual(['exhaust', 'mirror-l']);
+  });
+
+  it('knocks the part on the hit side off', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const debris = createDebris(new THREE.Scene());
+    const v = partVehicle();
+    const before = debris.count();
+    expect(debris.knock(v, 1, 0, 20)).toBeGreaterThanOrEqual(1);
+    expect(findPart(v, 'mirror-l').visible).toBe(false);
+    expect(debris.count()).toBeGreaterThan(before);
+    expect(findPart(v, 'wheel-0').visible).toBe(true);
+    expect(findPart(v, 'seat').visible).toBe(true);
+  });
+
+  it('does nothing below knockMin', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const debris = createDebris(new THREE.Scene());
+    const v = partVehicle();
+    expect(debris.knock(v, 1, 0, DEBRIS.knockMin - 1)).toBe(0);
+    expect(findPart(v, 'mirror-l').visible).toBe(true);
+    expect(debris.count()).toBe(0);
+  });
+
+  it('hides a knocked part again after a rebuild, until repair', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const debris = createDebris(new THREE.Scene());
+    const v = partVehicle();
+    debris.knock(v, 1, 0, 20);
+
+    showAll(v);
+    hideLostParts(v);
+    expect(findPart(v, 'mirror-l').visible).toBe(false);
+
+    forgetLostParts(v);
+    showAll(v);
+    hideLostParts(v);
+    expect(findPart(v, 'mirror-l').visible).toBe(true);
+  });
+
+  it('caps the parts one vehicle loses at knocksPerVehicle', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const debris = createDebris(new THREE.Scene());
+    const v = partVehicle(DEBRIS.knocksPerVehicle + 2);
+    let total = 0;
+    for (let i = 0; i < 10; i++) total += debris.knock(v, 1, 0, DEBRIS.knockMin + 1);
+    expect(total).toBe(DEBRIS.knocksPerVehicle);
   });
 });

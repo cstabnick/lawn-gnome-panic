@@ -17,6 +17,7 @@ import { REACT_C_ANIMS } from './reactsC';
 import { SOCIAL_ANIMS } from './social';
 import { STYLE_ANIMS } from './styles';
 import { JOB_ANIMS } from './jobs';
+import { VARIANT_ANIMS } from './variants';
 import type { AnimCategory, AnimDef, AnimId } from './types';
 
 export * from './types';
@@ -25,7 +26,7 @@ export * from './types';
 export const ANIMS: readonly AnimDef[] = [
   ...EMOTE_ANIMS, ...EMOTE_B_ANIMS, ...DANCE_ANIMS, ...IDLE_ANIMS, ...STYLE_ANIMS, ...MOOD_ANIMS, ...BIT_ANIMS,
   ...SOCIAL_ANIMS, ...ROLE_ANIMS, ...WORK_ANIMS, ...HUNT_ANIMS, ...RIDE_ANIMS, ...DRIVE_ANIMS, ...REACT_ANIMS,
-  ...REACT_B_ANIMS, ...REACT_C_ANIMS, ...JOB_ANIMS,
+  ...REACT_B_ANIMS, ...REACT_C_ANIMS, ...JOB_ANIMS, ...VARIANT_ANIMS,
 ];
 
 /** Menu tabs: category and title, in order. */

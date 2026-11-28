@@ -6,11 +6,9 @@ import { buildPrefab } from '@lawn/prefabs';
 import { PRO_TEAMS } from './teams';
 import type { ProTeam } from './types';
 
-export const COURT_HALF_X = 11.5;
-export const COURT_HALF_Z = 6.2;
-export const HOOP_X = 10.1;
-export const HOOP_Y = 3.05;
-export const THREE_PT_RADIUS = 5.4;
+import { COURT_HALF_X, COURT_HALF_Z, HOOP_X, HOOP_Y, THREE_PT_RADIUS } from '@lawn/jam';
+
+export { COURT_HALF_X, COURT_HALF_Z, HOOP_X, HOOP_Y, THREE_PT_RADIUS };
 
 export interface JumbotronData {
   homeAbbr: string;

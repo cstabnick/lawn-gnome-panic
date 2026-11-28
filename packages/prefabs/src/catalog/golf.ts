@@ -85,9 +85,9 @@ export const GOLF: readonly PrefabDef[] = [
     ],
     parts: [
       { s: 'cyl', d: [0.03, 0.03, 2.6], at: [0, 1.3, 0], c: 'white', seg: 6 },
-      { s: 'box', d: [0.9, 0.55, 0.01], at: [0.45, 2.325, 0], c: 'tint', name: 'flag-cloth', group: 'flag' },
+      { s: 'box', d: [0.9, 0.55, 0.01], at: [0.49, 2.3, 0], c: 'tint', name: 'flag-cloth', group: 'flag' }, // clear of the pole (no z-fighting)
     ],
-    pivots: { flag: [0, 2.325, 0] },
+    pivots: { flag: [0, 2.3, 0] },
   },
   {
     id: 'tee-marker', name: 'Tee Marker', category: 'prop', uses: ['place'],

@@ -2,7 +2,10 @@
 // store writes localStorage and calls notifySaveChanged() (saveHook.ts) like every save module.
 import { notifySaveChanged } from '../saveHook';
 import { LEVEL_XP, MAX_LEVEL } from './defs';
-import { JOB_IDS, type GigKind, type JobId, type JobRecord, type JobsSave, type JobStats, type PayResult } from './types';
+import {
+  JOB_IDS, WORK_JOB_IDS, type GigKind, type JobId, type JobRecord, type JobsSave, type JobStats, type PayResult, type WorkJobId,
+  type WorkStats,
+} from './types';
 
 export const JOBS_SAVE_KEY = 'gta-jobs-v1';
 
@@ -12,7 +15,26 @@ export function emptySave(): JobsSave {
   return {
     v: 1, jobs: { taxi: emptyRecord(), courier: emptyRecord(), pilot: emptyRecord(), boat: emptyRecord() }, parcels: 0,
     fragileClean: 0, perfectLandings: 0, ferryLoops: 0, playerFares: 0, tubeSeconds: 0, tubeBest: 0, towedMax: 0, buoyBest: null,
+    work: {
+      chef: emptyRecord(), mechanic: emptyRecord(), comedy: emptyRecord(), garbage: emptyRecord(), firefighter: emptyRecord(),
+      gnomazon: emptyRecord(),
+    }, workStats: emptyWorkStats(),
   };
+}
+
+const emptyWorkStats = (): WorkStats => ({
+  dishes: 0, fiveStarDishes: 0, cars: 0, perfectCars: 0, sets: 0, tomatoes: 0, doubleDowns: 0,
+  bins: 0, neatBins: 0, spills: 0, fires: 0, calls: 0, rescues: 0, parcels: 0, rightSized: 0,
+});
+
+function parseRecord(r: unknown, rec: JobRecord): void {
+  if (typeof r !== 'object' || r === null) return;
+  const rr = r as Record<string, unknown>;
+  for (const k of ['xp', 'done', 'failed', 'earned', 'bestTip', 'fiveStars'] as const) {
+    const n = num(rr[k]);
+    if (n !== null) rec[k] = k === 'xp' || k === 'earned' || k === 'bestTip' ? n : Math.floor(n);
+  }
+  if (typeof rr.licensed === 'boolean') rec.licensed = rr.licensed;
 }
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
@@ -26,16 +48,13 @@ export function parseSave(raw: string | null): JobsSave {
   if (typeof o !== 'object' || o === null || (o as { v?: unknown }).v !== 1) return s;
   const src = o as Record<string, unknown>;
   const jobs = typeof src.jobs === 'object' && src.jobs !== null ? (src.jobs as Record<string, unknown>) : {};
-  for (const id of JOB_IDS) {
-    const r = jobs[id];
-    if (typeof r !== 'object' || r === null) continue;
-    const rr = r as Record<string, unknown>;
-    const rec = s.jobs[id];
-    for (const k of ['xp', 'done', 'failed', 'earned', 'bestTip', 'fiveStars'] as const) {
-      const n = num(rr[k]);
-      if (n !== null) rec[k] = k === 'xp' || k === 'earned' || k === 'bestTip' ? n : Math.floor(n);
-    }
-    if (typeof rr.licensed === 'boolean') rec.licensed = rr.licensed;
+  for (const id of JOB_IDS) parseRecord(jobs[id], s.jobs[id]);
+  const work = typeof src.work === 'object' && src.work !== null ? (src.work as Record<string, unknown>) : {};
+  for (const id of WORK_JOB_IDS) parseRecord(work[id], s.work[id]);
+  const ws = typeof src.workStats === 'object' && src.workStats !== null ? (src.workStats as Record<string, unknown>) : {};
+  for (const k of Object.keys(s.workStats) as (keyof WorkStats)[]) {
+    const n = num(ws[k]);
+    if (n !== null) s.workStats[k] = Math.floor(n);
   }
   for (const k of ['parcels', 'fragileClean', 'perfectLandings', 'ferryLoops', 'playerFares', 'tubeSeconds', 'tubeBest', 'towedMax'] as const) {
     const n = num(src[k]);
@@ -96,13 +115,61 @@ export function recordGig(s: JobsSave, job: JobId, kind: GigKind, pay: PayResult
 
 export function recordFail(s: JobsSave, job: JobId): void { s.jobs[job].failed++; }
 
+/** Extra facts about a finished workplace shift (E24) for the counters. */
+export interface WorkExtra {
+  dishes?: number;
+  fiveStarDishes?: number;
+  cars?: number;
+  perfectCars?: number;
+  sets?: number;
+  tomatoes?: number;
+  doubleDowns?: number;
+  // E25
+  bins?: number;
+  neatBins?: number;
+  spills?: number;
+  fires?: number;
+  calls?: number;
+  rescues?: number;
+  parcels?: number;
+  rightSized?: number;
+}
+
+/** Book a finished workplace shift (mutates s). Returns the new level when it went up, else null. */
+export function recordShift(s: JobsSave, job: WorkJobId, pay: PayResult, extra: WorkExtra = {}): number | null {
+  const r = s.work[job];
+  const before = levelOf(r.xp);
+  r.xp += pay.xp;
+  r.done++;
+  r.earned += pay.total;
+  r.bestTip = Math.max(r.bestTip, pay.tip);
+  if (pay.stars === 5) r.fiveStars++;
+  for (const k of Object.keys(s.workStats) as (keyof WorkStats)[]) {
+    const n = extra[k];
+    if (n && n > 0) s.workStats[k] += Math.floor(n);
+  }
+  const after = levelOf(r.xp);
+  return after > before ? after : null;
+}
+
+/** True when any job, vehicle or workplace, has reached `level`. */
+export function anyJobAtLevel(s: JobsSave, level: number): boolean {
+  return JOB_IDS.some((id) => levelOf(s.jobs[id].xp) >= level) || WORK_JOB_IDS.some((id) => levelOf(s.work[id].xp) >= level);
+}
+
 export function statsOf(s: JobsSave, onDuty: JobId | null): JobStats {
   return {
     taxiFares: s.jobs.taxi.done, parcels: s.parcels, flights: s.jobs.pilot.done, boatTrips: s.jobs.boat.done,
     ferryLoops: s.ferryLoops, playerFares: s.playerFares, tubeSeconds: s.tubeSeconds, buoyBest: s.buoyBest,
-    earned: JOB_IDS.reduce((a, id) => a + s.jobs[id].earned, 0),
+    earned: JOB_IDS.reduce((a, id) => a + s.jobs[id].earned, 0) + WORK_JOB_IDS.reduce((a, id) => a + s.work[id].earned, 0),
     levels: { taxi: levelOf(s.jobs.taxi.xp), courier: levelOf(s.jobs.courier.xp), pilot: levelOf(s.jobs.pilot.xp), boat: levelOf(s.jobs.boat.xp) },
     onDuty,
+    workLevels: {
+      chef: levelOf(s.work.chef.xp), mechanic: levelOf(s.work.mechanic.xp), comedy: levelOf(s.work.comedy.xp),
+      garbage: levelOf(s.work.garbage.xp), firefighter: levelOf(s.work.firefighter.xp), gnomazon: levelOf(s.work.gnomazon.xp),
+    },
+    dishes: s.workStats.dishes, cars: s.workStats.cars, sets: s.workStats.sets,
+    bins: s.workStats.bins, fires: s.workStats.fires, rescues: s.workStats.rescues, packed: s.workStats.parcels,
   };
 }
 

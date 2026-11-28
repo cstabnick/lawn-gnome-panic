@@ -2,6 +2,11 @@
 // Pure: no DOM, no three.js, no game imports (only ./model). Design: docs/roadmaps/gta-air-and-sea.md.
 import type { AirBody, AirControls, AirEnv, AirSpec, AirState, AirStepResult } from './model';
 
+/** Fixed-wing ground reverse limit as a fraction of maxSpeed (about 2-3 m/s): planes can back up slowly on the floor, never in the air. */
+export const PLANE_REVERSE_FRAC = 0.06;
+/** Ground reverse acceleration of a fixed-wing, as a fraction of its thrust. */
+const PLANE_BACK_ACCEL = 0.15;
+
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
 const finiteOr0 = (v: number): number => (Number.isFinite(v) ? v : 0);
 
@@ -45,11 +50,14 @@ export function stepAir(
   let vy = body.vy;
 
   if (regime === 'fixed-wing') {
-    // Speed: planes never reverse.
+    // Speed: in the air a plane never reverses; on the floor, nearly stopped, the brake backs it up slowly.
+    const backMax = (spec.reverseFrac ?? PLANE_REVERSE_FRAC) * spec.maxSpeed;
     if (throttle > 0) speed = Math.min(spec.maxSpeed, speed + spec.thrust * throttle * dt);
-    else if (throttle < 0) speed = Math.max(0, speed - (onFloor ? 1.5 : 0.8) * spec.thrust * -throttle * dt);
-    else speed *= Math.pow(onFloor ? (env.water ? 0.3 : 0.5) : spec.drag, dt);
-    speed = Math.max(0, speed);
+    else if (throttle < 0) {
+      if (onFloor && speed <= 1) speed = Math.max(-backMax, speed - PLANE_BACK_ACCEL * spec.thrust * -throttle * dt);
+      else speed = Math.max(0, speed - (onFloor ? 1.5 : 0.8) * spec.thrust * -throttle * dt);
+    } else speed *= Math.pow(onFloor ? (env.water ? 0.3 : 0.5) : spec.drag, dt);
+    if (!onFloor) speed = Math.max(0, speed);
 
     // Vertical: needs airspeed to climb; below stall in the air the nose drops.
     const auth = clamp01((speed - 0.7 * stall) / (0.3 * stall));
@@ -60,8 +68,9 @@ export function stepAir(
     vy += (target - vy) * ease(spec.climbResponse);
 
     // Yaw: rudder authority needs airspeed (on the ground a plane taxis slowly).
-    const gate = onFloor ? clamp01(speed / 3) * 0.6 : clamp01(speed / stall);
-    yaw -= c.steer * spec.turnRate * gate * dt;
+    const aSpeed = Math.abs(speed);
+    const gate = onFloor ? (aSpeed > 0.3 ? Math.max(0.35, clamp01(aSpeed / 3) * 0.6) : clamp01(aSpeed / 3) * 0.6) : clamp01(speed / stall);
+    yaw -= c.steer * spec.turnRate * gate * dt * (speed < 0 ? -1 : 1);
   } else {
     // rotor and buoyant share the same maths; the balloon only yaws in the air and under power.
     let target = c.powered ? lift * spec.climbRate : -spec.sinkRate;

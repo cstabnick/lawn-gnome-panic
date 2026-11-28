@@ -4,6 +4,7 @@ import type { DriveControls, Vehicle, World } from '../types';
 import { play } from '../audio';
 import { sweepCircleBoxes, wallBounce, clampToWorld } from '../collide';
 import { deckSurfaceBelow } from '../highways/deck';
+import { rooftopSurfaceBelow } from '../interiors/rooftops';
 import { heightAt, waterAt } from '../terrain';
 import { initAir, stepAir } from './flight';
 import { applyAirTune } from './tuning';
@@ -19,12 +20,14 @@ const GROUND_MIN = 10;
 /** Last air step result per vehicle id (lastAirEvent reads it). */
 const lastResults = new Map<number, AirStepResult>();
 
-/** The floor under a point: the highest of ground, a bridge or skyway deck under `y`, and the water surface. */
+/** The floor under a point: the highest of ground, a bridge or skyway deck or a rooftop under `y`, and the water surface. */
 export function floorUnder(x: number, z: number, y: number): { y: number; water: boolean } {
   const ground = heightAt(x, z);
   const deck = deckSurfaceBelow(x, z, y + 0.5) ?? -Infinity;
+  // Rooftops (E05): tower roofs and the Double Pot slab are landing surfaces.
+  const roof = rooftopSurfaceBelow(x, z, y + 0.5) ?? -Infinity;
   const surface = waterAt(x, z)?.surface ?? -Infinity;
-  const top = Math.max(ground, deck, surface);
+  const top = Math.max(ground, deck, roof, surface);
   return { y: top, water: surface > -Infinity && surface === top };
 }
 

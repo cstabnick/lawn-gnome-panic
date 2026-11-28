@@ -1,7 +1,7 @@
 // Animal calls and wildlife. Cartoonish and garden-scale: soft, not shrill.
 // info.param: 0.5 = calm call, 1 = alarmed (louder, higher, quicker). info.rand: +-10% pitch variation.
 import { burst, env, noise, tone, voiced } from '../synth';
-import type { CritterSoundId, RecipeTable, SoundInfo } from '../ids';
+import type { CritterSoundId, Recipe, RecipeTable, SoundInfo } from '../ids';
 
 /** Pitch multiplier: per-play random +-10%, plus a little lift when alarmed. */
 function pitch(info: SoundInfo): number {
@@ -18,6 +18,24 @@ function hash(x: number): number {
   const s = Math.sin(x) * 43758.5453;
   return s - Math.floor(s);
 }
+
+/** A short hoarse deer bark: a noisy sawtooth with a fast pitch drop. Also the countryside's 'country-deer-bark'. */
+export const deerBark: Recipe = (c, out, t, info) => {
+  const p = pitch(info);
+  voiced(c, out, 'sawtooth', t, 0.3, 520 * p, 220 * p, loud(info, 0.18), 25, 0.05, 1500, 0.005);
+  burst(c, out, t, 0.28, 'bandpass', 1200 * p, 600 * p, loud(info, 0.08), 1.5, 0.004);
+  return 0.3;
+};
+
+/** A wobbly nasal goat "meh-eh-eh": three sawtooth notes with vibrato through a lowpass. Also 'country-goat-bleat'. */
+export const goatBleat: Recipe = (c, out, t, info) => {
+  const p = pitch(info);
+  const gap = 0.2;
+  for (let k = 0; k < 3; k++) {
+    voiced(c, out, 'sawtooth', t + k * gap, 0.18, 380 * p, 320 * p, loud(info, 0.14), 9, 0.08, 1600, 0.01);
+  }
+  return 2 * gap + 0.18;
+};
 
 export const CRITTER_RECIPES: RecipeTable<CritterSoundId> = {
   moo: (c, out, t, info) => {
@@ -73,10 +91,12 @@ export const CRITTER_RECIPES: RecipeTable<CritterSoundId> = {
   },
 
   bear: (c, out, t, info) => {
+    // A slow contented yawn: a soft voice rises a little, glides down an octave, then a breathy tail.
     const p = pitch(info);
-    const dur = 1.1;
-    voiced(c, out, 'sawtooth', t, dur, 70 * p, 55 * p, loud(info, 0.3), 9, 0.08, 400, 0.05);
-    burst(c, out, t, dur, 'lowpass', 300, 200, loud(info, 0.12), 1, 0.1);
+    const dur = 1.4;
+    tone(c, out, 'triangle', t, 0.5, 110 * p, 140 * p, loud(info, 0.16), 0.15);
+    tone(c, out, 'triangle', t + 0.5, 0.9, 140 * p, 60 * p, loud(info, 0.18), 0.04);
+    burst(c, out, t + 0.6, 0.8, 'lowpass', 500, 250, loud(info, 0.08), 1, 0.1);
     return dur;
   },
 
@@ -198,4 +218,7 @@ export const CRITTER_RECIPES: RecipeTable<CritterSoundId> = {
     burst(c, out, t, 0.12, 'lowpass', 800, 200, loud(info, 0.25), 1);
     return 0.15;
   },
+
+  'deer-bark': deerBark,
+  'goat-bleat': goatBleat,
 };

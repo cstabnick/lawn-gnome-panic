@@ -6,7 +6,7 @@ import { checkSpec, compose, isStrong, levelsAt, titleSeed, triadQuality } from 
 import { RADIO_SONGS } from './songs';
 import type { RadioStation, SongSpec } from './spec';
 
-const STATIONS: RadioStation[] = ['blade', 'fpr', 'beats'];
+const STATIONS: RadioStation[] = ['blade', 'fpr', 'beats', 'adagio'];
 const all: [RadioStation, SongSpec][] = STATIONS.flatMap((st) => RADIO_SONGS[st].map((s): [RadioStation, SongSpec] => [st, s]));
 
 /** What each station may use, so it keeps its identity. */
@@ -14,6 +14,7 @@ const IDENTITY: Record<RadioStation, { chord: string[]; kit: string[]; bpm: [num
   blade: { chord: ['crunch', 'brass', 'organ'], kit: ['break', 'rock'], bpm: [90, 170] },
   fpr: { chord: ['musicBox', 'strings', 'piano', 'nylon'], kit: ['soft', 'none'], bpm: [56, 100] },
   beats: { chord: ['rhodes', 'piano', 'organ', 'nylon'], kit: ['brush', 'soft'], bpm: [64, 128] },
+  adagio: { chord: ['strings', 'harpsichord', 'piano', 'musicBox'], kit: ['none'], bpm: [50, 126] },
 };
 
 describe('triadQuality', () => {

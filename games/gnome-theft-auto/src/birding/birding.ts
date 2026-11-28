@@ -10,6 +10,7 @@ import { markTrainerModified } from '../trainer/mark';
 import { registerTrainerSection, registerTrainerSpawnable } from '../trainer/registry';
 import { button, grid, heading, note, status } from '../trainer/ui';
 import type { Blip, Box, Hud, Player, Sfx, World } from '../types';
+import { birdAlertSoundOn, getBirdAlerts, getBirdSounds } from '../birdPrefs';
 import { createBirdStore, type BirdStore } from './birdSave';
 import { createBirdView, type BirdView } from './birdView';
 import { circleFlock, createFlock, flushFlock, sendFlock, stepFlock } from './flock';
@@ -214,7 +215,7 @@ export function createBirding(deps: BirdingDeps): Birding {
   // Scare a flock from (fromX, fromZ); the flush sound plays when it is near the player.
   function flushAt(fl: Flock, fromX: number, fromZ: number): void {
     flushFlock(fl, fromX, fromZ, env);
-    if (Math.hypot(fl.x - px, fl.z - pz) < FLUSH_SOUND_RANGE) {
+    if (getBirdSounds() && Math.hypot(fl.x - px, fl.z - pz) < FLUSH_SOUND_RANGE) {
       playAt(BIRD_SFX.flush, fl, { param: Math.min(1, fl.members.length / 10) });
     }
   }
@@ -228,7 +229,7 @@ export function createBirding(deps: BirdingDeps): Birding {
     const first = store.markSeen(s.id);
     if (first) {
       deps.economy.earn(NEW_SPECIES_ACORNS[s.rarity], 'New bird');
-      play2d(BIRD_SFX.tick);
+      if (birdAlertSoundOn()) play2d(BIRD_SFX.tick);
       deps.hud.callout?.('NEW ON THE LIFE LIST', s.name);
       deps.unlock(BIRD_ACHIEVEMENTS.firstTick);
       deps.increment(BIRD_ACHIEVEMENTS.lifeList10);
@@ -529,7 +530,7 @@ export function createBirding(deps: BirdingDeps): Birding {
           frame.dt = fl.acc;
           const flushed = stepFlock(fl, frame, env);
           fl.acc = 0;
-          if (flushed && d < FLUSH_SOUND_RANGE) {
+          if (flushed && d < FLUSH_SOUND_RANGE && getBirdSounds()) {
             playAt(BIRD_SFX.flush, fl, { param: Math.min(1, fl.members.length / 10) });
           }
           if (flushed && mirrors.has(fl)) net?.flushed(fl, px, pz);
@@ -538,14 +539,16 @@ export function createBirding(deps: BirdingDeps): Birding {
         fl.callT -= f.dt;
         if (fl.callT <= 0) {
           fl.callT = s.callEvery[0] + rnd() * (s.callEvery[1] - s.callEvery[0]);
-          if (d < BIRDING.callRadius) {
+          if (d < BIRDING.callRadius && getBirdSounds()) {
             playAt(birdSoundId(s.id), fl, {
               bus: 'ambience', maxDist: BIRDING.callRadius, param: fl.sinceFlush < 5 ? 1 : 0.5,
             });
           }
           if (d < BIRDING.hearRange) {
             if (store.markHeard(s.id)) journal.refresh();
-            scopeUi.showCall(bearingTo(viewing ? scope.yaw() : f.camYaw, px, pz, fl.x, fl.z), store.hasSeen(s.id));
+            if (getBirdAlerts()) {
+              scopeUi.showCall(bearingTo(viewing ? scope.yaw() : f.camYaw, px, pz, fl.x, fl.z), store.hasSeen(s.id));
+            }
           }
         }
         i++;

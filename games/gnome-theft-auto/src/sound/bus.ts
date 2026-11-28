@@ -22,6 +22,7 @@ const MAX_DIST: Partial<Record<string, number>> = {
   moo: 70, baa: 55, oink: 40, cluck: 35, squirrel: 35, bear: 80, 'bee-buzz': 18, owl: 90, crow: 90, gull: 90,
   'bell-toll': 400, 'crowd-cheer': 70, 'crowd-murmur': 45, 'shop-bell': 30, 'water-lap': 30,
   'splash-small': 35, 'splash-big': 90, 'event-start': 1000, 'event-end': 1000,
+  'turbine-whoosh': 140, 'ant-skitter': 25, 'telescope-whirr': 45, 'deer-bark': 70, 'goat-bleat': 50,
 };
 /** Shortest gap between two plays of the same id, seconds (anything not listed: 0.04). */
 const MIN_GAP: Partial<Record<string, number>> = { 'gun-hoa': 0.09, 'tyre-squeal': 0.25, 'crowd-murmur': 1.5 };

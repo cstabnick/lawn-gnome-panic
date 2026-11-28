@@ -1,6 +1,6 @@
 // Quest sim: the Save Trainer's 'Quest sim' tab (order 75). Pick a quest (and ending), tick cheats, and play it with the
 // bot through the real game (browser.ts). Import-light: the browser layer loads only when a button is pressed.
-import { questById } from '../quests/defs';
+import { QUESTS, questById } from '../quests/defs';
 import { registerTrainerSection } from '../trainer/registry';
 import type { TrainerCtx } from '../trainer/types';
 import { button, grid, heading, note, row, select, status } from '../trainer/ui';
@@ -30,7 +30,10 @@ const RESULT_COLOR: Record<QuestResult['status'], string> = { pass: '#8fff9a', f
 /** The runs for one chapter's 'Play chapter': every story plan of chapter n in table order, both endings for variant quests. */
 export function chapterRuns(n: number): { questId: string; variant?: 'A' | 'B' }[] {
   const runs: { questId: string; variant?: 'A' | 'B' }[] = [];
-  for (const [questId, plan] of Object.entries(QUEST_PLANS)) {
+  // Story order (E20: rows live in quests/story/, so plan key order is not play order).
+  const order = (id: string): number => QUESTS.findIndex((q) => q.id === id);
+  const plans = Object.entries(QUEST_PLANS).sort((a, b) => order(a[0]) - order(b[0]));
+  for (const [questId, plan] of plans) {
     if (plan.suite !== 'story' || questById(questId)?.chapter !== n) continue;
     if (plan.variants) for (const variant of plan.variants) runs.push({ questId, variant });
     else runs.push({ questId });

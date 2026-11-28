@@ -6,7 +6,7 @@
 //   Driving               left stick steer, RT gas, LT brake then reverse, A handbrake, B banger, LB boost, RB squirt, L3 horn, Y exit,
 //                         D-pad right radio, D-pad up context, right stick camera
 //   Flying                left stick steer + throttle, RT climb, LT descend, RB fire, B banger, Y exit, D-pad right radio, D-pad up context
-//   Anywhere              View / Back opens the More menu (gta:more), Start opens Options; in it D-pad up / down, A pick, B or Start close
+//   Anywhere              View / Back opens the Gnomlet tablet (gta:more), Start opens its Options app; in it D-pad / stick move, A pick, B back, View or Start close
 import { firstPad } from '@lawn/gamepad';
 import type { CameraMode } from './types';
 
@@ -76,7 +76,7 @@ export function createGamepad(onConnect?: (id: string) => void): Gamepad3 {
       const val = (i: number): number => p.buttons[i]?.value ?? 0;
       const startEdge = edge(BTN.START);
       if (blocked) return null;
-      // Anywhere: View opens the More menu (ui/moreMenu.ts). D-pad up is the context action (the top dock button).
+      // Anywhere: View opens the Gnomlet tablet (gnomlet/gnomlet.ts). D-pad up is the context action (the top dock button).
       if (edge(BTN.BACK)) window.dispatchEvent(new Event('gta:more'));
       if (edge(BTN.UP)) window.dispatchEvent(new Event('gta:context'));
       // On foot only: D-pad down opens the emote menu, D-pad left calls the taxi.

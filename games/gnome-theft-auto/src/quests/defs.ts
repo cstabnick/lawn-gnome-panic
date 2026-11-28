@@ -1,16 +1,35 @@
 // The quests and givers across Turfton and the four outer biomes.
 import { marker, markerNum } from '../levels';
 import { CHAPTER_1_QUESTS } from './chapter1';
+import { HOME_QUESTS } from './homeQuests';
+import { STORY_GIVERS, STORY_QUESTS } from './story';
+import { STORY_ROWS } from './storyRows';
 import { CHAPTER_2_QUESTS } from './chapter2';
 import { CHAPTER_3_QUESTS } from './chapter3';
 import { CHAPTER_4_QUESTS } from './chapter4';
 import { CHAPTER_5_QUESTS } from './chapter5';
 import { SIDE_QUESTS } from './sideQuests';
 import { OUTSKIRTS_QUESTS } from './outskirtsQuests';
+import { COAST_GIVERS, COAST_QUEST_DEFS } from './coastQuests';
 import { CITY_QUESTS } from './cityQuests';
 import { NEWCOMER_QUESTS } from './newcomerQuests';
 import { RACE_QUESTS } from './races';
+import { DIRT_QUESTS } from './dirtRaces';
+import { STREET_QUESTS } from './streetRaces';
 import { TESSIE_QUEST } from './tessieQuest';
+import { WINTER_QUESTS } from './winterQuests';
+import { GOLF_QUESTS } from './golfQuests';
+import { SPORTS_QUESTS } from './sportsQuests';
+import { ROOTWELL_QUESTS_DEFS } from './rootwellQuests';
+import { COUNTRY_QUESTS_DEFS } from './countryQuests';
+import { LOAMDEEP_QUESTS } from './loamdeepQuests';
+import { SOCIETY_QUEST_DEFS } from './societyQuests';
+import { DEWDROP_QUESTS } from './dewdropQuests';
+import { GLAZE_GIVERS, GLAZE_QUESTS } from './glazeQuests';
+import { SHOP as BENT_PIN } from '../fishing/types';
+import { HIDE } from '../birding/types';
+import { LODGE } from '../hunting/species';
+import { BURROW_DOOR, LOAMDEEP, SOCIETY_INTERIORS, UNDERSPAN, WADERS_REST } from '../societies/config';
 import type { GiverDef, QuestDef } from './types';
 
 /** A giver's position and exit, from its giver/<id> marker in the level documents. */
@@ -182,20 +201,270 @@ export const GIVERS: Record<string, GiverDef> = {
     room: 'street',
     letter: '!',
   },
+  ...COAST_GIVERS,
+  ...GLAZE_GIVERS,
+  // Snowcap Rise's side quests (winterQuests.ts): the ski class and the pond shanty.
+  gentian: {
+    id: 'gentian',
+    name: 'The Woolly Sock Lodge',
+    label: 'Talk to Gentian Bootlace',
+    ...placed('gentian'),
+    room: 'street',
+    letter: '!',
+  },
+  'theo-pond': {
+    id: 'theo-pond',
+    name: 'Pail Pond',
+    label: 'Talk to Thermos Theo',
+    ...placed('theo-pond'),
+    room: 'street',
+    letter: '!',
+  },
+  // E14 dirt country (dirtRaces.ts): the Rutbottom Dirt Bowl, the Capwood Run paddock and Capwood's warden.
+  'rutbottom-clary': {
+    id: 'rutbottom-clary',
+    name: 'Rutbottom Dirt Bowl (Clary Mudguard)',
+    label: 'Talk to Marshal Clary Mudguard',
+    ...placed('rutbottom-clary'),
+    room: 'street',
+    letter: 'R',
+  },
+  // E26 street races (streetRaces.ts): the three meets' organisers (streetRace/meets.ts, cast.ts).
+  'street-skyway-foot': {
+    id: 'street-skyway-foot',
+    name: 'The Skyway Foot (Ratchet Gaskin)',
+    label: 'Talk to Ratchet Gaskin',
+    ...placed('street-skyway-foot'),
+    room: 'street',
+    letter: 'S',
+  },
+  'street-pardonlin': {
+    id: 'street-pardonlin',
+    name: 'Quai de la Boucle (Commissaire Aurelie Fonce)',
+    label: 'Talk to Commissaire Aurelie Fonce',
+    ...placed('street-pardonlin'),
+    room: 'street',
+    letter: 'P',
+  },
+  'street-saltbucket': {
+    id: 'street-saltbucket',
+    name: 'The Saltbucket Lay-By (Dune Gritstone)',
+    label: 'Talk to Dune Gritstone',
+    ...placed('street-saltbucket'),
+    room: 'street',
+    letter: 'D',
+  },
+  'rutbottom-teasel': {
+    id: 'rutbottom-teasel',
+    name: 'Rutbottom Pits (Two-Ton Teasel)',
+    label: 'Talk to Two-Ton Teasel',
+    ...placed('rutbottom-teasel'),
+    room: 'street',
+    letter: 'T',
+  },
+  'capwood-lulu': {
+    id: 'capwood-lulu',
+    name: 'Capwood Run Paddock (Lugnut Lulu)',
+    label: 'Talk to Lugnut Lulu',
+    ...placed('capwood-lulu'),
+    room: 'street',
+    letter: 'L',
+  },
+  'capwood-warden': {
+    id: 'capwood-warden',
+    name: 'Capwood (Warden Stook)',
+    label: 'Talk to Warden Chanterelle Stook',
+    ...placed('capwood-warden'),
+    room: 'street',
+    letter: 'W',
+  },
+  // Hedgeworth Links' side quests (golfQuests.ts): the groundskeeper, the pro and the owner.
+  thrift: {
+    id: 'thrift',
+    name: "Thrift's shed",
+    label: 'Talk to Thrift Hosepipe',
+    ...placed('thrift'),
+    room: 'street',
+    letter: '!',
+  },
+  basil: {
+    id: 'basil',
+    name: 'The first tee',
+    label: 'Talk to Basil Divot',
+    ...placed('basil'),
+    room: 'street',
+    letter: '!',
+  },
+  peony: {
+    id: 'peony',
+    name: 'The clubhouse terrace',
+    label: 'Talk to Dame Peony',
+    ...placed('peony'),
+    room: 'street',
+    letter: '!',
+  },
+  // Founders' Green's side quests (sportsQuests.ts): Drainpipe Court and the Gutter Bowls.
+  cardoon: {
+    id: 'cardoon',
+    name: 'Drainpipe Court',
+    label: 'Talk to Swish Trowelly',
+    ...placed('cardoon'),
+    room: 'street',
+    letter: '!',
+  },
+  fennel: {
+    id: 'fennel',
+    name: 'The Gutter Bowls',
+    label: 'Talk to Fennel Gripwax',
+    ...placed('fennel'),
+    room: 'street',
+    letter: '!',
+  },
+  // Rootwell's side quests (rootwellQuests.ts): the Dean's lodge and the Anthill observatory.
+  lovage: {
+    id: 'lovage',
+    name: "The Dean's lodge",
+    label: 'Talk to Dean Inkwell',
+    ...placed('lovage'),
+    room: 'street',
+    letter: '!',
+  },
+  betony: {
+    id: 'betony',
+    name: 'The Anthill Observatory',
+    label: 'Talk to Professor Sextant',
+    ...placed('betony'),
+    room: 'street',
+    letter: '!',
+  },
+  // The countryside's side quests (countryQuests.ts): Plot 1's west gate and Windfall Croft's west gate.
+  chard: {
+    id: 'chard',
+    name: 'Even-Estates Plot 1',
+    label: 'Talk to Chard Levelright',
+    ...placed('chard'),
+    room: 'street',
+    letter: '!',
+  },
+  bramble: {
+    id: 'bramble',
+    name: 'Windfall Croft',
+    label: 'Talk to Farmer Bramble',
+    ...placed('bramble'),
+    room: 'street',
+    letter: '!',
+  },
+  // E17 societies (loamdeepQuests.ts, societyQuests.ts): places from societies/config.ts.
+  nubbin: {
+    id: 'nubbin',
+    name: 'The Burrow Door',
+    label: 'Talk to Nubbin',
+    x: BURROW_DOOR.nubbin.x + 1.2,
+    z: BURROW_DOOR.nubbin.z,
+    exit: { x: BURROW_DOOR.nubbin.x + 2.5, z: BURROW_DOOR.nubbin.z, yaw: Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
+  tumblesoil: {
+    id: 'tumblesoil',
+    name: "The Mother's Hall, Loamdeep",
+    label: 'Talk to Old Mother Tumblesoil',
+    x: LOAMDEEP.spots.tumblesoilFront[0],
+    z: LOAMDEEP.spots.tumblesoilFront[1],
+    exit: { x: LOAMDEEP.spots.tumblesoilFront[0], z: LOAMDEEP.spots.tumblesoilFront[1] + 1.5, yaw: Math.PI },
+    room: 'street',
+    letter: '!',
+    interior: SOCIETY_INTERIORS.loamdeep,
+  },
+  hogweed: {
+    id: 'hogweed',
+    name: 'The Underspan',
+    label: 'Talk to Hogweed Sprocket',
+    x: UNDERSPAN.hogweed.x - 1.2,
+    z: UNDERSPAN.hogweed.z,
+    exit: { x: UNDERSPAN.hogweed.x - 2.5, z: UNDERSPAN.hogweed.z, yaw: -Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
+  saxifrage: {
+    id: 'saxifrage',
+    name: "Wader's Rest",
+    label: 'Talk to Mother Saxifrage',
+    x: WADERS_REST.saxifrage.x - 1.2,
+    z: WADERS_REST.saxifrage.z,
+    exit: { x: WADERS_REST.saxifrage.x - 2.5, z: WADERS_REST.saxifrage.z, yaw: -Math.PI / 2 },
+    room: 'street',
+    letter: '!',
+  },
+  // E18 hobby intros (newcomerQuests.ts): the teacher at the hobby's own place, a few metres in front of the counter.
+  'club-bent-pin': {
+    id: 'club-bent-pin',
+    name: 'The Bent Pin',
+    label: 'Ask Wenna about fishing',
+    x: BENT_PIN.x,
+    z: BENT_PIN.z - 3,
+    exit: { x: BENT_PIN.x, z: BENT_PIN.z - 5, yaw: Math.PI },
+    room: 'street',
+    letter: 'N',
+  },
+  'club-lodge': {
+    id: 'club-lodge',
+    name: 'Tuft & Tally Lodge',
+    label: 'Ask Hazel about hunting',
+    x: LODGE.x,
+    z: LODGE.z + 6,
+    exit: { x: LODGE.x, z: LODGE.z + 8, yaw: 0 },
+    room: 'street',
+    letter: 'N',
+  },
+  'club-reedwatch': {
+    id: 'club-reedwatch',
+    name: 'Reedwatch Hide',
+    label: 'Ask Dunnock about birding',
+    x: HIDE.x,
+    z: HIDE.z - 4,
+    exit: { x: HIDE.x, z: HIDE.z - 6, yaw: Math.PI },
+    room: 'street',
+    letter: 'N',
+  },
+  // E20: givers the story rows add (quests/story/<NN>-*.ts `givers`).
+  ...STORY_GIVERS,
 };
 
-export const QUESTS: readonly QuestDef[] = [
+/**
+ * The main story in play order (spine row, storyRows.ts; a stable sort keeps an extended row's parts before its final).
+ * E20: rows 2-35 that live one file per row (quests/story/) mix with the kept chapter quests.
+ */
+const MAIN_STORY: readonly QuestDef[] = [
   ...CHAPTER_1_QUESTS,
+  ...HOME_QUESTS,
+  ...STORY_QUESTS,
   ...CHAPTER_2_QUESTS,
   ...CHAPTER_3_QUESTS,
   ...CHAPTER_4_QUESTS,
   ...CHAPTER_5_QUESTS,
+].map((q, i) => ({ q, i, row: STORY_ROWS[q.id] ?? 999 })).sort((a, b) => a.row - b.row || a.i - b.i).map((x) => x.q);
+
+export const QUESTS: readonly QuestDef[] = [
+  ...MAIN_STORY,
   ...SIDE_QUESTS,
   ...OUTSKIRTS_QUESTS,
+  ...COAST_QUEST_DEFS,
   ...CITY_QUESTS,
   ...NEWCOMER_QUESTS,
   TESSIE_QUEST,
   ...RACE_QUESTS,
+  ...WINTER_QUESTS,
+  ...DIRT_QUESTS,
+  ...STREET_QUESTS,
+  ...GOLF_QUESTS,
+  ...SPORTS_QUESTS,
+  ...ROOTWELL_QUESTS_DEFS,
+  ...COUNTRY_QUESTS_DEFS,
+  ...LOAMDEEP_QUESTS,
+  ...SOCIETY_QUEST_DEFS,
+  ...DEWDROP_QUESTS,
+  ...GLAZE_QUESTS,
 ];
 
 export const questById = (id: string): QuestDef | undefined => QUESTS.find((q) => q.id === id);

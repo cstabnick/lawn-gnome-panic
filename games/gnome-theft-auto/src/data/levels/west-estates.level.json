@@ -1,0 +1,333 @@
+{
+  "format": "lawn-level",
+  "version": 1,
+  "game": "gnome-theft-auto",
+  "id": "west-estates",
+  "name": "Trellisdown",
+  "bounds": {
+    "w": 500,
+    "d": 1800
+  },
+  "base": {
+    "id": "gta-estate-scatter",
+    "version": 1,
+    "seed": 1104,
+    "params": {}
+  },
+  "stamps": [],
+  "paths": [
+    {
+      "id": "west-band",
+      "kind": "road",
+      "points": [
+        [
+          280,
+          -30
+        ],
+        [
+          216,
+          -30
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "west-band-south",
+      "kind": "road",
+      "points": [
+        [
+          200,
+          -14
+        ],
+        [
+          200,
+          500
+        ],
+        [
+          200,
+          990
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "west-band-north",
+      "kind": "road",
+      "points": [
+        [
+          200,
+          -46
+        ],
+        [
+          200,
+          -500
+        ],
+        [
+          200,
+          -950
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "roundabout/trellis-cross",
+      "kind": "road",
+      "points": [
+        [
+          200,
+          -46
+        ],
+        [
+          208,
+          -43.86
+        ],
+        [
+          213.86,
+          -38
+        ],
+        [
+          216,
+          -30
+        ],
+        [
+          213.86,
+          -22
+        ],
+        [
+          208,
+          -16.14
+        ],
+        [
+          200,
+          -14
+        ],
+        [
+          192,
+          -16.14
+        ],
+        [
+          186.14,
+          -22
+        ],
+        [
+          184,
+          -30
+        ],
+        [
+          186.14,
+          -38
+        ],
+        [
+          192,
+          -43.86
+        ],
+        [
+          200,
+          -46
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "vineyard-lane",
+      "kind": "road",
+      "points": [
+        [
+          184,
+          -30
+        ],
+        [
+          0,
+          -32
+        ],
+        [
+          -250,
+          -30
+        ]
+      ],
+      "width": 10
+    },
+    {
+      "id": "wicket-north-approach",
+      "kind": "road",
+      "points": [
+        [
+          200,
+          -500
+        ],
+        [
+          -30,
+          -505
+        ],
+        [
+          -250,
+          -500
+        ]
+      ],
+      "width": 10
+    }
+  ],
+  "props": [],
+  "markers": [
+    {
+      "id": "vineyard",
+      "kind": "slot",
+      "x": 10,
+      "z": -170,
+      "data": {
+        "hw": 150,
+        "hd": 110,
+        "kind": "farm",
+        "epic": "E16",
+        "flat": false,
+        "label": "Trellisdown Vineyard"
+      }
+    },
+    {
+      "id": "mansion",
+      "kind": "slot",
+      "x": 0,
+      "z": 40,
+      "data": {
+        "hw": 60,
+        "hd": 50,
+        "kind": "building",
+        "epic": "E16",
+        "flat": true,
+        "label": "Brassknock Manor",
+        "anchors": {
+          "door": {
+            "dx": 0,
+            "dz": -50,
+            "yaw": 3.14159
+          }
+        }
+      }
+    },
+    {
+      "id": "cult-camp",
+      "kind": "slot",
+      "x": 20,
+      "z": -640,
+      "data": {
+        "hw": 90,
+        "hd": 90,
+        "kind": "society",
+        "epic": "E17",
+        "flat": true,
+        "label": "Wader's Rest"
+      }
+    },
+    {
+      "id": "mole-entrance",
+      "kind": "slot",
+      "x": 150,
+      "z": 300,
+      "data": {
+        "hw": 15,
+        "hd": 15,
+        "kind": "society",
+        "epic": "E17",
+        "flat": false,
+        "label": "the Burrow Door"
+      }
+    },
+    {
+      "id": "golf-yard",
+      "kind": "slot",
+      "x": -30,
+      "z": 692,
+      "data": {
+        "hw": 180,
+        "hd": 282,
+        "kind": "venue",
+        "epic": "E15",
+        "flat": true,
+        "label": "Hedgeworth Links",
+        "anchors": {
+          "breach": {
+            "dx": 179,
+            "dz": -52
+          },
+          "approach": {
+            "dx": 180,
+            "dz": -192
+          }
+        }
+      }
+    },
+    {
+      "id": "giver/thrift",
+      "kind": "giver",
+      "x": 93,
+      "z": 611,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/basil",
+      "kind": "giver",
+      "x": 60,
+      "z": 475,
+      "data": {
+        "exit": {
+          "dx": -2,
+          "dz": 0,
+          "yaw": 1.5707963267948966
+        }
+      }
+    },
+    {
+      "id": "giver/peony",
+      "kind": "giver",
+      "x": 90,
+      "z": 462,
+      "data": {
+        "exit": {
+          "dx": 0,
+          "dz": 2,
+          "yaw": 3.141592653589793
+        }
+      }
+    }
+  ],
+  "data": {
+    "region": "estate",
+    "ground": 6265420,
+    "surface": "grass",
+    "batch": "estate-scenery",
+    "border": [
+      [
+        -250,
+        -900
+      ],
+      [
+        250,
+        -900
+      ],
+      [
+        250,
+        900
+      ],
+      [
+        -250,
+        900
+      ]
+    ],
+    "terrain": {
+      "relief": {
+        "id": "gta-estate-relief",
+        "version": 1,
+        "params": {
+          "swell": 3,
+          "swellScale": 220
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Winter sports: a tea tray down the Tea-Tray Run",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "winter": "tea-tray-run" },
+  "warmup": 4,
+  "duration": 8,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 1.2 },
+    { "t": 3.0, "press": "jump" },
+    { "t": 5.0, "hold": "left", "for": 0.4 }
+  ]
+}

@@ -1,8 +1,8 @@
 {
   "format": "gta-layout",
   "version": 1,
-  "worldHalf": 900,
-  "fenceEdge": 895,
+  "worldHalf": 1800,
+  "fenceEdge": 1795,
   "regions": [
     {
       "id": "turfton",
@@ -52,6 +52,48 @@
         "x": -600,
         "z": 600
       }
+    },
+    {
+      "id": "north-highlands",
+      "origin": {
+        "x": 0,
+        "z": -1150
+      }
+    },
+    {
+      "id": "south-shore",
+      "origin": {
+        "x": 0,
+        "z": 1150
+      }
+    },
+    {
+      "id": "east-campus",
+      "origin": {
+        "x": 1150,
+        "z": 0
+      }
+    },
+    {
+      "id": "west-estates",
+      "origin": {
+        "x": -1150,
+        "z": 0
+      }
+    },
+    {
+      "id": "pardonlin",
+      "origin": {
+        "x": -1600,
+        "z": 100
+      }
+    },
+    {
+      "id": "the-unmown",
+      "origin": {
+        "x": -1000,
+        "z": -1500
+      }
     }
   ],
   "highways": [
@@ -70,6 +112,50 @@
     "north-outer",
     "south-outer",
     "loch-spur",
-    "commons-spur"
+    "commons-spur",
+    "north-band",
+    "north-band-east",
+    "east-band",
+    "east-band-south",
+    "runway-spur",
+    "south-band",
+    "south-band-east",
+    "coast-spur",
+    "west-band",
+    "west-band-south",
+    "west-band-north",
+    "roundabout/trellis-cross",
+    "vineyard-lane",
+    "wicket-north-approach",
+    "east-band-north",
+    "roundabout/anthill-ring",
+    "unmown-road",
+    "harbour-road",
+    "pl-grand-route",
+    "pl-rue-haute",
+    "pl-quai-nord",
+    "pl-quai-sud",
+    "pl-avenue-ne",
+    "pl-avenue-se",
+    "pl-rue-nord",
+    "pl-rue-a",
+    "pl-rue-b",
+    "pl-rue-c",
+    "pl-rue-d",
+    "pl-north-gate",
+    "pl-pont-nord",
+    "pl-pont-neuf",
+    "pl-pont-sud",
+    "pl-boulevard",
+    "pl-rue-ouest",
+    "pl-rue-e",
+    "pl-rue-f",
+    "pl-route-sud-ouest",
+    "pl-route-sud",
+    "pl-quai-bassin",
+    "pl-harbour-in",
+    "roundabout/hatwheel",
+    "roundabout/place-du-pot",
+    "unmown-lane"
   ]
 }

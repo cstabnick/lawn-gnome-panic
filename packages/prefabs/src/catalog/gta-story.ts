@@ -792,6 +792,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'local-404-strike-scarf', name: 'Local 404 Strike Scarf', category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.01, 0.02] },
     tags: ['scarf', 'strike', 'union', 'local', 'red', 'brass', 'neck', 'reward'], emoji: [],
     about: 'Gnome Theft Auto: the Local 404 Strike Scarf. A red knitted collar with a brass stripe and a long tail hanging down the front. Plain colours.',
     examine: [
@@ -830,6 +831,7 @@ export const GTA_STORY: readonly PrefabDef[] = [
   },
   {
     id: 'newcomers-card-lanyard', name: "Newcomers' Card Lanyard", category: 'armor', uses: ['wear-neck'],
+    wear: { at: [0, -0.01, 0.02] },
     tags: ['lanyard', 'card', 'newcomer', 'ticket', 'punch', 'mabel', 'neck', 'reward'], emoji: [],
     about: "Gnome Theft Auto: the Newcomers' Card Lanyard. A yellow cord round the collar with a cream punch-card hanging from it, every hole punched. Plain colours.",
     examine: [

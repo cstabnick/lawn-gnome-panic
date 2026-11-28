@@ -6,6 +6,7 @@ import type { Loadout } from '@lawn/glaze';
 import type { AnimId } from '../anim/types';
 import type { CutsceneRoom } from '../quests/types';
 import type { Sfx, VehicleKind } from '../types';
+import type { WeatherKind } from '../weather/types';
 
 export type Vec2 = [number, number];
 export type Vec3 = [number, number, number];
@@ -115,12 +116,39 @@ export type Gesture =
 export type MusicTrack =
   | 'tension' | 'warm' | 'heist' | 'sad' | 'triumph' | 'mystery' | 'chase'
   | 'turfton' | 'turfton-dusk' | 'finale' | 'villain' | 'fescue' | 'frost' | 'sandpit';
-/** Ambience beds (looped, procedural). */
-export type AmbienceBed = 'room' | 'street' | 'forest' | 'wind' | 'night' | 'crowd' | 'water' | 'rain';
-/** One-shot musical hits. 'villain': Vesper walks in. 'chapter': a chapter's title card. */
-export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery' | 'villain' | 'chapter';
-/** One-shot sounds: every game Sfx (audio.ts play) plus cutscene extras made in cueAudio.ts. */
-export type CueSfx = Sfx | 'footsteps' | 'door-creak' | 'whoosh' | 'punch' | 'thud' | 'skid' | 'engine-rev' | 'glass' | 'cash' | 'phone' | 'knock';
+/** Ambience beds (looped, procedural). The batch-3 beds (ExtraBed) are built in cueBeds.ts. */
+export type AmbienceBed = 'room' | 'street' | 'forest' | 'wind' | 'night' | 'crowd' | 'water' | 'rain' | ExtraBed;
+/**
+ * Batch-3 beds (docs/design/gnome-theft-auto/sound-design.md): 'snow' (hushed, muffled wind: Snowcap Rise, Frostbite
+ * Fells), 'shore' (surf wash: Saltbucket Shore), 'cave' (a roomy drip: tunnels, Loamdeep, cellars), 'market' (a café
+ * square murmur with cup clinks: Pardonlin), 'meadow' (tall grass hiss and insects: the Unmown), 'storm' (heavy rain with
+ * gusts and far thunder), 'office' (fluorescent hum: Rootwell campus, offices), 'garden' (a trickling fountain and
+ * birds: Trellisdown, Hedgeworth).
+ */
+export type ExtraBed = 'snow' | 'shore' | 'cave' | 'market' | 'meadow' | 'storm' | 'office' | 'garden';
+/** One-shot musical hits. 'villain': Vesper walks in. 'chapter': a chapter's title card. 'intro': a character intro card. */
+export type Stinger = 'reveal' | 'danger' | 'comic' | 'sad' | 'triumph' | 'mystery' | 'villain' | 'chapter' | 'intro';
+/** One-shot sounds: every game Sfx (audio.ts play) plus cutscene extras made in cueAudio.ts and foley in cueFoley.ts. */
+export type CueSfx = Sfx | 'footsteps' | 'door-creak' | 'whoosh' | 'punch' | 'thud' | 'skid' | 'engine-rev' | 'glass' | 'cash' | 'phone' | 'knock' | FoleySfx;
+/**
+ * Batch-3 foley (cueFoley.ts; the sound bible says when to use each): 'cloth' a coat rustle, 'paper' a page or map
+ * handled, 'pour' a drink poured, 'clink' cups touching, 'chair' a chair scraped back, 'keys' a jingle of keys, 'zip' a
+ * bag zipped, 'bell' a small shop or bike bell, 'crunch' a bite or gravel underfoot, 'creak' a wooden board or branch,
+ * 'thunder' a far rumble, 'gulp' a nervous swallow, 'tap' fingers drumming, 'pop' a cork or lid, 'clatter' small things
+ * falling, 'latch' a gate or case clicking shut, 'squeak' a clay gnome's squeak, 'shovel' a spade into soil, 'flutter'
+ * wings or flapping paper, 'static' a radio crackle, 'snap' a camera shutter (the character intro freeze), 'rustle' a
+ * bush or hedge moving.
+ */
+export type FoleySfx =
+  | 'cloth' | 'paper' | 'pour' | 'clink' | 'chair' | 'keys' | 'zip' | 'bell' | 'crunch' | 'creak' | 'thunder'
+  | 'gulp' | 'tap' | 'pop' | 'clatter' | 'latch' | 'squeak' | 'shovel' | 'flutter' | 'static' | 'snap' | 'rustle';
+/** Every FoleySfx id, in the order above (cueFoley.ts must have one synth per id). */
+export const FOLEY_SFX: readonly FoleySfx[] = [
+  'cloth', 'paper', 'pour', 'clink', 'chair', 'keys', 'zip', 'bell', 'crunch', 'creak', 'thunder',
+  'gulp', 'tap', 'pop', 'clatter', 'latch', 'squeak', 'shovel', 'flutter', 'static', 'snap', 'rustle',
+];
+/** Every ExtraBed id (cueBeds.ts must build each). */
+export const EXTRA_BEDS: readonly ExtraBed[] = ['snow', 'shore', 'cave', 'market', 'meadow', 'storm', 'office', 'garden'];
 
 /**
  * Shot sizes for a 'frame' shot, by how much of the frame's height the gnome fills (direction/bible.md, Camera):
@@ -159,10 +187,11 @@ export type CamShot = ShotBase & (
    * - `over`: an actor id. An over-the-shoulder shot from behind `over` onto `who`; `side` > 0 puts the camera at the
    *   over actor's right shoulder, < 0 at the left (default 1).
    * - `height`: 'eye' (default), 'low' (looking up: power, threat, heroics), 'high' (looking down: small, cornered).
+   * - `push`: a push-in (or pull-out): the size eases from `size` to `push.to` over `push.s` seconds (not with `over`).
    * The camera moves with the actors (a walk-and-talk if they walk). direct.ts `coverage(a, b)` builds a matched set on
    * one side of the line.
    */
-  | { kind: 'frame'; who: string; size: ShotSize; toward?: string; over?: string; side?: number; height?: 'eye' | 'low' | 'high'; fov?: number }
+  | { kind: 'frame'; who: string; size: ShotSize; toward?: string; over?: string; side?: number; height?: 'eye' | 'low' | 'high'; fov?: number; push?: { to: ShotSize; s: number } }
 );
 
 /** Every step may set `async: true`: the next step starts at the same moment instead of after this one. */
@@ -230,13 +259,27 @@ export type Step =
   /** A caption pill at the bottom, for narration without a speaker (null hides it). */
   | (Base & { do: 'caption'; text: string | null })
   /** Fade to black (`to` 1) or back (`to` 0) over `s` seconds. Waits. */
-  | (Base & { do: 'fade'; to: number; s: number });
+  | (Base & { do: 'fade'; to: number; s: number })
+  /**
+   * A character intro (introCard.ts): a camera-flash freeze on the frame, the 'intro' stinger and a name card with the
+   * character's name, role and one line of who they are, for `s` seconds (default INTRO_SECONDS). Waits. The card text
+   * comes from castIntros.ts CAST_INTROS[who] (a cast key, or the actor's preset); `name`, `role` and `line` override
+   * it. `freeze: false` keeps the colour (no flash-freeze look). Cut to a shot of `who` first (mcu or ms); the
+   * direction bible's "Character intros" says when.
+   */
+  | (Base & { do: 'intro'; who: string; name?: string; role?: string; line?: string; s?: number; freeze?: boolean });
+
+/** Default seconds a character intro card holds (the 'intro' step). */
+export const INTRO_SECONDS = 3.2;
 
 /** A pacing-checker fault code (pacing.ts) that a scene may waive on purpose. */
 export type PacingCode =
   | 'line-long' | 'line-outruns-shot' | 'shot-short' | 'shot-long' | 'dead-shot' | 'dead-air' | 'speaker-unseen'
   | 'speaker-small' | 'speaker-back' | 'crosses-line' | 'lines-per-shot' | 'speaker-run' | 'narration' | 'no-hook'
-  | 'opens-on-narration' | 'scene-long' | 'repeat-line';
+  | 'opens-on-narration' | 'scene-long' | 'repeat-line'
+  /** GR6 key-frame checks (pacing.ts keyFrameFaults): a close line or an intro card shows the back of the head or the hat
+   * from above, or someone stands between the camera and the speaker. */
+  | 'face-hidden' | 'speaker-blocked';
 
 /** A deliberate break of a pacing rule, with the reason (direction/bible.md, Waivers). */
 export interface PacingWaiver {
@@ -258,6 +301,25 @@ export interface SceneDirection {
   /** The scene's director notes (path from the repo root), once it has been re-directed. */
   notes?: string;
   waive?: PacingWaiver[];
+}
+
+/** A warm practical light in a scene (SceneScript.keyLights, GR6). */
+export interface SceneKeyLight {
+  /** A prop, actor or vehicle id (followed as it moves), or a fixed point (world, or room-local on a room stage). */
+  at: Target;
+  /** Metres above the target point. Default 0.6 for an id (a lantern's flame over the prop's centre), 0 for a point. */
+  lift?: number;
+  /** Default 0xffb066 (lamplight). Firelight: 0xff8a3a. */
+  color?: number;
+  /** Default 7 (a lantern lighting the faces 2-3 m round it). */
+  intensity?: number;
+  /** Metres it reaches. Default 9. */
+  range?: number;
+  /** Scene seconds it comes on and goes off (eased over 0.8 s). Default: the whole scene. */
+  from?: number;
+  until?: number;
+  /** A fire's flicker. */
+  flicker?: boolean;
 }
 
 export interface SceneScript {
@@ -282,6 +344,28 @@ export interface SceneScript {
   skippable?: boolean;
   /** World stage only: hold the sky at this time of day while the scene plays; the old sky comes back afterwards. */
   sky?: 'noon' | 'golden' | 'night';
+  /**
+   * World stages only (GR6): the weather while the scene plays; the world's own weather comes back afterwards. Default:
+   * 'rain' when the ambience bed is 'rain' or 'storm', 'snow' when it is 'snow', else 'clear'. 'world' keeps whatever the
+   * schedule has (a scene that does not mind the rain).
+   */
+  weather?: WeatherKind | 'world';
+  /**
+   * GR6: warm practical lights for night and dusk scenes (a lantern, a campfire, a lamp post), added while the scene
+   * plays. Each sits on a prop or actor id (followed) or a fixed point.
+   */
+  keyLights?: SceneKeyLight[];
+  /**
+   * GR6: a soft warm fill beside the camera that lights the faces in close shots (cu / mcu). Default: on for world scenes
+   * played at night or at golden hour (`sky`, or the world's own night), off by day and in rooms. A number sets the
+   * intensity (default 3.2); false turns it off.
+   */
+  faceFill?: boolean | number;
+  /**
+   * World stages only: world objects (by `name`) hidden while the scene plays and shown again after it: a resident who
+   * sits where the scene's actors sit, or the ambient double of a cast member who is acting in the scene.
+   */
+  hideWorld?: string[];
   /**
    * World stages only. 'live' (the default on a world stage): ambient traffic, pedestrians, critters, boats and world
    * sounds keep running around the scene, while the player stays safe (no Hat Watch, no damage, no quest updates) and
@@ -421,6 +505,8 @@ export interface SceneFrame {
   say: { step: number; who: string; text: string; shown: number; typing: boolean } | null;
   title: string | null;
   caption: string | null;
+  /** The character intro on screen: index into Timeline.steps, its `who`, seconds into it and its length. */
+  intro: { step: number; who: string; t: number; dur: number } | null;
   /** 0 clear .. 1 black, from 'fade' steps (the director adds the start / end fades). */
   fade: number;
 }

@@ -156,3 +156,4 @@ CHAPTER 3 — COLD CLAY. The chapter's loss in one picture, and its villain leav
 - [x] Report OK; removed from the baseline.
 - [x] LOS test passes; watched at 960x600 and 390x844.
 - [x] `direction.notes` points here.
+- E09 variety: "...Cam?" is now a slow push-in on Pip (was a third fixed cut in a row); same side and subject.

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { VEHICLES } from './config';
 import { installFakeDom } from './testing/fakeDom';
 import { buildWaterworks, waterworksPlan } from './waterworks';
-import { heightAt, waterAt } from './terrain';
+import { bedAt, heightAt, waterAt } from './terrain';
 import { BODIES, bodyRadius, bridges, courseProfile } from './water';
 import type { Box } from './types';
 
@@ -14,7 +14,10 @@ const byPrefab = (id: string) => plan.works.filter((w) => w.prefab === id);
 
 describe('waterworksPlan', () => {
   it('has the expected counts', () => {
+    // Four arches on the old river plus the Saltcut's (E11). Low bridges (E03) where deck-to-bed is shallow: the canal and the four over the
+    // Thymes in Pardonlin (E28).
     expect(byPrefab('arch-road-bridge')).toHaveLength(5);
+    expect(byPrefab('canal-road-bridge')).toHaveLength(5);
     expect(byPrefab('road-bridge')).toHaveLength(0);
     expect(byPrefab('canal-lock-gate')).toHaveLength(2);
     expect(byPrefab('loch-weir')).toHaveLength(2);
@@ -71,13 +74,15 @@ describe('waterworksPlan', () => {
     expect(gap).toBeGreaterThanOrEqual(4);
   });
 
-  it('raises every bridge deck on the arch: its base sits 6.5 below the span deck', () => {
+  it('keeps every bridge above the bed, with its deck top at the span deck height', () => {
+    const deckTop: Record<string, number> = { 'arch-road-bridge': 6.5, 'canal-road-bridge': 3.0 };
     const spans = bridges();
     expect(spans.length).toBeGreaterThan(0);
     for (const b of spans) {
-      const w = byPrefab('arch-road-bridge').find((p) => p.x === b.x && p.z === b.z);
-      expect(w, `arch at (${b.x}, ${b.z})`).toBeDefined();
-      expect(w!.y + 6.5).toBeCloseTo(b.deck, 6);
+      const w = plan.works.find((p) => p.prefab in deckTop && p.x === b.x && p.z === b.z);
+      expect(w, `bridge at (${b.x}, ${b.z})`).toBeDefined();
+      expect(w!.y, `${b.id} base vs bed`).toBeGreaterThanOrEqual(bedAt(b.x, b.z) - 0.1);
+      expect(w!.y + deckTop[w!.prefab] * (w!.scaleY ?? 1), `${b.id} deck`).toBeCloseTo(b.deck, 1);
     }
   });
 

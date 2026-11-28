@@ -1,15 +1,19 @@
 // Gnome Theft Auto HUD: Hat Watch hats, health bar, gun and ammo, flight readout, cracked count, crosshair, prompts,
 // toasts, a biome label, a big banner and a minimap. Everything lives in one #gta-hud container appended to #ui.
 import { damagedDef, getPrefab, prefabIcon, prefabIconElement } from '@lawn/prefabs';
-import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH } from './config';
+import { CITY_HALF, GUNS, MAX_HEAT, ROAD_WIDTH, ROOTWELL_AIRFIELD } from './config';
 import { REGIONS, REGION_IDS, waterBodies, waterPaths } from './levels';
 import { normalAt, terrainFlat } from './terrain';
-import type { Blip, GunKind, Hud, HudState, RoadNode, World } from './types';
+import type { Blip, GunKind, Hud, HudState, RoadNode, WatchSearch, World } from './types';
 import { isTyping, KEYS } from './keys';
 import { drawPlaceIcon, isPlace, layoutMapLabels, PLACE_STYLE, RIM_PLACES, type MapLabelWish, type PlaceKind } from './mapIcons';
 import { PIT_LANE, TRACK, trackSamples } from './raceTrack/track';
+import { ALL_TRACKS } from './raceTrack/tracks';
+import { ROUTES, routesOfKind } from './mountainRoutes/routes';
+import type { Track } from './raceTrack/trackDef';
 import { drawSkywaysOnMap } from './highways/map';
 import { drawRoute } from './highways/routeDraw';
+import { clampView, fitScale, fitView, panBy, zoomAt, type MapView, type MapViewport } from './bigMapView';
 import { registerAction } from './ui/actions';
 import { controlsFor, esc, fillHint, glyphHtml, glyphText } from './ui/glyphs';
 import { currentGlyphSet, onInputSourceChange } from './ui/inputSource';
@@ -29,6 +33,14 @@ const CSS = `
  */
 #gta-hud .gta-meters{position:absolute;top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 8px);right:calc(var(--sar) + 62px);
   height:44px;display:flex;align-items:center;gap:8px;}
+@media (max-height:500px){#gta-hud .gta-evade.on{top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 64px);right:calc(var(--sar) + var(--m) + 104px);}}
+#gta-hud .gta-evade{position:absolute;top:calc(var(--sat) + var(--m) + var(--gta-map, 128px) + 146px);right:calc(var(--sar) + var(--m));
+  display:none;flex-direction:column;align-items:flex-end;gap:2px;max-width:calc(100vw - 2 * var(--m) - 62px);pointer-events:none;
+  font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.85);}
+#gta-hud .gta-evade.on{display:flex;}
+#gta-hud .gta-evade-bar{width:64px;height:6px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden;}
+#gta-hud .gta-evade-fill{height:100%;width:0;background:#6fd36f;}
+#gta-hud .gta-evade-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 #gta-hud .gta-meter{position:relative;display:block;width:40px;height:40px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));}
 #gta-hud .gta-meter img{position:absolute;left:3px;top:3px;width:34px;height:34px;}
 #gta-hud .gta-meter svg{display:block;position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;}
@@ -76,11 +88,37 @@ const CSS = `
 #gta-hud .gta-tr{position:absolute;top:calc(var(--sat) + var(--m));right:calc(var(--sar) + var(--m));}
 #gta-hud .gta-map{display:block;border-radius:12px;border:2px solid rgba(255,255,255,.75);
   box-shadow:0 2px 6px rgba(0,0,0,.4);pointer-events:auto;cursor:zoom-in;touch-action:none;}
-#gta-hud .gta-big{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
-  gap:8px;background:rgba(0,0,0,.72);pointer-events:auto;cursor:zoom-out;touch-action:none;z-index:30;}
+#gta-hud .gta-big{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
+  box-sizing:border-box;background:rgba(0,0,0,.78);pointer-events:auto;z-index:30;}
 #gta-hud .gta-big.open{display:flex;}
-#gta-hud .gta-big canvas{border-radius:12px;border:2px solid rgba(255,255,255,.85);}
-#gta-hud .gta-big .gta-bighint{font-size:12px;opacity:.9;}
+body.gta-bigmap-open #gta-touch,body.gta-bigmap-open #gta-dock,body.gta-bigmap-open #gta-more-btn,
+body.gta-bigmap-open #gta-more-pins{visibility:hidden;}
+#gta-hud .gta-bigstage{display:flex;gap:12px;align-items:center;max-width:100%;max-height:100%;}
+#gta-hud .gta-bigstage.row{flex-direction:row;}
+#gta-hud .gta-bigstage.col{flex-direction:column;}
+#gta-hud .gta-bigcol{display:flex;flex-direction:column;align-items:center;gap:8px;}
+#gta-hud .gta-bigmap{position:relative;border-radius:12px;border:2px solid rgba(255,255,255,.85);overflow:hidden;background:#0b0d10;}
+#gta-hud .gta-bigmap canvas{display:block;cursor:grab;touch-action:none;}
+#gta-hud .gta-bmbtn{position:absolute;width:44px;height:44px;border-radius:22px;border:2px solid rgba(255,255,255,.8);
+  background:rgba(20,20,20,.7);color:#fff;font:700 22px/1 system-ui,sans-serif;padding:0;display:flex;align-items:center;
+  justify-content:center;pointer-events:auto;cursor:pointer;touch-action:none;}
+#gta-hud .gta-bmbtn:active{background:rgba(255,210,63,.35);}
+#gta-hud .gta-bmclose{top:6px;right:6px;}
+#gta-hud .gta-bmin{right:6px;bottom:6px;}
+#gta-hud .gta-bmout{right:6px;bottom:56px;}
+#gta-hud .gta-bmhome{right:6px;bottom:106px;font-size:20px;}
+#gta-hud .gta-bigbar{display:flex;align-items:center;gap:10px;max-width:100%;}
+#gta-hud .gta-big .gta-bighint{font-size:12px;opacity:.9;line-height:1.25;}
+#gta-hud .gta-legendpanel{display:none;gap:6px;overflow:auto;box-sizing:border-box;touch-action:pan-y;overscroll-behavior:contain;}
+#gta-hud .gta-legendpanel.on{display:flex;}
+#gta-hud .gta-legendpanel.side{flex-direction:column;flex-wrap:nowrap;width:210px;align-items:flex-start;}
+#gta-hud .gta-legendpanel.below{flex-direction:row;flex-wrap:wrap;align-content:flex-start;justify-content:center;}
+#gta-hud .gta-legendpanel.over{position:absolute;left:6px;right:60px;bottom:6px;max-height:33%;flex-direction:row;flex-wrap:wrap;
+  align-content:flex-start;padding:6px;border-radius:10px;background:rgba(10,12,16,.78);}
+#gta-hud .gta-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 3px;border-radius:999px;
+  background:rgba(20,22,28,.78);border:1px solid rgba(255,255,255,.25);font:600 12px system-ui,sans-serif;white-space:nowrap;}
+#gta-hud .gta-chip canvas{width:26px;height:26px;flex:none;}
 #gta-hud .gta-big .gta-legendbtn{min-width:44px;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid rgba(255,255,255,.8);
   background:rgba(20,20,20,.6);color:#fff;font:700 13px system-ui,sans-serif;pointer-events:auto;cursor:pointer;touch-action:manipulation;}
 #gta-hud .gta-big .gta-legendbtn[aria-pressed="true"]{background:rgba(255,210,63,.3);border-color:#ffd23f;}
@@ -272,6 +310,8 @@ const DRY_DARK = [120, 40, 20];
 const DRY_LIGHT = [214, 140, 80];
 const MAP_RANGE = 150;            // the minimap shows this far from the player, each way
 const MAP_VIEW = MAP_RANGE * 2;   // world units across the minimap
+/** Longest side of the map background picture, px (a phone-sized texture); the world is drawn scaled to fit. */
+const MAP_BG_MAX_PX = 2048;
 const MAP_BLANK = '#0b0d10';
 const BIOME_SHOW_MS = 3000;
 const HELP_TOUCH = 'Stick to move · drag to look · Aim · Fire · Reload · Enter / Exit';
@@ -293,6 +333,8 @@ const MAP = {
   city: 0x4a5560, desert: 0xe9bd62, forest: 0x1d5a33, tundra: 0xd3e9f5, farmland: 0x9ccb3c,
   road: 0x23272e, roadEdge: 0xfff1c2, sand: 0xf3dc98, wall: 0x3b2f14, runway: 0x23272e, runwayEdge: 0xffffff,
   building: 0x9aa6b4, outline: 0x0c0f13, loch: 0x3f7f6a, parkland: 0xb6e05a, water: 0x3d8fd6,
+  highland: 0x8fa77a, coast: 0xeedc9e, campus: 0x7fbf5e, estate: 0x5e9e4a,
+  continental: 0xc9b48a, preserve: 0x6f8f3a,
 } as const;
 const OUTLINE = hexColor(MAP.outline);
 const PIN = '#ffd23f';
@@ -472,72 +514,81 @@ const LEGEND: LegendRow[] = [
   { text: 'Other player', dot: '#7cf0ff' },
 ];
 
-/** The big map's legend, bottom-left: what each marker, the route and the dots mean. Sized to its widest label. Two columns
- * when one would take more than 60% of the map's height. */
-function drawLegend(g: CanvasRenderingContext2D, px: number): void {
-  const small = px < 360;
-  const fs = small ? 10 : 11;
-  const rowH = small ? 14 : 16;
-  const pad = 8;
-  const iconW = 16;
-  const font = `600 ${fs}px system-ui,sans-serif`;
-  g.font = font;
-  let textW = 0;
-  for (const row of LEGEND) textW = Math.max(textW, g.measureText(row.text).width);
-  const colW = iconW + 6 + textW;
-  const oneColH = pad * 2 + rowH * LEGEND.length;
-  const cols = oneColH > px * 0.6 ? 2 : 1;
-  const perCol = Math.ceil(LEGEND.length / cols);
-  const w = pad * 2 + colW * cols + (cols - 1) * 10;
-  const h = pad * 2 + rowH * perCol;
-  const x0 = 8;
-  const y0 = px - 8 - h;
-  const rad = 8;
-  g.fillStyle = 'rgba(10,12,16,.72)';
-  g.beginPath();
-  g.moveTo(x0 + rad, y0);
-  g.arcTo(x0 + w, y0, x0 + w, y0 + h, rad);
-  g.arcTo(x0 + w, y0 + h, x0, y0 + h, rad);
-  g.arcTo(x0, y0 + h, x0, y0, rad);
-  g.arcTo(x0, y0, x0 + w, y0, rad);
-  g.closePath();
-  g.fill();
-  LEGEND.forEach((row, n) => {
-    const col = Math.floor(n / perCol);
-    const i = n % perCol;
-    const left = x0 + pad + col * (colW + 10);
-    const cy = y0 + pad + rowH * i + rowH / 2;
-    const ix = left + iconW / 2;
-    if (row.place) {
-      drawPlaceIcon(g, ix, cy, 6, row.place);
-    } else if (row.blip) {
-      drawMarker(g, ix, cy, 5, 0, row.blip, true);
-    } else if (row.route) {
-      g.setLineDash([4, 3]);
-      g.strokeStyle = row.route;
-      g.lineWidth = 2.4;
-      g.lineCap = 'round';
-      g.beginPath();
-      g.moveTo(ix - 7, cy);
-      g.lineTo(ix + 7, cy);
-      g.stroke();
-      g.setLineDash([]);
-    } else if (row.dot) {
-      g.beginPath();
-      g.arc(ix, cy, 3, 0, TAU);
-      g.fillStyle = row.dot;
-      g.fill();
-      g.strokeStyle = OUTLINE;
-      g.lineWidth = 0.8;
-      g.stroke();
-    }
-    g.font = font;
-    g.textAlign = 'left';
-    g.textBaseline = 'middle';
-    g.fillStyle = '#fff';
-    g.fillText(row.text, left + iconW + 6, cy);
+/** The legend rows that have something on the map right now: a place kind only when a blip of it exists, the route only when
+ * one is set. Order is LEGEND's (quests, route, places, then the dots). */
+function legendRowsFor(blips: readonly Blip[], hasRoute: boolean): LegendRow[] {
+  const kinds = new Set<string>();
+  let players = false;
+  let others = false;
+  for (const b of blips) {
+    if (b.kind) kinds.add(b.kind);
+    else if (b.player) players = true;
+    else others = true;
+  }
+  return LEGEND.filter((row) => {
+    if (row.place) return kinds.has(row.place);
+    if (row.blip) return kinds.has(row.blip.kind as string);
+    if (row.route) return hasRoute;
+    if (row.dot === '#7cf0ff') return players;
+    return others;
   });
-  g.textBaseline = 'alphabetic';
+}
+
+/** A legend row's icon, drawn on a 26 x 26 CSS px canvas. */
+function drawLegendIcon(c: HTMLCanvasElement, row: LegendRow): void {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  c.width = Math.round(26 * dpr);
+  c.height = Math.round(26 * dpr);
+  const g = c.getContext('2d');
+  if (!g) return;
+  g.scale(dpr, dpr);
+  const ix = 13;
+  const cy = 13;
+  if (row.place) {
+    drawPlaceIcon(g, ix, cy, 9, row.place);
+  } else if (row.blip) {
+    drawMarker(g, ix, cy, 7, 0, row.blip, true);
+  } else if (row.route) {
+    g.setLineDash([4, 3]);
+    g.strokeStyle = row.route;
+    g.lineWidth = 2.4;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(ix - 10, cy);
+    g.lineTo(ix + 10, cy);
+    g.stroke();
+  } else if (row.dot) {
+    g.beginPath();
+    g.arc(ix, cy, 4, 0, TAU);
+    g.fillStyle = row.dot;
+    g.fill();
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1;
+    g.stroke();
+  }
+}
+
+/** E23: the one-line EVADE label under the hats. */
+export function evadeLabel(s: WatchSearch): string {
+  if (s.dispatchIn > 0) return `Units en route ${Math.ceil(s.dispatchIn)}s`;
+  if (s.seen) return 'SEEN \u2014 break line of sight';
+  if (!s.inside) return `Lying low ${Math.round(Math.max(0, Math.min(1, s.evade)) * 100)}%`;
+  return 'Leave the circle';
+}
+
+/** The pulsing search circle, centre and radius in the context's current (CSS pixel) units. */
+function drawSearchCircle(g: CanvasRenderingContext2D, cx: number, cy: number, r: number, s: WatchSearch, t: number, lw: number) {
+  g.save();
+  g.beginPath();
+  g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.fillStyle = s.level >= 4 ? 'rgba(212,175,55,0.18)' : 'rgba(47,85,212,0.16)';
+  g.fill();
+  g.setLineDash([5 * lw, 4 * lw]);
+  g.lineWidth = 1.5 * lw;
+  g.globalAlpha = 0.55 + 0.35 * Math.sin(t * 4);
+  g.strokeStyle = s.seen ? '#ff5a4d' : s.level >= 4 ? '#d4af37' : '#5b7bff';
+  g.stroke();
+  g.restore();
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -567,13 +618,15 @@ const SHADE_CELL = 4;
  * Shade the terrain on the map canvas `g` (W x W pixels, mirrored like buildBackground). Light comes from the north-west
  * and above. Darker than flat ground is black, lighter is white; level ground stays fully transparent.
  */
-function drawHillshade(g: CanvasRenderingContext2D, H: number, W: number): void {
+let shadeCache: { half: number; img: HTMLCanvasElement } | null = null;
+function hillshadeImage(H: number, W: number): HTMLCanvasElement | null {
+  if (shadeCache && shadeCache.half === H) return shadeCache.img;
   const n = Math.ceil(W / SHADE_CELL);
   const off = document.createElement('canvas');
   off.width = n;
   off.height = n;
   const og = off.getContext('2d');
-  if (!og) return;
+  if (!og) return null;
   const img = og.createImageData(n, n);
   const d = img.data;
   const len = Math.hypot(-0.5, 0.75, -0.5);
@@ -603,19 +656,61 @@ function drawHillshade(g: CanvasRenderingContext2D, H: number, W: number): void 
     }
   }
   og.putImageData(img, 0, 0);
-  g.imageSmoothingEnabled = true;
-  g.drawImage(off, 0, 0, W, W);
+  shadeCache = { half: H, img: off };
+  return off;
 }
 
-/** The static minimap picture of a world: 1 pixel per world unit, north (+z) up. */
+/** The part of the hillshade inside the mirrored world rectangle `r` (world units), drawn in the current world-unit transform. */
+function drawHillshade(g: CanvasRenderingContext2D, H: number, W: number, r: MapRect): void {
+  const img = hillshadeImage(H, W);
+  if (!img) return;
+  const per = img.width / W; // picture px per world unit
+  const x0 = Math.max(0, Math.floor(r.u0 * per));
+  const y0 = Math.max(0, Math.floor(r.v0 * per));
+  const x1 = Math.min(img.width, Math.ceil(r.u1 * per));
+  const y1 = Math.min(img.height, Math.ceil(r.v1 * per));
+  if (x1 <= x0 || y1 <= y0) return;
+  g.imageSmoothingEnabled = true;
+  g.drawImage(img, x0, y0, x1 - x0, y1 - y0, x0 / per, y0 / per, (x1 - x0) / per, (y1 - y0) / per);
+}
+
+/** A rectangle in the picture's own (mirrored) world units: u = H - x across, v = H - z down. */
+interface MapRect { u0: number; v0: number; u1: number; v1: number }
+
+/** The static minimap picture of a world: at most MAP_BG_MAX_PX across, north (+z) up. */
 function buildBackground(world: World): HTMLCanvasElement {
-  const H = world.half;
-  const W = 2 * H;
+  const W = 2 * world.half;
+  const k = Math.min(1, MAP_BG_MAX_PX / W);
   const c = document.createElement('canvas');
-  c.width = W;
-  c.height = W;
+  c.width = Math.round(W * k);
+  c.height = c.width;
   const g = c.getContext('2d');
   if (!g) return c;
+  paintWorld(g, world, k, 0, 0, null);
+  return c;
+}
+
+/**
+ * Paint the map of `world` on `g` at `s` px per world unit, the picture's top-left corner at (-ox, -oy) px. `cull` limits the
+ * work to a rectangle of the picture (a tile); null paints it all. The big map calls this per tile as it zooms, so
+ * everything stays sharp; edges and outlines keep a pixel width instead of growing with the zoom.
+ */
+function paintWorld(g: CanvasRenderingContext2D, world: World, s: number, ox: number, oy: number, cull: MapRect | null): void {
+  const H = world.half;
+  const W = 2 * H;
+  g.save();
+  g.setTransform(s, 0, 0, s, -ox, -oy); // draw in world units
+  // Thin lines: the full width when zoomed out, about 1.2 px per unit of width when zoomed in.
+  const e = (w: number) => Math.min(w, (1.2 * w) / s);
+  const pad = ROAD_WIDTH + 6;
+  // Is a rectangle of the picture (u0..u1, v0..v1) near the culling window?
+  const near = (u0: number, v0: number, u1: number, v1: number): boolean =>
+    !cull || (u1 >= cull.u0 - pad && u0 <= cull.u1 + pad && v1 >= cull.v0 - pad && v0 <= cull.v1 + pad);
+  if (cull) {
+    g.beginPath();
+    g.rect(cull.u0, cull.v0, cull.u1 - cull.u0, cull.v1 - cull.v0);
+    g.clip();
+  }
   // Mirrored in x so the picture agrees with the 3D view: facing north (+z), east (-x) is on the right.
   const X = (x: number) => H - x;
   const Y = (z: number) => H - z;
@@ -650,7 +745,7 @@ function buildBackground(world: World): HTMLCanvasElement {
   g.fillRect(...rect(-CITY_HALF, CITY_HALF, -CITY_HALF, CITY_HALF));
 
   // Hills: a hillshade over the ground colours (flat terrain draws nothing, so the map is unchanged).
-  if (!terrainFlat()) drawHillshade(g, H, W);
+  if (!terrainFlat()) drawHillshade(g, H, W, cull ?? { u0: 0, v0: 0, u1: W, v1: W });
 
   // Still water under the roads: the reserved still-water bodies filled, the river course stroked. The roads drawn
   // after them sit on top, which shows the bridge points.
@@ -677,6 +772,7 @@ function buildBackground(world: World): HTMLCanvasElement {
         if (id <= n.id) continue;
         const m = byId.get(id);
         if (!m) continue;
+        if (cull && !near(Math.min(X(n.x), X(m.x)), Math.min(Y(n.z), Y(m.z)), Math.max(X(n.x), X(m.x)), Math.max(Y(n.z), Y(m.z)))) continue;
         g.moveTo(X(n.x), Y(n.z));
         g.lineTo(X(m.x), Y(m.z));
       }
@@ -685,7 +781,7 @@ function buildBackground(world: World): HTMLCanvasElement {
   g.lineCap = 'round';
   roadPath();
   g.strokeStyle = hexColor(MAP.roadEdge);
-  g.lineWidth = ROAD_WIDTH + 2.5;
+  g.lineWidth = ROAD_WIDTH + e(2.5);
   g.stroke();
   roadPath();
   g.strokeStyle = hexColor(MAP.road);
@@ -701,7 +797,7 @@ function buildBackground(world: World): HTMLCanvasElement {
   g.lineJoin = 'round';
   trackPath();
   g.strokeStyle = '#f4f4f4';
-  g.lineWidth = TRACK.width + 3;
+  g.lineWidth = TRACK.width + e(3);
   g.stroke();
   trackPath();
   g.strokeStyle = hexColor(MAP.road);
@@ -711,48 +807,102 @@ function buildBackground(world: World): HTMLCanvasElement {
   PIT_LANE.forEach(([x, z], i) => (i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z))));
   g.lineWidth = 5;
   g.stroke();
+  // The dirt tracks (E14), at their own width; the open ones are an open line.
+  for (const t of ALL_TRACKS) {
+    if (t.id === 'lost-and-found' || t.def.relief === 'none') continue;
+    g.beginPath();
+    t.samples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
+    if (t.closed) g.closePath();
+    g.strokeStyle = '#5b4630';
+    g.lineWidth = t.def.width + e(3);
+    g.stroke();
+    g.strokeStyle = '#9a7a52';
+    g.lineWidth = t.def.width;
+    g.stroke();
+  }
+  // E33: the mountain routes that are not roads (the roads are in the road graph). A route is culled like a road: its
+  // bounds, mirrored like the map, must touch the culling window.
+  const routeBox = (t: Track): boolean => {
+    const b = t.bounds();
+    const x0 = X(b.maxX);
+    const z0 = Y(b.maxZ);
+    return near(Math.min(x0, X(b.minX)), Math.min(z0, Y(b.minZ)), Math.max(x0, X(b.minX)), Math.max(z0, Y(b.minZ)));
+  };
+  const routeLine = (t: Track, closed: boolean) => {
+    g.beginPath();
+    t.samples().forEach((p, i) => (i === 0 ? g.moveTo(X(p.x), Y(p.z)) : i % 3 === 0 ? g.lineTo(X(p.x), Y(p.z)) : undefined));
+    if (closed) g.closePath();
+  };
+  for (const id of routesOfKind('track')) {
+    const t = ROUTES[id];
+    if (!routeBox(t)) continue;
+    g.lineCap = 'round';
+    routeLine(t, false);
+    g.strokeStyle = '#5b4630';
+    g.lineWidth = t.def.width + e(2);
+    g.stroke();
+    routeLine(t, false);
+    g.strokeStyle = '#b8a27a';
+    g.lineWidth = t.def.width;
+    g.stroke();
+  }
+  for (const id of routesOfKind('trail')) {
+    const t = ROUTES[id];
+    if (!routeBox(t)) continue;
+    routeLine(t, false);
+    g.setLineDash([e(6), e(4)]);
+    g.strokeStyle = '#7a5a3a';
+    g.lineWidth = Math.max(e(2.2), 2.2);
+    g.stroke();
+    g.setLineDash([]);
+  }
 
-  // The skyways (highways/map.ts): drawn over the roads they cross.
-  drawSkywaysOnMap(g, X, Y);
+  // The skyways (highways/map.ts): drawn over the roads they cross. They work in pixels, so give them the pixel mapping.
+  g.save();
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  drawSkywaysOnMap(g, (x) => X(x) * s - ox, (z) => Y(z) * s - oy);
+  g.restore();
 
   // Fort Sandpit: sand inside a walled outline.
   const b = world.base;
   g.fillStyle = hexColor(MAP.sand);
   g.fillRect(...rect(b.minX, b.maxX, b.minZ, b.maxZ));
   g.strokeStyle = hexColor(MAP.wall);
-  g.lineWidth = 2;
+  g.lineWidth = e(2);
   g.strokeRect(...rect(b.minX, b.maxX, b.minZ, b.maxZ));
 
-  // Runway: forward = (sin yaw, cos yaw), width across it.
-  const a = world.airfield;
-  const fx = Math.sin(a.yaw);
-  const fz = Math.cos(a.yaw);
-  const sx = Math.cos(a.yaw);
-  const sz = -Math.sin(a.yaw);
-  const hl = a.length / 2;
-  const hw = a.width / 2;
-  poly(
-    [
-      [a.x + fx * hl + sx * hw, a.z + fz * hl + sz * hw],
-      [a.x + fx * hl - sx * hw, a.z + fz * hl - sz * hw],
-      [a.x - fx * hl - sx * hw, a.z - fz * hl - sz * hw],
-      [a.x - fx * hl + sx * hw, a.z - fz * hl + sz * hw],
-    ],
-    MAP.runway,
-    { color: MAP.runwayEdge, width: 1.5 },
-  );
+  // Runways (desert strip and Rootwell Field): forward = (sin yaw, cos yaw), width across it.
+  for (const a of [world.airfield, ROOTWELL_AIRFIELD]) {
+    const fx = Math.sin(a.yaw);
+    const fz = Math.cos(a.yaw);
+    const sx = Math.cos(a.yaw);
+    const sz = -Math.sin(a.yaw);
+    const hl = a.length / 2;
+    const hw = a.width / 2;
+    poly(
+      [
+        [a.x + fx * hl + sx * hw, a.z + fz * hl + sz * hw],
+        [a.x + fx * hl - sx * hw, a.z + fz * hl - sz * hw],
+        [a.x - fx * hl - sx * hw, a.z - fz * hl - sz * hw],
+        [a.x - fx * hl + sx * hw, a.z - fz * hl + sz * hw],
+      ],
+      MAP.runway,
+      { color: MAP.runwayEdge, width: 1.5 },
+    );
+  }
 
   // Buildings and walls: a light fill with a dark edge, so they stand out from the ground around them.
   g.fillStyle = hexColor(MAP.building);
   g.strokeStyle = OUTLINE;
-  g.lineWidth = 1;
+  g.lineWidth = e(1);
   for (const bx of world.boxes) {
     if (bx.h < 2) continue;
     const r = rect(bx.minX, bx.maxX, bx.minZ, bx.maxZ);
+    if (cull && !near(r[0], r[1], r[0] + r[2], r[1] + r[3])) continue;
     g.fillRect(...r);
     g.strokeRect(...r);
   }
-  return c;
+  g.restore();
 }
 
 export function createHud(ui: HTMLElement): Hud {
@@ -771,6 +921,13 @@ export function createHud(ui: HTMLElement): Hud {
   const lifeEl = el('span', 'gta-meter');
   lifeEl.setAttribute('aria-label', 'Clay');
   meters.append(wantedEl, lifeEl);
+  // E23: how to lose the Hat Watch, under the hats.
+  const evadeEl = el('div', 'gta-evade');
+  const evadeBar = el('div', 'gta-evade-bar');
+  const evadeFill = el('div', 'gta-evade-fill');
+  const evadeLabelEl = el('div', 'gta-evade-label');
+  evadeBar.append(evadeFill);
+  evadeEl.append(evadeBar, evadeLabelEl);
   // Under the icons: the gun with its ammo over it, then the gun's name (and RELOADING, when it applies).
   const gunBlock = el('div', 'gta-gunblock');
   const gunName = el('span', 'gta-gunname');
@@ -855,12 +1012,17 @@ export function createHud(ui: HTMLElement): Hud {
   const online = el('div', 'gta-online');
   online.style.display = 'none';
 
-  // Big map: click or tap the minimap, or press the map key (M), to see the whole world; click, tap, M or Esc closes it.
+  // Big map: click or tap the minimap, or press the map key (M), to see the whole world. Drag pans, wheel / pinch /
+  // double-tap zooms; the X button, M or Esc closes it.
   const big = el('div', 'gta-big');
+  const bigStage = el('div', 'gta-bigstage col');
+  const bigCol = el('div', 'gta-bigcol');
+  const bigMapBox = el('div', 'gta-bigmap');
   const bigCanvas = el('canvas');
+  const bigBar = el('div', 'gta-bigbar');
   const bigHint = el('div', 'gta-bighint');
   const paintBigHint = () => {
-    bigHint.textContent = `Click, tap, ${glyphText('map')} or ${glyphText('close')} to close`;
+    bigHint.textContent = `Drag to move, pinch or wheel to zoom, ${glyphText('map')} or ${glyphText('close')} to close`;
   };
   paintBigHint();
   // The glyphs change when the player switches device (keyboard, pad, touch).
@@ -868,20 +1030,43 @@ export function createHud(ui: HTMLElement): Hud {
     paintPromptGlyph();
     paintBigHint();
   });
-  // The legend covers much of a phone-sized map, so it is a toggle: on by default on wide screens, off on phones.
-  let legendOn = window.innerWidth >= 600;
+  // The legend is a toggle: on by default only when both sides of the screen are 700 px or more, off on phones.
+  let legendOn = Math.min(window.innerWidth, window.innerHeight) >= 700;
   const legendBtn = el('button', 'gta-legendbtn', 'Legend');
   legendBtn.type = 'button';
   legendBtn.setAttribute('aria-pressed', String(legendOn));
+  const legendPanel = el('div', 'gta-legendpanel');
+  const bigBtn = (cls: string, label: string, text: string, run: () => void): HTMLButtonElement => {
+    const b = el('button', `gta-bmbtn ${cls}`, text);
+    b.type = 'button';
+    b.setAttribute('aria-label', label);
+    b.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      run();
+    });
+    return b;
+  };
+  // The buttons are wired after the view code below; each one calls through these.
+  const bigActs = { zoomIn: () => {}, zoomOut: () => {}, home: () => {}, close: () => {}, legend: () => {} };
   legendBtn.addEventListener('pointerdown', (e) => {
-    e.stopPropagation(); // the overlay closes the map on any other tap
+    e.stopPropagation();
     e.preventDefault();
-    legendOn = !legendOn;
-    legendBtn.setAttribute('aria-pressed', String(legendOn));
+    bigActs.legend();
   });
-  big.append(bigCanvas, bigHint, legendBtn);
+  bigMapBox.append(
+    bigCanvas,
+    bigBtn('gta-bmclose', 'Close map', '✕', () => bigActs.close()),
+    bigBtn('gta-bmhome', 'Centre on me', '◎', () => bigActs.home()),
+    bigBtn('gta-bmout', 'Zoom out', '−', () => bigActs.zoomOut()),
+    bigBtn('gta-bmin', 'Zoom in', '+', () => bigActs.zoomIn()),
+  );
+  bigBar.append(legendBtn, bigHint);
+  bigCol.append(bigMapBox, bigBar);
+  bigStage.append(bigCol, legendPanel);
+  big.append(bigStage);
 
-  root.append(tl, tr, meters, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
+  root.append(tl, tr, meters, evadeEl, gunBlock, toasts, cross, biomeEl, bannerBox, calloutBox, flashEl, bottom, online, big);
   ui.append(root);
 
   // ---- Minimap -------------------------------------------------------------------------------------------------
@@ -891,6 +1076,7 @@ export function createHud(ui: HTMLElement): Hud {
   let size = 0;
   let mapDpr = 1;
   let bgCanvas: HTMLCanvasElement | null = null;
+  let bgHalf = 0; // the world half the background picture covers
   // The minimap is redrawn every 2nd frame (about 30 Hz): it was 2 % of a phone's frame.
   let mapFrame = 0;
 
@@ -917,21 +1103,22 @@ export function createHud(ui: HTMLElement): Hud {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, dev, dev);
     if (bgCanvas) {
-      const H = bgCanvas.width / 2;
+      const H = bgHalf;
+      const picPx = bgCanvas.width / (2 * H); // picture px per world unit
       const k = dev / MAP_VIEW; // device pixels per world unit
-      // Window in background pixels (1 px per unit): left edge, top edge. The picture is mirrored in x, so the window
-      // starts at the player's mirrored column.
+      // Window in world units: left edge, top edge. The picture is mirrored in x, so the window starts at the
+      // player's mirrored column.
       const bx0 = H - px0 - MAP_RANGE;
       const by0 = H - pz0 - MAP_RANGE;
       g.fillStyle = MAP_BLANK;
       g.fillRect(0, 0, dev, dev);
       const cx0 = Math.max(bx0, 0);
       const cy0 = Math.max(by0, 0);
-      const cx1 = Math.min(bx0 + MAP_VIEW, bgCanvas.width);
-      const cy1 = Math.min(by0 + MAP_VIEW, bgCanvas.height);
+      const cx1 = Math.min(bx0 + MAP_VIEW, 2 * H);
+      const cy1 = Math.min(by0 + MAP_VIEW, 2 * H);
       if (cx1 > cx0 && cy1 > cy0) {
         g.drawImage(
-          bgCanvas, cx0, cy0, cx1 - cx0, cy1 - cy0,
+          bgCanvas, cx0 * picPx, cy0 * picPx, (cx1 - cx0) * picPx, (cy1 - cy0) * picPx,
           (cx0 - bx0) * k, (cy0 - by0) * k, (cx1 - cx0) * k, (cy1 - cy0) * k,
         );
       }
@@ -939,6 +1126,14 @@ export function createHud(ui: HTMLElement): Hud {
       g.setTransform(mapDpr, 0, 0, mapDpr, 0, 0);
       const ks = size / MAP_VIEW;
       const half = size / 2;
+      if (s.search) {
+        g.save();
+        g.beginPath();
+        g.rect(0, 0, size, size);
+        g.clip();
+        drawSearchCircle(g, half - (s.search.x - px0) * ks, half - (s.search.z - pz0) * ks, s.search.r * ks, s.search, t, 1);
+        g.restore();
+      }
       if (s.route && s.route.points.length >= 2) {
         drawRoute(g, s.route.points, (x, z) => [half - (x - px0) * ks, half - (z - pz0) * ks], s.route.color, t, true);
       }
@@ -1017,16 +1212,124 @@ export function createHud(ui: HTMLElement): Hud {
 
   // ---- Big map ---------------------------------------------------------------------------------------------------
   let bigOpen = false;
-  let bigPx = 0;
+  let bigPx = 0; // the square map's side, CSS px
+  let bigLast: HudState | null = null;
+  let view: MapView = { cx: 0, cz: 0, scale: 0.1 };
+  let bgWorld: World | null = null;
+  const BIG_ZOOM_MAX = 12; // times the fitted scale
+  const bigVp = (): MapViewport => {
+    const minScale = fitScale(bigPx, bigPx, bgHalf);
+    return { w: bigPx, h: bigPx, half: bgHalf, minScale, maxScale: Math.max(minScale * BIG_ZOOM_MAX, 1.5) };
+  };
+
+  // Tiles: the map is re-drawn per zoom level into 512 px tiles (a small LRU), so it stays sharp at every zoom. Up to the
+  // whole-world picture's own detail the picture itself is drawn.
+  const TILE_PX = 512;
+  const TILE_MAX = 64;
+  const TILE_S0 = 0.125; // level 0: px per world unit; each level doubles it
+  const tiles = new Map<string, HTMLCanvasElement>();
+  function tileFor(level: number, i: number, j: number, make: boolean): HTMLCanvasElement | null {
+    const key = `${level}/${i}/${j}`;
+    const have = tiles.get(key);
+    if (have) {
+      tiles.delete(key); // most recently used goes last
+      tiles.set(key, have);
+      return have;
+    }
+    if (!make || !bgWorld) return null;
+    let c: HTMLCanvasElement | undefined;
+    if (tiles.size >= TILE_MAX) {
+      const oldest = tiles.keys().next().value as string;
+      c = tiles.get(oldest);
+      tiles.delete(oldest);
+    }
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = TILE_PX;
+      c.height = TILE_PX;
+    }
+    const g = c.getContext('2d');
+    if (!g) return null;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, TILE_PX, TILE_PX);
+    const s = TILE_S0 * 2 ** level;
+    const T = TILE_PX / s;
+    paintWorld(g, bgWorld, s, i * TILE_PX, j * TILE_PX, { u0: i * T, v0: j * T, u1: (i + 1) * T, v1: (j + 1) * T });
+    tiles.set(key, c);
+    return c;
+  }
+
+  /** Lay the big map out for the window: the map square, and where the legend goes (beside it, below it, or over it). */
+  type LegendSpot = 'side' | 'below' | 'over';
+  let legendSpot: LegendSpot = 'over';
+  function layoutBig(): void {
+    const iw = window.innerWidth;
+    const ih = window.innerHeight;
+    const landscape = iw >= ih;
+    const px = Math.max(160, Math.floor(Math.min(iw - 24, ih - 90)));
+    const dpr = window.devicePixelRatio || 1;
+    const fitted = bigPx === 0 || view.scale <= fitScale(bigPx, bigPx, bgHalf) * 1.001;
+    if (px !== bigPx || Math.round(px * dpr) !== bigCanvas.width) {
+      bigPx = px;
+      bigCanvas.style.width = `${px}px`;
+      bigCanvas.style.height = `${px}px`;
+      bigCanvas.width = Math.round(px * dpr);
+      bigCanvas.height = Math.round(px * dpr);
+      const vp = bigVp();
+      view = fitted ? fitView(vp) : clampView(view, vp);
+    }
+    // Room for the legend outside the map square.
+    const roomSide = iw - px - 24 - 12;
+    const roomBelow = ih - px - 90 - 12;
+    let spot: LegendSpot = 'over';
+    if (landscape && roomSide >= 210) spot = 'side';
+    else if (!landscape && roomBelow >= 110) spot = 'below';
+    if (spot !== legendSpot || legendPanel.parentElement === null) {
+      legendSpot = spot;
+      (spot === 'over' ? bigMapBox : bigStage).append(legendPanel);
+      bigStage.className = `gta-bigstage ${landscape ? 'row' : 'col'}`;
+    }
+    bigStage.className = `gta-bigstage ${landscape ? 'row' : 'col'}`;
+    legendPanel.className = `gta-legendpanel ${spot}${legendOn ? ' on' : ''}`;
+    if (spot === 'side') legendPanel.style.maxHeight = `${px + 4}px`;
+    else if (spot === 'below') legendPanel.style.maxHeight = `${Math.min(260, roomBelow)}px`;
+    else legendPanel.style.maxHeight = '';
+    legendPanel.style.width = spot === 'below' ? `${px + 4}px` : '';
+    bigHint.style.maxWidth = `${Math.max(120, px - 70)}px`;
+  }
+
+  // The legend list: only the kinds on the map, rebuilt when the set changes.
+  let legendKey = '';
+  function paintLegend(s: HudState): void {
+    const rows = legendRowsFor(s.blips, !!s.route && s.route.points.length >= 2);
+    const key = rows.map((r) => r.text).join('|');
+    if (key === legendKey) return;
+    legendKey = key;
+    legendPanel.replaceChildren(
+      ...rows.map((row) => {
+        const chip = el('span', 'gta-chip');
+        const c = el('canvas');
+        drawLegendIcon(c, row);
+        chip.append(c, document.createTextNode(row.text));
+        return chip;
+      }),
+    );
+  }
+
   function setBig(open: boolean) {
     if (open === bigOpen) return;
     bigOpen = open;
     big.classList.toggle('open', open);
-    if (open && document.pointerLockElement) document.exitPointerLock();
+    document.body.classList.toggle('gta-bigmap-open', open); // the touch buttons and dock sit above the HUD; hide them
+    ptrs.clear();
+    if (open) {
+      if (document.pointerLockElement) document.exitPointerLock();
+      layoutBig();
+      view = fitView(bigVp());
+    }
   }
   registerAction('map', { run: () => setBig(!bigOpen) });
   mapCanvas.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(true); });
-  big.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); setBig(false); });
   window.addEventListener('keydown', (e) => {
     if (isTyping(e) || e.repeat) return;
     // The map key only opens and closes the map: it never touches sound (mute is KEYS.mute, in audio.ts).
@@ -1034,53 +1337,216 @@ export function createHud(ui: HTMLElement): Hud {
     else if (e.code === KEYS.close) setBig(false);
   });
 
-  function drawBig(s: HudState) {
-    if (!bgCanvas) return;
-    const t = clock();
-    // Room under the map for the close hint and the Legend button.
-    const px = Math.max(160, Math.floor(Math.min(window.innerWidth - 24, window.innerHeight - 120)));
-    const dpr = window.devicePixelRatio || 1;
-    if (px !== bigPx) {
-      bigPx = px;
-      bigCanvas.style.width = `${px}px`;
-      bigCanvas.style.height = `${px}px`;
-      bigCanvas.width = Math.round(px * dpr);
-      bigCanvas.height = Math.round(px * dpr);
+  // Input: one pointer drags, two pinch, the wheel and a double tap zoom. Nothing reaches the game underneath.
+  const ptrs = new Map<number, { x: number; y: number }>();
+  let tap: { t: number; x: number; y: number; moved: boolean } | null = null;
+  let lastTap: { t: number; x: number; y: number } | null = null;
+  const local = (e: PointerEvent): { x: number; y: number } => {
+    const r = bigCanvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const zoomBy = (sx: number, sy: number, f: number) => { view = zoomAt(view, bigVp(), sx, sy, f); };
+  bigCanvas.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try { bigCanvas.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
+    const p = local(e);
+    ptrs.set(e.pointerId, p);
+    tap = ptrs.size === 1 ? { t: performance.now(), x: p.x, y: p.y, moved: false } : null;
+  });
+  bigCanvas.addEventListener('pointermove', (e) => {
+    e.stopPropagation();
+    const prev = ptrs.get(e.pointerId);
+    if (!prev) return;
+    e.preventDefault();
+    const p = local(e);
+    const vp = bigVp();
+    if (ptrs.size === 1) {
+      view = panBy(view, vp, p.x - prev.x, p.y - prev.y);
+      if (tap && Math.hypot(p.x - tap.x, p.y - tap.y) > 8) tap.moved = true;
+    } else if (ptrs.size === 2) {
+      let other: { x: number; y: number } | null = null;
+      for (const [id, q] of ptrs) if (id !== e.pointerId) other = q;
+      if (other) {
+        const d0 = Math.hypot(prev.x - other.x, prev.y - other.y);
+        const d1 = Math.hypot(p.x - other.x, p.y - other.y);
+        const m0 = { x: (prev.x + other.x) / 2, y: (prev.y + other.y) / 2 };
+        const m1 = { x: (p.x + other.x) / 2, y: (p.y + other.y) / 2 };
+        if (d0 > 1) view = zoomAt(view, vp, m0.x, m0.y, d1 / d0);
+        view = panBy(view, vp, m1.x - m0.x, m1.y - m0.y);
+      }
     }
+    ptrs.set(e.pointerId, p);
+  });
+  const endPointer = (e: PointerEvent) => {
+    e.stopPropagation();
+    if (!ptrs.has(e.pointerId)) return;
+    const p = local(e);
+    ptrs.delete(e.pointerId);
+    if (tap && !tap.moved && e.type === 'pointerup' && performance.now() - tap.t < 350) {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 380 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 30) {
+        zoomBy(p.x, p.y, 2);
+        lastTap = null;
+      } else {
+        lastTap = { t: now, x: p.x, y: p.y };
+      }
+    }
+    tap = null;
+  };
+  bigCanvas.addEventListener('pointerup', endPointer);
+  bigCanvas.addEventListener('pointercancel', endPointer);
+  bigCanvas.addEventListener('wheel', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const r = bigCanvas.getBoundingClientRect();
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    zoomBy(e.clientX - r.left, e.clientY - r.top, Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0018)));
+  }, { passive: false });
+  // The backdrop eats its input (a tap there no longer closes the map), so the game underneath hears nothing.
+  for (const type of ['pointerdown', 'pointerup', 'pointermove', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'wheel', 'click', 'contextmenu']) {
+    big.addEventListener(type, (e) => { e.stopPropagation(); if (e.target === big || e.target === bigStage) e.preventDefault(); }, { passive: false });
+  }
+  bigActs.zoomIn = () => zoomBy(bigPx / 2, bigPx / 2, 1.6);
+  bigActs.zoomOut = () => zoomBy(bigPx / 2, bigPx / 2, 1 / 1.6);
+  bigActs.home = () => {
+    if (!bigLast) return;
+    view = clampView({ cx: bigLast.player.x, cz: bigLast.player.z, scale: Math.max(view.scale, bigVp().minScale * 3) }, bigVp());
+  };
+  bigActs.close = () => setBig(false);
+  bigActs.legend = () => {
+    legendOn = !legendOn;
+    legendBtn.setAttribute('aria-pressed', String(legendOn));
+    legendPanel.classList.toggle('on', legendOn);
+  };
+
+  function drawBig(s: HudState) {
+    if (!bgCanvas || !bgWorld) return;
+    bigLast = s;
+    const t = clock();
+    layoutBig();
+    const px = bigPx;
+    const dpr = window.devicePixelRatio || 1;
     const g = bigCanvas.getContext('2d');
     if (!g) return;
-    const W = bgCanvas.width;
-    const k = px / W; // CSS pixels per world unit
+    const vp = bigVp();
+    view = clampView(view, vp);
+    const H = bgHalf;
+    const W = 2 * H;
+    const sc = view.scale;
+    const SX = (x: number) => px / 2 + (view.cx - x) * sc; // mirrored, as on the minimap
+    const SY = (z: number) => px / 2 + (view.cz - z) * sc;
+    // The background, in device pixels with snapped tile edges so no seams show.
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = MAP_BLANK;
+    g.fillRect(0, 0, bigCanvas.width, bigCanvas.height);
+    g.imageSmoothingEnabled = true;
+    const uc = H - view.cx; // the picture column at the screen centre
+    const vc = H - view.cz;
+    const half = px / 2 / sc; // world units from the centre to the edge of the view
+    const u0 = Math.max(0, uc - half);
+    const u1 = Math.min(W, uc + half);
+    const v0 = Math.max(0, vc - half);
+    const v1 = Math.min(H * 2, vc + half);
+    const toDev = (u: number) => Math.round((px / 2 + (u - uc) * sc) * dpr);
+    const toDevY = (v: number) => Math.round((px / 2 + (v - vc) * sc) * dpr);
+    const picPx = bgCanvas.width / W; // whole-world picture px per world unit
+    // Draw the whole-world picture's part of the rectangle (ua..ub, va..vb): the fallback while a tile is made.
+    const blitPic = (ua: number, va: number, ub: number, vb: number) => {
+      const ca = Math.max(ua, 0);
+      const cb = Math.min(ub, W);
+      const cc = Math.max(va, 0);
+      const cd = Math.min(vb, W);
+      if (cb <= ca || cd <= cc) return;
+      g.drawImage(bgCanvas!, ca * picPx, cc * picPx, (cb - ca) * picPx, (cd - cc) * picPx, toDev(ca), toDevY(cc), toDev(cb) - toDev(ca), toDevY(cd) - toDevY(cc));
+    };
+    const need = sc * dpr; // device px per world unit
+    if (u1 > u0 && v1 > v0) {
+      if (need <= picPx) {
+        blitPic(u0, v0, u1, v1);
+      } else {
+        let level = 0;
+        while (TILE_S0 * 2 ** level < need && level < 7) level++;
+        const T = TILE_PX / (TILE_S0 * 2 ** level);
+        const i0 = Math.floor(u0 / T);
+        const i1 = Math.floor((u1 - 1e-6) / T);
+        const j0 = Math.floor(v0 / T);
+        const j1 = Math.floor((v1 - 1e-6) / T);
+        // Missing tiles, nearest the centre first: make one (two when few are visible) per frame, blur the rest.
+        const missing: { i: number; j: number; d: number }[] = [];
+        for (let j = j0; j <= j1; j++) {
+          for (let i = i0; i <= i1; i++) {
+            const ua = i * T;
+            const va = j * T;
+            const tile = tileFor(level, i, j, false);
+            if (tile) {
+              const dx0 = toDev(ua);
+              const dy0 = toDevY(va);
+              g.drawImage(tile, dx0, dy0, toDev(ua + T) - dx0, toDevY(va + T) - dy0);
+            } else {
+              missing.push({ i, j, d: Math.hypot(ua + T / 2 - uc, va + T / 2 - vc) });
+            }
+          }
+        }
+        missing.sort((a, b) => a.d - b.d);
+        let made = 0;
+        const t0 = performance.now();
+        for (const m of missing) {
+          if (made === 0 || (performance.now() - t0 < 5 && made < 2)) {
+            const tile = tileFor(level, m.i, m.j, true);
+            made++;
+            if (tile) {
+              const dx0 = toDev(m.i * T);
+              const dy0 = toDevY(m.j * T);
+              g.drawImage(tile, dx0, dy0, toDev((m.i + 1) * T) - dx0, toDevY((m.j + 1) * T) - dy0);
+              continue;
+            }
+          }
+          blitPic(m.i * T, m.j * T, (m.i + 1) * T, (m.j + 1) * T);
+        }
+      }
+    }
+
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = true;
-    g.drawImage(bgCanvas, 0, 0, px, px);
-    const X = (x: number) => (W / 2 - x) * k; // mirrored, as on the minimap
-    const Y = (z: number) => (W / 2 - z) * k;
-    if (s.route && s.route.points.length >= 2) {
-      drawRoute(g, s.route.points, (x, z) => [X(x), Y(z)], s.route.color, t, false);
+    const onScreen = (x: number, y: number, m: number) => x > -m && x < px + m && y > -m && y < px + m;
+    if (s.search) {
+      g.save();
+      g.beginPath();
+      g.rect(0, 0, px, px);
+      g.clip();
+      drawSearchCircle(g, SX(s.search.x), SY(s.search.z), s.search.r * sc, s.search, t, 1);
+      g.restore();
     }
-    // Badges and markers first; their names are laid out after (mapIcons.ts layoutMapLabels): the active quest's, then
-    // the other quests' nearest first, then the places', each kept inside the map and skipped where another name sits.
+    if (s.route && s.route.points.length >= 2) {
+      drawRoute(g, s.route.points, (x, z) => [SX(x), SY(z)], s.route.color, t, false);
+    }
+    // Badges and markers first (they keep their pixel size at every zoom); their names are laid out after (mapIcons.ts
+    // layoutMapLabels): the active quest's, then the other quests' nearest first, then the places', each kept inside the
+    // map and skipped where another name sits. Zoomed in, more names fit.
     const wishes: MapLabelWish[] = [];
     s.blips.forEach((b, i) => {
+      const bx = SX(b.x);
+      const by = SY(b.z);
+      if (!onScreen(bx, by, 40)) return;
       if (isPlace(b)) {
-        drawPlaceIcon(g, X(b.x), Y(b.z), 9, b.kind);
+        drawPlaceIcon(g, bx, by, 9, b.kind);
         const label = b.label ?? (b.kind === 'shop' ? PLACE_STYLE.shop.name : undefined);
-        if (label) wishes.push({ text: label, x: X(b.x), y: Y(b.z), side: 'below', size: 11, prio: 1000 + i });
+        if (label) wishes.push({ text: label, x: bx, y: by, side: 'below', size: 11, prio: 1000 + i });
         return;
       }
       if (b.quest) {
-        drawMarker(g, X(b.x), Y(b.z), 8, t, b);
+        drawMarker(g, bx, by, 8, t, b);
         const d = Math.hypot(b.x - s.player.x, b.z - s.player.z);
         wishes.push({
-          text: b.quest, x: X(b.x), y: Y(b.z), side: 'above', size: 12, pad: 2,
+          text: b.quest, x: bx, y: by, side: 'above', size: 12, pad: 2,
           prio: b.kind === 'objective' ? 0 : 1 + Math.min(d, 9e4) / 1e5,
         });
         return;
       }
       g.fillStyle = b.color;
       g.beginPath();
-      g.arc(X(b.x), Y(b.z), 2, 0, Math.PI * 2);
+      g.arc(bx, by, 2, 0, Math.PI * 2);
       g.fill();
       if (b.label) {
         // Another player's name, small, over their dot.
@@ -1088,9 +1554,9 @@ export function createHud(ui: HTMLElement): Hud {
         g.textAlign = 'center';
         g.lineWidth = 3;
         g.strokeStyle = 'rgba(0,0,0,.8)';
-        g.strokeText(b.label, X(b.x), Y(b.z) - 5);
+        g.strokeText(b.label, bx, by - 5);
         g.fillStyle = '#fff';
-        g.fillText(b.label, X(b.x), Y(b.z) - 5);
+        g.fillText(b.label, bx, by - 5);
       }
     });
     const spots = layoutMapLabels(wishes, (text, size) => {
@@ -1108,21 +1574,30 @@ export function createHud(ui: HTMLElement): Hud {
       g.strokeText(sp.text, sp.x, ly);
       g.fillText(sp.text, sp.x, ly);
     }
-    // One name per region, at its label point (the average of its border; two corner regions use an inner point).
-    g.font = px < 360 ? '700 10px system-ui,sans-serif' : '700 12px system-ui,sans-serif';
-    g.textAlign = 'center';
-    g.fillStyle = 'rgba(0,0,0,.65)';
-    for (const id of REGION_IDS) {
-      const r = REGIONS[id];
-      const lp = LABEL_AT[id] ?? averagePoint(r.border);
-      // Kept inside the map's edge (a phone's map is narrow).
-      const half = g.measureText(r.name).width / 2 + 2;
-      g.fillText(r.name, Math.min(px - half, Math.max(half, X(lp[0]))), Y(lp[1]));
+    // One name per region, at its label point (the average of its border; two corner regions use an inner point). They
+    // fade out as you zoom in past about 2.5x the fitted view.
+    const zoomed = sc / vp.minScale;
+    const regionAlpha = clamp01(1 - (zoomed - 2.5) / 2.5);
+    if (regionAlpha > 0.02) {
+      g.font = px < 360 ? '700 10px system-ui,sans-serif' : '700 12px system-ui,sans-serif';
+      g.textAlign = 'center';
+      g.fillStyle = `rgba(0,0,0,${(0.65 * regionAlpha).toFixed(3)})`;
+      for (const id of REGION_IDS) {
+        const r = REGIONS[id];
+        const lp = LABEL_AT[id] ?? averagePoint(r.border);
+        const hw = g.measureText(r.name).width / 2 + 2;
+        const rx = SX(lp[0]);
+        const ry = SY(lp[1]);
+        if (!onScreen(rx, ry, hw)) continue;
+        // Kept inside the map's edge (a phone's map is narrow).
+        g.fillText(r.name, Math.min(px - hw, Math.max(hw, rx)), ry);
+      }
     }
-    if (legendOn) drawLegend(g, px);
+    paintLegend(s);
     // Player arrow.
-    const cx = X(s.player.x);
-    const cy = Y(s.player.z);
+    const cx = SX(s.player.x);
+    const cy = SY(s.player.z);
+    if (!onScreen(cx, cy, 12)) return;
     const fx = -Math.sin(s.player.yaw);
     const fy = -Math.cos(s.player.yaw);
     g.beginPath();
@@ -1171,6 +1646,7 @@ export function createHud(ui: HTMLElement): Hud {
     vehicle?: string | null; cracked?: number; acorns?: number; debt?: number; prompt?: string | null; online?: string | null;
     altitude?: number | null; speed?: number | null; chute?: boolean; biome?: string; district?: string | null;
     timeLabel?: string; boost?: number | null; buff?: string | null; stunts?: string;
+    evadeText?: string | null; evadeFill?: number;
   } = {};
 
   // The vehicle hint: the controls of a car or aircraft, shown for 6 s when the player enters one (keyboard / pad only),
@@ -1198,8 +1674,35 @@ export function createHud(ui: HTMLElement): Hud {
   return {
     setWorld(world: World) {
       bgCanvas = buildBackground(world);
+      bgHalf = world.half;
+      bgWorld = world;
+      tiles.clear();
+    },
+    bigMap: {
+      open() { setBig(true); },
+      close() { setBig(false); },
+      isOpen: () => bigOpen,
+      zoomTo(x: number, z: number, scale: number) {
+        if (!bgWorld) return;
+        setBig(true);
+        layoutBig();
+        view = clampView({ cx: x, cz: z, scale }, bigVp());
+      },
     },
     set(s: HudState) {
+      {
+        const text = s.search ? evadeLabel(s.search) : null;
+        if (text !== last.evadeText) {
+          last.evadeText = text;
+          evadeEl.classList.toggle('on', text !== null);
+          evadeLabelEl.textContent = text ?? '';
+        }
+        const fill = s.search ? Math.round(clamp01(s.search.evade) * 100) : 0;
+        if (fill !== last.evadeFill) {
+          last.evadeFill = fill;
+          evadeFill.style.width = `${fill}%`;
+        }
+      }
       if (s.heat !== last.heat) {
         last.heat = s.heat;
         const maxHeat = Math.max(MAX_HEAT, 4);

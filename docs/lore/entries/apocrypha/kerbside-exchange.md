@@ -45,6 +45,15 @@ The Exchange is the city's hub. In the game, giver `kerb-exchange` in `games/gno
 
 The Exchange does not replace the other givers. Big Lou, Shelldon, Clara, Granny Gnertrude and the rest still give their own jobs where they live.
 
+## Everyday
+
+- Tickets: each job Dot hands out gets a ticket punched with the date and a number. The numbers are not in order, and Dot says that is how she can tell them apart.
+- Board notices: "NO JOB IS TOO SMALL. SOME ARE TOO BIG." / "LOST: one hat (blue). FOUND: one hat (blue). SEE BEFORE ASKING." / "WANTED: somebody to hold a ladder (no questions)".
+- House rule (the desk): "Names first, acorns second, opinions last."
+- Habit: Dot has the first cup of the day at the desk, pours the second onto the kerb "for the board", and nobody has asked why.
+- Hours: "from the first bus until the last, and a little after, if you look like you need work".
+- Saying: "Pin it and pray" for a job nobody wants.
+
 ## Loose threads
 
 Who pinned the very first card. The board has been full for as long as anyone has been looking, and Dot will not say.

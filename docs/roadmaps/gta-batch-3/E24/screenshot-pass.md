@@ -1,0 +1,14 @@
+# E24 screenshot pass
+
+Taken 2026-11-25 with headless Edge (swiftshader) against the dev server (`tools/gta-shots.mjs`, `?offline&no-intro`,
+960x600, phone shots 390x844). Files in [screens/](screens/). No page errors on any shot; `tools/smoke.sh ... gta-gnomlet`
+OK at all four places (kitchen + `?chefshift`, lot + `?mechorder`, club + `?comedyset`, club street).
+
+| Workplace | Spots (files) | What it shows | Storytelling (a vignettes / b signs / c resident / d ambience) |
+|---|---|---|---|
+| Acorn Diner kitchen (chef) | `diner-door` (3, 252) outside; `kitchen-room` inside; `chef-shift` (390x844, the kitchen screen in a rush) | the diner front on Route South; the kitchen behind the red pass, stove, fridge, griddle, heat lamps; the ticket rail screen at phone size | (a) the washing-up mountain with a stool pulled up, Frank's corner (his mug, papers, half a pie), the burnt-toastie shrine under the heat lamp; (b) "TODAY: SOUP. TOMORROW: ALSO SOUP", "GRUB-FREE KITCHEN (DO NOT ASK)", a rota that says SAGE in every slot, "THE BELL IS NOT A TOY - FRANK"; (c) Sage Ladle at the pass, Fence-Post Frank on his stool beyond the hatch; (d) farmland bed through the walls, chop/sizzle/bell/ticket sounds |
+| Pay 'n' Glaze client lot (mechanic) | `lot-board` (84, 124); `mech-order` (390x844, a client's brief card) | the pink work-order board ("WORK ORDERS - ASK FOR CASS"), waiting bench, pink cones and drums by the bay | (a) before-and-after: a primer-grey panel on a tyre stack beside a glowing pink-rimmed tyre; the impatient client's bench with an empty cup under the key board; the colour argument: swatch wall, two knocked-over cones, a mud bucket; (b) "WORK ORDERS - ASK FOR CASS", "CLIENT CARS ONLY. YES, EVEN YOURS."; (c) the client gnome waiting by their car, walking back to it on hand-back; (d) city bed, air-wrench / keys / spray sounds |
+| Le Petit Groan (comedy) | `club-street` (-1498, -202) the stairs down off the Grand Platz; `club-room` inside; `comedy-set` a set in progress | the cellar entrance with railings, chalkboard and poster column; the brick-wall stage, mic, ten seated critics; the player's gnome mid-set with subtitles, cringe meter, Double down, Walk off | (a) the last act's exit (setlist on the stage, stool on its side, a tomato stain at the wall's foot); the empty tip jar with one button; the critics' table laid out like evidence; (b) "TONIGHT: YOU", "TWO-DRINK MINIMUM. ONE-LAUGH MAXIMUM.", "NO HECKLING BEFORE THE FIRST JOKE", "PLEASE DO NOT FEED THE COMEDIANS"; (c) Mireille Sans-Rire by the stage steps, three regulars who answer back; (d) continental bed, groans, coughs, one pity clap, a cricket, tomato whoosh and splat |
+
+Not done: no real phone, no full manual playthrough of a whole shift / work order / set in a browser (each was started by
+its dev hook and screenshotted; the flows are unit-tested in their pure parts).

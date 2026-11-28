@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { UNDERGROUND_JOURNEY } from '@lawn/music';
 import { PLACES } from '../config';
-import { ADS, allLines, BRIDGE_TRAFFIC, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine } from './content';
+import { ADS, allLines, BRIDGE_TRAFFIC, EVENT_BULLETINS, HEAT_BULLETINS, STATIONS, trafficLine, type StationId } from './content';
 import { createProgram, DIAL, readSeconds, type Segment } from './schedule';
 
 /** A seeded generator, so a failing run can be replayed. */
@@ -17,18 +17,18 @@ function seeded(seed: number): () => number {
   };
 }
 
-function play(station: 'blade' | 'fpr' | 'beats' | 'under', count: number, seed = 7): Segment[] {
+function play(station: StationId, count: number, seed = 7): Segment[] {
   const p = createProgram(seeded(seed));
   p.tune(station);
   return Array.from({ length: count }, () => p.next()!);
 }
 
 describe('the dial', () => {
-  it('cycles blade, fpr, beats, under, off and back round', () => {
+  it('cycles blade, fpr, beats, under, adagio, off and back round', () => {
     const p = createProgram(seeded(1));
     const seen: (string | null)[] = [];
     for (let i = 0; i < DIAL.length * 2; i++) seen.push(p.cycle());
-    expect(seen).toEqual(['blade', 'fpr', 'beats', 'under', null, 'blade', 'fpr', 'beats', 'under', null]);
+    expect(seen).toEqual(['blade', 'fpr', 'beats', 'under', 'adagio', null, 'blade', 'fpr', 'beats', 'under', 'adagio', null]);
   });
 
   it('is silent when off: no programme, no bulletins', () => {

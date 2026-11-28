@@ -1,7 +1,7 @@
 // NPC boats and the Hat Watch on water (Wild World Epic 4). The ferry, the dinghy and the gravy boat sail their routes;
 // at Hat Watch heat WATER.patrolHats or more, while the player is in a boat, an HOA Patrol Boat chases them down.
 import type * as THREE from 'three';
-import { getPrefab } from '@lawn/prefabs';
+import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { WATER, VEHICLES } from './config';
 import { angleDiff } from './collide';
 import { BODIES, ISLANDS, courseProfile, shorePoint } from './water';
@@ -32,6 +32,64 @@ const STUCK_DIST = 2;
 const STUCK_T = 6;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+
+/** The sightseeing loop offshore of the boardwalk (E11): clear of the slalom (z ~1300) and the ship. */
+export const SEA_LOOP: { x: number; z: number }[] = [
+  { x: -600, z: 1450 }, { x: -200, z: 1380 }, { x: 400, z: 1420 }, { x: 900, z: 1480 }, { x: 400, z: 1560 }, { x: -300, z: 1560 },
+];
+
+/** Where the Saltcut clog cruiser ends: out past the Long Spoon Pier and the Bathtub Queen's hull (A12), not off her bow. */
+export const SALTCUT_END = { x: 450, z: 1330 };
+
+/** The fishing smack: one slow silhouette working along the far horizon line (A12). */
+const SMACK_Z = 1560;
+const SMACK_X_MIN = -1300;
+const SMACK_X_MAX = 1300;
+const SMACK_SPEED = 2.5;
+const SMACK_TURN_T = 10;
+/** Scale of the `fishing-smack` prefab in this game, and its waterline (local y) at scale 1. */
+const SMACK_SCALE = 6;
+const SMACK_WATERLINE = 0.15;
+const SMACK_BOB = 0.25;
+const SMACK_ROLL = 0.04;
+const SMACK_LEG_T = (SMACK_X_MAX - SMACK_X_MIN) / SMACK_SPEED;
+/** One leg (east or west) plus the turn at its end. A full cycle is two of these. */
+const SMACK_HALF_T = SMACK_LEG_T + SMACK_TURN_T;
+const SMACK_PERIOD_T = 2 * SMACK_HALF_T;
+
+/** Heading yaw for east (+x) and west (-x): bow is +z, so east is PI/2. */
+const YAW_EAST = Math.PI / 2;
+const YAW_WEST = -Math.PI / 2;
+
+/**
+ * The fishing smack's pose at elapsed time `t` (s), written into `out`. It sails east along z = 1560 from x -1300 to 1300
+ * at 2.5 m/s, turns round over 10 s at each end (yaw eases through north or south), and repeats. Pure and deterministic.
+ */
+export function smackPoseInto(t: number, out: { x: number; z: number; yaw: number }): { x: number; z: number; yaw: number } {
+  const p = ((t % SMACK_PERIOD_T) + SMACK_PERIOD_T) % SMACK_PERIOD_T;
+  const east = p < SMACK_HALF_T;
+  const q = east ? p : p - SMACK_HALF_T;
+  const from = east ? YAW_EAST : YAW_WEST;
+  const startX = east ? SMACK_X_MIN : SMACK_X_MAX;
+  const endX = east ? SMACK_X_MAX : SMACK_X_MIN;
+  out.z = SMACK_Z;
+  if (q < SMACK_LEG_T) {
+    out.x = startX + (east ? 1 : -1) * SMACK_SPEED * q;
+    out.yaw = from;
+  } else {
+    // Turning at the far end: hold position and ease the heading round through a half-turn (ends on the opposite heading).
+    const u = Math.min(1, (q - SMACK_LEG_T) / SMACK_TURN_T);
+    const e = u * u * (3 - 2 * u);
+    out.x = endX;
+    out.yaw = from + (east ? Math.PI : -Math.PI) * e;
+  }
+  return out;
+}
+
+/** The fishing smack's pose at elapsed time `t` (s). */
+export function smackPose(t: number): { x: number; z: number; yaw: number } {
+  return smackPoseInto(t, { x: 0, z: 0, yaw: 0 });
+}
 
 /** Loop points closer than this many island radii to an island are moved to this distance, on the loch-centre side. */
 const ISLAND_CLEAR = 1.9;
@@ -141,12 +199,25 @@ export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world
     npcRoute('clog-cruiser', pingPong(lochToSea), 0.7, true),
     npcRoute('walnut-dinghy', pingPong(seaToLoch), 0.6, true),
     npcRoute('walnut-dinghy', pingPong(upper).reverse(), 0.5, true),
+    npcRoute('clog-cruiser', pingPong(waterwayRoute(['saltcut'], { from: { x: 690, z: 860 }, to: SALTCUT_END })), 0.6, true),
+    npcRoute('gravy-boat', SEA_LOOP, 0.7),
+    // E31: far-out sea line, a fishing loop off Dunelow, the Thymes river run (small boats under its low bridges),
+    // and slow loops on the High Tarn and in the Pardonlin basin.
+    npcRoute('clog-cruiser', pingPong([{ x: -1500, z: 1450 }, { x: 0, z: 1450 }, { x: 1500, z: 1450 }]), 0.6),
+    npcRoute('walnut-dinghy', [{ x: -500, z: 1350 }, { x: -542, z: 1407 }, { x: -609, z: 1385 }, { x: -609, z: 1315 }, { x: -542, z: 1293 }], 0.5),
+    npcRoute('walnut-dinghy', pingPong(waterwayRoute(['thymes'], { every: 5 }).filter((p) => p.z >= -600 && p.z <= 900)), 0.5, true),
+    npcRoute('walnut-dinghy', loopRoute('water/high-tarn', 0.5, 6), 0.3),
+    npcRoute('gravy-boat', loopRoute('water/pardonlin-basin', 0.5, 6), 0.4),
   ];
   // A route with no water to follow (the dry world) is skipped.
   const routes = allRoutes.filter((r) => r.route.length > 0);
   let patrol: Vehicle | null = null;
   let patrolLowT = 0;
   let outOfBoatT = 0;
+  // The fishing smack: a scenery prop (not a vehicle), built once its prefab has loaded.
+  let smack: THREE.Group | null = null;
+  let smackT = 0;
+  const smackPoseScratch = { x: 0, z: 0, yaw: 0 };
 
   const register = (v: Vehicle): void => {
     v.driver = 'npc';
@@ -240,12 +311,30 @@ export function createBoatTraffic(scene: THREE.Scene, vehicles: Vehicle[], world
     }
   };
 
+  /** Build the smack once its prefab has loaded, then sail it along the far line (one object, no per-frame allocation). */
+  const driveSmack = (dt: number): void => {
+    smackT += dt;
+    if (!smack) {
+      if (!getPrefab('fishing-smack')) return;
+      smack = buildPrefab('fishing-smack', { lights: false, scale: SMACK_SCALE });
+      smack.rotation.order = 'YXZ';
+      scene.add(smack);
+    }
+    const p = smackPoseInto(smackT, smackPoseScratch);
+    const surface = waterAt(p.x, p.z)?.surface ?? 0;
+    const bob = Math.sin(smackT * 0.9) * SMACK_BOB;
+    smack.position.set(p.x, surface - SMACK_WATERLINE * SMACK_SCALE + bob, p.z);
+    smack.rotation.y = p.yaw;
+    smack.rotation.z = Math.sin(smackT * 0.7) * SMACK_ROLL;
+  };
+
   return {
     boats,
     update(dt: number, player: Player, hats: number): void {
       makeRoutes();
       driveRoutes(dt, player);
       updatePatrol(dt, player, hats);
+      driveSmack(dt);
     },
   };
 }

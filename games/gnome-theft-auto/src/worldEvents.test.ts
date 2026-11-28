@@ -34,7 +34,8 @@ function makeHarness() {
     },
     vehicles: [],
     economy: {
-      state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false }),
+      state: () => ({ acorns: 50, debtRemaining: 5000, debtPaidOff: false, loans: [] }),
+      borrow: () => true, payLoan: () => 0, totalOwed: () => 5000,
       earn: (amt) => earned.push(amt),
       spend: () => true,
       payDebt: () => 0,
@@ -48,7 +49,7 @@ function makeHarness() {
 
 describe('worldEvents rotation & rewards', () => {
   it('rotates through all six public events cleanly', () => {
-    expect(EVENT_INTERVAL).toBe(110);
+    expect(EVENT_INTERVAL).toBe(160);
     expect(EVENT_ROTATION).toEqual([
       'dew-convoy',
       'drift-trial',

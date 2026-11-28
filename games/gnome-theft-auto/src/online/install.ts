@@ -21,6 +21,8 @@ import { createBirdSync } from './birdSync';
 import { createEventSync } from './eventSync';
 import { createHub, type Hub } from './hub';
 import { createHuntSync } from './huntSync';
+import { createRaceSync, type RaceSync } from './raceSync';
+import type { RaceNet } from '../streetRace/types';
 import { SYS } from './protocol';
 import { createSkySync } from './skySync';
 import { createSlingSync } from './slingSync';
@@ -52,12 +54,16 @@ export interface OnlineDeps {
   stableVehicles?: readonly Vehicle[];
   /** The vehicle I drive (driver 'player'), or null. */
   driving?(): Vehicle | null;
+  /** My display name for other players (online races). */
+  name?(): string;
 }
 
 export interface Online {
   readonly hub: Hub;
   /** Stationary vehicles (online/parkSync.ts); null when the deps had no stable set. */
   readonly park: ParkSync | null;
+  /** Online race lobbies and progress (online/raceSync.ts). */
+  readonly race: RaceNet;
   /** An emote just started on my gnome (createPlayerEmote's onPlay). */
   noteEmote(id: string): void;
   /** Every frame; (x, z) = where I am (my vehicle when driving). away = in a cutscene or the portal (hub.ts). */
@@ -85,6 +91,7 @@ export function installOnline(d: OnlineDeps): Online {
   }));
   hub.register(SYS.sling, (link) => createSlingSync(link, { lockup: d.lockup, scene: d.scene }));
   hub.register(SYS.sea, (link) => createSeaSync(link));
+  const race = hub.register(SYS.race, (link) => createRaceSync(link, { name: d.name ?? (() => 'Gnome') })) as RaceSync;
   const stable = d.stableVehicles;
   const driving = d.driving;
   const park = stable && driving ? hub.register(SYS.park, (link) => createParkSync(link, {
@@ -134,6 +141,7 @@ export function installOnline(d: OnlineDeps): Online {
   return {
     hub,
     park,
+    race,
     noteEmote: (id) => act.noteEmote(id),
     update: (dt, x, z, away) => hub.update(dt, x, z, away),
     hitTest: (x, y, z) => hub.hitTest(x, y, z),

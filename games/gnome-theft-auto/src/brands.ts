@@ -61,7 +61,7 @@ export const BRANDS: Record<BrandId, BrandDef> = {
     secondary: 0xc8d0d8,
     slogan: 'Loud Enough To Wake The Tall Ones.',
     finePrint: 'Illegal two-stroke exhaust kits sold separately at Side-Valve Salvage.',
-    vehicleKinds: ['push-bike'],
+    vehicleKinds: ['push-bike', 'dirt-bike'],
   },
   'black-dew': {
     id: 'black-dew',
@@ -194,7 +194,7 @@ const yawToward = (x: number, z: number, tx: number, tz: number): number => Math
  */
 export const BILLBOARD_SPOTS: readonly BillboardSpot[] = [
   // South highway pair: Buck-Iron vs. Razor-Back facing outbound & inbound Cloverfield traffic.
-  { id: 'south-buck-iron', brand: 'buck-iron', x: 16, z: 235, y: 0, yaw: yawToward(16, 235, 0, 210), scale: 1 },
+  { id: 'south-buck-iron', brand: 'buck-iron', x: 16, z: 240, y: 0, yaw: yawToward(16, 240, 0, 210), scale: 1 },
   { id: 'south-razor-back', brand: 'razor-back', x: -16, z: 255, y: 0, yaw: yawToward(-16, 255, 0, 230), scale: 1 },
   { id: 'south-kiln-shield', brand: 'kiln-shield', x: 52, z: 412, y: 0, yaw: yawToward(52, 412, 10, 390), scale: 1 },
 
@@ -560,6 +560,7 @@ export function brandForVehicle(kind: VehicleKind, _tint: number): BrandDef {
     case 'zero-turn':
       return BRANDS['razor-back'];
     case 'push-bike':
+    case 'dirt-bike':
       return BRANDS['husky-blade'];
     case 'snail-coach':
       return BRANDS['dandelion-fizz'];

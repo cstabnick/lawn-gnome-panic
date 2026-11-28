@@ -122,7 +122,7 @@ export function makeCourierRoute(c: GenCtx): Gig | null {
   if (v.flies || v.boat || !c.home) return null;
   const C = J.courier;
   const home = c.home;
-  const cap = Math.min(c.perks.capacity, v.kind === 'push-bike' ? C.bikeCap : C.defaultCap);
+  const cap = Math.min(c.perks.capacity, (v.kind === 'push-bike' || v.kind === 'dirt-bike') ? C.bikeCap : C.defaultCap);
   const n = Math.max(1, Math.min(cap, 2 + Math.floor(c.rng() * cap)));
   const maxD = c.level >= 4 ? 900 : 400;
   const spots = c.roads.filter((r) => {
@@ -194,8 +194,15 @@ export function makePilotGig(c: GenCtx, kind: GigKind): Gig | null {
   if (kind === 'charter') {
     if (v.fixedWing) {
       const sight = pick(SKY_SIGHTS, c);
-      stops = [stand, gateStop(sight), airfield()];
-      title = 'Charter to Airfield';
+      // drawn after the existing pick so the seeded sequence before it is unchanged
+      if (c.rng() < 0.4) {
+        // a visiting professor: down on the Rootwell Field runway, then home
+        stops = [stand, landStop('rootwell-field', 'Rootwell Field runway', 1300, 600, P.landRadius * 2), airfield()];
+        title = 'Charter to Rootwell Field';
+      } else {
+        stops = [stand, gateStop(sight), airfield()];
+        title = 'Charter to Airfield';
+      }
     } else {
       const pad = pick(AIR_PADS.slice(1), c);
       stops = [stand, landStop(pad.id, pad.name, pad.x, pad.z, P.landRadius)];

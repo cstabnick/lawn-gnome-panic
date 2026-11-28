@@ -6,7 +6,7 @@
 // returns the boats (world.ts adds them to world.parked; app.ts creates them like parked mowers).
 import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
-import { heightAt } from './terrain';
+import { bedAt, heightAt } from './terrain';
 import { BODIES, bodyLevel, bodyRadius, bridges, canalLocks, courseProfile, shorePoint, waterLevelAt } from './water';
 import type { Box, ParkedSpot } from './types';
 
@@ -16,6 +16,7 @@ export interface WorkPlacement {
   x: number; y: number; z: number;
   yaw: number;
   scaleX?: number;
+  scaleY?: number;
   scaleZ?: number;
   solid?: Box[];
   spin?: string;
@@ -36,6 +37,17 @@ export interface Waterworks {
 const WHEEL_RATE = 0.8;
 /** The arch-road-bridge prefab's deck top, above its base (see packages/prefabs gta-waterworks.ts). */
 const ARCH_DECK = 6.5;
+/** Deck height of the low `canal-road-bridge`, and the deck-to-bed depth below which it replaces the arch. */
+const CANAL_DECK = 3.0;
+const LOW_BRIDGE_BELOW = 4;
+
+/** The lowest bed height under a bridge span (sampled along its centre line). */
+export function lowestBed(b: { x: number; z: number; yaw: number; length: number }): number {
+  const s = Math.sin(b.yaw), c = Math.cos(b.yaw);
+  let low = Infinity;
+  for (let t = -b.length / 2; t <= b.length / 2 + 1e-6; t += 1) low = Math.min(low, bedAt(b.x + s * t, b.z + c * t));
+  return low;
+}
 /** Half the ravine's width (metres), and the half width of one weir half (the loch-weir sill is 12 wide). */
 const RIVER_HALF = 5;
 const WEIR_HALF = 1.4;
@@ -80,11 +92,18 @@ export function waterworksPlan(): WaterworksPlan {
 
   // 1. Bridges.
   // The arch's deck top is 6.5 above its base, so the base sits 6.5 below the span's deck (boats pass under the arch).
+  // A bridge with less than 6.5 m between deck and bed gets a squashed arch (scaleY), or the low canal bridge when the
+  // squash would be heavy, so no pier sinks through the bed. Deck tops always land on `b.deck`.
   for (const b of roads) {
-    works.push({
-      prefab: 'arch-road-bridge', x: b.x, y: b.deck - ARCH_DECK, z: b.z, yaw: b.yaw,
-      scaleX: b.width / 12, scaleZ: b.length / 24,
-    });
+    const need = b.deck - lowestBed(b);
+    const common = { x: b.x, z: b.z, yaw: b.yaw, scaleX: b.width / 12, scaleZ: b.length / 24 };
+    if (need >= ARCH_DECK) {
+      works.push({ prefab: 'arch-road-bridge', y: b.deck - ARCH_DECK, ...common });
+    } else if (need < LOW_BRIDGE_BELOW) {
+      works.push({ prefab: 'canal-road-bridge', y: b.deck - CANAL_DECK, ...common });
+    } else {
+      works.push({ prefab: 'arch-road-bridge', y: b.deck - need, scaleY: need / ARCH_DECK, ...common });
+    }
   }
 
   // 2. Loch dock, moored boats.
@@ -227,7 +246,9 @@ export function buildWaterworks(scene: THREE.Scene, boxes: Box[]): Waterworks {
     const obj = buildPrefab(w.prefab);
     obj.position.set(w.x, w.y, w.z);
     obj.rotation.y = w.yaw;
-    if (w.scaleX !== undefined || w.scaleZ !== undefined) obj.scale.set(w.scaleX ?? 1, 1, w.scaleZ ?? 1);
+    if (w.scaleX !== undefined || w.scaleY !== undefined || w.scaleZ !== undefined) {
+      obj.scale.set(w.scaleX ?? 1, w.scaleY ?? 1, w.scaleZ ?? 1);
+    }
     obj.traverse((o) => {
       if (o instanceof THREE.Mesh) { o.castShadow = true; o.receiveShadow = true; }
     });

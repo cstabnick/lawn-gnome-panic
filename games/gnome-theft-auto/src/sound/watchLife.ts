@@ -46,6 +46,19 @@ const CRITTER_CALL: Record<CritterKind, CritterSoundId> = {
   squirrel: 'squirrel',
   'polar-bear': 'bear',
   bee: 'bee-buzz',
+  // E31 small wildlife (stand-ins from the existing set where there is no own call).
+  hare: 'squirrel',
+  hedgehog: 'squirrel',
+  fox: 'crow',
+  frog: 'frog',
+  duck: 'bird-chirp',
+  crab: 'critter-thud',
+  butterfly: 'cricket',
+  dragonfly: 'cricket',
+  deer: 'deer-bark',
+  stag: 'deer-bark',
+  fawn: 'deer-bark',
+  goat: 'goat-bleat',
 };
 
 /** The call a critter makes (alarmed or calm). */
@@ -144,7 +157,7 @@ export function createLifeSounds(): LifeSounds {
     e.next -= step;
     if (e.next > 0) return;
     e.next = n.state === 'flee' ? NPC_FLEE : NPC_WALK;
-    playAt(stepId(surfaceAt(n.x, n.z, f.world).kind), { x: n.x, z: n.z }, { gain: 0.5 });
+    playAt(stepId(surfaceAt(n.x, n.z, f.world).kind), { x: n.x, z: n.z }, { gain: 0.4 });
   }
 
   function gnomeFootsteps(f: LifeSoundFrame, step: number): void {

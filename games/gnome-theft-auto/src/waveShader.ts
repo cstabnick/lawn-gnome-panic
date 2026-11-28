@@ -44,9 +44,11 @@ export function updateWaveUniforms(u: WaveUniforms, t: number): void {
  * vertex attribute (waterMesh.ts sets it). Vertex: height and analytic normal from the same sines as waves.ts.
  * Fragment: a colour shift by height and whitecaps on the crests.
  */
-export function applyWaveShader(mat: THREE.MeshStandardMaterial, u: WaveUniforms): void {
+export function applyWaveShader(mat: THREE.MeshStandardMaterial, u: WaveUniforms, crest?: number): void {
+  const crestColour = new THREE.Color(crest ?? 0xffffff);
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, u);
+    shader.uniforms.uCrest = { value: crestColour };
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -74,18 +76,19 @@ varying float vWaveH;`,
       )
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed.y += wh;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uWaveFoam;\nuniform float uWaveAmp;\nvarying float vWaveH;')
+      .replace('#include <common>', '#include <common>\nuniform float uWaveFoam;\nuniform float uWaveAmp;\nuniform vec3 uCrest;\nvarying float vWaveH;')
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
   float hn = clamp(vWaveH / uWaveAmp, -1.0, 1.0);
   diffuseColor.rgb *= 1.0 + 0.18 * hn;
   if (uWaveFoam > 0.5) {
-    float crest = smoothstep(0.32, 0.7, hn) * smoothstep(0.08, 0.3, uWaveAmp);
-    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.96, 0.95), crest * 0.7);
+    float crest = smoothstep(${crest === undefined ? '0.32, 0.7' : '0.55, 0.92'}, hn) * smoothstep(0.08, 0.3, uWaveAmp);
+    diffuseColor.rgb = mix(diffuseColor.rgb, ${crest === undefined ? 'vec3(0.93, 0.96, 0.95)' : 'uCrest'}, crest * ${crest === undefined ? '0.7' : '0.85'});
   }`,
       );
   };
   const own = Object.prototype.hasOwnProperty.call(mat, 'customProgramCacheKey') ? mat.customProgramCacheKey : null;
-  mat.customProgramCacheKey = () => (own ? `${own.call(mat)}|gta-waves` : 'gta-waves');
+  const tag = crest === undefined ? 'gta-waves' : 'gta-waves-crest';
+  mat.customProgramCacheKey = () => (own ? `${own.call(mat)}|${tag}` : tag);
 }

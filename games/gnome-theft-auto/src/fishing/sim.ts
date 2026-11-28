@@ -38,6 +38,21 @@ export function stepFishing(s: FishingState, inp: SimInput, env: SimEnv, dt: num
       if (!(inp.released || !inp.hold)) return null;
       const d0 = FISH.minCast + s.charge * (env.rod.castRange - FISH.minCast);
       const yaw = env.origin.yaw;
+      const hole = env.snap?.() ?? null;
+      if (hole) {
+        s.fromX = env.origin.x;
+        s.fromY = env.origin.y;
+        s.fromZ = env.origin.z;
+        s.toX = hole.x;
+        s.toZ = hole.z;
+        s.surface = hole.surface;
+        s.bobX = s.fromX;
+        s.bobY = s.fromY;
+        s.bobZ = s.fromZ;
+        s.phase = 'flight';
+        s.t = 0;
+        return 'cast';
+      }
       for (let k = 0; ; k++) {
         const d = d0 - 0.5 * k;
         if (d < 1.5) break;

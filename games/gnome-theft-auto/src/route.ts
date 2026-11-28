@@ -3,6 +3,7 @@ import type { HudRoute, RoadGraph, RoadNode } from './types';
 import { isDeckNode, nearestRoadNode } from './highways/roads';
 import { deckContactsAt } from './highways/deck';
 import { heightAt } from './terrain';
+import { canDrive } from './roundabouts';
 
 /** A point; y (optional) is the height the route starts at, so a car on a skyway deck starts on the deck. */
 export interface Pt { x: number; z: number; y?: number }
@@ -78,7 +79,7 @@ function astar(byId: Map<number, RoadNode>, start: RoadNode, goal: RoadNode): Ro
     const cn = byId.get(cur)!;
     for (const nid of cn.links) {
       const nb = byId.get(nid);
-      if (!nb || closed.has(nid)) continue;
+      if (!nb || closed.has(nid) || !canDrive(cn, nid)) continue;
       const ng = g.get(cur)! + dist(cn, nb);
       if (ng < (g.get(nid) ?? Infinity)) {
         g.set(nid, ng);

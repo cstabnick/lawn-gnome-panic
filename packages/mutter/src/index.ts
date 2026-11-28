@@ -56,6 +56,11 @@ export interface SayOptions {
   maxLetters?: number;
   /** Through a phone or radio: a 350..3200 Hz band and a little grit (mission comms, a call). Default false. */
   phone?: boolean;
+  /**
+   * Over the air (a broadcast radio host, a walkie-talkie): the phone band plus a crackle of static under the line.
+   * Implies the phone band. Default false.
+   */
+  radio?: boolean;
   /** Extra gain for this line only, 0..1 (default 1): e.g. a distant gnome. */
   gain?: number;
   /** Stereo pan for this line only, -1..1 (default 0). */
@@ -94,6 +99,11 @@ const WORD_LEN = 2.2;
 const PHONE_HIGHPASS_HZ = 350;
 const PHONE_LOWPASS_HZ = 3200;
 const PHONE_CLIP = 4;
+const RADIO_HIGHPASS_HZ = 450;
+const RADIO_LOWPASS_HZ = 2800;
+const RADIO_CLIP = 6;
+const RADIO_STATIC_HZ = 2200;
+const RADIO_STATIC_GAIN = 0.035;
 const WOBBLE_RATE_HZ = 5.5;
 
 /** Fills the defaults of a VoiceSpec (a bare base pitch in Hz is the same as `{ hz }`). */
@@ -440,21 +450,23 @@ function softClipCurve(k: number): Float32Array<ArrayBuffer> {
 
 /**
  * Per-line chain: gain, then either the voice's brightness lowpass (with pan before it) or the phone band
- * (highpass, lowpass, soft clip, pan), into `out`.
+ * (highpass, lowpass, soft clip, pan), into `out`. A radio line uses a narrower band and adds a static
+ * source (`hiss`) that the caller starts with the line.
  */
 function buildLine(
   c: AudioContext,
   out: AudioNode,
   opts: SayOptions | undefined,
   v: ResolvedVoice,
-): { input: AudioNode; nodes: AudioNode[] } {
+): { input: AudioNode; nodes: AudioNode[]; hiss?: AudioBufferSourceNode } {
   const gain = c.createGain();
   gain.gain.value = opts?.gain ?? 1;
   const pan = typeof c.createStereoPanner === 'function' ? c.createStereoPanner() : null;
   if (pan) pan.pan.value = Math.max(-1, Math.min(1, opts?.pan ?? 0));
+  const radio = !!opts?.radio;
 
   const stages: AudioNode[] = [];
-  if (!opts?.phone) {
+  if (!opts?.phone && !radio) {
     if (pan) stages.push(pan);
     const bright = c.createBiquadFilter();
     bright.type = 'lowpass';
@@ -463,12 +475,12 @@ function buildLine(
   } else {
     const hp = c.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = PHONE_HIGHPASS_HZ;
+    hp.frequency.value = radio ? RADIO_HIGHPASS_HZ : PHONE_HIGHPASS_HZ;
     const lp = c.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = PHONE_LOWPASS_HZ;
+    lp.frequency.value = radio ? RADIO_LOWPASS_HZ : PHONE_LOWPASS_HZ;
     const clip = c.createWaveShaper();
-    clip.curve = softClipCurve(PHONE_CLIP);
+    clip.curve = softClipCurve(radio ? RADIO_CLIP : PHONE_CLIP);
     stages.push(hp, lp, clip);
     if (pan) stages.push(pan);
   }
@@ -480,7 +492,31 @@ function buildLine(
     tail = n;
   }
   tail.connect(out);
-  return { input: gain, nodes };
+  if (!radio) return { input: gain, nodes };
+
+  // static: looping noise through a bandpass, panned like the line, joining the output beside it
+  const hiss = c.createBufferSource();
+  hiss.buffer = noiseBufferFor(c);
+  hiss.loop = true;
+  const band = c.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = RADIO_STATIC_HZ;
+  band.Q.value = 0.8;
+  const hissGain = c.createGain();
+  hissGain.gain.value = RADIO_STATIC_GAIN * (opts?.gain ?? 1);
+  hiss.connect(band);
+  band.connect(hissGain);
+  nodes.push(hiss, band, hissGain);
+  if (pan) {
+    const hissPan = c.createStereoPanner();
+    hissPan.pan.value = pan.pan.value;
+    hissGain.connect(hissPan);
+    hissPan.connect(out);
+    nodes.push(hissPan);
+  } else {
+    hissGain.connect(out);
+  }
+  return { input: gain, nodes, hiss };
 }
 
 function silent(): boolean {
@@ -586,6 +622,11 @@ export function createMutter(options: MutterOptions): Mutter {
 
       const line = buildLine(ctx, master, opts, v);
       const voice: Voice = { oscs: [], nodes: line.nodes, end: now + lay.end };
+      if (line.hiss) {
+        line.hiss.start(now);
+        line.hiss.stop(now + lay.end);
+        voice.oscs.push(line.hiss);
+      }
       const noise = v.breath > 0 ? noiseBufferFor(ctx) : null;
       for (const p of lay.placed) {
         const code = p.blip.ch.charCodeAt(0);

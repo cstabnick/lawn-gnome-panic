@@ -417,6 +417,55 @@ export function playHorn(kind: VehicleKind, horn?: string): void {
       hornNote(c, out, 'square', t, 0.09, 920, 0.14, 2200);
       hornNote(c, out, 'square', t + 0.1, 0.11, 680, 0.14, 2200);
       return;
+    case 'euro-hatch':
+      // Two-note meep-meep.
+      hornNote(c, out, 'square', t, 0.08, 880, 0.14, 2400);
+      hornNote(c, out, 'square', t + 0.12, 0.08, 880, 0.14, 2400);
+      return;
+    case 'deux-pots':
+      // One long nasal note.
+      hornNote(c, out, 'sawtooth', t, 0.35, 420, 0.15, 1400);
+      return;
+    case 'wespa':
+      // Three fast high beeps.
+      for (const offset of [0, 0.08, 0.16]) {
+        hornNote(c, out, 'square', t + offset, 0.05, 1200, 0.12, 3000);
+      }
+      return;
+    case 'dirt-bike':
+      // A short, flat two-stroke parp.
+      hornNote(c, out, 'sawtooth', t, 0.12, 660, 0.14, 1800);
+      hornNote(c, out, 'sawtooth', t + 0.14, 0.1, 600, 0.12, 1800);
+      return;
+    case 'baguette-trike':
+      // Bicycle bell.
+      hornNote(c, out, 'sine', t, 0.12, 2100, 0.12, 5000);
+      hornNote(c, out, 'sine', t + 0.12, 0.12, 2600, 0.12, 5000);
+      return;
+    case 'crepe-van': {
+      // Jaunty four-note tune.
+      const tune: readonly [number, number][] = [
+        [0, 523.25],
+        [0.1, 659.25],
+        [0.2, 783.99],
+        [0.3, 659.25],
+      ];
+      for (const [at, f] of tune) {
+        hornNote(c, out, 'sawtooth', t + at, 0.1, f, 0.14, 2000);
+      }
+      return;
+    }
+    case 'bin-lorry':
+      // Low two-note truck parp.
+      hornNote(c, out, 'sawtooth', t, 0.22, 110, 0.24, 800);
+      hornNote(c, out, 'sawtooth', t + 0.24, 0.3, 138, 0.24, 800);
+      return;
+    case 'fire-engine':
+      // Bright three-note bell-like "dee-da-dee".
+      hornNote(c, out, 'triangle', t, 0.14, 784, 0.18, 3200);
+      hornNote(c, out, 'triangle', t + 0.16, 0.14, 587.33, 0.18, 3200);
+      hornNote(c, out, 'triangle', t + 0.32, 0.22, 784, 0.18, 3200);
+      return;
     case 'lowrider': {
       // 4-note musical honk.
       const notes: readonly [number, number, number][] = [

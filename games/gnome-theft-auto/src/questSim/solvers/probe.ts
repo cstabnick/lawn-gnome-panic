@@ -7,7 +7,7 @@
 import type { Solver, SimCtx } from '../types';
 import { SimFail } from '../types';
 import { getInto, nearestVehicle, runUntil, travelTo } from '../util';
-import { readProbe } from '../../city/probes';
+import { bumpProbe, readProbe } from '../../city/probes';
 import { createFishStore } from '../../fishing/fishSave';
 import { FISH_SPECIES } from '../../fishing/species';
 import { RODS } from '../../fishing/tackle';
@@ -23,6 +23,15 @@ import { HOPPER_FARE } from '../../outskirts/bus';
 import { CRAFT_PAINT_PRICE } from '../../craft/craftPanels';
 import { LOCKUP } from '../../lockup/config';
 import { SIDE_VALVE } from '../../config';
+import { createWinterStore } from '../../winter/save';
+import { createGolfStore } from '../../golf/save';
+import { golfApi } from '../../golf/runtime';
+import { defineClubhouseInterior } from '../../golf/clubhouse';
+import { LOST_BALLS, MOLEHILLS } from '../../golf/types';
+import { createSportsStore } from '../../sports/save';
+import { SKATE_LINES } from '../../skate/types';
+import type { SocietySave } from '../../societies/config';
+import { updateSocietySave } from '../../societies/save';
 
 export type ProbeFidelity = 'api' | 'action' | 'economy' | 'vehicle';
 
@@ -85,6 +94,11 @@ async function mowOne(ctx: SimCtx, kindId: string, longGrass: boolean): Promise<
 const LOCH_DEEPS: [number, number] = [-700, -690];
 /** The Golf-cart at the Patio Heights Country Club (the objective's spot). */
 const GOLF_CART_SPOT: [number, number] = [185, -185];
+
+/** One E17 society probe: the save write the finished activity makes (mole job shift, Updraft ride, sermon stood). */
+function societyProbe(id: string, change: (s: SocietySave) => void): Record<string, ProbeAction> {
+  return { [id]: { fidelity: 'api', async run(ctx) { updateSocietySave(change, store()); await ctx.step(); } } };
+}
 
 export const PROBE_ACTIONS: Record<string, ProbeAction> = {
   'street-event': {
@@ -216,6 +230,145 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       await ctx.step();
     },
   },
+  'winter-sled-runs': {
+    fidelity: 'api',
+    async run(ctx) {
+      // One Tea-Tray Run finish, clean, booked the way the run's finish line books it.
+      createWinterStore(store()).recordRun('tea-tray-run', 30, true);
+      await ctx.step();
+    },
+  },
+  'winter-ski-runs': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordRun('wool-run', 30, true);
+      await ctx.step();
+    },
+  },
+  'ice-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordHole();
+      await ctx.step();
+    },
+  },
+  'ice-catches': {
+    fidelity: 'api',
+    async run(ctx) {
+      createWinterStore(store()).recordIceCatch();
+      await ctx.step();
+    },
+  },
+  // Hedgeworth Links (golf/): the save's own store, the calls the round and the pick-ups make.
+  'golf-board-broken': {
+    fidelity: 'api',
+    async run(ctx) {
+      golfApi()?.breakBoard();
+      createGolfStore(store()).breakBoard();
+      await ctx.step();
+    },
+  },
+  'golf-balls-found': {
+    fidelity: 'api',
+    async run(ctx) {
+      const golf = createGolfStore(store());
+      const next = LOST_BALLS.find((b) => !golf.data().ballsFound.includes(b.id));
+      if (!next) throw new SimFail('bot', 'golf-balls-found: every lost ball is already found');
+      golf.findBall(next.id);
+      await ctx.step();
+    },
+  },
+  'golf-molehills': {
+    fidelity: 'api',
+    async run(ctx) {
+      const golf = createGolfStore(store());
+      const next = MOLEHILLS.find((m) => !golf.data().molehills.includes(m.id));
+      if (!next) throw new SimFail('bot', 'golf-molehills: every molehill is already flat');
+      golf.flattenMolehill(next.id);
+      await ctx.step();
+    },
+  },
+  'golf-par-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createGolfStore(store()).recordHole(0, 3, 4);
+      await ctx.step();
+    },
+  },
+  'golf-bottom-holes': {
+    fidelity: 'api',
+    async run(ctx) {
+      // One finished Bottom Garden hole: hole 4 (index 4), par 4, in four.
+      createGolfStore(store()).recordHole(4, 4, 4);
+      await ctx.step();
+    },
+  },
+  'golf-holes-played': {
+    fidelity: 'api',
+    async run(ctx) {
+      createGolfStore(store()).recordHole(1, 3, 3);
+      await ctx.step();
+    },
+  },
+  'golf-rounds': {
+    fidelity: 'api',
+    async run(ctx) {
+      // The clubhouse room is defined by the runtime at install; the sim has no runtime, so define it here (as the coast does at import).
+      defineClubhouseInterior({ store: () => createGolfStore(store()), startRound: () => null, toast: () => {} });
+      createGolfStore(store()).recordRound(16);
+      await ctx.step();
+    },
+  },
+  // Founders' Green (sports/): the save's own store, the calls a shootaround, a pickup game, the Board Library and a line make.
+  'jam-shoot-makes': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordShootMake();
+      await ctx.step();
+    },
+  },
+  'jam-wins': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordGame({ won: true, margin: 2, threes: 0, dunks: 0, swish: false });
+      await ctx.step();
+    },
+  },
+  'jam-swish-beaten': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).recordGame({ won: true, margin: 2, threes: 0, dunks: 0, swish: true });
+      await ctx.step();
+    },
+  },
+  'skate-board-owned': {
+    fidelity: 'api',
+    async run(ctx) {
+      createSportsStore(store()).setBoardOwned();
+      await ctx.step();
+    },
+  },
+  ...Object.fromEntries(
+    SKATE_LINES.map((l): [string, ProbeAction] => [
+      `skate-line-${l.id}`,
+      {
+        fidelity: 'api',
+        async run(ctx) {
+          createSportsStore(store()).recordLine(l.id, 20);
+          await ctx.step();
+        },
+      },
+    ]),
+  ),
+  // E17 societies (societies/save.ts): the counts the mole jobs, the Updraft and the sermon write when finished.
+  ...societyProbe('mole-job-roots', (s) => { s.moleJobs.roots++; }),
+  ...societyProbe('mole-job-lamps', (s) => { s.moleJobs.lamps++; }),
+  ...societyProbe('mole-job-post', (s) => { s.moleJobs.post++; }),
+  ...societyProbe('mole-job-dig', (s) => { s.moleJobs.dig++; }),
+  ...societyProbe('mole-job-any', (s) => { s.moleJobs.roots++; }),
+  ...societyProbe('moleman-met', (s) => { s.molemanMet++; }),
+  ...societyProbe('underspan-updraft', (s) => { s.updraftRides++; }),
+  ...societyProbe('flock-sermon-stood', (s) => { s.sermonsStood++; }),
   [`spend:Pebblewick Hopper`]: {
     fidelity: 'economy',
     async run(ctx) {
@@ -260,6 +413,12 @@ export const PROBE_ACTIONS: Record<string, ProbeAction> = {
       await getInto(ctx, v, 'probe boat');
     },
   },
+  // The coast's window events (coast/probes.ts) have no window in the headless sim: the counters those listeners feed are
+  // bumped directly, so the quest side (objective, save, reward) is real but the ride, tow run and chest are not played.
+  'coast-spokewheel-rides': { fidelity: 'api', run: async () => bumpProbe('coast-spokewheel-rides') },
+  'coast-tow-gates': { fidelity: 'api', run: async () => bumpProbe('coast-tow-gates') },
+  'coast-tow-finish': { fidelity: 'api', run: async () => bumpProbe('coast-tow-finish') },
+  'coast-queen-chest': { fidelity: 'api', run: async () => bumpProbe('coast-queen-chest') },
   'party-on': {
     fidelity: 'action',
     // Headless: throws SimFail 'blocked' (no relay server); let it through.

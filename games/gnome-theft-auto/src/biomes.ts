@@ -11,10 +11,13 @@ import { LAYER, flatLayer } from '@lawn/depth';
 import { mulberry32 } from '@lawn/level';
 import { AIRFIELD, BASE, CITY_HALF, COLORS, HIGHWAYS, ROAD_WIDTH, WORLD_HALF, biomeAt, type Highway } from './config';
 import { GENERATORS, LAYOUT, REGION_IDS, REGIONS, markerNum, markersOf, waterBodies, waterPaths, type GtaProp, type Region, type RegionId, type WorldMarker } from './levels';
+import { reservedRects } from './sites';
 import type { Box, BiomeId, DewBarrel, ParkedSpot, VehicleKind } from './types';
 import { heightAt, waterAt, withGround } from './terrain';
+import { nearTrack } from './raceTrack/tracks';
 import { addGroundToGeometry, placeOnGround } from './terrainMesh';
 import { onWaterCourse } from './water';
+import { deckContactsAt } from './highways/deck';
 
 export interface BiomeBuild {
   /** Static colliders of everything built here (tree trunks, rocks, fort walls, hangars, cabins...). */
@@ -172,7 +175,9 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   let sock: THREE.Object3D | null = null;
   /** Zones scenery stays out of (fort, airfield, villages, yards, fields, landmarks), grown where they need clearance. */
   const reserved: Rect[] = [];
-  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm', Batch> = { desert: [], forest: [], tundra: [], farm: [] };
+  const batches: Record<'desert' | 'forest' | 'tundra' | 'farm' | 'highland' | 'coast' | 'campus' | 'estate' | 'continental' | 'preserve', Batch> = {
+    desert: [], forest: [], tundra: [], farm: [], highland: [], coast: [], campus: [], estate: [], continental: [], preserve: [],
+  };
 
   // Box lookup: a grid of cells, so clearance checks do not scan every box.
   const grid = new Map<string, Box[]>();
@@ -218,11 +223,23 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   const anywhere = (): Pt => ({ x: uni(-half + 14, half - 14), z: uni(-half + 14, half - 14) });
 
   /** A spot an object of radius `margin` can stand on: in the world, off Turfton and the highways, outside the reserved zones, clear of boxes. */
+  /** A skyway embankment or a low stretch of deck within `margin` of (x, z) (nothing tall may stand there). */
+  const nearSkywayFoot = (x: number, z: number, margin: number): boolean => {
+    for (const dx of [0, margin, -margin]) {
+      for (const dz of [0, margin, -margin]) {
+        for (const c of deckContactsAt(x + dx, z + dz)) if (c.solid || c.surfaceY - c.land < 9) return true;
+      }
+    }
+    return false;
+  };
+
   const free = (x: number, z: number, margin: number): boolean => {
     if (Math.abs(x) > half - 12 || Math.abs(z) > half - 12) return false;
     if (Math.abs(x) <= CITY_HALF + margin && Math.abs(z) <= CITY_HALF + margin) return false;
     if (roadDist(x, z, genRoads) < ROAD_CLEAR + margin) return false;
     if (reserved.some((r) => inRect(r, x, z, margin))) return false;
+    if (nearTrack(x, z, margin + 2)) return false;
+    if (nearSkywayFoot(x, z, margin + 2)) return false;
     return !boxNear(x, z, margin) && !oldFenceNear(x, z, margin);
   };
 
@@ -373,7 +390,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
   };
   reserved.push(growRect(apron, GROW));
   // Outer-biome landmark zones: reserved upfront so villages, ponds, farms and random clutter never spawn inside them.
-  for (const m of markersOf('reserve')) reserved.push(rectOf(m.x, m.z, markerNum(m, 'hw'), markerNum(m, 'hd')));
+  // Every reserve marker and every slot (sites.ts): later epics' ground stays clear.
+  for (const r of reservedRects()) reserved.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ });
 
   // ============================================================================================================
   // Fort Sandpit (desert)
@@ -464,6 +482,8 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
 
   const batchByName: Record<string, Batch> = {
     'desert-scenery': batches.desert, 'forest-scenery': batches.forest, 'tundra-scenery': batches.tundra, 'farm-scenery': batches.farm,
+    'highland-scenery': batches.highland, 'coast-scenery': batches.coast, 'campus-scenery': batches.campus, 'estate-scenery': batches.estate,
+    'continental-scenery': batches.continental, 'preserve-scenery': batches.preserve,
   };
   /** A hand-placed prefab from a region document. x, z is the prefab's origin (not its footprint centre). */
   const placeProp = (region: Region, p: GtaProp): void => {
@@ -876,7 +896,9 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
       addWorld([
         boxGeo(0.08, 1.8, 1.8, drx - 0.4, 2.6 + dy, drz, 0.3),
       ], new THREE.MeshStandardMaterial({ color: 0xd9cbb0, roughness: 0.95 }));
-      addSafeBox({ minX: drx - 2.8, maxX: drx + 2.8, minZ: drz - 1.8, maxZ: drz + 1.8, h: 3.8 + dy });
+      // Collider = the deck (5.2 x 3.0), not the mast's reach. The marker sits in a pocket against the north bank, so ~6 m
+      // of the ~9 m channel stays open for boats (L24).
+      addSafeBox({ minX: drx - 2.6, maxX: drx + 2.6, minZ: drz - 1.5, maxZ: drz + 1.5, h: 3.8 + dy });
     },
 
     // 5 (knot-hole). The glowing knot-hole overlook in the perimeter fence (its crate and pail are props).
@@ -979,9 +1001,25 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     oldFence = Number(base.params.fence);
     genRoads = HIGHWAYS.slice(0, Number(base.params.roads));
   };
-  /** Starts a region's outer-ring pass: the whole world as it is now, and a PRNG stream of its own (base.params.outerSeed). */
-  const startOuter = (id: RegionId): void => {
+  /** Starts a batch-3 band's scatter (E01): the whole 2800 map, every highway, a PRNG stream from the document's seed. */
+  const startBand = (id: RegionId): void => {
+    const base = REGIONS[id].base;
+    const want = GENERATORS[id];
+    if (base.id !== want.id || base.version !== want.version) {
+      throw new Error(`biomes: ${id} wants generator ${base.id} v${base.version}; this code is ${want.id} v${want.version}`);
+    }
+    rnd = mulberry32(base.seed ?? 0);
     half = H;
+    oldFence = null;
+    genRoads = HIGHWAYS;
+  };
+  /**
+   * Starts a region's outer-ring pass: the world as it was when the pass was written (base.params.outerHalf, 900: the
+   * 1800 x 1800 map, so the batch-3 bands round it do not change what it draws), and a PRNG stream of its own
+   * (base.params.outerSeed).
+   */
+  const startOuter = (id: RegionId): void => {
+    half = Number(REGIONS[id].base.params.outerHalf ?? H);
     oldFence = null;
     genRoads = HIGHWAYS;
     rnd = mulberry32(Number(REGIONS[id].base.params.outerSeed));
@@ -1269,6 +1307,68 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     outerRing(id);
   }
 
+  // ============================================================================================================
+  // Batch 3 bands (E01): a light scatter per band, each on its own PRNG stream, after every earlier generator.
+  // ============================================================================================================
+  {
+    const Hl = batches.highland;
+    startBand('north-highlands');
+    for (let i = 0; i < 352; i++) treeAt(Hl, rnd() < 0.6 ? 'cone-pine' : 'snow-pine', 'highland', uni(0.8, 1.2));
+    for (let i = 0; i < 88; i++) scatter(Hl, 'garden-rock', 'highland', fit('garden-rock', uni(1.5, 3.5)), true);
+    for (let i = 0; i < 26; i++) scatter(Hl, 'stone-cairn', 'highland', uni(0.9, 1.3), true);
+  }
+  {
+    const C = batches.coast;
+    const ok = (p: Pt): boolean => p.z < 1140;
+    startBand('south-shore');
+    for (let i = 0; i < 126; i++) treeAt(C, 'palm-tree', 'coast', uni(0.9, 1.2), ok);
+    for (let i = 0; i < 54; i++) scatter(C, 'garden-rock', 'coast', fit('garden-rock', uni(1.2, 2.5)), true, anywhere, ok);
+    for (let i = 0; i < 72; i++) scatter(C, 'round-bush', 'coast', uni(0.7, 1.1), false, anywhere, ok);
+  }
+  {
+    const Cp = batches.campus;
+    startBand('east-campus');
+    for (let i = 0; i < 294; i++) treeAt(Cp, 'broadleaf-tree', 'campus', uni(0.9, 1.3));
+    for (let i = 0; i < 105; i++) scatter(Cp, 'round-bush', 'campus', uni(0.8, 1.2), false);
+  }
+  {
+    const Es = batches.estate;
+    startBand('west-estates');
+    for (let i = 0; i < 140; i++) treeAt(Es, 'broadleaf-tree', 'estate', uni(0.9, 1.4));
+    for (let i = 0; i < 30; i++) scatter(Es, 'topiary-cone', 'estate', uni(0.9, 1.2), true);
+    for (let i = 0; i < 40; i++) scatter(Es, 'round-bush', 'estate', uni(0.8, 1.2), false);
+  }
+  {
+    // Pardonlin is a town: trees, box balls and topiary only in the Jardin and the south, or along the quays (30 m of the Thymes).
+    const Pc = batches.continental;
+    const town = (p: Pt): boolean => p.z < -460 || p.z > 470 || Math.abs(p.x + 1612) < 30;
+    startBand('pardonlin');
+    for (let i = 0; i < 120; i++) treeAt(Pc, 'broadleaf-tree', 'continental', uni(0.8, 1.1), town);
+    for (let i = 0; i < 80; i++) scatter(Pc, 'boxwood-ball', 'continental', uni(0.8, 1.1), true, anywhere, town);
+    for (let i = 0; i < 40; i++) scatter(Pc, 'topiary-cone', 'continental', uni(0.9, 1.2), true, anywhere, town);
+    for (let i = 0; i < 30; i++) scatter(Pc, 'flower-bed', 'continental', uni(0.9, 1.2), false, anywhere, town);
+  }
+  {
+    // The Unmown: a wild preserve. Half the broadleaves stand in clumps (a centre, then 4-6 within 25 m of it).
+    const Pr = batches.preserve;
+    startBand('the-unmown');
+    for (let i = 0; i < 50; i++) {
+      const c = treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3));
+      if (!c) continue;
+      const near = (q: Pt): boolean => Math.hypot(q.x - c.x, q.z - c.z) < 25;
+      const n = 4 + Math.floor(rnd() * 3);
+      for (let k = 0; k < n; k++) treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3), near);
+    }
+    for (let i = 0; i < 250; i++) treeAt(Pr, 'broadleaf-tree', 'preserve', uni(0.9, 1.3));
+    for (let i = 0; i < 120; i++) treeAt(Pr, 'cone-pine', 'preserve', uni(0.85, 1.2));
+    for (let i = 0; i < 300; i++) scatter(Pr, 'round-bush', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 250; i++) scatter(Pr, 'wildflower-patch', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 250; i++) scatter(Pr, 'ornamental-grass', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 80; i++) scatter(Pr, 'fern-clump', 'preserve', uni(0.8, 1.2), false);
+    for (let i = 0; i < 60; i++) scatter(Pr, 'fallen-log', 'preserve', 2 * uni(0.9, 1.1), true);
+    for (let i = 0; i < 40; i++) scatter(Pr, 'garden-rock', 'preserve', fit('garden-rock', uni(1.5, 2.5)), true);
+  }
+
   rnd = noRandom;
   half = H;
 
@@ -1280,6 +1380,12 @@ export function buildBiomes(scene: THREE.Scene): BiomeBuild {
     ['forest-scenery', batches.forest],
     ['tundra-scenery', batches.tundra],
     ['farm-scenery', batches.farm],
+    ['highland-scenery', batches.highland],
+    ['coast-scenery', batches.coast],
+    ['campus-scenery', batches.campus],
+    ['estate-scenery', batches.estate],
+    ['continental-scenery', batches.continental],
+    ['preserve-scenery', batches.preserve],
   ];
   for (const [name, batch] of groups) {
     // One batch per cell (cull.ts), not per region: a region-wide mesh is never culled and is drawn twice from anywhere.

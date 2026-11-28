@@ -5,10 +5,12 @@
 //
 // The rule, in order (the first that applies wins; roads, the runway and the Basin ice are asphalt / ice before this):
 //   1. a trail (road path `trail/...`, within half its width)            -> dirt
-//   2. ground at least TERRAIN.rockSlope steep (outside Turfton)          -> rock
+//   2. ground at least TERRAIN.rockSlope steep, inside a rock site only (ROCK_SITES, D58) -> rock; elsewhere rules 3-4
 //   3. the region's own paint (src/landforms/<region>.ts paint())         -> whatever it says
 //   4. within TERRAIN.mudReach of a river or canal bank (outside Turfton) -> mud
 //   5. otherwise unpainted: the region's own ground texture and surface
+//
+// Then the borders between kinds are feathered (finishPaint): border cells wobble up to one cell; trail cells never shrink.
 //
 // Pure (no three.js): imports only types from textures.ts.
 import { distToSeg } from '@lawn/level';
@@ -18,6 +20,8 @@ import { PAINT_KINDS, regionPaintAt, riverDistAt, waterDistAt, type GroundFacts,
 import type { SurfaceKind } from './surfaces';
 import { GRID_N, heightGrid, terrainFlat, terrainOptions } from './terrain';
 import type { GroundKind } from './textures';
+import { LANDSCAPE } from './landforms/macro';
+import { distToPolyline, valueNoise } from './landforms/noise';
 import { wasmBuildPaintGrid } from './wasm/gtaWasm';
 
 /** How each paint kind drives. */
@@ -33,9 +37,43 @@ export const PAINT_GROUND: Record<PaintKind, GroundKind> = {
 };
 
 let paint: Uint8Array | null = null;
+let raw: Uint8Array | null = null;
 let builtFor: Float32Array | null = null;
 
-function buildPaint(g: Float32Array): Uint8Array {
+/** Where the lore says rock (D58): the Hatbrim, and the Highland Spine where the Spine Cut and the Keyhole are. */
+export const ROCK_SITES: readonly { id: string; points: readonly (readonly [number, number])[]; r: number }[] = ([
+  ['ridge/hatbrim', 15], ['ridge/highland-spine', 10],
+] as const).flatMap(([id, pad]) => {
+  const f = LANDSCAPE.features.find((q) => q.id === id);
+  return f ? [{ id: id as string, points: f.points as readonly (readonly [number, number])[], r: f.r + pad }] : [];
+});
+
+export function inRockSite(x: number, z: number): boolean {
+  for (const s of ROCK_SITES) if (distToPolyline(x, z, s.points) <= s.r) return true;
+  return false;
+}
+
+/** Rasterise the trails (cells whose centre is within half the trail's width) into `out` as `value`. */
+function rasterTrails(out: Uint8Array, value: number): void {
+  const C = GRID_N - 1, S = TERRAIN.step, H = WORLD_HALF;
+  for (const t of trails()) {
+    const half = (t.width || TERRAIN.trailWidth) / 2;
+    for (let k = 0; k + 1 < t.points.length; k++) {
+      const [ax, az] = t.points[k], [bx, bz] = t.points[k + 1];
+      const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - half + H) / S) - 1), i1 = Math.min(C - 1, Math.ceil((Math.max(ax, bx) + half + H) / S));
+      const j0 = Math.max(0, Math.floor((Math.min(az, bz) - half + H) / S) - 1), j1 = Math.min(C - 1, Math.ceil((Math.max(az, bz) + half + H) / S));
+      for (let j = j0; j <= j1; j++) {
+        const z = -H + (j + 0.5) * S;
+        for (let i = i0; i <= i1; i++) {
+          if (distToSeg(-H + (i + 0.5) * S, z, ax, az, bx, bz) <= half) out[j * C + i] = value;
+        }
+      }
+    }
+  }
+}
+
+/** Rules 1-4 as the kernel computes them (the Wasm kernel or the JS mirror). */
+function rawPaint(g: Float32Array): Uint8Array {
   const fromWasm = wasmBuildPaintGrid(g);
   if (fromWasm) return fromWasm;
   const N = GRID_N;
@@ -46,21 +84,7 @@ function buildPaint(g: Float32Array): Uint8Array {
   const DIRT = PAINT_KINDS.indexOf('dirt') + 1;
   const ROCK = PAINT_KINDS.indexOf('rock') + 1;
   const MUD = PAINT_KINDS.indexOf('mud') + 1;
-  // 1. Trails, rasterised first (cells whose centre is within half the trail's width).
-  for (const t of trails()) {
-    const half = (t.width || TERRAIN.trailWidth) / 2;
-    for (let k = 0; k + 1 < t.points.length; k++) {
-      const [ax, az] = t.points[k], [bx, bz] = t.points[k + 1];
-      const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - half + H) / S) - 1), i1 = Math.min(C - 1, Math.ceil((Math.max(ax, bx) + half + H) / S));
-      const j0 = Math.max(0, Math.floor((Math.min(az, bz) - half + H) / S) - 1), j1 = Math.min(C - 1, Math.ceil((Math.max(az, bz) + half + H) / S));
-      for (let j = j0; j <= j1; j++) {
-        const z = -H + (j + 0.5) * S;
-        for (let i = i0; i <= i1; i++) {
-          if (distToSeg(-H + (i + 0.5) * S, z, ax, az, bx, bz) <= half) out[j * C + i] = DIRT;
-        }
-      }
-    }
-  }
+  rasterTrails(out, DIRT);
   const facts: GroundFacts = { height: 0, slope: 0, riverDist: 0, waterDist: 0, region: 'turfton' };
   for (let j = 0; j < C; j++) {
     const z = -H + (j + 0.5) * S;
@@ -87,8 +111,59 @@ function buildPaint(g: Float32Array): Uint8Array {
   return out;
 }
 
-/** Raw (GRID_N - 1)^2 surface paint byte raster (0 = unpainted, 1..12 = PAINT_KINDS[v - 1] -> PAINT_GROUND), or null. */
-export function paintGridBytes(): Uint8Array | null {
+/** Pass 1: rock outside the rock sites takes the region's own paint (rules 3-4). Pass 2: feather the borders. */
+function finishPaint(rawGrid: Uint8Array, g: Float32Array): Uint8Array {
+  const N = GRID_N, C = N - 1, S = TERRAIN.step, H = WORLD_HALF;
+  const ROCK = PAINT_KINDS.indexOf('rock') + 1;
+  const MUD = PAINT_KINDS.indexOf('mud') + 1;
+  const base = rawGrid.slice();
+  const facts: GroundFacts = { height: 0, slope: 0, riverDist: 0, waterDist: 0, region: 'turfton' };
+  for (let j = 0; j < C; j++) {
+    const z = -H + (j + 0.5) * S;
+    for (let i = 0; i < C; i++) {
+      const idx = j * C + i;
+      if (base[idx] !== ROCK) continue;
+      const x = -H + (i + 0.5) * S;
+      if (inRockSite(x, z)) continue;
+      const h00 = g[j * N + i], h10 = g[j * N + i + 1], h01 = g[(j + 1) * N + i], h11 = g[(j + 1) * N + i + 1];
+      const dx = (h10 - h00 + h11 - h01) / (2 * S), dz = (h01 - h00 + h11 - h10) / (2 * S);
+      facts.height = (h00 + h10 + h01 + h11) / 4;
+      facts.slope = Math.hypot(dx, dz);
+      facts.riverDist = riverDistAt(x, z);
+      facts.waterDist = waterDistAt(x, z);
+      facts.region = regionAt(x, z);
+      const own = regionPaintAt(x, z, facts);
+      base[idx] = own ? PAINT_KINDS.indexOf(own) + 1 : facts.riverDist < TERRAIN.mudReach ? MUD : 0;
+    }
+  }
+  // Pass 2: border cells read from a noise-warped neighbour, so a border wobbles by up to a cell. Trail cells stay put.
+  const trailMask = new Uint8Array(C * C);
+  rasterTrails(trailMask, 1);
+  const out = base.slice();
+  const jitter = (a: number, b: number): number => ((Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0) / 4294967296 - 0.5;
+  for (let j = 0; j < C; j++) {
+    for (let i = 0; i < C; i++) {
+      const idx = j * C + i;
+      const v = base[idx];
+      if (trailMask[idx]) continue;
+      if (!((i > 0 && base[idx - 1] !== v) || (i < C - 1 && base[idx + 1] !== v) || (j > 0 && base[idx - C] !== v) || (j < C - 1 && base[idx + C] !== v))) continue;
+      const x = -H + (i + 0.5) * S, z = -H + (j + 0.5) * S;
+      const di = Math.round(valueNoise(x / 9, z / 9, 5821) * 1.1 + jitter(i, j) * 0.5);
+      const dj = Math.round(valueNoise(x / 9, z / 9, 9137) * 1.1 + jitter(j + 7919, i + 104729) * 0.5);
+      const ni = Math.min(C - 1, Math.max(0, i + Math.max(-1, Math.min(1, di))));
+      const nj = Math.min(C - 1, Math.max(0, j + Math.max(-1, Math.min(1, dj))));
+      out[idx] = base[nj * C + ni];
+    }
+  }
+  return out;
+}
+
+function buildPaint(g: Float32Array): Uint8Array {
+  raw = rawPaint(g);
+  return finishPaint(raw, g);
+}
+
+function ensure(): Uint8Array | null {
   if (terrainFlat() || !terrainOptions().landforms) return null;
   const g = heightGrid();
   if (!g) return null;
@@ -96,16 +171,24 @@ export function paintGridBytes(): Uint8Array | null {
   return paint;
 }
 
+/** Finished (GRID_N - 1)^2 surface paint byte raster (0 = unpainted, 1..12 = PAINT_KINDS[v - 1] -> PAINT_GROUND), or null. */
+export function paintGridBytes(): Uint8Array | null {
+  return ensure();
+}
+
+/** The raw grid before the rock rule and the feathering (the kernel's contract), or null. */
+export function paintRawBytes(): Uint8Array | null {
+  return ensure() ? raw : null;
+}
+
 /** The paint at world (x, z), or null where it is unpainted (and everywhere while flat or without landforms). */
 export function paintAt(x: number, z: number): PaintKind | null {
-  if (terrainFlat() || !terrainOptions().landforms) return null;
-  const g = heightGrid();
-  if (!g) return null;
-  if (!paint || builtFor !== g) { paint = buildPaint(g); builtFor = g; }
+  const p = ensure();
+  if (!p) return null;
   const C = GRID_N - 1;
   const i = Math.floor((x + WORLD_HALF) / TERRAIN.step), j = Math.floor((z + WORLD_HALF) / TERRAIN.step);
   if (i < 0 || j < 0 || i >= C || j >= C) return null;
-  const v = paint[j * C + i];
+  const v = p[j * C + i];
   return v === 0 ? null : PAINT_KINDS[v - 1];
 }
 

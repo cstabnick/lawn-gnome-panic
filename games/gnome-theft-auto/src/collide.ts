@@ -1,12 +1,51 @@
 // Circle-vs-box collision on the ground plane, shared by the player, vehicles, pedestrians and officers.
 import type { Box } from './types';
 import { groundAt } from './terrain';
+import { isInteriorPoint } from './interiors/space';
 
 /**
  * A circle's corrected position. (nx, nz) is the unit direction the circle was last pushed (the wall normal, pointing out
  * of the box); (0, 0) when hit is false.
  */
 export interface Pushed { x: number; z: number; hit: boolean; nx: number; nz: number }
+
+/** Radius of a round collider: half its shorter side. */
+export function roundRadius(b: Box): number {
+  return Math.min(b.maxX - b.minX, b.maxZ - b.minZ) / 2;
+}
+
+/** A round collider (vertical cylinder) of radius r centred on (cx, cz), up to height h. See Box.shape. */
+export function roundBox(cx: number, cz: number, r: number, h: number): Box {
+  return { minX: cx - r, maxX: cx + r, minZ: cz - r, maxZ: cz + r, h, shape: 'round' };
+}
+
+/**
+ * The round version of a box made from a round prefab's bounds: same centre and height, radius `r` (default half the
+ * box's shorter side, i.e. the circle inscribed in it). Use it for trunks, silos, towers, fountains, toadstool stems.
+ */
+export function roundOf(b: Box, r = roundRadius(b)): Box {
+  return roundBox((b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2, r, b.h);
+}
+
+/** Push a round collider onto `boxes` (scenery builders: E01/E10/E11/E13/E14 sites use this for round things). Returns it. */
+export function placeRoundBox(boxes: Box[], cx: number, cz: number, r: number, h: number): Box {
+  const b = roundBox(cx, cz, r, h);
+  boxes.push(b);
+  return b;
+}
+
+/** True when (x, z) grown by r overlaps box b in plan (round boxes as circles). */
+function overlaps(b: Box, x: number, z: number, r: number): boolean {
+  if (b.shape === 'round') {
+    const R = roundRadius(b) + r;
+    const ex = x - (b.minX + b.maxX) / 2, ez = z - (b.minZ + b.maxZ) / 2;
+    return ex * ex + ez * ez < R * R;
+  }
+  const cx = Math.max(b.minX, Math.min(x, b.maxX));
+  const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
+  const dx = x - cx, dz = z - cz;
+  return r > 0 ? dx * dx + dz * dz < r * r : x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ;
+}
 
 // ---- Spatial grid ---------------------------------------------------------------------------------------------------
 // The world holds thousands of boxes (towers, trees, fences). Every query below looks only at the boxes in the grid
@@ -50,6 +89,20 @@ export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly 
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
    for (const b of g.cells.get(cellKey(i, j)) ?? EMPTY) {
     if (b.h <= y) continue;
+    if (b.shape === 'round') {
+      // Cylinder: circle vs circle.
+      const ox = (b.minX + b.maxX) / 2, oz = (b.minZ + b.maxZ) / 2;
+      const R = roundRadius(b) + r;
+      const ex = x - ox, ez = z - oz;
+      const e2 = ex * ex + ez * ez;
+      if (e2 >= R * R) continue;
+      hit = true;
+      const e = Math.sqrt(e2);
+      if (e > 1e-6) { nx = ex / e; nz = ez / e; } else { nx = 0; nz = 1; }
+      x = ox + nx * R;
+      z = oz + nz * R;
+      continue;
+    }
     const cx = Math.max(b.minX, Math.min(x, b.maxX));
     const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
     const dx = x - cx;
@@ -77,8 +130,12 @@ export function pushOutOfBoxes(x: number, z: number, r: number, boxes: readonly 
   return hit ? { x, z, hit, nx, nz } : { x, z, hit, nx: 0, nz: 0 };
 }
 
-/** Keep a circle inside [-half, half] on both axes. The normal points back inside the world. */
+/**
+ * Keep a circle inside [-half, half] on both axes. The normal points back inside the world. Interior space (x >= 5000,
+ * interiors/space.ts) is exempt: a body standing in an interior pocket is never pulled back onto the map.
+ */
 export function clampToWorld(x: number, z: number, half: number, r: number): Pushed {
+  if (isInteriorPoint(x, z)) return { x, z, hit: false, nx: 0, nz: 0 };
   const lim = half - r;
   const cx = Math.max(-lim, Math.min(lim, x));
   const cz = Math.max(-lim, Math.min(lim, z));
@@ -105,6 +162,11 @@ export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number,
     x += sx; z += sz;
     const p = pushOutOfBoxes(x, z, r, boxes, y);
     x = p.x; z = p.z;
+    // Two boxes touching (a seam, an inside corner): a push out of one can leave it in the other, so push once more.
+    if (p.hit) {
+      const q = pushOutOfBoxes(x, z, r, boxes, y);
+      if (q.hit) { x = q.x; z = q.z; }
+    }
     if (p.hit) {
       hit = true; nx = p.nx; nz = p.nz;
       const into = Math.min(0, rx * nx + rz * nz);
@@ -113,6 +175,105 @@ export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number,
     }
   }
   return { x, z, hit, nx: hit ? nx : 0, nz: hit ? nz : 0 };
+}
+
+/** Padding beyond the body's half-width (D36). */
+export const CAPSULE_PAD = 0.05;
+
+/** A vehicle's collision capsule: circles of radius r at the centre +- off along the heading (off 0 = one circle). */
+export interface Capsule { r: number; off: number }
+
+/**
+ * r = halfWidth + CAPSULE_PAD, off = max(0, radius - r) (the ends reach spec.radius along the heading).
+ * No halfWidth: { r: radius, off: 0 } (the old circle).
+ */
+export function vehicleCapsule(spec: { radius: number; halfWidth?: number }): Capsule {
+  if (spec.halfWidth === undefined) return { r: spec.radius, off: 0 };
+  const r = spec.halfWidth + CAPSULE_PAD;
+  return { r, off: Math.max(0, spec.radius - r) };
+}
+
+/**
+ * Like sweepCircleBoxes, for a capsule whose heading is yaw (forward = (sin yaw, cos yaw)). With off 0 it returns exactly
+ * what sweepCircleBoxes(x0, z0, x1, z1, c.r, boxes, y) returns. Returns the capsule centre.
+ */
+export function sweepCapsuleBoxes(x0: number, z0: number, x1: number, z1: number, yaw: number, c: Capsule, boxes: readonly Box[], y = 0): Pushed {
+  if (c.off <= 0) return sweepCircleBoxes(x0, z0, x1, z1, c.r, boxes, y);
+  const r = c.r;
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  const offs = c.off > 0.5 * r ? [0, c.off, -c.off] : [c.off, -c.off];
+  const dist = Math.hypot(x1 - x0, z1 - z0);
+  const n = Math.min(32, Math.max(1, Math.ceil(dist / (0.4 * r))));
+  let rx = x1 - x0, rz = z1 - z0;
+  let x = x0, z = z0;
+  let hit = false, nx = 0, nz = 0;
+  for (let s = 0; s < n; s++) {
+    const left = n - s;
+    const sx = rx / left, sz = rz / left;
+    rx -= sx; rz -= sz;
+    x += sx; z += sz;
+    let stepHit = false, hnx = 0, hnz = 0;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const o of offs) {
+        const p = pushOutOfBoxes(x + fx * o, z + fz * o, r, boxes, y);
+        if (!p.hit) continue;
+        x += p.x - (x + fx * o);
+        z += p.z - (z + fz * o);
+        stepHit = true; hnx = p.nx; hnz = p.nz;
+      }
+    }
+    if (stepHit) {
+      hit = true; nx = hnx; nz = hnz;
+      const into = Math.min(0, rx * nx + rz * nz);
+      rx -= into * nx;
+      rz -= into * nz;
+    }
+  }
+  return { x, z, hit, nx: hit ? nx : 0, nz: hit ? nz : 0 };
+}
+
+/** Distance between two segments (p + s*d, s in [0,1]) with closest points; standard clamped solution. */
+function segClosest(p1x: number, p1z: number, d1x: number, d1z: number, p2x: number, p2z: number, d2x: number, d2z: number): { ax: number; az: number; bx: number; bz: number } {
+  const rx = p1x - p2x, rz = p1z - p2z;
+  const a = d1x * d1x + d1z * d1z, e = d2x * d2x + d2z * d2z;
+  const f = d2x * rx + d2z * rz;
+  const cl = (v: number): number => Math.max(0, Math.min(1, v));
+  let s: number, t: number;
+  if (a <= 1e-12 && e <= 1e-12) { s = 0; t = 0; }
+  else if (a <= 1e-12) { s = 0; t = cl(f / e); }
+  else {
+    const cc = d1x * rx + d1z * rz;
+    if (e <= 1e-12) { t = 0; s = cl(-cc / a); }
+    else {
+      const b = d1x * d2x + d1z * d2z;
+      const den = a * e - b * b;
+      s = den > 1e-12 ? cl((b * f - cc * e) / den) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) { t = 0; s = cl(-cc / a); }
+      else if (t > 1) { t = 1; s = cl((b - cc) / a); }
+    }
+  }
+  return { ax: p1x + d1x * s, az: p1z + d1z * s, bx: p2x + d2x * t, bz: p2z + d2z * t };
+}
+
+/**
+ * Closest distance between two capsules' centre segments, and the unit normal from a to b at the closest points
+ * (falls back to the centre-to-centre direction, then (1, 0), when the segments touch).
+ */
+export function capsuleGap(ax: number, az: number, ayaw: number, a: Capsule, bx: number, bz: number, byaw: number, b: Capsule): { dist: number; nx: number; nz: number } {
+  const c = segClosest(
+    ax - Math.sin(ayaw) * a.off, az - Math.cos(ayaw) * a.off, Math.sin(ayaw) * 2 * a.off, Math.cos(ayaw) * 2 * a.off,
+    bx - Math.sin(byaw) * b.off, bz - Math.cos(byaw) * b.off, Math.sin(byaw) * 2 * b.off, Math.cos(byaw) * 2 * b.off,
+  );
+  let dx = c.bx - c.ax, dz = c.bz - c.az;
+  let dist = Math.hypot(dx, dz);
+  if (dist < 1e-6) {
+    dx = bx - ax; dz = bz - az;
+    const cd = Math.hypot(dx, dz);
+    if (cd < 1e-6) return { dist: 0, nx: 1, nz: 0 };
+    return { dist: 0, nx: dx / cd, nz: dz / cd };
+  }
+  return { dist, nx: dx / dist, nz: dz / dist };
 }
 
 /**
@@ -137,7 +298,7 @@ export function wallBounce(vx: number, vz: number, nx: number, nz: number, resti
 /** True when the point is inside a box taller than y. */
 export function insideBox(x: number, y: number, z: number, boxes: readonly Box[]): boolean {
   for (const b of gridOf(boxes).cells.get(cellKey(Math.floor(x / CELL), Math.floor(z / CELL))) ?? EMPTY) {
-    if (y < b.h && x > b.minX && x < b.maxX && z > b.minZ && z < b.maxZ) return true;
+    if (y < b.h && overlaps(b, x, z, 0)) return true;
   }
   return false;
 }
@@ -152,6 +313,7 @@ export function groundHeight(x: number, z: number, r: number, boxes: readonly Bo
   for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
     for (const b of g.cells.get(cellKey(i, j)) ?? EMPTY) {
       if (b.h <= best || b.h > maxY + 0.35) continue;
+      if (b.shape === 'round') { if (overlaps(b, x, z, r)) best = b.h; continue; }
       const cx = Math.max(b.minX, Math.min(x, b.maxX));
       const cz = Math.max(b.minZ, Math.min(z, b.maxZ));
       const dx = x - cx;

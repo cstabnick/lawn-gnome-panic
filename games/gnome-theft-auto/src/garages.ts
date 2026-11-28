@@ -24,6 +24,9 @@ export interface GarageDeps {
   showroom(v: Vehicle | null): void;
   /** A purchase went through in the Pay 'n' Glaze shop: the game unlocks achievements and refreshes the driving model. */
   onPurchase(info: { kind: VehicleKind; before: Loadout; after: Loadout; spent: number }): void;
+  /** E08: an owned vehicle's own look (GlazeShopDeps.ownLook) and whether a purchase stays on it (keepOwnLook). */
+  ownLook?(v: Vehicle): Loadout | null;
+  keepOwnLook?(v: Vehicle, look: Loadout): boolean;
 }
 
 export interface Garages {
@@ -42,7 +45,7 @@ const SIDE_VALVE_RADIUS = 10;
 const PAY_N_GLAZE_PROMPT_RADIUS = 10;
 const GLAZE_PROMPT_EXTRA = PAY_N_GLAZE_PROMPT_RADIUS - PAY_N_GLAZE.bay.radius;
 const GLAZE_FAB_EXTRA_RADIUS = 4;
-const RESPRAY_COST = 50;
+const RESPRAY_COST = 90;
 /** The handling modal's knobs: every tuning knob except ride height (ride height lives in the shop). */
 const HANDLING_PARAMS = TUNING_PARAMS.filter((p) => p.id !== 'comHeight');
 
@@ -193,7 +196,7 @@ export function createGarages(
     return isGroundVehicle(v) ? v : null;
   }
 
-  /** The Pay 'n' Glaze shop: the Quick Respray button (repair, clear heat, a fresh coat for 50 Acorns). */
+  /** The Pay 'n' Glaze shop: the Quick Respray button (repair, clear heat, a fresh coat for 90 Acorns). */
   function quickRespray(v: Vehicle): void {
     if (economy.state().acorns < RESPRAY_COST) {
       hud.toast("Pay 'n' Glaze: not enough Acorns for a Quick Respray.");
@@ -217,6 +220,8 @@ export function createGarages(
     quickRespray,
     onPurchase: deps.onPurchase,
     openHandling: (v) => openTuningModal(v.kind),
+    ownLook: deps.ownLook,
+    keepOwnLook: deps.keepOwnLook,
   });
 
   function renderModal(): void {

@@ -603,6 +603,16 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'back', prefabId: 'salvage-wrench-pack', label: 'Side-Valve Tool Pack' },
   },
   {
+    id: 'gta-caught-in-rain', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Caught in the Rain', description: 'Spend two minutes out in the rain. Glazed gnomes are waterproof; that is not the point.',
+    reward: { slot: 'head', prefabId: 'umbrella-hat', label: 'Umbrella Hat' },
+  },
+  {
+    id: 'gta-glazed-over', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Glazed Over', description: 'Stand out in the falling snow for a full minute. The Fells folk insist it is frost glaze.',
+    reward: { slot: 'neck', prefabId: 'frost-glaze-muffler', label: 'Frost-Glaze Muffler' },
+  },
+  {
     id: 'gta-boot-legger', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Boot-Legger', description: "Hijack Gnorwin's Boot Parade Float and crash the HOA Tribunal.",
     reward: { slot: 'head', prefabId: 'parade-boot-cap', label: "Founder's Parade Boot Cap" },
@@ -690,6 +700,92 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     reward: { slot: 'hand', prefabId: 'speedway-fizz-cup', label: 'The Fizz Cup', exclusive: true },
   },
   {
+    id: 'gta-dirt-rookie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rut Runner', description: "Finish on the podium in Rutbottom's Knobbly Heat.",
+    reward: { slot: 'neck', prefabId: 'rutbottom-mud-bandana', label: 'Mud Bandana' },
+  },
+  {
+    id: 'gta-dirt-champion', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Berm Remembers', description: 'Beat Two-Ton Teasel in the Rutbottom Heats.',
+    reward: { slot: 'head', prefabId: 'rutbottom-knobbly-helmet', label: 'Knobbly Helmet' },
+  },
+  {
+    id: 'gta-rally-finish', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Capwood Finisher', description: 'Finish the Capwood Run.',
+    reward: { slot: 'back', prefabId: 'capwood-rally-pennant', label: 'Rally Pennant' },
+  },
+  {
+    id: 'gta-rally-gold', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Gold Through the Gills', description: 'Win the Capwood Run inside the gold time.',
+    reward: { slot: 'head', prefabId: 'capwood-cap-hat', label: 'Capwood Cap', exclusive: true },
+  },
+  {
+    id: 'gta-street-first', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Kerb Appeal', description: 'Finish on the podium in your first street race on Kerb Row.',
+    reward: { slot: 'neck', prefabId: 'street-flag-bandana', label: 'Chequered Bandana' },
+  },
+  {
+    id: 'gta-street-night', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Midnight Oil', description: 'Win the Skyway Sprint after dark.',
+    reward: { slot: 'head', prefabId: 'skyway-night-goggles', label: 'Skyway Night Goggles' },
+  },
+  {
+    id: 'gta-street-champion', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'King of the Kerb', description: 'Win the Ring Road Run and end the street-racing season.',
+    reward: { slot: 'back', prefabId: 'kerb-king-cape', label: "Kerb King's Cape" },
+  },
+  {
+    id: 'gta-street-wager', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Acorns on the Line', description: 'Win 300 Acorns from the street-race bookies.', target: 300,
+    reward: { slot: 'hand', prefabId: 'bookie-chalk-slate', label: "Bookie's Slate" },
+  },
+  {
+    id: 'gta-time-trial', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Against the Clock', description: 'Set a time-trial time on all five street routes.', target: 5,
+    reward: { slot: 'head', prefabId: 'stopwatch-cap', label: 'Stopwatch Cap' },
+  },
+  {
+    id: 'gta-online-race', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Lap of Honour', description: 'Win an online race against another player.',
+    reward: { slot: 'neck', prefabId: 'lap-of-honour-laurel', label: 'Lap of Honour Laurel' },
+  },
+  {
+    id: 'gta-toadstool-trail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ring of Glow', description: 'Find the Great Ring in Capwood after dark.',
+    reward: { slot: 'back', prefabId: 'spore-cloak', label: 'Spore Cloak' },
+  },
+  {
+    id: 'gta-cap-count', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Section Nine', description: 'Count every unfined cap for Warden Stook.',
+    reward: { slot: 'hand', prefabId: 'warden-ticket-book', label: 'Ticket Book' },
+  },
+  // ---- Gnome Theft Auto E33: mountain routes (rewards in packages/prefabs/src/catalog/gta-mountain-gear.ts) ----
+  {
+    id: 'gta-brim-gap-road', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Over the Brim', description: 'Drive the Brim Gap Road from one end to the other.',
+    reward: { slot: 'head', prefabId: 'pass-driving-goggles', label: 'Pass Goggles' },
+  },
+  {
+    id: 'gta-spine-cut', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Keyhole', description: 'Drive the Spine Cut end to end, under the Keyhole.',
+    reward: { slot: 'back', prefabId: 'keyhole-pennant', label: 'Keyhole Pennant' },
+  },
+  {
+    id: 'gta-hatband', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Round the Hatband', description: 'Ride the Hatband end to end on a bike or a buggy.',
+    reward: { slot: 'neck', prefabId: 'goat-bell', label: 'Goat Bell' },
+  },
+  {
+    id: 'gta-brim-walk', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Brim Walker', description: 'Walk the Brim Walk from Mittenholt to the High Tarn on foot.',
+    reward: { slot: 'head', prefabId: 'mountain-bobble-beanie', label: 'Bobble Beanie' },
+  },
+  {
+    id: 'gta-summit-register', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Signed at the Top', description: 'Sign the Summit Register on the Bobble.',
+    reward: { slot: 'hand', prefabId: 'alpenstock', label: 'Alpenstock' },
+  },
+  {
     id: 'gta-dry-bone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Dry as a Bone', description: "Deliver Big Lou's VIP bowler without chipping the ride.",
     reward: { slot: 'neck', prefabId: 'vip-towel-scarf', label: 'Gnomecino VIP Towel' },
@@ -774,6 +870,31 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 4,
     reward: { slot: 'head', prefabId: 'sunday-driver-cap', label: "Sunday Driver's Cap" },
   },
+  // European rides (E29, games/gnome-theft-auto/src/euroRides.ts; rewards in packages/prefabs/src/catalog/gta-euro-gear.ts).
+  {
+    id: 'gta-grand-tour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Grand Tour',
+    description: 'Drive every European ride: the Petit Pois, Deux-Pots, Wespa, Baguette Trike and Crepe Van.', target: 5,
+    reward: { slot: 'head', prefabId: 'tour-beret', label: 'Tour Beret' },
+  },
+  { id: 'gta-baguette-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Baguette Run',
+    description: 'Drive the Baguette Trike.', reward: { slot: 'back', prefabId: 'baguette-quiver', label: 'Baguette Quiver' } },
+  { id: 'gta-petit-pois', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Small Is Beautiful',
+    description: 'Drive the Petit Pois.', reward: { slot: 'neck', prefabId: 'riviera-scarf', label: 'Riviera Scarf' } },
+  { id: 'gta-pl-queue', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Queued for Nothing',
+    description: 'Reach the front of the Grand Platz queue in Pardonlin. There is nothing at the front.',
+    reward: { slot: 'neck', prefabId: 'queue-ticket-lanyard', label: 'Queue Ticket' } },
+  { id: 'gta-pl-baguette-round', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Daily Bread',
+    description: "Deliver every baguette on Brigitte Levain's Baguette Round.",
+    reward: { slot: 'hand', prefabId: 'daily-baguette', label: 'Daily Baguette' } },
+  { id: 'gta-pl-portrait', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Portrait of a Croissant',
+    description: "Sit still for Odile Easelby's portrait on the Grand Platz.",
+    reward: { slot: 'head', prefabId: 'painters-beret', label: "Painter's Beret" } },
+  { id: 'gta-pl-flaneur', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Flâneur',
+    description: 'Stroll on foot through all four districts of Pardonlin.', target: 4,
+    reward: { slot: 'neck', prefabId: 'flaneur-cravat', label: 'Flâneur Cravat' } },
+  { id: 'gta-pl-adagio', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Largo',
+    description: 'Listen to Radio Adagio for three whole minutes.',
+    reward: { slot: 'back', prefabId: 'cello-case', label: 'Cello Case' } },
   { id: 'gta-fore', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Fore!',
     description: 'Drive the Putting-Green Cart.', reward: { slot: 'head', prefabId: 'country-club-visor', label: 'Country Club Visor' } },
   { id: 'gta-swamp-engine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Bog Standard',
@@ -788,6 +909,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'gta-head-groundskeeper', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Head Groundskeeper',
     description: 'Mow 1,000 plants. They grow back; you keep going.', target: 1000,
     reward: { slot: 'back', prefabId: 'grass-catcher-pack', label: 'Grass-Catcher Pack', exclusive: true } },
+  { id: 'gta-skipping-stone', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Skipping Stone',
+    description: 'Skim a mower 35 m across deep water before it sinks.',
+    reward: { slot: 'neck', prefabId: 'skipping-stone-pendant', label: 'Skipping-Stone Pendant' } },
+  { id: 'gta-shrub-bowling', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Shrub Bowling',
+    description: 'Flatten 6 big shrubs within 10 seconds.',
+    reward: { slot: 'head', prefabId: 'shrub-disguise', label: 'Shrub Disguise' } },
   { id: 'gta-lockup-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Five-Mower Gnome',
     description: 'Fill all five slots of the Side-Valve Lock-Up.',
     reward: { slot: 'neck', prefabId: 'lockup-key-lanyard', label: 'Lock-Up Key Lanyard' } },
@@ -803,6 +930,27 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'gta-boathouse-full', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Harbour Full',
     description: 'Fill all three slips of the Mossbank Boathouse with boats.',
     reward: { slot: 'neck', prefabId: 'cork-key-float', label: 'Cork Key Float' } },
+  { id: 'gta-new-wheels', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'New Wheels',
+    description: 'Buy a vehicle at a dealership.',
+    reward: { slot: 'hand', prefabId: 'dealer-keyring', label: 'Dealer Keyring' } },
+  { id: 'gta-fleet-of-three', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Fleet of Three',
+    description: 'Own three vehicles of the same model in your garages.',
+    reward: { slot: 'back', prefabId: 'numbered-plate-rack', label: 'Numbered Plate Rack' } },
+  { id: 'gta-showroom-regular', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Showroom Regular',
+    description: "Buy a vehicle at Burl's Forecourt, Driftwood's Boat Yard and Wally's Wing Lot.",
+    reward: { slot: 'head', prefabId: 'salesman-boater', label: "Salesman's Boater" } },
+  { id: 'gta-claim-approved', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Claim Approved',
+    description: 'Have Kiln-Shield actually pay out: reclaim a written-off vehicle.',
+    reward: { slot: 'neck', prefabId: 'kiln-shield-badge', label: 'Kiln-Shield Badge' } },
+  { id: 'gta-first-snack', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Snack Break',
+    description: 'Eat a snack from your bag.',
+    reward: { slot: 'back', prefabId: 'crumbs-satchel', label: 'Crumbs & Co. Satchel' } },
+  { id: 'gta-good-as-new', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Good as New',
+    description: "Repair a vehicle at the Pay 'n' Glaze Repair tab.",
+    reward: { slot: 'hand', prefabId: 'glaze-repair-mallet', label: 'Repair Mallet' } },
+  { id: 'gta-signed-on-the-line', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto', title: 'Signed on the Line',
+    description: 'Buy a property on a loan.',
+    reward: { slot: 'neck', prefabId: 'deed-scroll-cord', label: 'Deed Scroll Cord' } },
   {
     id: 'gta-new-coat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'New Coat. Who Dis?', description: "Buy your first job at Pay 'n' Glaze.",
@@ -829,6 +977,33 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     title: 'Full Glaze', description: "Spend 1,000 Acorns at Pay 'n' Glaze.",
     target: 1000,
     reward: { slot: 'hand', prefabId: 'glaze-gold-spray-can', label: 'Gold Spray Can', exclusive: true },
+  },
+  // ---- Gnome Theft Auto: Saltbucket Shore (E11 coast) ----
+  {
+    id: 'gta-salt-skier', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salt Skier', description: 'Water-ski 2000 metres on the Saltwater. Driftwood calls that "warming up".',
+    target: 2000,
+    reward: { slot: 'head', prefabId: 'ski-visor', label: 'Salt-Skier Visor' },
+  },
+  {
+    id: 'gta-wake-jumper', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Wake Jumper', description: 'Spend a full second in the air off the Saltwater wake ramp, on skis.',
+    reward: { slot: 'back', prefabId: 'life-ring-back', label: 'Life Ring' },
+  },
+  {
+    id: 'gta-full-circle', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Full Circle', description: 'Ride the Spokewheel all the way round and come down where you went up.',
+    reward: { slot: 'neck', prefabId: 'spokewheel-scarf', label: 'Spokewheel Scarf' },
+  },
+  {
+    id: 'gta-queens-treasure', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "The Queen's Treasure", description: "Find the Bathtub Queen's real treasure, not the one for the tourists.",
+    reward: { slot: 'head', prefabId: 'pirate-bandana', label: 'Pirate Bandana' },
+  },
+  {
+    id: 'gta-shiver-me-glaze', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Shiver Me Glaze', description: "Finish Captain Bilge's pirate tour without anyone looking in the hold.",
+    reward: { slot: 'head', prefabId: 'eye-patch', label: 'Toy Eye Patch' },
   },
   // ---- Gnome Theft Auto: Ammu-Gnation (gun mods) ----
   {
@@ -1114,6 +1289,557 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     id: 'gta-buoy-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
     title: 'Buoy Run', description: 'Finish the Loch Moss buoy run.',
     reward: { slot: 'hand', prefabId: 'buoy-pennant', label: 'Buoy Pennant', exclusive: true },
+  },
+  {
+    id: 'gta-shell-collector', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Shell Shock', description: 'Leave 500 acorn shells on the ground.', target: 500,
+    reward: { slot: 'back', prefabId: 'acorn-shell-bandolier', label: 'Acorn-Shell Bandolier' },
+  },
+  {
+    id: 'gta-driver-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Pulled Over', description: 'Crack 10 gnomes while they are driving.', target: 10,
+    reward: { slot: 'head', prefabId: 'pulled-over-cap', label: 'Pulled-Over Cap' },
+  },
+  {
+    id: 'gta-band-highlands', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Above the Fells', description: 'Climb past Frostbite Fells to Snowcap Rise.',
+    reward: { slot: 'head', prefabId: 'snowcap-tuque', label: 'Snowcap Tuque' },
+  },
+  {
+    id: 'gta-band-shore', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salt on the Glaze', description: 'Drive south until the garden ends in sand at Saltbucket Shore.',
+    reward: { slot: 'head', prefabId: 'saltbucket-boater', label: 'Saltbucket Boater' },
+  },
+  {
+    id: 'gta-band-campus', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mature Student', description: 'Find Rootwell University past the Dust Flats.',
+    reward: { slot: 'head', prefabId: 'rootwell-mortarboard', label: 'Rootwell Mortarboard' },
+  },
+  {
+    id: 'gta-band-estates', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Hedge', description: 'Slip past the hedges into Trellisdown, west of Mossy Wood.',
+    reward: { slot: 'neck', prefabId: 'trellisdown-cravat', label: 'Trellisdown Cravat' },
+  },
+  {
+    id: 'gta-home-sweet-hovel', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Home Sweet Hovel', description: 'Walk through a door into a building.',
+    reward: { slot: 'head', prefabId: 'tea-cosy-hat', label: 'Tea-Cosy Hat' },
+  },
+  {
+    id: 'gta-roof-rat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Roof Rat', description: 'Land an aircraft on a rooftop.',
+    reward: { slot: 'head', prefabId: 'propeller-beanie', label: 'Propeller Beanie' },
+  },
+  {
+    id: 'gta-rooftop-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rooftop Run', description: 'Stand on 5 different rooftops.', target: 5,
+    reward: { slot: 'back', prefabId: 'rooftop-pigeon-pack', label: 'Rooftop Pigeon' },
+  },
+  {
+    id: 'gta-home-sweet-loan', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Home Sweet Loan', description: 'Sign for Flat 3B at the First Kiln Bank.',
+    reward: { slot: 'neck', prefabId: 'house-key-necklace', label: 'House Key' },
+  },
+  {
+    id: 'gta-interior-decorator', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Interior Decorator', description: 'Place 10 pieces of furniture in your flat.', target: 10,
+    reward: { slot: 'hand', prefabId: 'feather-duster', label: 'Feather Duster' },
+  },
+  {
+    id: 'gta-forty-winks', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Forty Winks', description: 'Sleep in your own bed at Saucer Court.',
+    reward: { slot: 'head', prefabId: 'nightcap', label: 'Nightcap' },
+  },
+  {
+    id: 'gta-house-call', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'House Call', description: 'Stand at the front doors of 6 different Turfton homes.', target: 6,
+    reward: { slot: 'back', prefabId: 'rolled-doormat-pack', label: 'Rolled Doormat' },
+  },
+  {
+    id: 'gta-band-pardonlin', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mind the Wicket', description: 'Pass through the Wicket into Pardonlin, the riverside town past Trellisdown.',
+    reward: { slot: 'head', prefabId: 'pardonlin-beret', label: 'Pardonlin Beret' },
+  },
+  {
+    id: 'gta-band-unmown', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Left Unmown', description: 'Walk or drive into the Unmown, the preserve no one has mown in living memory.',
+    reward: { slot: 'head', prefabId: 'meadow-crown', label: 'Meadow Crown' },
+  },
+  {
+    id: 'gta-roundabout-lap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Round and Round', description: 'Go all the way round a roundabout without taking the exit.',
+    reward: { slot: 'neck', prefabId: 'roundabout-rosette', label: 'Roundabout Rosette' },
+  },
+  // ---- Gnome Theft Auto: E31 living world ----
+  {
+    id: 'gta-unmown-checklist', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Last Tick', description: "Tick every species on the Unmown rangers' checklist.",
+    reward: { slot: 'head', prefabId: 'ranger-campaign-hat', label: 'Ranger Campaign Hat' },
+  },
+  {
+    id: 'gta-dry-feet', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Dry Feet', description: 'Walk the Reedmere boardwalk from end to end without stepping off.',
+    reward: { slot: 'neck', prefabId: 'reed-whistle', label: 'Reed Whistle' },
+  },
+  {
+    id: 'gta-hide-and-seek', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hide and Seek', description: 'Sit quietly in all three bird hides of the Unmown.', target: 3,
+    reward: { slot: 'back', prefabId: 'hide-camo-cape', label: 'Hide Camo Cape' },
+  },
+  {
+    id: 'gta-fresh-feathers', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fresh Feathers', description: 'Spot 5 of the birds that only turned up recently.', target: 5,
+    reward: { slot: 'hand', prefabId: 'bird-call-whistle', label: 'Bird-Call Whistle' },
+  },
+  {
+    id: 'gta-off-the-beaten-lane', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Off the Beaten Lane', description: 'Find Espalier End, Mittenholt, Dunelow and the High Tarn.', target: 4,
+    reward: { slot: 'neck', prefabId: 'milestone-medal', label: 'Milestone Medal' },
+  },
+  {
+    id: 'gta-weekend-away', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Weekend Away', description: 'Drive the Ranger Buggy, the Snail-Shell Camper and the Cone Van.', target: 3,
+    reward: { slot: 'back', prefabId: 'camping-roll', label: 'Camping Roll' },
+  },
+  {
+    id: 'gta-hat-wave', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Waved Through', description: 'Wait at a traffic warden\'s line until you are waved through.',
+    reward: { slot: 'head', prefabId: 'hoa-traffic-hat', label: 'HOA Traffic Hat' },
+  },
+  {
+    id: 'gta-flappy-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Flappy Gnome', description: 'Score 10 in Gnomey Bird on the Gnomlet.',
+    reward: { slot: 'head', prefabId: 'hedge-hopper-cap', label: 'Hedge-Hopper Cap' },
+  },
+  {
+    id: 'gta-tea-tray-run', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tea-Tray Run', description: 'Ride a tea tray down the Tea-Tray Run on Snowdrop Slope, start line to finish.',
+    reward: { slot: 'head', prefabId: 'bobble-beanie', label: 'Bobble Beanie' },
+  },
+  {
+    id: 'gta-first-tracks', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Tracks', description: 'Ski the Wool Run on Snowdrop Slope from the start hut to the finish banner.',
+    reward: { slot: 'head', prefabId: 'ear-flap-hat', label: 'Ear-Flap Hat' },
+  },
+  {
+    id: 'gta-black-diamond', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Black Diamond', description: 'A clean Wool Run (every gate) in 36 seconds or less.',
+    reward: { slot: 'back', prefabId: 'crossed-skis-pack', label: 'Crossed Skis' },
+  },
+  {
+    id: 'gta-ice-station', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ice Station', description: 'Land 3 fish through holes in the ice.', target: 3,
+    reward: { slot: 'neck', prefabId: 'woolly-sock-scarf', label: 'Woolly Sock Scarf' },
+  },
+  {
+    id: 'gta-bear-hug', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bear Hug', description: 'Stand beside 9 different polar bears. They will not mind. They will barely notice.', target: 9,
+    reward: { slot: 'hand', prefabId: 'cocoa-mug', label: 'Cocoa Mug' },
+  },
+  {
+    id: 'gta-kicked-board', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Kicked Board', description: 'Break through the loose board in the fence round Hedgeworth Links.',
+    reward: { slot: 'back', prefabId: 'kicked-board-plank', label: 'The Kicked Board' },
+  },
+  {
+    id: 'gta-hedgeworth-card', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Card in Hand', description: 'Play all four holes of Hedgeworth Links (the 1st, 2nd, 3rd and 9th) in one round.',
+    reward: { slot: 'neck', prefabId: 'scorecard-lanyard', label: 'Scorecard Lanyard' },
+  },
+  {
+    id: 'gta-hedgeworth-ace', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ace, Champ', description: 'Hole in one at Hedgeworth Links. Basil will say it was luck. It was.',
+    reward: { slot: 'head', prefabId: 'argyle-tam', label: 'Argyle Tam' },
+  },
+  {
+    id: 'gta-birdie-birdie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Birdie, Birdie', description: 'Birdie (or better) two Hedgeworth holes in a row.',
+    reward: { slot: 'hand', prefabId: 'driver-cane', label: 'Driver Cane' },
+  },
+  {
+    id: 'gta-through-the-hedge', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Through the Hedge', description: 'Drive a golf cart through a hedge arch at Hedgeworth Links.',
+    reward: { slot: 'back', prefabId: 'golf-bag-pack', label: 'Golf Bag' },
+  },
+  {
+    id: 'gta-groundskeepers-secret', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: "The Groundskeeper's Secret", description: 'Pat down every molehill on the ninth green before Basil sees them.', target: 4,
+    reward: { slot: 'head', prefabId: 'hosepipe-cap', label: 'Hosepipe Cap' },
+  },
+  // ---- Gnome Theft Auto: E17 underground societies (ids in games/gnome-theft-auto/src/societies/config.ts SOCIETY_ACH) ----
+  {
+    id: 'gta-honest-dirt', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Honest Dirt', description: 'Finish your first mole job in Loamdeep.',
+    reward: { slot: 'back', prefabId: 'post-satchel', label: 'Post Satchel' },
+  },
+  {
+    id: 'gta-every-hall', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Every Hall Thanks You', description: 'Finish all four kinds of mole job: roots, lamps, post and digging.', target: 4,
+    reward: { slot: 'head', prefabId: 'loamdeep-lamp-cap', label: 'Loamdeep Lamp Cap' },
+  },
+  {
+    id: 'gta-seat', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Seat', description: 'Be in the Under-Chorus when DJ Moleman plays.',
+    reward: { slot: 'neck', prefabId: 'subsoil-headphones', label: 'Subsoil Headphones' },
+  },
+  {
+    id: 'gta-unauthorised-verticality', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Unauthorised Verticality', description: "Ride the Underspan's Updraft up onto the Roost.",
+    reward: { slot: 'head', prefabId: 'underspan-goggles', label: 'Underspan Goggles' },
+  },
+  // ---- Gnome Theft Auto: E18 the Dewdrop and the hobby intros (ids in games/gnome-theft-auto/src/dewdrop/config.ts DEWDROP_ACH, hobbyIntros.ts) ----
+  {
+    id: 'gta-roll-with-it', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Roll With It', description: "Finish Hogweed's Dewdrop series and roll away in your own hamster ball.",
+    reward: { slot: 'head', prefabId: 'gta-bubble-visor', label: 'Bubble Visor' },
+  },
+  {
+    id: 'gta-hamster-hour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hamster Hour', description: 'Spend a whole minute inside the Dewdrop without climbing out.',
+    reward: { slot: 'neck', prefabId: 'gta-hamster-medal', label: 'Hamster Wheel Medal' },
+  },
+  {
+    id: 'gta-rod-comb-notebook', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Rod, Comb and Notebook', description: "Finish the Newcomers' Card fishing, hunting and birding intros (The Bent Pin, Tuft & Tally, Reedwatch).",
+    reward: { slot: 'neck', prefabId: 'gta-newcomer-lanyard', label: "Newcomer's Lanyard" },
+  },
+  {
+    id: 'gta-birds-of-a-feather', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Birds of a Feather', description: 'Join the Flock of the One Leg.',
+    reward: { slot: 'head', prefabId: 'flock-hood', label: 'Flock Hood' },
+  },
+  {
+    id: 'gta-sat-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sat Down', description: "Sit down at the Flock's Long Vigil. They forgive you. It is a Tuesday.",
+    reward: { slot: 'hand', prefabId: 'reed-tea-cup', label: 'Reed Tea Cup' },
+  },
+  {
+    id: 'gta-hedgeworth-full-nine', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Nine', description: 'Finish all nine holes of Hedgeworth Links in one round.',
+    reward: { slot: 'neck', prefabId: 'turn-rosette', label: 'Turn Rosette' },
+  },
+  {
+    id: 'gta-nine-under-par', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Under the Promise', description: 'Finish a full nine at Hedgeworth under par.',
+    reward: { slot: 'head', prefabId: 'promise-boater', label: 'Promise Boater' },
+  },
+  {
+    id: 'gta-out-of-the-maze', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Out of the Maze', description: "Make par or better on The Maze, Hedgeworth's fifth.",
+    reward: { slot: 'back', prefabId: 'topiary-cape', label: 'Topiary Cape' },
+  },
+  // ---- Gnome Theft Auto E24: jobs II (chef, mechanic, comedy stage; games/gnome-theft-auto/src/jobs/workDefs.ts) ----
+  {
+    id: 'gta-job-chef', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Order Up', description: 'Serve 25 dishes at the Route South Acorn Diner.', target: 25,
+    reward: { slot: 'head', prefabId: 'diner-chef-toque', label: 'Diner Chef Toque' },
+  },
+  {
+    id: 'gta-job-five-star-rush', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Five Stars', description: 'Work a whole diner shift (6 tickets or more) with every ticket at five stars.',
+    reward: { slot: 'neck', prefabId: 'pass-bell-medal', label: 'Pass Bell Medal' },
+  },
+  {
+    id: 'gta-job-full-menu', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Menu', description: 'Cook every dish on the Acorn Diner menu at least once.', target: 8,
+    reward: { slot: 'hand', prefabId: 'golden-ladle', label: 'Golden Ladle' },
+  },
+  {
+    id: 'gta-job-mechanic', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Customer Is Always Right', description: "Hand back 5 client cars at Pay 'n' Glaze.", target: 5,
+    reward: { slot: 'head', prefabId: 'glaze-shop-overalls-cap', label: 'Glaze Shop Cap' },
+  },
+  {
+    id: 'gta-job-nailed-the-brief', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nailed the Brief', description: 'A client rates your work five stars.',
+    reward: { slot: 'hand', prefabId: 'torque-wrench-chrome', label: 'Chrome Torque Wrench' },
+  },
+  {
+    id: 'gta-job-creative-differences', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Creative Differences', description: 'Hand back a car that matches nothing the client asked for.',
+    reward: { slot: 'hand', prefabId: 'paint-swatch-fan', label: 'Paint Swatch Fan' },
+  },
+  {
+    id: 'gta-job-comedian', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Tough Room', description: 'Perform 3 sets at Le Petit Groan, all the way to the end.', target: 3,
+    reward: { slot: 'neck', prefabId: 'open-mic-bowtie', label: 'Open Mic Bow Tie' },
+  },
+  {
+    id: 'gta-job-tomato-catcher', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fresh Produce', description: 'Take 10 tomatoes on stage. With your face.', target: 10,
+    reward: { slot: 'head', prefabId: 'tomato-splat-beret', label: 'Tomato-Splat Beret' },
+  },
+  {
+    id: 'gta-job-double-down', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Double Down', description: 'Double down five times in one set.',
+    reward: { slot: 'hand', prefabId: 'squeaky-rubber-chicken', label: 'Squeaky Rubber Chicken' },
+  },
+  // ---- Rootwell (games/gnome-theft-auto/src/campus; ids in ROOTWELL_ACH) ----
+  {
+    id: 'gta-deans-leap', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Not Termites', description: "Drive off Dean's Leap at the top of the Anthill and land it.",
+    reward: { slot: 'head', prefabId: 'ant-antenna-headband', label: 'Ant Antenna Headband' },
+  },
+  {
+    id: 'gta-first-class-honours', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Class Honours', description: 'Visit the front door of all twelve Rootwell University buildings.', target: 12,
+    reward: { slot: 'neck', prefabId: 'rootwell-college-scarf', label: 'Rootwell College Scarf' },
+  },
+  {
+    id: 'gta-stargazer', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Level with the Stars', description: "Look through the Anthill Observatory's telescope at night.",
+    reward: { slot: 'back', prefabId: 'star-chart-tube', label: 'Star Chart Tube' },
+  },
+  {
+    id: 'gta-touch-and-go', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Touch and Go', description: "Land an aircraft on Rootwell Field's runway.",
+    reward: { slot: 'head', prefabId: 'rootwell-flight-goggles', label: 'Rootwell Flight Goggles' },
+  },
+  {
+    id: 'gta-windfall', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Windfall', description: 'Fly along Pinwheel Ridge below the tops of the pinwheels and between them.',
+    reward: { slot: 'head', prefabId: 'pinwheel-hat', label: 'Pinwheel Hat' },
+  },
+  // ---- Gnome Theft Auto E25 jobs III (workplaces/garbage, firefighter, gnomazon) ----
+  {
+    id: 'gta-job-bin-day', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bin Day', description: 'Empty 50 bins on the Turfton bin round.', target: 50,
+    reward: { slot: 'head', prefabId: 'bin-crew-cap', label: 'Bin Crew Cap' },
+  },
+  {
+    id: 'gta-job-not-a-drop', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Not a Drop', description: 'Finish a bin round of 8 bins or more without spilling one.',
+    reward: { slot: 'hand', prefabId: 'golden-bin-lid', label: 'Golden Bin Lid' },
+  },
+  {
+    id: 'gta-job-kerb-appeal', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Kerb Appeal', description: 'Set 25 bins back down perfectly neat.', target: 25,
+    reward: { slot: 'back', prefabId: 'bin-bag-backpack', label: 'Bin-Bag Backpack' },
+  },
+  {
+    id: 'gta-job-hose-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hose Gnome', description: 'Put out 20 fires for Fire Station No. 1.', target: 20,
+    reward: { slot: 'head', prefabId: 'brass-fire-helmet', label: 'Brass Fire Helmet' },
+  },
+  {
+    id: 'gta-job-ladder-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Ladder Gnome', description: 'Bring 5 stranded gnomes (or cats) down the ladder.', target: 5,
+    reward: { slot: 'neck', prefabId: 'ladder-rescue-medal', label: 'Ladder Rescue Medal' },
+  },
+  {
+    id: 'gta-job-barbecue-season', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Barbecue Season', description: 'Put out a burning bin, a shed, a barbecue and a toadstool.', target: 4,
+    reward: { slot: 'hand', prefabId: 'brass-hose-nozzle', label: 'Brass Hose Nozzle' },
+  },
+  {
+    id: 'gta-job-fulfilled', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fulfilled', description: 'Pack 100 parcels at Gnomazon FC-1.', target: 100,
+    reward: { slot: 'neck', prefabId: 'gnomazon-lanyard', label: 'Gnomazon Lanyard' },
+  },
+  {
+    id: 'gta-job-beat-the-bot', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Beat the Bot', description: 'Beat the quota on a Gnomazon shift with every box the right size.',
+    reward: { slot: 'hand', prefabId: 'gnomazon-scanner', label: 'Gnomazon Scanner' },
+  },
+  {
+    id: 'gta-job-time-off-task', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Time Off Task', description: 'Stand still at your packing station for 20 seconds while Kippy watches.',
+    reward: { slot: 'head', prefabId: 'cardboard-box-hat', label: 'Cardboard Box Hat' },
+  },
+  // ---- Countryside (games/gnome-theft-auto/src/country; ids in COUNTRY_ACH) ----
+  {
+    id: 'gta-first-sprout', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'First Sprout', description: 'Harvest your first crop at Windfall Croft.',
+    reward: { slot: 'hand', prefabId: 'croft-trowel', label: 'Croft Trowel' },
+  },
+  {
+    id: 'gta-oak-patience', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Oak Patience', description: 'Grow an oak at Windfall Croft and shake the acorns from it.',
+    reward: { slot: 'head', prefabId: 'croft-straw-hat', label: 'Croft Straw Hat' },
+  },
+  {
+    id: 'gta-mansion-on-the-hill', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mansion on the Hill', description: "Stand at Brassknock Manor's front door, under the knocker nobody uses.",
+    reward: { slot: 'neck', prefabId: 'brass-knocker-pendant', label: 'Brass Knocker Pendant' },
+  },
+  {
+    id: 'gta-deer-me', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Deer Me', description: 'Get close to twelve different deer without scaring them off first.', target: 12,
+    reward: { slot: 'head', prefabId: 'antler-headband', label: 'Antler Headband' },
+  },
+  {
+    id: 'gta-camp-crasher', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Camp Crasher', description: "Visit ten hunters' camps out in the empty country.", target: 10,
+    reward: { slot: 'back', prefabId: 'camp-kettle-pack', label: 'Camp Kettle Pack' },
+  },
+  {
+    id: 'gta-level-best', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Level Best', description: "Walk through the gates of all three Thorne Even-Estates building sites.", target: 3,
+    reward: { slot: 'hand', prefabId: 'spirit-level', label: 'Spirit Level' },
+  },
+  // ---- Gnome Theft Auto E19: Founders' Green courts and skate park (games/gnome-theft-auto/src/court, src/skate; rewards in packages/prefabs/src/catalog/gta-sports-gear.ts) ----
+  {
+    id: 'gta-drainpipe-dunk', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Down the Drainpipe', description: 'Dunk in a pickup game at Drainpipe Court.',
+    reward: { slot: 'head', prefabId: 'drainpipe-sweatband', label: 'Drainpipe Sweatband' },
+  },
+  {
+    id: 'gta-drainpipe-three', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Bring a Spare', description: 'Make a three at Drainpipe Court.',
+    reward: { slot: 'hand', prefabId: 'spare-basketball', label: 'Spare Basketball' },
+  },
+  {
+    id: 'gta-drainpipe-win', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nobody Owns the Court', description: 'Win a pickup game at Drainpipe Court.',
+    reward: { slot: 'neck', prefabId: 'swish-net-scarf', label: 'Swish Net Scarf' },
+  },
+  {
+    id: 'gta-first-ollie', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Both Wheels Off', description: 'Land an ollie on a skateboard.',
+    reward: { slot: 'head', prefabId: 'gutter-skate-helmet', label: 'Gutter Skate Helmet' },
+  },
+  {
+    id: 'gta-five-trick-combo', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Five in the Gutter', description: 'Land a combo of five tricks or more.',
+    reward: { slot: 'back', prefabId: 'gutter-deck-sling', label: 'Deck Sling' },
+  },
+  {
+    id: 'gta-full-rail', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'End to End', description: 'Grind a rail from one end to the other.',
+    reward: { slot: 'neck', prefabId: 'skate-tool-lanyard', label: 'Skate Tool Lanyard' },
+  },
+  // ---- Gnome Theft Auto: story acts I-II (E20) ----
+  {
+    id: 'gta-mortgage-gnome', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Mortgage Gnome', description: 'Sign for Flat 3B and climb the stairs.',
+    reward: { slot: 'neck', prefabId: 'house-key-lanyard', label: 'House Key Lanyard' },
+  },
+  {
+    id: 'gta-cap-back', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Cap Back', description: 'Bring Asphalt and her bottlecap home to Bodega & Sons.',
+    reward: { slot: 'neck', prefabId: 'bottlecap-pendant', label: 'Bottlecap Pendant' },
+  },
+  {
+    id: 'gta-off-by-a-quarter-inch', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Off by a Quarter-Inch', description: "Swap Reginald's calipers without anyone raising an alarm.",
+    reward: { slot: 'hand', prefabId: 'quarter-inch-ruler', label: 'Quarter-Inch Ruler' },
+  },
+  {
+    id: 'gta-swish-seven', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Swish', description: "Win Pip's toolbox back at Drainpipe Court.",
+    reward: { slot: 'head', prefabId: 'court-headband', label: 'Court Headband' },
+  },
+  {
+    id: 'gta-dress-rehearsal', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Dress Rehearsal Clean', description: 'Run the Boot float through the Even-Estates site at night.',
+    reward: { slot: 'back', prefabId: 'parade-banner-cape', label: 'Parade Banner Cape' },
+  },
+  {
+    id: 'gta-fair-weather-friend', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Fair-Weather Friend', description: "Set all three of Rooster's barometers down unbroken.",
+    reward: { slot: 'back', prefabId: 'weathervane-pack', label: 'Weathervane Pack' },
+  },
+  {
+    id: 'gta-agreeable', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Agreeable', description: 'Leave the penthouse key on the table.',
+    reward: { slot: 'neck', prefabId: 'beige-cravat', label: 'Beige Cravat' },
+  },
+  {
+    id: 'gta-mole-neighbour', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Neighbourly', description: 'Bring Nubbin home to the Burrow Door without a bump.',
+    reward: { slot: 'neck', prefabId: 'mole-lantern-charm', label: 'Mole Lantern Charm' },
+  },
+  {
+    id: 'gta-standing-ovation', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Standing Ovation', description: "Stand on one leg through Mother Saxifrage's whole sermon.",
+    reward: { slot: 'head', prefabId: 'flamingo-plume', label: 'Flamingo Plume' },
+  },
+  {
+    id: 'gta-gentle-hands', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Gentle Hands', description: 'Drive Granny to the Glaze Clinic without a single bump.',
+    reward: { slot: 'hand', prefabId: 'pie-tin', label: 'Pie Tin' },
+  },
+  {
+    id: 'gta-hold-the-bay', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hold the Bay', description: 'Hold Side-Valve Alley while the crate is loaded.',
+    reward: { slot: 'neck', prefabId: 'shop-rag-scarf', label: 'Shop Rag Scarf' },
+  },
+  {
+    id: 'gta-on-the-house', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'On the House', description: "Square things with Chrome-Knuckle Cass: Pay 'n' Glaze repairs are free.",
+    reward: { slot: 'hand', prefabId: 'chrome-knuckle-glove', label: 'Chrome-Knuckle Glove' },
+  },
+  // ---- Gnome Theft Auto: story act III (E21) ----
+  {
+    id: 'gta-woolly-sock-regular', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Woolly Sock Regular', description: 'Lose the salt-plows on Snowdrop Slope and take a bunk at the Woolly Sock Lodge.',
+    reward: { slot: 'neck', prefabId: 'bunk-peg-sock', label: 'Bunk Peg Sock' },
+  },
+  {
+    id: 'gta-cap-bruiser', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Cap Bruiser', description: 'Win the Capwood Run for Lugnut Lulu and the Carburettors.',
+    reward: { slot: 'hand', prefabId: 'racing-flag', label: 'Racing Flag' },
+  },
+  {
+    id: 'gta-pirate-for-a-night', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Pirate for a Night', description: "Take an HOA barge's blades and raise the crew's colours on the Bathtub Queen.",
+    reward: { slot: 'head', prefabId: 'pirate-tricorn', label: 'Pirate Tricorn' },
+  },
+  {
+    id: 'gta-sugar-landlord', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Sugar Landlord', description: 'Pay the ants\' sugar toll and fly out of Rootwell with the guidance lens.',
+    reward: { slot: 'back', prefabId: 'faculty-gown', label: 'Faculty Gown' },
+  },
+  {
+    id: 'gta-everyone-digs', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Everyone Digs', description: 'Do all three jobs for the Burrowfolk of Loamdeep.',
+    reward: { slot: 'head', prefabId: 'mole-lamp-helmet', label: 'Mole Lamp Helmet' },
+  },
+  {
+    id: 'gta-nothing-works', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Nothing Works', description: "Throw everything at the Grand Combine's deck and live to run through the hedge.",
+    reward: { slot: 'hand', prefabId: 'golf-umbrella', label: 'Golf Umbrella' },
+  },
+  // ---- Gnome Theft Auto: story act IV (E22) ----
+  {
+    id: 'gta-almost-certainly', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Almost Certainly', description: "Fly to the Underspan and back for Hogweed's mortar and a parachute that almost certainly opens.",
+    reward: { slot: 'back', prefabId: 'patched-parachute-pack', label: 'Patched Parachute Pack' },
+  },
+  {
+    id: 'gta-salute-to-a-mole', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Salute to a Mole', description: "Escort the Burrowfolk's diggers under Fort Sandpit and see Commander Diggs salute a mole.",
+    reward: { slot: 'neck', prefabId: 'spade-guard-pin', label: 'Spade Guard Pin' },
+  },
+  {
+    id: 'gta-all-hats', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'All Hats at One Table', description: 'Bring every outcast in Turfton to one table at the overlook camp.',
+    reward: { slot: 'back', prefabId: 'patchwork-coalition-cape', label: 'Patchwork Coalition Cape' },
+  },
+  {
+    id: 'gta-hairline', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Hairline', description: 'See Clara\'s photograph and hear what she asks of you.',
+    reward: { slot: 'neck', prefabId: 'pressed-leaf-locket', label: 'Pressed Leaf Locket' },
+  },
+  {
+    id: 'gta-last-lift-home', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Last Lift Home', description: 'Drive every friend home on the night before the Even Cut.',
+    reward: { slot: 'hand', prefabId: 'saucer-court-key', label: 'Saucer Court Key' },
+  },
+  {
+    id: 'gta-lollipop-lady', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'Lollipop Lady', description: 'Get the fringe out of the Grand Combine\'s way while Hyssop holds the crossing.',
+    reward: { slot: 'hand', prefabId: 'stop-sign-lollipop', label: 'Stop Sign Lollipop' },
+  },
+  {
+    id: 'gta-hat-comes-off', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Hat Comes Off', description: 'Stop Vesper Thorne without shattering him, and take his top hat.',
+    reward: { slot: 'head', prefabId: 'borrowed-top-hat', label: 'Borrowed Top Hat' },
+  },
+  {
+    id: 'gta-the-whole-story', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
+    title: 'The Whole Story', description: 'Finish every main quest of the story, all seventy.',
+    reward: { slot: 'neck', prefabId: 'finishers-medal', label: "Finisher's Medal" },
   },
   // ---- Cooking Gnoma ----
   {

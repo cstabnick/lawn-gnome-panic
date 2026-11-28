@@ -15,14 +15,18 @@
 import { applyStamps, smoothstep, type Stamp } from '@lawn/level';
 import { flatGround, type GroundHit, type GroundProbe, type Vec3 } from '@lawn/vehicle';
 import { AIRFIELD, BASE, CITY_HALF, HIGHWAYS, ROAD_WIDTH, TERRAIN, WORLD_HALF } from './config';
-import { LAYOUT, REGION_DOCS, REGION_IDS, markerNum, markersOf, trails } from './levels';
+import { LAYOUT, REGION_DOCS, REGION_IDS, trails } from './levels';
+import { reservedRects } from './sites';
 import { macroAt, reliefAt, tiltAt } from './landforms';
 import { surfaceAt as surfaceSpecAt, type SurfaceKind } from './surfaces';
 import { WATER } from './config';
 import { bridgeDeckAt, carveWater, resetWater, setWaterSource, waterBedAt, waterLevelAt } from './water';
-import { applyTrackRelief } from './raceTrack/track';
+import { GROUND_TRACKS, fordWaterAt } from './raceTrack/tracks';
+import { applyPadRelief } from './mountainRoutes/pads';
 import { waveSurfaceOffset } from './waves';
 import { castDeck, deckSurfaceBelow, resetDecks } from './highways/deck';
+import { INTERIOR_FLOOR_Y, INTERIOR_MIN_X } from './interiors/space';
+import { rooftopSurfaceBelow } from './interiors/rooftops';
 import { SKYWAY } from './highways/skyways';
 import { wasmBuildBaseHeightGrid, wasmNaturalHeightAt } from './wasm/gtaWasm';
 
@@ -150,10 +154,11 @@ function flatSites(): FlatSite[] {
     minZ: Math.min(AIRFIELD.z - hz, Math.min(...pz) - 8), maxZ: Math.max(AIRFIELD.z + hz, Math.max(...pz) + 8),
     target: null,
   });
-  for (const m of markersOf('reserve')) {
-    const hw = markerNum(m, 'hw');
-    const hd = markerNum(m, 'hd');
-    sites.push({ minX: m.x - hw, maxX: m.x + hw, minZ: m.z - hd, maxZ: m.z + hd, target: null });
+  // Every flat slot (sites.ts), then every `reserve` marker: a reserve is levelled last, so a nearby slot's blend never
+  // tilts it.
+  const rects = reservedRects({ flatOnly: true });
+  for (const r of [...rects.filter((q) => q.source === 'slot'), ...rects.filter((q) => q.source === 'reserve')]) {
+    sites.push({ minX: r.minX, maxX: r.maxX, minZ: r.minZ, maxZ: r.maxZ, target: null });
   }
   return sites;
 }
@@ -163,7 +168,10 @@ function buildGrid(): Float32Array {
   const clampI = (v: number): number => Math.max(0, Math.min(N - 1, v));
   const roadInner = ROAD_WIDTH / 2 + TERRAIN.roadShoulder;
   const flatPaths = [
-    ...HIGHWAYS.map((hw) => ({ points: hw.points, inner: roadInner, outer: roadInner + TERRAIN.roadFade })),
+    ...HIGHWAYS.map((hw) => {
+      const inner = roadInner - (ROAD_WIDTH - hw.width) / 2;
+      return { points: hw.points, inner, outer: inner + TERRAIN.roadFade };
+    }),
     ...(opts.landforms ? trails() : []).map((t) => {
       const inner = (t.width || TERRAIN.trailWidth) / 2 + 1;
       return { points: t.points, inner, outer: inner + TERRAIN.trailFade };
@@ -237,8 +245,11 @@ function buildGrid(): Float32Array {
     }
   }
 
-  // The Lost & Found Speedway (raceTrack/track.ts): rises, banked corners and jumps, raised on its flattened reserve.
-  if (opts.landforms) applyTrackRelief(g, N, H, S);
+  // The race tracks (raceTrack/tracks.ts): the Speedway and the Dirt Bowl raised on their flattened sites, the Capwood
+  // Run carved into the mountain as a graded ribbon; then E33's mountain routes (mountainRoutes/routes.ts), also ribbons.
+  if (opts.landforms) for (const t of GROUND_TRACKS) t.applyRelief(g, N, H, S);
+  // E33: the level pads beside the mountain routes (lay-bys, the café terrace, lookouts), at their road's height.
+  if (opts.landforms) applyPadRelief(g, N, H, S);
   rectFlatten(g, { minX: -CITY_HALF, maxX: CITY_HALF, minZ: -CITY_HALF, maxZ: CITY_HALF, target: 0 }, TERRAIN.cityMargin, TERRAIN.cityFade, 0);
   // Water (Epic 4, water.ts): carve the river, canal, loch and sea beds into the finished ground; record bridge decks.
   if (waterCarving()) carveWater(g, N, H, S);
@@ -277,6 +288,7 @@ setWaterSource(() => {
  */
 export function heightAt(x: number, z: number): number {
   if (terrainFlat()) return 0;
+  if (x >= INTERIOR_MIN_X) return INTERIOR_FLOOR_Y; // an interior pocket (E05): flat floor
   const h = gridHeight(x, z);
   // A road bridge (water.ts): the deck, not the river bed under it.
   const d = bridgeDeckAt(x, z);
@@ -331,16 +343,24 @@ export function surfaceAt(x: number, z: number): SurfaceKind {
   return surfaceSpecAt(x, z, {}).kind;
 }
 
-/** Water at a point: the water surface height and the depth below it. */
-export interface WaterHit { surface: number; depth: number }
+/** Water at a point: the water surface height and the depth below it. `ford`: Cap-water in a track ford (never floods an engine). */
+export interface WaterHit { surface: number; depth: number; ford?: boolean }
 
 /**
  * Water at (x, z): the surface height and the depth from it down to the bed, or null where there is none (or while
  * the water is off). Ignores bridge decks: under a bridge it is the river. "In the water" means `w && y < w.surface`.
  */
 export function waterAt(x: number, z: number): WaterHit | null {
+  if (x >= INTERIOR_MIN_X) return null; // interior pockets are dry
   const surface = waterLevelAt(x, z);
-  if (surface === null) return null;
+  if (surface === null) {
+    // A ford of Cap-water on a race track (E14, raceTrack/trackDef.ts): shallow, still, no waves.
+    if (terrainFlat()) return null;
+    const f = fordWaterAt(x, z);
+    if (!f) return null;
+    const fd = f.surface - gridHeight(x, z);
+    return fd > 0 ? { surface: f.surface, depth: fd, ford: true } : null;
+  }
   const depth = surface - (waterBedAt(x, z) ?? surface);
   // Waves (waves.ts) move the surface; depth stays the still depth so a shore never flickers dry. 0 until app ticks it.
   return depth > 0 ? { surface: surface + waveSurfaceOffset(x, z), depth } : null;
@@ -361,7 +381,14 @@ export function bedAt(x: number, z: number): number {
 export function groundAt(x: number, z: number, y: number = Infinity): number {
   const land = heightAt(x, z);
   const deck = deckSurfaceBelow(x, z, y + SKYWAY.step);
-  return deck !== null && deck > land ? deck : land;
+  let top = deck !== null && deck > land ? deck : land;
+  // A walkable rooftop with no box under it (the Double Pot slab, E05 interiors/rooftops.ts). Only for a known height:
+  // something dropped with y omitted lands on the land under it, not on the roof over a tunnel.
+  if (y !== Infinity) {
+    const roof = rooftopSurfaceBelow(x, z, y + SKYWAY.step, false);
+    if (roof !== null && roof > top) top = roof;
+  }
+  return top;
 }
 
 /** How high world point (x, y, z) is above the ground under it (negative = below it). Skyway decks count (groundAt). */

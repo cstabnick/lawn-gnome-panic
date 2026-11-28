@@ -109,7 +109,7 @@ function make(acorns: number, at: { x: number; z: number }, probe: TestProbe) {
 describe('Hangar Two (air)', () => {
   it('is bought on foot at the site: the prompt shows the price, and only enough Acorns buy it', () => {
     const poor = make(100, { x: 480, z: -70 }, DRY);
-    expect(poor.lk.prompt()).toBe('Buy Hangar Two · 1200 Acorns');
+    expect(poor.lk.prompt()).toBe('Buy Hangar Two · 1800 Acorns');
     poor.lk.interact();
     expect(poor.lk.owns('air')).toBe(false);
     expect(poor.state.acorns).toBe(100);
@@ -117,7 +117,7 @@ describe('Hangar Two (air)', () => {
     const rich = make(2000, { x: 480, z: -70 }, DRY);
     rich.lk.interact();
     expect(rich.lk.owns('air')).toBe(true);
-    expect(rich.state.acorns).toBe(800);
+    expect(rich.state.acorns).toBe(200);
     expect(rich.lk.prompt()).toBe('Open Hangar Two');
   });
 
@@ -159,6 +159,6 @@ describe('Mossbank Boathouse (water)', () => {
     const boat = deep.lk.addRecord('clog-cruiser');
     deep.lk.buy('water', true);
     expect(deep.lk.callDelivery(boat!.uid)).toBeNull();
-    expect(deep.state.acorns).toBe(500 - 60);
+    expect(deep.state.acorns).toBe(500 - 100);
   });
 });

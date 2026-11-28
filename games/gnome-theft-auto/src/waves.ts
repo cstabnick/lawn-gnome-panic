@@ -32,6 +32,7 @@
 //   tickWaveClock(nowMs?), setWaveClockOffset(ms), setWaveDetail('off'|'low'|'high'), registerCalmSpots(spots)
 // Anything that floats can just use terrain.ts waterAt(x, z).surface: it already includes the waves (still depth).
 import { smoothstep } from '@lawn/level';
+import { WATER } from './config';
 import { BODIES, ISLANDS, bodyRadius } from './water';
 import type { Tier } from './quality';
 
@@ -57,7 +58,7 @@ export const WAVES = {
   /** Sea state gain. */
   seaGain: { calm: 0.35, breezy: 1, blustery: 1.75 } as Record<SeaState, number>,
   /** Per still body (water marker id), else 1. */
-  bodyGain: { 'water/loch-moss': 1, 'water/puddle-sea': 1.35 } as Record<string, number>,
+  bodyGain: { 'water/loch-moss': 1, 'water/puddle-sea': 1.35, 'water/saltwater': 1.6 } as Record<string, number>,
   /** Rivers and the canal (anywhere wet that is not a still body). */
   courseGain: 0.05,
   /** Waves fade to nothing over this many metres in from a shore, and around an island. */
@@ -97,9 +98,10 @@ for (let i = 0; i < N; i++) {
 const WIND_X = Math.sin(WAVES.windYaw), WIND_Z = Math.cos(WAVES.windYaw);
 
 // ---- Static scale --------------------------------------------------------------------------------------------------
-interface BodyBox { cx: number; cz: number; a: number; b: number; m: number; gain: number; w: (typeof BODIES)[number]; isl: { x: number; z: number; r: number }[] }
+interface BodyBox { cx: number; cz: number; a: number; b: number; m: number; gain: number; shore: number; w: (typeof BODIES)[number]; isl: { x: number; z: number; r: number }[] }
 const BOXES: BodyBox[] = BODIES.map((w) => ({
-  cx: w.cx, cz: w.cz, a: w.a, b: w.b, m: Math.min(w.a, w.b), gain: WAVES.bodyGain[w.id] ?? 1, w,
+  cx: w.cx, cz: w.cz, a: w.a, b: w.b, m: Math.min(w.a, w.b), gain: WAVES.bodyGain[w.id] ?? 1,
+  shore: (WATER.bodies as Record<string, { shoreM?: number }>)[w.id]?.shoreM ?? WAVES.shoreM, w,
   isl: ISLANDS.filter((i) => bodyRadius(w, i.x, i.z) < 1).map((i) => ({ x: i.x, z: i.z, r: i.r })),
 }));
 
@@ -127,7 +129,7 @@ export function waveAmplitudeScale(x: number, z: number): number {
       outside = Math.min(outside, smoothstep(0, SHORE_BAND_M, (r - 1) * b.m));
       continue;
     }
-    let s = b.gain * smoothstep(0, WAVES.shoreM, (1 - r) * b.m);
+    let s = b.gain * smoothstep(0, b.shore, (1 - r) * b.m);
     for (let j = 0; j < b.isl.length; j++) {
       const il = b.isl[j];
       s *= smoothstep(0, WAVES.islandM, Math.hypot(x - il.x, z - il.z) - il.r);

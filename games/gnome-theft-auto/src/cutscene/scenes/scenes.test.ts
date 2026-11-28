@@ -18,7 +18,12 @@ let worldBoxes: Box[] = [];
 beforeAll(async () => {
   const { buildWorld } = await import('../../world');
   const scene = new THREE.Scene();
-  worldBoxes = buildWorld(scene, null as unknown as THREE.WebGLRenderer).boxes;
+  const world = buildWorld(scene, null as unknown as THREE.WebGLRenderer);
+  // The walkable rooftops (app.ts buildRooftops: tower tops and the Double Pot slab, with their parapets): scenes staged
+  // on a roof (#21's roof garden, FX05) stand on them, as in the game.
+  const { buildRooftops } = await import('../../interiors/rooftopsBuild');
+  buildRooftops(scene, world);
+  worldBoxes = world.boxes;
   // The stage set dressing (stageSets.ts) is part of the live world too: the diner, benches, barrels.
   const { stageSetBoxes } = await import('../../quests/stages');
   worldBoxes = [...worldBoxes, ...stageSetBoxes()];

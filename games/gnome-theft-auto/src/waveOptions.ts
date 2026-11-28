@@ -1,6 +1,7 @@
 // Water waves option (docs/roadmaps/gta-water-waves.md): 'Water waves: off / low / high' in the Options panel, saved in
 // localStorage, overridden by ?waves=0|off|low|high|1 (a URL value is not saved). Feeds waves.ts setWaveDetail.
 // Waves are a local view choice: online, the host's sea is the same for everyone; 'off' only stills your own water.
+import { registerOption } from './optionsRegistry';
 import { setSeaState, setWaveDetail, waveDetail, type WaveDetail } from './waves';
 
 const KEY = 'gta-waves';
@@ -42,29 +43,19 @@ export function initWaveDetail(search: string): void {
   if (sea === 'calm' || sea === 'breezy' || sea === 'blustery') setSeaState(sea, -1e9);
 }
 
-/** Add the 'Water waves' button to the Options panel (options.ts). */
-export function mountWaveOptions(panel: HTMLElement): void {
-  const head = document.createElement('div');
-  head.className = 'gta-opt-note';
-  head.style.fontWeight = '700';
-  head.textContent = 'Water';
-  const list = document.createElement('div');
-  list.className = 'gta-opt-list';
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'gta-opt-mode';
-  const paint = (): void => {
-    btn.innerHTML = `Water waves: ${waveDetail()}<small>How much the loch and the Puddle Sea roll. Low is gentler and cheaper; off is flat water.</small>`;
-  };
-  paint();
-  btn.addEventListener('click', () => {
-    const next = ORDER[(ORDER.indexOf(waveDetail()) + 1) % ORDER.length];
-    setWaveDetail(next);
-    saveWaveDetail(next);
-    paint();
+/** Registers the 'Water waves' row with the Options registry (options.ts renders it). */
+export function registerWaveOptions(): void {
+  registerOption({
+    section: 'world', id: 'waves', label: 'Water waves', kind: 'cycle', order: 60,
+    desc: 'How much the loch and the Puddle Sea roll. Low is gentler and cheaper; off is flat water.',
+    values: ORDER.map((id) => ({ id, label: id })),
+    get: () => waveDetail(),
+    set: (id) => {
+      const d = id as WaveDetail;
+      setWaveDetail(d);
+      saveWaveDetail(d);
+    },
   });
-  list.appendChild(btn);
-  panel.append(head, list);
 }
 
 export type { WaveDetail };

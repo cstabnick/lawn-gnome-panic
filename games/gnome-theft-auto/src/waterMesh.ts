@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { WATER } from './config';
+import { COAST } from './coast/config';
 import { BODIES, COURSES, bodyLevel, bodyRadius, canalLocks, courseProfile, shorePoint, waterOn, type StillWater, type WaterCourse } from './water';
 import { registerCalmSpots, waveAmplitudeScale, waveTime } from './waves';
 import { applyWaveShader, createWaveUniforms, updateWaveUniforms } from './waveShader';
@@ -52,18 +53,18 @@ function rgba(c: number, a: number): string {
 }
 
 /** The flow texture: the water colour with short lighter streaks running along v (downstream). */
-function flowTexture(): THREE.CanvasTexture {
+function flowTexture(colour: number = WATER.colour, streak: number = WATER.foam, streakAlpha: readonly [number, number] = [0.15, 0.3]): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = hexCss(WATER.colour);
+  ctx.fillStyle = hexCss(colour);
   ctx.fillRect(0, 0, 128, 128);
   const rnd = mulberry32(0x6f10);
   for (let i = 0; i < 60; i++) {
     const x = rnd() * 128, y = rnd() * 128;
     const len = 6 + rnd() * 18;
-    ctx.strokeStyle = rgba(WATER.foam, 0.15 + rnd() * 0.15);
+    ctx.strokeStyle = rgba(streak, streakAlpha[0] + rnd() * (streakAlpha[1] - streakAlpha[0]));
     ctx.lineWidth = 1 + rnd();
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -79,7 +80,7 @@ type Vtx = [number, number, number, number, number]; // x, y, z, u, v
 type Row = [Vtx, Vtx];
 
 /** Accumulates triangle strips into one geometry's arrays. */
-interface Acc { pos: number[]; uv: number[]; idx: number[] }
+interface Acc { pos: number[]; uv: number[]; idx: number[]; col: number[] }
 
 /**
  * Adds a strip of rows. Each row is a pair of vertices (first, second); the first is on the +normal side of travel, so
@@ -106,8 +107,17 @@ function geometryOf(acc: Acc): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(acc.pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(acc.uv, 2));
+  if (acc.col.length) g.setAttribute('color', new THREE.Float32BufferAttribute(acc.col, 3));
   g.setIndex(acc.idx);
   return g;
+}
+
+interface BodyLook { colour?: number; crest?: number; opacity?: number }
+const bodyLook = (id: string): BodyLook | undefined => (WATER.bodies as Record<string, BodyLook>)[id];
+
+/** Smooth deterministic wobble in -1..1 along the shore (two sines of k). */
+function shoreNoise(k: number, seed: number): number {
+  return 0.6 * Math.sin(k * 0.37 + seed) + 0.4 * Math.sin(k * 0.91 + seed * 2.3);
 }
 
 function insideBody(x: number, z: number): boolean {
@@ -147,10 +157,12 @@ function courseFoam(c: WaterCourse, acc: Acc, surface: number[], x: number[], z:
       if (insideBody(x[k], z[k])) { rows.push(null); continue; }
       const [nx, nz] = pathNormal(x, z, k);
       const y = surface[k] + FOAM_LIFT;
-      const far = side * (hw + 0.3), near = side * (hw - 0.6);
+      const far = side * (hw + 0.3), near = side * (hw - 0.6 + 0.15 * shoreNoise(k, side));
       // The first vertex must sit on the +normal side: order by signed offset, larger first.
       const outer: Vtx = [x[k] + nx * far, y, z[k] + nz * far, 0, 0];
       const inner: Vtx = [x[k] + nx * near, y, z[k] + nz * near, 0, 0];
+      const br = 0.75 + 0.25 * (0.5 + 0.5 * shoreNoise(k * 1.7, 4 + side));
+      acc.col.push(br, br, br, br, br, br);
       rows.push(far > near ? [outer, inner] : [inner, outer]);
     }
     addStrip(acc, rows);
@@ -163,10 +175,12 @@ function courseFoam(c: WaterCourse, acc: Acc, surface: number[], x: number[], z:
  * quad is kept while one of its corners is inside. Both triangles of a quad face up.
  */
 function bodyGrid(w: StillWater, level: number): Acc {
-  const acc: Acc = { pos: [], uv: [], idx: [] };
+  const acc: Acc = { pos: [], uv: [], idx: [], col: [] };
   const grow = 1 + 2 / Math.min(w.a, w.b);
   const hx = w.a * grow, hz = w.b * grow;
-  const nx = Math.max(1, Math.ceil((2 * hx) / GRID_STEP)), nz = Math.max(1, Math.ceil((2 * hz) / GRID_STEP));
+  // A body may ask for a coarser grid (the Saltwater, 3580 m long: WATER.bodies[id].meshStep).
+  const step = (WATER.bodies as Record<string, { meshStep?: number }>)[w.id]?.meshStep ?? GRID_STEP;
+  const nx = Math.max(1, Math.ceil((2 * hx) / step)), nz = Math.max(1, Math.ceil((2 * hz) / step));
   const dx = (2 * hx) / nx, dz = (2 * hz) / nz;
   const x0 = w.cx - hx, z0 = w.cz - hz;
   const stride = nz + 1;
@@ -207,12 +221,15 @@ function bodyGrid(w: StillWater, level: number): Acc {
 }
 
 function bodyFoam(w: StillWater, level: number): Acc {
-  const acc: Acc = { pos: [], uv: [], idx: [] };
+  const acc: Acc = { pos: [], uv: [], idx: [], col: [] };
   const y = level + FOAM_LIFT;
   const rows: Row[] = [];
   for (let k = 0; k <= FAN_SEGMENTS; k++) {
     const p = shorePoint(w, (k / FAN_SEGMENTS) * Math.PI * 2);
-    const inner: Vtx = [w.cx + (p.x - w.cx) * 0.985, y, w.cz + (p.z - w.cz) * 0.985, 0, 0];
+    const f = 0.985 + 0.007 * shoreNoise(k, 1.3);
+    const inner: Vtx = [w.cx + (p.x - w.cx) * f, y, w.cz + (p.z - w.cz) * f, 0, 0];
+    const br = 0.75 + 0.25 * (0.5 + 0.5 * shoreNoise(k * 1.9, 7.1));
+    acc.col.push(br, br, br, br, br, br);
     const outer: Vtx = [w.cx + (p.x - w.cx) * 1.005, y, w.cz + (p.z - w.cz) * 1.005, 0, 0];
     // Travel runs with increasing angle, so the inner rim is the +normal side: first = inner.
     rows.push([inner, outer]);
@@ -225,7 +242,8 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   if (!waterOn()) return { update() { /* no water */ } };
 
   // Canal locks are calm water (no waves over the gates).
-  registerCalmSpots(canalLocks().map((l) => ({ x: l.x, z: l.z, r: LOCK_CALM_R })));
+  // ... and so are the coast's pier end and tube launch (E11).
+  registerCalmSpots([...canalLocks().map((l) => ({ x: l.x, z: l.z, r: LOCK_CALM_R })), ...COAST.calmSpots]);
 
   const group = new THREE.Group();
   group.name = 'water';
@@ -236,6 +254,7 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   bodyTex.needsUpdate = true;
   const waveU = createWaveUniforms();
 
+  const bodyTexs = new Map<string, THREE.CanvasTexture>();
   const waterMats = new Map<number, THREE.MeshStandardMaterial>();
   const waterMat = (layer: number, map: THREE.Texture): THREE.MeshStandardMaterial => {
     const key = layer * 1000 + (map === bodyTex ? 1 : 0);
@@ -249,7 +268,24 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
     }
     return m;
   };
-  const foamMat = flatLayer(new THREE.MeshBasicMaterial({ color: WATER.foam, transparent: true, opacity: 0.45 }), FOAM_LAYER);
+  /** A body with its own look (the Saltwater) gets its own texture and material; others share the default ones. */
+  const bodyWaterMat = (id: string): THREE.MeshStandardMaterial => {
+    const look = bodyLook(id);
+    if (look?.colour === undefined) return waterMat(BODY_LAYER, bodyTex);
+    const key = BODY_LAYER * 1000 + 500 + id.length * 7 + [...id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    let m = waterMats.get(key);
+    if (!m) {
+      let tex = bodyTexs.get(id);
+      if (!tex) { tex = flowTexture(look.colour, 0xffffff, [0.06, 0.12]); tex.colorSpace = THREE.SRGBColorSpace; bodyTexs.set(id, tex); }
+      m = flatLayer(new THREE.MeshStandardMaterial({
+        color: 0xffffff, map: tex, roughness: 0.2, metalness: 0.1, transparent: true, opacity: look.opacity ?? 0.88,
+      }), BODY_LAYER);
+      applyWaveShader(m, waveU, look.crest);
+      waterMats.set(key, m);
+    }
+    return m;
+  };
+  const foamMat = flatLayer(new THREE.MeshLambertMaterial({ color: WATER.foam, transparent: true, opacity: 0.45, vertexColors: true }), FOAM_LAYER);
 
   /** `waves`: a surface the wave field displaces (gets the aWaveScale attribute and a grown bounding sphere). */
   const add = (name: string, geometry: THREE.BufferGeometry, material: THREE.Material, waves: boolean): void => {
@@ -273,12 +309,12 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   for (const c of COURSES) {
     const p = courseProfile(c.id);
     if (!p) continue;
-    const water: Acc = { pos: [], uv: [], idx: [] };
+    const water: Acc = { pos: [], uv: [], idx: [], col: [] };
     courseWater(c, water, p.surface, p.x, p.z, p.s);
     const layer = COURSE_LAYER[c.id] ?? LAYER.area;
     add(`water:${c.id}`, geometryOf(water), waterMat(layer, riverTex), true);
 
-    const foam: Acc = { pos: [], uv: [], idx: [] };
+    const foam: Acc = { pos: [], uv: [], idx: [], col: [] };
     courseFoam(c, foam, p.surface, p.x, p.z);
     add(`water-foam:${c.id}`, geometryOf(foam), foamMat, false);
   }
@@ -287,12 +323,16 @@ export function buildWaterMeshes(scene: THREE.Scene): WaterMeshes {
   for (const b of BODIES) {
     const level = bodyLevel(b.id);
     if (level === null) continue;
-    add(`water:${b.id}`, geometryOf(bodyGrid(b, level)), waterMat(BODY_LAYER, bodyTex), true);
+    add(`water:${b.id}`, geometryOf(bodyGrid(b, level)), bodyWaterMat(b.id), true);
     add(`water-foam:${b.id}`, geometryOf(bodyFoam(b, level)), foamMat, false);
   }
 
+  let washT = 0;
   return {
     update(dt: number) {
+      washT += dt;
+      foamMat.opacity = 0.38 + 0.1 * Math.sin(washT * 0.5);
+      for (const t of bodyTexs.values()) t.offset.x += 0.01 * dt;
       riverTex.offset.y -= (WATER.flowSpeed / 6) * dt;
       bodyTex.offset.x += 0.01 * dt;
       updateWaveUniforms(waveU, waveTime());

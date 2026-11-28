@@ -6,9 +6,10 @@ import { angleDiff } from '../collide';
 import { gnomeState, makeGnome, randomTownLook } from '../gnomes';
 import type { Blip, Npc, Vehicle } from '../types';
 import { collideVehicles, createVehicle, removeVehicle, stepVehicle, syncVehicleMesh } from '../vehicles';
-import type { ObjectiveDef, QuestDeps, Run } from './types';
+import type { ObjectiveDef, QuestDeps, QuestSave, Run } from './types';
 import { heightAt } from '../terrain';
 import { placeOnGround } from '../terrainMesh';
+import { trackBeam } from '../questMarkerPrefs';
 
 const TARGET_COLOR = '#ff7a00';
 const ALT_COLOR = '#7cf0ff';
@@ -30,6 +31,7 @@ function makeBeacon(scene: THREE.Scene, x: number, z: number, color: number): TH
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
   );
   m.position.set(x, heightAt(x, z) + 20, z);
+  trackBeam(m, heightAt(x, z), 40);
   scene.add(m);
   return m;
 }
@@ -200,7 +202,7 @@ export function bossCombineRun(
   deps.scene.add(bossMesh);
 
   const intakeRing = makeRing(deps.scene, 0, bossZ + 8, 4.5, 0xffd23f);
-  const guards: Npc[] = deps.watch?.spawnSquad('porcelain', [
+  const guards: Npc[] = obj.phase === 'jam' ? [] : deps.watch?.spawnSquad('porcelain', [
     [-2.5, bossZ],
     [2.5, bossZ],
     [0, bossZ - 3],
@@ -216,7 +218,8 @@ export function bossCombineRun(
         ? [obj.text, `Crack Vesper's Porcelain Guards (${alive} left).`]
         : [obj.text, `Jam the Grand Combine's front intake at {{${obj.hint}}}!`];
     },
-    done: () => jammed,
+    // E22: the 'guards' phase ends once the Porcelain Guard is down (the jam is the next part's objective).
+    done: () => jammed || (obj.phase === 'guards' && guards.every((g) => crackedGuards.has(g) || g.state === 'ragdoll')),
     update(dt, px, pz) {
       t += dt;
       if (jammed) return;
@@ -265,6 +268,7 @@ export function bossCombineRun(
 export function choiceRun(
   obj: Extract<ObjectiveDef, { kind: 'choice' }>,
   deps: QuestDeps,
+  save: QuestSave,
   changed: () => void,
   say: (t: string) => void,
 ): Run {
@@ -288,6 +292,7 @@ export function choiceRun(
       if (Math.hypot(px - obj.optionA.at[0], pz - obj.optionA.at[1]) <= 4.5) {
         chosen = true;
         ending = obj.optionA.outro;
+        save.ending = 'A';
         const bonus = obj.optionA.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionA.label);
         if (obj.optionA.achievement) deps.unlock(obj.optionA.achievement);
@@ -296,6 +301,7 @@ export function choiceRun(
       } else if (Math.hypot(px - obj.optionB.at[0], pz - obj.optionB.at[1]) <= 4.5) {
         chosen = true;
         ending = obj.optionB.outro;
+        save.ending = 'B';
         const bonus = obj.optionB.bonusAcorns ?? 0;
         if (bonus > 0) deps.economy?.earn(bonus, obj.optionB.label);
         if (obj.optionB.achievement) deps.unlock(obj.optionB.achievement);

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { BAITS, RODS, baitById } from './tackle';
+import { _resetWeatherForTests, forceWeather } from '../weather';
 import { FISH_SPECIES, FISH_SPOTS, spotById } from './species';
 import { FISH, RARITY_WEIGHT } from './types';
 import type { FishSpecies, RegionId, FishWater, TimeLabel } from './types';
@@ -22,6 +23,7 @@ const REGION_FOR_WATER: Record<FishWater, RegionId> = {
   river: 'mossy-wood',
   canal: 'cloverfield-farms',
   sea: 'cloverfield-farms',
+  ice: 'north-highlands',
 };
 
 const MOON_JIG = baitById('moon-jig')!;
@@ -146,12 +148,33 @@ describe('rollSize, biteDelay, spots and weather', () => {
     expect(spotAt(spot.x + FISH.spotRadius + 5, spot.z + 5000)).toBeNull();
   });
 
+  afterEach(() => {
+    _resetWeatherForTests();
+  });
+
   it('weatherAt derives snow, mist and clear', () => {
+    forceWeather('clear');
     expect(weatherAt('frostbite-fells', 'Noon')).toBe('snow');
     expect(weatherAt('loch-moss', 'Dawn')).toBe('mist');
     expect(weatherAt('loch-moss', 'Morning')).toBe('mist');
     expect(weatherAt('loch-moss', 'Dusk')).toBe('clear');
     expect(weatherAt('cloverfield-farms', 'Dawn')).toBe('clear');
+  });
+
+  it('weatherAt reads forced rain, keeps Frostbite Fells on snow, and forced mist goes anywhere', () => {
+    forceWeather('rain', 0.8);
+    expect(weatherAt('turfton', 'Noon')).toBe('rain');
+    expect(weatherAt('frostbite-fells', 'Noon')).toBe('snow');
+    forceWeather('mist');
+    expect(weatherAt('turfton', 'Noon')).toBe('mist');
+    expect(weatherAt('frostbite-fells', 'Noon')).toBe('snow');
+  });
+
+  it('a rain-loving species bites more in rain than in clear', () => {
+    const s = FISH_SPECIES.find((f) => f.weather?.rain !== undefined)!;
+    expect(fishWeight(s, { ...ctxFor(s, 'Noon'), weather: 'rain' })).toBeGreaterThan(
+      fishWeight(s, { ...ctxFor(s, 'Noon'), weather: 'clear' }),
+    );
   });
 });
 

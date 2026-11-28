@@ -1,0 +1,17 @@
+{
+  "name": "@lawn/trickboard",
+  "private": true,
+  "type": "module",
+  "description": "Skate trick layer shared by Aether Board and other games: trick, grab and grind tables, the trick-stick recognizer and the combo scorer. No three.js.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Winter sports: skiing the Wool Run on Snowdrop Slope",
+  "url": "http://localhost:5198/",
+  "setup": { "offline": true, "no-intro": true, "winter": "wool-run", "weather": "snow:0.5" },
+  "warmup": 4,
+  "duration": 9,
+  "size": [560, 350],
+  "fps": 12,
+  "steps": [
+    { "t": 0.2, "hold": "forward", "for": 1.0 },
+    { "t": 1.6, "hold": "right", "for": 0.7 },
+    { "t": 3.2, "hold": "left", "for": 0.8 },
+    { "t": 5.0, "hold": "right", "for": 0.8 },
+    { "t": 6.8, "hold": "left", "for": 0.8 }
+  ]
+}

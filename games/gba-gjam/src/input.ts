@@ -1,14 +1,7 @@
 // Unified keyboard (P1 + optional P2 local) and mobile touch controls for GBA GJAM.
-export interface PlayerControlInput {
-  moveX: number; // -1..1
-  moveZ: number; // -1..1
-  turbo: boolean;
-  shootDown: boolean;
-  shootPressed: boolean;
-  shootReleased: boolean;
-  passPressed: boolean;
-  fakePressed: boolean;
-}
+import type { PlayerControlInput } from '@lawn/jam';
+
+export type { PlayerControlInput };
 
 export class JamInput {
   private keys = new Set<string>();

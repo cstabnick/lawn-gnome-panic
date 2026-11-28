@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { resetTerrainOptions, waterAt } from './terrain';
-import { loopRoute, patrolSpawn, pingPong, steerToward, waterwayRoute } from './boatTraffic';
-import { courseProfile, onWaterCourse } from './water';
+import { SALTCUT_END, SEA_LOOP, loopRoute, patrolSpawn, pingPong, smackPose, steerToward, waterwayRoute } from './boatTraffic';
+import { courseProfile, onWaterCourse, waterDepthAt } from './water';
 
 // Browser-only audio (it touches `window` on load); the pure helpers here do not play sound.
 vi.mock('./audio', () => ({ play: () => undefined }));
@@ -15,6 +15,47 @@ describe('boat traffic: loop routes', () => {
     for (const p of pts) {
       expect(waterAt(p.x, p.z)?.depth ?? 0).toBeGreaterThan(1);
     }
+  });
+});
+
+describe('boat traffic: the Saltwater routes (E11)', () => {
+  it('keeps every sea-loop point at least 3 m deep', () => {
+    for (const p of SEA_LOOP) expect(waterDepthAt(p.x, p.z), `${p.x},${p.z}`).toBeGreaterThanOrEqual(3);
+  });
+
+  it('runs the Saltcut as a non-empty route, every point on water', () => {
+    waterAt(0, 0);
+    const pts = waterwayRoute(['saltcut']);
+    expect(pts.length).toBeGreaterThan(0);
+    for (const p of pts) expect(waterDepthAt(p.x, p.z), `${p.x},${p.z}`).toBeGreaterThan(0.5);
+  });
+
+  it('ends the Saltcut off the Queen, out at (450, 1330), in water at least 1.5 m deep', () => {
+    waterAt(0, 0);
+    const pts = waterwayRoute(['saltcut'], { to: SALTCUT_END });
+    const end = pts[pts.length - 1];
+    expect(end).toEqual(SALTCUT_END);
+    expect(waterDepthAt(end.x, end.z)).toBeGreaterThanOrEqual(1.5);
+  });
+});
+
+describe('boat traffic: the fishing smack (A12)', () => {
+  it('sails the far line at z 1560 between x -1300 and 1300, in water, for 4000 s', () => {
+    waterAt(0, 0);
+    for (let t = 0; t <= 4000; t += 50) {
+      const p = smackPose(t);
+      expect(p.z, `t=${t}`).toBe(1560);
+      expect(p.x, `t=${t}`).toBeGreaterThanOrEqual(-1300);
+      expect(p.x, `t=${t}`).toBeLessThanOrEqual(1300);
+      expect(waterDepthAt(p.x, p.z), `t=${t} ${p.x}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('starts at the west end heading east, and is deterministic in t', () => {
+    const p = smackPose(0);
+    expect(p.x).toBe(-1300);
+    expect(p.yaw).toBeCloseTo(Math.PI / 2, 6);
+    expect(smackPose(123)).toEqual(smackPose(123));
   });
 });
 

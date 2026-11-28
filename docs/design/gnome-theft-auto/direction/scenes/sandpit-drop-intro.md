@@ -133,3 +133,16 @@ last moment because the crew is about to jump, and the player is the one who wil
       moving close-up (Pip's walk to the table, about 6 s on the phone) has his hat over his face for a moment; it is the
       bounce, and the face returns on the line.
 - [x] `direction.notes` points here.
+
+## 12. Act IV revision (E22, row 57)
+
+Dawn (`sky: 'golden'`), `kind: 'intro'`. Pip now holds the `parachute-rig` Hogweed fitted in row 56 (the kazoo stays with
+the other scenes).
+
+- The running joke pays: Pip "Okay, okay. Hear me out." (escalated from the Founders' Boot rung), Tansy "Don't.", and
+  Pip says it anyway; Tansy then lets him run the plan (her act IV change), only supplying the three clauses at the end.
+- The rig is named once: "Hogweed's rig, the almost-certainly one." Player: "Should I check it?" Pip: "Don't. Morale."
+- Everything after (pad reveal, the sniper turn, the unauthorised-verticality ticket, "umbrellas with ambition") is as
+  built. Length 37.2 s.
+- Quest comms (row 57): step 0 Pip + Tansy (Hogweed's rig, no gate, bail out when the ring is green), step 1 Tansy
+  (Whirligig boarded, three-hat heat), step 2 Pip ("Diggs is behind you").

@@ -6,6 +6,7 @@ import type { VoiceSpec } from '@lawn/mutter';
 import { speech, unlockSpeech } from '../voice/speech';
 import { portraitElement } from './portrait';
 import { fillHint } from '../ui/glyphs';
+import { CHARS_PER_SECOND, getTextSpeed } from '../cutscene/textSpeed';
 
 /** Who is talking: display name, look (for the portrait), voice, and a stable key (portrait cache). */
 export interface BriefingCaller {
@@ -25,6 +26,10 @@ export interface BriefingShowOptions {
   mode?: 'briefing' | 'call';
   /** Card heading, e.g. the quest title. */
   title?: string;
+  /** GR5 (FX21): the reward chip's text (quests/story/rewards.ts rewardChip(q).text), shown on a 'briefing' card. */
+  reward?: string;
+  /** D7 (FX21): a short frame shown before the title in the card's tag, e.g. 'Before the Even Cut'. */
+  kicker?: string;
   /** Called once when the last line is done or the panel is skipped / hidden. */
   onDone?: () => void;
 }
@@ -41,7 +46,6 @@ export interface Briefing {
   update(dt: number): void;
 }
 
-const CHARS_PER_SECOND = 40;
 /** Phone-call ring shown before the first line of a call types. */
 const RING_SECONDS = 0.6;
 /** A reveal that uncovers more than this many characters at once speaks one word only. */
@@ -50,8 +54,10 @@ const BURST_CHARS = 12;
 const MAX_VOICE_LETTERS = 4;
 /** How long the portrait stays bobbed when a word starts. */
 const BOB_SECONDS = 0.09;
-const MIN_HOLD_SECONDS = 2.2;
-const WORDS_PER_SECOND = 3.5;
+const MIN_HOLD_SECONDS = 3.0;
+const WORDS_PER_SECOND = 3.0;
+/** L47: comms text stays a little longer. */
+const EXTRA_HOLD_SECONDS = 0.8;
 
 const STYLE_ID = 'gta-briefing-style';
 const STYLE = `
@@ -76,24 +82,46 @@ const STYLE = `
   cursor:pointer;touch-action:manipulation;box-sizing:border-box;}
 #gta-briefing .gb-next{border:2px solid #ffd23f;background:rgba(255,210,63,.18);color:#ffd23f;}
 #gta-briefing .gb-skip{border:2px solid rgba(255,255,255,.65);background:rgba(0,0,0,.55);color:#fff;}
-@media (max-width:700px){
-  #gta-briefing .gb-card{top:calc(env(safe-area-inset-top,0px) + 300px);bottom:auto;left:max(8px,env(safe-area-inset-left,0px));
-    right:max(8px,env(safe-area-inset-right,0px));width:auto;transform:none;padding:10px 12px;}
-  #gta-briefing .gb-ring{width:56px;height:56px;}
-  #gta-briefing .gb-portrait{width:50px;height:50px;}
-  #gta-briefing .gb-text{font-size:13px;min-height:4.2em;}
-  #gta-briefing .gb-tag{font-size:10px;}
-  #gta-briefing .gb-name{font-size:14px;}
+#gta-briefing .gb-icon{display:none;}
+#gta-briefing .gb-chip{flex:none;align-self:flex-start;max-width:42%;padding:4px 10px;border-radius:999px;background:rgba(255,210,63,.16);
+  border:1px solid rgba(255,210,63,.6);color:#ffe9a8;font-size:13px;font-weight:700;line-height:1.3;text-align:right;overflow:hidden;
+  text-overflow:ellipsis;display:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+#gta-briefing .gb-chip.gb-chip-on{display:-webkit-box;}
+/* Phone portrait: a compact strip under the minimap, scrollable text, icon buttons. */
+@media (max-width:700px) and (orientation:portrait){
+  #gta-briefing .gb-card{top:calc(env(safe-area-inset-top,0px) + max(18px,4vw) + var(--gta-map,128px) + 60px);bottom:auto;
+    left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;transform:none;
+    padding:8px 10px;max-height:28vh;display:flex;flex-direction:column;overflow:hidden;}
+  #gta-briefing .gb-head{margin-bottom:6px;gap:10px;}
+  #gta-briefing .gb-ring{width:40px;height:40px;border-radius:10px;border-width:2px;}
+  #gta-briefing .gb-portrait{width:36px;height:36px;}
+  #gta-briefing .gb-who{display:flex;align-items:baseline;gap:6px;}
+  #gta-briefing .gb-tag{font-size:10px;flex:0 1 auto;min-width:0;}
+  /* The chip takes its own row under the name, so the speaker's name is never cut short. */
+  #gta-briefing .gb-head{flex-wrap:wrap;row-gap:4px;}
+  #gta-briefing .gb-who{flex:1 1 calc(100% - 50px);}
+  #gta-briefing .gb-chip{font-size:11px;padding:2px 8px;margin-left:50px;max-width:calc(100% - 50px);-webkit-line-clamp:1;text-align:left;}
+  #gta-briefing .gb-name{margin-top:0;font-size:14px;min-width:0;flex:0 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  #gta-briefing .gb-text{flex:1 1 auto;min-height:4.2em;font-size:13px;margin-bottom:8px;overflow-y:auto;touch-action:pan-y;}
+  #gta-briefing .gb-actions{flex:none;}
+  #gta-briefing .gb-icon{display:inline;}
+  #gta-briefing .gb-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  #gta-briefing button{width:44px;height:44px;min-width:44px;padding:0;font-size:20px;line-height:1;}
 }
+/* Landscape phone: a short strip at the top, capped at 40 percent of the height. */
 @media (max-height:500px){
   #gta-briefing .gb-card{top:calc(env(safe-area-inset-top,0px) + 8px);bottom:auto;right:auto;left:50%;transform:translateX(-50%);
-    width:min(440px,52vw);padding:8px 12px;}
-  #gta-briefing .gb-ring{width:48px;height:48px;}
-  #gta-briefing .gb-portrait{width:42px;height:42px;}
+    width:min(440px,52vw);padding:8px 12px;max-height:40vh;display:flex;flex-direction:column;overflow:hidden;}
+  #gta-briefing .gb-ring{width:36px;height:36px;}
+  #gta-briefing .gb-portrait{width:32px;height:32px;}
   #gta-briefing .gb-head{margin-bottom:4px;}
-  #gta-briefing .gb-text{font-size:13px;min-height:3.9em;margin-bottom:8px;}
+  #gta-briefing .gb-text{flex:1 1 auto;min-height:2.9em;font-size:13px;margin-bottom:6px;overflow-y:auto;touch-action:pan-y;}
   #gta-briefing .gb-name{font-size:14px;}
-  #gta-briefing button{min-height:44px;}
+  #gta-briefing .gb-chip{font-size:11px;padding:2px 8px;max-width:44%;-webkit-line-clamp:2;border-radius:10px;}
+  #gta-briefing .gb-actions{flex:none;}
+  #gta-briefing .gb-icon{display:inline;}
+  #gta-briefing .gb-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  #gta-briefing button{width:44px;height:44px;min-width:44px;padding:0;font-size:20px;line-height:1;}
 }`;
 
 function ensureStyle(): void {
@@ -110,7 +138,7 @@ function isSpace(ch: string | undefined): boolean {
 
 function holdSeconds(text: string): number {
   const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(MIN_HOLD_SECONDS, words / WORDS_PER_SECOND);
+  return Math.max(MIN_HOLD_SECONDS, words / WORDS_PER_SECOND) + EXTRA_HOLD_SECONDS;
 }
 
 /** Builds the comms panel inside ui (hidden until show()). */
@@ -133,7 +161,10 @@ export function createBriefing(ui: HTMLElement): Briefing {
   const nameEl = document.createElement('div');
   nameEl.className = 'gb-name';
   who.append(tagEl, nameEl);
-  head.append(ring, who);
+  // The reward chip: shown on a 'briefing' card only (toggled with a class, not an inline display).
+  const chipEl = document.createElement('div');
+  chipEl.className = 'gb-chip';
+  head.append(ring, who, chipEl);
 
   // Typed part and the untyped rest; the rest is hidden, not removed, so the card keeps its size while typing.
   const textEl = document.createElement('div');
@@ -145,13 +176,29 @@ export function createBriefing(ui: HTMLElement): Briefing {
 
   const actions = document.createElement('div');
   actions.className = 'gb-actions';
+  // Each button has an icon (shown on phones) and a text label (hidden there, still read by screen readers).
   const skipBtn = document.createElement('button');
   skipBtn.type = 'button';
   skipBtn.className = 'gb-skip';
-  skipBtn.textContent = 'Skip ✕';
+  skipBtn.setAttribute('aria-label', 'Skip');
+  const skipIcon = document.createElement('span');
+  skipIcon.className = 'gb-icon';
+  skipIcon.setAttribute('aria-hidden', 'true');
+  skipIcon.textContent = '⏭';
+  const skipLabel = document.createElement('span');
+  skipLabel.className = 'gb-label';
+  skipLabel.textContent = 'Skip ✕';
+  skipBtn.append(skipIcon, skipLabel);
   const nextBtn = document.createElement('button');
   nextBtn.type = 'button';
   nextBtn.className = 'gb-next';
+  const nextIcon = document.createElement('span');
+  nextIcon.className = 'gb-icon';
+  nextIcon.setAttribute('aria-hidden', 'true');
+  nextIcon.textContent = '›';
+  const nextLabel = document.createElement('span');
+  nextLabel.className = 'gb-label';
+  nextBtn.append(nextIcon, nextLabel);
   actions.append(skipBtn, nextBtn);
   card.append(head, textEl, actions);
   el.appendChild(card);
@@ -160,6 +207,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
   let active = false;
   let mode: 'briefing' | 'call' = 'call';
   let title = '';
+  let kicker = '';
+  let reward = '';
   let lines: readonly BriefingLine[] = [];
   let index = 0;
   let onDone: (() => void) | undefined;
@@ -169,6 +218,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
   let phase: 'ring' | 'type' | 'hold' = 'type';
   let ringLeft = 0;
   let acc = 0;
+  /** Characters per second for the current line, from the Options text speed (Infinity = whole line at once). */
+  let cps = CHARS_PER_SECOND.normal;
   let holdLeft = 0;
   let bobLeft = 0;
   let lastNow = 0;
@@ -207,14 +258,31 @@ export function createBriefing(ui: HTMLElement): Briefing {
     const word = text.slice(picked).split(/\s/)[0];
     const caller = lines[index].caller;
     speech().stop();
-    speech().say(word, caller.voice, { maxLetters: MAX_VOICE_LETTERS, phone: mode === 'call' });
+    speech().say(word, caller.voice, {
+      maxLetters: MAX_VOICE_LETTERS,
+      phone: mode === 'call',
+      radio: mode === 'call',
+    });
     if (portraitEl) {
       portraitEl.classList.add('gb-talk');
       bobLeft = BOB_SECONDS;
     }
   };
 
-  const tagFor = (): string => (mode === 'briefing' ? `Briefing${title ? ` · ${title}` : ''}` : '📞 Call');
+  const tagFor = (): string =>
+    mode === 'briefing' ? `${kicker ? `${kicker} · ` : ''}Briefing${title ? ` · ${title}` : ''}` : '📞 Call';
+
+  const paintChip = (): void => {
+    const on = mode === 'briefing' && reward.length > 0;
+    chipEl.classList.toggle('gb-chip-on', on);
+    if (on) {
+      chipEl.textContent = reward;
+      chipEl.setAttribute('aria-label', `Reward: ${reward}`);
+    } else {
+      chipEl.textContent = '';
+      chipEl.removeAttribute('aria-label');
+    }
+  };
 
   const startLine = (i: number): void => {
     index = i;
@@ -223,6 +291,7 @@ export function createBriefing(ui: HTMLElement): Briefing {
     text = fillHint(line.text);
     shown = 0;
     acc = 0;
+    cps = CHARS_PER_SECOND[getTextSpeed()];
     tagEl.textContent = tagFor();
     nameEl.textContent = caller.name;
     nameEl.classList.remove('gb-hidden');
@@ -234,7 +303,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
       portraitEl.dataset.key = caller.key;
       ring.replaceChildren(portraitEl);
     }
-    nextBtn.textContent = i === lines.length - 1 ? 'Done ▶' : 'Next ▶';
+    nextLabel.textContent = i === lines.length - 1 ? 'Done ▶' : 'Next ▶';
+    nextBtn.setAttribute('aria-label', i === lines.length - 1 ? 'Done' : 'Next');
     if (mode === 'call' && i === 0) {
       // A phone call rings first: the incoming caller shows where the line will type.
       phase = 'ring';
@@ -279,6 +349,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
   card.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     unlockSpeech();
+    // A long line scrolls inside the card: a touch that starts in the scrollable text is a drag, not a tap.
+    if (textEl.contains(e.target as Node) && textEl.scrollHeight > textEl.clientHeight) return;
     advance();
   });
   nextBtn.addEventListener('pointerdown', (e) => {
@@ -301,10 +373,13 @@ export function createBriefing(ui: HTMLElement): Briefing {
       }
       mode = opts?.mode ?? 'call';
       title = opts?.title ?? '';
+      kicker = opts?.kicker ?? '';
+      reward = opts?.reward ?? '';
       lines = newLines;
       onDone = opts?.onDone;
       active = true;
       el.style.display = 'block';
+      paintChip();
       startLine(0);
     },
     hide() {
@@ -337,7 +412,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
         return;
       }
       if (phase === 'type') {
-        acc += dt * CHARS_PER_SECOND;
+        // Instant: the whole line at once (Infinity * 0 would be NaN, so it is not multiplied by dt).
+        acc = Number.isFinite(cps) ? acc + dt * cps : text.length;
         const target = Math.floor(acc);
         if (target > shown) reveal(target);
         if (shown >= text.length) {

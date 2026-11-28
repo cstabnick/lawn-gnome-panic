@@ -1,9 +1,8 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Economy } from './economy';
 import { aboveGround, heightAt } from './terrain';
 import { attachRampGround, pushOutOfRampSides, rampContactAt, rampSlope } from './ramps';
-import { addGroundToGeometry } from './terrainMesh';
+import { buildRampMeshes } from './rampSkins';
 import type { BiomeId, Blip, Fx, Hud, Player, Sfx, Vehicle } from './types';
 import { notifySaveChanged } from './saveHook';
 
@@ -35,10 +34,20 @@ export const STUNT_RAMPS: readonly StuntRamp[] = [
   { id: 'compost-heap', name: 'Compost Heap Launch', x: -290, z: 112, yaw: Math.PI / 4, width: 6, length: 12, height: 3.0, biome: 'forest' },
   { id: 'frostbite-ridge', name: 'Frostbite Ice Ridge', x: 61, z: -296, yaw: 0, width: 6.5, length: 13, height: 3.3, biome: 'tundra' },
   { id: 'cloverfield-barn', name: 'Cloverfield Barn Leap', x: 56, z: 312, yaw: Math.PI, width: 6.5, length: 13, height: 3.3, biome: 'farmland' },
+  // E13: Dean's Leap on the Anthill's flat summit (campus/types.ts OBSERVATORY), launching north toward the campus.
+  { id: 'deans-leap', name: "Dean's Leap", x: 1238, z: 126.5, yaw: Math.PI, width: 8, length: 14, height: 6, biome: 'campus' },
 ];
 
+/** Listeners told when a stunt jump lands and qualifies (E13: achievements read Dean's Leap from here). */
+const landedListeners = new Set<(rampId: string, dist: number, airTime: number) => void>();
+/** Subscribe to qualifying stunt landings; returns the unsubscribe. */
+export function onStuntLanded(cb: (rampId: string, dist: number, airTime: number) => void): () => void {
+  landedListeners.add(cb);
+  return () => { landedListeners.delete(cb); };
+}
+
 /** Arcade launch: the vertical speed off the lip is the car's speed times the slope's sine, times this. */
-export const RAMP_LAUNCH = { arcadeBoost: 1.15 } as const;
+export const RAMP_LAUNCH = { arcadeBoost: 1.4 } as const;
 
 export interface StuntJumpEvaluation {
   qualifies: boolean;
@@ -78,7 +87,7 @@ export function evaluateStuntJump(
   }
   const spins = Math.floor(Math.abs(yawDelta) / (Math.PI * 1.7));
   const label = spins >= 1 ? `INSANE ${spins * 360}° STUNT BONUS` : 'INSANE STUNT BONUS';
-  const bonus = firstTime ? 150 : 40;
+  const bonus = firstTime ? 180 : 50;
   return { qualifies: true, bonus, label, firstTime };
 }
 
@@ -115,60 +124,6 @@ function saveCompleted(storage: StuntStorage | undefined, completed: Set<string>
   }
 }
 
-function buildWedgeGeo(ramp: StuntRamp): THREE.BufferGeometry {
-  const hw = ramp.width / 2;
-  const hl = ramp.length / 2;
-  const h = ramp.height;
-  // Local space: +z is launch lip, -z is ground entry
-  const positions = new Float32Array([
-    // Top slope (2 tris)
-    -hw, 0, -hl,   hw, 0, -hl,   hw, h, hl,
-    -hw, 0, -hl,   hw, h, hl,   -hw, h, hl,
-    // Back vertical face (+z lip)
-    -hw, 0, hl,   -hw, h, hl,    hw, h, hl,
-    -hw, 0, hl,    hw, h, hl,    hw, 0, hl,
-    // Left side (-x)
-    -hw, 0, -hl,  -hw, h, hl,   -hw, 0, hl,
-    // Right side (+x)
-    hw, 0, -hl,    hw, 0, hl,    hw, h, hl,
-  ]);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.computeVertexNormals();
-  geo.rotateY(ramp.yaw);
-  geo.translate(ramp.x, 0, ramp.z);
-  return addGroundToGeometry(geo);
-}
-
-function buildRampExtras(
-  ramp: StuntRamp,
-  chevronGeos: THREE.BufferGeometry[],
-  railGeos: THREE.BufferGeometry[],
-): void {
-  const slopeAngle = Math.atan2(ramp.height, ramp.length);
-  const slopeLen = Math.hypot(ramp.length, ramp.height);
-  // Chevrons sit 0.04m proud of the slope surface so zero z-fighting
-  for (const frac of [0.3, 0.58, 0.82]) {
-    const zLocal = -ramp.length / 2 + frac * ramp.length;
-    const yLocal = frac * ramp.height + 0.045;
-    const c = new THREE.BoxGeometry(ramp.width * 0.58, 0.05, 0.7);
-    c.rotateX(-slopeAngle);
-    c.translate(0, yLocal, zLocal);
-    c.rotateY(ramp.yaw);
-    c.translate(ramp.x, 0, ramp.z);
-    chevronGeos.push(addGroundToGeometry(c));
-  }
-  // Glowing side guide rails along left and right edges
-  for (const s of [-1, 1]) {
-    const r = new THREE.BoxGeometry(0.18, 0.28, slopeLen);
-    r.rotateX(-slopeAngle);
-    r.translate(s * (ramp.width / 2 - 0.14), ramp.height / 2 + 0.14, 0);
-    r.rotateY(ramp.yaw);
-    r.translate(ramp.x, 0, ramp.z);
-    railGeos.push(addGroundToGeometry(r));
-  }
-}
-
 function wrapAngleDelta(delta: number): number {
   let d = delta;
   while (d > Math.PI) d -= Math.PI * 2;
@@ -186,28 +141,8 @@ export function createStunts(
 ) {
   const completed = loadCompleted(storage);
 
-  // Build merged ramp geometry
-  const bodyGeos: THREE.BufferGeometry[] = [];
-  const chevronGeos: THREE.BufferGeometry[] = [];
-  const railGeos: THREE.BufferGeometry[] = [];
-  for (const ramp of STUNT_RAMPS) {
-    bodyGeos.push(buildWedgeGeo(ramp));
-    buildRampExtras(ramp, chevronGeos, railGeos);
-  }
-
-  const addMerged = (geos: THREE.BufferGeometry[], mat: THREE.Material) => {
-    const geo = mergeGeometries(geos, false);
-    for (const g of geos) g.dispose();
-    if (!geo) return;
-    const m = new THREE.Mesh(geo, mat);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    scene.add(m);
-  };
-
-  addMerged(bodyGeos, new THREE.MeshStandardMaterial({ color: 0x5c646d, roughness: 0.85 }));
-  addMerged(chevronGeos, new THREE.MeshStandardMaterial({ color: 0xffc82c, emissive: 0xffa600, emissiveIntensity: 0.35, roughness: 0.5 }));
-  addMerged(railGeos, new THREE.MeshStandardMaterial({ color: 0x38f2ff, emissive: 0x1bd6ff, emissiveIntensity: 0.9, roughness: 0.3 }));
+  // Dressed ramp meshes (rampSkins.ts); the rings glow only while that ramp's stunt is active.
+  const rings = buildRampMeshes(scene, STUNT_RAMPS);
 
   let activeJump: {
     rampId: string;
@@ -239,6 +174,10 @@ export function createStunts(
   return {
     update(dt: number, player: Player, _vehicles: Vehicle[]): { airborne: boolean; jumpJustLanded: boolean } {
       let jumpJustLanded = false;
+      const showRings = (): void => {
+        const id = (activeJump as { rampId: string } | null)?.rampId;
+        for (const [rid, ring] of rings) ring.visible = rid === id;
+      };
       const v = player.vehicle;
       if (!v || v.spec.flies || v.spec.boat) {
         activeJump = null;
@@ -246,6 +185,7 @@ export function createStunts(
         sinceRamp = Infinity;
         prevWheels = 0;
         prevOn = null;
+        showRings();
         return { airborne: false, jumpJustLanded };
       }
 
@@ -340,11 +280,13 @@ export function createStunts(
             hud.toast(`${evalRes.label}! ${sub}`, 3200);
             (hud as { callout?: (t: string, s?: string) => void }).callout?.(evalRes.label, sub);
             jumpJustLanded = true;
+            for (const cb of landedListeners) cb(activeJump.rampId, dist, activeJump.airTime);
           }
           activeJump = null;
         }
       }
 
+      showRings();
       return { airborne: activeJump !== null, jumpJustLanded };
     },
 

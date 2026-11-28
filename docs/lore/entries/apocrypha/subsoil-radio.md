@@ -36,7 +36,13 @@ open after a breakdown.
 
 - Gnome Theft Auto: station `under` in `radio/content.ts`. It is a bonus station: "Drive-Time Regular" asks for a song
   on the three main stations and does not count it. The set is `buildUndergroundSet` in `@lawn/music`, and the song
-  credit on screen follows the part of the set that is playing.
+  credit on screen follows the part of the set that is playing. E17: once the lamps are lit, the station plays live in Loamdeep's Under-Chorus Hall, the floor humming along (`sq-loamdeep-under-chorus`).
+
+## Everyday
+
+- **Notices:** On the Loamdeep wall by the decks: "Not the transmitter." "The floor you are standing on is the speaker." "Please do not say 'mower' and 'kick drum' in the same breath. Say 'seat'."
+- **Sayings and habits:** "Turn it up until the floor agrees." Moles tune by pressing an ear to the ground; gnomes tune by pressing the Beats button four times and holding. A listener who drives off the dial the long way "has gone to Subsoil".
+- **Small history:** The first night it went out, the only complaint was from a badger, who said it was the most restful noise he had been given since the thaw.
 
 ## Loose threads
 

@@ -5,7 +5,7 @@
 // their length. Every number lives in PACING below and is quoted in the bible. Pure: no three.js, no DOM.
 // Run: `npm run cutscene-report -w games/gnome-theft-auto` (the report), `npm test` (pacing.test.ts).
 import type {
-  ActorSample, CameraSample, PacingCode, PacingWaiver, SceneFrame, SceneKind, SceneScript, StageEnv, Timeline,
+  ActorSample, CameraSample, PacingCode, PacingWaiver, SceneFrame, SceneKind, SceneScript, ShotSize, StageEnv, Step, Timeline,
 } from './script';
 import { GNOME_HEIGHT, compile, sampleFrame } from './timeline';
 import { lineTiming, wordCount } from './textSpeed';
@@ -307,6 +307,9 @@ export function checkPacing(script: SceneScript, env: StageEnv, opts: PacingOpti
       case 'title': case 'caption':
         if (st.text) busy.push([ts.start, ts.start + 2.5]);
         break;
+      case 'intro':
+        busy.push([ts.start, ts.start + ts.dur]);
+        break;
       default:
         break;
     }
@@ -330,6 +333,85 @@ export function checkPacing(script: SceneScript, env: StageEnv, opts: PacingOpti
   };
 }
 
+// ---- GR6 key frames ----------------------------------------------------------------------------------------------------
+
+/** GR6 thresholds for key frames (close lines and intro cards). */
+export const KEY_FRAME = {
+  /** A line counts as a close line when its speaker fills at least this share of the frame height. */
+  closeFill: 0.6,
+  /** Seen from more than this many degrees off their facing, a close-up shows an ear and the back of the hat. */
+  faceAngle: 60,
+  /** Looked down on more steeply than this (degrees below level, camera to head), a close-up shows the hat crown. */
+  topAngle: 40,
+} as const;
+
+/** Is someone else standing between the camera and `a`'s face? Bodies are upright cylinders, hat tip included. */
+function blockerOf(frame: SceneFrame, a: ActorSample): string | null {
+  const px = a.x, py = a.y + a.head * 0.85, pz = a.z;
+  const [cx, cy, cz] = frame.camera.pos;
+  const len = Math.hypot(px - cx, py - cy, pz - cz);
+  for (const b of Object.values(frame.actors)) {
+    if (b.id === a.id || !b.visible) continue;
+    const r = 0.3 * (b.head / 0.9), top = b.y + b.head * 1.55;
+    // A camera at someone's shoulder has their hat brim across the lens, whatever the ray does.
+    if (cy >= b.y - 0.2 && cy <= top + 0.15 && Math.hypot(cx - b.x, cz - b.z) < r + 0.45) return b.id;
+    for (let k = 1; k < 24; k++) {
+      const t = k / 24;
+      // Stop 0.35 m short of the face: the speaker's own beard and a hand on a shoulder do not count.
+      if ((1 - t) * len < 0.35) break;
+      const x = cx + (px - cx) * t, y = cy + (py - cy) * t, z = cz + (pz - cz) * t;
+      if (y >= b.y && y <= top && Math.hypot(x - b.x, z - b.z) < r) return b.id;
+    }
+  }
+  return null;
+}
+
+/** Why `a`'s face does not read from the camera (back of the head, hat crown from above, someone in front), or null. */
+export function faceProblem(frame: SceneFrame, a: ActorSample): { code: PacingCode; detail: string } | null {
+  const g = framing(frame.camera, a);
+  if (g.offFacing > KEY_FRAME.faceAngle && !a.seatedIn) return { code: 'face-hidden', detail: `seen ${Math.round(g.offFacing)} deg off their facing (max ${KEY_FRAME.faceAngle}): the back of the head` };
+  const [cx, cy, cz] = frame.camera.pos;
+  const down = Math.atan2(cy - (a.y + a.head * 0.85), Math.hypot(cx - a.x, cz - a.z)) * 180 / Math.PI;
+  if (down > KEY_FRAME.topAngle) return { code: 'face-hidden', detail: `looked down on at ${Math.round(down)} deg (max ${KEY_FRAME.topAngle}): the hat crown, not the face` };
+  const by = blockerOf(frame, a);
+  if (by) return { code: 'speaker-blocked', detail: `${by} stands between the camera and the face` };
+  return null;
+}
+
+/**
+ * GR6 key-frame faults: every close line (the speaker fills >= KEY_FRAME.closeFill of the frame) and every intro card
+ * must show the face: not the back of the head, not the hat from above, nobody in front. Sampled at the middle of the
+ * line's typing (the intro card: half a second in). Waivers in `direction.waive` apply as in checkPacing.
+ */
+export function keyFrameFaults(script: SceneScript, env: StageEnv): PacingFault[] {
+  const tl: Timeline = compile(script, lineTiming('normal'));
+  const faults: PacingFault[] = [];
+  const actorIds = new Set((script.actors ?? []).map((a) => a.id));
+  for (const ts of tl.steps) {
+    const st = ts.step;
+    if (st.do === 'say' && actorIds.has(st.who)) {
+      const f = sampleFrame(tl, Math.min(ts.start + Math.max(ts.typeDur ?? 0, 0.6) / 2, tl.duration), env);
+      const a = f.actors[st.who];
+      if (!a?.visible) continue;
+      const g = framing(f.camera, a);
+      if (!g.inFrame || g.fill < KEY_FRAME.closeFill) continue;
+      const p = faceProblem(f, a);
+      if (p) faults.push({ code: p.code, t: ts.start, detail: `close line: ${st.who} ${p.detail}`, text: st.text });
+    } else if (st.do === 'intro' && actorIds.has(st.who)) {
+      const f = sampleFrame(tl, Math.min(ts.start + 0.5, tl.duration), env);
+      const a = f.actors[st.who];
+      if (!a?.visible) continue;
+      const g = framing(f.camera, a);
+      if (!g.inFrame) { faults.push({ code: 'face-hidden', t: ts.start, detail: `intro card: ${st.who} is out of frame` }); continue; }
+      const p = faceProblem(f, a);
+      if (p) faults.push({ code: p.code, t: ts.start, detail: `intro card: ${st.who} ${p.detail}` });
+    }
+  }
+  const waive: PacingWaiver[] = script.direction?.waive ?? [];
+  return faults.filter((f) => !waive.some((w) => w.code === f.code && w.why.trim().length > 0
+    && (!w.match || (f.text ?? '').includes(w.match) || f.detail.includes(w.match))));
+}
+
 /** True when `id` is in the baseline list (exact ids, or a prefix ending in '*'). */
 export function inBaseline(id: string, baseline: readonly string[]): boolean {
   return baseline.some((b) => (b.endsWith('*') ? id.startsWith(b.slice(0, -1)) : b === id));
@@ -349,4 +431,81 @@ export function countByCode(results: readonly PacingResult[]): Record<string, nu
   const out: Record<string, number> = {};
   for (const r of results) for (const f of r.faults) out[f.code] = (out[f.code] ?? 0) + 1;
   return out;
+}
+
+export interface ShotTally {
+  id: string;
+  /** Camera steps by kind ('frame' counted by size below; 'push' counts frame shots with a push-in). */
+  moves: Record<'cut' | 'dolly' | 'orbit' | 'follow' | 'track' | 'frame' | 'push', number>;
+  sizes: Record<ShotSize, number>;
+  heights: Record<'eye' | 'low' | 'high', number>;
+  /** Longest run of consecutive cam steps with the same set-up (frame: who + size + height + side sign; others: kind). */
+  longestRun: number;
+  /** longestRun >= 3. */
+  monotone: boolean;
+  /** Sound cues: 'sfx' steps + say.sfx, 'stinger' steps + say.stinger, 'ambience' steps (+1 if the script has ambience), 'music' steps (+1 if script.music). */
+  sound: { sfx: number; stingers: number; beds: number; music: number };
+}
+
+/** Visits every step in order, nested 'parallel' tracks included. */
+function walkSteps(steps: readonly Step[], fn: (s: Step) => void): void {
+  for (const s of steps) {
+    fn(s);
+    if (s.do === 'parallel') for (const track of s.tracks) walkSteps(track, fn);
+  }
+}
+
+/** The shot and sound tally of one scene, read from its script (no compile): for the report's variety and sound lists. */
+export function tallyShots(script: SceneScript): ShotTally {
+  const t: ShotTally = {
+    id: script.id,
+    moves: { cut: 0, dolly: 0, orbit: 0, follow: 0, track: 0, frame: 0, push: 0 },
+    sizes: { cu: 0, mcu: 0, ms: 0, fs: 0, ws: 0 },
+    heights: { eye: 0, low: 0, high: 0 },
+    longestRun: 0,
+    monotone: false,
+    sound: { sfx: 0, stingers: 0, beds: script.ambience ? 1 : 0, music: script.music ? 1 : 0 },
+  };
+  let run = 0;
+  let prev = '';
+  walkSteps(script.steps, (s) => {
+    if (s.do === 'cam') {
+      const shot = s.shot;
+      t.moves[shot.kind]++;
+      let key: string = shot.kind;
+      if (shot.kind === 'frame') {
+        const h = shot.height ?? 'eye';
+        t.sizes[shot.size]++;
+        t.heights[h]++;
+        if (shot.push) t.moves.push++;
+        key = `frame:${shot.who}:${shot.size}:${h}:${Math.sign(shot.side ?? 0)}`;
+      }
+      run = key === prev ? run + 1 : 1;
+      prev = key;
+      t.longestRun = Math.max(t.longestRun, run);
+    } else if (s.do === 'sfx') t.sound.sfx++;
+    else if (s.do === 'stinger') t.sound.stingers++;
+    else if (s.do === 'ambience') t.sound.beds++;
+    else if (s.do === 'music') t.sound.music++;
+    else if (s.do === 'say') {
+      if (s.sfx) t.sound.sfx++;
+      if (s.stinger) t.sound.stingers++;
+    }
+  });
+  t.monotone = t.longestRun >= 3;
+  return t;
+}
+
+/** One line per scene, e.g. "  shots: frame 6 (cu 1 mcu 3 ms 2) dolly 1 | eye 5 low 1 | run 3 MONOTONE | sound: sfx 2 stingers 1 beds 1 music 1". */
+export function formatTally(t: ShotTally): string {
+  const sizes = (Object.keys(t.sizes) as ShotSize[]).filter((k) => t.sizes[k] > 0).map((k) => `${k} ${t.sizes[k]}`).join(' ');
+  const order: Array<'frame' | 'dolly' | 'orbit' | 'follow' | 'track' | 'cut'> = ['frame', 'dolly', 'orbit', 'follow', 'track', 'cut'];
+  const shotParts = order.filter((k) => t.moves[k] > 0)
+    .map((k) => (k === 'frame' && sizes ? `frame ${t.moves.frame} (${sizes})` : `${k} ${t.moves[k]}`));
+  if (t.moves.push > 0) shotParts.push(`push ${t.moves.push}`);
+  const heights = (Object.keys(t.heights) as Array<keyof ShotTally['heights']>).filter((k) => t.heights[k] > 0)
+    .map((k) => `${k} ${t.heights[k]}`).join(' ');
+  const run = `run ${t.longestRun}${t.monotone ? ' MONOTONE' : ''}`;
+  const sound = `sound: sfx ${t.sound.sfx} stingers ${t.sound.stingers} beds ${t.sound.beds} music ${t.sound.music}`;
+  return `  shots: ${shotParts.join(' ') || 'none'} | ${heights || 'no heights'} | ${run} | ${sound}`;
 }

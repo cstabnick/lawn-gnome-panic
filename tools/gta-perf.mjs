@@ -2,7 +2,7 @@
 // Edge/Chrome and prints frame times and WebGL draw calls per leg. The dev server must be running.
 //
 //   npm run dev -w games/gnome-theft-auto          # http://localhost:5198/
-//   node tools/gta-perf.mjs [url] [--landscape] [--speed 40]
+//   node tools/gta-perf.mjs [url] [--landscape] [--speed 40] [--route outer]
 //
 // The mower is moved along the route by script (about `speed` m/s, the game's physics still settles it on the ground),
 // so streaming, critter LOD and chunk culling all run as in play. Numbers depend on the machine's GPU: compare runs
@@ -24,7 +24,18 @@ const queryArg = args.indexOf('--query');
 const extraQuery = queryArg >= 0 ? args[queryArg + 1] : '';
 
 // Legs over land (roads where possible), each ending in the region it is named after.
-const ROUTE = [
+// --route outer (E31): the outer bands and the batch-3 regions instead: Trellisdown, the Unmown, Snowcap Rise and
+// the Saltbucket hinterland.
+const routeArg = args.indexOf('--route');
+const OUTER = [
+  ['Trellisdown', [[-950, 300], [-950, -30], [-950, -600]]],
+  ['Unmown gate', [[-950, -600], [-950, -950], [-1400, -1020], [-1540, -1120]]],
+  ['Unmown preserve', [[-1540, -1120], [-1300, -1500], [-1100, -1600], [-560, -1600]]],
+  ['Snowcap Rise', [[-560, -1600], [-100, -1250], [400, -1100], [1000, -1150]]],
+  ['Saltbucket hinterland', [[1000, -1150], [1150, -500], [1150, 400], [700, 1000], [-300, 1000]]],
+  ['Trellisdown south', [[-300, 1000], [-950, 990], [-950, 500]]],
+];
+const OLD_ROUTE = [
   ['Turfton', [[0, -115], [0, -200]]],
   ['Frostbite Fells', [[0, -200], [0, -400], [-30, -700]]],
   ['Loch Moss', [[-30, -700], [-400, -520], [-720, -480]]],
@@ -34,6 +45,9 @@ const ROUTE = [
   ['Dust Flats', [[300, 600], [520, 300], [560, 30]]],
   ['Turfton (back)', [[560, 30], [200, 0], [60, -60]]],
 ];
+// --legs '<json>' (E33): your own legs, e.g. along a mountain route: [["Brim Gap Road", [[640,-1302],[700,-1500]]], ...].
+const legsArg = args.indexOf('--legs');
+const ROUTE = legsArg >= 0 ? JSON.parse(args[legsArg + 1]) : routeArg >= 0 && args[routeArg + 1] === 'outer' ? OUTER : OLD_ROUTE;
 
 const BROWSERS = [
   process.env.DEMO_BROWSER,

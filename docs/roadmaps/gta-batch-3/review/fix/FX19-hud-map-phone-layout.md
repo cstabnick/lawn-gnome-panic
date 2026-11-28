@@ -252,3 +252,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 ## Added after FX03 (orchestrator)
 
 - From FX03: a global toast queue (toasts stack and collide; G9), the duplicate vehicle-name toast and the 'Entering Mossy Wood' district toast in `hud.ts`. Use `node tools/gta-touch-check.mjs` for overlap checks.
+
+## Added after FX12 (orchestrator)
+
+- G4#5: the minimap still shows Snowcap Rise green (carried from FX12).

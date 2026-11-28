@@ -225,3 +225,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Drive-along and race tests green; perf at the Capwood core within GR9.
 - All 3 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX12 (orchestrator)
+
+- Mittenholt snow lumps sit on its frost ring (`living/hamletMittenholt.ts`); the lodge sock reads as a chimney from some angles; G4#4 snow settling during snow weather (needs ground material + weather) carried. FX11/FX12 perf and zfight checks never ran on a loaded machine: re-measure the Rise and the coast with `node tools/gta-perf.mjs` while you are there.

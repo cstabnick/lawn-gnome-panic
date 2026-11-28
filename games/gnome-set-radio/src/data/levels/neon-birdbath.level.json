@@ -4,54 +4,376 @@
   "game": "gnome-set-radio",
   "id": "neon-birdbath",
   "name": "Neon Birdbath Spire",
-  "bounds": { "w": 175, "d": 175 },
+  "bounds": {
+    "w": 232,
+    "d": 232
+  },
   "stamps": [
-    { "op": "gauss", "x": -58, "z": 58, "sigma": 15, "amount": 1.7 },
-    { "op": "gauss", "x": 58, "z": -58, "sigma": 15, "amount": 1.7 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 46, "outer": 60, "to": 0 }
+    {
+      "op": "gauss",
+      "x": -58,
+      "z": 58,
+      "sigma": 15,
+      "amount": 1.7
+    },
+    {
+      "op": "gauss",
+      "x": 58,
+      "z": -58,
+      "sigma": 15,
+      "amount": 1.7
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 0,
+      "inner": 46,
+      "outer": 60,
+      "to": 0
+    }
   ],
   "paths": [
-    { "id": "spire-promenade", "kind": "road", "points": [[0, 66], [-26, 22], [30, 16]], "width": 7 },
-    { "id": "spire-boardwalk", "kind": "road", "points": [[0, 66], [0, -40]], "width": 6.5 }
+    {
+      "id": "spire-promenade",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          66
+        ],
+        [
+          -26,
+          22
+        ],
+        [
+          30,
+          16
+        ]
+      ],
+      "width": 7
+    },
+    {
+      "id": "spire-boardwalk",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          66
+        ],
+        [
+          0,
+          -40
+        ]
+      ],
+      "width": 6.5
+    }
   ],
   "props": [
-    { "prefab": "gsr-postcard-kiosk", "x": -12, "z": 38, "rot": 0.5, "scale": 1.45 },
-    { "prefab": "gsr-photo-cutout", "x": 12, "z": 38, "rot": -0.45, "scale": 1.45 },
-    { "prefab": "gsr-mist-bench", "x": -16, "z": 2, "rot": 1.4, "scale": 1.35 },
-    { "prefab": "gsr-mist-bench", "x": 16, "z": 2, "rot": -1.4, "scale": 1.35 },
-    { "prefab": "gsr-cafe-table", "x": 18, "z": 28, "rot": -0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": -18, "z": 30, "rot": 0.4, "scale": 1.15 },
-    { "prefab": "street-lamp", "x": -14, "z": 18, "rot": 0, "scale": 1.25 },
-    { "prefab": "street-lamp", "x": 14, "z": 18, "rot": 0, "scale": 1.25 },
-    { "prefab": "gsr-telescope-stand", "x": -62, "z": 0, "rot": 1.57, "scale": 1.5 },
-    { "prefab": "gsr-mist-bench", "x": -60, "z": 8, "rot": 1.57, "scale": 1.35 },
-    { "prefab": "gsr-telescope-stand", "x": 62, "z": 0, "rot": -1.57, "scale": 1.5 },
-    { "prefab": "gsr-cafe-table", "x": 60, "z": -8, "rot": 0.4, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 },
-    { "prefab": "gsr-neon-palm", "x": -18, "z": 46, "rot": 0.2, "scale": 1.5 },
-    { "prefab": "gsr-neon-palm", "x": 18, "z": 46, "rot": -0.2, "scale": 1.5 },
-    { "prefab": "gsr-neon-palm", "x": -44, "z": 16, "rot": 0.5, "scale": 1.45 },
-    { "prefab": "gsr-neon-palm", "x": 44, "z": 16, "rot": -0.5, "scale": 1.45 },
-    { "prefab": "birdbath", "x": -18, "z": 26, "rot": 0, "scale": 1.4 },
-    { "prefab": "birdbath", "x": 18, "z": 26, "rot": 0, "scale": 1.4 },
-    { "prefab": "lawn-flamingo", "x": -22, "z": 10, "rot": 0.6, "scale": 1.4 },
-    { "prefab": "lawn-flamingo", "x": 22, "z": 10, "rot": -0.6, "scale": 1.4 },
-    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
-    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
-    { "prefab": "gsr-gondola-dock", "x": -48, "z": 30, "rot": 1.57, "scale": 1.5 },
-    { "prefab": "gsr-gondola-dock", "x": 48, "z": 30, "rot": -1.57, "scale": 1.5 },
-    { "prefab": "gta-vending-fizz", "x": 22, "z": 36, "rot": -0.5, "scale": 1.35 },
-    { "prefab": "toadstool-seat", "x": -22, "z": 34, "rot": 0.3, "scale": 1.3 }
+    {
+      "prefab": "gsr-postcard-kiosk",
+      "x": -12,
+      "z": 38,
+      "rot": 0.5,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-photo-cutout",
+      "x": 12,
+      "z": 38,
+      "rot": -0.45,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": -16,
+      "z": 2,
+      "rot": 1.4,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 16,
+      "z": 2,
+      "rot": -1.4,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 18,
+      "z": 28,
+      "rot": -0.3,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": -18,
+      "z": 30,
+      "rot": 0.4,
+      "scale": 1.15
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -14,
+      "z": 18,
+      "rot": 0,
+      "scale": 1.25
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 14,
+      "z": 18,
+      "rot": 0,
+      "scale": 1.25
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": -62,
+      "z": 0,
+      "rot": 1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": -60,
+      "z": 8,
+      "rot": 1.57,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": 62,
+      "z": 0,
+      "rot": -1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 60,
+      "z": -8,
+      "rot": 0.4,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 0,
+      "z": -64,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-neon-palm",
+      "x": -18,
+      "z": 46,
+      "rot": 0.2,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-neon-palm",
+      "x": 18,
+      "z": 46,
+      "rot": -0.2,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-neon-palm",
+      "x": -44,
+      "z": 16,
+      "rot": 0.5,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-neon-palm",
+      "x": 44,
+      "z": 16,
+      "rot": -0.5,
+      "scale": 1.45
+    },
+    {
+      "prefab": "birdbath",
+      "x": -18,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "birdbath",
+      "x": 18,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "lawn-flamingo",
+      "x": -22,
+      "z": 10,
+      "rot": 0.6,
+      "scale": 1.4
+    },
+    {
+      "prefab": "lawn-flamingo",
+      "x": 22,
+      "z": 10,
+      "rot": -0.6,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": -8,
+      "z": 48,
+      "rot": 0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 8,
+      "z": 48,
+      "rot": -0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-gondola-dock",
+      "x": -48,
+      "z": 30,
+      "rot": 1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-gondola-dock",
+      "x": 48,
+      "z": 30,
+      "rot": -1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gta-vending-fizz",
+      "x": 22,
+      "z": 36,
+      "rot": -0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "toadstool-seat",
+      "x": -22,
+      "z": 34,
+      "rot": 0.3,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-lotus-basin",
+      "x": -56,
+      "z": 28,
+      "rot": 0.2,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": -50,
+      "z": 34,
+      "rot": -0.6,
+      "scale": 1.3
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -60,
+      "z": 34,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": 56,
+      "z": -32,
+      "rot": -1.1,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-gondola-dock",
+      "x": 52,
+      "z": -38,
+      "rot": 0.5,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": 58,
+      "z": -26,
+      "rot": 0,
+      "scale": 1.35
+    }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
-    { "id": "ev-nb-tags", "kind": "event", "x": -24, "z": 36, "data": { "eventId": "nb-tag-rim" } },
-    { "id": "ev-nb-rings", "kind": "event", "x": 24, "z": 34, "data": { "eventId": "nb-mist-rings" } },
-    { "id": "ev-nb-gus", "kind": "event", "x": -18, "z": -10, "data": { "eventId": "nb-gus-chase" } },
-    { "id": "ev-nb-spouts", "kind": "event", "x": 18, "z": -10, "data": { "eventId": "nb-tune-spouts" } },
-    { "id": "ev-nb-boss", "kind": "boss", "x": 0, "z": -40, "data": { "eventId": "nb-boss-finn" } },
-    { "id": "ev-nb-demo", "kind": "side", "x": -40, "z": 40, "data": { "eventId": "nb-side-demo" } },
-    { "id": "ev-nb-nell", "kind": "side", "x": 40, "z": 40, "data": { "eventId": "nb-side-nell" } }
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 56,
+      "data": {
+        "yaw": 3.14159
+      }
+    },
+    {
+      "id": "ev-nb-tags",
+      "kind": "event",
+      "x": -24,
+      "z": 36,
+      "data": {
+        "eventId": "nb-tag-rim"
+      }
+    },
+    {
+      "id": "ev-nb-rings",
+      "kind": "event",
+      "x": 24,
+      "z": 34,
+      "data": {
+        "eventId": "nb-mist-rings"
+      }
+    },
+    {
+      "id": "ev-nb-gus",
+      "kind": "event",
+      "x": -18,
+      "z": -10,
+      "data": {
+        "eventId": "nb-gus-chase"
+      }
+    },
+    {
+      "id": "ev-nb-spouts",
+      "kind": "event",
+      "x": 18,
+      "z": -10,
+      "data": {
+        "eventId": "nb-tune-spouts"
+      }
+    },
+    {
+      "id": "ev-nb-boss",
+      "kind": "boss",
+      "x": 0,
+      "z": -40,
+      "data": {
+        "eventId": "nb-boss-finn"
+      }
+    },
+    {
+      "id": "ev-nb-demo",
+      "kind": "side",
+      "x": -40,
+      "z": 40,
+      "data": {
+        "eventId": "nb-side-demo"
+      }
+    },
+    {
+      "id": "ev-nb-nell",
+      "kind": "side",
+      "x": 40,
+      "z": 40,
+      "data": {
+        "eventId": "nb-side-nell"
+      }
+    }
   ],
   "data": {
     "areaNumber": 4,
@@ -116,7 +438,7 @@
         "w": 20,
         "d": 18,
         "yBase": 0,
-        "h": 11.0,
+        "h": 11,
         "color": "#1a2647",
         "roofColor": "#ff4ecd",
         "accentColor": "#ffd740",
@@ -144,7 +466,7 @@
         "w": 16,
         "d": 14,
         "yBase": 12.5,
-        "h": 4.0,
+        "h": 4,
         "color": "#131c36",
         "roofColor": "#ffd740",
         "accentColor": "#00e5ff",
@@ -172,7 +494,7 @@
         "w": 14,
         "d": 12,
         "yBase": 0,
-        "h": 6.0,
+        "h": 6,
         "color": "#202e54",
         "roofColor": "#69f0ae",
         "accentColor": "#00e5ff",
@@ -209,139 +531,741 @@
       }
     ],
     "ramps": [
-      { "id": "nb-ramp-pier-s", "x": -26, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "nb-ramp-pavilion-s", "x": 30, "z": 32, "w": 6, "length": 12, "yBottom": 0, "yTop": 5.5, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "nb-ramp-east-spa", "x": 36, "z": -1, "w": 6, "length": 14, "yBottom": 5.5, "yTop": 8.5, "yaw": 3.14159, "color": "#69f0ae" },
-      { "id": "nb-ramp-west-obs", "x": -32, "z": -5, "w": 6, "length": 16, "yBottom": 0, "yTop": 11.0, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "nb-ramp-spire", "x": 0, "z": -22, "w": 6.5, "length": 16, "yBottom": 0, "yTop": 12.5, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "nb-ramp-apex", "x": 12, "z": -40, "w": 5, "length": 10, "yBottom": 12.5, "yTop": 16.5, "yaw": -1.5708, "color": "#ffd740" },
-      { "id": "nb-ramp-lagoon-kicker", "x": 0, "z": 26, "w": 6, "length": 9, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "nb-ramp-rim-west", "x": -60, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#69f0ae" },
-      { "id": "nb-ramp-rim-east", "x": 60, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#00e5ff" }
+      {
+        "id": "nb-ramp-pier-s",
+        "x": -26,
+        "z": 36,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "nb-ramp-pavilion-s",
+        "x": 30,
+        "z": 32,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 5.5,
+        "yaw": 3.14159,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "nb-ramp-east-spa",
+        "x": 36,
+        "z": -1,
+        "w": 6,
+        "length": 14,
+        "yBottom": 5.5,
+        "yTop": 8.5,
+        "yaw": 3.14159,
+        "color": "#69f0ae"
+      },
+      {
+        "id": "nb-ramp-west-obs",
+        "x": -32,
+        "z": -5,
+        "w": 6,
+        "length": 16,
+        "yBottom": 0,
+        "yTop": 11,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      },
+      {
+        "id": "nb-ramp-spire",
+        "x": 0,
+        "z": -22,
+        "w": 6.5,
+        "length": 16,
+        "yBottom": 0,
+        "yTop": 12.5,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "nb-ramp-apex",
+        "x": 12,
+        "z": -40,
+        "w": 5,
+        "length": 10,
+        "yBottom": 12.5,
+        "yTop": 16.5,
+        "yaw": -1.5708,
+        "color": "#ffd740"
+      },
+      {
+        "id": "nb-ramp-lagoon-kicker",
+        "x": 0,
+        "z": 26,
+        "w": 6,
+        "length": 9,
+        "yBottom": 0,
+        "yTop": 3.4,
+        "yaw": 3.14159,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "nb-ramp-rim-west",
+        "x": -60,
+        "z": 24,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#69f0ae"
+      },
+      {
+        "id": "nb-ramp-rim-east",
+        "x": 60,
+        "z": 24,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      }
     ],
     "rails": [
       {
         "id": "nb-rail-pier-to-pavilion",
-        "points": [[-14, 3.8, 22], [0, 4.6, 20], [20, 5.8, 16]],
+        "points": [
+          [
+            -14,
+            3.8,
+            22
+          ],
+          [
+            0,
+            4.6,
+            20
+          ],
+          [
+            20,
+            5.8,
+            16
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.24
       },
       {
         "id": "nb-rail-pavilion-to-spa",
-        "points": [[30, 5.8, 6], [33, 7.2, -1], [36, 8.8, -8]],
+        "points": [
+          [
+            30,
+            5.8,
+            6
+          ],
+          [
+            33,
+            7.2,
+            -1
+          ],
+          [
+            36,
+            8.8,
+            -8
+          ]
+        ],
         "color": "#69f0ae",
         "glowColor": "#69f0ae",
         "speedBoost": 1.28
       },
       {
         "id": "nb-rail-spa-to-spire",
-        "points": [[36, 8.8, -28], [26, 11.0, -34], [17, 12.8, -40]],
+        "points": [
+          [
+            36,
+            8.8,
+            -28
+          ],
+          [
+            26,
+            11,
+            -34
+          ],
+          [
+            17,
+            12.8,
+            -40
+          ]
+        ],
         "color": "#69f0ae",
         "glowColor": "#69f0ae",
         "speedBoost": 1.32
       },
       {
         "id": "nb-rail-obs-to-spire",
-        "points": [[-22, 11.3, -24], [-18, 12.2, -32], [-17, 12.8, -38]],
+        "points": [
+          [
+            -22,
+            11.3,
+            -24
+          ],
+          [
+            -18,
+            12.2,
+            -32
+          ],
+          [
+            -17,
+            12.8,
+            -38
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.32
       },
       {
         "id": "nb-rail-apex-halo",
-        "points": [[-22, 13.0, -40], [-10, 16.9, -40], [0, 17.5, -46], [10, 16.9, -40], [22, 13.0, -40]],
+        "points": [
+          [
+            -22,
+            13,
+            -40
+          ],
+          [
+            -10,
+            16.9,
+            -40
+          ],
+          [
+            0,
+            17.5,
+            -46
+          ],
+          [
+            10,
+            16.9,
+            -40
+          ],
+          [
+            22,
+            13,
+            -40
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.38
       },
       {
         "id": "nb-rail-plaza-arc",
-        "points": [[-32, 1.5, 40], [-14, 1.8, 42], [14, 1.8, 42], [32, 1.5, 40]],
+        "points": [
+          [
+            -32,
+            1.5,
+            40
+          ],
+          [
+            -14,
+            1.8,
+            42
+          ],
+          [
+            14,
+            1.8,
+            42
+          ],
+          [
+            32,
+            1.5,
+            40
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.2
       },
       {
         "id": "nb-rail-sky-drop",
-        "points": [[0, 16.8, -48], [-24, 12.5, -42], [-32, 11.3, -31]],
+        "points": [
+          [
+            0,
+            16.8,
+            -48
+          ],
+          [
+            -24,
+            12.5,
+            -42
+          ],
+          [
+            -32,
+            11.3,
+            -31
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.35
       },
       {
         "id": "nb-rail-spawn-lead",
-        "points": [[0, 1.5, 48], [0, 1.8, 42]],
+        "points": [
+          [
+            0,
+            1.5,
+            48
+          ],
+          [
+            0,
+            1.8,
+            42
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.22
       },
       {
         "id": "nb-rail-rim-west",
-        "points": [[-60, 1.8, 22], [-66, 2.4, 0], [-42, 2.2, -22]],
+        "points": [
+          [
+            -60,
+            1.8,
+            22
+          ],
+          [
+            -66,
+            2.4,
+            0
+          ],
+          [
+            -42,
+            2.2,
+            -22
+          ]
+        ],
         "color": "#69f0ae",
         "glowColor": "#69f0ae",
         "speedBoost": 1.3
       },
       {
         "id": "nb-rail-rim-east",
-        "points": [[46, 2.2, -18], [66, 2.4, 0], [60, 1.8, 22]],
+        "points": [
+          [
+            46,
+            2.2,
+            -18
+          ],
+          [
+            66,
+            2.4,
+            0
+          ],
+          [
+            60,
+            1.8,
+            22
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.3
       },
       {
         "id": "nb-rail-office-sw",
-        "points": [[-26, 5.1, 50], [-40, 5.1, 46], [-52, 3.8, 32]],
+        "points": [
+          [
+            -26,
+            5.1,
+            50
+          ],
+          [
+            -40,
+            5.1,
+            46
+          ],
+          [
+            -52,
+            3.8,
+            32
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.28
       },
       {
         "id": "nb-rail-office-se",
-        "points": [[34, 5.5, 48], [46, 5.5, 44], [54, 3.8, 32]],
+        "points": [
+          [
+            34,
+            5.5,
+            48
+          ],
+          [
+            46,
+            5.5,
+            44
+          ],
+          [
+            54,
+            3.8,
+            32
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.28
       },
       {
         "id": "nb-rail-office-nw",
-        "points": [[-44, 6.8, -36], [-48, 6.8, -48], [-32, 7.2, -48]],
+        "points": [
+          [
+            -44,
+            6.8,
+            -36
+          ],
+          [
+            -48,
+            6.8,
+            -48
+          ],
+          [
+            -32,
+            7.2,
+            -48
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.32
       },
       {
         "id": "nb-rail-office-ne",
-        "points": [[36, 6.3, -44], [46, 6.3, -36], [48, 4.2, -26]],
+        "points": [
+          [
+            36,
+            6.3,
+            -44
+          ],
+          [
+            46,
+            6.3,
+            -36
+          ],
+          [
+            48,
+            4.2,
+            -26
+          ]
+        ],
         "color": "#69f0ae",
         "glowColor": "#69f0ae",
         "speedBoost": 1.32
+      },
+      {
+        "id": "rail-neon-birdbath-epic-aether",
+        "points": [
+          [
+            0,
+            17,
+            -40
+          ],
+          [
+            -75.4,
+            19.5,
+            -14
+          ],
+          [
+            -130,
+            3.7,
+            -16
+          ],
+          [
+            -83.52,
+            4.5,
+            16
+          ],
+          [
+            -28,
+            1.5,
+            28
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.55,
+        "aetherRail": true
+      },
+      {
+        "id": "rail-neon-birdbath-underworld",
+        "points": [
+          [
+            44.08,
+            2.2,
+            -22
+          ],
+          [
+            124,
+            -2.5,
+            -14
+          ],
+          [
+            52.2,
+            -8.5,
+            0
+          ],
+          [
+            0,
+            -9.2,
+            8
+          ],
+          [
+            -55.68,
+            -8,
+            0
+          ],
+          [
+            -124,
+            -1.5,
+            14
+          ],
+          [
+            -44.08,
+            2.5,
+            22
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.65,
+        "aetherRail": true,
+        "underWorld": true
+      },
+      {
+        "id": "rail-neon-birdbath-sat-east-loop",
+        "points": [
+          [
+            52.2,
+            2.5,
+            6
+          ],
+          [
+            130,
+            4.6,
+            16
+          ],
+          [
+            52.2,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.45,
+        "aetherRail": true
       }
     ],
     "billboards": [
-      { "id": "nb-bb-1", "x": -26, "y": 3.5, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#00e5ff" },
-      { "id": "nb-bb-2", "x": 30, "y": 5.5, "z": 16, "yaw": -0.6, "w": 4.6, "h": 2.5, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#ff4ecd" },
-      { "id": "nb-bb-3", "x": 36, "y": 8.5, "z": -18, "yaw": -1.2, "w": 4.6, "h": 2.5, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#69f0ae" },
-      { "id": "nb-bb-4", "x": 0, "y": 16.5, "z": -46, "yaw": 0, "w": 5.0, "h": 2.6, "gangName": "Splash-Back Skaters", "eventId": "nb-tag-rim", "color": "#ffd740" }
+      {
+        "id": "nb-bb-1",
+        "x": -26,
+        "y": 3.5,
+        "z": 22,
+        "yaw": 0.4,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "Splash-Back Skaters",
+        "eventId": "nb-tag-rim",
+        "color": "#00e5ff"
+      },
+      {
+        "id": "nb-bb-2",
+        "x": 30,
+        "y": 5.5,
+        "z": 16,
+        "yaw": -0.6,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Splash-Back Skaters",
+        "eventId": "nb-tag-rim",
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "nb-bb-3",
+        "x": 36,
+        "y": 8.5,
+        "z": -18,
+        "yaw": -1.2,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Splash-Back Skaters",
+        "eventId": "nb-tag-rim",
+        "color": "#69f0ae"
+      },
+      {
+        "id": "nb-bb-4",
+        "x": 0,
+        "y": 16.5,
+        "z": -46,
+        "yaw": 0,
+        "w": 5,
+        "h": 2.6,
+        "gangName": "Splash-Back Skaters",
+        "eventId": "nb-tag-rim",
+        "color": "#ffd740"
+      }
     ],
     "interactives": [
-      { "id": "nb-vent-1", "kind": "updraft-vent", "x": -18, "y": 0, "z": -14, "power": 21.0, "prefab": "gsr-updraft-vent", "label": "Observatory Mist Geyser" },
-      { "id": "nb-vent-2", "kind": "updraft-vent", "x": 18, "y": 0, "z": -14, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "Spa Mist Geyser" },
-      { "id": "nb-vent-3", "kind": "updraft-vent", "x": 0, "y": 12.5, "z": -31, "power": 16.5, "prefab": "gsr-updraft-vent", "label": "Apex Mist Jet" },
-      { "id": "nb-ring-1", "kind": "aerial-ring", "x": -14, "y": 10.8, "z": -24, "eventId": "nb-mist-rings", "label": "Observatory Ring" },
-      { "id": "nb-ring-2", "kind": "aerial-ring", "x": 14, "y": 10.8, "z": -24, "eventId": "nb-mist-rings", "label": "Spa Ring" },
-      { "id": "nb-ring-3", "kind": "aerial-ring", "x": 0, "y": 18.2, "z": -46, "eventId": "nb-mist-rings", "label": "Apex Ring" },
-      { "id": "nb-ring-4", "kind": "aerial-ring", "x": 0, "y": 5.4, "z": 20, "eventId": "nb-mist-rings", "label": "Lagoon Ring" },
-      { "id": "nb-spk-1", "kind": "speaker-stack", "x": 36, "y": 8.5, "z": -14, "prefab": "gsr-boombox", "eventId": "nb-tune-spouts", "label": "Mist-Spa Spout" },
-      { "id": "nb-spk-2", "kind": "speaker-stack", "x": -32, "y": 11.0, "z": -18, "prefab": "gsr-boombox", "eventId": "nb-tune-spouts", "label": "Observatory Spout" },
-      { "id": "nb-spk-3", "kind": "speaker-stack", "x": 0, "y": 16.5, "z": -35, "prefab": "gsr-radio-dish", "eventId": "nb-tune-spouts", "label": "Apex Pirate Beacon" },
-      { "id": "nb-spray-1", "kind": "spray-pickup", "x": -26, "y": 3.9, "z": 22, "prefab": "gsr-spray-can" },
-      { "id": "nb-spray-2", "kind": "spray-pickup", "x": 36, "y": 8.9, "z": -18, "prefab": "gsr-spray-can" },
-      { "id": "nb-spray-3", "kind": "spray-pickup", "x": 0, "y": 16.9, "z": -40, "prefab": "gsr-spray-can" },
-      { "id": "nb-acorn-1", "kind": "tempo-acorn", "x": 36, "y": 9.1, "z": -22, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" },
-      { "id": "nb-acorn-2", "kind": "tempo-acorn", "x": -32, "y": 11.6, "z": -26, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" },
-      { "id": "nb-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 17.1, "z": -44, "eventId": "nb-side-demo", "label": "Lydian Tempo Acorn" }
+      {
+        "id": "nb-vent-1",
+        "kind": "updraft-vent",
+        "x": -18,
+        "y": 0,
+        "z": -14,
+        "power": 21,
+        "prefab": "gsr-updraft-vent",
+        "label": "Observatory Mist Geyser"
+      },
+      {
+        "id": "nb-vent-2",
+        "kind": "updraft-vent",
+        "x": 18,
+        "y": 0,
+        "z": -14,
+        "power": 19,
+        "prefab": "gsr-updraft-vent",
+        "label": "Spa Mist Geyser"
+      },
+      {
+        "id": "nb-vent-3",
+        "kind": "updraft-vent",
+        "x": 0,
+        "y": 12.5,
+        "z": -31,
+        "power": 16.5,
+        "prefab": "gsr-updraft-vent",
+        "label": "Apex Mist Jet"
+      },
+      {
+        "id": "nb-ring-1",
+        "kind": "aerial-ring",
+        "x": -14,
+        "y": 10.8,
+        "z": -24,
+        "eventId": "nb-mist-rings",
+        "label": "Observatory Ring"
+      },
+      {
+        "id": "nb-ring-2",
+        "kind": "aerial-ring",
+        "x": 14,
+        "y": 10.8,
+        "z": -24,
+        "eventId": "nb-mist-rings",
+        "label": "Spa Ring"
+      },
+      {
+        "id": "nb-ring-3",
+        "kind": "aerial-ring",
+        "x": 0,
+        "y": 18.2,
+        "z": -46,
+        "eventId": "nb-mist-rings",
+        "label": "Apex Ring"
+      },
+      {
+        "id": "nb-ring-4",
+        "kind": "aerial-ring",
+        "x": 0,
+        "y": 5.4,
+        "z": 20,
+        "eventId": "nb-mist-rings",
+        "label": "Lagoon Ring"
+      },
+      {
+        "id": "nb-spk-1",
+        "kind": "speaker-stack",
+        "x": 36,
+        "y": 8.5,
+        "z": -14,
+        "prefab": "gsr-boombox",
+        "eventId": "nb-tune-spouts",
+        "label": "Mist-Spa Spout"
+      },
+      {
+        "id": "nb-spk-2",
+        "kind": "speaker-stack",
+        "x": -32,
+        "y": 11,
+        "z": -18,
+        "prefab": "gsr-boombox",
+        "eventId": "nb-tune-spouts",
+        "label": "Observatory Spout"
+      },
+      {
+        "id": "nb-spk-3",
+        "kind": "speaker-stack",
+        "x": 0,
+        "y": 16.5,
+        "z": -35,
+        "prefab": "gsr-radio-dish",
+        "eventId": "nb-tune-spouts",
+        "label": "Apex Pirate Beacon"
+      },
+      {
+        "id": "nb-spray-1",
+        "kind": "spray-pickup",
+        "x": -26,
+        "y": 3.9,
+        "z": 22,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "nb-spray-2",
+        "kind": "spray-pickup",
+        "x": 36,
+        "y": 8.9,
+        "z": -18,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "nb-spray-3",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 16.9,
+        "z": -40,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "nb-acorn-1",
+        "kind": "tempo-acorn",
+        "x": 36,
+        "y": 9.1,
+        "z": -22,
+        "eventId": "nb-side-demo",
+        "label": "Lydian Tempo Acorn"
+      },
+      {
+        "id": "nb-acorn-2",
+        "kind": "tempo-acorn",
+        "x": -32,
+        "y": 11.6,
+        "z": -26,
+        "eventId": "nb-side-demo",
+        "label": "Lydian Tempo Acorn"
+      },
+      {
+        "id": "nb-acorn-3",
+        "kind": "tempo-acorn",
+        "x": 0,
+        "y": 17.1,
+        "z": -44,
+        "eventId": "nb-side-demo",
+        "label": "Lydian Tempo Acorn"
+      }
     ],
     "events": [
       {
@@ -353,7 +1277,12 @@
         "introLine": "Spiral up from the Arrival Pier, Glass Pavilion, and Mist-Spa to the Apex—tag all 4 billboards!",
         "completeLine": "Resort tagged! Even the honeymooners are cheering!",
         "objectiveType": "tag",
-        "targetIds": ["nb-bb-1", "nb-bb-2", "nb-bb-3", "nb-bb-4"],
+        "targetIds": [
+          "nb-bb-1",
+          "nb-bb-2",
+          "nb-bb-3",
+          "nb-bb-4"
+        ],
         "targetCount": 4,
         "x": -24,
         "y": 0,
@@ -368,7 +1297,12 @@
         "introLine": "Double-jump off the lagoon rails and mist geysers to thread all 4 Neon Mist Rings!",
         "completeLine": "Pure Lydian air-time! Every mist ring is lit!",
         "objectiveType": "rings",
-        "targetIds": ["nb-ring-1", "nb-ring-2", "nb-ring-3", "nb-ring-4"],
+        "targetIds": [
+          "nb-ring-1",
+          "nb-ring-2",
+          "nb-ring-3",
+          "nb-ring-4"
+        ],
         "targetCount": 4,
         "x": 24,
         "y": 0,
@@ -397,7 +1331,11 @@
         "introLine": "Retune the Mist-Spa, Sky-Lounge Observatory, and Apex Beacon to pierce the upper clouds!",
         "completeLine": "Pirate Beacon online! Mulch Alley Arcade just lit up on the scanner!",
         "objectiveType": "speakers",
-        "targetIds": ["nb-spk-1", "nb-spk-2", "nb-spk-3"],
+        "targetIds": [
+          "nb-spk-1",
+          "nb-spk-2",
+          "nb-spk-3"
+        ],
         "targetCount": 3,
         "x": 18,
         "y": 0,
@@ -426,7 +1364,11 @@
         "introLine": "Three Tempo Acorns spun up to the Mist-Spa, Observatory, and Apex—grab all 3!",
         "completeLine": "170 BPM locked! Enjoy the Neon Mist Wings vibe!",
         "objectiveType": "collect",
-        "targetIds": ["nb-acorn-1", "nb-acorn-2", "nb-acorn-3"],
+        "targetIds": [
+          "nb-acorn-1",
+          "nb-acorn-2",
+          "nb-acorn-3"
+        ],
         "targetCount": 3,
         "x": -40,
         "y": 0,
@@ -448,25 +1390,250 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "nb-npc-1", "name": "Honeymooner Marigold", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#26365e", "x": -10, "y": 0, "z": 38, "yaw": 0.4, "line": "We rode the pink gondola up for our anniversary! Which postcard filter looks best in cyan?" },
-      { "id": "nb-npc-2", "name": "Master Glass-Blower", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#223157", "x": 30, "y": 5.5, "z": 12, "yaw": -0.6, "line": "I bent those neon tubes myself—DJ Broadcast was just a kid with a dented birdbath back then." },
-      { "id": "nb-npc-3", "name": "Midnight Sax", "kind": "woken", "prefab": "gsr-saxophone-woken", "x": -32, "y": 11.0, "z": -18, "yaw": 0.7, "line": "Shhh... listen to 170 BPM liquid-DnB drift across the cloud deck from the Sky-Lounge." },
-      { "id": "nb-npc-4", "name": "Postcard Vendor", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1c2847", "x": -26, "y": 3.5, "z": 24, "yaw": 0.5, "line": "Best-selling card: 'Wish You Were Skating Here'—drawn right on the Arrival Pier!" },
-      { "id": "nb-npc-5", "name": "Glass Fan", "kind": "woken", "prefab": "gsr-neon-fountain", "x": 36, "y": 8.5, "z": -14, "yaw": -0.3, "line": "Hummm... G Lydian mist feels great on fired clay!" },
-      { "id": "nb-npc-6", "name": "Night-Watch Pip", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b2440", "x": 0, "y": 12.5, "z": -36, "yaw": 0.2, "line": "One last jump up to the 16.5m Lighthouse Apex—the whole Archipelago is below us." },
-      { "id": "nb-npc-7", "name": "Cliffside Skater", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -60, "y": 0, "z": -4, "yaw": 1.57, "line": "The rim boardwalk rails give you a full-speed view over the cloud deck!" },
-      { "id": "nb-npc-8", "name": "Gondola Captain", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#26365e", "x": -44, "y": 0, "z": 30, "yaw": 1.4, "line": "Look up—those pink Aether gondolas are ferrying tourists straight from Velvet Keys!" },
-      { "id": "nb-npc-9", "name": "Fizz Enthusiast", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#00e5ff", "x": 20, "y": 0, "z": 36, "yaw": -0.5, "line": "110% pollen Dandelion Fizz—best pre-flight fuel before hitting the Mist Geysers!" }
+      {
+        "id": "nb-npc-1",
+        "name": "Honeymooner Marigold",
+        "kind": "gnome",
+        "hatColor": "#ff4ecd",
+        "shirtColor": "#26365e",
+        "x": -10,
+        "y": 0,
+        "z": 38,
+        "yaw": 0.4,
+        "line": "We rode the pink gondola up for our anniversary! Which postcard filter looks best in cyan?"
+      },
+      {
+        "id": "nb-npc-2",
+        "name": "Master Glass-Blower",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#223157",
+        "x": 30,
+        "y": 5.5,
+        "z": 12,
+        "yaw": -0.6,
+        "line": "I bent those neon tubes myself—DJ Broadcast was just a kid with a dented birdbath back then."
+      },
+      {
+        "id": "nb-npc-3",
+        "name": "Midnight Sax",
+        "kind": "woken",
+        "prefab": "gsr-saxophone-woken",
+        "x": -32,
+        "y": 11,
+        "z": -18,
+        "yaw": 0.7,
+        "line": "Shhh... listen to 170 BPM liquid-DnB drift across the cloud deck from the Sky-Lounge."
+      },
+      {
+        "id": "nb-npc-4",
+        "name": "Postcard Vendor",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#1c2847",
+        "x": -26,
+        "y": 3.5,
+        "z": 24,
+        "yaw": 0.5,
+        "line": "Best-selling card: 'Wish You Were Skating Here'—drawn right on the Arrival Pier!"
+      },
+      {
+        "id": "nb-npc-5",
+        "name": "Glass Fan",
+        "kind": "woken",
+        "prefab": "gsr-neon-fountain",
+        "x": 36,
+        "y": 8.5,
+        "z": -14,
+        "yaw": -0.3,
+        "line": "Hummm... G Lydian mist feels great on fired clay!"
+      },
+      {
+        "id": "nb-npc-6",
+        "name": "Night-Watch Pip",
+        "kind": "gnome",
+        "hatColor": "#69f0ae",
+        "shirtColor": "#1b2440",
+        "x": 0,
+        "y": 12.5,
+        "z": -36,
+        "yaw": 0.2,
+        "line": "One last jump up to the 16.5m Lighthouse Apex—the whole Archipelago is below us."
+      },
+      {
+        "id": "nb-npc-7",
+        "name": "Cliffside Skater",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#ff4ecd",
+        "x": -60,
+        "y": 0,
+        "z": -4,
+        "yaw": 1.57,
+        "line": "The rim boardwalk rails give you a full-speed view over the cloud deck!"
+      },
+      {
+        "id": "nb-npc-8",
+        "name": "Gondola Captain",
+        "kind": "gnome",
+        "hatColor": "#ff4ecd",
+        "shirtColor": "#26365e",
+        "x": -44,
+        "y": 0,
+        "z": 30,
+        "yaw": 1.4,
+        "line": "Look up—those pink Aether gondolas are ferrying tourists straight from Velvet Keys!"
+      },
+      {
+        "id": "nb-npc-9",
+        "name": "Fizz Enthusiast",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#00e5ff",
+        "x": 20,
+        "y": 0,
+        "z": 36,
+        "yaw": -0.5,
+        "line": "110% pollen Dandelion Fizz—best pre-flight fuel before hitting the Mist Geysers!"
+      }
     ],
     "details": [
-      { "kind": "mist-pool", "x": 0, "y": 0.04, "z": 2, "w": 24, "color": "#00e5ff", "accentColor": "#ff4ecd" },
-      { "kind": "fountain-plaza", "x": 0, "y": 0.06, "z": 2, "scale": 1.45, "color": "#69f0ae", "accentColor": "#00e5ff" },
-      { "kind": "banner-arch", "x": 0, "y": 0, "z": 42, "yaw": 0, "scale": 1.3, "color": "#00e5ff", "accentColor": "#ff4ecd" },
-      { "kind": "placed-prop", "prefab": "gsr-piano-fountain", "x": 36, "y": 8.5, "z": -20, "yaw": 0.4, "scale": 1.35, "color": "#69f0ae" },
-      { "kind": "placed-prop", "prefab": "gsr-cafe-table", "x": -32, "y": 11.0, "z": -24, "yaw": 0.3, "scale": 1.25, "color": "#ff4ecd" },
-      { "kind": "placed-prop", "prefab": "gsr-telescope-stand", "x": -36, "y": 11.0, "z": -26, "yaw": 2.4, "scale": 1.4, "color": "#ffd740" },
-      { "kind": "placed-prop", "prefab": "gsr-telescope-stand", "x": -22, "y": 3.5, "z": 26, "yaw": 2.8, "scale": 1.3, "color": "#00e5ff" },
-      { "kind": "cable-span", "x": -32, "y": 11.6, "z": -22, "x2": 36, "y2": 9.1, "z2": -18, "color": "#00e5ff" }
+      {
+        "kind": "mist-pool",
+        "x": 0,
+        "y": 0.04,
+        "z": 2,
+        "w": 24,
+        "color": "#00e5ff",
+        "accentColor": "#ff4ecd"
+      },
+      {
+        "kind": "fountain-plaza",
+        "x": 0,
+        "y": 0.06,
+        "z": 2,
+        "scale": 1.45,
+        "color": "#69f0ae",
+        "accentColor": "#00e5ff"
+      },
+      {
+        "kind": "banner-arch",
+        "x": 0,
+        "y": 0,
+        "z": 42,
+        "yaw": 0,
+        "scale": 1.3,
+        "color": "#00e5ff",
+        "accentColor": "#ff4ecd"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-piano-fountain",
+        "x": 36,
+        "y": 8.5,
+        "z": -20,
+        "yaw": 0.4,
+        "scale": 1.35,
+        "color": "#69f0ae"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-cafe-table",
+        "x": -32,
+        "y": 11,
+        "z": -24,
+        "yaw": 0.3,
+        "scale": 1.25,
+        "color": "#ff4ecd"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-telescope-stand",
+        "x": -36,
+        "y": 11,
+        "z": -26,
+        "yaw": 2.4,
+        "scale": 1.4,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-telescope-stand",
+        "x": -22,
+        "y": 3.5,
+        "z": 26,
+        "yaw": 2.8,
+        "scale": 1.3,
+        "color": "#00e5ff"
+      },
+      {
+        "kind": "cable-span",
+        "x": -32,
+        "y": 11.6,
+        "z": -22,
+        "x2": 36,
+        "y2": 9.1,
+        "z2": -18,
+        "color": "#00e5ff"
+      }
+    ],
+    "satellites": [
+      {
+        "id": "neon-birdbath-sat-west",
+        "x": -130,
+        "y": 2.5,
+        "z": -16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      },
+      {
+        "id": "neon-birdbath-sat-east",
+        "x": 130,
+        "y": 3.5,
+        "z": 16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      }
+    ],
+    "shopNpc": {
+      "id": "shop-nb",
+      "name": "Mistress Dew",
+      "prefab": "gsr-lotus-basin",
+      "x": -28,
+      "y": 0,
+      "z": 46,
+      "yaw": 0.5,
+      "itemId": "prism-mist",
+      "greeting": "Prism Mist skates—carve through cloudbanks without a splash!"
+    },
+    "bossWaypoints": [
+      [
+        0,
+        9,
+        0
+      ],
+      [
+        -26,
+        3.5,
+        22
+      ],
+      [
+        30,
+        5.5,
+        16
+      ],
+      [
+        36,
+        8.5,
+        -18
+      ],
+      [
+        0,
+        16.5,
+        -46
+      ]
     ]
   }
 }

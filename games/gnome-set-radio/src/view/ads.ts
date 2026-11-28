@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buildArenaOutline2D } from '../levels/collision';
 import type { GsrLevelDoc } from '../levels/schema';
 
 export interface GsrBrandAd {
@@ -373,27 +374,52 @@ export interface PerimeterAdSpec {
 }
 
 export function getPerimeterAdSpecs(doc: GsrLevelDoc): PerimeterAdSpec[] {
-  const halfW = doc.bounds.w * 0.5 - 5.5;
-  const halfD = doc.bounds.d * 0.5 - 5.5;
-  const placements: { x: number; z: number; yaw: number }[] = [
-    { x: -halfW * 0.55, z: -halfD, yaw: 0 },
-    { x: halfW * 0.55, z: -halfD, yaw: 0 },
-    { x: -halfW * 0.55, z: halfD, yaw: Math.PI },
-    { x: halfW * 0.55, z: halfD, yaw: Math.PI },
-    { x: -halfW, z: -halfD * 0.45, yaw: Math.PI / 2 },
-    { x: -halfW, z: halfD * 0.45, yaw: Math.PI / 2 },
-    { x: halfW, z: -halfD * 0.45, yaw: -Math.PI / 2 },
-    { x: halfW, z: halfD * 0.45, yaw: -Math.PI / 2 },
-  ];
-  return placements.map((p, idx) => ({
-    id: `perim-ad-${idx}`,
-    x: p.x,
-    y: 3.1,
-    z: p.z,
-    yaw: p.yaw,
-    w: 7.4,
-    h: 3.8,
-  }));
+  const halfW = doc.bounds.w * 0.5;
+  const halfD = doc.bounds.d * 0.5;
+  const poly = buildArenaOutline2D(doc.data.arenaShape, halfW, halfD);
+  const inset = 6.5;
+  const count = 8;
+
+  let totalLen = 0;
+  const segLens: number[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i]!;
+    const b = poly[(i + 1) % poly.length]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    segLens.push(len);
+    totalLen += len;
+  }
+
+  const out: PerimeterAdSpec[] = [];
+  for (let idx = 0; idx < count; idx++) {
+    let targetDist = ((idx + 0.5) / count) * totalLen;
+    let segIdx = 0;
+    while (segIdx < segLens.length - 1 && targetDist > segLens[segIdx]!) {
+      targetDist -= segLens[segIdx]!;
+      segIdx++;
+    }
+    const a = poly[segIdx]!;
+    const b = poly[(segIdx + 1) % poly.length]!;
+    const len = segLens[segIdx] || 1;
+    const t = Math.max(0, Math.min(1, targetDist / len));
+    const ex = a[0] + (b[0] - a[0]) * t;
+    const ez = a[1] + (b[1] - a[1]) * t;
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    // Negative-area polygon winding -> inward normal is (dz/len, -dx/len)
+    const inX = dz / len;
+    const inZ = -dx / len;
+    out.push({
+      id: `perim-ad-${idx}`,
+      x: ex + inX * inset,
+      y: 3.1,
+      z: ez + inZ * inset,
+      yaw: Math.atan2(inX, inZ),
+      w: 7.4,
+      h: 3.8,
+    });
+  }
+  return out;
 }
 
 export function buildPerimeterAds(

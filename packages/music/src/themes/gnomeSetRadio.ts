@@ -200,14 +200,14 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     bpm: 162,
     key: 'D',
     mode: 'dorian',
-    progression: 'Dm9 - G13 - Cmaj9 - Am7',
+    progression: 'Dm7 - G7 - Cmaj7 - Am7',
     motifNote: 'Felt piano & Rhodes jazz comping with walking upright bass & horn calls.',
     beatNote: 'Chopped Amen & Funky Drummer jungle breaks, halftime intermission & DJ outro.',
     color: '#ff4ecd',
     rootMidi: 38, // D2
     degrees: [0, 3, 6, 4],
     bDegrees: [0, 4, 1, 3],
-    chordSize: 5,
+    chordSize: 4,
     breakName: 'Amen',
     altBreakName: 'Funky Drummer',
     chopAmount: 0.42,
@@ -220,8 +220,8 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     hasHarp: false,
     hasBongoRip: true,
     bongoIntensity: 0.28,
-    leadPattern: [0, -1, 4, -1, 6, 5, -1, 4, 2, -1, 3, 4, -1, 2, 1, -1],
-    altLeadPattern: [4, -1, 6, -1, 7, 5, 4, -1, 3, 2, -1, 4, 2, -1, 0, -1],
+    leadPattern: [0, -1, 4, -1, 6, 4, -1, 2, 0, -1, 2, 4, -1, 2, 0, -1],
+    altLeadPattern: [4, -1, 6, -1, 7, 6, 4, -1, 2, 0, -1, 4, 2, -1, 0, -1],
     bassStyle: 'walking',
     introBars: 4,
     loopSections: [
@@ -244,7 +244,7 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     bpm: 132,
     key: 'A',
     mode: 'mixolydian',
-    progression: 'A7 - Gmaj7 - D9 - E7',
+    progression: 'A7 - Gmaj7 - D7 - Em7',
     motifNote: 'Punchy Mixolydian horn stabs & percussive Rhodes chops over slap-funk bass.',
     beatNote: 'Polyrhythmic bongo rip + Apache break, house-lift B-section & percussion breakdown.',
     color: '#ff9100',
@@ -330,14 +330,14 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     bpm: 170,
     key: 'G',
     mode: 'lydian',
-    progression: 'Gmaj9 - A/G - F#m7 - Bm7',
+    progression: 'Gmaj7 - Am7 - F#m7b5 - Bm7',
     motifNote: 'Shimmering harp arpeggios & soaring Lydian (#4) vibraphone melody.',
     beatNote: 'Fast rolling Amen + Think liquid break with floating ambient intermissions.',
     color: '#40c4ff',
     rootMidi: 43, // G2
     degrees: [0, 1, 6, 2],
     bDegrees: [0, 4, 3, 2],
-    chordSize: 5,
+    chordSize: 4,
     breakName: 'Amen',
     altBreakName: 'Think',
     chopAmount: 0.38,
@@ -438,8 +438,8 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     hasBongoRip: true,
     bongoIntensity: 0.42,
     fourOnFloor: true,
-    leadPattern: [0, -1, 4, 2, -1, 4, 5, 4, -1, 2, 1, 0, -1, 2, 4, -1],
-    altLeadPattern: [4, -1, 5, 4, -1, 2, 4, 5, -1, 4, 2, 0, -1, 4, 5, -1],
+    leadPattern: [0, -1, 4, 2, -1, 4, 6, 4, -1, 2, 0, -1, 2, 4, 2, -1],
+    altLeadPattern: [4, -1, 6, 4, -1, 2, 4, 6, -1, 4, 2, 0, -1, 4, 6, -1],
     bassStyle: 'disco',
     introBars: 4,
     loopSections: [
@@ -526,8 +526,8 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     hasHarp: false,
     hasBongoRip: true,
     bongoIntensity: 0.45,
-    leadPattern: [0, -1, 1, -1, 4, -1, 3, 1, 0, -1, 4, 5, -1, 3, 1, -1],
-    altLeadPattern: [4, -1, 3, 1, -1, 0, 1, 4, -1, 5, 4, -1, 1, 0, -1, -1],
+    leadPattern: [0, -1, 2, -1, 4, -1, 2, 0, 0, -1, 4, 6, -1, 4, 2, -1],
+    altLeadPattern: [4, -1, 2, 0, -1, 0, 2, 4, -1, 6, 4, -1, 2, 0, -1, -1],
     bassStyle: 'sub',
     introBars: 4,
     loopSections: [
@@ -637,7 +637,7 @@ const ACID_12_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 4, oct: 0, gate: true },
   { deg: 0, oct: 1, gate: true },
   { deg: 0, oct: 0, gate: false },
-  { deg: 6, oct: 0, gate: true },
+  { deg: 4, oct: 0, gate: true },
   { deg: 4, oct: 0, gate: true },
   { deg: 0, oct: 0, gate: true },
   { deg: 2, oct: 1, gate: true },
@@ -662,10 +662,10 @@ const HORN_RIFFS: Record<GsrTrackFlavor, readonly (HornHit | null)[]> = {
     null, null, null, null, { deg: 4, interval: 2, dur: 0.2 }, null, null, null,
   ],
   jazz: [
-    { deg: 0, interval: 2, dur: 0.16 }, null, null, { deg: 4, interval: 6, dur: 0.14 }, null, null, { deg: 2, interval: 4, dur: 0.18 }, null,
-    null, null, { deg: 4, interval: 6, dur: 0.16 }, null, null, null, null, null,
-    null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 5, interval: 2, dur: 0.14 }, null, null,
-    { deg: 4, interval: 6, dur: 0.2 }, null, null, null, null, null, { deg: 2, interval: 4, dur: 0.14 }, null,
+    { deg: 0, interval: 2, dur: 0.16 }, null, null, { deg: 4, interval: 2, dur: 0.14 }, null, null, { deg: 2, interval: 4, dur: 0.18 }, null,
+    null, null, { deg: 4, interval: 2, dur: 0.16 }, null, null, null, null, null,
+    null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 4, interval: 2, dur: 0.14 }, null, null,
+    { deg: 4, interval: 2, dur: 0.2 }, null, null, null, null, null, { deg: 2, interval: 4, dur: 0.14 }, null,
   ],
   bongo: [
     { deg: 0, interval: 4, dur: 0.16 }, null, null, { deg: 0, interval: 4, dur: 0.14 }, null, null, { deg: 4, interval: 6, dur: 0.18 }, null,
@@ -734,7 +734,7 @@ const FLAIR_PATTERNS: Record<GsrTrackFlavor, readonly number[]> = {
   chiptune: [0, 2, 4, 7, -1, 5, 4, 2, 0, -1, 4, 5, 7, -1, 4, 2, 0, 4, 7, 9, -1, 7, 5, 4, 2, -1, 4, 5, 4, 2, 0, -1],
   mallsoft: [4, -1, 5, 4, -1, 2, 4, -1, 5, -1, 7, 5, 4, -1, 2, -1, 4, -1, 6, 5, -1, 4, 2, -1, 0, -1, 2, 4, -1, 5, 4, -1],
   skaBrass: [0, -1, 2, 4, -1, 2, 4, 6, -1, 4, 2, -1, 0, -1, 4, -1, 4, -1, 5, 6, -1, 4, 2, -1, 0, 2, 4, -1, 6, 4, 2, -1],
-  darkJungle: [0, -1, 1, -1, 4, -1, 3, 1, -1, 0, 1, 4, -1, 3, 1, -1, 4, -1, 5, 4, -1, 3, 1, -1, 0, 1, 3, -1, 4, 1, 0, -1],
+  darkJungle: [0, -1, 2, -1, 4, -1, 2, 0, -1, 0, 2, 4, -1, 2, 0, -1, 4, -1, 6, 4, -1, 2, 0, -1, 0, 2, 4, -1, 4, 2, 0, -1],
   finale: [0, 2, 4, -1, 6, -1, 7, 6, 4, -1, 2, 4, -1, 6, 4, -1, 7, -1, 6, 4, 5, -1, 4, 2, 0, -1, 2, 4, 6, -1, 4, -1],
 };
 
@@ -771,9 +771,9 @@ function buildBassLine(
     line[2] = deg(barChordDeg) + 12;
     line[6] = deg(barChordDeg + 4);
     line[8] = deg(barChordDeg);
-    line[10] = deg(barChordDeg + 6);
-    line[12] = deg(barChordDeg + 4);
-    line[14] = deg(barChordDeg + 2);
+    line[10] = deg(barChordDeg + 4);
+    line[12] = deg(barChordDeg + 2);
+    line[14] = deg(barChordDeg + 4);
   } else if (spec.bassStyle === 'acid') {
     line[0] = deg(barChordDeg);
     line[4] = deg(barChordDeg);
@@ -782,14 +782,14 @@ function buildBassLine(
     line[14] = deg(barChordDeg + 6);
   } else if (spec.bassStyle === 'disco') {
     for (let s = 0; s < 16; s += 2) {
-      line[s] = s % 4 === 0 ? deg(barChordDeg) : deg(barChordDeg) + 12;
+      line[s] = s % 4 === 0 ? deg(barChordDeg) - 12 : deg(barChordDeg);
     }
   } else {
     // sub
     line[0] = deg(barChordDeg);
     line[6] = deg(barChordDeg + 4);
     line[10] = deg(barChordDeg);
-    line[14] = deg(barChordDeg + 2);
+    line[14] = deg(barChordDeg + 4);
   }
   return line;
 }
@@ -849,10 +849,11 @@ function precomposeChords(
 ): number[][] {
   const out: number[][] = [];
   let prev: number[] | null = null;
+  const center = Math.max(62, rootMidi + 20);
   for (let b = 0; b < 8; b++) {
     const deg = degrees[b % degrees.length];
     const tones = chordTones(mode, deg, chordSize).map((t) => t + rootMidi + 12);
-    const voiced = voiceLead(tones, 62, prev);
+    const voiced = voiceLead(tones, center, prev);
     out.push(voiced);
     prev = voiced;
   }
@@ -1485,12 +1486,12 @@ export function buildGnomeSetRadioTrack(
       if (sectionKind !== 'outro') {
         const isDub = spec.flavor === 'dub' || sectionKind === 'dubBreak';
         const isSka = spec.flavor === 'skaBrass' || (spec.flavor === 'finale' && sectionKind === 'grooveB');
-        const isOffbeatSkank = isDub || isSka;
+        const isOffbeatSkank = isDub || isSka || spec.flavor === 'mallsoft';
         const isCompStep = isOffbeatSkank
           ? step === 2 || step === 6 || step === 10 || step === 14
           : step === 0 || step === 6 || step === 10 || (step === 14 && bar8 % 2 === 1);
         if (isCompStep) {
-          const dur = isSka ? 0.095 : isDub ? 0.12 : step === 0 ? 0.36 : 0.16;
+          const dur = isSka ? 0.095 : isDub ? 0.12 : step === 0 ? 0.28 : 0.12;
           const vel = sectionKind === 'intermission' ? 0.45 : isSka ? 0.68 : 0.62;
           if (piano) piano.play(chord, dur, time, vel * h);
           if (rhodes && (isOffbeatSkank || step === 0 || step === 10)) rhodes.play(chord, dur * 1.1, time, (vel - 0.04) * h);
@@ -1504,10 +1505,11 @@ export function buildGnomeSetRadioTrack(
         sectionKind !== 'outro' &&
         (spec.flavor === 'mallsoft' || (spec.flavor === 'finale' && (sectionKind === 'grooveC' || sectionKind === 'intermission')));
       if (padActive && mallPad) {
-        mallPad.triggerAttackRelease(chord.map(midiToNote), 1.6, time, 0.5 * h);
+        const openPad = [chord[0]!, chord[2]!].map((n) => midiToNote(n + 12));
+        mallPad.triggerAttackRelease(openPad, 0.55, time, 0.45 * h);
         if (spec.flavor === 'mallsoft' && sectionKind !== 'intro') {
-          const paChime = [0, 4, 9].map((d) => midiToNote(degreeToMidi(spec.rootMidi + 24, mode, barDeg + d)));
-          chimeSynth.triggerAttackRelease(paChime, 0.32, time, 0.48 * h);
+          const paChime = [0, 4].map((d) => midiToNote(degreeToMidi(spec.rootMidi + 24, mode, barDeg + d)));
+          chimeSynth.triggerAttackRelease(paChime, 0.24, time, 0.42 * h);
         }
       }
 
@@ -1531,13 +1533,14 @@ export function buildGnomeSetRadioTrack(
             vibes.play(melodyMidi, 0.2, time, (sectionKind === 'intermission' ? 0.48 : 0.58) * h);
           }
           if (horn && sectionKind !== 'intermission' && (hype > 0.55 || bar8 % 4 === 2) && step % 4 === 0) {
-            const hornDur = spec.flavor === 'skaBrass' ? 0.12 : 0.26;
-            horn.play(melodyMidi - 12, hornDur, time, 0.66 * h);
+            const hornDur = spec.flavor === 'skaBrass' ? 0.12 : 0.22;
+            const hornMidi = spec.flavor === 'mallsoft' ? melodyMidi : melodyMidi - 12;
+            horn.play(hornMidi, hornDur, time, 0.66 * h);
           }
         }
         if (spec.flavor === 'darkJungle' && vibes && ((step === 4 && bar8 % 2 === 0) || (step === 12 && bar8 % 2 === 1))) {
-          const pingMidi = degreeToMidi(spec.rootMidi + 36, mode, barDeg + (step === 4 ? 4 : 1));
-          vibes.play(pingMidi, 0.36, time, 0.54 * h);
+          const pingMidi = degreeToMidi(spec.rootMidi + 36, mode, barDeg + (step === 4 ? 4 : 2));
+          vibes.play(pingMidi, 0.32, time, 0.52 * h);
         }
       }
 

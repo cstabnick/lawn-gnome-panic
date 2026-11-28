@@ -181,7 +181,7 @@ export function createEtherealMarker(opts: {
 }
 
 export function createMarkerSystem(
-  scene: THREE.Scene,
+  scene: THREE.Object3D,
   doc: GsrLevelDoc,
   refs: {
     getBillboardDone: (id: string) => boolean;

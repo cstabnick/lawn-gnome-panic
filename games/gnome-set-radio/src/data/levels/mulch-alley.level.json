@@ -4,49 +4,337 @@
   "game": "gnome-set-radio",
   "id": "mulch-alley",
   "name": "Mulch Alley Arcade",
-  "bounds": { "w": 175, "d": 175 },
+  "bounds": {
+    "w": 232,
+    "d": 232
+  },
   "stamps": [
-    { "op": "gauss", "x": -62, "z": 58, "sigma": 14, "amount": 1.6 },
-    { "op": "gauss", "x": 62, "z": -58, "sigma": 14, "amount": 1.6 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 46, "outer": 60, "to": 0 }
+    {
+      "op": "gauss",
+      "x": -62,
+      "z": 58,
+      "sigma": 14,
+      "amount": 1.6
+    },
+    {
+      "op": "gauss",
+      "x": 62,
+      "z": -58,
+      "sigma": 14,
+      "amount": 1.6
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 0,
+      "inner": 46,
+      "outer": 60,
+      "to": 0
+    }
   ],
   "paths": [
-    { "id": "alley-main", "kind": "road", "points": [[0, 66], [0, -48]], "width": 8.5 },
-    { "id": "alley-cross", "kind": "road", "points": [[-46, 8], [46, 8]], "width": 6.5 }
+    {
+      "id": "alley-main",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          66
+        ],
+        [
+          0,
+          -48
+        ]
+      ],
+      "width": 8.5
+    },
+    {
+      "id": "alley-cross",
+      "kind": "road",
+      "points": [
+        [
+          -46,
+          8
+        ],
+        [
+          46,
+          8
+        ]
+      ],
+      "width": 6.5
+    }
   ],
   "props": [
-    { "prefab": "gsr-arcade-cabinet", "x": -10, "z": 38, "rot": 0.4, "scale": 1.35 },
-    { "prefab": "gsr-token-changer", "x": 10, "z": 38, "rot": -0.4, "scale": 1.35 },
-    { "prefab": "gsr-neon-alley-sign", "x": -11, "z": 18, "rot": 1.57, "scale": 1.5 },
-    { "prefab": "gsr-neon-alley-sign", "x": 11, "z": 18, "rot": -1.57, "scale": 1.5 },
-    { "prefab": "gsr-cassette-deck", "x": -14, "z": -16, "rot": 0.3, "scale": 1.25 },
-    { "prefab": "gsr-boombox", "x": 14, "z": -16, "rot": -0.3, "scale": 1.2 },
-    { "prefab": "street-lamp", "x": -9, "z": 46, "rot": 0, "scale": 1.25 },
-    { "prefab": "street-lamp", "x": 9, "z": 46, "rot": 0, "scale": 1.25 },
-    { "prefab": "gsr-crt-stack", "x": -13, "z": 28, "rot": 0.4, "scale": 1.4 },
-    { "prefab": "gsr-crt-stack", "x": 13, "z": 28, "rot": -0.4, "scale": 1.4 },
-    { "prefab": "slot-machine-classic", "x": -12, "z": 6, "rot": 0.5, "scale": 1.35 },
-    { "prefab": "slot-machine-deluxe", "x": 12, "z": 6, "rot": -0.5, "scale": 1.35 },
-    { "prefab": "billiard-table", "x": -44, "z": 22, "rot": 0, "scale": 1.3 },
-    { "prefab": "crate", "x": 44, "z": 22, "rot": 0.3, "scale": 1.4 },
-    { "prefab": "barrel", "x": -44, "z": -16, "rot": 0, "scale": 1.4 },
-    { "prefab": "air-conditioner", "x": 44, "z": -16, "rot": -0.4, "scale": 1.4 },
-    { "prefab": "gsr-dj-booth", "x": -7, "z": 48, "rot": 0.2, "scale": 1.35 },
-    { "prefab": "gsr-graffiti-rack", "x": 7, "z": 48, "rot": -0.2, "scale": 1.35 },
-    { "prefab": "gsr-pinball-bumper", "x": -12, "z": -4, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-pinball-bumper", "x": 12, "z": -4, "rot": 0, "scale": 1.4 },
-    { "prefab": "slot-machine-mushroom", "x": -44, "z": 6, "rot": 1.2, "scale": 1.35 },
-    { "prefab": "blackjack-table", "x": 44, "z": 6, "rot": -1.2, "scale": 1.3 }
+    {
+      "prefab": "gsr-arcade-cabinet",
+      "x": -10,
+      "z": 38,
+      "rot": 0.4,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-token-changer",
+      "x": 10,
+      "z": 38,
+      "rot": -0.4,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-neon-alley-sign",
+      "x": -11,
+      "z": 18,
+      "rot": 1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-neon-alley-sign",
+      "x": 11,
+      "z": 18,
+      "rot": -1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-cassette-deck",
+      "x": -14,
+      "z": -16,
+      "rot": 0.3,
+      "scale": 1.25
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 14,
+      "z": -16,
+      "rot": -0.3,
+      "scale": 1.2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -9,
+      "z": 46,
+      "rot": 0,
+      "scale": 1.25
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 9,
+      "z": 46,
+      "rot": 0,
+      "scale": 1.25
+    },
+    {
+      "prefab": "gsr-crt-stack",
+      "x": -13,
+      "z": 28,
+      "rot": 0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-crt-stack",
+      "x": 13,
+      "z": 28,
+      "rot": -0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "slot-machine-classic",
+      "x": -12,
+      "z": 6,
+      "rot": 0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "slot-machine-deluxe",
+      "x": 12,
+      "z": 6,
+      "rot": -0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "billiard-table",
+      "x": -44,
+      "z": 22,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "crate",
+      "x": 44,
+      "z": 22,
+      "rot": 0.3,
+      "scale": 1.4
+    },
+    {
+      "prefab": "barrel",
+      "x": -44,
+      "z": -16,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "air-conditioner",
+      "x": 44,
+      "z": -16,
+      "rot": -0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": -7,
+      "z": 48,
+      "rot": 0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 7,
+      "z": 48,
+      "rot": -0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-pinball-bumper",
+      "x": -12,
+      "z": -4,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-pinball-bumper",
+      "x": 12,
+      "z": -4,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "slot-machine-mushroom",
+      "x": -44,
+      "z": 6,
+      "rot": 1.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "blackjack-table",
+      "x": 44,
+      "z": 6,
+      "rot": -1.2,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-tape-shrine",
+      "x": -50,
+      "z": 38,
+      "rot": 0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": -45,
+      "z": 44,
+      "rot": -0.3,
+      "scale": 1.25
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": -54,
+      "z": 44,
+      "rot": 0.2,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gta-vending-cola",
+      "x": 48,
+      "z": -38,
+      "rot": -0.7,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 52,
+      "z": -32,
+      "rot": 0.3,
+      "scale": 1.35
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 44,
+      "z": -34,
+      "rot": 0,
+      "scale": 1.25
+    }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
-    { "id": "ev-ma-tags", "kind": "event", "x": -18, "z": 36, "data": { "eventId": "ma-tag-alley" } },
-    { "id": "ev-ma-bumpers", "kind": "event", "x": 18, "z": 34, "data": { "eventId": "ma-bumper-chain" } },
-    { "id": "ev-ma-pip", "kind": "event", "x": -16, "z": -8, "data": { "eventId": "ma-pip-chase" } },
-    { "id": "ev-ma-cabs", "kind": "event", "x": 16, "z": -8, "data": { "eventId": "ma-tune-cabinets" } },
-    { "id": "ev-ma-boss", "kind": "boss", "x": 0, "z": -42, "data": { "eventId": "ma-boss-quinn" } },
-    { "id": "ev-ma-tokens", "kind": "side", "x": -40, "z": 38, "data": { "eventId": "ma-side-tokens" } },
-    { "id": "ev-ma-score", "kind": "side", "x": 40, "z": 38, "data": { "eventId": "ma-side-score" } }
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 56,
+      "data": {
+        "yaw": 3.14159
+      }
+    },
+    {
+      "id": "ev-ma-tags",
+      "kind": "event",
+      "x": -18,
+      "z": 36,
+      "data": {
+        "eventId": "ma-tag-alley"
+      }
+    },
+    {
+      "id": "ev-ma-bumpers",
+      "kind": "event",
+      "x": 18,
+      "z": 34,
+      "data": {
+        "eventId": "ma-bumper-chain"
+      }
+    },
+    {
+      "id": "ev-ma-pip",
+      "kind": "event",
+      "x": -16,
+      "z": -8,
+      "data": {
+        "eventId": "ma-pip-chase"
+      }
+    },
+    {
+      "id": "ev-ma-cabs",
+      "kind": "event",
+      "x": 16,
+      "z": -8,
+      "data": {
+        "eventId": "ma-tune-cabinets"
+      }
+    },
+    {
+      "id": "ev-ma-boss",
+      "kind": "boss",
+      "x": 0,
+      "z": -42,
+      "data": {
+        "eventId": "ma-boss-quinn"
+      }
+    },
+    {
+      "id": "ev-ma-tokens",
+      "kind": "side",
+      "x": -40,
+      "z": 38,
+      "data": {
+        "eventId": "ma-side-tokens"
+      }
+    },
+    {
+      "id": "ev-ma-score",
+      "kind": "side",
+      "x": 40,
+      "z": 38,
+      "data": {
+        "eventId": "ma-side-score"
+      }
+    }
   ],
   "data": {
     "areaNumber": 5,
@@ -62,61 +350,813 @@
     "groundColor": "#171124",
     "accentColor": "#ff5252",
     "buildings": [
-      { "id": "token-drop-corner", "x": -26, "z": 24, "w": 20, "d": 16, "yBase": 0, "h": 4.2, "color": "#261638", "roofColor": "#ff5252", "accentColor": "#ffd740", "label": "Token-Drop Corner", "arch": "arcade-marquee" },
-      { "id": "crt-repair-loft", "x": 26, "z": 22, "w": 20, "d": 18, "yBase": 0, "h": 6.0, "color": "#1e1a36", "roofColor": "#00e5ff", "accentColor": "#ff5252", "label": "CRT Repair Loft", "arch": "alley-tenement" },
-      { "id": "bootleg-tape-vault", "x": -28, "z": -16, "w": 20, "d": 18, "yBase": 0, "h": 8.0, "color": "#2b1224", "roofColor": "#ffd740", "accentColor": "#ff4ecd", "label": "Bootleg Tape Vault", "arch": "mulch-club-annex" },
-      { "id": "pinball-mezzanine", "x": 28, "z": -16, "w": 20, "d": 18, "yBase": 0, "h": 9.5, "color": "#1f193b", "roofColor": "#ff5252", "accentColor": "#00e5ff", "label": "Pinball Mezzanine", "arch": "arcade-marquee" },
-      { "id": "quinns-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 10.0, "color": "#180d29", "roofColor": "#2b1640", "accentColor": "#ff5252", "label": "Quinn's Arcade Base", "arch": "alley-tenement" },
-      { "id": "quinns-marquee-tower", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.0, "h": 4.0, "color": "#240b24", "roofColor": "#ffd740", "accentColor": "#00e5ff", "label": "Quinn's Marquee Tower", "arch": "crt-spire" },
-      { "id": "ma-office-sw", "x": -42, "z": 58, "w": 12, "d": 12, "yBase": 0, "h": 5.0, "color": "#241638", "roofColor": "#ff5252", "accentColor": "#ffd740", "label": "SW Canyon Office Slab", "arch": "abstract-office-slab" },
-      { "id": "ma-office-w", "x": -62, "z": -2, "w": 12, "d": 12, "yBase": 0, "h": 5.5, "color": "#26122a", "roofColor": "#ffd740", "accentColor": "#ff4ecd", "label": "West Rim Office Slab", "arch": "abstract-office-slab" },
-      { "id": "ma-office-e", "x": 62, "z": -2, "w": 12, "d": 12, "yBase": 0, "h": 6.0, "color": "#1d1836", "roofColor": "#00e5ff", "accentColor": "#ff5252", "label": "East Rim Stepped Monolith", "arch": "stepped-monolith" },
-      { "id": "ma-office-ne", "x": 38, "z": -56, "w": 12, "d": 12, "yBase": 0, "h": 6.5, "color": "#211233", "roofColor": "#ff4ecd", "accentColor": "#00e5ff", "label": "NE Rim Cantilever Tower", "arch": "cantilever-tower" }
+      {
+        "id": "token-drop-corner",
+        "x": -26,
+        "z": 24,
+        "w": 20,
+        "d": 16,
+        "yBase": 0,
+        "h": 4.2,
+        "color": "#261638",
+        "roofColor": "#ff5252",
+        "accentColor": "#ffd740",
+        "label": "Token-Drop Corner",
+        "arch": "arcade-marquee"
+      },
+      {
+        "id": "crt-repair-loft",
+        "x": 26,
+        "z": 22,
+        "w": 20,
+        "d": 18,
+        "yBase": 0,
+        "h": 6,
+        "color": "#1e1a36",
+        "roofColor": "#00e5ff",
+        "accentColor": "#ff5252",
+        "label": "CRT Repair Loft",
+        "arch": "alley-tenement"
+      },
+      {
+        "id": "bootleg-tape-vault",
+        "x": -28,
+        "z": -16,
+        "w": 20,
+        "d": 18,
+        "yBase": 0,
+        "h": 8,
+        "color": "#2b1224",
+        "roofColor": "#ffd740",
+        "accentColor": "#ff4ecd",
+        "label": "Bootleg Tape Vault",
+        "arch": "mulch-club-annex"
+      },
+      {
+        "id": "pinball-mezzanine",
+        "x": 28,
+        "z": -16,
+        "w": 20,
+        "d": 18,
+        "yBase": 0,
+        "h": 9.5,
+        "color": "#1f193b",
+        "roofColor": "#ff5252",
+        "accentColor": "#00e5ff",
+        "label": "Pinball Mezzanine",
+        "arch": "arcade-marquee"
+      },
+      {
+        "id": "quinns-base",
+        "x": 0,
+        "z": -42,
+        "w": 30,
+        "d": 18,
+        "yBase": 0,
+        "h": 10,
+        "color": "#180d29",
+        "roofColor": "#2b1640",
+        "accentColor": "#ff5252",
+        "label": "Quinn's Arcade Base",
+        "arch": "alley-tenement"
+      },
+      {
+        "id": "quinns-marquee-tower",
+        "x": 0,
+        "z": -42,
+        "w": 16,
+        "d": 14,
+        "yBase": 10,
+        "h": 4,
+        "color": "#240b24",
+        "roofColor": "#ffd740",
+        "accentColor": "#00e5ff",
+        "label": "Quinn's Marquee Tower",
+        "arch": "crt-spire"
+      },
+      {
+        "id": "ma-office-sw",
+        "x": -42,
+        "z": 58,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 5,
+        "color": "#241638",
+        "roofColor": "#ff5252",
+        "accentColor": "#ffd740",
+        "label": "SW Canyon Office Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "ma-office-w",
+        "x": -62,
+        "z": -2,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 5.5,
+        "color": "#26122a",
+        "roofColor": "#ffd740",
+        "accentColor": "#ff4ecd",
+        "label": "West Rim Office Slab",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "ma-office-e",
+        "x": 62,
+        "z": -2,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 6,
+        "color": "#1d1836",
+        "roofColor": "#00e5ff",
+        "accentColor": "#ff5252",
+        "label": "East Rim Stepped Monolith",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "ma-office-ne",
+        "x": 38,
+        "z": -56,
+        "w": 12,
+        "d": 12,
+        "yBase": 0,
+        "h": 6.5,
+        "color": "#211233",
+        "roofColor": "#ff4ecd",
+        "accentColor": "#00e5ff",
+        "label": "NE Rim Cantilever Tower",
+        "arch": "cantilever-tower"
+      }
     ],
     "ramps": [
-      { "id": "ma-ramp-token", "x": -26, "z": 38, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.2, "yaw": 3.14159, "color": "#ff5252" },
-      { "id": "ma-ramp-crt", "x": 26, "z": 38, "w": 6, "length": 13, "yBottom": 0, "yTop": 6.0, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "ma-ramp-vault", "x": -28, "z": 0, "w": 6, "length": 14, "yBottom": 4.2, "yTop": 8.0, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "ma-ramp-pinball", "x": 28, "z": 0, "w": 6, "length": 14, "yBottom": 6.0, "yTop": 9.5, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "ma-ramp-quinn-base", "x": 0, "z": -24, "w": 6.5, "length": 16, "yBottom": 0, "yTop": 10.0, "yaw": 3.14159, "color": "#ff5252" },
-      { "id": "ma-ramp-quinn-top", "x": 11, "z": -42, "w": 5, "length": 10, "yBottom": 10.0, "yTop": 14.0, "yaw": -1.5708, "color": "#ffd740" },
-      { "id": "ma-ramp-alley-kicker", "x": 0, "z": 22, "w": 6, "length": 10, "yBottom": 0, "yTop": 3.6, "yaw": 3.14159, "color": "#ffd740" }
+      {
+        "id": "ma-ramp-token",
+        "x": -26,
+        "z": 38,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 4.2,
+        "yaw": 3.14159,
+        "color": "#ff5252"
+      },
+      {
+        "id": "ma-ramp-crt",
+        "x": 26,
+        "z": 38,
+        "w": 6,
+        "length": 13,
+        "yBottom": 0,
+        "yTop": 6,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ma-ramp-vault",
+        "x": -28,
+        "z": 0,
+        "w": 6,
+        "length": 14,
+        "yBottom": 4.2,
+        "yTop": 8,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ma-ramp-pinball",
+        "x": 28,
+        "z": 0,
+        "w": 6,
+        "length": 14,
+        "yBottom": 6,
+        "yTop": 9.5,
+        "yaw": 3.14159,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "ma-ramp-quinn-base",
+        "x": 0,
+        "z": -24,
+        "w": 6.5,
+        "length": 16,
+        "yBottom": 0,
+        "yTop": 10,
+        "yaw": 3.14159,
+        "color": "#ff5252"
+      },
+      {
+        "id": "ma-ramp-quinn-top",
+        "x": 11,
+        "z": -42,
+        "w": 5,
+        "length": 10,
+        "yBottom": 10,
+        "yTop": 14,
+        "yaw": -1.5708,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ma-ramp-alley-kicker",
+        "x": 0,
+        "z": 22,
+        "w": 6,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.6,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      }
     ],
     "rails": [
-      { "id": "ma-rail-spawn", "points": [[0, 1.5, 48], [0, 1.8, 38], [0, 2.2, 28]], "color": "#ff5252", "glowColor": "#ff5252", "speedBoost": 1.25 },
-      { "id": "ma-rail-sign-1", "points": [[-16, 4.5, 24], [0, 5.4, 23], [16, 6.2, 22]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.28 },
-      { "id": "ma-rail-west-hop", "points": [[-26, 4.5, 16], [-27, 6.4, 2], [-28, 8.3, -7]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.28 },
-      { "id": "ma-rail-east-hop", "points": [[26, 6.3, 13], [27, 8.0, 2], [28, 9.8, -7]], "color": "#ff4ecd", "glowColor": "#ff4ecd", "speedBoost": 1.28 },
-      { "id": "ma-rail-sign-2", "points": [[-18, 8.3, -16], [0, 9.2, -16], [18, 9.8, -16]], "color": "#ff5252", "glowColor": "#ff5252", "speedBoost": 1.32 },
-      { "id": "ma-rail-vault-to-tower", "points": [[-28, 8.3, -25], [-20, 9.5, -36], [-15, 10.3, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.34 },
-      { "id": "ma-rail-pinball-to-tower", "points": [[28, 9.8, -25], [20, 10.1, -36], [15, 10.3, -42]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.34 },
-      { "id": "ma-rail-marquee-halo", "points": [[-16, 10.4, -42], [-8, 14.4, -42], [0, 14.8, -48], [8, 14.4, -42], [16, 10.4, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 },
-      { "id": "ma-rail-edge-sw", "points": [[-40, 5.3, 52], [-34, 4.8, 42], [-28, 4.5, 34]], "color": "#ff5252", "glowColor": "#ff5252", "speedBoost": 1.28 },
-      { "id": "ma-rail-edge-w", "points": [[-40, 5.8, 10], [-58, 5.8, 2], [-56, 5.8, -10], [-40, 6.5, -14]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.3 },
-      { "id": "ma-rail-edge-e", "points": [[40, 6.3, 10], [58, 6.3, 2], [56, 6.3, -10], [40, 7.2, -14]], "color": "#00e5ff", "glowColor": "#00e5ff", "speedBoost": 1.3 },
-      { "id": "ma-rail-edge-ne", "points": [[34, 6.8, -52], [40, 6.8, -48], [32, 8.0, -34]], "color": "#ff4ecd", "glowColor": "#ff4ecd", "speedBoost": 1.32 }
+      {
+        "id": "ma-rail-spawn",
+        "points": [
+          [
+            0,
+            1.5,
+            48
+          ],
+          [
+            0,
+            1.8,
+            38
+          ],
+          [
+            0,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.25
+      },
+      {
+        "id": "ma-rail-sign-1",
+        "points": [
+          [
+            -16,
+            4.5,
+            24
+          ],
+          [
+            0,
+            5.4,
+            23
+          ],
+          [
+            16,
+            6.2,
+            22
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ma-rail-west-hop",
+        "points": [
+          [
+            -26,
+            4.5,
+            16
+          ],
+          [
+            -27,
+            6.4,
+            2
+          ],
+          [
+            -28,
+            8.3,
+            -7
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ma-rail-east-hop",
+        "points": [
+          [
+            26,
+            6.3,
+            13
+          ],
+          [
+            27,
+            8,
+            2
+          ],
+          [
+            28,
+            9.8,
+            -7
+          ]
+        ],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ma-rail-sign-2",
+        "points": [
+          [
+            -18,
+            8.3,
+            -16
+          ],
+          [
+            0,
+            9.2,
+            -16
+          ],
+          [
+            18,
+            9.8,
+            -16
+          ]
+        ],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "ma-rail-vault-to-tower",
+        "points": [
+          [
+            -28,
+            8.3,
+            -25
+          ],
+          [
+            -20,
+            9.5,
+            -36
+          ],
+          [
+            -15,
+            10.3,
+            -42
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.34
+      },
+      {
+        "id": "ma-rail-pinball-to-tower",
+        "points": [
+          [
+            28,
+            9.8,
+            -25
+          ],
+          [
+            20,
+            10.1,
+            -36
+          ],
+          [
+            15,
+            10.3,
+            -42
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.34
+      },
+      {
+        "id": "ma-rail-marquee-halo",
+        "points": [
+          [
+            -16,
+            10.4,
+            -42
+          ],
+          [
+            -8,
+            14.4,
+            -42
+          ],
+          [
+            0,
+            14.8,
+            -48
+          ],
+          [
+            8,
+            14.4,
+            -42
+          ],
+          [
+            16,
+            10.4,
+            -42
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.4
+      },
+      {
+        "id": "ma-rail-edge-sw",
+        "points": [
+          [
+            -40,
+            5.3,
+            52
+          ],
+          [
+            -34,
+            4.8,
+            42
+          ],
+          [
+            -28,
+            4.5,
+            34
+          ]
+        ],
+        "color": "#ff5252",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "ma-rail-edge-w",
+        "points": [
+          [
+            -40,
+            5.8,
+            10
+          ],
+          [
+            -58,
+            5.8,
+            2
+          ],
+          [
+            -56,
+            5.8,
+            -10
+          ],
+          [
+            -40,
+            6.5,
+            -14
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "ma-rail-edge-e",
+        "points": [
+          [
+            40,
+            6.3,
+            10
+          ],
+          [
+            58,
+            6.3,
+            2
+          ],
+          [
+            56,
+            6.3,
+            -10
+          ],
+          [
+            40,
+            7.2,
+            -14
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#00e5ff",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "ma-rail-edge-ne",
+        "points": [
+          [
+            34,
+            6.8,
+            -52
+          ],
+          [
+            40,
+            6.8,
+            -48
+          ],
+          [
+            32,
+            8,
+            -34
+          ]
+        ],
+        "color": "#ff4ecd",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "rail-mulch-alley-epic-aether",
+        "points": [
+          [
+            0,
+            14.5,
+            -42
+          ],
+          [
+            -75.4,
+            17,
+            -14
+          ],
+          [
+            -130,
+            3.7,
+            -16
+          ],
+          [
+            -83.52,
+            4.5,
+            16
+          ],
+          [
+            -28,
+            1.5,
+            28
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.55,
+        "aetherRail": true
+      },
+      {
+        "id": "rail-mulch-alley-underworld",
+        "points": [
+          [
+            44.08,
+            2.2,
+            -22
+          ],
+          [
+            124,
+            -2.5,
+            -14
+          ],
+          [
+            52.2,
+            -8.5,
+            0
+          ],
+          [
+            0,
+            -9.2,
+            8
+          ],
+          [
+            -55.68,
+            -8,
+            0
+          ],
+          [
+            -124,
+            -1.5,
+            14
+          ],
+          [
+            -44.08,
+            2.5,
+            22
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.65,
+        "aetherRail": true,
+        "underWorld": true
+      },
+      {
+        "id": "rail-mulch-alley-sat-east-loop",
+        "points": [
+          [
+            52.2,
+            2.5,
+            6
+          ],
+          [
+            130,
+            4.6,
+            16
+          ],
+          [
+            52.2,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#ff5252",
+        "speedBoost": 1.45,
+        "aetherRail": true
+      }
     ],
     "billboards": [
-      { "id": "ma-bb-1", "x": -26, "y": 4.2, "z": 24, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Token Sharks", "eventId": "ma-tag-alley", "color": "#ff5252" },
-      { "id": "ma-bb-2", "x": 26, "y": 6.0, "z": 22, "yaw": -0.5, "w": 4.4, "h": 2.4, "gangName": "Token Sharks", "eventId": "ma-tag-alley", "color": "#00e5ff" },
-      { "id": "ma-bb-3", "x": -28, "y": 8.0, "z": -16, "yaw": 0.6, "w": 4.6, "h": 2.5, "gangName": "Token Sharks", "eventId": "ma-tag-alley", "color": "#ffd740" },
-      { "id": "ma-bb-4", "x": 0, "y": 14.0, "z": -48, "yaw": 0, "w": 5.0, "h": 2.6, "gangName": "Token Sharks", "eventId": "ma-tag-alley", "color": "#ff5252" }
+      {
+        "id": "ma-bb-1",
+        "x": -26,
+        "y": 4.2,
+        "z": 24,
+        "yaw": 0.4,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "Token Sharks",
+        "eventId": "ma-tag-alley",
+        "color": "#ff5252"
+      },
+      {
+        "id": "ma-bb-2",
+        "x": 26,
+        "y": 6,
+        "z": 22,
+        "yaw": -0.5,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "Token Sharks",
+        "eventId": "ma-tag-alley",
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ma-bb-3",
+        "x": -28,
+        "y": 8,
+        "z": -16,
+        "yaw": 0.6,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Token Sharks",
+        "eventId": "ma-tag-alley",
+        "color": "#ffd740"
+      },
+      {
+        "id": "ma-bb-4",
+        "x": 0,
+        "y": 14,
+        "z": -48,
+        "yaw": 0,
+        "w": 5,
+        "h": 2.6,
+        "gangName": "Token Sharks",
+        "eventId": "ma-tag-alley",
+        "color": "#ff5252"
+      }
     ],
     "interactives": [
-      { "id": "ma-pad-1", "kind": "bongo-pad", "x": 0, "y": 0, "z": 12, "power": 17.5, "prefab": "gsr-bongo-stack", "eventId": "ma-bumper-chain", "label": "Alley CRT Bumper" },
-      { "id": "ma-pad-2", "kind": "bongo-pad", "x": -26, "y": 4.2, "z": 18, "power": 16.5, "prefab": "gsr-bongo-stack", "eventId": "ma-bumper-chain", "label": "Corner Bumper" },
-      { "id": "ma-pad-3", "kind": "bongo-pad", "x": 26, "y": 6.0, "z": 16, "power": 17.0, "prefab": "gsr-bongo-stack", "eventId": "ma-bumper-chain", "label": "CRT Loft Bumper" },
-      { "id": "ma-pad-4", "kind": "bongo-pad", "x": 28, "y": 9.5, "z": -22, "power": 18.0, "prefab": "gsr-bongo-stack", "eventId": "ma-bumper-chain", "label": "Pinball Bumper" },
-      { "id": "ma-vent-1", "kind": "updraft-vent", "x": 0, "y": 10.0, "z": -33, "power": 16.5, "prefab": "gsr-updraft-vent", "label": "Marquee Vent" },
-      { "id": "ma-cab-1", "kind": "speaker-stack", "x": 26, "y": 6.0, "z": 26, "prefab": "gsr-arcade-cabinet", "eventId": "ma-tune-cabinets", "label": "CRT Loft Cabinet" },
-      { "id": "ma-cab-2", "kind": "speaker-stack", "x": -28, "y": 8.0, "z": -12, "prefab": "gsr-cassette-deck", "eventId": "ma-tune-cabinets", "label": "Bootleg Vault Deck" },
-      { "id": "ma-cab-3", "kind": "speaker-stack", "x": 28, "y": 9.5, "z": -12, "prefab": "gsr-arcade-cabinet", "eventId": "ma-tune-cabinets", "label": "Pinball Cabinet" },
-      { "id": "ma-spray-1", "kind": "spray-pickup", "x": 0, "y": 0.4, "z": 32, "prefab": "gsr-spray-can" },
-      { "id": "ma-spray-2", "kind": "spray-pickup", "x": -28, "y": 8.4, "z": -16, "prefab": "gsr-spray-can" },
-      { "id": "ma-spray-3", "kind": "spray-pickup", "x": 0, "y": 14.4, "z": -42, "prefab": "gsr-spray-can" },
-      { "id": "ma-acorn-1", "kind": "tempo-acorn", "x": -26, "y": 4.8, "z": 28, "eventId": "ma-side-tokens", "label": "8-Bit Token Acorn" },
-      { "id": "ma-acorn-2", "kind": "tempo-acorn", "x": 26, "y": 6.6, "z": 20, "eventId": "ma-side-tokens", "label": "8-Bit Token Acorn" },
-      { "id": "ma-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 14.6, "z": -45, "eventId": "ma-side-tokens", "label": "8-Bit Token Acorn" }
+      {
+        "id": "ma-pad-1",
+        "kind": "bongo-pad",
+        "x": 0,
+        "y": 0,
+        "z": 12,
+        "power": 17.5,
+        "prefab": "gsr-bongo-stack",
+        "eventId": "ma-bumper-chain",
+        "label": "Alley CRT Bumper"
+      },
+      {
+        "id": "ma-pad-2",
+        "kind": "bongo-pad",
+        "x": -26,
+        "y": 4.2,
+        "z": 18,
+        "power": 16.5,
+        "prefab": "gsr-bongo-stack",
+        "eventId": "ma-bumper-chain",
+        "label": "Corner Bumper"
+      },
+      {
+        "id": "ma-pad-3",
+        "kind": "bongo-pad",
+        "x": 26,
+        "y": 6,
+        "z": 16,
+        "power": 17,
+        "prefab": "gsr-bongo-stack",
+        "eventId": "ma-bumper-chain",
+        "label": "CRT Loft Bumper"
+      },
+      {
+        "id": "ma-pad-4",
+        "kind": "bongo-pad",
+        "x": 28,
+        "y": 9.5,
+        "z": -22,
+        "power": 18,
+        "prefab": "gsr-bongo-stack",
+        "eventId": "ma-bumper-chain",
+        "label": "Pinball Bumper"
+      },
+      {
+        "id": "ma-vent-1",
+        "kind": "updraft-vent",
+        "x": 0,
+        "y": 10,
+        "z": -33,
+        "power": 16.5,
+        "prefab": "gsr-updraft-vent",
+        "label": "Marquee Vent"
+      },
+      {
+        "id": "ma-cab-1",
+        "kind": "speaker-stack",
+        "x": 26,
+        "y": 6,
+        "z": 26,
+        "prefab": "gsr-arcade-cabinet",
+        "eventId": "ma-tune-cabinets",
+        "label": "CRT Loft Cabinet"
+      },
+      {
+        "id": "ma-cab-2",
+        "kind": "speaker-stack",
+        "x": -28,
+        "y": 8,
+        "z": -12,
+        "prefab": "gsr-cassette-deck",
+        "eventId": "ma-tune-cabinets",
+        "label": "Bootleg Vault Deck"
+      },
+      {
+        "id": "ma-cab-3",
+        "kind": "speaker-stack",
+        "x": 28,
+        "y": 9.5,
+        "z": -12,
+        "prefab": "gsr-arcade-cabinet",
+        "eventId": "ma-tune-cabinets",
+        "label": "Pinball Cabinet"
+      },
+      {
+        "id": "ma-spray-1",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 0.4,
+        "z": 32,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ma-spray-2",
+        "kind": "spray-pickup",
+        "x": -28,
+        "y": 8.4,
+        "z": -16,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ma-spray-3",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 14.4,
+        "z": -42,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ma-acorn-1",
+        "kind": "tempo-acorn",
+        "x": -26,
+        "y": 4.8,
+        "z": 28,
+        "eventId": "ma-side-tokens",
+        "label": "8-Bit Token Acorn"
+      },
+      {
+        "id": "ma-acorn-2",
+        "kind": "tempo-acorn",
+        "x": 26,
+        "y": 6.6,
+        "z": 20,
+        "eventId": "ma-side-tokens",
+        "label": "8-Bit Token Acorn"
+      },
+      {
+        "id": "ma-acorn-3",
+        "kind": "tempo-acorn",
+        "x": 0,
+        "y": 14.6,
+        "z": -45,
+        "eventId": "ma-side-tokens",
+        "label": "8-Bit Token Acorn"
+      }
     ],
     "events": [
       {
@@ -128,7 +1168,12 @@
         "introLine": "Tag all 4 Token Shark billboards across the neon back-alley rooftops!",
         "completeLine": "Mulch Alley is glowing Turfton neon! Even Don Compost noticed!",
         "objectiveType": "tag",
-        "targetIds": ["ma-bb-1", "ma-bb-2", "ma-bb-3", "ma-bb-4"],
+        "targetIds": [
+          "ma-bb-1",
+          "ma-bb-2",
+          "ma-bb-3",
+          "ma-bb-4"
+        ],
         "targetCount": 4,
         "x": -18,
         "y": 0,
@@ -143,7 +1188,12 @@
         "introLine": "Hit all 4 CRT Bumper Pads from the alley floor up to the Pinball Mezzanine!",
         "completeLine": "Pinball wizard! Every bumper pad in the canyon just hit tilt!",
         "objectiveType": "bongo-chain",
-        "targetIds": ["ma-pad-1", "ma-pad-2", "ma-pad-3", "ma-pad-4"],
+        "targetIds": [
+          "ma-pad-1",
+          "ma-pad-2",
+          "ma-pad-3",
+          "ma-pad-4"
+        ],
         "targetCount": 4,
         "x": 18,
         "y": 0,
@@ -172,7 +1222,11 @@
         "introLine": "Tune the 3 Bootleg Cabinets on the CRT Loft, Vault, and Pinball Mezzanine!",
         "completeLine": "Free-play unlocked! Sky-Mall coordinates just flashed on the CRT!",
         "objectiveType": "speakers",
-        "targetIds": ["ma-cab-1", "ma-cab-2", "ma-cab-3"],
+        "targetIds": [
+          "ma-cab-1",
+          "ma-cab-2",
+          "ma-cab-3"
+        ],
         "targetCount": 3,
         "x": 16,
         "y": 0,
@@ -189,7 +1243,7 @@
         "objectiveType": "boss-quinn",
         "targetCount": 3,
         "x": 0,
-        "y": 14.0,
+        "y": 14,
         "z": -42
       },
       {
@@ -201,7 +1255,11 @@
         "introLine": "Three 8-Bit Tempo Acorns dropped on Token-Drop, CRT Loft, and Quinn's Tower—snag all 3!",
         "completeLine": "Jackpot payout! 128 BPM locked in!",
         "objectiveType": "collect",
-        "targetIds": ["ma-acorn-1", "ma-acorn-2", "ma-acorn-3"],
+        "targetIds": [
+          "ma-acorn-1",
+          "ma-acorn-2",
+          "ma-acorn-3"
+        ],
         "targetCount": 3,
         "x": -40,
         "y": 0,
@@ -223,25 +1281,247 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "ma-npc-1", "name": "Arcade Regular", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#261638", "x": -12, "y": 0, "z": 40, "yaw": 0.4, "line": "Two tokens per grind—unless you skate straight past the bouncer!" },
-      { "id": "ma-npc-2", "name": "CRT Tech", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1e1a36", "x": 26, "y": 6.0, "z": 18, "yaw": -0.6, "line": "Fresh scanlines on every monitor! Don't mind the 128 BPM hum." },
-      { "id": "ma-npc-3", "name": "Don Compost's Bouncer", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#2b1224", "x": -28, "y": 8.0, "z": -20, "yaw": 0.3, "line": "Mulch Club members only—though skaters with 5x combos get a pass." },
-      { "id": "ma-npc-4", "name": "Pinball Wizard", "kind": "woken", "prefab": "gsr-arcade-cabinet", "x": 28, "y": 9.5, "z": -18, "yaw": -0.4, "line": "BEEP-BOOP! Multiball ready on the Pinball Mezzanine!" },
-      { "id": "ma-npc-5", "name": "Bootleg Collector", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#171124", "x": -14, "y": 0, "z": -10, "yaw": 1.1, "line": "Got a crisp C-90 cassette straight from Turfton's back alleys." },
-      { "id": "ma-npc-6", "name": "Coin Spotter", "kind": "woken", "prefab": "gsr-token-changer", "x": 14, "y": 0, "z": 24, "yaw": -0.8, "line": "Clink-clink! Bounce off the CRT pads to clear the fire escapes!" },
-      { "id": "ma-npc-7", "name": "Marquee Lookout", "kind": "gnome", "hatColor": "#ff5252", "shirtColor": "#180d29", "x": 0, "y": 10.0, "z": -38, "yaw": 0, "line": "Quinn's Marquee Tower is just one gold ramp above us!" },
-      { "id": "ma-npc-8", "name": "Bumper Kid", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#240b18", "x": -10, "y": 0, "z": -4, "yaw": 0.5, "line": "DING! Hit the Pinball Bumpers on the alley floor to keep your chiptune hype maxed!" },
-      { "id": "ma-npc-9", "name": "Backroom Dealer", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#1b1d28", "x": 42, "y": 0, "z": 6, "yaw": -1.2, "line": "We moved the Mushroom Slots out to the alley—watch out for flying skaters!" }
+      {
+        "id": "ma-npc-1",
+        "name": "Arcade Regular",
+        "kind": "gnome",
+        "hatColor": "#ff5252",
+        "shirtColor": "#261638",
+        "x": -12,
+        "y": 0,
+        "z": 40,
+        "yaw": 0.4,
+        "line": "Two tokens per grind—unless you skate straight past the bouncer!"
+      },
+      {
+        "id": "ma-npc-2",
+        "name": "CRT Tech",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#1e1a36",
+        "x": 26,
+        "y": 6,
+        "z": 18,
+        "yaw": -0.6,
+        "line": "Fresh scanlines on every monitor! Don't mind the 128 BPM hum."
+      },
+      {
+        "id": "ma-npc-3",
+        "name": "Don Compost's Bouncer",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#2b1224",
+        "x": -28,
+        "y": 8,
+        "z": -20,
+        "yaw": 0.3,
+        "line": "Mulch Club members only—though skaters with 5x combos get a pass."
+      },
+      {
+        "id": "ma-npc-4",
+        "name": "Pinball Wizard",
+        "kind": "woken",
+        "prefab": "gsr-arcade-cabinet",
+        "x": 28,
+        "y": 9.5,
+        "z": -18,
+        "yaw": -0.4,
+        "line": "BEEP-BOOP! Multiball ready on the Pinball Mezzanine!"
+      },
+      {
+        "id": "ma-npc-5",
+        "name": "Bootleg Collector",
+        "kind": "gnome",
+        "hatColor": "#ff4ecd",
+        "shirtColor": "#171124",
+        "x": -14,
+        "y": 0,
+        "z": -10,
+        "yaw": 1.1,
+        "line": "Got a crisp C-90 cassette straight from Turfton's back alleys."
+      },
+      {
+        "id": "ma-npc-6",
+        "name": "Coin Spotter",
+        "kind": "woken",
+        "prefab": "gsr-token-changer",
+        "x": 14,
+        "y": 0,
+        "z": 24,
+        "yaw": -0.8,
+        "line": "Clink-clink! Bounce off the CRT pads to clear the fire escapes!"
+      },
+      {
+        "id": "ma-npc-7",
+        "name": "Marquee Lookout",
+        "kind": "gnome",
+        "hatColor": "#ff5252",
+        "shirtColor": "#180d29",
+        "x": 0,
+        "y": 10,
+        "z": -38,
+        "yaw": 0,
+        "line": "Quinn's Marquee Tower is just one gold ramp above us!"
+      },
+      {
+        "id": "ma-npc-8",
+        "name": "Bumper Kid",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#240b18",
+        "x": -10,
+        "y": 0,
+        "z": -4,
+        "yaw": 0.5,
+        "line": "DING! Hit the Pinball Bumpers on the alley floor to keep your chiptune hype maxed!"
+      },
+      {
+        "id": "ma-npc-9",
+        "name": "Backroom Dealer",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#1b1d28",
+        "x": 42,
+        "y": 0,
+        "z": 6,
+        "yaw": -1.2,
+        "line": "We moved the Mushroom Slots out to the alley—watch out for flying skaters!"
+      }
     ],
     "details": [
-      { "kind": "arcade-grid", "x": 0, "y": 0.04, "z": 24, "d": 20, "color": "#ff5252", "accentColor": "#1b0d2e" },
-      { "kind": "eq-strip", "x": 0, "y": 0.04, "z": -4, "scale": 1.3, "color": "#00e5ff" },
-      { "kind": "neon-arch", "x": 0, "y": 0, "z": 42, "yaw": 0, "scale": 1.25, "color": "#ff5252" },
-      { "kind": "neon-arch", "x": 0, "y": 0, "z": 0, "yaw": 0, "scale": 1.25, "color": "#00e5ff" },
-      { "kind": "placed-prop", "prefab": "gsr-crt-stack", "x": -24, "y": 4.2, "z": 22, "yaw": 0.4, "scale": 1.3, "color": "#ff5252" },
-      { "kind": "placed-prop", "prefab": "gsr-token-changer", "x": 28, "y": 9.5, "z": -20, "yaw": -0.5, "scale": 1.3, "color": "#ffd740" },
-      { "kind": "cable-span", "x": -26, "y": 4.8, "z": 24, "x2": 26, "y2": 6.6, "z2": 22, "color": "#ff5252" },
-      { "kind": "cable-span", "x": -28, "y": 8.6, "z": -16, "x2": 28, "y2": 10.1, "z2": -16, "color": "#ffd740" }
+      {
+        "kind": "arcade-grid",
+        "x": 0,
+        "y": 0.04,
+        "z": 24,
+        "d": 20,
+        "color": "#ff5252",
+        "accentColor": "#1b0d2e"
+      },
+      {
+        "kind": "eq-strip",
+        "x": 0,
+        "y": 0.04,
+        "z": -4,
+        "scale": 1.3,
+        "color": "#00e5ff"
+      },
+      {
+        "kind": "neon-arch",
+        "x": 0,
+        "y": 0,
+        "z": 42,
+        "yaw": 0,
+        "scale": 1.25,
+        "color": "#ff5252"
+      },
+      {
+        "kind": "neon-arch",
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "yaw": 0,
+        "scale": 1.25,
+        "color": "#00e5ff"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-crt-stack",
+        "x": -24,
+        "y": 4.2,
+        "z": 22,
+        "yaw": 0.4,
+        "scale": 1.3,
+        "color": "#ff5252"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-token-changer",
+        "x": 28,
+        "y": 9.5,
+        "z": -20,
+        "yaw": -0.5,
+        "scale": 1.3,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "cable-span",
+        "x": -26,
+        "y": 4.8,
+        "z": 24,
+        "x2": 26,
+        "y2": 6.6,
+        "z2": 22,
+        "color": "#ff5252"
+      },
+      {
+        "kind": "cable-span",
+        "x": -28,
+        "y": 8.6,
+        "z": -16,
+        "x2": 28,
+        "y2": 10.1,
+        "z2": -16,
+        "color": "#ffd740"
+      }
+    ],
+    "satellites": [
+      {
+        "id": "mulch-alley-sat-west",
+        "x": -130,
+        "y": 2.5,
+        "z": -16,
+        "r": 9.5,
+        "color": "#ff5252",
+        "bouncePower": 18
+      },
+      {
+        "id": "mulch-alley-sat-east",
+        "x": 130,
+        "y": 3.5,
+        "z": 16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      }
+    ],
+    "shopNpc": {
+      "id": "shop-ma",
+      "name": "Quartermaster Pip",
+      "prefab": "gsr-tape-shrine",
+      "x": 26,
+      "y": 0,
+      "z": 46,
+      "yaw": -0.4,
+      "itemId": "pixel-8bit",
+      "greeting": "8-Bit Pixel trails—2 tokens per grind, no refunds!"
+    },
+    "bossWaypoints": [
+      [
+        0,
+        7,
+        0
+      ],
+      [
+        -26,
+        4.2,
+        24
+      ],
+      [
+        26,
+        6,
+        22
+      ],
+      [
+        -28,
+        8,
+        -16
+      ],
+      [
+        0,
+        14,
+        -48
+      ]
     ]
   }
 }

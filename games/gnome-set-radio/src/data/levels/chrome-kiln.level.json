@@ -4,53 +4,363 @@
   "game": "gnome-set-radio",
   "id": "chrome-kiln",
   "name": "Chrome Kiln Foundry",
-  "bounds": { "w": 170, "d": 170 },
+  "bounds": {
+    "w": 224,
+    "d": 224
+  },
   "stamps": [
-    { "op": "gauss", "x": -58, "z": -56, "sigma": 14, "amount": 1.8 },
-    { "op": "gauss", "x": 58, "z": 56, "sigma": 14, "amount": 1.6 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 44, "outer": 58, "to": 0 }
+    {
+      "op": "gauss",
+      "x": -58,
+      "z": -56,
+      "sigma": 14,
+      "amount": 1.8
+    },
+    {
+      "op": "gauss",
+      "x": 58,
+      "z": 56,
+      "sigma": 14,
+      "amount": 1.6
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 0,
+      "inner": 44,
+      "outer": 58,
+      "to": 0
+    }
   ],
   "paths": [
-    { "id": "kiln-west-alley", "kind": "road", "points": [[-14, -64], [-14, 62]], "width": 7 },
-    { "id": "kiln-east-alley", "kind": "road", "points": [[14, -64], [14, 62]], "width": 7 }
+    {
+      "id": "kiln-west-alley",
+      "kind": "road",
+      "points": [
+        [
+          -14,
+          -64
+        ],
+        [
+          -14,
+          62
+        ]
+      ],
+      "width": 7
+    },
+    {
+      "id": "kiln-east-alley",
+      "kind": "road",
+      "points": [
+        [
+          14,
+          -64
+        ],
+        [
+          14,
+          62
+        ]
+      ],
+      "width": 7
+    }
   ],
   "props": [
-    { "prefab": "gsr-glaze-vat", "x": -10, "z": 18, "rot": 0.2, "scale": 1.6 },
-    { "prefab": "gsr-glaze-vat", "x": 10, "z": 18, "rot": -0.2, "scale": 1.6 },
-    { "prefab": "gsr-glaze-vat", "x": -10, "z": -14, "rot": 0.5, "scale": 1.6 },
-    { "prefab": "gsr-glaze-vat", "x": 10, "z": -14, "rot": -0.5, "scale": 1.6 },
-    { "prefab": "gsr-gantry-crane", "x": -18, "z": 28, "rot": 0.4, "scale": 2.1 },
-    { "prefab": "gsr-gantry-crane", "x": 18, "z": 28, "rot": -0.4, "scale": 2.1 },
-    { "prefab": "gsr-cafe-table", "x": 20, "z": 34, "rot": 0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": -18, "z": 36, "rot": 0.3, "scale": 1.15 },
-    { "prefab": "gsr-gantry-crane", "x": -60, "z": 0, "rot": 1.57, "scale": 2.2 },
-    { "prefab": "gsr-glaze-vat", "x": 60, "z": 8, "rot": 0, "scale": 1.7 },
-    { "prefab": "gsr-telescope-stand", "x": 58, "z": -12, "rot": -1.57, "scale": 1.5 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -64, "rot": 0, "scale": 1.3 },
-    { "prefab": "anvil", "x": -16, "z": 40, "rot": 0.3, "scale": 1.45 },
-    { "prefab": "anvil", "x": 16, "z": 40, "rot": -0.3, "scale": 1.45 },
-    { "prefab": "workbench", "x": -22, "z": 44, "rot": 0.5, "scale": 1.35 },
-    { "prefab": "brick-stack", "x": 22, "z": 44, "rot": -0.4, "scale": 1.4 },
-    { "prefab": "barrel", "x": -18, "z": 6, "rot": 0, "scale": 1.4 },
-    { "prefab": "crate", "x": 18, "z": 6, "rot": 0.2, "scale": 1.4 },
-    { "prefab": "wheelbarrow", "x": -46, "z": 28, "rot": 0.7, "scale": 1.4 },
-    { "prefab": "air-conditioner", "x": 46, "z": 28, "rot": -0.5, "scale": 1.5 },
-    { "prefab": "gsr-dj-booth", "x": -8, "z": 44, "rot": 0.25, "scale": 1.35 },
-    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 44, "rot": -0.25, "scale": 1.35 },
-    { "prefab": "gsr-smelter-bell", "x": -18, "z": -4, "rot": 0.6, "scale": 1.45 },
-    { "prefab": "gsr-smelter-bell", "x": 18, "z": -4, "rot": -0.6, "scale": 1.45 },
-    { "prefab": "gta-dew-pump", "x": -42, "z": 40, "rot": 0.4, "scale": 1.4 },
-    { "prefab": "gta-dew-barrel", "x": 42, "z": 40, "rot": -0.3, "scale": 1.45 },
-    { "prefab": "clay-oven", "x": 24, "z": 38, "rot": -0.5, "scale": 1.35 }
+    {
+      "prefab": "gsr-glaze-vat",
+      "x": -10,
+      "z": 18,
+      "rot": 0.2,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-glaze-vat",
+      "x": 10,
+      "z": 18,
+      "rot": -0.2,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-glaze-vat",
+      "x": -10,
+      "z": -14,
+      "rot": 0.5,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-glaze-vat",
+      "x": 10,
+      "z": -14,
+      "rot": -0.5,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-gantry-crane",
+      "x": -18,
+      "z": 28,
+      "rot": 0.4,
+      "scale": 2.1
+    },
+    {
+      "prefab": "gsr-gantry-crane",
+      "x": 18,
+      "z": 28,
+      "rot": -0.4,
+      "scale": 2.1
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 20,
+      "z": 34,
+      "rot": 0.3,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": -18,
+      "z": 36,
+      "rot": 0.3,
+      "scale": 1.15
+    },
+    {
+      "prefab": "gsr-gantry-crane",
+      "x": -60,
+      "z": 0,
+      "rot": 1.57,
+      "scale": 2.2
+    },
+    {
+      "prefab": "gsr-glaze-vat",
+      "x": 60,
+      "z": 8,
+      "rot": 0,
+      "scale": 1.7
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": 58,
+      "z": -12,
+      "rot": -1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 0,
+      "z": -64,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "anvil",
+      "x": -16,
+      "z": 40,
+      "rot": 0.3,
+      "scale": 1.45
+    },
+    {
+      "prefab": "anvil",
+      "x": 16,
+      "z": 40,
+      "rot": -0.3,
+      "scale": 1.45
+    },
+    {
+      "prefab": "workbench",
+      "x": -22,
+      "z": 44,
+      "rot": 0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "brick-stack",
+      "x": 22,
+      "z": 44,
+      "rot": -0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "barrel",
+      "x": -18,
+      "z": 6,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "crate",
+      "x": 18,
+      "z": 6,
+      "rot": 0.2,
+      "scale": 1.4
+    },
+    {
+      "prefab": "wheelbarrow",
+      "x": -46,
+      "z": 28,
+      "rot": 0.7,
+      "scale": 1.4
+    },
+    {
+      "prefab": "air-conditioner",
+      "x": 46,
+      "z": 28,
+      "rot": -0.5,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": -8,
+      "z": 44,
+      "rot": 0.25,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 8,
+      "z": 44,
+      "rot": -0.25,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-smelter-bell",
+      "x": -18,
+      "z": -4,
+      "rot": 0.6,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-smelter-bell",
+      "x": 18,
+      "z": -4,
+      "rot": -0.6,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gta-dew-pump",
+      "x": -42,
+      "z": 40,
+      "rot": 0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gta-dew-barrel",
+      "x": 42,
+      "z": 40,
+      "rot": -0.3,
+      "scale": 1.45
+    },
+    {
+      "prefab": "clay-oven",
+      "x": 24,
+      "z": 38,
+      "rot": -0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-glaze-basin",
+      "x": -56,
+      "z": 32,
+      "rot": 0.2,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-glaze-basin",
+      "x": -50,
+      "z": 38,
+      "rot": -0.4,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": -58,
+      "z": 40,
+      "rot": 0.7,
+      "scale": 1.35
+    },
+    {
+      "prefab": "picnic-table",
+      "x": 54,
+      "z": -34,
+      "rot": 0.2,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 58,
+      "z": -30,
+      "rot": 0,
+      "scale": 1.2
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 50,
+      "z": -38,
+      "rot": -0.4,
+      "scale": 1.2
+    }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 50, "data": { "yaw": 3.14159 } },
-    { "id": "ev-ck-tags", "kind": "event", "x": -18, "z": 22, "data": { "eventId": "ck-tag-stacks" } },
-    { "id": "ev-ck-patrol", "kind": "event", "x": 34, "z": 4, "data": { "eventId": "ck-cymbal-patrol" } },
-    { "id": "ev-ck-dishes", "kind": "event", "x": 18, "z": -18, "data": { "eventId": "ck-vent-dishes" } },
-    { "id": "ev-ck-boss", "kind": "boss", "x": 0, "z": -44, "data": { "eventId": "ck-boss-vera" } },
-    { "id": "ev-ck-cinder", "kind": "side", "x": -34, "z": 34, "data": { "eventId": "ck-side-cinder" } },
-    { "id": "ev-ck-sparks", "kind": "side", "x": 34, "z": 34, "data": { "eventId": "ck-side-sparks" } }
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 50,
+      "data": {
+        "yaw": 3.14159
+      }
+    },
+    {
+      "id": "ev-ck-tags",
+      "kind": "event",
+      "x": -18,
+      "z": 22,
+      "data": {
+        "eventId": "ck-tag-stacks"
+      }
+    },
+    {
+      "id": "ev-ck-patrol",
+      "kind": "event",
+      "x": 34,
+      "z": 4,
+      "data": {
+        "eventId": "ck-cymbal-patrol"
+      }
+    },
+    {
+      "id": "ev-ck-dishes",
+      "kind": "event",
+      "x": 18,
+      "z": -18,
+      "data": {
+        "eventId": "ck-vent-dishes"
+      }
+    },
+    {
+      "id": "ev-ck-boss",
+      "kind": "boss",
+      "x": 0,
+      "z": -44,
+      "data": {
+        "eventId": "ck-boss-vera"
+      }
+    },
+    {
+      "id": "ev-ck-cinder",
+      "kind": "side",
+      "x": -34,
+      "z": 34,
+      "data": {
+        "eventId": "ck-side-cinder"
+      }
+    },
+    {
+      "id": "ev-ck-sparks",
+      "kind": "side",
+      "x": 34,
+      "z": 34,
+      "data": {
+        "eventId": "ck-side-sparks"
+      }
+    }
   ],
   "data": {
     "areaNumber": 3,
@@ -73,7 +383,7 @@
         "w": 22,
         "d": 28,
         "yBase": 0,
-        "h": 5.0,
+        "h": 5,
         "color": "#382f3b",
         "roofColor": "#544c59",
         "accentColor": "#ff6d00",
@@ -87,7 +397,7 @@
         "w": 22,
         "d": 30,
         "yBase": 0,
-        "h": 5.0,
+        "h": 5,
         "color": "#332a36",
         "roofColor": "#544c59",
         "accentColor": "#76ff03",
@@ -101,7 +411,7 @@
         "w": 16,
         "d": 16,
         "yBase": 0,
-        "h": 9.0,
+        "h": 9,
         "color": "#2f242c",
         "roofColor": "#ff6d00",
         "accentColor": "#ff6d00",
@@ -199,7 +509,7 @@
         "w": 12,
         "d": 12,
         "yBase": 0,
-        "h": 5.0,
+        "h": 5,
         "color": "#382f3b",
         "roofColor": "#1a1117",
         "accentColor": "#ffd740",
@@ -208,128 +518,702 @@
       }
     ],
     "ramps": [
-      { "id": "ck-ramp-west-smelter", "x": -34, "z": 29, "w": 7, "length": 14, "yBottom": 0, "yTop": 5.0, "yaw": 3.14159, "color": "#ff6d00" },
-      { "id": "ck-ramp-east-press", "x": 34, "z": 26, "w": 7, "length": 14, "yBottom": 0, "yTop": 5.0, "yaw": 3.14159, "color": "#76ff03" },
-      { "id": "ck-ramp-nw-chimney", "x": -30, "z": -14, "w": 6, "length": 16, "yBottom": 5.0, "yTop": 9.0, "yaw": 3.14159, "color": "#ff6d00" },
-      { "id": "ck-ramp-ne-canteen", "x": 32, "z": -15, "w": 6, "length": 12, "yBottom": 5.0, "yTop": 7.5, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "ck-ramp-crucible", "x": 0, "z": -28, "w": 6.5, "length": 14, "yBottom": 0, "yTop": 8.5, "yaw": 3.14159, "color": "#76ff03" },
-      { "id": "ck-ramp-crown", "x": 12, "z": -44, "w": 5, "length": 10, "yBottom": 8.5, "yTop": 13.0, "yaw": -1.5708, "color": "#ffd740" },
-      { "id": "ck-ramp-canyon-kicker", "x": 0, "z": 14, "w": 6, "length": 9, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff6d00" },
-      { "id": "ck-ramp-rim-east", "x": 58, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#76ff03" },
-      { "id": "ck-ramp-rim-west", "x": -58, "z": 24, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#ff6d00" }
+      {
+        "id": "ck-ramp-west-smelter",
+        "x": -34,
+        "z": 29,
+        "w": 7,
+        "length": 14,
+        "yBottom": 0,
+        "yTop": 5,
+        "yaw": 3.14159,
+        "color": "#ff6d00"
+      },
+      {
+        "id": "ck-ramp-east-press",
+        "x": 34,
+        "z": 26,
+        "w": 7,
+        "length": 14,
+        "yBottom": 0,
+        "yTop": 5,
+        "yaw": 3.14159,
+        "color": "#76ff03"
+      },
+      {
+        "id": "ck-ramp-nw-chimney",
+        "x": -30,
+        "z": -14,
+        "w": 6,
+        "length": 16,
+        "yBottom": 5,
+        "yTop": 9,
+        "yaw": 3.14159,
+        "color": "#ff6d00"
+      },
+      {
+        "id": "ck-ramp-ne-canteen",
+        "x": 32,
+        "z": -15,
+        "w": 6,
+        "length": 12,
+        "yBottom": 5,
+        "yTop": 7.5,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ck-ramp-crucible",
+        "x": 0,
+        "z": -28,
+        "w": 6.5,
+        "length": 14,
+        "yBottom": 0,
+        "yTop": 8.5,
+        "yaw": 3.14159,
+        "color": "#76ff03"
+      },
+      {
+        "id": "ck-ramp-crown",
+        "x": 12,
+        "z": -44,
+        "w": 5,
+        "length": 10,
+        "yBottom": 8.5,
+        "yTop": 13,
+        "yaw": -1.5708,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ck-ramp-canyon-kicker",
+        "x": 0,
+        "z": 14,
+        "w": 6,
+        "length": 9,
+        "yBottom": 0,
+        "yTop": 3.4,
+        "yaw": 3.14159,
+        "color": "#ff6d00"
+      },
+      {
+        "id": "ck-ramp-rim-east",
+        "x": 58,
+        "z": 24,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#76ff03"
+      },
+      {
+        "id": "ck-ramp-rim-west",
+        "x": -58,
+        "z": 24,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#ff6d00"
+      }
     ],
     "rails": [
       {
         "id": "ck-rail-canyon-cross-s",
-        "points": [[-23, 5.2, 8], [0, 6.2, 8], [23, 5.2, 8]],
+        "points": [
+          [
+            -23,
+            5.2,
+            8
+          ],
+          [
+            0,
+            6.2,
+            8
+          ],
+          [
+            23,
+            5.2,
+            8
+          ]
+        ],
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.28
       },
       {
         "id": "ck-rail-west-pipe",
-        "points": [[-30, 9.2, -22], [-22, 9.8, -34], [-17, 8.9, -42]],
+        "points": [
+          [
+            -30,
+            9.2,
+            -22
+          ],
+          [
+            -22,
+            9.8,
+            -34
+          ],
+          [
+            -17,
+            8.9,
+            -42
+          ]
+        ],
         "color": "#ff6d00",
         "glowColor": "#ff6d00",
         "speedBoost": 1.3
       },
       {
         "id": "ck-rail-east-pipe",
-        "points": [[32, 7.8, -20], [24, 9.0, -34], [17, 8.9, -42]],
+        "points": [
+          [
+            32,
+            7.8,
+            -20
+          ],
+          [
+            24,
+            9,
+            -34
+          ],
+          [
+            17,
+            8.9,
+            -42
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.3
       },
       {
         "id": "ck-rail-crown-arch",
-        "points": [[-24, 9.2, -38], [-12, 13.4, -44], [0, 14.0, -48], [12, 13.4, -44], [24, 9.2, -38]],
+        "points": [
+          [
+            -24,
+            9.2,
+            -38
+          ],
+          [
+            -12,
+            13.4,
+            -44
+          ],
+          [
+            0,
+            14,
+            -48
+          ],
+          [
+            12,
+            13.4,
+            -44
+          ],
+          [
+            24,
+            9.2,
+            -38
+          ]
+        ],
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.35
       },
       {
         "id": "ck-rail-foundry-loop",
-        "points": [[-26, 1.5, 32], [-10, 1.5, 32], [10, 1.5, 32], [26, 1.5, 32]],
+        "points": [
+          [
+            -26,
+            1.5,
+            32
+          ],
+          [
+            -10,
+            1.5,
+            32
+          ],
+          [
+            10,
+            1.5,
+            32
+          ],
+          [
+            26,
+            1.5,
+            32
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.2
       },
       {
         "id": "ck-rail-back-drop",
-        "points": [[0, 13.3, -52], [-26, 8.2, -52], [-44, 5.2, -10]],
+        "points": [
+          [
+            0,
+            13.3,
+            -52
+          ],
+          [
+            -26,
+            8.2,
+            -52
+          ],
+          [
+            -44,
+            5.2,
+            -10
+          ]
+        ],
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.32
       },
       {
         "id": "ck-rail-spawn-lead",
-        "points": [[0, 1.5, 42], [0, 1.5, 32]],
+        "points": [
+          [
+            0,
+            1.5,
+            42
+          ],
+          [
+            0,
+            1.5,
+            32
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.2
       },
       {
         "id": "ck-rail-rim-west",
-        "points": [[-58, 1.8, 22], [-62, 2.2, 0], [-42, 2.2, -28]],
+        "points": [
+          [
+            -58,
+            1.8,
+            22
+          ],
+          [
+            -62,
+            2.2,
+            0
+          ],
+          [
+            -42,
+            2.2,
+            -28
+          ]
+        ],
         "color": "#ff6d00",
         "glowColor": "#ff6d00",
         "speedBoost": 1.28
       },
       {
         "id": "ck-rail-rim-east",
-        "points": [[44, 2.2, -28], [62, 2.2, 0], [58, 1.8, 22]],
+        "points": [
+          [
+            44,
+            2.2,
+            -28
+          ],
+          [
+            62,
+            2.2,
+            0
+          ],
+          [
+            58,
+            1.8,
+            22
+          ]
+        ],
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.28
       },
       {
         "id": "ck-rail-edge-west",
-        "points": [[-62, 2.4, 0], [-72, 6.0, -8], [-72, 6.0, -20], [-54, 4.0, -26]],
+        "points": [
+          [
+            -62,
+            2.4,
+            0
+          ],
+          [
+            -72,
+            6,
+            -8
+          ],
+          [
+            -72,
+            6,
+            -20
+          ],
+          [
+            -54,
+            4,
+            -26
+          ]
+        ],
         "color": "#ff6d00",
         "glowColor": "#ff6d00",
         "speedBoost": 1.28
       },
       {
         "id": "ck-rail-edge-east",
-        "points": [[62, 2.4, 0], [72, 5.8, -8], [72, 5.8, -20], [56, 3.8, -28]],
+        "points": [
+          [
+            62,
+            2.4,
+            0
+          ],
+          [
+            72,
+            5.8,
+            -8
+          ],
+          [
+            72,
+            5.8,
+            -20
+          ],
+          [
+            56,
+            3.8,
+            -28
+          ]
+        ],
         "color": "#76ff03",
         "glowColor": "#76ff03",
         "speedBoost": 1.28
       },
       {
         "id": "ck-rail-edge-ne",
-        "points": [[44, 2.4, -28], [52, 6.6, -44], [52, 6.6, -54], [32, 7.8, -36]],
+        "points": [
+          [
+            44,
+            2.4,
+            -28
+          ],
+          [
+            52,
+            6.6,
+            -44
+          ],
+          [
+            52,
+            6.6,
+            -54
+          ],
+          [
+            32,
+            7.8,
+            -36
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.3
       },
       {
         "id": "ck-rail-edge-sw",
-        "points": [[-58, 3.6, 24], [-52, 5.2, 44], [-50, 5.2, 54], [-30, 2.2, 36]],
+        "points": [
+          [
+            -58,
+            3.6,
+            24
+          ],
+          [
+            -52,
+            5.2,
+            44
+          ],
+          [
+            -50,
+            5.2,
+            54
+          ],
+          [
+            -30,
+            2.2,
+            36
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.26
+      },
+      {
+        "id": "rail-chrome-kiln-epic-aether",
+        "points": [
+          [
+            0,
+            13.5,
+            -44
+          ],
+          [
+            -72.8,
+            16,
+            -14
+          ],
+          [
+            -126,
+            3.7,
+            -16
+          ],
+          [
+            -80.64,
+            4.5,
+            16
+          ],
+          [
+            -28,
+            1.5,
+            28
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.55,
+        "aetherRail": true
+      },
+      {
+        "id": "rail-chrome-kiln-underworld",
+        "points": [
+          [
+            42.56,
+            2.2,
+            -22
+          ],
+          [
+            120,
+            -2.5,
+            -14
+          ],
+          [
+            50.4,
+            -8.5,
+            0
+          ],
+          [
+            0,
+            -9.2,
+            8
+          ],
+          [
+            -53.76,
+            -8,
+            0
+          ],
+          [
+            -120,
+            -1.5,
+            14
+          ],
+          [
+            -42.56,
+            2.5,
+            22
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.65,
+        "aetherRail": true,
+        "underWorld": true
+      },
+      {
+        "id": "rail-chrome-kiln-sat-east-loop",
+        "points": [
+          [
+            50.4,
+            2.5,
+            6
+          ],
+          [
+            126,
+            4.6,
+            16
+          ],
+          [
+            50.4,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#76ff03",
+        "speedBoost": 1.45,
+        "aetherRail": true
       }
     ],
     "billboards": [
-      { "id": "ck-bb-1", "x": -34, "y": 5.0, "z": 8, "yaw": 1.2, "w": 4.6, "h": 2.5, "gangName": "Glaze Grinders", "eventId": "ck-tag-stacks", "color": "#ff6d00" },
-      { "id": "ck-bb-2", "x": 34, "y": 5.0, "z": 4, "yaw": -1.2, "w": 4.6, "h": 2.5, "gangName": "Glaze Grinders", "eventId": "ck-tag-stacks", "color": "#76ff03" },
-      { "id": "ck-bb-3", "x": -30, "y": 9.0, "z": -30, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "Glaze Grinders", "eventId": "ck-tag-stacks", "color": "#00e5ff" },
-      { "id": "ck-bb-4", "x": 0, "y": 13.0, "z": -49, "yaw": 0, "w": 5.0, "h": 2.6, "gangName": "Glaze Grinders", "eventId": "ck-tag-stacks", "color": "#ffd740" }
+      {
+        "id": "ck-bb-1",
+        "x": -34,
+        "y": 5,
+        "z": 8,
+        "yaw": 1.2,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Glaze Grinders",
+        "eventId": "ck-tag-stacks",
+        "color": "#ff6d00"
+      },
+      {
+        "id": "ck-bb-2",
+        "x": 34,
+        "y": 5,
+        "z": 4,
+        "yaw": -1.2,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Glaze Grinders",
+        "eventId": "ck-tag-stacks",
+        "color": "#76ff03"
+      },
+      {
+        "id": "ck-bb-3",
+        "x": -30,
+        "y": 9,
+        "z": -30,
+        "yaw": 0.4,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "Glaze Grinders",
+        "eventId": "ck-tag-stacks",
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ck-bb-4",
+        "x": 0,
+        "y": 13,
+        "z": -49,
+        "yaw": 0,
+        "w": 5,
+        "h": 2.6,
+        "gangName": "Glaze Grinders",
+        "eventId": "ck-tag-stacks",
+        "color": "#ffd740"
+      }
     ],
     "interactives": [
-      { "id": "ck-vent-1", "kind": "updraft-vent", "x": -16, "y": 0, "z": -18, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "West Canyon Vent" },
-      { "id": "ck-vent-2", "kind": "updraft-vent", "x": 16, "y": 0, "z": -18, "power": 18.5, "prefab": "gsr-updraft-vent", "label": "East Canyon Vent" },
-      { "id": "ck-vent-3", "kind": "updraft-vent", "x": 0, "y": 8.5, "z": -35, "power": 16.0, "prefab": "gsr-updraft-vent", "label": "Crucible Booster Vent" },
-      { "id": "ck-dish-1", "kind": "relay-dish", "x": -30, "y": 9.0, "z": -24, "prefab": "gsr-radio-dish", "eventId": "ck-vent-dishes", "label": "Chimney Dish" },
-      { "id": "ck-dish-2", "kind": "relay-dish", "x": 32, "y": 7.5, "z": -24, "prefab": "gsr-radio-dish", "eventId": "ck-vent-dishes", "label": "Canteen Roof Dish" },
-      { "id": "ck-dish-3", "kind": "relay-dish", "x": 0, "y": 13.0, "z": -38, "prefab": "gsr-radio-dish", "eventId": "ck-vent-dishes", "label": "Crown Amplifier Dish" },
-      { "id": "ck-spray-1", "kind": "spray-pickup", "x": 0, "y": 0.4, "z": 16, "prefab": "gsr-spray-can" },
-      { "id": "ck-spray-2", "kind": "spray-pickup", "x": 34, "y": 5.4, "z": 4, "prefab": "gsr-spray-can" },
-      { "id": "ck-spray-3", "kind": "spray-pickup", "x": 0, "y": 13.4, "z": -44, "prefab": "gsr-spray-can" },
-      { "id": "ck-acorn-1", "kind": "tempo-acorn", "x": -30, "y": 9.6, "z": -34, "eventId": "ck-side-cinder", "label": "Kiln Tempo Acorn" },
-      { "id": "ck-acorn-2", "kind": "tempo-acorn", "x": 32, "y": 8.1, "z": -32, "eventId": "ck-side-cinder", "label": "Kiln Tempo Acorn" },
-      { "id": "ck-acorn-3", "x": 0, "kind": "tempo-acorn", "y": 13.6, "z": -48, "eventId": "ck-side-cinder", "label": "Kiln Tempo Acorn" }
+      {
+        "id": "ck-vent-1",
+        "kind": "updraft-vent",
+        "x": -16,
+        "y": 0,
+        "z": -18,
+        "power": 19,
+        "prefab": "gsr-updraft-vent",
+        "label": "West Canyon Vent"
+      },
+      {
+        "id": "ck-vent-2",
+        "kind": "updraft-vent",
+        "x": 16,
+        "y": 0,
+        "z": -18,
+        "power": 18.5,
+        "prefab": "gsr-updraft-vent",
+        "label": "East Canyon Vent"
+      },
+      {
+        "id": "ck-vent-3",
+        "kind": "updraft-vent",
+        "x": 0,
+        "y": 8.5,
+        "z": -35,
+        "power": 16,
+        "prefab": "gsr-updraft-vent",
+        "label": "Crucible Booster Vent"
+      },
+      {
+        "id": "ck-dish-1",
+        "kind": "relay-dish",
+        "x": -30,
+        "y": 9,
+        "z": -24,
+        "prefab": "gsr-radio-dish",
+        "eventId": "ck-vent-dishes",
+        "label": "Chimney Dish"
+      },
+      {
+        "id": "ck-dish-2",
+        "kind": "relay-dish",
+        "x": 32,
+        "y": 7.5,
+        "z": -24,
+        "prefab": "gsr-radio-dish",
+        "eventId": "ck-vent-dishes",
+        "label": "Canteen Roof Dish"
+      },
+      {
+        "id": "ck-dish-3",
+        "kind": "relay-dish",
+        "x": 0,
+        "y": 13,
+        "z": -38,
+        "prefab": "gsr-radio-dish",
+        "eventId": "ck-vent-dishes",
+        "label": "Crown Amplifier Dish"
+      },
+      {
+        "id": "ck-spray-1",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 0.4,
+        "z": 16,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ck-spray-2",
+        "kind": "spray-pickup",
+        "x": 34,
+        "y": 5.4,
+        "z": 4,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ck-spray-3",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 13.4,
+        "z": -44,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "ck-acorn-1",
+        "kind": "tempo-acorn",
+        "x": -30,
+        "y": 9.6,
+        "z": -34,
+        "eventId": "ck-side-cinder",
+        "label": "Kiln Tempo Acorn"
+      },
+      {
+        "id": "ck-acorn-2",
+        "kind": "tempo-acorn",
+        "x": 32,
+        "y": 8.1,
+        "z": -32,
+        "eventId": "ck-side-cinder",
+        "label": "Kiln Tempo Acorn"
+      },
+      {
+        "id": "ck-acorn-3",
+        "x": 0,
+        "kind": "tempo-acorn",
+        "y": 13.6,
+        "z": -48,
+        "eventId": "ck-side-cinder",
+        "label": "Kiln Tempo Acorn"
+      }
     ],
     "events": [
       {
@@ -341,7 +1225,12 @@
         "introLine": "Tag all 4 Glaze Grinder billboards across the Smelter, Glaze-Press, Chimney, and Crucible Crown!",
         "completeLine": "Canyon billboards painted! Thermal wattage climbing!",
         "objectiveType": "tag",
-        "targetIds": ["ck-bb-1", "ck-bb-2", "ck-bb-3", "ck-bb-4"],
+        "targetIds": [
+          "ck-bb-1",
+          "ck-bb-2",
+          "ck-bb-3",
+          "ck-bb-4"
+        ],
         "targetCount": 4,
         "x": -18,
         "y": 0,
@@ -358,7 +1247,7 @@
         "objectiveType": "sentries",
         "targetCount": 3,
         "x": 34,
-        "y": 5.0,
+        "y": 5,
         "z": 4
       },
       {
@@ -370,7 +1259,11 @@
         "introLine": "Ride the canyon updraft vents to tune all 3 Kiln Amplifier Dishes!",
         "completeLine": "All 3 kiln dishes humming! Crucible wattage at 100%!",
         "objectiveType": "dish",
-        "targetIds": ["ck-dish-1", "ck-dish-2", "ck-dish-3"],
+        "targetIds": [
+          "ck-dish-1",
+          "ck-dish-2",
+          "ck-dish-3"
+        ],
         "targetCount": 3,
         "x": 18,
         "y": 0,
@@ -387,7 +1280,7 @@
         "objectiveType": "boss-vera",
         "targetCount": 3,
         "x": 0,
-        "y": 13.0,
+        "y": 13,
         "z": -44
       },
       {
@@ -399,7 +1292,11 @@
         "introLine": "Three glowing Tempo Acorns landed on the Chimney, Canteen, and Crown—fetch them before they glaze over!",
         "completeLine": "Acid-funk clock locked! Boost coils topped off!",
         "objectiveType": "collect",
-        "targetIds": ["ck-acorn-1", "ck-acorn-2", "ck-acorn-3"],
+        "targetIds": [
+          "ck-acorn-1",
+          "ck-acorn-2",
+          "ck-acorn-3"
+        ],
         "targetCount": 3,
         "x": -34,
         "y": 0,
@@ -421,25 +1318,249 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "ck-npc-1", "name": "Foreman Barnaby", "kind": "gnome", "hatColor": "#ff6d00", "shirtColor": "#2b2b36", "x": -10, "y": 0, "z": 36, "yaw": 0.4, "line": "Local 404 keeps these kilns singing! Hit the canyon vents to jump straight to the stacks." },
-      { "id": "ck-npc-2", "name": "Inspector Clem", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#382f3b", "x": 12, "y": 0, "z": 24, "yaw": -0.5, "line": "Sign says 'DAYS SINCE GLAZE SPILL: 0'. Please stop using exhaust vents as skate elevators." },
-      { "id": "ck-npc-3", "name": "Trundle", "kind": "woken", "prefab": "gsr-glaze-trolley", "x": 0, "y": 0, "z": 10, "yaw": 0.2, "line": "Clank-whirr! Mind the molten channel grates—fresh neon-lime glaze coming through!" },
-      { "id": "ck-npc-4", "name": "Tour Guide Pip", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#2f242c", "x": 32, "y": 7.5, "z": -22, "yaw": -0.9, "line": "Welcome to the Union Canteen overlook! Grab a biscuit and watch the Crucible Bridge." },
-      { "id": "ck-npc-5", "name": "Apprentice Ash", "kind": "gnome", "hatColor": "#76ff03", "shirtColor": "#1f1826", "x": -30, "y": 9.0, "z": -24, "yaw": 0.9, "line": "Double-jump mid-air off the Chimney rail to snag the Crucible Crown Arch!" },
-      { "id": "ck-npc-6", "name": "Glaze Fan", "kind": "woken", "prefab": "gsr-boombox", "x": -26, "y": 5.0, "z": 8, "yaw": 0.6, "line": "Bzzzt! Phrygian basslines rattle every rivet in the West Blast-Smelter!" },
-      { "id": "ck-npc-7", "name": "Rigger Rusty", "kind": "gnome", "hatColor": "#76ff03", "shirtColor": "#332a36", "x": 58, "y": 0, "z": -8, "yaw": -1.57, "line": "Outer catwalk rails run along the canyon rim—launch off the kicker for huge 360 spins!" },
-      { "id": "ck-npc-8", "name": "Union Bell-Ringer", "kind": "gnome", "hatColor": "#ff6d00", "shirtColor": "#2f242c", "x": -18, "y": 0, "z": -6, "yaw": 0.5, "line": "Clang! One tap on the Foundry Shift Bell starts the acid-funk breakbeat!" },
-      { "id": "ck-npc-9", "name": "Black-Dew Fueler", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#1c1824", "x": -40, "y": 0, "z": 38, "yaw": 0.4, "line": "Keep open flames away from the Dew pump—we're running 87-octane boot polish here!" }
+      {
+        "id": "ck-npc-1",
+        "name": "Foreman Barnaby",
+        "kind": "gnome",
+        "hatColor": "#ff6d00",
+        "shirtColor": "#2b2b36",
+        "x": -10,
+        "y": 0,
+        "z": 36,
+        "yaw": 0.4,
+        "line": "Local 404 keeps these kilns singing! Hit the canyon vents to jump straight to the stacks."
+      },
+      {
+        "id": "ck-npc-2",
+        "name": "Inspector Clem",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#382f3b",
+        "x": 12,
+        "y": 0,
+        "z": 24,
+        "yaw": -0.5,
+        "line": "Sign says 'DAYS SINCE GLAZE SPILL: 0'. Please stop using exhaust vents as skate elevators."
+      },
+      {
+        "id": "ck-npc-3",
+        "name": "Trundle",
+        "kind": "woken",
+        "prefab": "gsr-glaze-trolley",
+        "x": 0,
+        "y": 0,
+        "z": 10,
+        "yaw": 0.2,
+        "line": "Clank-whirr! Mind the molten channel grates—fresh neon-lime glaze coming through!"
+      },
+      {
+        "id": "ck-npc-4",
+        "name": "Tour Guide Pip",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#2f242c",
+        "x": 32,
+        "y": 7.5,
+        "z": -22,
+        "yaw": -0.9,
+        "line": "Welcome to the Union Canteen overlook! Grab a biscuit and watch the Crucible Bridge."
+      },
+      {
+        "id": "ck-npc-5",
+        "name": "Apprentice Ash",
+        "kind": "gnome",
+        "hatColor": "#76ff03",
+        "shirtColor": "#1f1826",
+        "x": -30,
+        "y": 9,
+        "z": -24,
+        "yaw": 0.9,
+        "line": "Double-jump mid-air off the Chimney rail to snag the Crucible Crown Arch!"
+      },
+      {
+        "id": "ck-npc-6",
+        "name": "Glaze Fan",
+        "kind": "woken",
+        "prefab": "gsr-boombox",
+        "x": -26,
+        "y": 5,
+        "z": 8,
+        "yaw": 0.6,
+        "line": "Bzzzt! Phrygian basslines rattle every rivet in the West Blast-Smelter!"
+      },
+      {
+        "id": "ck-npc-7",
+        "name": "Rigger Rusty",
+        "kind": "gnome",
+        "hatColor": "#76ff03",
+        "shirtColor": "#332a36",
+        "x": 58,
+        "y": 0,
+        "z": -8,
+        "yaw": -1.57,
+        "line": "Outer catwalk rails run along the canyon rim—launch off the kicker for huge 360 spins!"
+      },
+      {
+        "id": "ck-npc-8",
+        "name": "Union Bell-Ringer",
+        "kind": "gnome",
+        "hatColor": "#ff6d00",
+        "shirtColor": "#2f242c",
+        "x": -18,
+        "y": 0,
+        "z": -6,
+        "yaw": 0.5,
+        "line": "Clang! One tap on the Foundry Shift Bell starts the acid-funk breakbeat!"
+      },
+      {
+        "id": "ck-npc-9",
+        "name": "Black-Dew Fueler",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#1c1824",
+        "x": -40,
+        "y": 0,
+        "z": 38,
+        "yaw": 0.4,
+        "line": "Keep open flames away from the Dew pump—we're running 87-octane boot polish here!"
+      }
     ],
     "details": [
-      { "kind": "molten-channel", "x": 0, "y": 0.04, "z": 4, "w": 6.4, "d": 62, "color": "#ff6d00" },
-      { "kind": "banner-arch", "x": 0, "y": 0, "z": 36, "yaw": 0, "scale": 1.25, "color": "#76ff03", "accentColor": "#ff6d00" },
-      { "kind": "eq-strip", "x": -34, "y": 5.02, "z": 8, "yaw": 0, "scale": 1.25, "color": "#ff6d00" },
-      { "kind": "eq-strip", "x": 34, "y": 5.02, "z": 14, "yaw": 0, "scale": 1.25, "color": "#76ff03" },
-      { "kind": "placed-prop", "prefab": "gsr-cafe-table", "x": 32, "y": 7.5, "z": -30, "yaw": 0.4, "scale": 1.25, "color": "#00e5ff" },
-      { "kind": "placed-prop", "prefab": "gsr-telescope-stand", "x": 36, "y": 7.5, "z": -22, "yaw": 2.4, "scale": 1.35, "color": "#ffd740" },
-      { "kind": "placed-prop", "prefab": "gsr-gantry-crane", "x": -34, "y": 5.0, "z": 16, "yaw": 0.8, "scale": 1.9, "color": "#ffd740" },
-      { "kind": "cable-span", "x": -30, "y": 9.6, "z": -30, "x2": 32, "y2": 8.2, "z2": -28, "color": "#ff6d00" }
+      {
+        "kind": "molten-channel",
+        "x": 0,
+        "y": 0.04,
+        "z": 4,
+        "w": 6.4,
+        "d": 62,
+        "color": "#ff6d00"
+      },
+      {
+        "kind": "banner-arch",
+        "x": 0,
+        "y": 0,
+        "z": 36,
+        "yaw": 0,
+        "scale": 1.25,
+        "color": "#76ff03",
+        "accentColor": "#ff6d00"
+      },
+      {
+        "kind": "eq-strip",
+        "x": -34,
+        "y": 5.02,
+        "z": 8,
+        "yaw": 0,
+        "scale": 1.25,
+        "color": "#ff6d00"
+      },
+      {
+        "kind": "eq-strip",
+        "x": 34,
+        "y": 5.02,
+        "z": 14,
+        "yaw": 0,
+        "scale": 1.25,
+        "color": "#76ff03"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-cafe-table",
+        "x": 32,
+        "y": 7.5,
+        "z": -30,
+        "yaw": 0.4,
+        "scale": 1.25,
+        "color": "#00e5ff"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-telescope-stand",
+        "x": 36,
+        "y": 7.5,
+        "z": -22,
+        "yaw": 2.4,
+        "scale": 1.35,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-gantry-crane",
+        "x": -34,
+        "y": 5,
+        "z": 16,
+        "yaw": 0.8,
+        "scale": 1.9,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "cable-span",
+        "x": -30,
+        "y": 9.6,
+        "z": -30,
+        "x2": 32,
+        "y2": 8.2,
+        "z2": -28,
+        "color": "#ff6d00"
+      }
+    ],
+    "satellites": [
+      {
+        "id": "chrome-kiln-sat-west",
+        "x": -126,
+        "y": 2.5,
+        "z": -16,
+        "r": 9.5,
+        "color": "#76ff03",
+        "bouncePower": 18
+      },
+      {
+        "id": "chrome-kiln-sat-east",
+        "x": 126,
+        "y": 3.5,
+        "z": 16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      }
+    ],
+    "shopNpc": {
+      "id": "shop-ck",
+      "name": "Slag & Spark",
+      "prefab": "gsr-glaze-basin",
+      "x": 28,
+      "y": 0,
+      "z": 44,
+      "yaw": -0.5,
+      "itemId": "molten-acid",
+      "greeting": "900-degree Molten Acid trails, fresh from the vat!"
+    },
+    "bossWaypoints": [
+      [
+        0,
+        8,
+        0
+      ],
+      [
+        -34,
+        5,
+        8
+      ],
+      [
+        34,
+        5,
+        4
+      ],
+      [
+        -30,
+        9,
+        -30
+      ],
+      [
+        0,
+        13,
+        -49
+      ]
     ]
   }
 }

@@ -458,4 +458,99 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
       expect(s.railId).toBe(`rail-${ad.id}`);
     }
   });
+
+  it('air dash caps forward speed while leaving sideways strafe-dash uncapped', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = false;
+    s.y = 12;
+    s.yaw = 0; // facing +Z
+    s.vx = 0;
+    s.vz = 28;
+    s.boost = 100;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    // Forward air dash clamps forward speed at 34 m/s
+    const fwdDash = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: 1, jump: false, grind: false, trick: false, boost: true },
+      1 / 60,
+      btn,
+    );
+    expect(fwdDash.airDashTriggered).toBe(true);
+    expect(s.vz).toBeLessThanOrEqual(34.01);
+
+    // Sideways air dash (+X) is uncapped and can stack past 34 m/s
+    s.vx = 32;
+    s.vz = 0;
+    s.yaw = 0;
+    s.airDashCooldown = 0;
+    btn.boost = false;
+    const sideDash = stepSkater(
+      s,
+      doc,
+      { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true },
+      1 / 60,
+      btn,
+    );
+    expect(sideDash.airDashTriggered).toBe(true);
+    expect(s.vx).toBeGreaterThan(40);
+  });
+
+  it('speed mode preserves high momentum and decays smoothly on exit instead of snapping', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = true;
+    s.vx = 0;
+    s.vz = -34;
+    s.yaw = Math.PI;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    // Hold speedMode for 10 frames: speed stays > 32
+    for (let i = 0; i < 10; i++) {
+      stepSkater(
+        s,
+        doc,
+        { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false, speedMode: true },
+        1 / 60,
+        btn,
+      );
+    }
+    const tuckSpd = Math.hypot(s.vx, s.vz);
+    expect(tuckSpd).toBeGreaterThan(31);
+
+    // Release speedMode for 1 frame: should decay smoothly, NOT snap to 22
+    stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false, speedMode: false },
+      1 / 60,
+      btn,
+    );
+    const afterExitSpd = Math.hypot(s.vx, s.vz);
+    expect(afterExitSpd).toBeGreaterThan(28);
+    expect(afterExitSpd).toBeLessThan(tuckSpd);
+  });
+
+  it('wall-bump cooldown prevents repeated bump events when rubbing against a wall', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const prop = doc.props[0]!;
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.y = 0;
+    s.vx = -8;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    const first = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(first.bumped).toBe(true);
+
+    // Immediate second impact within cooldown does not re-trigger bump SFX
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.vx = -8;
+    const second = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(second.bumped).toBe(false);
+  });
 });

@@ -8,6 +8,7 @@ export interface BossAnimator {
     bossActive: boolean,
     bossWavePhase: number,
     hitRecoil: number,
+    overridePos?: { x: number; y: number; z: number },
   ): void;
 }
 
@@ -36,6 +37,7 @@ export function createBossAnimator(
 
   const stageGroup = new THREE.Group();
   stageGroup.position.set(baseX, baseY, baseZ);
+  stageGroup.scale.setScalar(1.55);
   group.add(stageGroup);
 
   const makeGlowMat = (color: number, opacity = 0.9, emissiveIntensity = 0.95): THREE.MeshStandardMaterial =>
@@ -322,7 +324,11 @@ export function createBossAnimator(
   }
 
   return {
-    update(t, beatPulse, bossActive, bossWavePhase, hitRecoil) {
+    update(t, beatPulse, bossActive, bossWavePhase, hitRecoil, overridePos) {
+      const cx = overridePos ? overridePos.x : baseX;
+      const cy = overridePos ? overridePos.y : baseY;
+      const cz = overridePos ? overridePos.z : baseZ;
+      stageGroup.position.set(cx, cy, cz);
       const activity = bossActive ? 1.0 : 0.45;
       const waveBoost = bossWavePhase * 0.25;
 
@@ -546,7 +552,7 @@ export function createBossAnimator(
         dy += Math.sin(recoil * Math.PI) * 0.4;
       }
 
-      bossRoot.position.set(baseX + dx, baseY + dy, baseZ + dz);
+      bossRoot.position.set(cx + dx, cy + dy, cz + dz);
       bossRoot.rotation.set(rx, baseRotY + ry, rz);
       bossRoot.scale.set(baseScale.x * sx, baseScale.y * sy, baseScale.z * sz);
     },

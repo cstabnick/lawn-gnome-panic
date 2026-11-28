@@ -17,6 +17,8 @@ export interface ChaseCamera {
     dt: number,
     orbitDeltaX: number,
     getGroundY?: (x: number, z: number) => number,
+    beatPulse?: number,
+    energyNorm?: number,
   ): void;
 }
 
@@ -60,7 +62,7 @@ export function createChaseCamera(initialYaw = Math.PI): ChaseCamera {
       cam.fov = 60;
       cam.updateProjectionMatrix();
     },
-    update(cam, s, dt, orbitDeltaX, getGroundY) {
+    update(cam, s, dt, orbitDeltaX, getGroundY, beatPulse = 0, energyNorm = 0) {
       if (Math.abs(orbitDeltaX) > 0.0001) {
         state.yaw -= orbitDeltaX;
         manualOrbitTimer = 1.2;
@@ -84,7 +86,7 @@ export function createChaseCamera(initialYaw = Math.PI): ChaseCamera {
       const targetX = s.x - Math.sin(state.yaw) * dist;
       const targetZ = s.z - Math.cos(state.yaw) * dist;
       let targetY = s.y + height;
-      if (getGroundY) {
+      if (getGroundY && s.y >= -1.0) {
         targetY = Math.max(targetY, getGroundY(targetX, targetZ) + 1.3);
       }
 
@@ -95,17 +97,24 @@ export function createChaseCamera(initialYaw = Math.PI): ChaseCamera {
       lookAt.lerp(targetLookVec, k);
 
       cam.position.copy(pos);
-      if (getGroundY) {
+      if (getGroundY && s.y >= -1.0) {
         cam.position.y = Math.max(cam.position.y, getGroundY(cam.position.x, cam.position.z) + 1.3);
       }
-      if (shakeTime > 0) {
-        shakeTime = Math.max(0, shakeTime - dt);
-        const falloff = shakeTime / shakeDur;
-        const mag = shakeIntensity * falloff * falloff;
+      const spdNow = Math.hypot(s.vx, s.vz);
+      const grooveShake =
+        beatPulse * energyNorm * 0.065 +
+        Math.max(0, Math.min(1, (spdNow - 18) / 20)) * (s.boosting || s.speedMode ? 0.045 : 0.02);
+      if (shakeTime > 0 || grooveShake > 0.005) {
+        let mag = grooveShake;
+        if (shakeTime > 0) {
+          shakeTime = Math.max(0, shakeTime - dt);
+          const falloff = shakeTime / shakeDur;
+          mag += shakeIntensity * falloff * falloff;
+          if (shakeTime === 0) shakeIntensity = 0;
+        }
         cam.position.x += (Math.random() * 2 - 1) * mag;
         cam.position.y += (Math.random() * 2 - 1) * mag * 0.75;
         cam.position.z += (Math.random() * 2 - 1) * mag;
-        if (shakeTime === 0) shakeIntensity = 0;
       }
 
       const targetRoll = s.wallRiding ? s.wallSide * 0.14 : -s.lean * 0.16;

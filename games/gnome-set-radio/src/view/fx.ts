@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { SkaterState } from '../sim/skater';
 
 export interface GsrFx {
+  setTrailStyle(trailId: string | null, accentHex?: string): void;
   update(s: SkaterState, dt: number): void;
   burst(x: number, y: number, z: number, colorHex: string, count?: number): void;
   ring(x: number, y: number, z: number, colorHex: string): void;
@@ -31,7 +32,51 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
   const C_PINK = new THREE.Color('#ff4ecd');
   const C_GOLD = new THREE.Color('#ffd740');
   const C_LIME = new THREE.Color('#69f0ae');
+  const C_TRAIL_A = new THREE.Color('#ff4ecd');
+  const C_TRAIL_B = new THREE.Color('#00e5ff');
   const LINE_COLS = ['#ffffff', '#ff4ecd', '#00e5ff', '#ffd740'];
+
+  const TRAIL_THEMES: Record<string, [string, string]> = {
+    'ivory-notes': ['#ffd740', '#ffffff'],
+    'molten-acid': ['#76ff03', '#ff6d00'],
+    'pixel-8bit': ['#ff5252', '#00e5ff'],
+    'golden-bylaw': ['#ffd740', '#69f0ae'],
+    'subsoil-dub': ['#b388ff', '#00e5ff'],
+  };
+
+  function makeThematicParticleTex(): THREE.CanvasTexture {
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 64;
+    const g = c.getContext('2d')!;
+    g.clearRect(0, 0, 64, 64);
+    // Glowing 4-point star / sound-sparkle + music note silhouette
+    const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.45, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(32, 32, 28, 0, Math.PI * 2);
+    g.fill();
+    // Crisp music eighth-note + chevron core
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.ellipse(24, 42, 9, 6.5, -0.35, 0, Math.PI * 2);
+    g.fill();
+    g.fillRect(30, 16, 4.5, 25);
+    g.beginPath();
+    g.moveTo(30, 16);
+    g.quadraticCurveTo(48, 22, 43, 34);
+    g.lineTo(39, 30);
+    g.quadraticCurveTo(42, 24, 34, 21);
+    g.closePath();
+    g.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+  const particleTex = makeThematicParticleTex();
 
   // DOM: speed lines canvas + vignette + flash inside #gsr-ui
   const box = document.createElement('div');
@@ -94,7 +139,9 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
   pGeo.setAttribute('position', pAttr);
   pGeo.setAttribute('color', cAttr);
   const pMat = new THREE.PointsMaterial({
-    size: 0.34,
+    size: 0.62,
+    map: particleTex,
+    alphaTest: 0.04,
     vertexColors: true,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -180,7 +227,18 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
     ctx.globalAlpha = 1;
   };
 
+  let boostRingTimer = 0;
   return {
+    setTrailStyle(trailId, accentHex) {
+      const theme = trailId ? TRAIL_THEMES[trailId] : undefined;
+      if (theme) {
+        C_TRAIL_A.set(theme[0]);
+        C_TRAIL_B.set(theme[1]);
+      } else {
+        C_TRAIL_A.set(accentHex ?? '#ff4ecd');
+        C_TRAIL_B.set('#00e5ff');
+      }
+    },
     burst(x, y, z, colorHex, count = 20) {
       const col = new THREE.Color(colorHex);
       for (let i = 0; i < count; i++) {
@@ -241,11 +299,39 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
           emit(s.x, s.y + 0.08, s.z, -vFwd.x * rnd(2, 5) + rnd(-1.5, 1.5), rnd(2, 5), -vFwd.z * rnd(2, 5) + rnd(-1.5, 1.5), 14, rnd(0.22, 0.38), i & 1 ? C_CYAN : C_GOLD);
         }
       }
-      // Boost trail
-      if (s.boosting) {
-        for (let i = 0; i < 3; i++) {
-          emit(s.x - vFwd.x * 0.5 + rnd(-0.2, 0.2), s.y + 0.4 + rnd(-0.15, 0.15), s.z - vFwd.z * 0.5 + rnd(-0.2, 0.2), rnd(-0.5, 0.5), rnd(0.2, 0.8), rnd(-0.5, 0.5), 0, 0.36, i & 1 ? C_PINK : C_CYAN);
+      // Thematic Boost & Speed Mode particle burst (radio waves, musical sparks & sonic rings)
+      if (s.boosting || s.speedMode) {
+        const count = s.boosting ? 4 : 2;
+        for (let i = 0; i < count; i++) {
+          const side = (i % 2 === 0 ? 1 : -1) * 0.35;
+          const rx = -vFwd.z * side;
+          const rz = vFwd.x * side;
+          emit(
+            s.x - vFwd.x * 0.55 + rx + rnd(-0.15, 0.15),
+            s.y + 0.35 + rnd(-0.1, 0.25),
+            s.z - vFwd.z * 0.55 + rz + rnd(-0.15, 0.15),
+            -vFwd.x * rnd(2.2, 5.0) + rx * 2.5,
+            rnd(0.5, 1.8),
+            -vFwd.z * rnd(2.2, 5.0) + rz * 2.5,
+            -0.8,
+            0.44,
+            i & 1 ? C_TRAIL_A : C_TRAIL_B,
+          );
         }
+        boostRingTimer -= dt;
+        if (s.boosting && boostRingTimer <= 0) {
+          boostRingTimer = 0.22;
+          const r = rings[ringNext]!;
+          ringNext = (ringNext + 1) % RINGS;
+          r.age = 0.08;
+          r.mesh.visible = true;
+          r.mesh.position.set(s.x, s.y + 0.35, s.z);
+          r.mesh.scale.setScalar(0.8);
+          r.mat.color.copy(C_TRAIL_A);
+          r.mat.opacity = 0.75;
+        }
+      } else {
+        boostRingTimer = 0;
       }
       // Carve sparks when sliding hard or braking
       if (s.grounded && !s.grinding && ((Math.abs(s.carveSlip) > 0.22 && speed > 7) || (s.braking && speed > 2))) {
@@ -315,6 +401,7 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
       box.remove();
       sGeo.dispose(); sMat.dispose();
       pGeo.dispose(); pMat.dispose();
+      particleTex.dispose();
       ringGeo.dispose();
       for (const r of rings) r.mat.dispose();
     },

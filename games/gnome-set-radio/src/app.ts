@@ -27,6 +27,13 @@ import {
 } from './fx/effectHandlers';
 import { createInputController } from './input';
 import { getLevelDoc, groundHeightAt, LEVEL_ORDER, sampleSurfaceHeight, type GsrLevelId } from './levels/loader';
+import {
+  activeAreaAt,
+  checkVoidRescue,
+  getMegaLocalDoc,
+  MEGA_WORLD_OFFSETS,
+  sampleMegaGroundY,
+} from './levels/megaWorld';
 import type { GsrLevelDoc } from './levels/schema';
 import {
   advanceEvent,
@@ -37,8 +44,9 @@ import {
   type LevelSession,
   type StyleRank,
 } from './game/events';
+import { advanceBossWaypoint, createBossBattle, stepBossBattle, type BossBattleState } from './game/bossBattle';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
-import { syncChassisFromSkater } from './sim/skateVehicle';
+import { createLevelGroundProbe, syncChassisFromSkater } from './sim/skateVehicle';
 import { createCutscenePlayer } from './ui/cutscene';
 import { createHelperGnome } from './ui/helperGnome';
 import { createHud } from './ui/hud';
@@ -46,6 +54,7 @@ import { createMusicExplorer } from './ui/musicExplorer';
 import { createArchipelagoMap } from './ui/archipelagoMap';
 import { createLocationToast } from './ui/locationToast';
 import { createRadioTicker } from './ui/radioTicker';
+import { createShopModal } from './ui/shopModal';
 import { mountTitleOverlay, showFinaleEncoreModal, showAreaClearSummary } from './ui/title';
 import { getArchipelagoNode } from './data/archipelago';
 import { COMPETITIONS } from './data/competitions';
@@ -63,7 +72,8 @@ import { createMarkerSystem, type MarkerSystem } from './view/markers';
 import { createRiderView, type RiderView } from './view/rider';
 import { createRemoteRiders } from './view/remoteRiders';
 import { buildTransitCableCurve } from './view/transitGates';
-import { buildWorldVisuals, type WorldVisuals } from './view/world';
+import { buildMegaWorldView, type MegaWorldView } from './view/megaWorldView';
+import { type WorldVisuals } from './view/world';
 import { createGsrNet } from './net/client';
 
 const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'] as const;
@@ -135,7 +145,7 @@ export function startApp(): void {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.15, 450);
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.15, 900);
 
   const hemi = new THREE.HemisphereLight(0xffb3ec, 0x261542, 1.05);
   scene.add(hemi);
@@ -175,13 +185,57 @@ export function startApp(): void {
   let progress = loadProgress();
   let currentLevelId: GsrLevelId = startLevelParam;
   let doc: GsrLevelDoc = getLevelDoc(currentLevelId);
-  let world: WorldVisuals | null = null;
+  const megaWorld: MegaWorldView = buildMegaWorldView(currentLevelId);
+  megaWorld.setFlowVisible(flowVisible);
+  scene.add(megaWorld.group);
+  for (const w of megaWorld.islands.values()) {
+    for (const vId of progress.collectedVinyls) {
+      w.markVinylCollected(vId);
+    }
+  }
+  const sessions = new Map<GsrLevelId, LevelSession>();
+  const bossBattles = new Map<GsrLevelId, BossBattleState>();
+  for (const id of LEVEL_ORDER) {
+    const d = getLevelDoc(id);
+    sessions.set(id, createLevelSession(d, id));
+    bossBattles.set(id, createBossBattle(id, d));
+  }
+  let world: WorldVisuals | null = megaWorld.islands.get(currentLevelId) ?? null;
   let markers: MarkerSystem | null = null;
-  let rider: RiderView | null = null;
+  let rider: RiderView | null = createRiderView(scene);
+  scene.add(rider.root);
+  rider.setCosmetics({ trailId: progress.equippedTrail, rideId: progress.equippedRide });
+  fx.setTrailStyle(progress.equippedTrail, doc.data.accentColor);
   let skater: SkaterState = createSkater(doc);
-  let session: LevelSession = createLevelSession(doc, currentLevelId);
+  let session: LevelSession = sessions.get(currentLevelId)!;
+  let bossBattle: BossBattleState = bossBattles.get(currentLevelId)!;
   const chaseCam = createChaseCamera();
-  const prevButtons = { jump: false, trick: false, railCooldown: 0 };
+  const prevButtons = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+  const applyCosmetics = () => {
+    rider?.setCosmetics({ trailId: progress.equippedTrail, rideId: progress.equippedRide });
+    fx.setTrailStyle(progress.equippedTrail, doc.data.accentColor);
+  };
+
+  const shopModal = createShopModal(gsrUi, {
+    onBuy(item) {
+      if (progress.tokens < item.cost || progress.ownedCosmetics.includes(item.id)) return;
+      progress.tokens -= item.cost;
+      progress.ownedCosmetics.push(item.id);
+      if (item.category === 'trail') progress.equippedTrail = item.id;
+      else progress.equippedRide = item.id;
+      saveProgress(progress);
+      applyCosmetics();
+      sfx.rankFanfare();
+    },
+    onEquip(item, category) {
+      if (category === 'trail') progress.equippedTrail = item ? item.id : null;
+      else progress.equippedRide = item ? item.id : null;
+      saveProgress(progress);
+      applyCosmetics();
+      sfx.tagSwitch();
+    },
+  });
 
   let selectedTagIdx = 0;
   let currentTrackId: GsrTrackId = 'pirate-radio-hub';
@@ -198,6 +252,10 @@ export function startApp(): void {
   let trickMusicPulse = false;
   let activeComp: CompetitionRun | null = null;
   let scratchPadCd = 0;
+  let smoothedHype = 0.3;
+  let smoothedComboMult = 1;
+  let unmultipliedEnergy = 0;
+  let currentBpm = 120;
 
   type TransitState =
     | { phase: 'ride'; t: number; dur: number; fadeStart: number; targetId: GsrLevelId; curve: THREE.CatmullRomCurve3 }
@@ -216,7 +274,11 @@ export function startApp(): void {
   const transitRightTmp = new THREE.Vector3();
 
   const unstuckSkater = () => {
+    const [ox, oy, oz] = MEGA_WORLD_OFFSETS[currentLevelId];
     skater = createSkater(doc);
+    skater.x += ox;
+    skater.y += oy;
+    skater.z += oz;
     chaseCam.yaw = skater.yaw;
     fx.ring(skater.x, skater.y, skater.z, '#69f0ae');
   };
@@ -232,10 +294,13 @@ export function startApp(): void {
         grinding: () => musicExplorer.getReactiveOverrides()?.grinding?.() ?? skater.grinding,
         air: () => musicExplorer.getReactiveOverrides()?.air?.() ?? (!skater.grounded && !skater.grinding),
         boss: () => musicExplorer.getReactiveOverrides()?.boss?.() ?? (session.bossUnlocked && !session.levelCleared),
-        skillPeak: () => musicExplorer.getReactiveOverrides()?.skillPeak?.() ?? (skater.comboMult >= 4 || skillFlairTimer > 0),
-        hype: () => musicExplorer.getReactiveOverrides()?.hype?.() ?? Math.min(1, 0.3 + skater.comboMult * 0.12),
+        skillPeak: () => musicExplorer.getReactiveOverrides()?.skillPeak?.() ?? (smoothedComboMult >= 3.5 || skillFlairTimer > 0),
+        hype: () => musicExplorer.getReactiveOverrides()?.hype?.() ?? smoothedHype,
         wallRiding: () => skater.wallRiding,
-        comboTier: () => (skater.comboMult >= 7 ? 3 : skater.comboMult >= 4 ? 2 : skater.comboMult >= 2 ? 1 : 0),
+        comboTier: () => {
+          const m = Math.round(smoothedComboMult);
+          return m >= 7 ? 3 : m >= 4 ? 2 : m >= 2 ? 1 : 0;
+        },
         speedNorm: () => Math.min(1, skater.speedKmh / 90),
         trickPulse: () => {
           const v = trickMusicPulse;
@@ -418,27 +483,17 @@ export function startApp(): void {
     createHudEffectHandler(hud),
   ]);
 
-  function loadSceneForLevel(levelId: GsrLevelId): WorldVisuals {
+  function switchDistrict(levelId: GsrLevelId, resetSkaterPos: boolean): WorldVisuals {
     currentLevelId = levelId;
     selectedTagIdx = 0;
     doc = getLevelDoc(levelId);
-    graffiti.clear();
-    if (world) {
-      scene.remove(world.group);
-      world.dispose();
-    }
+    const [ox, oy, oz] = MEGA_WORLD_OFFSETS[levelId];
     if (markers) {
       markers.dispose();
     }
-    if (rider) {
-      scene.remove(rider.root);
-      rider.dispose();
-    }
-    const nextWorld = buildWorldVisuals(doc);
+    const nextWorld = megaWorld.islands.get(levelId)!;
     world = nextWorld;
-    world.setFlowVisible(flowVisible);
-    scene.add(world.group);
-    markers = createMarkerSystem(scene, doc, {
+    markers = createMarkerSystem(nextWorld.group, doc, {
       getBillboardDone: (id) => nextWorld.billboardMeshes.get(id)?.tagged ?? false,
       getInteractiveDone: (id) => nextWorld.interactiveMeshes.get(id)?.consumed ?? false,
       getChasePos: () => {
@@ -453,20 +508,26 @@ export function startApp(): void {
         return { x: p.x, y: p.y, z: p.z };
       },
     });
-    rider = createRiderView(scene);
-    scene.add(rider.root);
-    skater = createSkater(doc);
-    session = createLevelSession(doc, levelId);
+    session = sessions.get(levelId)!;
+    bossBattle = bossBattles.get(levelId)!;
+    if (resetSkaterPos) {
+      skater = createSkater(doc);
+      skater.x += ox;
+      skater.y += oy;
+      skater.z += oz;
+      chaseCam.yaw = skater.yaw;
+    } else if (skater.chassis) {
+      const megaDoc = getMegaLocalDoc(levelId);
+      skater.chassis.ctrl.ground = createLevelGroundProbe(megaDoc, () => skater.chassis!.feetY);
+      syncChassisFromSkater(skater.chassis, skater.x - ox, skater.y - oy, skater.z - oz, skater.vx, skater.vz, skater.yaw);
+    }
     paused = false;
     hud.setPaused(false);
     bossWaveHitCd = 0;
     bossWaveDodgeCd = 0;
-    chaseCam.yaw = skater.yaw;
     applyRegionalLighting(levelId, hemi, sun, rimLight, scene, doc.data.fogColor);
+    applyCosmetics();
     discoveredRoofs.clear();
-    for (const vId of progress.collectedVinyls) {
-      nextWorld.markVinylCollected(vId);
-    }
     radioTicker.setStation(levelId);
     helper.resetForLevel(levelId);
     activeComp = null;
@@ -474,6 +535,11 @@ export function startApp(): void {
     const compUnlocked = session.levelCleared || progress.completedAreas.includes(levelId);
     nextWorld.worldBits.setCompetitionState(compUnlocked, false);
     return nextWorld;
+  }
+
+  function loadSceneForLevel(levelId: GsrLevelId): WorldVisuals {
+    graffiti.clear();
+    return switchDistrict(levelId, true);
   }
 
   function beginPlay(): void {
@@ -499,16 +565,18 @@ export function startApp(): void {
     loadSceneForLevel(levelId);
     titleOverlay.hide();
     playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
+    currentBpm = doc.data.areaNumber === 1 ? 162 : doc.data.areaNumber === 4 ? 170 : doc.data.areaNumber === 8 ? 166 : 132;
     if (camera.fov !== 60) {
       camera.fov = 60;
       camera.updateProjectionMatrix();
     }
     if (rider) {
-      const spawnSurfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
+      const [ox, oy, oz] = MEGA_WORLD_OFFSETS[currentLevelId];
+      const spawnSurfY = oy + sampleSurfaceHeight(doc, skater.x - ox, skater.z - oz, skater.y - oy);
       rider.update(skater, 0.016, 0, spawnSurfY);
     }
     if (autostart || noCutscenes || !world) {
-      chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
+      chaseCam.snap(camera, skater, (x, z) => sampleMegaGroundY(currentLevelId, x, z));
       beginPlay();
       if (options?.fromTransit) {
         transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
@@ -529,7 +597,7 @@ export function startApp(): void {
           t: 0,
           dur: 0.35,
           onBlack: () => {
-            chaseCam.snap(camera, skater, (x, z) => groundHeightAt(doc, x, z));
+            chaseCam.snap(camera, skater, (x, z) => sampleMegaGroundY(currentLevelId, x, z));
             beginPlay();
           },
         };
@@ -650,7 +718,14 @@ export function startApp(): void {
           void achievements.unlock('gsr-deep-cut-sync');
         } else if (currentLevelId === 'zero-hz-zenith') {
           void achievements.unlock('gsr-zero-hz-encore');
+          if (!progress.ownedCosmetics.includes('aether-board')) {
+            progress.ownedCosmetics.push('aether-board');
+            progress.equippedRide = 'aether-board';
+            applyCosmetics();
+            locationToast.show('🛸 TIER 9 REWARD UNLOCKED!', 'THE AETHER BOARD', 'Equipped! Visit any Shop NPC to swap rides.', '#ffd740');
+          }
         }
+        progress.tokens += 300;
         const sideEvs = [...session.events.values()].filter((e) => e.def.kind === 'side');
         const sideCleared = sideEvs.filter((e) => e.completed).length;
         const finalScore = skater.totalScore + skater.comboScore * skater.comboMult;
@@ -778,7 +853,7 @@ export function startApp(): void {
     }
     if (inp.toggleFlow && world) {
       flowVisible = !flowVisible;
-      world.setFlowVisible(flowVisible);
+      megaWorld.setFlowVisible(flowVisible);
     }
 
     let promptText: string | null = null;
@@ -791,6 +866,7 @@ export function startApp(): void {
       !paused &&
       !cutscene.isActive() &&
       !musicExplorer.isOpen() &&
+      !shopModal.isOpen() &&
       (!transit || transit.phase === 'fade-to-player-in') &&
       !!world &&
       !!rider;
@@ -862,32 +938,78 @@ export function startApp(): void {
         transit = { phase: 'fade-to-player-in', t: 0, dur: 0.45 };
       }
     } else if (isPlaying && world && rider) {
+      const [ox, oy, oz] = MEGA_WORLD_OFFSETS[currentLevelId];
       const inHitstop = hitstopTimer > 0;
       if (inHitstop) {
         hitstopTimer = Math.max(0, hitstopTimer - dt);
       }
-      const stepRes = inHitstop
-        ? {
-            landed: false,
-            landImpact: 0,
-            bankedScore: 0,
-            bounced: false,
-            trickTriggered: null,
-            trickAnim: null,
-            jumpTriggered: false,
-            airJumpTriggered: false,
-            wallKickTriggered: false,
-            boostStarted: false,
-            bumped: false,
-            wallRideStarted: false,
-            grindStarted: false,
-            danceStarted: null,
-          }
-        : stepSkater(skater, doc, inp.skater, dt, prevButtons);
+      let stepRes;
+      if (inHitstop) {
+        stepRes = {
+          landed: false,
+          landImpact: 0,
+          bankedScore: 0,
+          bounced: false,
+          trickTriggered: null,
+          trickAnim: null,
+          jumpTriggered: false,
+          airJumpTriggered: false,
+          airDashTriggered: false,
+          wallKickTriggered: false,
+          boostStarted: false,
+          bumped: false,
+          wallRideStarted: false,
+          grindStarted: false,
+          danceStarted: null,
+        };
+      } else {
+        skater.x -= ox;
+        skater.y -= oy;
+        skater.z -= oz;
+        stepRes = stepSkater(skater, getMegaLocalDoc(currentLevelId), inp.skater, dt, prevButtons);
+        skater.x += ox;
+        skater.y += oy;
+        skater.z += oz;
+      }
+
+      // Void rescue safety net
+      const rescue = checkVoidRescue(skater.x, skater.y, skater.z, currentLevelId, skater.grinding);
+      if (rescue.rescued) {
+        skater.x = rescue.x;
+        skater.y = rescue.y;
+        skater.z = rescue.z;
+        skater.vx = 0;
+        skater.vz = 0;
+        skater.vy = 10;
+        skater.airJumpsLeft = skater.maxAirJumps;
+        fx.ring(skater.x, skater.y, skater.z, '#00e5ff');
+        locationToast.show('✨ AETHER UPDRAFT', 'BACK ON DECK', 'Void safety net caught you!', '#00e5ff');
+      }
+
+      // Seamless Mega World district crossing
+      const nextAreaId = activeAreaAt(skater.x, skater.y, skater.z, currentLevelId);
+      if (nextAreaId !== currentLevelId) {
+        switchDistrict(nextAreaId, false);
+        playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
+        currentBpm = doc.data.areaNumber === 1 ? 162 : doc.data.areaNumber === 4 ? 170 : doc.data.areaNumber === 8 ? 166 : 132;
+        const arch = getArchipelagoNode(nextAreaId);
+        locationToast.show(
+          `AREA ${doc.data.areaNumber} · ${arch.frequency} · ${arch.elevationM}m ALT`,
+          doc.name.toUpperCase(),
+          'SEAMLESS SKY-RAIL ARRIVAL',
+          doc.data.accentColor,
+        );
+      }
+
+      const [curOx, curOy, curOz] = MEGA_WORLD_OFFSETS[currentLevelId];
+      const lx = skater.x - curOx;
+      const ly = skater.y - curOy;
+      const lz = skater.z - curOz;
 
       const onBeatNow = beatPulse > 0.62;
       if (stepRes.jumpTriggered) effects.emit({ type: 'jump' });
       if (stepRes.airJumpTriggered) effects.emit({ type: 'airJump', x: skater.x, y: skater.y, z: skater.z });
+      if (stepRes.airDashTriggered) effects.emit({ type: 'airDash', x: skater.x, y: skater.y, z: skater.z });
       if (stepRes.wallKickTriggered) effects.emit({ type: 'wallKick', x: skater.x, y: skater.y, z: skater.z });
       if (stepRes.grindStarted) effects.emit({ type: 'grindStart' });
       if (stepRes.wallRideStarted) effects.emit({ type: 'wallRideStart' });
@@ -897,9 +1019,9 @@ export function startApp(): void {
         sfx.dancePop();
         if (stepRes.danceStarted === 'airfreeze') fx.ring(skater.x, skater.y, skater.z, '#00e5ff');
       }
-      const surfY = sampleSurfaceHeight(doc, skater.x, skater.z, skater.y);
+      const surfY = curOy + sampleSurfaceHeight(doc, lx, lz, ly);
       rider.update(skater, dt, beatPulse, surfY);
-      chaseCam.update(camera, skater, dt, inp.orbitDeltaX, (x, z) => groundHeightAt(doc, x, z));
+      chaseCam.update(camera, skater, dt, inp.orbitDeltaX, (x, z) => sampleMegaGroundY(currentLevelId, x, z), beatPulse, unmultipliedEnergy);
       fx.update(skater, dt);
       helper.tick(dt, currentLevelId, session);
 
@@ -931,6 +1053,9 @@ export function startApp(): void {
         effects.emit({ type: 'land', x: skater.x, y: skater.y, z: skater.z, impact: stepRes.landImpact });
       }
       if (stepRes.bankedScore > 0) {
+        const earnedTokens = Math.max(10, Math.round(stepRes.bankedScore * 0.08));
+        progress.tokens += earnedTokens;
+        saveProgress(progress);
         if (stepRes.bankedScore >= 1000) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
         if (stepRes.bankedScore >= 1500) hitstopTimer = Math.max(hitstopTimer, 0.045);
         if (stepRes.bankedScore >= 1800) {
@@ -948,8 +1073,8 @@ export function startApp(): void {
 
       // Billboard spray-tagging (always sprays the board when standing nearby, even to re-tag)
       for (const [id, bb] of world.billboardMeshes) {
-        const horiz = Math.hypot(skater.x - bb.def.x, skater.z - bb.def.z);
-        const vert = Math.abs(skater.y - bb.def.y);
+        const horiz = Math.hypot(lx - bb.def.x, lz - bb.def.z);
+        const vert = Math.abs(ly - bb.def.y);
         if (horiz < 5.5 && vert < 4.5) {
           promptText = bb.tagged
             ? `${sprayVerb} to re-tag ${bb.def.gangName} billboard!`
@@ -957,9 +1082,9 @@ export function startApp(): void {
           if (inp.sprayEdge) {
             sprayConsumed = true;
             trickMusicPulse = true;
-            skater.yaw = Math.atan2(bb.def.x - skater.x, bb.def.z - skater.z);
+            skater.yaw = Math.atan2(bb.def.x - lx, bb.def.z - lz);
             if (skater.grounded && skater.chassis) {
-              syncChassisFromSkater(skater.chassis, skater.x, skater.y, skater.z, skater.vx, skater.vz, skater.yaw);
+              syncChassisFromSkater(skater.chassis, lx, ly, lz, skater.vx, skater.vz, skater.yaw);
             }
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             const wasTagged = bb.tagged;
@@ -967,9 +1092,9 @@ export function startApp(): void {
             effects.emit({
               type: 'spray',
               isTarget: true,
-              x: bb.def.x,
-              y: bb.def.y + 1.2,
-              z: bb.def.z,
+              x: bb.def.x + curOx,
+              y: bb.def.y + curOy + 1.2,
+              z: bb.def.z + curOz,
               color: activeTag.primary,
               count: 24,
               celebrate: true,
@@ -995,7 +1120,7 @@ export function startApp(): void {
 
       // Interactive world objects
       for (const [id, item] of world.interactiveMeshes) {
-        const dist = Math.hypot(skater.x - item.def.x, skater.y - item.def.y, skater.z - item.def.z);
+        const dist = Math.hypot(lx - item.def.x, ly - item.def.y, lz - item.def.z);
         if ((item.def.kind === 'bongo-pad' || item.def.kind === 'updraft-vent') && dist < 2.3 && skater.vy <= 2.0) {
           effects.emit({ type: 'bounce', kind: item.def.kind, x: item.def.x, y: item.def.y + 0.2, z: item.def.z, color: activeTag.secondary });
           skater.vy = item.def.power ?? (item.def.kind === 'updraft-vent' ? 18.5 : 16);
@@ -1055,7 +1180,7 @@ export function startApp(): void {
       // Chase NPC (Pluck / Gus)
       if (world.pluckNpc && pluckHitCooldown <= 0) {
         const pPos = world.pluckNpc.root.position;
-        if (Math.hypot(skater.x - pPos.x, skater.y - pPos.y, skater.z - pPos.z) < 3.6) {
+        if (Math.hypot(lx - pPos.x, ly - pPos.y, lz - pPos.z) < 3.6) {
           promptText = `${sprayVerb} to tag the Bassist!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
@@ -1075,7 +1200,7 @@ export function startApp(): void {
         for (const se of world.sentries) {
           if (se.tagged) continue;
           const p = se.root.position;
-          if (Math.hypot(skater.x - p.x, skater.y - p.y, skater.z - p.z) < 3.2) {
+          if (Math.hypot(lx - p.x, ly - p.y, lz - p.z) < 3.2) {
             promptText = `${sprayVerb} to silence Sentry!`;
             if (inp.sprayEdge) {
               sprayConsumed = true;
@@ -1095,7 +1220,7 @@ export function startApp(): void {
       // Side-story NPC intros
       for (const ev of session.events.values()) {
         if (ev.def.kind === 'side' && !ev.completed) {
-          const d = Math.hypot(skater.x - ev.def.x, skater.y - ev.def.y, skater.z - ev.def.z);
+          const d = Math.hypot(lx - ev.def.x, ly - ev.def.y, lz - ev.def.z);
           if (d < 4.2) {
             promptText = `${sprayVerb} to talk to ${ev.def.character}`;
             if (inp.sprayEdge) {
@@ -1111,7 +1236,7 @@ export function startApp(): void {
       // Ambient NPC proximity lines & gang crew shoutouts (paused during active story banners)
       if (!session.activeBanner) {
         for (const npc of world.ambientNpcs) {
-          const d = Math.hypot(skater.x - npc.def.x, skater.y - npc.def.y, skater.z - npc.def.z);
+          const d = Math.hypot(lx - npc.def.x, ly - npc.def.y, lz - npc.def.z);
           if (d < 3.4 && elapsed - npc.talkedAt > 30) {
             npc.talkedAt = elapsed;
             world.showSpeechBubble(npc.def.id, npc.def.name, npc.def.line, 4.5);
@@ -1119,32 +1244,32 @@ export function startApp(): void {
         }
 
         // Skating gang crew shoutouts when player skates nearby
-        world.gangCrew.checkShoutouts(skater.x, skater.y, skater.z, elapsed, (id, speaker, line, hz) => {
+        world.gangCrew.checkShoutouts(lx, ly, lz, elapsed, (id, speaker, line, hz) => {
           world?.showSpeechBubble(id, speaker, line, 4.5);
           mutter.say(line, hz);
         });
       }
 
-      // Boss encounter + interactive bass shockwave
+      // Map-wide Boss encounter + interactive bass shockwave
+      stepBossBattle(bossBattle, dt, session.bossUnlocked, session.levelCleared);
       if (session.bossUnlocked && !session.levelCleared && world.bossActor) {
-        session.bossWavePhase += dt * 0.55;
-        const bp = world.bossActor.root.position;
-        const dx = skater.x - bp.x;
-        const dz = skater.z - bp.z;
+        session.bossWavePhase += dt * bossBattle.waveSpeed;
+        const dx = lx - bossBattle.x;
+        const dz = lz - bossBattle.z;
         const distXZ = Math.hypot(dx, dz);
-        const dist = Math.hypot(dx, skater.y - bp.y, dz);
+        const dist = Math.hypot(dx, ly - bossBattle.y, dz);
 
-        const waveR = (1 + (session.bossWavePhase % 1) * 5.2) * 1.8;
-        if (Math.abs(distXZ - waveR) < 1.1 && distXZ > 0.5) {
-          const dy = skater.y - bp.y;
-          if (dy < 1.15 && bossWaveHitCd <= 0) {
+        const waveR = (1 + (session.bossWavePhase % 1) * 6.5) * 2.2;
+        if (Math.abs(distXZ - waveR) < 1.3 && distXZ > 0.5) {
+          const dy = ly - bossBattle.y;
+          if (dy < 1.3 && bossWaveHitCd <= 0) {
             bossWaveHitCd = 1.3;
-            skater.vx += (dx / distXZ) * 11;
-            skater.vz += (dz / distXZ) * 11;
-            skater.vy = 4.5;
+            skater.vx += (dx / distXZ) * 12;
+            skater.vz += (dz / distXZ) * 12;
+            skater.vy = 4.8;
             skater.grounded = false;
             effects.emit({ type: 'bump' });
-          } else if (dy >= 1.15 && dy < 6.5 && bossWaveDodgeCd <= 0) {
+          } else if (dy >= 1.3 && dy < 8.5 && bossWaveDodgeCd <= 0) {
             bossWaveDodgeCd = 1.5;
             skater.comboScore += 200;
             skater.comboMult++;
@@ -1154,7 +1279,7 @@ export function startApp(): void {
           }
         }
 
-        if (dist < 4.8 && bossHitCooldown <= 0) {
+        if (dist < bossBattle.hitRadius && bossHitCooldown <= 0) {
           promptText = `${sprayVerb} to tag the Boss!`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
@@ -1163,7 +1288,8 @@ export function startApp(): void {
             bossHitCooldown = 0.9;
             world.bossActor.hits++;
             world.triggerBossHit();
-            effects.emit({ type: 'bossHit', x: bp.x, y: bp.y + 1.2, z: bp.z });
+            advanceBossWaypoint(bossBattle);
+            effects.emit({ type: 'bossHit', x: bossBattle.x + curOx, y: bossBattle.y + curOy + 1.8, z: bossBattle.z + curOz });
             const bossEv = [...session.events.values()].find((e) => e.def.kind === 'boss');
             if (bossEv) {
               handleEventCompletion(bossEv.def.id);
@@ -1172,8 +1298,8 @@ export function startApp(): void {
                 session.activeBanner = {
                   speaker: bossEv.def.character,
                   text: bossEv.progress === 1
-                    ? 'Direct hit?! Watch the bass shockwave, street-skater!'
-                    : 'One more tag and the frequency flips—bring it on!',
+                    ? 'Direct hit?! Catch me across the district, street-skater!'
+                    : 'Final phase—meet me at the next landmark!',
                   ttl: 3.5,
                 };
               }
@@ -1182,13 +1308,43 @@ export function startApp(): void {
         }
       }
 
+      // Shop NPC interaction
+      if (world.shopNpcPos) {
+        const sn = world.shopNpcPos;
+        if (Math.hypot(lx - sn.x, ly - sn.y, lz - sn.z) < 4.8) {
+          promptText = `${sprayVerb} to open ${sn.name}'s Gear Shop`;
+          if (inp.sprayEdge) {
+            sprayConsumed = true;
+            mutter.say(sn.greeting, 114);
+            shopModal.open(currentLevelId, progress);
+          }
+        }
+      }
+
+      // Satellite island bounce pads
+      if (scratchPadCd <= 0) {
+        for (const pad of world.satellitePads) {
+          if (Math.hypot(lx - pad.x, ly - pad.y, lz - pad.z) < 2.6 && skater.vy <= 3.0) {
+            scratchPadCd = 0.65;
+            skater.vy = pad.power;
+            skater.grounded = false;
+            skater.airJumpsLeft = skater.maxAirJumps;
+            skater.boost = Math.min(100, skater.boost + 35);
+            effects.emit({ type: 'bounce', kind: 'bongo-pad', x: pad.x + curOx, y: pad.y + curOy + 0.3, z: pad.z + curOz, color: '#00e5ff' });
+            hud.slamTrick('SATELLITE LAUNCH', skater.comboMult, beatPulse > 0.62);
+            break;
+          }
+        }
+      }
+
       // Collectible Golden Vinyls
       for (const [vId, v] of world.goldenVinyls) {
         if (v.collected) continue;
-        if (Math.hypot(skater.x - v.def.x, skater.y - v.def.y, skater.z - v.def.z) < 2.6) {
+        if (Math.hypot(lx - v.def.x, ly - v.def.y, lz - v.def.z) < 2.6) {
           world.markVinylCollected(vId);
           if (!progress.collectedVinyls.includes(vId)) {
             progress.collectedVinyls.push(vId);
+            progress.tokens += 150;
             saveProgress(progress);
             void achievements.increment('gsr-crate-digger');
           }
@@ -1213,9 +1369,9 @@ export function startApp(): void {
           if (!b.label || discoveredRoofs.has(b.id)) continue;
           const roofY = b.yBase + b.h;
           if (
-            Math.abs(skater.y - roofY) < 0.75 &&
-            Math.abs(skater.x - b.x) <= b.w * 0.5 &&
-            Math.abs(skater.z - b.z) <= b.d * 0.5
+            Math.abs(ly - roofY) < 0.75 &&
+            Math.abs(lx - b.x) <= b.w * 0.5 &&
+            Math.abs(lz - b.z) <= b.d * 0.5
           ) {
             discoveredRoofs.add(b.id);
             skater.totalScore += 150;
@@ -1229,11 +1385,11 @@ export function startApp(): void {
       // Transit Gates to connected neighboring islands
       for (const gate of world.transitGates) {
         const [gx, gy, gz] = gate.link.gatePos;
-        if (Math.hypot(skater.x - gx, skater.y - gy, skater.z - gz) < 5.2) {
+        if (Math.hypot(lx - gx, ly - gy, lz - gz) < 5.2) {
           promptText = `${sprayVerb} to ride ${gate.link.label}`;
           if (inp.sprayEdge) {
             sprayConsumed = true;
-            fx.ring(gx, gy + 1.0, gz, gate.link.color);
+            fx.ring(gx + curOx, gy + curOy + 1.0, gz + curOz, gate.link.color);
             fx.flash(gate.link.color, 0.35, 0.25);
             sfx.rankFanfare();
             pendingArrivalNote = 'ARRIVED VIA TRANSIT GATE';
@@ -1261,7 +1417,7 @@ export function startApp(): void {
       // Turntable Scratch Launch Pads
       if (scratchPadCd <= 0) {
         for (const pad of world.worldBits.scratchPads) {
-          if (Math.hypot(skater.x - pad.x, skater.y - pad.y, skater.z - pad.z) < 2.4 && skater.vy <= 3.0) {
+          if (Math.hypot(lx - pad.x, ly - pad.y, lz - pad.z) < 2.4 && skater.vy <= 3.0) {
             scratchPadCd = 0.65;
             skater.vy = 16.5;
             skater.grounded = false;
@@ -1271,7 +1427,7 @@ export function startApp(): void {
             skater.comboMult++;
             skater.comboTimer = Math.max(skater.comboTimer, 2.6);
             trickMusicPulse = true;
-            effects.emit({ type: 'bounce', kind: 'hydrant', x: pad.x, y: pad.y + 0.3, z: pad.z, color: '#00e5ff' });
+            effects.emit({ type: 'bounce', kind: 'hydrant', x: pad.x + curOx, y: pad.y + curOy + 0.3, z: pad.z + curOz, color: '#00e5ff' });
             hud.slamTrick('SCRATCH BOOST', skater.comboMult, beatPulse > 0.62);
             break;
           }
@@ -1282,7 +1438,7 @@ export function startApp(): void {
       const compDef = COMPETITIONS[currentLevelId];
       const compUnlocked = session.levelCleared || progress.completedAreas.includes(currentLevelId);
       const bp = world.worldBits.boothPos;
-      if (!activeComp && Math.hypot(skater.x - bp.x, skater.y - bp.y, skater.z - bp.z) < 4.5) {
+      if (!activeComp && Math.hypot(lx - bp.x, ly - bp.y, lz - bp.z) < 4.5) {
         if (compUnlocked) {
           promptText = `${sprayVerb} to start ${compDef.title}`;
           if (inp.sprayEdge) {
@@ -1305,10 +1461,10 @@ export function startApp(): void {
           for (let ri = 0; ri < compDef.ringPositions.length; ri++) {
             if (activeComp.collectedRings.has(ri)) continue;
             const rp = compDef.ringPositions[ri]!;
-            if (Math.hypot(skater.x - rp[0], skater.y - rp[1], skater.z - rp[2]) < 3.4) {
+            if (Math.hypot(lx - rp[0], ly - rp[1], lz - rp[2]) < 3.4) {
               ringHitIdx = ri;
               sfx.pickup('aerial-ring');
-              fx.burst(rp[0], rp[1], rp[2], '#ffd740', 14);
+              fx.burst(rp[0] + curOx, rp[1] + curOy, rp[2] + curOz, '#ffd740', 14);
               break;
             }
           }
@@ -1368,28 +1524,56 @@ export function startApp(): void {
         if (session.activeBanner.ttl <= 0) session.activeBanner = null;
       }
 
-      const hype = Math.min(1, 0.3 + skater.comboMult * 0.12);
+      // Gradual 1.5-beat scale-down after big combo + unmultiplied score brightness/saturation
+      const beatSec = 60 / Math.max(90, currentBpm);
+      const decayRate = 1 / (beatSec * 1.5);
+      const targetHype = Math.min(1, 0.3 + skater.comboMult * 0.12);
+      if (targetHype >= smoothedHype) smoothedHype = targetHype;
+      else smoothedHype = Math.max(targetHype, smoothedHype - decayRate * 0.7 * dt);
+
+      if (skater.comboMult >= smoothedComboMult) smoothedComboMult = skater.comboMult;
+      else smoothedComboMult = Math.max(skater.comboMult, smoothedComboMult - (smoothedComboMult - 1) * decayRate * dt);
+
+      const rawUnmult = skater.unmultipliedScore + skater.comboScore;
+      const targetEnergy = Math.min(1, rawUnmult / 4500);
+      unmultipliedEnergy += (targetEnergy - unmultipliedEnergy) * Math.min(1, dt * 2.5);
+      const bright = (1 + unmultipliedEnergy * 0.13).toFixed(3);
+      const sat = (1 + unmultipliedEnergy * 0.26).toFixed(3);
+      const cont = (1 + unmultipliedEnergy * 0.05).toFixed(3);
+      canvas.style.filter = `brightness(${bright}) saturate(${sat}) contrast(${cont})`;
+      renderer.toneMappingExposure = 1.12 + unmultipliedEnergy * 0.11;
+
       net.setPose(currentLevelId, skater);
       remoteRiders.update(currentLevelId, dt);
-      world.update(elapsed, beatPulse, session.bossUnlocked && !session.levelCleared, session.bossWavePhase, hype, skater.comboMult);
+      megaWorld.update(
+        currentLevelId,
+        elapsed,
+        beatPulse,
+        session.bossUnlocked && !session.levelCleared,
+        session.bossWavePhase,
+        smoothedHype,
+        Math.round(smoothedComboMult),
+        { x: bossBattle.x, y: bossBattle.y, z: bossBattle.z },
+      );
       markers?.update(elapsed, beatPulse, session);
-      const nearest = markers?.nearestTarget(skater.x, skater.y, skater.z, session);
+      const nearest = markers?.nearestTarget(lx, ly, lz, session);
       const compass = nearest
         ? {
             label: nearest.label,
             kind: nearest.kind,
             dist: nearest.dist,
-            arrow: directionArrow(chaseCam.yaw, nearest.x - skater.x, nearest.z - skater.z),
+            arrow: directionArrow(chaseCam.yaw, nearest.x - lx, nearest.z - lz),
           }
         : null;
       hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass, beatPulse);
     } else if (world) {
-      world.update(elapsed, beatPulse, false, 0, 0.3);
+      megaWorld.update(currentLevelId, elapsed, beatPulse, false, 0, 0.3, 1);
       if (cutscene.isActive()) {
         cutscene.updateCamera(camera, dt, beatPulse);
       } else {
-        camera.position.set(Math.sin(elapsed * 0.18) * 48, 22, Math.cos(elapsed * 0.18) * 48);
-        camera.lookAt(0, 4, -8);
+        const [ox, oy, oz] = MEGA_WORLD_OFFSETS[currentLevelId];
+        camera.position.set(ox + Math.sin(elapsed * 0.18) * 56, oy + 24, oz + Math.cos(elapsed * 0.18) * 56);
+        camera.lookAt(ox, oy + 4, oz - 8);
       }
     }
 

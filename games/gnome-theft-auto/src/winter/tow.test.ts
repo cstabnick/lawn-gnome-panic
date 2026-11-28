@@ -32,6 +32,12 @@ describe('tow', () => {
     expect(Math.abs(t - LEN / TOW.speed)).toBeLessThanOrEqual(dt + 1e-9);
   });
 
+  it('the ride up to the summit takes 35 s or less and ends near the top of the slope', () => {
+    expect(LEN / TOW.speed).toBeLessThanOrEqual(35);
+    expect(LEN / TOW.speed).toBeGreaterThan(15);
+    expect(TOW.top.z).toBeLessThan(-1300);
+  });
+
   it('towPoint(0) is the base and towPoint(len) the top', () => {
     const a = towPoint(0);
     expect(a.x).toBeCloseTo(TOW.base.x, 6);

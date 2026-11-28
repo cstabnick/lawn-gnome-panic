@@ -125,9 +125,9 @@ export const RANGE = 2.4;
 /** The Bootlace Tow: a rope tow from the foot to near the top, up the east side of the slope. */
 export const TOW = {
   base: { x: -300, z: -1028 },
-  top: { x: -325, z: -1270 },
-  /** m/s along the line. */
-  speed: 8,
+  top: { x: -325, z: -1318 },
+  /** m/s along the line (about 30 s up). */
+  speed: 10,
   /** A rider (skis or sled, moving slower than grabSpeed) within grabRange of the base can grab a handle. */
   grabRange: 4,
   grabSpeed: 7,
@@ -138,7 +138,8 @@ export const TOW = {
   handles: 24,
 } as const;
 
-export type RunId = 'wool-run' | 'tea-tray-run';
+/** 'nursery' is the old short Wool Run course (D26, FX12): learners' gates below the old start, bests kept apart. */
+export type RunId = 'wool-run' | 'tea-tray-run' | 'nursery';
 
 export interface Gate { x: number; z: number; /** Half the gap between the two poles, metres. */ half: number }
 
@@ -159,8 +160,40 @@ export interface RunDef {
   parS: number;
 }
 
+/** The Wool Run (D26): from the summit, a traverse and chicane down the whole slope, 35-45 s for a clean run. */
 export const WOOL_RUN: RunDef = {
   id: 'wool-run', name: 'the Wool Run', ride: 'snow-skis',
+  start: { x: -372, z: -1305, half: 14 },
+  gates: [
+    { x: -378, z: -1283, half: 5 },
+    { x: -352, z: -1261, half: 5 },
+    { x: -352, z: -1239, half: 5 },
+    { x: -378, z: -1217, half: 5 },
+    { x: -404, z: -1195, half: 5 },
+    { x: -404, z: -1173, half: 5 },
+    { x: -378, z: -1151, half: 5 },
+    { x: -352, z: -1129, half: 5 },
+    { x: -352, z: -1107, half: 5 },
+    { x: -378, z: -1085, half: 5 },
+    { x: -404, z: -1065, half: 5 },
+  ],
+  finish: { x: -385, z: -1045, half: 30 },
+  penalty: 3,
+  parS: 50,
+};
+
+export const TEA_TRAY_RUN: RunDef = {
+  id: 'tea-tray-run', name: 'the Tea-Tray Run', ride: 'tea-tray-sled',
+  start: { x: -398, z: -1250, half: 14 },
+  gates: [],
+  finish: { x: -398, z: -1040, half: 18 },
+  penalty: 0,
+  parS: 22,
+};
+
+/** The Nursery (D26): the E12 Wool Run course, kept for learners. Its bests are its own (save.ts migrates old ones). */
+export const NURSERY_RUN: RunDef = {
+  id: 'nursery', name: 'the Nursery', ride: 'snow-skis',
   start: { x: -350, z: -1255, half: 12 },
   gates: [
     { x: -375, z: -1225, half: 3.5 },
@@ -175,19 +208,10 @@ export const WOOL_RUN: RunDef = {
   parS: 22,
 };
 
-export const TEA_TRAY_RUN: RunDef = {
-  id: 'tea-tray-run', name: 'the Tea-Tray Run', ride: 'tea-tray-sled',
-  start: { x: -405, z: -1250, half: 14 },
-  gates: [],
-  finish: { x: -405, z: -1040, half: 18 },
-  penalty: 0,
-  parS: 22,
-};
-
-export const RUNS: readonly RunDef[] = [WOOL_RUN, TEA_TRAY_RUN];
+export const RUNS: readonly RunDef[] = [WOOL_RUN, TEA_TRAY_RUN, NURSERY_RUN];
 
 /** A clean Wool Run (no missed gate) at or under this many seconds earns Black Diamond. */
-export const BLACK_DIAMOND_S = 18;
+export const BLACK_DIAMOND_S = 36;
 
 /** Rental prices (Acorns) and how many rented rides of each kind may exist at once (older ones are removed). */
 export const RENT = { skis: 8, sled: 4, max: 2, cocoa: 6, ownSled: 30 } as const;
@@ -242,7 +266,8 @@ export const WINTER_APP_ID = 'ski-runs';
 export const WINTER_SAVE_KEY = 'gta-winter-v1';
 
 export interface WinterSave {
-  v: 1;
+  /** 2: the old short Wool Run's best moved to the Nursery (save.ts migrates a save without this marker). */
+  v: 1 | 2;
   /** Best finished time per run, seconds (penalties included). */
   best: Partial<Record<RunId, number>>;
   /** Finished runs per run. */

@@ -191,10 +191,10 @@
       "id": "ski-hill",
       "kind": "slot",
       "x": -350,
-      "z": 0,
+      "z": -25,
       "data": {
         "hw": 110,
-        "hd": 150,
+        "hd": 175,
         "kind": "venue",
         "epic": "E12",
         "flat": false,
@@ -202,17 +202,32 @@
         "anchors": {
           "top": {
             "dx": 0,
-            "dz": -140
+            "dz": -155
           },
           "bottom": {
             "dx": 0,
-            "dz": 140
+            "dz": 165
           },
           "lift-base": {
             "dx": 60,
-            "dz": 135
+            "dz": 160
           }
         }
+      }
+    },
+    {
+      "id": "woolly-sock-lodge",
+      "kind": "slot",
+      "x": -447,
+      "z": 130,
+      "data": {
+        "hw": 11,
+        "hd": 10,
+        "kind": "venue",
+        "epic": "E12",
+        "flat": true,
+        "parent": "ski-hill",
+        "label": "the Woolly Sock Lodge"
       }
     },
     {
@@ -379,6 +394,32 @@
             ]
           ],
           "r": 108
+        },
+        {
+          "id": "thaw/capwood",
+          "kind": "thaw",
+          "points": [
+            [
+              150,
+              -30
+            ],
+            [
+              350,
+              -30
+            ]
+          ],
+          "r": 92
+        },
+        {
+          "id": "thaw/mittenholt-green",
+          "kind": "thaw",
+          "points": [
+            [
+              550,
+              -225
+            ]
+          ],
+          "r": 16
         }
       ]
     }

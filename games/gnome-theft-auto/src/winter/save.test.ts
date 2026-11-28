@@ -58,13 +58,50 @@ describe('winter save', () => {
   it('parses garbage to safe values', () => {
     expect(parseWinterSave('{').runs).toEqual({});
     expect(parseWinterSave('[]')).toEqual(parseWinterSave(null));
-    expect(parseWinterSave(null).v).toBe(1);
+    expect(parseWinterSave(null).v).toBe(2);
     const bad = parseWinterSave('{"best":{"wool-run":-3,"x":5},"clean":-1,"holes":1.5,"sled":"yes"}');
     expect(bad.best).toEqual({});
     expect(bad.clean).toBe(0);
     expect(bad.holes).toBe(0);
     expect(bad.sled).toBe(false);
     expect(parseWinterSave('null')).toEqual(parseWinterSave(null));
+  });
+
+  it('migrates an old save: the old Wool Run best becomes the Nursery best, once', () => {
+    const old = JSON.stringify({ v: 1, best: { 'wool-run': 17.2, 'tea-tray-run': 40 }, runs: { 'wool-run': 3 }, clean: 2 });
+    const first = parseWinterSave(old);
+    expect(first.v).toBe(2);
+    expect(first.best.nursery).toBe(17.2);
+    expect(first.best['wool-run']).toBeUndefined();
+    expect(first.best['tea-tray-run']).toBe(40);
+    expect(first.runs['wool-run']).toBe(3);
+    expect(first.clean).toBe(2);
+    // Loading the migrated save again changes nothing, even after a new Wool Run best was set.
+    expect(parseWinterSave(JSON.stringify(first))).toEqual(first);
+    const later = { ...first, best: { ...first.best, 'wool-run': 38.4 } };
+    expect(parseWinterSave(JSON.stringify(later))).toEqual(later);
+    // A save with no marker at all migrates too.
+    expect(parseWinterSave('{"best":{"wool-run":20}}').best).toEqual({ nursery: 20 });
+  });
+
+  it('migrates through the store and writes the marker back', () => {
+    const s = fakeStorage();
+    s.setItem(WINTER_SAVE_KEY, JSON.stringify({ v: 1, best: { 'wool-run': 17.2 }, runs: { 'wool-run': 1 } }));
+    const store = createWinterStore(s);
+    expect(store.data().best.nursery).toBe(17.2);
+    store.recordRun('wool-run', 40, true);
+    const saved = JSON.parse(s.m.get(WINTER_SAVE_KEY) ?? '{}');
+    expect(saved.v).toBe(2);
+    expect(saved.best).toEqual({ nursery: 17.2, 'wool-run': 40 });
+    expect(createWinterStore(s).data().best).toEqual({ nursery: 17.2, 'wool-run': 40 });
+  });
+
+  it('keeps nursery as a valid run id', () => {
+    const store = createWinterStore(fakeStorage());
+    expect(store.recordRun('nursery', 18.04, true)).toEqual({ best: true, first: true });
+    expect(store.data().best.nursery).toBe(18);
+    expect(store.data().clean).toBe(0);
+    expect(parseWinterSave(JSON.stringify(store.data())).best.nursery).toBe(18);
   });
 
   it('does not throw when setItem throws', () => {

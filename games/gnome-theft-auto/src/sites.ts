@@ -28,7 +28,7 @@ export const SITE_IDS = [
   'construction-1', 'construction-2', 'construction-3',
   'home-05', 'home-06', 'home-07', 'home-08', 'home-09', 'home-10', 'home-11', 'home-12',
   // North band
-  'ski-hill', 'ice-lake', 'toadstool-forest', 'wind-farm',
+  'ski-hill', 'woolly-sock-lodge', 'ice-lake', 'toadstool-forest', 'wind-farm',
   // East band
   'dirt-track', 'campus', 'observatory-mound', 'runway-2', 'aircraft-dealer',
   // South band

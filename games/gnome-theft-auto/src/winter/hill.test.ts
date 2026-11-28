@@ -4,7 +4,7 @@ import { homeOf } from '../homes/data';
 import { installFakeDom } from '../testing/fakeDom';
 import type { Box } from '../types';
 import { buildSnowdropSlope } from './hill';
-import { COCOA_HATCH, SKI_RACK, SLED_STACK, TEA_TRAY_RUN, TOW, WOOL_RUN } from './types';
+import { COCOA_HATCH, RUNS, SKI_RACK, SLED_STACK, TEA_TRAY_RUN, TOW, WOOL_RUN } from './types';
 
 const inside = (b: Box, x: number, z: number): boolean => x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ;
 
@@ -31,6 +31,25 @@ describe('Snowdrop Slope scenery', () => {
         if (inside(b, x, z)) expect(pylons.some((p) => Math.hypot(p.x - x, p.z - z) <= 0.5)).toBe(true);
       }
     }
+  });
+
+  it('keeps the gates of every skis run clear, the corral north of the road and a top hut by the tow', () => {
+    const { boxes } = buildSnowdropSlope(new THREE.Scene());
+    for (const run of RUNS) {
+      for (const g of [...run.gates, run.start, run.finish]) {
+        for (const b of boxes) expect(inside(b, g.x, g.z), `${run.id} box in the way at ${g.x},${g.z}`).toBe(false);
+      }
+    }
+    const lines = RUNS.flatMap((r) => [r.start, ...r.gates, r.finish]);
+    const finishZ = Math.max(...RUNS.map((r) => r.finish.z));
+    const corral = boxes.filter((b) => b.minZ > -1001 && b.maxZ < -958 && b.minZ > finishZ);
+    expect(corral.length).toBeGreaterThan(10);
+    for (const b of boxes) {
+      if (b.minZ > finishZ && b.minX > -430 && b.maxX < -335) expect(b.maxZ, 'corral stays short of the band road').toBeLessThan(-958);
+    }
+    for (const b of boxes) for (const l of lines) if (l.z < finishZ) expect(inside(b, l.x, l.z)).toBe(false);
+    expect(boxes.some((b) => Math.hypot((b.minX + b.maxX) / 2 - TOW.top.x, (b.minZ + b.maxZ) / 2 - TOW.top.z) < 12
+      && b.maxX - b.minX < 5 && b.maxZ - b.minZ < 5)).toBe(true);
   });
 
   it('updates without throwing and registers Gentian\'s door', () => {

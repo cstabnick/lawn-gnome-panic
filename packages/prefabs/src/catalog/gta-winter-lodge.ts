@@ -34,9 +34,25 @@ export const GTA_WINTER_LODGE: readonly PrefabDef[] = [
       { s: 'box', d: [3.2, 0.2, 1.7], at: [0, 0.1, 4.05], c: 'wood-light' },                            // porch deck
       { s: 'cyl', d: [0.1, 0.1, 2.8], at: [1.4, 1.4, 4.7], c: 'wood-dark', seg: 6, mirror: true },      // porch posts
       { s: 'box', d: [3.4, 0.14, 2.2], at: [0, 2.8, 4.2], c: 'bark' },                                  // porch roof
-      { s: 'box', d: [0.36, 0.9, 0.16], at: [0, 2.3, 5.2], rot: [0, 0, 6], c: 'red' },                  // sock, leg
-      { s: 'box', d: [0.38, 0.1, 0.2], at: [0, 2.1, 5.2], rot: [0, 0, 6], c: 'white' },                 // sock, stripe
-      { s: 'box', d: [0.6, 0.3, 0.14], at: [0.12, 1.8, 5.2], rot: [0, 0, 6], c: 'red' },                // sock, foot
+      { s: 'box', d: [0.04, 0.7, 1.0], at: [4.82, 1.5, -1.5], c: 'yellow', glow: true, mirror: true },                // side windows
+      { s: 'box', d: [0.04, 0.7, 1.0], at: [4.82, 1.5, 1.5], c: 'yellow', glow: true, mirror: true },                // side windows
+      { s: 'box', d: [1.0, 0.7, 0.04], at: [-3.0, 1.5, -3.32], c: 'yellow', glow: true },                 // back windows
+      { s: 'box', d: [1.0, 0.7, 0.04], at: [0, 1.5, -3.32], c: 'yellow', glow: true },                 // back windows
+      { s: 'box', d: [1.0, 0.7, 0.04], at: [3.0, 1.5, -3.32], c: 'yellow', glow: true },                 // back windows
+      { s: 'box', d: [0.14, 0.14, 4.4], at: [-2.6, 5.12, 2.0], c: 'wood-dark' },                         // sock boom from the ridge
+      { s: 'box', d: [0.05, 0.4, 0.05], at: [-2.6, 4.9, 4.15], c: 'wood-dark' },                         // sock hanger
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 4.70, 4.15], c: 'red' },                          // sock stripe 1
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 4.40, 4.15], c: 'white' },                          // sock stripe 2
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 4.10, 4.15], c: 'red' },                          // sock stripe 3
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 3.80, 4.15], c: 'white' },                          // sock stripe 4
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 3.50, 4.15], c: 'red' },                          // sock stripe 5
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 3.20, 4.15], c: 'white' },                          // sock stripe 6
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 2.90, 4.15], c: 'red' },                          // sock stripe 7
+      { s: 'box', d: [1.22, 0.14, 0.5], at: [-2.6, 4.92, 4.15], c: 'white' },                         // sock cuff
+      { s: 'box', d: [1.1, 0.3, 0.46], at: [-2.6, 2.6, 4.15], c: 'red' },                           // sock heel
+      { s: 'box', d: [1.9, 0.5, 0.45], at: [-1.95, 2.3, 4.15], c: 'red' },                          // sock foot
+      { s: 'box', d: [0.4, 0.5, 0.47], at: [-1.1, 2.3, 4.15], c: 'white' },                         // sock toe
+      { s: 'ball', d: [0.3], at: [-2.6, 5.15, 4.15], c: 'white', seg: 8 },                          // bobble
     ],
   },
   {
@@ -191,6 +207,28 @@ export const GTA_WINTER_LODGE: readonly PrefabDef[] = [
     ],
   },
   {
+    id: 'nap-towel', name: 'Nap Towel', category: 'prop', uses: ['place'],
+    tags: ['towel', 'beach', 'nap', 'stripes', 'bear', 'pond', 'lie', 'rest'], emoji: [],
+    footprint: { r: 1.6, h: 0.03 },
+    about: 'Gnome Theft Auto: the Nap Towel. A big red-and-white striped towel laid flat, about 2.8 x 3.1 m (polar-bear size), for napping on the ice. Stripes run along local z.',
+    examine: [
+      'A towel big enough for a polar bear, striped red and white, laid out flat with the corners tugged straight.',
+      'Saying: a towel on the ice is a promise that somebody intends to be very still for a very long time.',
+      'Tip: lay it stripes-downhill. Nobody knows why. Everybody who naps does it.',
+      'Joke: the label says Beach Towel. The beach is four hundred metres of snow away, and the bear does not mind.',
+      'It is warm in the middle, the shape of a bear, and nobody is going to check that.',
+    ],
+    parts: [
+      { s: 'box', d: [0.398, 0.02, 3.1], at: [-1.2, 0.01, 0], c: 'red' },
+      { s: 'box', d: [0.398, 0.022, 3.1], at: [-0.8, 0.011, 0], c: 'white' },
+      { s: 'box', d: [0.398, 0.02, 3.1], at: [-0.4, 0.01, 0], c: 'red' },
+      { s: 'box', d: [0.398, 0.022, 3.1], at: [0, 0.011, 0], c: 'white' },
+      { s: 'box', d: [0.398, 0.02, 3.1], at: [0.4, 0.01, 0], c: 'red' },
+      { s: 'box', d: [0.398, 0.022, 3.1], at: [0.8, 0.011, 0], c: 'white' },
+      { s: 'box', d: [0.398, 0.02, 3.1], at: [1.2, 0.01, 0], c: 'red' },
+    ],
+  },
+  {
     id: 'pail-handle', name: 'Pail Handle', category: 'prop', uses: ['place'],
     tags: ['pail', 'handle', 'wire', 'ice', 'pond', 'bucket', 'rim', 'giant', 'winter'], emoji: [],
     footprint: { r: 0.3, h: 0.3 },
@@ -239,6 +277,50 @@ export const GTA_WINTER_LODGE: readonly PrefabDef[] = [
       { s: 'ball', d: [0.035], at: [0.35, 0.035, 0.17], c: 'orange', seg: 6 },                              // mitten 5, thumb
       { s: 'ball', d: [0.11], at: [0.05, 0.055, -0.2], scale: [1, 0.5, 0.75], c: 'purple', seg: 8 },        // mitten 6
       { s: 'box', d: [0.07, 0.005, 0.05], at: [-0.2, 0.09, 0.05], rot: [0, 20, 10], c: 'paper' },           // blank tag
+    ],
+  },
+  {
+    id: 'bear-deck', name: 'Bear Deck', category: 'prop', uses: ['place'],
+    tags: ['deck', 'bear', 'timber', 'sun', 'lodge', 'terrace', 'planks', 'winter', 'gta'], emoji: [],
+    footprint: { r: 11.5, h: 0.9 },
+    about: 'Gnome Theft Auto: the Bear Deck, a timber sun deck about 22 m wide and 6 m deep for five deck chairs. Top at 0.25 m, planks along x with dark gaps, a low rail on the back and both ends, open at the front (+z) with two steps in the middle. Base at y 0.',
+    examine: [
+      'A long timber deck with a low rail round three sides and two steps up at the front, set out for a row of deck chairs and nothing else.',
+      'Saying: the bears are really chill, and a really chill bear never once asked anyone to move off its chair.',
+      'Tip: the sign says they are not asleep. Keep your voice down all the same, in case they are being polite.',
+      'Joke: the planks run the long way so the sun can find all of them at once, and the bears can find all of the sun.',
+      'The dark gaps between the planks are where the cocoa goes, and the bears have never once complained.',
+    ],
+    parts: [
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, -2.75], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, -2.25], c: 'wood' },
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, -1.75], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, -1.25], c: 'wood' },
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, -0.75], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, -0.25], c: 'wood' },
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, 0.25], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, 0.75], c: 'wood' },
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, 1.25], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, 1.75], c: 'wood' },
+      { s: 'box', d: [22, 0.25, 0.46], at: [0, 0.125, 2.25], c: 'wood-light' },
+      { s: 'box', d: [22, 0.246, 0.46], at: [0, 0.123, 2.75], c: 'wood' },
+      { s: 'box', d: [21.6, 0.12, 5.6], at: [0, 0.06, 0], c: 'wood-dark' },                                // shadow under the planks
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [-10.9, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [-7.3, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [-3.65, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [0, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [3.65, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [7.3, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [10.9, 0.55, -2.9], c: 'wood-dark' },
+      { s: 'box', d: [22, 0.06, 0.1], at: [0, 0.85, -2.9], c: 'wood' },
+      { s: 'box', d: [22, 0.05, 0.06], at: [0, 0.5, -2.9], c: 'wood' },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [10.9, 0.55, -0.95], c: 'wood-dark', mirror: true },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [10.9, 0.55, 1.0], c: 'wood-dark', mirror: true },
+      { s: 'box', d: [0.1, 0.7, 0.1], at: [10.9, 0.55, 2.9], c: 'wood-dark', mirror: true },
+      { s: 'box', d: [0.1, 0.06, 5.9], at: [10.9, 0.85, 0], c: 'wood', mirror: true },
+      { s: 'box', d: [0.06, 0.05, 5.9], at: [10.9, 0.5, 0], c: 'wood', mirror: true },
+      { s: 'box', d: [3.0, 0.17, 0.5], at: [0, 0.085, 3.2], c: 'wood-light' },                           // step 1
+      { s: 'box', d: [3.0, 0.09, 0.55], at: [0, 0.045, 3.6], c: 'wood' },                              // step 2
     ],
   },
 ];

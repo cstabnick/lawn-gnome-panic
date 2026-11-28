@@ -4,7 +4,7 @@ import { createCritters, type CritterCtx, type CritterDeps, type CritterRuntime 
 import { SNOWCAP_BEARS } from '../winter/types';
 import type { Fx, World } from '../types';
 import { BEAR_SHRUGS } from './fells';
-import { snowcapLife } from './snowcap';
+import { MUG_SCALE, SIGN_DX, snowcapLife } from './snowcap';
 
 const fx = { smash() {}, spark() {} } as unknown as Fx;
 
@@ -62,5 +62,11 @@ describe('snowcap rise locals', () => {
       expect(b.x).toBe(x0);
       expect(b.z).toBe(z0);
     }
+  });
+
+  it('the mug is bear-sized and the Bear Deck sign stands well clear of the centre bear', () => {
+    expect(MUG_SCALE).toBeGreaterThanOrEqual(0.5);
+    expect(SIGN_DX).toBeGreaterThanOrEqual(6);
+    expect(SIGN_DX).toBeLessThanOrEqual(10);
   });
 });

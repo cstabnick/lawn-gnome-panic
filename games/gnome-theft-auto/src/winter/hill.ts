@@ -8,8 +8,9 @@ import { buildPieces, prefabBox, textPlate, type HomePiece } from '../homes/piec
 import { homeOf, registerHome } from '../homes/data';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
+import { buildSlopeLife } from './slopeLife';
 import { handlePositions } from './tow';
-import { LODGE, SLED_STACK, COCOA_HATCH, SKI_RACK, TOW, WOOL_RUN, TEA_TRAY_RUN } from './types';
+import { LODGE, SLED_STACK, COCOA_HATCH, SKI_RACK, TOW, WOOL_RUN, NURSERY_RUN, TEA_TRAY_RUN, RUNS, type RunDef } from './types';
 
 export interface SnowdropScenery {
   /** Colliders for world.boxes (lodge, pylons, racks; never the gates or flags). */
@@ -23,6 +24,10 @@ const ROPE_Y = 2.2;
 const BLUE = 0x2a6fdb;
 const RED = 0xc0392b;
 const ORANGE = 0xe67e22;
+const YELLOW = 0xf1c40f;
+const GREEN = 0x2e9e5b;
+const SNOW_LUMP = 0xf4f8ff;
+const NUMBER_WORDS = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE'];
 const PLATE_BG = 0xf2e8c8;
 
 /** How far a prefab reaches along its own front (+z), metres at scale s (1 m when it is not in the catalogue yet). */
@@ -74,6 +79,66 @@ function skiTrack(pts: [number, number][], width: number): THREE.Mesh {
   const mesh = new THREE.Mesh(g, m);
   mesh.name = 'ski-track';
   return mesh;
+}
+
+/** Groomer stripes: faint parallel bands (0.5 m wide, 1 m apart) lying on the snow along a polyline, `width` m across. */
+function corduroy(pts: [number, number][], width: number): THREE.Mesh {
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const bands = Math.floor(width);
+  let base = 0;
+  for (let k = 0; k < bands; k++) {
+    const off = -width / 2 + (k + 0.5) * (width / bands);
+    pts.forEach(([x, z], i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      const dx = b[0] - a[0], dz = b[1] - a[1];
+      const l = Math.hypot(dx, dz) || 1;
+      const nx = -dz / l, nz = dx / l;
+      for (const e of [off - 0.25, off + 0.25]) {
+        const px = x + nx * e, pz = z + nz * e;
+        pos.push(px, heightAt(px, pz) + 0.03, pz);
+      }
+      if (i > 0) { const q = base + i * 2; idx.push(q - 2, q - 1, q, q - 1, q + 1, q); }
+    });
+    base += pts.length * 2;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  const m = new THREE.MeshBasicMaterial({ color: 0xc4d6f0, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide });
+  flatLayer(m, LAYER.area);
+  const mesh = new THREE.Mesh(g, m);
+  mesh.name = 'corduroy';
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
+/** The run's line down the hill: start, every gate, finish, eased between them (sampled every `step` m of z). */
+function runLine(run: RunDef, step: number): [number, number][] {
+  const way = [run.start, ...run.gates, run.finish];
+  const out: [number, number][] = [];
+  for (let i = 0; i < way.length - 1; i++) {
+    const a = way[i], b = way[i + 1];
+    const n = Math.max(1, Math.round((b.z - a.z) / step));
+    for (let k = 0; k < n; k++) {
+      const f = k / n;
+      out.push([a.x + (b.x - a.x) * (f * f * (3 - 2 * f)), a.z + (b.z - a.z) * f]);
+    }
+  }
+  out.push([run.finish.x, run.finish.z]);
+  return out;
+}
+
+/** The curved run-out corral south of the finish lines: bales and fence sections along a bow, `n`+1 samples of it. */
+function corralLine(x0: number, x1: number, zEnd: number, bow: number, n = 240): { x: number; z: number; s: number }[] {
+  const out: { x: number; z: number; s: number }[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const x = x0 + (x1 - x0) * t, z = zEnd - bow * Math.sin(Math.PI * t);
+    const prev = out[i - 1];
+    out.push({ x, z, s: prev ? prev.s + Math.hypot(x - prev.x, z - prev.z) : 0 });
+  }
+  return out;
 }
 
 /** The rope: the up line and the return line 0.8 m beside it (as tow.ts), sampled along the ground. */
@@ -143,15 +208,33 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
   add({ prefab: 'lost-mittens', x: TOW.base.x + 2.2, z: TOW.base.z + 1, yaw: 0.7, solid: false });
   const baseSign = add({ prefab: 'signpost', x: TOW.base.x + 3.2, z: TOW.base.z + 3, yaw: 0, solid: false });
 
-  // The Wool Run.
-  const hut = add({ prefab: 'start-hut', x: WOOL_RUN.start.x - 16, z: WOOL_RUN.start.z - 4, yaw: 0 });
-  WOOL_RUN.gates.forEach((gate, i) => {
-    const tint = i % 2 === 0 ? BLUE : RED;
-    for (const side of [-1, 1]) {
-      add({ prefab: 'slalom-flag', x: gate.x + side * gate.half, z: gate.z, yaw: 0, tint, solid: false });
-    }
-  });
-  const woolBanner = add({ prefab: 'finish-banner', x: WOOL_RUN.finish.x, z: WOOL_RUN.finish.z, yaw: Math.PI, solid: false });
+  // Every skis run: a start hut, slalom flags at every gate (the Nursery's are smaller, yellow and green).
+  const skisRuns = RUNS.filter((r) => r.ride === 'snow-skis');
+  const huts: { run: RunDef; piece: HomePiece }[] = [];
+  const hutSpots: { x: number; z: number }[] = [];
+  for (const run of skisRuns) {
+    const hx = run.start.x - 16;
+    let hz = run.start.z - 4;
+    while (hutSpots.some((h) => Math.hypot(h.x - hx, h.z - hz) < 6)) hz += 9;
+    hutSpots.push({ x: hx, z: hz });
+    huts.push({ run, piece: add({ prefab: 'start-hut', x: hx, z: hz, yaw: 0 }) });
+    const small = run.id === 'nursery';
+    run.gates.forEach((gate, i) => {
+      const tint = small ? (i % 2 === 0 ? YELLOW : GREEN) : (i % 2 === 0 ? BLUE : RED);
+      for (const side of [-1, 1]) {
+        add({ prefab: 'slalom-flag', x: gate.x + side * gate.half, z: gate.z, yaw: 0, tint, scale: small ? 0.8 : 1, solid: false });
+      }
+    });
+  }
+  // One finish banner per distinct finish line.
+  const banners: HomePiece[] = [];
+  for (const run of RUNS) {
+    if (banners.some((b) => Math.hypot(b.x - run.finish.x, b.z - run.finish.z) < 3)) continue;
+    banners.push(add({ prefab: 'finish-banner', x: run.finish.x, z: run.finish.z, yaw: Math.PI, solid: false }));
+  }
+
+  // The top station at the tow's top: a hut beside the line, facing it.
+  const topHut = add({ prefab: 'start-hut', x: TOW.top.x + 7, z: TOW.top.z + 2, yaw: -HALF_PI, tint: 0x8a5a3c });
 
   // The Tea-Tray Run.
   const tt = TEA_TRAY_RUN;
@@ -159,26 +242,76 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
     for (const side of [-1, 1]) add({ prefab: 'slalom-flag', x: tt.start.x + side * 9, z, yaw: 0, tint: ORANGE, solid: false });
   }
   const teaSign = add({ prefab: 'signpost', x: tt.start.x + 11, z: tt.start.z - 4, yaw: 0, solid: false });
-  const teaBanner = add({ prefab: 'finish-banner', x: tt.finish.x, z: tt.finish.z, yaw: Math.PI, solid: false });
+
+  // Piste poles every 30 m along both edges of the Wool Run corridor (blue) and the Tea-Tray lane (red); an orange
+  // snow fence along the lane's west side. Skipped while the prefabs are missing from the catalogue.
+  const wool = WOOL_RUN;
+  const woolX0 = Math.min(wool.start.x - wool.start.half, ...wool.gates.map((q) => q.x - q.half)) - 4;
+  const woolX1 = Math.max(wool.start.x + wool.start.half, ...wool.gates.map((q) => q.x + q.half)) + 4;
+  for (let z = wool.start.z; z <= wool.finish.z; z += 30) {
+    for (const x of [woolX0, woolX1]) add({ prefab: 'piste-pole', x, z, yaw: 0, tint: BLUE, solid: false });
+  }
+  for (let z = tt.start.z + 15; z <= tt.finish.z; z += 30) {
+    for (const side of [-1, 1]) add({ prefab: 'piste-pole', x: tt.start.x + side * 10.5, z, yaw: 0, tint: RED, solid: false });
+  }
+  for (let z = tt.start.z + 2; z <= tt.finish.z; z += 4) {
+    add({ prefab: 'snow-fence', x: tt.start.x - 12, z, yaw: HALF_PI, tint: ORANGE, solid: false });
+  }
+
+  // The run-out corral: a bow of hay bales and fence sections south of the finish lines, well short of the band road.
+  const finX0 = Math.min(...RUNS.map((r) => r.finish.x - r.finish.half)) - 3;
+  const finX1 = Math.max(...RUNS.map((r) => r.finish.x + r.finish.half)) + 3;
+  const arc = corralLine(finX0, finX1, -976, 20);
+  const kinds: [string, number][] = [['hay-bale', 1.6], ['hay-bale', 1.6], ['hay-bale', 1.6], ['snow-fence', 4]];
+  let sAt = 0, ki = 0;
+  while (sAt < arc[arc.length - 1].s - 2) {
+    const [id, len] = kinds[ki++ % kinds.length];
+    const mid = sAt + len / 2;
+    const j = Math.min(arc.length - 2, Math.max(1, arc.findIndex((q) => q.s >= mid)));
+    const p0 = arc[j - 1], p1 = arc[j + 1], c = arc[j];
+    sAt += len;
+    const yaw = Math.atan2(-(p1.z - p0.z), p1.x - p0.x);
+    if (id === 'hay-bale') add({ prefab: id, x: c.x, z: c.z, yaw, scale: 3 });
+    else add({ prefab: id, x: c.x, z: c.z, yaw, tint: ORANGE, solid: true });
+  }
 
   // The foot sign and the vignette props.
   const footSign = add({ prefab: 'signpost', x: -400, z: -1004, yaw: 0, solid: false });
   add({ prefab: 'snowman', x: -425, z: -1052, yaw: 0.3, solid: false });
   add({ prefab: 'hay-bale', x: -388, z: -1029, yaw: 0.2, solid: false });
 
-  // Framing pines on the west and east margins, clear of the runs, the tow line and the lodge.
-  const pines: [number, number][] = [
-    [-472, -1060], [-465, -1105], [-478, -1150], [-463, -1190], [-474, -1235], [-466, -1280],
-    [-258, -1040], [-252, -1095], [-262, -1160], [-250, -1215], [-259, -1270],
-  ];
-  for (const [x, z] of pines) add({ prefab: 'snow-pine', x, z, yaw: x * 0.7 });
+  // A low snow berm on the lodge's uphill (north) side.
+  [[-3.5, -3.4, 0.55], [0.4, -3.8, 0.7], [4, -3.3, 0.5]].forEach(([dx, dz, k], i) => add({
+    prefab: 'snowman', x: LODGE.x + dx, z: lb.north + dz - 0.4, yaw: i, scale: k, tint: SNOW_LUMP, solid: false,
+  }));
+
+  // Pine clumps on the west and east margins, clear of the runs, the tow line and the lodge.
+  const clumps: [number, number][] = [[-472, -1075], [-468, -1170], [-472, -1255], [-256, -1060], [-254, -1160], [-258, -1255]];
+  clumps.forEach(([cx, cz], ci) => {
+    const n = 3 + (ci % 3);
+    for (let k = 0; k < n; k++) {
+      const ang = k * 2.4 + ci;
+      const r = k === 0 ? 0 : 2.6 + (k % 2) * 1.4;
+      add({
+        prefab: 'snow-pine', x: cx + Math.cos(ang) * r, z: cz + Math.sin(ang) * r * 1.2, yaw: ang * 1.7,
+        scale: 0.8 + ((ci * 3 + k * 5) % 7) * 0.08,
+      });
+    }
+  });
 
   const boxes = buildPieces(scene, pieces, 'snowdrop-slope');
 
   // Signs with jokes.
   life.add(plateOn(footSign, 'SNOWDROP SLOPE\nGRADIENT: YES', 1.9, 1.4, 0.55));
   life.add(plateOn(baseSign, 'THE BOOTLACE TOW\nHOLD ON. LET GO.\nIN THAT ORDER.', 1.9, 1.4, 0.7));
-  life.add(plateOn(hut, 'THE WOOL RUN\nSIX GATES. NO EXCUSES.', 1.9, 1.5, 0.55));
+  for (const { run, piece } of huts) {
+    const n = run.gates.length;
+    const text = run.id === 'nursery'
+      ? 'THE NURSERY\nLEARNERS. GENTLE. PROBABLY.'
+      : `THE WOOL RUN\n${NUMBER_WORDS[n] ?? String(n)} GATES. NO EXCUSES.`;
+    life.add(plateOn(piece, text, 1.9, 1.5, 0.55));
+  }
+  life.add(plateOn(topHut, 'TOP OF THE BOOTLACE', 1.9, 1.3, 0.4));
   life.add(textPlate('THE WOOLLY SOCK LODGE\nBOOTS ON THE RACK.\nTROUBLES IN THE STOVE.', lb.east + 0.05, g(lb.east, LODGE.z + 3) + 1.9,
     LODGE.z + 3, LODGE.yaw, { w: 1.5, h: 0.7, bg: PLATE_BG }));
   life.add(plateOn(hatch, 'HOT COCOA 6 ACORNS', 1.1, 1.0, 0.3));
@@ -188,7 +321,7 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
   life.add(textPlate('LOST & FOUND\n(MOSTLY LEFT)', base.x + 2.2, g(base.x + 2.2, base.z + 2.2) + 0.5, base.z + 2.2, 0,
     { w: 0.8, h: 0.35, bg: PLATE_BG }));
   // The finish banners read "FINISH" from above (facing north) and from below.
-  for (const b of [woolBanner, teaBanner]) {
+  for (const b of banners) {
     for (const side of [1, -1]) {
       life.add(textPlate('FINISH', b.x, g(b.x, b.z) + 3.4, b.z + side * 0.06, side > 0 ? 0 : Math.PI, { w: 6, h: 0.9, bg: 0xf5f5f5 }));
     }
@@ -211,12 +344,17 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
   if (mitten) life.add(mitten);
   // Vignette 3 is the sock rack above: one huge sock and a crate under it. Vignette 4: a knocked-over flag by
   // gate 3 and the ski tracks that swerved round it.
-  const gate3 = WOOL_RUN.gates[2];
-  const down = tilted('slalom-flag', gate3.x + gate3.half + 3, gate3.z - 1, 0.25, 0.4, 1.4, 1, RED);
-  if (down) life.add(down);
-  life.add(skiTrack([[-374, -1180], [-373, -1172], [-371, -1167], [-368, -1163], [-365, -1158], [-363, -1150]], 0.18));
-  life.add(skiTrack([[-376.4, -1180], [-375.4, -1172], [-373.4, -1167], [-370.4, -1163], [-367.4, -1158], [-365.4, -1150]], 0.18));
-  life.add(skiTrack([[-372.8, -1181], [-371.8, -1173], [-369.6, -1166], [-366.4, -1161], [-363.8, -1155]], 0.18));
+  const gate3 = WOOL_RUN.gates[Math.min(2, WOOL_RUN.gates.length - 1)];
+  if (gate3) {
+    const down = tilted('slalom-flag', gate3.x + gate3.half + 3, gate3.z - 1, 0.25, 0.4, 1.4, 1, RED);
+    if (down) life.add(down);
+    const rel = (pts: [number, number][]): [number, number][] => pts.map(([x, z]) => [gate3.x + x, gate3.z + z]);
+    life.add(skiTrack(rel([[1, -15], [2, -7], [4, -2], [7, 2], [10, 7], [12, 15]]), 0.18));
+    life.add(skiTrack(rel([[-1.4, -15], [-0.4, -7], [1.6, -2], [4.6, 2], [7.6, 7], [9.6, 15]]), 0.18));
+    life.add(skiTrack(rel([[2.2, -16], [3.2, -8], [5.4, -1], [8.6, 4], [11.2, 10]]), 0.18));
+  }
+  // Groomer stripes down the Wool Run's line.
+  life.add(corduroy(runLine(WOOL_RUN, 4), 10));
 
   // The rope and its handles.
   life.add(buildRope());
@@ -232,7 +370,8 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
   const door: [number, number, number] = [lb.east + 1.5, LODGE.z, HALF_PI];
   const home = homeOf('gentian');
   if (home) registerHome({ ...home, door });
-  const classX = door[0] + 8, classZ = LODGE.z + 18;
+  const lastGate = NURSERY_RUN.gates[NURSERY_RUN.gates.length - 1] ?? NURSERY_RUN.finish;
+  const classX = lastGate.x + lastGate.half + 6, classZ = lastGate.z + 8;
   const gentian = makeGnome(life, {
     hat: 0xc0392b, shirt: 0x2e5e4e, pants: 0x3b3a4a, skin: 0xe0ac69, boots: 0x222222, beard: 0xd8d8d8, hair: null,
     freckles: false, dress: false, glasses: false, bowlCut: null,
@@ -254,11 +393,13 @@ export function buildSnowdropSlope(scene: THREE.Scene): SnowdropScenery {
     l.m.object.rotation.y = HALF_PI;
   }
   scene.add(life);
+  const slopeLife = buildSlopeLife(life);
 
   let handlesOn = true;
   return {
     boxes,
     update(dt, t, px, pz) {
+      slopeLife.update(dt, t, px, pz);
       const nearTow = Math.hypot(px - (TOW.base.x + TOW.top.x) / 2, pz - (TOW.base.z + TOW.top.z) / 2) < 350;
       if (nearTow !== handlesOn) { handles.visible = nearTow; handlesOn = nearTow; }
       if (nearTow && hs.length) {

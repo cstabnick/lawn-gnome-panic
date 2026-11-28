@@ -112,6 +112,8 @@ interface Ride {
   prevZ: number;
   /** Seconds before the tow may be grabbed again after letting go. */
   grabLock: number;
+  /** Seconds of run-out braking left after a finish (a full snowplough, so nobody coasts onto the band road). */
+  runOut: number;
 }
 
 const GROUND: SlideGround = {
@@ -129,6 +131,9 @@ const RIDE_AGAIN_S = 8;
 const BEAR_TICK_S = 0.5;
 /** How close to the tow base the grab hint and button show. */
 const BASE_HINT_M = 12;
+/** After a finish the rider is braked for this long, with the snowplough's friction multiplied by RUN_OUT_BRAKE. */
+const RUN_OUT_S = 3;
+const RUN_OUT_BRAKE = 2.5;
 
 // ---- HUD -------------------------------------------------------------------------------------------------------------
 
@@ -278,6 +283,7 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       prevX: v.x,
       prevZ: v.z,
       grabLock: 0,
+      runOut: 0,
     };
   }
 
@@ -291,10 +297,12 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
     if (result.id === 'tea-tray-run') deps.unlock(WINTER_ACHIEVEMENTS.teaTray);
     else {
       deps.unlock(WINTER_ACHIEVEMENTS.firstTracks);
-      if (result.clean && result.seconds <= BLACK_DIAMOND_S) deps.unlock(WINTER_ACHIEVEMENTS.blackDiamond);
+      if (result.id === 'wool-run' && result.clean && result.seconds <= BLACK_DIAMOND_S) deps.unlock(WINTER_ACHIEVEMENTS.blackDiamond);
     }
     deps.hud.callout?.(formatTime(result.seconds), rec.best ? 'New best!' : `Best ${formatTime(best)}`);
     lastRunId = result.id;
+    ride.runOut = RUN_OUT_S;
+    toast('Run-out! Plough to a stop.');
     againT = RIDE_AGAIN_S;
     const full: RunResult = { ...result, ride: v.kind };
     for (const cb of [...listeners]) cb(full);
@@ -316,7 +324,7 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       s.yaw = 0;
       s.vx = 0;
       s.vz = 0;
-      toast('Top of Snowdrop Slope. The Wool Run starts west of here.');
+      toast('Top of Snowdrop Slope. The Wool Run starts just west of here.');
     }
     v.speed = 0;
   }
@@ -334,6 +342,13 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
     const hop = hopPressed;
     hopPressed = false;
     const input = rideInput(inp, hop);
+    const runningOut = ride.runOut > 0;
+    if (runningOut) {
+      input.brake = 1;
+      input.push = 0;
+      input.jump = false;
+      ride.runOut = Math.max(0, ride.runOut - dt);
+    }
     const letGo = letGoPressed;
     letGoPressed = false;
     const grab = grabPressed;
@@ -342,6 +357,7 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
 
     if (!ride.tow && ride.grabLock <= 0 && canGrab(s.x, s.z, slideSpeed(s)) && (input.push > 0.5 || grab)) {
       ride.tow = startTow();
+      ride.runOut = 0;
       abortRuns(ride);
       if (!toldTow) toast('Hold on. Let go at the top.');
       toldTow = true;
@@ -373,7 +389,8 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       powderToasted = true;
       toast('Fresh powder!');
     } else if (!powder && getWeather().kind !== 'snow') powderToasted = false;
-    const tune = powder ? powderTune(tuneOf(v.kind)) : tuneOf(v.kind);
+    const base = powder ? powderTune(tuneOf(v.kind)) : tuneOf(v.kind);
+    const tune = runningOut ? { ...base, brakeMu: base.brakeMu * RUN_OUT_BRAKE } : base;
 
     const ox = s.x;
     const oz = s.z;
@@ -409,7 +426,10 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       return;
     }
 
-    for (const state of ride.runs) {
+    // One descent, one run: a run's start line crossed mid-run (the Nursery's, from the Wool Run) does not start it.
+    const busy = ride.runs.some((r) => r.phase === 'running');
+    for (const state of [...ride.runs]) {
+      if (busy && state.phase === 'ready') continue;
       const e = stepRun(state, ride.prevX, ride.prevZ, v.x, v.z, dt);
       if (!e) continue;
       if (e.t === 'start') deps.hud.callout?.('GO!', state.run.name);

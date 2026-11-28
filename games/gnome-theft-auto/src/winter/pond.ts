@@ -86,38 +86,89 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
   life.name = 'pail-pond-life';
   const extraBoxes: Box[] = [];
 
-  // ---- The sunk pail's rim: low galvanized segments on the circle, stepped over, with 2 cm gaps ----
-  const SEG = 28;
+  // ---- The sunk pail's rim: a bright zinc band with vertical ribs and a rolled lip, three crossings ----
+  const SEG = 56;
   const R = C.r + 0.6;
+  const RIM_H = 1.2; // above the snow outside
+  const WALL_T = 0.4;
   const chord = 2 * R * Math.sin(Math.PI / SEG);
-  const rimGeo = new THREE.BoxGeometry(chord - 0.02, 0.35, 0.25);
-  const rimMat = new THREE.MeshStandardMaterial({ color: 0x9aa3a8, roughness: 0.5, metalness: 0.5 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xd2dade, roughness: 0.4, metalness: 0.2, emissive: 0x8d989e });
+  const ribMat = new THREE.MeshStandardMaterial({ color: 0xeef3f5, roughness: 0.45, metalness: 0.2, emissive: 0xb4bec4 });
+  const lipGeo = new THREE.CylinderGeometry(0.17, 0.17, chord + 0.12, 8);
+  lipGeo.rotateZ(HALF_PI);
+  const ribGeo = new THREE.BoxGeometry(0.14, 1, 0.12);
+  const capGeo = new THREE.SphereGeometry(0.19, 8, 6);
+  /** Crossings (degrees round the pond, +z = 90): south to the band road, Theo's, east to the lodge. */
+  const CROSS_DEG = [90, 36, -6];
+  const CROSS_HALF = 3.3;
+  const angDiff = (a: number, b: number): number => {
+    let d = (a - b) % 360;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    return Math.abs(d);
+  };
+  const isGap = (i: number): boolean => {
+    const deg = (((((i % SEG) + SEG) % SEG) + 0.5) / SEG) * 360;
+    return CROSS_DEG.some((c) => angDiff(deg, c) < CROSS_HALF);
+  };
   const rim = new THREE.Group();
   rim.name = 'pail-rim';
   for (let i = 0; i < SEG; i++) {
-    const a = ((i + 0.5) / SEG) * Math.PI * 2;
+    const a0 = (i / SEG) * Math.PI * 2, a1 = ((i + 1) / SEG) * Math.PI * 2;
+    if (isGap(i)) {
+      // roll the rim ends where it opens for a crossing
+      for (const [n, ae] of [[i - 1, a0], [i + 1, a1]] as const) {
+        if (isGap(n)) continue;
+        const x = C.x + Math.cos(ae) * R, z = C.z + Math.sin(ae) * R;
+        const cap = new THREE.Mesh(capGeo, rimMat);
+        cap.position.set(x, g(x, z) + RIM_H, z);
+        rim.add(cap);
+      }
+      continue;
+    }
+    const a = (a0 + a1) / 2;
     const ap = R * Math.cos(Math.PI / SEG);
     const x = C.x + Math.cos(a) * ap, z = C.z + Math.sin(a) * ap;
-    const seg = new THREE.Mesh(rimGeo, rimMat);
-    seg.position.set(x, g(x, z) + 0.15, z);
-    seg.rotation.y = -a - HALF_PI;
-    seg.receiveShadow = true;
+    // follow the ground: the wall runs from below its lowest end up to RIM_H above its highest
+    const gs = [g(x, z), g(C.x + Math.cos(a0) * (R + 0.2), C.z + Math.sin(a0) * (R + 0.2)),
+      g(C.x + Math.cos(a1) * (R + 0.2), C.z + Math.sin(a1) * (R + 0.2))];
+    const lo = Math.min(...gs) - 0.4, hi = Math.max(...gs) + RIM_H;
+    const seg = new THREE.Group();
+    seg.position.set(x, 0, z);
+    seg.rotation.y = -a - HALF_PI; // local +z points at the pond centre
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(chord + 0.04, hi - lo, WALL_T), rimMat);
+    wall.position.y = (lo + hi) / 2;
+    wall.receiveShadow = true;
+    seg.add(wall);
+    const lip = new THREE.Mesh(lipGeo, rimMat);
+    lip.position.set(0, hi, 0);
+    seg.add(lip);
+    for (let k = 0; k < 3; k++) { // a rib about every 2 m
+      const rib = new THREE.Mesh(ribGeo, ribMat);
+      rib.scale.y = hi - lo - 0.1;
+      rib.position.set((k - 1) * (chord / 3), (lo + hi) / 2 - 0.05, -(WALL_T / 2 + 0.05));
+      seg.add(rib);
+    }
     rim.add(seg);
   }
   life.add(rim);
 
-  // ---- The pail's handle arcs out of the ice at the north-east edge ----
+  // ---- The pail's handle: a big wire arc standing over the far (north) rim, clear of it from the road ----
   {
-    const [hx, hz] = onCircle(-40, C.r + 1);
-    pieces.push({ prefab: 'pail-handle', x: hx, z: hz, yaw: toCentre(hx, hz), size: 9, solid: false });
+    const [hx, hz] = onCircle(-90, C.r + 0.4);
+    pieces.push({ prefab: 'pail-handle', x: hx, z: hz, yaw: toCentre(hx, hz), size: 26, y: RIM_H - 0.3, solid: false });
   }
 
   // ---- Shanties: Theo's red one on the ice, a blue one with its door ajar, a dark green one ----
   const SH = 2.6;
   const theoYaw = SHANTY.yaw ?? -HALF_PI;
   pieces.push({ prefab: 'ice-shanty', x: SHANTY.x, z: SHANTY.z, yaw: theoYaw, size: SH, solid: false });
-  const blue = { x: -668, z: -1030 }, green = { x: -676, z: -1100 };
-  const blueYaw = toCentre(blue.x, blue.z), greenYaw = toCentre(green.x, green.z);
+  // a little village: the blue and green shanties stand round Theo's stool, 14-18 m from his door
+  const blue = { x: -602, z: -1030 }, green = { x: -624, z: -1054 };
+  const campX = SHANTY.x + Math.sin(theoYaw) * 3, campZ = SHANTY.z + Math.cos(theoYaw) * 3;
+  const blueYaw = Math.atan2(campX - blue.x, campZ - blue.z), greenYaw = Math.atan2(campX - green.x, campZ - green.z);
+  /** Every flat decal centre already laid on the ice (holes, paws): boot prints keep off them. */
+  const decals: Array<[number, number, number]> = [];
   pieces.push({ prefab: 'ice-shanty', x: blue.x, z: blue.z, yaw: blueYaw, size: SH, solid: false, tint: 0x2e6b8f });
   pieces.push({ prefab: 'ice-shanty', x: green.x, z: green.z, yaw: greenYaw, size: SH, solid: false, tint: 0x6a8f2e });
   for (const s of [SHANTY, blue, green]) {
@@ -154,6 +205,7 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
   const [hdx, hdz] = fx(theoYaw, 0.95);
   pieces.push({ prefab: 'stool', x: stoolX, z: stoolZ, yaw: 0, size: 0.5, solid: false });
   life.add(holeDecal(stoolX + hdx, stoolZ + hdz));
+  decals.push([stoolX + hdx, stoolZ + hdz, 1.1]);
   const stoolTop = 0.45; // a 0.5 m stool: seat about 0.4 m up
   const theo = makeGnome(life, {
     hat: 0x8a5a2b, shirt: 0x7a3b2e, pants: 0x3b3a4a, skin: 0xe0ac69, boots: 0x222222,
@@ -186,13 +238,14 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
     life.add(textPlate(text, x + dx, g(x, z) + 1.35, z + dz, yaw, { w: 1.7, h: 0.75, bg: 0xe8e0c8 }));
   };
   signAt(C.x, C.z + C.r - 4, 0, 'PAIL POND\nTHIN ICE: NONE\nTHICK ICE: ALL OF IT');
-  signAt(-604, -1026, toCentre(-604, -1026), 'HOA NOTICE\nICE HOLES MUST BE ROUND.\nSQUARE HOLES WILL BE FINED.');
+  signAt(-594, -1044, toCentre(-594, -1044), 'HOA NOTICE\nICE HOLES MUST BE ROUND.\nSQUARE HOLES WILL BE FINED.');
   signAt(-648, -1090, toCentre(-648, -1090), 'DO NOT FEED THE BEARS\n(THEY HAVE SARDINES)');
 
   // ---- Vignette 1: four stools round an old hole, a tin in the middle, one stool tipped over in a hurry ----
   {
     const vx = -600, vz = -1075;
     life.add(holeDecal(vx, vz, 0.55));
+    decals.push([vx, vz, 2.4]);
     pieces.push({ prefab: 'sardine-tin', x: vx + 0.2, z: vz - 0.1, yaw: 0.4, size: 0.2, solid: false });
     for (let i = 0; i < 4; i++) {
       const a = (i / 4) * Math.PI * 2 + 0.4;
@@ -210,6 +263,7 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
   {
     const x = -640, z = -1020; // open ice between the blue shanty and Theo's
     life.add(holeDecal(x, z));
+    decals.push([x, z, 1.5]);
     const r = loose('fishing-rod', x, g(x, z) - 0.2, z, 0.7, 1.6);
     if (r) { r.rotation.z = 0.12; life.add(r); }
     const t = loose(has('thermos') ? 'thermos' : 'barrel', x + 0.9, g(x, z), z + 0.3, 0.3, 0.3, 0xbfd8e6);
@@ -223,17 +277,19 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
     const pawMat = flatLayer(new THREE.MeshBasicMaterial({ color: 0x30424e }), LAYER.marking);
     const [ddx, ddz] = fx(greenYaw, front + 1.0);
     const door = { x: green.x + ddx, z: green.z + ddz };
-    const [sx, sz] = onCircle((Math.atan2(green.z - C.z, green.x - C.x) * 180) / Math.PI + 22, 58);
+    const [sx, sz] = onCircle(165, 58); // the bear came across the ice from the west shore
     const dirX = door.x - sx, dirZ = door.z - sz, len = Math.hypot(dirX, dirZ);
     const nx = -dirZ / len, nz = dirX / len; // sideways
     const yawAlong = Math.atan2(dirX, dirZ);
     for (let i = 0; i < 5; i++) {
       const t = i / 4, side = (i % 2 ? 1 : -1) * 0.25;
       life.add(pawPrint(sx + dirX * t + nx * side, sz + dirZ * t + nz * side, -yawAlong, pawMat, pawGeo));
+      decals.push([sx + dirX * t + nx * side, sz + dirZ * t + nz * side, 0.5]);
     }
     for (let i = 0; i < 4; i++) { // the way back: a wider, hurried stride, an arm's length to one side
       const t = 0.9 - i * 0.3, side = 1.1 + (i % 2 ? 0.25 : -0.25);
       life.add(pawPrint(sx + dirX * t + nx * side, sz + dirZ * t + nz * side, -yawAlong + Math.PI, pawMat, pawGeo));
+      decals.push([sx + dirX * t + nx * side, sz + dirZ * t + nz * side, 0.5]);
     }
   }
 
@@ -244,6 +300,66 @@ export function buildPailPond(scene: THREE.Scene): PailPondScenery {
     fish.position.y += 0.012;
     fish.material = flatLayer(Array.isArray(fish.material) ? fish.material[0] : fish.material, LAYER.marking + 1);
     life.add(fish);
+  }
+
+  // ---- The village: a sled path of boot prints from the south crossing past all three doors, flags, two jiggers ----
+  {
+    const door = (s: { x: number; z: number }, yaw: number, d: number): [number, number] => {
+      const [dx, dz] = fx(yaw, d);
+      return [s.x + dx, s.z + dz];
+    };
+    const gD = door(green, greenYaw, front + 1.6), bD = door(blue, blueYaw, front + 1.6);
+    const tD: [number, number] = [SHANTY.x + fx(theoYaw, front + 1.6)[0], SHANTY.z - 2.3];
+    const [cx0, cz0] = onCircle(90, C.r - 1);
+    const route: Array<[number, number]> = [[cx0, cz0], [-638, -1030], gD, [campX - 2.5, campZ + 2.4], tD, [-607, -1034], bD];
+    const bootGeo = new THREE.CircleGeometry(0.12, 8);
+    bootGeo.scale(1, 1.7, 1);
+    const bootMat = flatLayer(new THREE.MeshBasicMaterial({ color: 0x8aa0b0 }), LAYER.marking);
+    let step = 0;
+    for (let i = 0; i + 1 < route.length; i++) {
+      const [ax, az] = route[i]!, [bx, bz] = route[i + 1]!;
+      const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz);
+      const ux = dx / len, uz = dz / len, yaw = Math.atan2(ux, uz);
+      for (let d = 0; d < len; d += 0.85, step++) {
+        const side = (step % 2 ? 1 : -1) * 0.2;
+        const px = ax + ux * d - uz * side, pz = az + uz * d + ux * side;
+        if (decals.some(([qx, qz, qr]) => Math.hypot(px - qx, pz - qz) < qr)) continue;
+        if (Math.hypot(px - SHANTY.x, pz - SHANTY.z) < 1.8 || Math.hypot(px - blue.x, pz - blue.z) < 1.8 || Math.hypot(px - green.x, pz - green.z) < 1.8) continue;
+        life.add(pawPrint(px, pz, -yaw, bootMat, bootGeo));
+      }
+    }
+
+    // marker flags, orange, round the village
+    for (const [fxp, fzp] of [[-633, -1031], [-607, -1022], [-633, -1062], [-598, -1058]] as const) {
+      const f = loose('slalom-flag', fxp, g(fxp, fzp), fzp, (fxp * 7) % 3, 2.4, 0xff7a1a);
+      if (f) life.add(f);
+    }
+
+    // two gnomes jigging on stools: one in front of the blue shanty over its own hole, one at the stool vignette
+    const jigger = (look: { hat: number; shirt: number }, x: number, z: number, yaw: number): void => {
+      const gn = makeGnome(life, {
+        hat: look.hat, shirt: look.shirt, pants: 0x3b3a4a, skin: 0xe0ac69, boots: 0x222222,
+        beard: 0xd8d8d8, hair: null, freckles: false, dress: false, glasses: false, bowlCut: null,
+      });
+      const y = g(x, z) + 0.25;
+      gn.object.position.set(x, y, z);
+      gn.object.rotation.y = yaw;
+      gn.update(gnomeState(x, y, z, yaw, 0, true), 0);
+      const rodP = loose('fishing-rod', x + Math.sin(yaw) * 0.35, y + 0.55, z + Math.cos(yaw) * 0.35, yaw, 1.6);
+      if (rodP) { rodP.rotation.order = 'YXZ'; rodP.rotation.x = 0.9; life.add(rodP); }
+    };
+    {
+      const [sx, sz] = door(blue, blueYaw, front + 2.6);
+      pieces.push({ prefab: has('camp-stool') ? 'camp-stool' : 'stool', x: sx, z: sz, yaw: blueYaw, size: 0.5, solid: false });
+      const [hx2, hz2] = fx(blueYaw, 0.95);
+      life.add(holeDecal(sx + hx2, sz + hz2));
+      jigger({ hat: 0x2e6b8f, shirt: 0xd9a441 }, sx, sz, blueYaw);
+    }
+    {
+      const vx = -600, vz = -1075, a = 0.4;
+      const sx = vx + Math.cos(a) * 1.7, sz = vz + Math.sin(a) * 1.7;
+      jigger({ hat: 0xc0392b, shirt: 0x2e5e4e }, sx, sz, Math.atan2(vx - sx, vz - sz));
+    }
   }
 
   const boxes = [...buildPieces(scene, pieces, 'pail-pond'), ...extraBoxes];

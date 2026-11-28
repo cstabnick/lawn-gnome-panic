@@ -14,7 +14,7 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 ## Next session starts here
 
 All 33 feature epics merged; PR #372 is mergeable and its description is current (`gta-batch-3/pr-description.md`).
-R1 fix round: merged FX01–FX06, FX11, FX12, FX21 (9 of 24). When the session ended, leads were running in worktrees under
+R1 fix round: merged FX01–FX06, FX09, FX11, FX12, FX21 (10 of 24). When the session ended, leads were running in worktrees under
 `C:/Users/cpsai/cstabnick/lawn-gnome-panic/.claude/worktrees/`: **FX09** Pardonlin ground, **FX11** the coast (finished and committed on `fix/FX11`, not merged yet: rulings R-240..R-248 need
 renumbering from R-241, golden regen; its perf baseline and zfight never completed — re-measure on a quiet machine), **FX12** Snowcap snow. Resume or merge them (`tools/batch-merge.sh`, `tools/renumber-rulings.py` — next
 free ruling R-241, `tools/merge-hunks.py`; check the test command's own exit status), then start the next unblocked

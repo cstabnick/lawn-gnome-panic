@@ -257,3 +257,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 
 - `coast/sign.ts` still paints text its own way: switch it to FX01's `layoutPlate` / `signBoard` (`src/textPlate.ts`).
 - The pier's underside is still a black lid at night: use FX01's `undersideMat()`.
+
+## Added after FX06 (orchestrator)
+
+- Boardwalk west end (x -210..-200): the ground rises above the deck and the planks sink in (pre-existing; carried from FX06). Cars on the boardwalk were not checked by eye.

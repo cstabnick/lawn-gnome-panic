@@ -270,3 +270,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - `uni-lecture` (lecture hall interior): `campus/interiors.ts` scales the bench rows to 18 m wide, so each row stands
   ~4 m tall right in front of the spawn. FX02's entry-view test (`interiors/entryView.test.ts`) exempts it for now;
   fix the benches and remove the exemption.
+
+## Added after FX06 (orchestrator)
+
+- G5#1 (partly fixed by FX06): the Anthill's stepped top tier remains; widening the summit blend broke the Anthill road grade tests and hid a shot target in the m46 outro, so reshape it together with those.

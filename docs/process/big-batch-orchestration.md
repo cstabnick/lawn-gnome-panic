@@ -112,6 +112,12 @@ Source items: L03, L17, ... (verbatim text of each)
 ## Done when
 ```
 
+## Keep the PR mergeable
+
+After every push: `gh pr view <n> --json mergeable,mergeStateStatus`. If main moved, merge it in at once (same
+helpers), rerun the build and tests, push. Keep the PR description current so the batch can be merged as-is at any
+point (copy kept in `docs/roadmaps/<batch>/pr-description.md`).
+
 ## Merge traps seen
 
 - Lead worktrees on Windows can commit CRLF line endings, which turns a small change into a whole-file diff and

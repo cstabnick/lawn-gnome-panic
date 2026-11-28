@@ -13,7 +13,7 @@ import type { GnomeLook } from '@lawn/gnome';
 /** A home's frame: origin in the world and the yaw its front faces. Local x runs across the front, local z out of it. */
 interface Frame { x: number; z: number; yaw: number }
 
-interface Plate { text: string; lx: number; y: number; lz: number; w: number; h: number; bg?: number; fg?: number }
+interface Plate { text: string; lx: number; y: number; lz: number; w: number; h: number; bg?: number; fg?: number; back?: boolean }
 interface Pane { lx: number; y: number; lz: number; w: number; h: number }
 interface Resident { look: GnomeLook; lx: number; lz: number; y?: number; yaw: number; scale?: number }
 /** A loop of string between pegs (local x, z) at a height. */
@@ -80,8 +80,9 @@ function juniper(): Home {
     // Half-painted front door: a green patch over its lower half.
     { text: '', lx: 0, y: 0.4 * S, lz: 3.1 * S, w: 0.9 * S, h: 0.8 * S, bg: 0x2e7d32 },
     { text: 'WET PAINT\n(HALF)', lx: 0, y: 1.1 * S, lz: 3.12 * S, w: 0.8, h: 0.3, bg: 0xf5f0e1 },
-    { text: 'KERB ROW\nkerbs: yes  row: ongoing', lx: 9, y: 1.2, lz: F + 1.6 + 0.36, w: 1.3, h: 0.6, bg: 0x2f6f4f, fg: 0xf5f0e1 },
-    { text: 'PARKING FINE\nISSUED BY: COUNCIL', lx: -3.4, y: 0.6, lz: F + 1.3 + 0.3, w: 0.7, h: 0.3, bg: 0xf2c200 },
+    // Free-standing in the front garden: both faces printed, on a backing.
+    { text: 'KERB ROW\nkerbs: yes  row: ongoing', lx: 9, y: 1.2, lz: F + 1.6 + 0.36, w: 1.8, h: 0.8, bg: 0x2f6f4f, fg: 0xf5f0e1, back: true },
+    { text: 'PARKING FINE\nISSUED BY: COUNCIL', lx: -3.4, y: 0.6, lz: F + 1.3 + 0.3, w: 0.9, h: 0.4, bg: 0xf2c200 },
   ];
   const pane = (lx: number, y: number, w = 0.55): Pane => ({ lx: lx * S, y: y * S, lz: 3.095 * S, w: w * S, h: 1.2 * S });
   const panes: Pane[] = [
@@ -160,8 +161,8 @@ function reginald(): Home {
   ];
   const plates: Plate[] = [
     { text: '404\nR. VANCE', lx: 0, y: 1.9 * S, lz: 3.06 * S, w: 1.0, h: 0.4 },
-    { text: 'NOTICE OF\nNON-COMPLIANCE', lx: -3.3, y: 0.5, lz: F + 2.2 + 0.5, w: 0.8, h: 0.4, bg: 0xf5f0e1 },
-    { text: 'LAWN UNDER\nOBSERVATION', lx: -6, y: 1.1, lz: F + 1.0 + 0.3, w: 1.2, h: 0.5, bg: 0xf5f0e1 },
+    { text: 'NOTICE OF\nNON-COMPLIANCE', lx: -3.3, y: 0.5, lz: F + 2.2 + 0.5, w: 1.0, h: 0.5, bg: 0xf5f0e1 },
+    { text: 'LAWN UNDER\nOBSERVATION', lx: -6, y: 1.1, lz: F + 1.0 + 0.3, w: 1.5, h: 0.6, bg: 0xf5f0e1 },
   ];
   const pane = (y: number): Pane => ({ lx: 0, y: y * S, lz: 3.095 * S, w: 0.6 * S, h: 1.2 * S });
   const panes: Pane[] = [pane(3.6), pane(5.9), pane(8.15)];
@@ -227,7 +228,7 @@ export function buildTownHomes(scene: THREE.Scene): Box[] {
     };
     for (const p of h.plates) {
       const [x, g, z] = gy(p.lx, p.lz);
-      life.add(textPlate(p.text, x, g + p.y, z, f.yaw, { w: p.w, h: p.h, bg: p.bg, fg: p.fg }));
+      life.add(textPlate(p.text, x, g + p.y, z, f.yaw, { w: p.w, h: p.h, bg: p.bg, fg: p.fg, back: p.back, backing: p.back ? true : undefined }));
     }
     for (const p of h.panes) {
       const [x, g, z] = gy(p.lx, p.lz);

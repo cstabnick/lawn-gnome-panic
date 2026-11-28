@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 
 /** Emissive intensity (times the material's own colour) by day and at full night. */
-export const UNDERSIDE_GLOW = { day: 0.3, night: 0.05 } as const;
+export const UNDERSIDE_GLOW = { day: 0.3, night: 0.1 } as const;
 
 const mats: THREE.MeshStandardMaterial[] = [];
 

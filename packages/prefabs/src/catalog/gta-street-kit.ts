@@ -186,4 +186,21 @@ export const GTA_STREET_KIT: readonly PrefabDef[] = [
       { s: 'ball', d: [0.5], scale: [1, 0.6, 1], at: [0, 2.3, 0], c: 'brass', seg: 8 },        // dome cap
     ],
   },
+  {
+    id: 'tunnel-lamp', name: 'Tunnel Lamp', category: 'prop', uses: ['place', 'light'],
+    tags: ['gta', 'scenery', 'lamp', 'tunnel', 'light', 'street'], emoji: [],
+    mount: 'wall', footprint: { r: 0.6, h: 0.12 },
+    about: 'Gnome Theft Auto: the Tunnel Lamp. A dark grey strip housing with a warm glowing diffuser on its underside, hung from a ceiling (origin at the top centre, it hangs down to y -0.12). 1.2 x 0.25 x 0.12 m. No tint.',
+    examine: [
+      'A long grey lamp bolted flat to the underside of a ceiling, glowing the warm yellow of a buttered crumpet.',
+      'Saying: a tunnel without lamps is just a very long argument with the dark, and the dark has never lost one.',
+      'Tip: stand under it at dusk and your hat will glow the colour of an acorn that has made good decisions.',
+      'Joke: the lamp is always on, and nobody has ever seen the gnome whose job it is to change the bulb.',
+      'Scratched into the housing, in very small letters: "mind your head, it is mostly ceiling in here".',
+    ],
+    parts: [
+      { s: 'box', d: [1.2, 0.12, 0.25], at: [0, -0.06, 0], c: 'iron-dark' },                    // housing
+      { s: 'box', d: [1.0, 0.02, 0.17], at: [0, -0.115, 0], c: 0xffd98a, glow: true },         // warm diffuser strip
+    ],
+  },
 ];

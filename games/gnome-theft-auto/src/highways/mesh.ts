@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { heightAt } from '../terrain';
+import { undersideMat } from '../undersides';
 import { type Bent, skywayBents } from './colliders';
 import { branchTrim, deckContactsAt, deckSamples, railGaps, skywayDefs, skywayLength } from './deck';
 import { footConnectors } from './roads';
@@ -343,9 +344,12 @@ export function buildSkywayMeshes(): THREE.Group {
   const redMat = new THREE.MeshStandardMaterial({ color: 0xd94f3d });
   const plank = new THREE.MeshStandardMaterial({ color: 0x9a7448, roughness: 1 });
   const timber = new THREE.MeshStandardMaterial({ color: 0x6b4f32 });
+  // Deck sides and undersides: an emissive floor so a deck seen from below is not a black lid (columns keep the plain ones).
+  const concreteDeck = undersideMat(0xb9b2a4);
+  const timberDeck = undersideMat(0x6b4f32, { roughness: 1 });
   const slipMat = flatLayer(new THREE.MeshStandardMaterial({ color: 0x55555b, roughness: 1 }), LAYER.tint);
-  const road: Style = { top: asphalt, sides: concrete, rail: railMat, railWidth: RAIL_WIDTH, railHeight: SKYWAY.railHeight };
-  const site: Style = { top: plank, sides: timber, rail: timber, railWidth: 0.15, railHeight: 0.7 };
+  const road: Style = { top: asphalt, sides: concreteDeck, rail: railMat, railWidth: RAIL_WIDTH, railHeight: SKYWAY.railHeight };
+  const site: Style = { top: plank, sides: timberDeck, rail: timber, railWidth: 0.15, railHeight: 0.7 };
 
   const barrierBoards: THREE.BufferGeometry[] = [];
   const barrierPosts: THREE.BufferGeometry[] = [];

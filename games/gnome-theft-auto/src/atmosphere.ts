@@ -11,6 +11,155 @@ export const CYCLE_SECONDS = 360;
 /** Starting phase in 'auto' mode: bright morning-noon (0 = dawn/midnight, 0.25 = noon, 0.5 = golden, 0.75 = night). */
 export const INITIAL_PHASE = 0.22;
 
+/** Which of the 4 atlas cells a mote uses: 0 round glow, 1 petal, 2 leaf, 3 seed fluff. Night is always the glow.
+ *  The mote shader mirrors this (floor(seed * 4), night > 0.5 gives 0). */
+export function moteCell(seed: number, night: number): number {
+  if (night > 0.5) return 0;
+  return Math.min(3, Math.max(0, Math.floor(seed * 4)));
+}
+
+/** 128 x 128 atlas, 2 x 2 cells of 64 px, each with a transparent margin. Null where there is no DOM (node tests). */
+function createMoteAtlas(): THREE.Texture | null {
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  const cell = (n: number, draw: () => void): void => {
+    g.save();
+    g.translate((n % 2) * 64 + 32, Math.floor(n / 2) * 64 + 32);
+    draw();
+    g.restore();
+  };
+  // 0: soft round glow
+  cell(0, () => {
+    const r = g.createRadialGradient(0, 0, 0, 0, 0, 30);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.arc(0, 0, 30, 0, Math.PI * 2);
+    g.fill();
+  });
+  // 1: petal, a soft ellipse a touch pink
+  cell(1, () => {
+    g.rotate(-0.5);
+    const r = g.createRadialGradient(0, 0, 2, 0, 0, 26);
+    r.addColorStop(0, 'rgba(255,248,250,1)');
+    r.addColorStop(0.7, 'rgba(255,226,236,0.95)');
+    r.addColorStop(1, 'rgba(255,214,228,0)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.ellipse(0, 0, 26, 14, 0, 0, Math.PI * 2);
+    g.fill();
+  });
+  // 2: leaf, pointed ellipse with a darker mid vein
+  cell(2, () => {
+    g.rotate(-0.6);
+    g.fillStyle = 'rgba(236,244,196,0.96)';
+    g.beginPath();
+    g.moveTo(-28, 0);
+    g.quadraticCurveTo(0, -20, 28, 0);
+    g.quadraticCurveTo(0, 20, -28, 0);
+    g.fill();
+    g.strokeStyle = 'rgba(170,190,110,0.9)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(-27, 0);
+    g.lineTo(22, 0);
+    g.stroke();
+  });
+  // 3: seed fluff, a tiny core with faint radiating strands
+  cell(3, () => {
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = 1.2;
+    g.lineCap = 'round';
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2 + 0.2;
+      g.beginPath();
+      g.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+      g.lineTo(Math.cos(a) * 28, Math.sin(a) * 28);
+      g.stroke();
+    }
+    const r = g.createRadialGradient(0, 0, 0, 0, 0, 8);
+    r.addColorStop(0, 'rgba(255,255,255,1)');
+    r.addColorStop(1, 'rgba(255,255,255,0.1)');
+    g.fillStyle = r;
+    g.beginPath();
+    g.arc(0, 0, 8, 0, Math.PI * 2);
+    g.fill();
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Soft tumbling sprite points: capped size, faded out near the camera, fog aware. */
+function createMoteMaterial(tex: THREE.Texture | null): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    fog: true,
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      {
+        uColor: { value: new THREE.Color(0xffffff) },
+        uOpacity: { value: 0.3 },
+        uSize: { value: 0.25 },
+        uScale: { value: 400 },
+        uTime: { value: 0 },
+        uNight: { value: 0 },
+        uMap: { value: tex },
+      },
+    ]),
+    vertexShader: `
+      uniform float uSize;
+      uniform float uScale;
+      uniform float uTime;
+      attribute float aSeed;
+      varying float vNear;
+      varying float vSeed;
+      varying float vAngle;
+      #include <fog_pars_vertex>
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = min(uSize * uScale / -mv.z, 22.0);
+        vNear = smoothstep(0.8, 3.0, -mv.z);
+        vSeed = aSeed;
+        vAngle = aSeed * 6.2832 + uTime * (0.6 + aSeed) * (aSeed > 0.5 ? 1.0 : -1.0);
+        vec4 mvPosition = mv;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      uniform float uNight;
+      uniform sampler2D uMap;
+      varying float vNear;
+      varying float vSeed;
+      varying float vAngle;
+      #include <fog_pars_fragment>
+      void main() {
+        vec2 q = gl_PointCoord - 0.5;
+        float cs = cos(vAngle);
+        float sn = sin(vAngle);
+        vec2 p = vec2(cs * q.x - sn * q.y, sn * q.x + cs * q.y) + 0.5;
+        if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0) discard;
+        float cell = uNight > 0.5 ? 0.0 : min(3.0, floor(vSeed * 4.0));
+        float col = mod(cell, 2.0);
+        float row = floor(cell / 2.0);
+        vec2 uv = vec2((col + p.x) * 0.5, 1.0 - (row + p.y) * 0.5);
+        vec4 t = texture2D(uMap, uv);
+        gl_FragColor = vec4(uColor * t.rgb, t.a * uOpacity * vNear);
+        if (gl_FragColor.a < 0.01) discard;
+        #include <fog_fragment>
+      }`,
+  });
+}
+
 /** Ambient motes (dust, pollen, fireflies). L05: fewer and fainter than before (was 260 at full opacity). */
 const MOTE_COUNT = 180;
 /** Every biome's mote opacity is scaled by this (L05). */
@@ -623,13 +772,14 @@ export function createAtmosphere(
   const moteGeo = new THREE.BufferGeometry();
   const posAttr = new THREE.BufferAttribute(positions, 3);
   moteGeo.setAttribute('position', posAttr);
-  const moteMat = new THREE.PointsMaterial({
-    color: BIOME_PROFILES.city.moteColorDay,
-    size: BIOME_PROFILES.city.moteSize,
-    transparent: true,
-    opacity: BIOME_PROFILES.city.moteOpacityDay,
-    depthWrite: false,
-  });
+  const seedAttr = new Float32Array(MOTE_COUNT);
+  for (let i = 0; i < MOTE_COUNT; i++) seedAttr[i] = seeds[i] / (Math.PI * 2);
+  moteGeo.setAttribute('aSeed', new THREE.BufferAttribute(seedAttr, 1));
+  const moteMat = createMoteMaterial(createMoteAtlas());
+  (moteMat.uniforms.uColor.value as THREE.Color).setHex(BIOME_PROFILES.city.moteColorDay);
+  moteMat.uniforms.uSize.value = BIOME_PROFILES.city.moteSize;
+  moteMat.uniforms.uOpacity.value = BIOME_PROFILES.city.moteOpacityDay;
+  let moteScale = 0;
   const motes = new THREE.Points(moteGeo, moteMat);
   motes.frustumCulled = false;
   scene.add(motes);
@@ -734,6 +884,7 @@ export function createAtmosphere(
     sunColor.setHex(state.sunColorHex);
     sun.color.copy(sunColor);
     sun.intensity = state.sunIntensity;
+    sun.shadow.intensity = 1 - 0.55 * Math.min(1, curOvercast);
     sun.position.set(
       focusX + state.sunDir[0] * 120,
       state.sunDir[1] * 120,
@@ -757,10 +908,19 @@ export function createAtmosphere(
     const targetOpacity = lerpNum(bp.moteOpacityDay, bp.moteOpacityNight, state.nightFactor) * MOTE_OPACITY_SCALE;
     curMoteOpacity = lerpNum(curMoteOpacity, targetOpacity, blend);
     targetMoteColor.setHex(lerpHex(bp.moteColorDay, bp.moteColorNight, state.nightFactor));
-    moteColor.copy(moteMat.color).lerp(targetMoteColor, blend);
-    moteMat.color.copy(moteColor);
-    moteMat.size = curMoteSize;
-    moteMat.opacity = curMoteOpacity;
+    moteColor.copy(moteMat.uniforms.uColor.value as THREE.Color).lerp(targetMoteColor, blend);
+    (moteMat.uniforms.uColor.value as THREE.Color).copy(moteColor);
+    moteMat.uniforms.uSize.value = curMoteSize;
+    moteMat.uniforms.uOpacity.value = curMoteOpacity;
+    moteMat.uniforms.uTime.value = clock;
+    moteMat.uniforms.uNight.value = state.nightFactor;
+    if (typeof window !== 'undefined') {
+      const sc = (window.innerHeight * Math.min(2, window.devicePixelRatio || 1)) / 2;
+      if (sc !== moteScale) {
+        moteScale = sc;
+        moteMat.uniforms.uScale.value = sc;
+      }
+    }
 
     for (let i = 0; i < MOTE_COUNT; i++) {
       const idx = i * 3;

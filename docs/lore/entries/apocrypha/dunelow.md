@@ -30,7 +30,7 @@ Gnome Theft Auto (E32): houses, a notice board, a deckchair row and two ambient 
 
 ## Everyday
 
-- Notice board (already posted in the village): gulls are not to be fed (the gulls disagree); ice-cream van Tuesdays and whenever it hears you; lost: one flip-flop, left, possibly at sea; the snail coach Mon-Sat "sometimes", Sun "see Mon"; deckchairs 50p, "falling over included"; sandcastle contest judged by three gulls, the tallest wins, the bucket stays.
+- Notice board (already posted in the village): gulls are not to be fed (the gulls disagree); ice-cream van Tuesdays and whenever it hears you; lost: one flip-flop, left, possibly at sea; the snail coach Mon-Sat "sometimes", Sun "see Mon"; deckchairs 1 Acorn, "falling over included" (R-237); sandcastle contest judged by three gulls, the tallest wins, the bucket stays.
 - Cornet Brindle's menu: ninety-nine flavours, the first of which is vanilla, the second also vanilla, and so on to the ninety-eighth. Cone 2 Acorns, "double" 3, a flake 1, "extra vanilla" free.
 - Habit: everybody on the street stops talking when the van's tune starts, and resumes when it fades, "out of respect".
 - Local drink: warm lemonade in a deckchair-stripe mug.

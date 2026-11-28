@@ -5,6 +5,8 @@ import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import { buildStaticCells } from '../../cull';
 import { addRooftop, rooftopById } from '../../interiors';
 import { textPlate, prefabBox } from '../../homes/pieces';
+import { addNoticeSpot } from '../../homes/notices';
+import { undersideMat } from '../../undersides';
 import { heightAt } from '../../terrain';
 import type { Box } from '../../types';
 import { UNDERSPAN, type Rect } from '../config';
@@ -85,19 +87,25 @@ export function buildUnderspan(scene: THREE.Scene, boxes: Box[]): void {
   const wallSign = (text: string, wx: number, wz: number, yaw: number, y: number, w: number, h: number, bg = PAPER): void => {
     plate(text, wx + Math.sin(yaw) * 0.15, heightAt(wx, wz) + y, wz + Math.cos(yaw) * 0.15, yaw, w, h, bg);
   };
-  /** Posters across the front (facing `yaw`) of a prefab board at (x, z), spread evenly over its width. */
-  const posters = (id: string, x: number, z: number, yaw: number, texts: string[]): void => {
-    if (!getPrefab(id)) return;
-    const b = prefabBox(id);
-    const depth = b.max.z + 0.04;
-    const width = b.max.x - b.min.x;
-    const top = b.max.y;
-    texts.forEach((text, i) => {
-      const lateral = -width / 2 + ((i + 0.5) * width) / texts.length;
-      const p = toWorld(x, z, yaw, lateral, depth);
-      plate(text, p.x, heightAt(x, z) + top * 0.55, p.z, yaw, Math.min(0.9, width / texts.length - 0.1), 0.5);
-    });
+  /** A manifesto poster: a plain text, or [text, background colour]. */
+  type Poster = string | [string, number];
+  /** Manifesto posters on both faces of a free-standing hoarding at (x, z) facing `yaw`: up to two per face, each
+   *  2.6 x 1.5 m at the face centre height, 0.03 m off the board. The back faces `yaw + PI`, so its lateral flips. */
+  const manifesto = (x: number, z: number, yaw: number, front: Poster[], back: Poster[]): void => {
+    const PW = 2.6, PH = 1.5, GAP = 1.45, OFF = 0.03, FACE = 0.1;
+    const cy = heightAt(x, z) + 1.45;
+    const face = (list: Poster[], depth: number, faceYaw: number, flip: number): void => {
+      const lats = list.length === 1 ? [0] : [-GAP, GAP];
+      list.forEach((p, i) => {
+        const [text, bg]: [string, number] = typeof p === 'string' ? [p, PAPER] : p;
+        const q = toWorld(x, z, yaw, flip * lats[i], depth);
+        plate(text, q.x, cy, q.z, faceYaw, PW, PH, bg);
+      });
+    };
+    face(front, FACE + OFF, yaw, 1);
+    face(back, -(FACE + OFF), yaw + N, -1);
   };
+  const posterText = (p: Poster): string => (typeof p === 'string' ? p : p[0]);
   /** A prop placed loose with its own tilt (vignettes). Not batched, so it can lean. */
   const loosePrefab = (id: string, x: number, z: number, yaw: number, o: { size?: number; y?: number; tiltX?: number; tiltZ?: number } = {}): void => {
     if (!getPrefab(id)) return;
@@ -143,7 +151,7 @@ export function buildUnderspan(scene: THREE.Scene, boxes: Box[]): void {
   const deckT = 0.15;
   const deck = new THREE.Mesh(
     new THREE.BoxGeometry(r.maxX - r.minX, deckT, r.maxZ - r.minZ),
-    new THREE.MeshLambertMaterial({ color: PLANK }),
+    undersideMat(PLANK),
   );
   deck.position.set(mx, UNDERSPAN.roostY - deckT / 2, (r.minZ + r.maxZ) / 2);
   const roost = new THREE.Group();
@@ -209,17 +217,25 @@ export function buildUnderspan(scene: THREE.Scene, boxes: Box[]): void {
   }
 
   // ---- Signs and posters -------------------------------------------------------------------------------------------
-  posters('manifesto-board', UNDERSPAN.manifestoWall.x, UNDERSPAN.manifestoWall.z, W, [
-    'A RULE IS ONLY A\nPROTOTYPE NOBODY\nTESTED',
-    'PERMITS ARE FOR\nPEOPLE WHO ASK',
-    'THE GROUND IS\nALREADY OBSOLETE',
-    'UP IS A DIRECTION,\nNOT A CRIME',
-  ]);
-  posters('manifesto-board', UNDERSPAN.manifestoWall.x, -34, W, [
-    'WE BUILT A LIFT.\nTHEY BUILT A FORM.',
-    'CITATIONS ARE\nA FORM OF PRAISE',
-    'FORM 7 IS A\nSUGGESTION',
-  ]);
+  const manifestoBoards: { z: number; front: Poster[]; back: Poster[] }[] = [
+    {
+      z: UNDERSPAN.manifestoWall.z,
+      front: ['A RULE IS ONLY A\nPROTOTYPE NOBODY\nTESTED', 'PERMITS ARE FOR\nPEOPLE WHO ASK'],
+      back: ['THE GROUND IS\nALREADY OBSOLETE', 'UP IS A DIRECTION,\nNOT A CRIME'],
+    },
+    {
+      z: -34,
+      front: ['WE BUILT A LIFT.\nTHEY BUILT A FORM.', 'CITATIONS ARE\nA FORM OF PRAISE'],
+      back: ['FORM 7 IS A\nSUGGESTION', ['rules are prototypes', 0xf3e9a6]],
+    },
+  ];
+  for (const board of manifestoBoards) {
+    manifesto(UNDERSPAN.manifestoWall.x, board.z, W, board.front, board.back);
+    // The "Read the manifesto" spot stands 1.4 m in front of the front face, on the approach side.
+    const spot = toWorld(UNDERSPAN.manifestoWall.x, board.z, W, 0, 1.4);
+    const lines = [...board.front, ...board.back].map((p) => posterText(p).replace(/\n/g, ' '));
+    addNoticeSpot({ x: spot.x, z: spot.z, y: heightAt(spot.x, spot.z) }, lines, 'Read the manifesto');
+  }
   const cp = getPrefab('citation-post') ? prefabBox('citation-post') : null;
   const cpDepth = cp ? cp.max.z + 0.04 : 0.1;
   const cpAt = toWorld(584, -19, W, 0, cpDepth);

@@ -101,7 +101,7 @@ const hex = (n: number): string => '#' + n.toString(16).padStart(6, '0');
 export const PLATE_MIN_PX = 18;
 const PLATE_FONT = 'system-ui, sans-serif';
 /** Line height as a multiple of the font size. */
-const LINE_H = 1.15;
+const LINE_H = 1.1;
 
 /** Canvas width for a plate `w` metres wide holding `text` (D58: 512 over 1.5 m, 1024 over 3 m; long text never 256). */
 export function plateCanvasWidth(w: number, text: string): number {
@@ -143,9 +143,10 @@ export function wrapWords(text: string, max: number, measure: (s: string) => num
 export function layoutPlate(text: string, w: number, h: number, measure: (s: string, px: number) => number): PlateLayout {
   const cw = plateCanvasWidth(w, text);
   const ch = Math.max(16, Math.round((cw * h) / w));
-  const minPx = Math.max(8, Math.round((PLATE_MIN_PX * cw) / 512));
+  // 18 px at 512, or a 6 cm glyph on a very large plate (a 9 m banner), whichever is smaller.
+  const minPx = Math.max(8, Math.min(Math.round((PLATE_MIN_PX * cw) / 512), Math.round((0.06 * cw) / w)));
   const border = Math.max(2, ch * 0.05);
-  const innerW = cw - border * 4, innerH = ch - border * 3;
+  const innerW = cw - border * 3.2, innerH = ch - border * 2.8;
   for (let px = Math.max(minPx, Math.floor(innerH * 0.8)); px >= minPx; px--) {
     const lines = wrapWords(text, innerW, (s) => measure(s, px));
     const wide = Math.max(...lines.map((l) => measure(l, px)));
@@ -250,8 +251,9 @@ export interface BoardFace { w: number; h: number; y: number; front: number; bac
 
 /** Board prefabs a sign can be printed on, measured from their parts (packages/prefabs/src/catalog). */
 export const BOARD_FACES: Readonly<Record<string, BoardFace>> = {
-  // gta-golf-nine-props.ts: board 1.9 x 1.0 x 0.06 at y 1.4.
-  'garden-sign': { w: 1.9, h: 1.0, y: 1.4, front: 0.03, back: -0.03 },
+  // gta-golf-nine-props.ts: board 1.9 x 1.0 x 0.06 at y 1.4; its posts (0.1 deep, x +-0.9) stand 0.05 proud, so the
+  // plate is measured from the posts' faces (a wide plate would otherwise share their plane).
+  'garden-sign': { w: 1.9, h: 1.0, y: 1.4, front: 0.05, back: -0.05 },
   // dayg.ts: board 1.4 x 1.0 x 0.05 at y 1.5, z 0.06; the pinned sheets stand 0.105 out, so the plate goes over them.
   'notice-board': { w: 1.4, h: 1.0, y: 1.5, front: 0.11, back: 0.035 },
   // gta-underspan.ts: hoarding 6 x 1.9 x 0.2 at y 1.45.

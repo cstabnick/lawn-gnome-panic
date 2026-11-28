@@ -2,7 +2,10 @@
 // runs through a tunnel in one long 2x1 tower. The two halves are ordinary TowerSpecs (world.ts addTower, styled by
 // src/towers/); this file adds the slab. Numbers match the `double-pot` site (src/sites.ts): x 69..171, z -111..-69.
 import * as THREE from 'three';
+import { buildStaticCells } from '../cull';
+import { textPlate } from '../homes/pieces';
 import { siteRect } from '../sites';
+import { undersideMat } from '../undersides';
 
 /** The Double Pot (L92 mega block): two block footprints joined over street x = 120 by a roof slab (the tunnel roof). */
 export const MEGA_BLOCK = {
@@ -47,11 +50,33 @@ export function buildMegaBlock(
   const d = roof.maxZ - roof.minZ - 0.6;
   const slab = new THREE.Mesh(
     new THREE.BoxGeometry(w, roof.thickness, d),
-    new THREE.MeshStandardMaterial({ color: 0x8d8f93, roughness: 0.95 }),
+    undersideMat(0x8d8f93, { roughness: 0.95 }),
   );
   slab.position.set((roof.minX + roof.maxX) / 2, roof.y - roof.thickness / 2, (roof.minZ + roof.maxZ) / 2);
   slab.castShadow = true;
   slab.receiveShadow = true;
   slab.name = 'double-pot-tunnel-roof';
   scene.add(slab);
+
+  // Tunnel lamps: two rows hung under the slab (underside y = roof.y - thickness), no real lights.
+  const lampY = roof.y - roof.thickness - 0.02;
+  const lamps: { id: string; x: number; y: number; z: number; yaw: number }[] = [];
+  for (const x of [116, 124]) {
+    for (let z = -108; z <= -72; z += 6) lamps.push({ id: 'tunnel-lamp', x, y: lampY, z, yaw: Math.PI / 2 });
+  }
+  scene.add(buildStaticCells(lamps, { lights: false, name: 'double-pot-tunnel-lamps' }));
+
+  // Portal plates on the slab's end faces (0.3 m inset), body y 8..9.
+  const portal = 'DOUBLE POT TUNNEL\nHEADROOM 8 M';
+  const portalOpts = { w: 6, h: 0.8, bg: 0x1d2a3a, fg: 0xf2c14e };
+  const midX = (roof.minX + roof.maxX) / 2;
+  scene.add(textPlate(portal, midX, 8.5, roof.minZ + 0.3 - 0.03, Math.PI, portalOpts));
+  scene.add(textPlate(portal, midX, 8.5, roof.maxZ - 0.3 + 0.03, 0, portalOpts));
+
+  // THORNE logo plates on the tunnel's inner facades, facing into the tunnel.
+  const logo = { w: 2.4, h: 0.6, bg: 0x111111, fg: 0xd4af37 };
+  scene.add(textPlate('THORNE', west.maxX + 0.03, 5.5, -90, Math.PI / 2, logo));
+  scene.add(textPlate('THORNE', east.minX - 0.03, 5.5, -90, -Math.PI / 2, logo));
+  // Sales floor sign by the door at (112.4, -84), on the west half's east facade.
+  scene.add(textPlate('SALES FLOOR →', west.maxX + 0.03, 2.6, -84, Math.PI / 2, { w: 1.6, h: 0.45, bg: 0xf5f0e0, fg: 0x1d2a3a }));
 }

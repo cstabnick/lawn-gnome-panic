@@ -7,6 +7,7 @@ import { makeGnome } from '../gnomes';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import { buildPieces, litWindow, textPlate, type HomePiece } from './pieces';
+import { addNoticeSpot } from './notices';
 import { SAUCER_COURT } from './types';
 
 const HALF_PI = Math.PI / 2;
@@ -18,6 +19,20 @@ const WEST_FACE = 18.9;
 const EAST_FACE = 41.1;
 const NORTH_FACE_A = 78.6;
 const NORTH_FACE_B = 78.8;
+
+// Legible sizes (D58): the rules plate sits on the north wing's first block beside the door (x 28.5 clears the door
+// frame at x 30 +- 0.72), the rota on the west face. Each has a "Read the notices" spot 1.2 m out on the courtyard side.
+const RULES_PLATE = { x: 28.5, y: 1.6, z: NORTH_FACE_A + 0.05, w: 1.3, h: 0.8 };
+const ROTA_PLATE = { x: WEST_FACE + 0.05, y: 1.8, z: 87, w: 1.5, h: 0.9 };
+export const SAUCER_NOTICES = {
+  rules: ['1. WIPE FEET', '2. NO RUNNING', '3. NO LODGERS', '4. I AM WATCHING'],
+  rota: ['MON: nobody. TUE: nobody. WED: nobody. THU: nobody...'],
+};
+/** Interact spots that read the full notice lines (pure data; the builder adds them). */
+export const SAUCER_NOTICE_SPOTS: { x: number; z: number; lines: string[] }[] = [
+  { x: RULES_PLATE.x, z: NORTH_FACE_A + 1.2, lines: SAUCER_NOTICES.rules },
+  { x: WEST_FACE + 1.2, z: ROTA_PLATE.z, lines: SAUCER_NOTICES.rota },
+];
 
 export function saucerCourtPieces(): HomePiece[] {
   const p: HomePiece[] = [];
@@ -75,10 +90,10 @@ function details(): THREE.Object3D[] {
   out.push(textPlate('SAUCER COURT\nSTAIRS 1-3', 30.2, 2.6, NORTH_FACE_B + 0.05, 0, { w: 0.8, h: 0.35, ...dark }));
   out.push(textPlate('3A  H. DOORMAT\n3B  (YOU)', 31.6, 1.7, NORTH_FACE_B + 0.05, 0, { w: 0.8, h: 0.35, ...dark }));
   // Hyssop's notice on the door (door front z 78.94).
-  out.push(textPlate('STAIRWELL RULES\n1. WIPE FEET  2. NO RUNNING\n3. NO LODGERS  4. I AM WATCHING', 30, 1.4, 78.99, 0, { w: 0.9, h: 0.5, ...paper }));
+  out.push(textPlate('STAIRWELL RULES\n1. WIPE FEET  2. NO RUNNING\n3. NO LODGERS  4. I AM WATCHING', RULES_PLATE.x, RULES_PLATE.y, RULES_PLATE.z, 0, { w: RULES_PLATE.w, h: RULES_PLATE.h, ...paper }));
   // Signage jokes.
-  out.push(textPlate('SAUCER COURT\nresidents only\n(and the bank)', 21.5, 0.72, 109.5, 0, { w: 0.6, h: 0.4, ...dark }));
-  out.push(textPlate('COURTYARD CLEANING ROTA:\nMON: nobody  TUE: nobody\nWED: nobody  THU: nobody...', WEST_FACE + 0.05, 1.8, 87, HALF_PI, { w: 0.95, h: 0.55, ...paper }));
+  out.push(textPlate('SAUCER COURT\nresidents only\n(and the bank)', 21.5, 1.3, 109.5, 0, { w: 1.2, h: 0.8, ...dark }));
+  out.push(textPlate('COURTYARD CLEANING ROTA:\nMON: nobody  TUE: nobody\nWED: nobody  THU: nobody...', ROTA_PLATE.x, ROTA_PLATE.y, ROTA_PLATE.z, HALF_PI, { w: ROTA_PLATE.w, h: ROTA_PLATE.h, ...paper }));
   // Windows on the courtyard faces, some at each floor.
   [74.25, 84.75, 95.25, 105.75].forEach((z, i) => {
     out.push(litWindow(WEST_FACE + 0.03, 3.5 + (i % 2) * 4.5, z, HALF_PI));
@@ -103,6 +118,7 @@ export function buildSaucerCourt(scene: THREE.Scene): Box[] {
   group.name = 'saucer-court-details';
   for (const o of details()) group.add(o);
   scene.add(group);
+  for (const s of SAUCER_NOTICE_SPOTS) addNoticeSpot(s, s.lines);
 
   // Hyssop Doormat: retired lollipop-crossing warden, hi-vis coat, white beard, red hat. A figure, no collider.
   const life = new THREE.Group();

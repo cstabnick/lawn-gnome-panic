@@ -6,7 +6,7 @@ import type { GnomeLook } from '@lawn/gnome';
 import type { JobsDeps } from '../jobs/types';
 import { makeBubbleSprite } from '../ambientGnomes';
 import { gnomeState, makeGnome } from '../gnomes';
-import { buildPieces, prefabBox, textPlate, type HomePiece } from '../homes/pieces';
+import { buildPieces, prefabBox, signBoard, type HomePiece } from '../homes/pieces';
 import { playAt } from '../sound/bus';
 import { speakAt } from '../voice/speech';
 import { voiceFor } from '../voice/voices';
@@ -26,7 +26,6 @@ const CHICORY_SPEED = 1.2;
 const CHICORY_SLEEP_DIST = 250;
 const VINEYARD_CENTRE = { x: -1140, z: -170 };
 const SMOKE_RANGE = 80;
-const PLATE_OFF = 0.3;
 
 /** Frost-pots by the vineyard path, south of the rows (the smoke puffs rise above them on cold nights). */
 const FROST_POTS: readonly { x: number; z: number }[] = [
@@ -39,11 +38,14 @@ function topOf(id: string): number {
   return prefabBox(id).max.y;
 }
 
-/** Signs on a post, each with its text plate in front (x, z = the post; yaw = the way the plate faces). */
-const SIGNS: readonly { text: string; x: number; z: number; yaw: number }[] = [
-  { text: 'THIS ROW IS CROOKED ON PURPOSE', x: -1132.5, z: -205, yaw: W },
+/** Free-standing boards (x, z = the board; yaw = the way its front faces). Each board is 1.9 m wide, so a sign whose
+ *  width would cross a vine row (rows every 5 m, collider +-0.15 m) is moved off the row (sign 1 and sign 3 below). */
+export const SIGNS: readonly { text: string; x: number; z: number; yaw: number }[] = [
+  // Moved 1.3 m in +z from z -205 (off the crooked row itself; the joke is about it, so it stands just beside it).
+  { text: 'THIS ROW IS CROOKED ON PURPOSE', x: -1132.5, z: -203.7, yaw: W },
   { text: 'PICKERS: ONE GRAPE FOR THE BASKET, NONE FOR THE MOUTH', x: -1121, z: -111, yaw: W },
-  { text: 'FROST-POTS LIT BY THE GARDENER ONLY', x: -1158, z: -236, yaw: E },
+  // Moved 1.0 m in -z from z -236 so the 1.9 m board clears the row at z -235 and the row at z -240.
+  { text: 'FROST-POTS LIT BY THE GARDENER ONLY', x: -1158, z: -237, yaw: E },
   { text: 'THE FIRST VINE: DO NOT TOUCH, PRUNE, ADMIRE OR LEAN', x: -1118, z: -101, yaw: E },
   { text: 'PRIVATE GARDEN · BRASSKNOCK CHARTER 1', x: -1160, z: -2, yaw: N },
   { text: 'TASTINGS BY INVITATION', x: -1128, z: 14, yaw: N },
@@ -107,22 +109,17 @@ function puffTexture(): THREE.CanvasTexture | null {
   return new THREE.CanvasTexture(cv);
 }
 
-/** Vignettes, frost-pots, signs and their posts (one static batch); returns their colliders (push them into world.boxes). */
+/** Vignettes, frost-pots and sign boards (one static batch); returns their colliders (push them into world.boxes). */
 export function buildTrellisStory(scene: THREE.Scene, boxes: Box[]): void {
   const pots: HomePiece[] = FROST_POTS.map((p) => ({ prefab: 'frost-pot', x: p.x, z: p.z, yaw: 0, solid: false }));
-  const posts: HomePiece[] = SIGNS.map((s) => ({ prefab: 'signpost', x: s.x, z: s.z, yaw: s.yaw }));
-  boxes.push(...buildPieces(scene, [...vignettes(), ...pots, ...posts], 'trellis-story'));
+  const boards: HomePiece[] = [];
   for (const s of SIGNS) {
-    const plate = textPlate(
-      s.text,
-      s.x + Math.sin(s.yaw) * PLATE_OFF,
-      heightAt(s.x, s.z) + 1.35,
-      s.z + Math.cos(s.yaw) * PLATE_OFF,
-      s.yaw,
-      { w: 1.2, h: 0.38 },
-    );
-    scene.add(plate);
+    // Both faces printed, the plate seated flush on the board (D58).
+    const sb = signBoard({ front: s.text, x: s.x, z: s.z, yaw: s.yaw, board: 'garden-sign', w: 1.75, h: 0.9, tint: 0x8a6a45 });
+    boards.push(sb.piece);
+    scene.add(sb.plates);
   }
+  boxes.push(...buildPieces(scene, [...vignettes(), ...pots, ...boards], 'trellis-story'));
 }
 
 /** Chicory's loop, the Countess, the cold-night smoke and the knocker. */

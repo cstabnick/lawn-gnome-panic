@@ -127,5 +127,8 @@ point (copy kept in `docs/roadmaps/<batch>/pr-description.md`).
   conflicts are the long GTA row in `AGENT_INDEX.md` (splice the incoming insertion into the current row), `layout.golden.json`
   (take either side, then regenerate with `UPDATE_GOLDEN=1 npx vitest run src/layout.golden.test.ts`) and import
   lists (keep both).
+- Check the **test command's own exit status** before committing a merge (`npm test ...; echo $?` inside a backgrounded
+  shell reports the shell's status, not the tests'). Whole-world tests can time out while other leads run suites on
+  the same machine: rerun them alone before treating them as failures.
 - Timing-sensitive tests (e.g. GTA's `traffic.test.ts` "keep moving") can fail under a loaded full-suite run; rerun the
   single file before treating it as a regression.

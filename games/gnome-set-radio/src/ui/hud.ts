@@ -22,6 +22,7 @@ export interface HudHandle {
     selectedTagIdx: number,
     compass?: CompassTarget | null,
     beatPulse?: number,
+    beatSec?: number,
   ): void;
   slamTrick(name: string, mult: number, onBeat?: boolean): void;
   slamBank(points: number): void;
@@ -331,6 +332,11 @@ export function createHud(
   let displayedScore = 0;
   let lastTrickSlamAt = -Infinity;
   let slamTrickTimer: ReturnType<typeof setTimeout> | null = null;
+  let comboFade = 0;
+  let lastComboText = '';
+  let lastComboPct = 0;
+  let lastComboTierScale = 1;
+  let lastHudTickMs = performance.now();
 
   return {
     setVisible(v) {
@@ -382,7 +388,10 @@ export function createHud(
       slamLayer.appendChild(wrap);
       setTimeout(() => wrap.remove(), 1550);
     },
-    update(doc, s, session, promptText, tags, selectedTagIdx, compass, beatPulse = 0) {
+    update(doc, s, session, promptText, tags, selectedTagIdx, compass, beatPulse = 0, beatSec = 0.45) {
+      const nowMs = performance.now();
+      const hudDt = Math.min(0.1, Math.max(0.001, (nowMs - lastHudTickMs) / 1000));
+      lastHudTickMs = nowMs;
       const compassHtml = compass
         ? `<span style="color:${compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740'};">${compass.kind === 'boss' ? '👑' : compass.kind === 'side' ? '⭐' : '🎯'} ${compass.label}</span> · <b>${Math.round(compass.dist)}m</b> <span style="font-size:14px;color:${compass.kind === 'boss' ? '#ff5252' : compass.kind === 'side' ? '#00e5ff' : '#ffd740'};">${compass.arrow}</span>`
         : '';
@@ -413,16 +422,39 @@ export function createHud(
       beatDot.style.transform = `scale(${(1 + beatPulse * 0.7).toFixed(2)})`;
       beatDot.style.background = beatPulse > 0.62 ? '#ffd740' : '#00e5ff';
 
-      // Live combo stack
+      // Live combo stack with gradual 1.5-beat scale-down after combo ends
       if (s.comboScore > 0) {
+        comboFade = 1;
+        lastComboText = `${s.comboScore} × ${s.comboMult}`;
+        lastComboPct = Math.min(100, Math.max(0, (s.comboTimer / 2.6) * 100));
+        lastComboTierScale = 1 + Math.min(0.16, (s.comboMult - 1) * 0.02);
         comboBox.style.display = 'flex';
-        comboPts.textContent = `${s.comboScore} × ${s.comboMult}`;
-        comboLinkFill.style.width = `${Math.min(100, Math.max(0, (s.comboTimer / 2.6) * 100))}%`;
+        comboBox.style.opacity = '1';
+        comboBox.style.transform = `scale(${lastComboTierScale.toFixed(3)})`;
+        comboPts.textContent = lastComboText;
+        comboLinkFill.style.width = `${lastComboPct}%`;
         const badges: string[] = [];
+        if (s.speedMode) badges.push('<span class="gr gsr-badge">SPEED TUCK</span>');
         if (s.grinding) badges.push('<span class="gr gsr-badge">GRINDING</span>');
         if (s.wallRiding) badges.push('<span class="gr gsr-badge">WALL-RIDE</span>');
         if (!s.grounded && s.airJumpsLeft > 0) badges.push('<span class="gr gsr-badge">AIR JUMP READY</span>');
         comboBadges.innerHTML = badges.join('');
+      } else if (comboFade > 0) {
+        comboFade = Math.max(0, comboFade - hudDt / Math.max(0.35, beatSec * 1.5));
+        if (comboFade <= 0.01) {
+          comboFade = 0;
+          comboBox.style.display = 'none';
+          comboBox.style.opacity = '1';
+          comboBox.style.transform = 'scale(1)';
+        } else {
+          const sc = (0.82 + 0.18 * comboFade) * (1 + (lastComboTierScale - 1) * comboFade);
+          comboBox.style.display = 'flex';
+          comboBox.style.opacity = comboFade.toFixed(3);
+          comboBox.style.transform = `scale(${sc.toFixed(3)})`;
+          comboPts.textContent = lastComboText;
+          comboLinkFill.style.width = `${(lastComboPct * comboFade).toFixed(1)}%`;
+          comboBadges.innerHTML = '';
+        }
       } else {
         comboBox.style.display = 'none';
       }

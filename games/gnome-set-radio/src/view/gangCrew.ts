@@ -3,7 +3,8 @@ import { createGnomeModel, GNORMAN_LOOK, type GnomeLook } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
 import type { GsrAreaId } from '../audio/jingles';
 import { AREA_CAST, type CrewVariantDef, type GangLeaderDef } from '../data/cast';
-import { groundHeightAt } from '../levels/loader';
+import { groundHeightAt, type GsrLevelId } from '../levels/loader';
+import { MEGA_WORLD_OFFSETS } from '../levels/megaWorld';
 import type { GsrLevelDoc } from '../levels/schema';
 
 export interface HeroCrewMember {
@@ -570,12 +571,13 @@ export function createGangCrew(
     },
 
     getAnchors() {
+      const [ox, oy, oz] = MEGA_WORLD_OFFSETS[doc.id as GsrLevelId] ?? [0, 0, 0];
       return {
-        bossPos: { x: baseBossX, y: baseBossY, z: baseBossZ },
-        sidekickPos: { x: baseBossX + 1.8, y: baseBossY, z: baseBossZ + 2.2 },
-        playerSpawn: { x: spX, y: groundHeightAt(doc, spX, spZ), z: spZ },
-        djBoothPos: { x: djX, y: djY, z: djZ },
-        crewLineupPos: { x: spX + 6.2, y: groundHeightAt(doc, spX + 6.2, spZ - 2.8), z: spZ - 2.8 },
+        bossPos: { x: baseBossX + ox, y: baseBossY + oy, z: baseBossZ + oz },
+        sidekickPos: { x: baseBossX + 1.8 + ox, y: baseBossY + oy, z: baseBossZ + 2.2 + oz },
+        playerSpawn: { x: spX + ox, y: groundHeightAt(doc, spX, spZ) + oy, z: spZ + oz },
+        djBoothPos: { x: djX + ox, y: djY + oy, z: djZ + oz },
+        crewLineupPos: { x: spX + 6.2 + ox, y: groundHeightAt(doc, spX + 6.2, spZ - 2.8) + oy, z: spZ - 2.8 + oz },
       };
     },
 

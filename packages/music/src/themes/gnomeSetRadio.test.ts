@@ -29,9 +29,9 @@ describe('Gnom Set Radio music', () => {
     });
   }
 
-  it('Area 3 (chrome-kiln-funk) is pure aeolian minor acid', () => {
+  it('Area 3 (chrome-kiln-funk) is Dorian acid-funk in E', () => {
     const area3 = GSR_TRACKS.find((t) => t.id === 'chrome-kiln-funk');
-    expect(area3?.mode).toBe('aeolian');
+    expect(area3?.mode).toBe('dorian');
     expect(area3?.key).toBe('E');
   });
 

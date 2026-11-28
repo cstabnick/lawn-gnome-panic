@@ -284,30 +284,32 @@ const SPECS: Record<GsrTrackId, TrackSpec> = {
     title: 'Kiln-Fired Acid',
     areaName: 'Chrome Kiln Foundry',
     gangName: 'The Glaze Grinders',
-    style: 'Minor Polyrhythmic 303 Acid',
+    style: 'Dorian Acid-Funk Breakbeat',
     bpm: 138,
     key: 'E',
-    mode: 'aeolian',
-    progression: 'Em (1-Chord Acid Pedal & Filter Squelch)',
-    motifNote: 'Resonant 303 sawtooth acid with hypnotic 12/7 polymeter, warm drive & dub echo throws.',
+    mode: 'dorian',
+    progression: 'Em7 - Em7 - A7 - Bm7 (B: Gmaj7 - A7 - Em7 - Bm7)',
+    motifNote: 'Bouncy squelchy 303 acid polymeter, funky Rhodes stabs, wah-clav hooks & brass hits.',
     beatNote: 'Driving Think & Amen breaks with heavy filter sweeps and stripped acid intermissions.',
     color: '#ff5252',
     rootMidi: 40, // E2
-    degrees: [0, 0, 0, 0],
+    degrees: [0, 0, 3, 4],
+    bDegrees: [2, 3, 0, 4],
     chordSize: 4,
     breakName: 'Think',
     altBreakName: 'Amen',
     chopAmount: 0.38,
-    swing: 0.04,
+    swing: 0.06,
     hasUprightBass: false,
     hasPiano: false,
-    hasRhodes: false,
-    hasVibes: false,
+    hasRhodes: true,
+    hasVibes: true,
     hasHorn: true,
     hasHarp: false,
-    hasBongoRip: false,
-    bongoIntensity: 0,
-    leadPattern: [0, -1, -1, 4, -1, -1, 2, -1, 0, -1, 4, -1, -1, 6, -1, -1],
+    hasBongoRip: true,
+    bongoIntensity: 0.45,
+    leadPattern: [0, -1, 2, 4, -1, 5, 4, -1, 6, -1, 4, 2, -1, 0, 4, -1],
+    altLeadPattern: [4, -1, 5, 6, -1, 7, 5, -1, 4, 2, -1, 4, 0, -1, 2, -1],
     bassStyle: 'acid',
     introBars: 4,
     loopSections: [
@@ -643,6 +645,20 @@ const ACID_12_STEPS: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
   { deg: 2, oct: 1, gate: true },
   { deg: 4, oct: 0, gate: false },
 ];
+const ACID_12_STEPS_B: readonly { deg: number; oct: 0 | 1; gate: boolean }[] = [
+  { deg: 0, oct: 0, gate: true },
+  { deg: 4, oct: 1, gate: true },
+  { deg: 2, oct: 0, gate: true },
+  { deg: 0, oct: 0, gate: false },
+  { deg: 6, oct: 0, gate: true },
+  { deg: 4, oct: 1, gate: true },
+  { deg: 2, oct: 1, gate: true },
+  { deg: 0, oct: 0, gate: false },
+  { deg: 4, oct: 0, gate: true },
+  { deg: 6, oct: 1, gate: true },
+  { deg: 4, oct: 0, gate: true },
+  { deg: 2, oct: 0, gate: false },
+];
 const ACID_7_ACCENTS: readonly boolean[] = [
   true, false, false, true, false, true, false,
 ];
@@ -674,10 +690,10 @@ const HORN_RIFFS: Record<GsrTrackFlavor, readonly (HornHit | null)[]> = {
     null, null, { deg: 6, interval: 4, dur: 0.14 }, null, null, null, { deg: 4, interval: 2, dur: 0.14 }, null,
   ],
   acid: [
-    { deg: 0, interval: 2, dur: 0.26 }, null, null, null, null, null, { deg: 4, interval: 2, dur: 0.22 }, null,
-    null, null, null, null, { deg: 2, interval: 4, dur: 0.2 }, null, null, null,
-    { deg: 0, interval: 4, dur: 0.26 }, null, null, null, null, null, { deg: 5, interval: 2, dur: 0.2 }, null,
-    null, null, { deg: 4, interval: 2, dur: 0.22 }, null, null, null, null, null,
+    { deg: 0, interval: 2, dur: 0.16 }, null, null, { deg: 4, interval: 2, dur: 0.14 }, null, null, { deg: 2, interval: 4, dur: 0.18 }, null,
+    null, null, { deg: 4, interval: 2, dur: 0.14 }, null, { deg: 6, interval: 2, dur: 0.16 }, null, null, null,
+    { deg: 0, interval: 4, dur: 0.18 }, null, null, { deg: 2, interval: 4, dur: 0.14 }, null, null, { deg: 4, interval: 2, dur: 0.18 }, null,
+    null, null, { deg: 4, interval: 2, dur: 0.16 }, null, { deg: 6, interval: 4, dur: 0.16 }, null, null, null,
   ],
   house: [
     null, null, { deg: 0, interval: 4, dur: 0.16 }, null, null, null, { deg: 4, interval: 7, dur: 0.16 }, null,
@@ -713,7 +729,7 @@ const HORN_RIFFS: Record<GsrTrackFlavor, readonly (HornHit | null)[]> = {
     { deg: 0, interval: 4, dur: 0.26 }, null, null, null, null, null, null, null,
     null, null, { deg: 1, interval: 4, dur: 0.24 }, null, null, null, null, null,
     null, null, null, null, { deg: 4, interval: 3, dur: 0.26 }, null, null, null,
-    null, null, { deg: 1, interval: 6, dur: 0.22 }, null, null, null, null, null,
+    null, null, { deg: 4, interval: 2, dur: 0.22 }, null, null, null, null, null,
   ],
   finale: [
     { deg: 0, interval: 4, dur: 0.24 }, null, null, { deg: 2, interval: 4, dur: 0.16 }, null, null, { deg: 4, interval: 7, dur: 0.22 }, null,
@@ -1138,7 +1154,7 @@ export function buildGnomeSetRadioTrack(
   // Dedicated Acid 303 Voice (sonically bounded resonance & drive)
   const hasAcidVoice = spec.bassStyle === 'acid' || spec.id === 'subsoil-relay-jungle';
   const acidFilter = hasAcidVoice
-    ? keep(new T.Filter({ frequency: 620, type: 'lowpass', rolloff: -24, Q: 4.6 }))
+    ? keep(new T.Filter({ frequency: 620, type: 'lowpass', rolloff: -24, Q: 5.6 }))
     : null;
   const acidDist = hasAcidVoice ? keep(new T.Distortion(0.24)) : null;
   const acidPostLp = hasAcidVoice ? keep(new T.Filter({ frequency: 3400, type: 'lowpass', rolloff: -12 })) : null;
@@ -1166,7 +1182,7 @@ export function buildGnomeSetRadioTrack(
               sustain: 0.15,
               release: 0.08,
               baseFrequency: 240,
-              octaves: 2.2,
+              octaves: 2.8,
             },
           }),
         ).connect(acidFilter)
@@ -1277,7 +1293,7 @@ export function buildGnomeSetRadioTrack(
         initialHz: 620,
         rampS: 0.04,
         thresholdHz: 70,
-        maxHz: 2500,
+        maxHz: 3200,
         accentBoostHz: 560,
         throwLevel: 0.58,
         isActive(ctx) {
@@ -1458,7 +1474,8 @@ export function buildGnomeSetRadioTrack(
           : (sectionKind === 'grooveC' || boss || hype > 0.7));
       if (acidActive && acidSynth) {
         const secStep = barInSec * 16 + step;
-        const aStep = ACID_12_STEPS[secStep % ACID_12_STEPS.length]!;
+        const aPattern = (useB || sectionKind === 'grooveC') && spec.bassStyle === 'acid' ? ACID_12_STEPS_B : ACID_12_STEPS;
+        const aStep = aPattern[secStep % aPattern.length]!;
         const isAccent = ACID_7_ACCENTS[secStep % ACID_7_ACCENTS.length]!;
         if (aStep.gate && (sectionKind !== 'intermission' || step % 2 === 0)) {
           const midi = Math.min(67, degreeToMidi(spec.rootMidi + 12, mode, barDeg + aStep.deg) + aStep.oct * 12);

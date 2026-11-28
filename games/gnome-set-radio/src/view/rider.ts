@@ -100,7 +100,7 @@ export function createRiderView(scene: THREE.Scene): RiderView {
   };
   const RIDE_COLOR_MAP: Record<string, number> = {
     'solar-flame': 0xff6d00,
-    'prism-mist': 0x00e5ff,
+    'prism-mist': 0xff66ff,
     'vapor-chrome': 0xff80ab,
     'aether-board': 0xffd740,
   };
@@ -292,10 +292,15 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     root.rotation.z = s.wallRiding ? wallTilt : -s.lean - s.roll * 0.6 + wallTilt;
     root.rotation.x = s.grinding ? 0.06 : s.pitch * 0.7;
 
-    // Wheel spin & emissive intensity
+    // Wheel spin & emissive intensity (prismatic shimmer for prism-mist skates)
     const wheelSpin = spd * dt * 12;
     for (const w of wheels) w.rotation.x += wheelSpin;
     wheelMat.emissiveIntensity = s.boosting || s.grinding ? 1.5 : 0.85;
+    if (activeRideId === 'prism-mist') {
+      const hue = (performance.now() * 0.00045) % 1;
+      wheelMat.color.setHSL(hue, 0.95, 0.62);
+      wheelMat.emissive.setHSL(hue, 0.95, 0.55);
+    }
 
     // Landing & jump squash-and-stretch
     if (!wasGrounded && s.grounded) squashY = 0.82;

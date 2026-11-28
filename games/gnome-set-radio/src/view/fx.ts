@@ -3,6 +3,7 @@ import type { SkaterState } from '../sim/skater';
 
 export interface GsrFx {
   setTrailStyle(trailId: string | null, accentHex?: string): void;
+  getTrailColor(): string;
   update(s: SkaterState, dt: number): void;
   burst(x: number, y: number, z: number, colorHex: string, count?: number): void;
   ring(x: number, y: number, z: number, colorHex: string): void;
@@ -238,6 +239,9 @@ export function createFx(scene: THREE.Scene, ui: HTMLElement): GsrFx {
         C_TRAIL_A.set(accentHex ?? '#ff4ecd');
         C_TRAIL_B.set('#00e5ff');
       }
+    },
+    getTrailColor() {
+      return `#${C_TRAIL_A.getHexString()}`;
     },
     burst(x, y, z, colorHex, count = 20) {
       const col = new THREE.Color(colorHex);

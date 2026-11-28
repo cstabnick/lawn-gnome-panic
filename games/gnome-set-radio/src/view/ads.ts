@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildArenaOutline2D } from '../levels/collision';
+import { buildArenaOutline2D, clampPointToPolygon } from '../levels/collision';
 import type { GsrLevelDoc } from '../levels/schema';
 
 export interface GsrBrandAd {
@@ -409,11 +409,21 @@ export function getPerimeterAdSpecs(doc: GsrLevelDoc): PerimeterAdSpec[] {
     // Negative-area polygon winding -> inward normal is (dz/len, -dx/len)
     const inX = dz / len;
     const inZ = -dx / len;
+    let ax = ex + inX * inset;
+    let az = ez + inZ * inset;
+    // On concave polygons (e.g. s-curve-viaduct), pull ad strictly inside the walkable outline
+    const check = clampPointToPolygon(ax, az, poly);
+    if (check.clamped) {
+      const innerPoly = buildArenaOutline2D(doc.data.arenaShape, Math.max(10, halfW - inset), Math.max(10, halfD - inset));
+      const pulled = clampPointToPolygon(ax, az, innerPoly);
+      ax = pulled.x;
+      az = pulled.z;
+    }
     out.push({
       id: `perim-ad-${idx}`,
-      x: ex + inX * inset,
+      x: ax,
       y: 3.1,
-      z: ez + inZ * inset,
+      z: az,
       yaw: Math.atan2(inX, inZ),
       w: 7.4,
       h: 3.8,

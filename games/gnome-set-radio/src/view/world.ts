@@ -975,6 +975,32 @@ export function buildWorldVisuals(doc: GsrLevelDoc, opts?: { megaMode?: boolean 
     group.add(npcModel.object);
     speechTargets.set(sn.id, { root: npcModel.object, height: 2.3 });
     shopNpcPos = { x: sn.x, y: sy, z: sn.z, name: sn.name, greeting: sn.greeting };
+
+    // Floating 3D Shop Signpost above booth
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 256;
+    signCanvas.height = 96;
+    const sctx = signCanvas.getContext('2d');
+    if (sctx) {
+      sctx.fillStyle = 'rgba(12, 10, 28, 0.88)';
+      sctx.strokeStyle = '#ffd740';
+      sctx.lineWidth = 6;
+      sctx.beginPath();
+      sctx.roundRect(8, 8, 240, 80, 18);
+      sctx.fill();
+      sctx.stroke();
+      sctx.fillStyle = '#ffd740';
+      sctx.font = 'bold 34px system-ui, sans-serif';
+      sctx.textAlign = 'center';
+      sctx.textBaseline = 'middle';
+      sctx.fillText('★ GEAR SHOP', 128, 48);
+    }
+    const signTex = track(new THREE.CanvasTexture(signCanvas));
+    const signMat = track(new THREE.SpriteMaterial({ map: signTex, transparent: true, depthWrite: false }));
+    const signSprite = new THREE.Sprite(signMat);
+    signSprite.position.set(sn.x, sy + 4.4, sn.z);
+    signSprite.scale.set(4.2, 1.55, 1);
+    group.add(signSprite);
   }
 
   // Collectible Golden Vinyls for this district

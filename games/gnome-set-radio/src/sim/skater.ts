@@ -73,6 +73,7 @@ export interface SkaterState {
   onBeatCount: number;
   speedMode: boolean;
   airDashCooldown: number;
+  sideDashLockTimer: number;
   bumpCooldown: number;
   unmultipliedScore: number;
   chassis?: SkateChassis;
@@ -163,6 +164,7 @@ export function createSkater(doc: GsrLevelDoc): SkaterState {
     onBeatCount: 0,
     speedMode: false,
     airDashCooldown: 0,
+    sideDashLockTimer: 0,
     bumpCooldown: 0,
     unmultipliedScore: 0,
     chassis: createSkateChassis(doc, x, y, z, yaw),
@@ -306,6 +308,7 @@ export function stepSkater(
   prevButtons.railCooldown = Math.max(0, prevButtons.railCooldown - dt);
   s.groundTrickCooldown = Math.max(0, s.groundTrickCooldown - dt);
   s.airDashCooldown = Math.max(0, s.airDashCooldown - dt);
+  s.sideDashLockTimer = Math.max(0, s.sideDashLockTimer - dt);
   s.bumpCooldown = Math.max(0, s.bumpCooldown - dt);
 
   if (!s.chassis) {
@@ -360,7 +363,6 @@ export function stepSkater(
       s.speedKmh = Math.round(speed * 3.6);
       const grindPts = Math.round(120 * dt);
       s.comboScore += grindPts;
-      s.unmultipliedScore += grindPts;
       s.comboTimer = 2.4;
       s.boost = Math.min(100, s.boost + 14 * dt);
 
@@ -368,7 +370,6 @@ export function stepSkater(
         const name = s.comboMult % 2 === 0 ? 'Switch Stance' : 'One-Foot Grind';
         s.comboMult++;
         s.comboScore += 200;
-        s.unmultipliedScore += 200;
         s.boost = Math.min(100, s.boost + 12);
         s.lastTrickName = name;
         s.activeTrickAnim = 'grindHop';
@@ -488,6 +489,7 @@ export function stepSkater(
     if (!s.wallRiding && boostEdge && s.boost >= 16 && s.airDashCooldown <= 0) {
       s.boost = Math.max(0, s.boost - 16);
       s.airDashCooldown = 0.35;
+      s.sideDashLockTimer = 0.55;
       res.airDashTriggered = true;
       const fx = Math.sin(s.yaw);
       const fz = Math.cos(s.yaw);
@@ -518,14 +520,14 @@ export function stepSkater(
       s.vx = (s.vx / horizSpd) * airCap;
       s.vz = (s.vz / horizSpd) * airCap;
     }
-    if (horizSpd > 0.5) {
+    if (horizSpd > 0.5 && s.sideDashLockTimer <= 0) {
       const targetYaw = Math.atan2(s.vx, s.vz);
       let diff = targetYaw - s.yaw;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       s.yaw += diff * Math.min(1, dt * (s.speedMode ? 3.5 : 8));
       s.lean = Math.max(-0.35, Math.min(0.35, diff * 0.45));
-    } else {
+    } else if (horizSpd <= 0.5) {
       s.lean *= Math.max(0, 1 - dt * 8);
     }
     s.carveSlip *= Math.max(0, 1 - dt * 6);
@@ -698,9 +700,9 @@ export function stepSkater(
     }
   }
 
-  // Keep inside island bounds (exact arenaShape polygon, bypassed when over a satellite island)
+  // Keep grounded skaters inside island bounds (airborne skaters can jump to satellites, ride sky rails, or fall into void rescue)
   const overSatellite = satelliteSurfaceAt(doc.data.satellites, s.x, s.z, s.y + 4) !== null;
-  if (!overSatellite) {
+  if (s.grounded && !overSatellite) {
     const limX = doc.bounds.w * 0.5 - 2;
     const limZ = doc.bounds.d * 0.5 - 2;
     const poly = getPerimeterPoly(doc, limX, limZ);
@@ -752,9 +754,9 @@ export function stepSkater(
     }
   }
 
-  // Surface landing
+  // Surface landing (never snap up through solid island if dismounting an underworld rail below surfY)
   const surfY = sampleSurfaceHeight(doc, s.x, s.z, s.y);
-  if (nextY <= surfY + 0.08 && s.vy <= 0.5) {
+  if (s.y >= surfY - 1.5 && nextY <= surfY + 0.08 && s.vy <= 0.5) {
     const wasAir = !s.grounded;
     if (wasAir && s.airTime > 0.12) {
       res.landed = true;
@@ -763,6 +765,7 @@ export function stepSkater(
     s.y = surfY;
     s.vy = 0;
     s.grounded = true;
+    s.sideDashLockTimer = 0;
     s.wallNormalX = 0;
     s.wallNormalZ = 0;
     s.airJumpsLeft = s.maxAirJumps;

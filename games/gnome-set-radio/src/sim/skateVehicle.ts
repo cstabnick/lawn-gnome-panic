@@ -180,13 +180,13 @@ export function stepGroundChassis(
     source: 'keyboard',
   });
 
-  // Gentle directional velocity alignment for crisp high-speed carving
+  // Gentle directional velocity alignment for crisp high-speed carving (reduced in speedMode)
   if (moveLen > 0.05 && fwdDot > 0.1 && spd > 2) {
     const bvx = chassis.ctrl.body.vel.x;
     const bvz = chassis.ctrl.body.vel.z;
     const bSpd = Math.hypot(bvx, bvz);
     if (bSpd > 0.5) {
-      const blend = Math.min(1, dt * 4.5);
+      const blend = Math.min(1, dt * (speedMode ? 1.4 : 4.5));
       const ax = bvx / bSpd + (nx - bvx / bSpd) * blend;
       const az = bvz / bSpd + (nz - bvz / bSpd) * blend;
       const aLen = Math.hypot(ax, az) || 1;

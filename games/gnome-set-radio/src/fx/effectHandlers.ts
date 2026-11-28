@@ -192,10 +192,12 @@ export function createVisualFxEffectHandler(fx: GsrFx): GameEffectHandler {
           fx.burst(ev.x, ev.y, ev.z, '#00e5ff', 18);
           fx.ring(ev.x, ev.y, ev.z, '#ff4ecd');
           break;
-        case 'airDash':
-          fx.burst(ev.x, ev.y, ev.z, '#ff4ecd', 22);
+        case 'airDash': {
+          const dashCol = fx.getTrailColor?.() ?? '#ff4ecd';
+          fx.burst(ev.x, ev.y, ev.z, dashCol, 22);
           fx.ring(ev.x, ev.y, ev.z, '#00e5ff');
           break;
+        }
         case 'wallKick':
           fx.burst(ev.x, ev.y, ev.z, '#69f0ae', 16);
           fx.ring(ev.x, ev.y, ev.z, '#00e5ff');

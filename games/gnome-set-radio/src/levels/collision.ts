@@ -292,8 +292,9 @@ export function billboardObbCollision(
   if (y < bb.y - 0.5 || y > bb.y + bb.h + 0.35) return null;
   const dx = x - bb.x;
   const dz = z - bb.z;
-  const c = Math.cos(-bb.yaw);
-  const s = Math.sin(-bb.yaw);
+  // Three.js rotation.y = bb.yaw maps local +X -> (cos, -sin) and local +Z -> (sin, cos)
+  const c = Math.cos(bb.yaw);
+  const s = Math.sin(bb.yaw);
   const lx = dx * c - dz * s;
   const lz = dx * s + dz * c;
 
@@ -315,13 +316,11 @@ export function billboardObbCollision(
     outLz = lnz * halfD;
   }
 
-  const cw = Math.cos(bb.yaw);
-  const sw = Math.sin(bb.yaw);
   return {
-    x: bb.x + outLx * cw - outLz * sw,
-    z: bb.z + outLx * sw + outLz * cw,
-    nx: lnx * cw - lnz * sw,
-    nz: lnx * sw + lnz * cw,
+    x: bb.x + outLx * c + outLz * s,
+    z: bb.z - outLx * s + outLz * c,
+    nx: lnx * c + lnz * s,
+    nz: -lnx * s + lnz * c,
   };
 }
 

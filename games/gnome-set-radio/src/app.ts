@@ -44,7 +44,14 @@ import {
   type LevelSession,
   type StyleRank,
 } from './game/events';
-import { advanceBossWaypoint, createBossBattle, stepBossBattle, type BossBattleState } from './game/bossBattle';
+import {
+  advanceBossWaypoint,
+  bossLaserBeamCount,
+  checkBossLaserHit,
+  createBossBattle,
+  stepBossBattle,
+  type BossBattleState,
+} from './game/bossBattle';
 import { createSkater, stepSkater, type SkaterState } from './sim/skater';
 import { createLevelGroundProbe, syncChassisFromSkater } from './sim/skateVehicle';
 import { createCutscenePlayer } from './ui/cutscene';
@@ -161,9 +168,29 @@ export function startApp(): void {
   sun.shadow.camera.near = 10;
   sun.shadow.camera.far = 190;
   scene.add(sun);
+  scene.add(sun.target);
   const rimLight = new THREE.DirectionalLight(0x66d9ff, 0.45);
   rimLight.position.set(-40, 28, -35);
   scene.add(rimLight);
+
+  // Sweeping boss laser beams (up to 2 beams for laser/zenith bosses)
+  const bossLaserGroup = new THREE.Group();
+  bossLaserGroup.visible = false;
+  const laserGeo = new THREE.CylinderGeometry(0.16, 0.34, 28, 8);
+  laserGeo.rotateX(Math.PI / 2);
+  laserGeo.translate(0, 0, 14);
+  const laserMat = new THREE.MeshBasicMaterial({
+    color: '#ff2a6d',
+    transparent: true,
+    opacity: 0.82,
+    depthWrite: false,
+  });
+  const bossLaserBeams = [new THREE.Mesh(laserGeo, laserMat), new THREE.Mesh(laserGeo, laserMat)];
+  bossLaserBeams[1]!.rotation.y = Math.PI;
+  bossLaserGroup.add(bossLaserBeams[0]!, bossLaserBeams[1]!);
+  scene.add(bossLaserGroup);
+
+  const AREA_BPMS = [162, 132, 138, 170, 128, 122, 136, 166, 158];
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -467,6 +494,9 @@ export function startApp(): void {
       hud.setVisible(false);
       helper.hide();
       input.setTouchVisible(false);
+      canvas.style.filter = '';
+      renderer.toneMappingExposure = 1.12;
+      bossLaserGroup.visible = false;
       titleOverlay.show(progress);
       playTrack('pirate-radio-hub', musicExplorer.getReactiveOverrides());
     },
@@ -526,6 +556,11 @@ export function startApp(): void {
     bossWaveHitCd = 0;
     bossWaveDodgeCd = 0;
     applyRegionalLighting(levelId, hemi, sun, rimLight, scene, doc.data.fogColor);
+    sun.position.x += ox;
+    sun.position.y += oy;
+    sun.position.z += oz;
+    sun.target.position.set(ox, oy, oz);
+    sun.target.updateMatrixWorld();
     applyCosmetics();
     discoveredRoofs.clear();
     radioTicker.setStation(levelId);
@@ -565,7 +600,7 @@ export function startApp(): void {
     loadSceneForLevel(levelId);
     titleOverlay.hide();
     playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
-    currentBpm = doc.data.areaNumber === 1 ? 162 : doc.data.areaNumber === 4 ? 170 : doc.data.areaNumber === 8 ? 166 : 132;
+    currentBpm = AREA_BPMS[doc.data.areaNumber - 1] ?? 132;
     if (camera.fov !== 60) {
       camera.fov = 60;
       camera.updateProjectionMatrix();
@@ -835,7 +870,11 @@ export function startApp(): void {
 
     const inp = input.poll(chaseCam.yaw);
     if (inp.pauseEdge && playing && !cutscene.isActive() && !musicExplorer.isOpen() && transit === null) {
-      togglePause();
+      if (shopModal.isOpen()) {
+        shopModal.close();
+      } else {
+        togglePause();
+      }
     }
     if (inp.toggleExplorer) {
       musicExplorer.toggle();
@@ -991,7 +1030,7 @@ export function startApp(): void {
       if (nextAreaId !== currentLevelId) {
         switchDistrict(nextAreaId, false);
         playTrack(doc.data.trackId, musicExplorer.getReactiveOverrides());
-        currentBpm = doc.data.areaNumber === 1 ? 162 : doc.data.areaNumber === 4 ? 170 : doc.data.areaNumber === 8 ? 166 : 132;
+        currentBpm = AREA_BPMS[doc.data.areaNumber - 1] ?? 132;
         const arch = getArchipelagoNode(nextAreaId);
         locationToast.show(
           `AREA ${doc.data.areaNumber} · ${arch.frequency} · ${arch.elevationM}m ALT`,
@@ -1111,7 +1150,7 @@ export function startApp(): void {
             if (skater.comboMult >= 3) skillFlairTimer = Math.max(skillFlairTimer, 4.5);
             hud.slamTrick(activeTag.label, skater.comboMult, onBeatNow);
             void achievements.unlock('gsr-first-tag');
-            net.sendSpray(currentLevelId, bb.def.x, bb.def.y + 1.2, bb.def.z, activeTag.id, id);
+            net.sendSpray(currentLevelId, bb.def.x + curOx, bb.def.y + curOy + 1.2, bb.def.z + curOz, activeTag.id, id);
             if (!wasTagged && bb.def.eventId) handleEventCompletion(bb.def.eventId, id);
           }
           break;
@@ -1122,7 +1161,7 @@ export function startApp(): void {
       for (const [id, item] of world.interactiveMeshes) {
         const dist = Math.hypot(lx - item.def.x, ly - item.def.y, lz - item.def.z);
         if ((item.def.kind === 'bongo-pad' || item.def.kind === 'updraft-vent') && dist < 2.3 && skater.vy <= 2.0) {
-          effects.emit({ type: 'bounce', kind: item.def.kind, x: item.def.x, y: item.def.y + 0.2, z: item.def.z, color: activeTag.secondary });
+          effects.emit({ type: 'bounce', kind: item.def.kind, x: item.def.x + curOx, y: item.def.y + curOy + 0.2, z: item.def.z + curOz, color: activeTag.secondary });
           skater.vy = item.def.power ?? (item.def.kind === 'updraft-vent' ? 18.5 : 16);
           skater.grounded = false;
           skater.airJumpsLeft = skater.maxAirJumps;
@@ -1136,7 +1175,7 @@ export function startApp(): void {
             handleEventCompletion(item.def.eventId, id);
           }
         } else if (item.def.kind === 'hydrant' && dist < 2.1 && skater.vy <= 2) {
-          effects.emit({ type: 'bounce', kind: 'hydrant', x: item.def.x, y: item.def.y + 0.2, z: item.def.z, color: '#00e5ff' });
+          effects.emit({ type: 'bounce', kind: 'hydrant', x: item.def.x + curOx, y: item.def.y + curOy + 0.2, z: item.def.z + curOz, color: '#00e5ff' });
           skater.vy = item.def.power ?? 16;
           skater.grounded = false;
           skater.airJumpsLeft = skater.maxAirJumps;
@@ -1169,7 +1208,7 @@ export function startApp(): void {
               sprayConsumed = true;
               trickMusicPulse = true;
               world.markInteractiveDone(id);
-              effects.emit({ type: 'spray', isTarget: true, x: item.def.x, y: item.def.y + 0.8, z: item.def.z, color: '#ff4ecd', count: 16, celebrate: true, shake: 0.16, shakeDur: 0.16 });
+              effects.emit({ type: 'spray', isTarget: true, x: item.def.x + curOx, y: item.def.y + curOy + 0.8, z: item.def.z + curOz, color: '#ff4ecd', count: 16, celebrate: true, shake: 0.16, shakeDur: 0.16 });
               skater.boost = Math.min(100, skater.boost + 25);
               if (item.def.eventId) handleEventCompletion(item.def.eventId, id);
             }
@@ -1188,7 +1227,7 @@ export function startApp(): void {
             hitstopTimer = Math.max(hitstopTimer, 0.045);
             pluckHitCooldown = 0.8;
             world.pluckNpc.surge = 1.8;
-            effects.emit({ type: 'spray', isTarget: true, x: pPos.x, y: pPos.y + 0.8, z: pPos.z, color: '#ff4ecd', count: 22, shake: 0.18, shakeDur: 0.16 });
+            effects.emit({ type: 'spray', isTarget: true, x: pPos.x + curOx, y: pPos.y + curOy + 0.8, z: pPos.z + curOz, color: '#ff4ecd', count: 22, shake: 0.18, shakeDur: 0.16 });
             const chaseEv = [...session.events.values()].find((e) => e.def.objectiveType === 'chase');
             if (chaseEv) handleEventCompletion(chaseEv.def.id);
           }
@@ -1208,7 +1247,7 @@ export function startApp(): void {
               hitstopTimer = Math.max(hitstopTimer, 0.045);
               se.tagged = true;
               sentryHitCooldown = 0.4;
-              effects.emit({ type: 'spray', isTarget: true, x: p.x, y: p.y + 0.8, z: p.z, color: '#ff9100', count: 16, shake: 0.18, shakeDur: 0.16 });
+              effects.emit({ type: 'spray', isTarget: true, x: p.x + curOx, y: p.y + curOy + 0.8, z: p.z + curOz, color: '#ff9100', count: 16, shake: 0.18, shakeDur: 0.16 });
               const sentryEv = [...session.events.values()].find((e) => e.def.objectiveType === 'sentries');
               if (sentryEv) handleEventCompletion(sentryEv.def.id);
               break;
@@ -1250,7 +1289,7 @@ export function startApp(): void {
         });
       }
 
-      // Map-wide Boss encounter + interactive bass shockwave
+      // Map-wide Boss encounter + unique per-boss hazards
       stepBossBattle(bossBattle, dt, session.bossUnlocked, session.levelCleared);
       if (session.bossUnlocked && !session.levelCleared && world.bossActor) {
         session.bossWavePhase += dt * bossBattle.waveSpeed;
@@ -1259,8 +1298,36 @@ export function startApp(): void {
         const distXZ = Math.hypot(dx, dz);
         const dist = Math.hypot(dx, ly - bossBattle.y, dz);
 
-        const waveR = (1 + (session.bossWavePhase % 1) * 6.5) * 2.2;
-        if (Math.abs(distXZ - waveR) < 1.3 && distXZ > 0.5) {
+        if (bossBattle.blinkedJustNow) {
+          fx.ring(bossBattle.x + curOx, bossBattle.y + curOy + 0.5, bossBattle.z + curOz, '#76ff03');
+        }
+
+        const beamCount = bossLaserBeamCount(bossBattle);
+        if (beamCount > 0) {
+          bossLaserGroup.visible = true;
+          bossLaserGroup.position.set(bossBattle.x + curOx, bossBattle.y + curOy + 1.4, bossBattle.z + curOz);
+          bossLaserGroup.rotation.y = bossBattle.laserAngle;
+          bossLaserBeams[1]!.visible = beamCount > 1;
+          if (checkBossLaserHit(bossBattle, lx, ly, lz) && bossWaveHitCd <= 0) {
+            bossWaveHitCd = 1.15;
+            const dLen = Math.max(0.5, distXZ);
+            skater.vx += (dx / dLen) * 14;
+            skater.vz += (dz / dLen) * 14;
+            skater.vy = 5.4;
+            skater.grounded = false;
+            effects.emit({ type: 'bump' });
+          }
+        } else {
+          bossLaserGroup.visible = false;
+        }
+
+        const waveR = (1 + (session.bossWavePhase % 1) * 6.5) * (bossBattle.hazardKind === 'sub-shockwave' ? 2.6 : 2.2);
+        const secondWaveR =
+          bossBattle.hazardKind === 'double-pulse' || bossBattle.hazardKind === 'zenith-barrage'
+            ? (1 + ((session.bossWavePhase + 0.5) % 1) * 6.5) * 2.2
+            : -99;
+        const hitWave = Math.abs(distXZ - waveR) < 1.3 || Math.abs(distXZ - secondWaveR) < 1.3;
+        if (hitWave && distXZ > 0.5) {
           const dy = ly - bossBattle.y;
           if (dy < 1.3 && bossWaveHitCd <= 0) {
             bossWaveHitCd = 1.3;
@@ -1306,6 +1373,8 @@ export function startApp(): void {
             }
           }
         }
+      } else {
+        bossLaserGroup.visible = false;
       }
 
       // Shop NPC interaction
@@ -1351,8 +1420,8 @@ export function startApp(): void {
           skater.totalScore += 500;
           skater.boost = Math.min(100, skater.boost + 40);
           sfx.pickup('aerial-ring');
-          fx.burst(v.def.x, v.def.y, v.def.z, '#ffd740', 22);
-          fx.ring(v.def.x, v.def.y, v.def.z, '#ffd740');
+          fx.burst(v.def.x + curOx, v.def.y + curOy, v.def.z + curOz, '#ffd740', 22);
+          fx.ring(v.def.x + curOx, v.def.y + curOy, v.def.z + curOz, '#ffd740');
           locationToast.show(
             '💿 GOLDEN VINYL FOUND',
             v.def.label.toUpperCase(),
@@ -1400,13 +1469,19 @@ export function startApp(): void {
             input.setTouchVisible(false);
             helper.hide();
             radioTicker.setVisible(false);
+            const cableCurve = buildTransitCableCurve(gate.link);
+            for (const pt of cableCurve.points) {
+              pt.x += curOx;
+              pt.y += curOy;
+              pt.z += curOz;
+            }
             transit = {
               phase: 'ride',
               t: 0,
               dur: 1.9,
               fadeStart: 1.35,
               targetId: gate.link.targetId,
-              curve: buildTransitCableCurve(gate.link),
+              curve: cableCurve,
             };
             break;
           }
@@ -1534,9 +1609,12 @@ export function startApp(): void {
       if (skater.comboMult >= smoothedComboMult) smoothedComboMult = skater.comboMult;
       else smoothedComboMult = Math.max(skater.comboMult, smoothedComboMult - (smoothedComboMult - 1) * decayRate * dt);
 
-      const rawUnmult = skater.unmultipliedScore + skater.comboScore;
-      const targetEnergy = Math.min(1, rawUnmult / 4500);
-      unmultipliedEnergy += (targetEnergy - unmultipliedEnergy) * Math.min(1, dt * 2.5);
+      const targetEnergy = Math.min(1, skater.comboScore / 3500);
+      if (targetEnergy >= unmultipliedEnergy) {
+        unmultipliedEnergy += (targetEnergy - unmultipliedEnergy) * Math.min(1, dt * 4);
+      } else {
+        unmultipliedEnergy = Math.max(targetEnergy, unmultipliedEnergy - decayRate * dt);
+      }
       const bright = (1 + unmultipliedEnergy * 0.13).toFixed(3);
       const sat = (1 + unmultipliedEnergy * 0.26).toFixed(3);
       const cont = (1 + unmultipliedEnergy * 0.05).toFixed(3);
@@ -1565,7 +1643,7 @@ export function startApp(): void {
             arrow: directionArrow(chaseCam.yaw, nearest.x - lx, nearest.z - lz),
           }
         : null;
-      hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass, beatPulse);
+      hud.update(doc, skater, session, promptText, tags, selectedTagIdx, compass, beatPulse, beatSec);
     } else if (world) {
       megaWorld.update(currentLevelId, elapsed, beatPulse, false, 0, 0.3, 1);
       if (cutscene.isActive()) {

@@ -553,4 +553,46 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
     const second = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
     expect(second.bumped).toBe(false);
   });
+
+  it('consecutive sideways air dashes stack past 34 m/s without resetting yaw', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = false;
+    s.y = 14;
+    s.yaw = 0; // facing +Z
+    s.vx = 28;
+    s.vz = 0;
+    s.boost = 100;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    // Simulate 0.36s of air time (past 0.35s cooldown, inside 0.55s sideDashLockTimer)
+    for (let i = 0; i < 22; i++) {
+      stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    }
+    const second = stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    expect(second.airDashTriggered).toBe(true);
+    expect(s.vx).toBeGreaterThan(42);
+  });
+
+  it('billboardObbCollision matches Three.js +yaw rotation and buildingRoofAt supports stepped/cantilever tiers', async () => {
+    const { billboardObbCollision } = await import('../levels/collision');
+    const { buildingRoofAt } = await import('../levels/loader');
+    // Billboard rotated +45 deg around Y: local +Z is (sin(45), cos(45)) = (+0.707, +0.707)
+    // Point 0.6m along local +Z from center should collide; point 3m along local +Z should miss.
+    const bb = { id: 'b', x: 0, y: 0, z: 0, yaw: Math.PI / 4, w: 6, h: 4, style: 'wide' as const, gangName: 'Test', color: '#fff' };
+    const hit = billboardObbCollision(bb, 0.4, 0.4, 1.5, 0.5);
+    expect(hit).not.toBeNull();
+    // Point 2.2m along local +X = (2.2*cos(45), -2.2*sin(45)) = (+1.55, -1.55) is inside w=6 half-width 3
+    const onPlane = billboardObbCollision(bb, 1.55, -1.55, 1.5, 0.5);
+    expect(onPlane).not.toBeNull();
+    // Point perpendicular to plane at +2.2m (+1.55, +1.55) should NOT collide
+    const offPlane = billboardObbCollision(bb, 1.55, 1.55, 1.5, 0.5);
+    expect(offPlane).toBeNull();
+
+    const stepped = { id: 's', x: 0, yBase: 0, z: 0, w: 10, d: 10, h: 8, color: '#fff', roofColor: '#fff', arch: 'stepped-monolith' as const };
+    expect(buildingRoofAt(stepped, 0, 0, 9.8)).toBeCloseTo(9.8);
+    const canti = { id: 'c', x: 0, yBase: 0, z: 0, w: 10, d: 10, h: 10, color: '#fff', roofColor: '#fff', arch: 'cantilever-tower' as const };
+    expect(buildingRoofAt(canti, 0, 5.5, 5.4)).toBeCloseTo(5.4);
+  });
 });

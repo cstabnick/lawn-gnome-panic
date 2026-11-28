@@ -37,17 +37,17 @@ export function buildMegaWorldView(initialId: GsrLevelId): MegaWorldView {
     islands.set(id, w);
   }
 
-  // Shared Skybox, Visualizer & Cartoon Backdrop anchored to active island
+  // Shared Skybox, Visualizer & Cartoon Backdrop anchored to active island (swaps per district)
+  let currentSkyId: GsrLevelId = initialId;
   const initDoc = getLevelDoc(initialId);
   const skyGroup = new THREE.Group();
   const [ix, iy, iz] = MEGA_WORLD_OFFSETS[initialId];
   skyGroup.position.set(ix, iy, iz);
-  const skybox = createRegionalSkybox(initDoc);
-  const skyVis = createSkyVisualizer(initDoc);
-  const cartoonBackdrop = createCartoonBackdrop(initDoc);
+  let skybox = createRegionalSkybox(initDoc);
+  let skyVis = createSkyVisualizer(initDoc);
+  let cartoonBackdrop = createCartoonBackdrop(initDoc);
   skyGroup.add(skybox.group, skyVis.group, cartoonBackdrop.group);
   group.add(skyGroup);
-  disposables.push(skybox, skyVis, cartoonBackdrop);
 
   // Inter-Island Sky Ley-Line Grind Rails
   const skyBeads: { curve: THREE.CatmullRomCurve3; mesh: THREE.Mesh; offset: number; speed: number }[] = [];
@@ -86,9 +86,23 @@ export function buildMegaWorldView(initialId: GsrLevelId): MegaWorldView {
     update(activeId, t, beatPulse, bossActive, bossWavePhase, hype, comboMult, bossPosOverride) {
       frameCounter++;
       const [ax, ay, az] = MEGA_WORLD_OFFSETS[activeId];
-      skyGroup.position.x += (ax - skyGroup.position.x) * 0.08;
-      skyGroup.position.y += (ay - skyGroup.position.y) * 0.08;
-      skyGroup.position.z += (az - skyGroup.position.z) * 0.08;
+      if (activeId !== currentSkyId) {
+        currentSkyId = activeId;
+        skyGroup.remove(skybox.group, skyVis.group, cartoonBackdrop.group);
+        skybox.dispose();
+        skyVis.dispose();
+        cartoonBackdrop.dispose();
+        const nextDoc = getLevelDoc(activeId);
+        skybox = createRegionalSkybox(nextDoc);
+        skyVis = createSkyVisualizer(nextDoc);
+        cartoonBackdrop = createCartoonBackdrop(nextDoc);
+        skyGroup.add(skybox.group, skyVis.group, cartoonBackdrop.group);
+        skyGroup.position.set(ax, ay, az);
+      } else {
+        skyGroup.position.x += (ax - skyGroup.position.x) * 0.08;
+        skyGroup.position.y += (ay - skyGroup.position.y) * 0.08;
+        skyGroup.position.z += (az - skyGroup.position.z) * 0.08;
+      }
 
       skybox.update(t, beatPulse, hype);
       skyVis.update(t, beatPulse, hype, comboMult);
@@ -108,6 +122,9 @@ export function buildMegaWorldView(initialId: GsrLevelId): MegaWorldView {
       }
     },
     dispose() {
+      skybox.dispose();
+      skyVis.dispose();
+      cartoonBackdrop.dispose();
       for (const w of islands.values()) w.dispose();
       for (const d of disposables) d.dispose();
     },

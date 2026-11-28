@@ -14,7 +14,63 @@
     "seed": 1102,
     "params": {}
   },
-  "stamps": [],
+  "stamps": [
+    {"op": "gauss", "x": -990.0, "z": -100.8, "sigma": 9.3, "amount": 1.8},
+    {"op": "gauss", "x": -962.6, "z": -98.2, "sigma": 5.9, "amount": 2.7},
+    {"op": "gauss", "x": -947.3, "z": -93.8, "sigma": 7.2, "amount": 2.5},
+    {"op": "gauss", "x": -923.8, "z": -96.2, "sigma": 8.0, "amount": 1.6},
+    {"op": "gauss", "x": -862.7, "z": -98.4, "sigma": 5.3, "amount": 1.6},
+    {"op": "gauss", "x": -836.7, "z": -104.3, "sigma": 6.6, "amount": 2.3},
+    {"op": "gauss", "x": -819.4, "z": -101.5, "sigma": 5.0, "amount": 3.0},
+    {"op": "gauss", "x": -797.5, "z": -95.9, "sigma": 9.7, "amount": 2.2},
+    {"op": "gauss", "x": -776.2, "z": -106.3, "sigma": 5.1, "amount": 1.4},
+    {"op": "gauss", "x": -732.6, "z": -93.4, "sigma": 9.2, "amount": 1.6},
+    {"op": "gauss", "x": -712.2, "z": -97.9, "sigma": 9.9, "amount": 3.0},
+    {"op": "gauss", "x": -686.2, "z": -92.6, "sigma": 6.3, "amount": 1.7},
+    {"op": "gauss", "x": -633.2, "z": -100.2, "sigma": 8.5, "amount": 1.7},
+    {"op": "gauss", "x": -608.9, "z": -95.7, "sigma": 5.9, "amount": 3.2},
+    {"op": "gauss", "x": -589.3, "z": -108.0, "sigma": 6.9, "amount": 1.9},
+    {"op": "gauss", "x": -517.3, "z": -101.7, "sigma": 6.5, "amount": 1.5},
+    {"op": "gauss", "x": -489.9, "z": -104.6, "sigma": 8.2, "amount": 2.4},
+    {"op": "gauss", "x": -473.3, "z": -106.8, "sigma": 8.9, "amount": 3.0},
+    {"op": "gauss", "x": -459.6, "z": -102.1, "sigma": 7.9, "amount": 2.3},
+    {"op": "gauss", "x": -439.5, "z": -94.1, "sigma": 9.8, "amount": 1.6},
+    {"op": "gauss", "x": -396.1, "z": -96.2, "sigma": 9.1, "amount": 1.7},
+    {"op": "gauss", "x": -367.2, "z": -98.3, "sigma": 6.0, "amount": 3.2},
+    {"op": "gauss", "x": -347.6, "z": -104.2, "sigma": 5.5, "amount": 1.9},
+    {"op": "gauss", "x": -167.2, "z": -104.8, "sigma": 5.2, "amount": 2.4},
+    {"op": "gauss", "x": -137.9, "z": -104.3, "sigma": 5.1, "amount": 3.6},
+    {"op": "gauss", "x": -120.1, "z": -104.2, "sigma": 10.0, "amount": 4.2},
+    {"op": "gauss", "x": -91.9, "z": -101.4, "sigma": 8.7, "amount": 3.8},
+    {"op": "gauss", "x": -73.6, "z": -109.3, "sigma": 8.4, "amount": 2.5},
+    {"op": "gauss", "x": -58.0, "z": -106.0, "sigma": 7.5, "amount": 3.9},
+    {"op": "gauss", "x": 58.0, "z": -109.0, "sigma": 7.0, "amount": 3.3},
+    {"op": "gauss", "x": 47.9, "z": -114.6, "sigma": 7.6, "amount": 3.4},
+    {"op": "gauss", "x": 60.3, "z": -105.4, "sigma": 9.8, "amount": 2.4},
+    {"op": "gauss", "x": 124.0, "z": -113.3, "sigma": 6.5, "amount": 2.4},
+    {"op": "gauss", "x": 152.3, "z": -110.8, "sigma": 8.3, "amount": 4.1},
+    {"op": "gauss", "x": 176.3, "z": -101.4, "sigma": 6.0, "amount": 4.1},
+    {"op": "gauss", "x": 204.1, "z": -113.8, "sigma": 6.9, "amount": 2.4},
+    {"op": "gauss", "x": 266.8, "z": -113.3, "sigma": 8.6, "amount": 2.7},
+    {"op": "gauss", "x": 286.9, "z": -106.0, "sigma": 6.4, "amount": 4.2},
+    {"op": "gauss", "x": 307.8, "z": -108.8, "sigma": 6.6, "amount": 3.0},
+    {"op": "gauss", "x": 346.8, "z": -103.1, "sigma": 5.2, "amount": 1.6},
+    {"op": "gauss", "x": 373.0, "z": -107.6, "sigma": 5.1, "amount": 2.2},
+    {"op": "gauss", "x": 399.9, "z": -97.9, "sigma": 6.2, "amount": 2.8},
+    {"op": "gauss", "x": 420.0, "z": -92.7, "sigma": 8.1, "amount": 2.5},
+    {"op": "gauss", "x": 444.3, "z": -107.8, "sigma": 6.0, "amount": 1.4},
+    {"op": "gauss", "x": 504.1, "z": -92.9, "sigma": 6.1, "amount": 1.9},
+    {"op": "gauss", "x": 525.1, "z": -96.8, "sigma": 10.0, "amount": 3.1},
+    {"op": "gauss", "x": 541.1, "z": -100.8, "sigma": 7.1, "amount": 1.8},
+    {"op": "gauss", "x": 599.4, "z": -95.3, "sigma": 6.9, "amount": 1.9},
+    {"op": "gauss", "x": 628.4, "z": -96.4, "sigma": 7.3, "amount": 3.1},
+    {"op": "gauss", "x": 655.1, "z": -93.6, "sigma": 8.2, "amount": 1.8},
+    {"op": "gauss", "x": 865.6, "z": -103.4, "sigma": 5.4, "amount": 1.5},
+    {"op": "gauss", "x": 890.7, "z": -99.0, "sigma": 8.2, "amount": 2.4},
+    {"op": "gauss", "x": 908.3, "z": -104.7, "sigma": 6.9, "amount": 3.2},
+    {"op": "gauss", "x": 935.7, "z": -104.8, "sigma": 9.8, "amount": 2.4},
+    {"op": "gauss", "x": 957.3, "z": -92.5, "sigma": 7.5, "amount": 1.4}
+  ],
   "paths": [
     {
       "id": "south-band",
@@ -117,11 +173,19 @@
           -120
         ],
         [
-          745,
-          -40
+          752,
+          -75
         ],
         [
-          745,
+          748,
+          -30
+        ],
+        [
+          732,
+          15
+        ],
+        [
+          728,
           55
         ]
       ],

@@ -1,7 +1,7 @@
 // Tubing visuals: the tow ropes, NPC riders on their tubes (the driver's own and mirrored ones), the buoy-run buoys and
 // the next-gate marker. Pooled and capped; runtime.ts says what to draw each frame.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, getPrefab } from '@lawn/prefabs';
 import type { GnomeModel } from '@lawn/gnome';
 import { createAnimator, type Animator } from '../anim/animator';
 import { gnomeState, makeGnome } from '../gnomes';
@@ -9,6 +9,7 @@ import { registerCull } from '../cull';
 import { heightAt, waterAt } from '../terrain';
 import { COAST } from '../coast/config';
 import { coastSign } from '../coast/sign';
+import { textPlate } from '../homes/pieces';
 import { lookFromSeed } from '../jobs/visuals';
 import { BUOY_GATES, TOW_COURSES, buoysOf, type BuoyGate } from './course';
 import type { TowMode } from './types';
@@ -263,22 +264,52 @@ export function createTubingView(scene: THREE.Scene): TubingView {
       if (lastTubeBuilt) return;
       lastTubeBuilt = true;
       const lt = COAST.lastTube;
-      const hut = buildPrefab('beach-hut', { scale: 2.2, lights: false });
-      hut.position.set(lt.hut.x, heightAt(lt.hut.x, lt.hut.z), lt.hut.z);
-      hut.rotation.y = lt.hut.yaw ?? 0;
-      scene.add(hut);
-      registerCull(hut, 'prop');
-      // The sign stands left of the tube rack, facing north (the boardwalk side, where customers come from).
-      const sign = coastSign('THE LAST TUBE\nTubes 8 · Skis 11\nDriftwood tows. Driftwood is not sorry.', { w: 3.6, h: 1.5, post: 0.9 });
-      sign.position.set(lt.rack.x - 3, heightAt(lt.rack.x - 3, lt.rack.z), lt.rack.z);
-      sign.rotation.y = Math.PI;
-      scene.add(sign);
-      registerCull(sign, 'prop');
+      const put = (o: THREE.Object3D, x: number, z: number, yaw: number, dy = 0): void => {
+        o.position.set(x, heightAt(x, z) + dy, z);
+        o.rotation.y = yaw;
+        scene.add(o);
+        registerCull(o, 'prop');
+      };
+      // A guarded prefab: another worker may still be adding the id.
+      const dress = (id: string, x: number, z: number, yaw: number, scale: number, dy = 0): void => {
+        if (!getPrefab(id)) return;
+        put(buildPrefab(id, { lights: false, scale }), x, z, yaw, dy);
+      };
+      // Driftwood's hut: weathered grey-tan, its door to the sea (+z), where customers come back from the water.
+      const hx = lt.hut.x, hz = lt.hut.z;
+      put(buildPrefab('beach-hut', { scale: 2.2, lights: false, tint: 0xb8ac94, trim: 0x8a7a5e }), hx, hz, 0);
+      // The lost-hat notice on the hut wall (front face z +1.32), beside the door, 3 cm proud.
+      const hat = coastSign("IF YOU LOSE YOUR HAT,\nI'LL LOOK FIRST", { w: 1.1, h: 0.6, bg: 0xd9cfb4, fg: 0x4a3a22 });
+      put(hat, hx + 0.97, hz + 1.39, 0, 1.0);
+      // The castaway's dressing, each piece placed by hand.
+      dress('lawn-shark-fin', hx, hz, Math.PI * 0.5, 2.8, 3.78);
+      dress('driftwood-pile', hx - 2.0, hz + 0.3, Math.PI * 0.5, 1.6);
+      dress('hung-net', hx + 6, hz + 9, 0.12, 1.6);
+      dress('oar-pair', hx - 1.5, hz + 2.0, -0.35, 1.3);
+      dress('rope-coil', hx + 2.6, hz + 2.4, 0.8, 1.2);
+      dress('tow-buoy', hx - 3.6, hz + 3.2, 0.4, 1.0);
+      // The price board faces the sea (customers come back up the beach); the boardwalk side reads the second joke.
+      const board = coastSign('THE LAST TUBE\nTubes 8 · Skis 11\nWake ramp: yours to find', {
+        w: 3.6, h: 1.5, post: 0.9, back: 'Driftwood tows.\nDriftwood is not sorry.',
+      });
+      put(board, lt.rack.x - 5, lt.rack.z - 6, 0);
+      const refunds = coastSign('Refunds: stories only.', { w: 1.8, h: 0.36, bg: 0xd9cfb4, fg: 0x4a3a22, back: true });
+      put(refunds, lt.rack.x - 5, lt.rack.z - 6, 0, 0.4);
+      // The house rule on a post at the water's edge, facing the sea.
+      const bowl = coastSign('NO TUBES IN THE BOWL', { w: 2.4, h: 0.9, post: 0.8, back: 'The bowl is east.\nWe checked.' });
+      put(bowl, lt.rack.x + 12, 1186, 0);
+      // The rack, with the owners' tags on its sea face and the house rule over it.
+      const rx = lt.rack.x + 4, rz = lt.rack.z - 1;
       const skiRack = buildPrefab('water-ski-rack', { lights: false });
-      skiRack.position.set(lt.rack.x + 4, heightAt(lt.rack.x + 4, lt.rack.z - 1), lt.rack.z - 1);
-      skiRack.rotation.y = Math.PI;
-      scene.add(skiRack);
-      registerCull(skiRack, 'prop');
+      const tags: Array<[string, number, number]> = [
+        ['BEV · TUES', -0.28, 0.8], ['NOT YOURS', 0.28, 0.8], ['LENNY · ONE DAY', -0.28, 0.45], ['DRIFTWOOD', 0.28, 0.45],
+      ];
+      for (const [text, tx, ty] of tags) {
+        skiRack.add(textPlate(text, tx, ty, -0.07, Math.PI, { w: 0.5, h: 0.18, bg: 0xd9cfb4, fg: 0x3a2c18 }));
+      }
+      put(skiRack, rx, rz, Math.PI);
+      const rule = coastSign('I TOW. YOU HOLD ON.', { w: 1.5, h: 0.32, bg: 0xd9cfb4, fg: 0x4a3a22, back: true });
+      put(rule, rx, rz, 0, 2.05);
     },
 
     highlightGate(i, gates = BUOY_GATES) {

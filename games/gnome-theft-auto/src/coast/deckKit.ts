@@ -37,6 +37,47 @@ export function plankTexture(n: number, a: number, b: number, alongV: boolean): 
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
+/**
+ * Real decking for the boardwalk (FX11, G3#6): `n` thin boards (~0.3 m on a 30 m slab) in four wood tones around `base`,
+ * a seam only a little darker than the board, and a faint grain line. Fixed seed, so every build looks the same.
+ * Null without a DOM (tests).
+ */
+export function deckingTexture(n: number, base: number): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const W = 2048, H = 16;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  let seed = 0x9e3779b1;
+  const rnd = (): number => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const tones = [0.9, 1.0, 1.08, 0.82];
+  const r0 = (base >> 16) & 255, g0 = (base >> 8) & 255, b0 = base & 255;
+  const shade = (k: number): string => {
+    const f = (v: number): number => Math.max(0, Math.min(255, Math.round(v * k)));
+    return `rgb(${f(r0)},${f(g0)},${f(b0)})`;
+  };
+  const step = W / n;
+  for (let i = 0; i < n; i++) {
+    const k = tones[Math.floor(rnd() * tones.length)] * (0.97 + rnd() * 0.06);
+    const x = i * step;
+    g.fillStyle = shade(k);
+    g.fillRect(x, 0, step + 0.5, H);
+    g.fillStyle = shade(k * 1.07);
+    g.fillRect(x + step * (0.25 + rnd() * 0.5), 0, 1, H);
+    g.fillStyle = shade(k * 0.78);
+    g.fillRect(x, 0, Math.max(1, step * 0.07), H);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+const decking = (n: number, base: number): THREE.MeshStandardMaterial => {
+  const map = deckingTexture(n, base);
+  return map ? new THREE.MeshStandardMaterial({ map, roughness: 0.92 }) : new THREE.MeshStandardMaterial({ color: base, roughness: 0.92 });
+};
 export const deckMat = (n: number, a: number, b: number, alongV: boolean): THREE.MeshStandardMaterial => {
   const map = plankTexture(n, a, b, alongV);
   return map ? new THREE.MeshStandardMaterial({ map, roughness: 0.92 }) : new THREE.MeshStandardMaterial({ color: a, roughness: 0.92 });
@@ -44,7 +85,7 @@ export const deckMat = (n: number, a: number, b: number, alongV: boolean): THREE
 
 /** Materials by key; a Bins key must be one of these. Modules may add their own keys at import time (MATS.key = ...). */
 export const MATS: Record<string, THREE.Material> = {
-  woodA: deckMat(25, 0x9c7248, 0x86603a, false),
+  woodA: decking(98, 0x93693f),
   pierWoodZ: deckMat(25, 0x8f6b45, 0x7c5a38, true),
   woodB: new THREE.MeshStandardMaterial({ color: 0x86603a, roughness: 0.92 }),
   rail: new THREE.MeshStandardMaterial({ color: 0xe6dcc6, roughness: 0.85 }),

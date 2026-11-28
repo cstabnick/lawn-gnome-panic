@@ -10,6 +10,7 @@ import { heightAt, waterAt } from '../terrain';
 import { waveSlope, waveTime } from '../waves';
 import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
 import type { Blip, InputState, Vehicle } from '../types';
+import { skiPose } from './skiPose';
 import { COAST, COAST_ACH } from '../coast/config';
 import {
   FINISH_POINTS, GATE_POINTS, LOCH_COURSE, OCEAN_COURSE, courseNear, newRun, stepRun, type RunState, type TowCourse,
@@ -56,6 +57,8 @@ export function boatSpeedFrom(prevX: number, prevZ: number, x: number, z: number
 
 const modeOf = (v: Vehicle): TowMode => (v.kind === 'tow-ski' ? 'ski' : 'tube');
 const isTowRide = (v: Vehicle): boolean => v.kind === 'tow-tube' || v.kind === 'tow-ski';
+/** The rider's steer input from the last stepRider call this frame; the skier's hips sway with it (skiPose). */
+let skiLean = 0;
 
 /** A point on a closed polyline `loop` ((x, z) pairs) and the heading of the segment it is on. */
 export interface LoopPos { x: number; z: number; yaw: number; s: number }
@@ -549,11 +552,12 @@ export function installTubing(deps: JobsDeps): Tubing {
     const host = ride.host;
     const boat = ride.local ? dw?.boat ?? null : host === null ? null : deps.net.vehicleOf(host);
     const st = ride.state;
+    skiLean = inp.moveX;
     if (!boat || !st) {
       unhook(ride.local ? undefined : 'Your boat left.');
       return;
     }
-    const raw = ride.lastX === null ? 0 : boatSpeedFrom(ride.lastX, ride.lastZ, boat.x, boat.z, boat.yaw, dt);
+    const raw =ride.lastX === null ? 0 : boatSpeedFrom(ride.lastX, ride.lastZ, boat.x, boat.z, boat.yaw, dt);
     ride.lastX = boat.x;
     ride.lastZ = boat.z;
     ride.speed += (raw - ride.speed) * Math.min(1, dt * 4);
@@ -996,6 +1000,9 @@ export function installTubing(deps: JobsDeps): Tubing {
       autoHook(dt);
       if (towOn) tickDriver(dt);
       tickRider(dt);
+      // Runs after the player's riding pose: a skier stands on the skis with arms to the handle (skiPose.ts).
+      if (deps.player.vehicle?.kind === 'tow-ski') skiPose(deps.player.model, skiLean);
+      skiLean = 0;
       tickDriftwood(dt);
       drawRopes();
       view.update(dt, deps.player.x, deps.player.z);

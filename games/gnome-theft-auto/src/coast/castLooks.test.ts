@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { CAST } from '../cutscene/cast';
 import { COAST_QUEST_DEFS } from '../quests/coastQuests';
-import { COAST_RESIDENTS } from './life';
+import { BILGE, COAST_RESIDENTS } from './life';
 
 const WHO = [
   { key: 'marram', speaker: 'Marram Teaspoon', resident: 'coast-marram-spokewheel' },
@@ -31,7 +31,7 @@ describe('coast characters wear one look', () => {
       const mine = all.filter((l) => l.speaker === w.speaker);
       expect(mine.length).toBeGreaterThan(0);
       for (const l of mine) expect(l.look).toEqual(CAST[w.key].look);
-      expect(COAST_RESIDENTS.find((r) => r.id === w.resident)!.look).toEqual(CAST[w.key].look);
+      expect([...COAST_RESIDENTS, BILGE].find((r) => r.id === w.resident)!.look).toEqual(CAST[w.key].look);
     });
   }
 

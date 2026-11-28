@@ -1,5 +1,5 @@
 // Saltbucket Shore's coast (E11, coast/): the Spokewheel platform where Marram Teaspoon gives 'The Wobbly Gondola', the
-// Last Tube hut where Driftwood gives 'Tubing the Long Spoon', and the foot of Long Spoon Pier for Captain Bilge's two
+// Last Tube hut where Driftwood gives 'The Buoy Run', and the foot of Long Spoon Pier for Captain Bilge's two
 // quests (her cabin is an interior; her scenes play on the pier). Conventions and types: ../stages.ts and ./kit.ts.
 import { cam, mark, type Stage } from './kit';
 
@@ -18,7 +18,7 @@ export const COAST_STAGES: readonly Stage[] = [
     look: 'The Spokewheel turning over the boardwalk, twelve bright gondolas, a brass bell on the boarding platform.',
     sounds: 'Gears, the bell, surf behind the stalls, gulls on the rail.',
     marks: [
-      mark('marram', [-252, 1112], [-258, 1116], 'stand', 'at the boarding rail, one hand on the bell rope'),
+      mark('marram', [-252.5, 1111.5], [-258, 1116], 'stand', 'at the boarding platform, one hand on the bell rope'),
       mark('player', [-258, 1116], [-252, 1112], 'stand', 'walks along the boardwalk to the platform'),
     ],
     cameras: [
@@ -65,7 +65,7 @@ export const COAST_STAGES: readonly Stage[] = [
     built: 'existing',
     givers: ['coast-bathtub-queen'],
     usedBy: ['coast-bathtub-tours', 'coast-queens-treasure'],
-    look: 'The pier running out to a toy pirate ship, a chalked board of tour times, the Saltwater glittering past the rail.',
+    look: 'The pier running out to a toy pirate ship, a chalk A-board of tour times, the Saltwater glittering past the rail.',
     sounds: 'Planks, rope, surf, the ship\'s bell.',
     marks: [
       mark('bilge', [300, 1168], [300, 1175], 'stand', 'at the head of the pier, with a chalk board and a very large hat'),

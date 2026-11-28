@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COAST } from './config';
-import { gondolaPos, spokewheelAngle } from './spokewheel';
+import { gondolaPos, spokewheelAngle, spokewheelLegBoxes, spokewheelSetDown } from './spokewheel';
 
 const w = COAST.spokewheel;
 const G = 3;
@@ -33,6 +33,18 @@ describe('spokewheel', () => {
       const a1 = Math.atan2(p.x - w.x, hubY - p.y);
       const a2 = Math.atan2(q.x - w.x, hubY - q.y);
       expect((((a2 - a1) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)).toBeCloseTo(step, 6);
+    }
+  });
+
+  it('leg and bell colliders leave the boarding spot and the set-down point clear', () => {
+    const boxes = spokewheelLegBoxes();
+    expect(boxes).toHaveLength(5);
+    const inside = (b: { minX: number; maxX: number; minZ: number; maxZ: number }, x: number, z: number, m = 0): boolean =>
+      x > b.minX - m && x < b.maxX + m && z > b.minZ - m && z < b.maxZ + m;
+    const sd = spokewheelSetDown();
+    for (const b of boxes) {
+      expect(inside(b, w.board.x, w.board.z, 0.5)).toBe(false);
+      expect(inside(b, sd.x, sd.z, 0.5)).toBe(false);
     }
   });
 });

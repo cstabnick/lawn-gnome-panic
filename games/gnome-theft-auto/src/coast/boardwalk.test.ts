@@ -52,6 +52,13 @@ describe('the boardwalk deck is walkable', () => {
     }
   });
 
+  it('the ground stays below the deck top along every edge', () => {
+    const pts: [number, number][] = [];
+    for (let x = R.minX; x <= R.maxX; x += 2) pts.push([x, R.minZ], [x, R.maxZ], [x, (R.minZ + R.maxZ) / 2]);
+    for (let z = R.minZ; z <= R.maxZ; z += 2) pts.push([R.minX, z], [R.maxX, z]);
+    for (const [x, z] of pts) expect(heightAt(x, z), `ground at ${x},${z}`).toBeLessThan(deckTop - 0.05);
+  });
+
   it('leaves the ground outside the rectangle alone', () => {
     expect(groundAt(0, R.maxZ + 3, heightAt(0, R.maxZ + 3))).toBeCloseTo(heightAt(0, R.maxZ + 3), 5);
   });

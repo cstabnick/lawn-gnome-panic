@@ -1,5 +1,6 @@
 // South Shore landforms (region document south-shore.level.json, data.terrain): low dunes and a long swell above the
-// beach. Paint: sand from the beach line (z > 1130) to the edge, grass inland.
+// beach. Paint: sand from the beach line (z > 1130) to the edge, and sand round the whole town (|x| <= 460, z > 1000:
+// under the boardwalk and the wheel); grass elsewhere inland.
 import { fbm } from './noise';
 import type { Landform, LandformInput, GroundFacts, PaintKind } from './types';
 
@@ -17,7 +18,7 @@ export const landform: Landform = {
     const swell = param(input, 'swell') * fbm(x / param(input, 'swellScale'), z / param(input, 'swellScale'), 73, 2);
     return dunes + swell;
   },
-  paint(_x, z: number, _g: GroundFacts): PaintKind | null {
-    return z > 1130 ? 'sand' : 'grass';
+  paint(x: number, z: number, _g: GroundFacts): PaintKind | null {
+    return z > 1130 || (Math.abs(x) <= 460 && z > 1000) ? 'sand' : 'grass';
   },
 };

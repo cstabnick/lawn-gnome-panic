@@ -951,7 +951,9 @@ export const WATER = {
     canal: { depth: 0.85, bank: 1.5, freeboard: 1.6 },
     'river-farm': { depth: 1.8, bank: 6 },
     // E28: Pardonlin's garden rill (its own chain, not in WATER.order), a slow town river in stone-ish banks.
-    thymes: { depth: 1.4, bank: 4 },
+    // FX09: sunk in stone quay walls (pardonlin/districts/thymes.ts): the water sits 1.8 m below the quays, the earth
+    // bank is a short ramp (one 2 m grid cell) the walls stand over.
+    thymes: { depth: 1.4, bank: 0.5, freeboard: 1.8 },
     // E11: the Saltcut, the channel from the Puddle Sea's south shore through the dunes to the Saltwater (R-185).
     saltcut: { depth: 2.2, bank: 6 },
   },

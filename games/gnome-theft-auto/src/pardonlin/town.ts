@@ -13,6 +13,7 @@ import type { Box } from '../types';
 import { boundsOf, cornersOf, insideEuroYard } from './layout';
 import { buildingFootprint, propFootprint, type PlanSign } from './plan';
 import { pardonlinPlans } from './plans';
+import { buildPardonlinGround } from './ground';
 import { plateCanvasWidth } from '../homes/pieces';
 
 const SIGN_PREFAB = { menu: 'euro-chalkboard-sign', poster: 'euro-poster-board', street: 'euro-street-sign' } as const;
@@ -57,6 +58,7 @@ export function buildPardonlinTown(scene: THREE.Scene, boxes: Box[]): void {
     }
   }
   scene.add(buildStaticCells(out, { lights: false, name: 'pardonlin-town' }));
+  scene.add(buildPardonlinGround(pardonlinPlans().flatMap((p) => p.ground)));
   if (signs.length) scene.add(buildSignText(signs));
 }
 

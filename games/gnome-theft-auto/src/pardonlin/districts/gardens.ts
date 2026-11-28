@@ -1,8 +1,10 @@
 // Pardonlin district plan (E30): the Jardin, the Little Gardens and Basin Quay. Pure data (../plan.ts).
 // Fewer buildings, more gardening as a competitive sport. Coordinates are world metres (+x east, +z south).
 import type { AmbientGnomeDef } from '../../ambientGnomes';
-import type { EuroPlacement } from '../../eurokit/street';
-import { districtById, footprintProblem, inRect, pathPoints, roadClearance, type Footprint } from '../layout';
+import { planStreetRow, type EuroPlacement } from '../../eurokit/street';
+import { heightAt, waterAt } from '../../terrain';
+import { distToLine, townFootpaths, type GroundPatch } from '../groundPlan';
+import { districtById, footprintProblem, inRect, pathPoints, type Footprint } from '../layout';
 import { emptyPlan, keepClear, propFootprint, type DistrictPlan, type PlanProp, type PlanSign } from '../plan';
 
 const PI = Math.PI;
@@ -26,8 +28,7 @@ const yawTo = (x: number, z: number, tx: number, tz: number): number => Math.ata
 export function planGardens(): DistrictPlan {
   const plan = emptyPlan('gardens');
   const rects = districtById('gardens').rects;
-  const { props, signs, vignettes, residents } = plan;
-  const tileKeys = new Set<string>();
+  const { props, signs, vignettes, residents, ground } = plan;
 
   // ---- helpers ----------------------------------------------------------------------------------------------------
   /** Put a prop; a solid one that would stand on a road, path or the river, or outside the district, is dropped. */
@@ -41,12 +42,38 @@ export function planGardens(): DistrictPlan {
     return true;
   };
   const sign = (s: PlanSign): void => { signs.push(s); };
-  const tile = (x: number, z: number): void => {
-    if (!rects.some((r) => inRect(r, x, z)) || roadClearance(x, z) < 2.2) return;
-    const k = `${x.toFixed(2)},${z.toFixed(2)}`;
-    if (tileKeys.has(k)) return;
-    tileKeys.add(k);
-    props.push({ id: 'euro-paving-tile', x, z });
+  // Laid ground. The town's footpaths are gravel / cobble ribbons on the same layer as a plain patch, so a walk of ours is
+  // trimmed where a footpath comes within 0.35 m of its edge. `accent` patches sit one layer up and may cross a walk.
+  const paths = townFootpaths();
+  const clearOfPaths = (x: number, z: number): boolean => paths.every((t) => distToLine(x, z, t.points) >= t.width / 2 + 2.3);
+  /** A straight walk from a to b, `width` wide, trimmed at each end to where its corners clear every footpath. */
+  const walk = (kind: GroundPatch['kind'], a: readonly [number, number], b: readonly [number, number], width: number): [number, number][] | null => {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const dx = (b[0] - a[0]) / len, dz = (b[1] - a[1]) / len;
+    const okAt = (s: number): boolean => {
+      const cx = a[0] + dx * s, cz = a[1] + dz * s;
+      return [-1, 0, 1].every((k) => clearOfPaths(cx - dz * k * width / 2, cz + dx * k * width / 2));
+    };
+    let lo = len / 2, hi = len / 2;
+    if (!okAt(lo)) return null;
+    while (lo > 0 && okAt(lo - 0.1)) lo -= 0.1;
+    while (hi < len && okAt(hi + 0.1)) hi += 0.1;
+    const pts: [number, number][] = [[a[0] + dx * lo, a[1] + dz * lo], [a[0] + dx * hi, a[1] + dz * hi]];
+    ground.push({ kind, line: pts, width } as GroundPatch);
+    return pts;
+  };
+  const rect = (kind: GroundPatch['kind'], x0: number, z0: number, x1: number, z1: number, accent = false): void => {
+    ground.push({ kind, accent, rect: { x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: Math.abs(x1 - x0), d: Math.abs(z1 - z0) } });
+  };
+  /** The x where the Basin's east shore is at this z (the first dry ground going east from the water). */
+  const shoreX = (z: number): number => {
+    for (let x = -1575; x < -1530; x += 0.1) if (!waterAt(x, z)) return x;
+    return -1556;
+  };
+  /** Place a prop floating on the Basin: its keel sits `sink` m below the still surface at (x, z). */
+  const afloat = (id: string, x: number, z: number, yaw: number, sink: number, extra: Partial<PlanProp> = {}): void => {
+    const surface = waterAt(x, z)?.surface ?? -4.9;
+    put({ id, x, z, yaw, y: surface - sink - heightAt(x, z), ...extra });
   };
   /** Points along a polyline every `step` m, each with the unit tangent. */
   const along = (pts: readonly (readonly [number, number])[], step: number, start = 0): { x: number; z: number; tx: number; tz: number }[] => {
@@ -137,14 +164,136 @@ export function planGardens(): DistrictPlan {
   }
   put({ id: 'stone-fountain', x: CX, z: CZ, scale: 1.3, solid: { r: 1.6, h: 1.2 } });
 
-  // -- Gravel walks: 2 m-wide paving on the two main axes (2 tiles wide, filling the hedge gaps) and a plaza round the fountain.
-  for (let v = -27; v <= 27; v += 2) {
-    for (const u of [-1, 1]) {
-      const [x, z] = par(u, v); tile(x, z);
-      const [x2, z2] = par(v, u); tile(x2, z2);
+  // -- Gravel walks (ground patches): the main axis runs north-south through the parterre's gaps and on to the footpath loop
+  // at both ends, the cross axis runs west to a round and east to the rill court. A flagged disc and a ring of setts round the
+  // fountain sit one layer up (accent), over the crossing.
+  const AX = CX, W = 3.6;
+  const axis = walk('gravel', [AX, CZ - 135], [AX, CZ + 160], W)!;       // [0] = north end, [1] = south end
+  const westEnd = -1574;
+  walk('gravel', [AX - W / 2, CZ], [westEnd, CZ], W);
+  const eastWalk = walk('gravel', [AX + W / 2, CZ], [-1420, CZ], W)!;
+  ground.push({ kind: 'flags', accent: true, circle: { x: CX, z: CZ, r: 3.0 } });
+  ground.push({ kind: 'setts', accent: true, circle: { x: CX, z: CZ, r: 5.6, r0: 3.15 } });
+  const nEnd = axis[0][1], sEnd = axis[1][1], eEnd = eastWalk[1][0];
+
+  // -- The pleached-lime avenue: a straight double row either side of the main axis, north and south of the parterre,
+  // 5.6 m apart, with urns where the avenue meets the parterre, benches between the trees and an arch / a statue at the ends.
+  const LIME = 3.4, PITCH = 5.6;
+  const limeRow = (from: number, dir: number, stop: number): number[] => {
+    const zs: number[] = [];
+    for (let z = from; dir * (stop - z) > 0; z += dir * PITCH) zs.push(z);
+    return zs;
+  };
+  const limesN = limeRow(CZ - 31, -1, nEnd + 4.5), limesS = limeRow(CZ + 31, 1, sEnd - 4.5);
+  for (const z of [...limesN, ...limesS]) {
+    if (Math.abs(z + 684) < 4) continue;                          // the first shot stands here: keep the walk open around it
+    for (const side of [-1, 1]) put({ id: 'pl-pleached-lime', x: AX + side * LIME, z, yaw: PI / 2, solid: { r: 0.2, h: 4 } });
+  }
+  [...limesN, ...limesS].forEach((z, i) => {
+    if (i % 3 !== 1) return;
+    const zz = z + (z < CZ ? -PITCH / 2 : PITCH / 2);
+    for (const side of [-1, 1]) {
+      const x = AX + side * 2.4;
+      put({ id: 'park-bench', x, z: zz, yaw: yawTo(x, zz, AX, zz), solid: { w: 1.8, d: 0.7, h: 0.9 } });
+    }
+  });
+  for (const [x, z] of [[2.4, -28.4], [-2.4, -28.4], [2.4, 28.4], [-2.4, 28.4], [-28.4, 2.4], [-28.4, -2.4], [28.4, 2.4], [28.4, -2.4]] as const) {
+    put({ id: 'pl-terracotta-urn', x: CX + x, z: CZ + z, tint: (x + z) % 2 === 0 ? 0xd8342c : 0xe8708a });
+  }
+  put({ id: 'euro-rose-arch', x: AX, z: nEnd + 1.4, yaw: 0 });
+  for (const side of [-1, 1]) put({ id: 'pl-terracotta-urn', x: AX + side * 2.6, z: nEnd + 1.6, tint: 0xf2f0e6 });
+  put({ id: 'gnome-statue', x: AX, z: sEnd - 2.6, yaw: PI, solid: { r: 0.5, h: 1.8 } });
+  for (const side of [-1, 1]) put({ id: 'pl-terracotta-urn', x: AX + side * 2.5, z: sEnd - 2.0, tint: 0xd8342c });
+  sign({ kind: 'poster', text: 'STATUE OF THE UNKNOWN GARDENER.\nHe knows.', x: AX + 2.2, z: sEnd - 4.2, yaw: PI });
+
+  // -- The rill court on the east arm: a long stone-edged rill with a jet row, a gravel court with a flagged threshold, benches
+  // facing the water, box hedges either side, urns on the axis at both ends, a rose arch where the walk meets the loop.
+  {
+    const rx = -1457, c0 = rx - 13, c1 = rx + 13;
+    rect('gravel', c0, CZ - 7, c1, CZ + 7, true);
+    rect('flags', c0 - 0.7, CZ - 7.7, c1 + 0.7, CZ - 7, true);
+    rect('flags', c0 - 0.7, CZ + 7, c1 + 0.7, CZ + 7.7, true);
+    rect('flags', c0 - 0.7, CZ - 7, c0, CZ + 7, true);
+    rect('flags', c1, CZ - 7, c1 + 0.7, CZ + 7, true);
+    put({ id: 'pl-garden-rill', x: rx, z: CZ, yaw: 0 });
+    for (const x of [rx - 8.9, rx + 8.9]) put({ id: 'pl-terracotta-urn', x, z: CZ, tint: 0xd8342c });
+    for (const bx of [rx - 4, rx + 4]) {
+      for (const sgn of [-1, 1]) {
+        const z = CZ + sgn * 3.1;
+        put({ id: 'park-bench', x: bx, z, yaw: yawTo(bx, z, bx, CZ), solid: { w: 1.8, d: 0.7, h: 0.9 } });
+      }
+    }
+    for (let x = c0 + 1; x <= c1 - 1; x += 2) {
+      for (const sgn of [-1, 1]) put({ id: 'euro-box-hedge', x, z: CZ + sgn * 8.6, yaw: 0, solid: { w: 1.96, d: 0.6, h: 0.8 } });
+    }
+    for (const [x, z] of [[c0 - 1.6, CZ - 8.6], [c0 - 1.6, CZ + 8.6], [c1 + 1.6, CZ - 8.6], [c1 + 1.6, CZ + 8.6]] as const) {
+      put({ id: 'euro-lamp-post', x, z, solid: { r: 0.2, h: 4.2 } });
+    }
+    for (const x of [rx - 10.2, rx + 10.2]) {
+      for (const sgn of [-1, 1]) put({ id: 'euro-geranium-pot', x, z: CZ + sgn * 1.9 });
+    }
+    put({ id: 'euro-rose-arch', x: eEnd - 1.4, z: CZ, yaw: PI / 2 });
+    sign({ kind: 'poster', text: 'THE RILL.\nIt is not a stream. It has asked us to say so.', x: rx - 7.2, z: CZ + 4.7, yaw: PI });
+  }
+
+  // -- The west arm: a gravel round with a stone urn and benches, where the cross axis ends at the river avenue.
+  {
+    // The cross axis has its own avenue of limes, in rows along the walk, so the lawn west of the parterre reads as a garden.
+    for (let x = CX - 31.2; x > westEnd - 4; x -= PITCH) {
+      for (const side of [-1, 1]) put({ id: 'pl-pleached-lime', x, z: CZ + side * LIME, yaw: 0, solid: { r: 0.2, h: 4 } });
+    }
+    const rx = westEnd - 5, rr = 5;
+    ground.push({ kind: 'gravel', accent: true, circle: { x: rx, z: CZ, r: rr, r0: 1.5 } });
+    ground.push({ kind: 'flags', accent: true, circle: { x: rx, z: CZ, r: 1.5 } });
+    put({ id: 'manor-urn', x: rx, z: CZ, solid: { r: 0.45, h: 1.55 } });
+    for (const deg of [90, 150, 210, 270]) {
+      const a = (deg * PI) / 180;
+      const x = rx + Math.cos(a) * 3.6, z = CZ + Math.sin(a) * 3.6;
+      put({ id: 'park-bench', x, z, yaw: yawTo(x, z, rx, CZ), solid: { w: 1.8, d: 0.7, h: 0.9 } });
+    }
+    for (const [dx, dz] of [[-6.2, -1.2], [-6.2, 1.2]] as const) put({ id: 'pl-terracotta-urn', x: rx + dx, z: CZ + dz, tint: 0xe8708a });
+    put({ id: 'euro-lamp-post', x: rx + 5.6, z: CZ - 3.4, solid: { r: 0.2, h: 4.2 } });
+    put({ id: 'euro-lamp-post', x: rx + 5.6, z: CZ + 3.4, solid: { r: 0.2, h: 4.2 } });
+  }
+
+  // -- The rose walk: a narrow gravel walk from a gap in the south avenue (between two lime pairs) out west across the lawn, under
+  // a run of rose arches, so the big lawn south-west of the parterre has a structure to read from the first shot's side.
+  {
+    const rz = (limesS[2] + limesS[3]) / 2;                       // the gap between two lime pairs
+    const rwalk = walk('gravel', [AX - W / 2, rz], [-1582, rz], 2.4);
+    if (rwalk) {
+      for (let x = AX - 9; x > rwalk[1][0] + 3; x -= 3.2) put({ id: 'euro-rose-arch', x, z: rz, yaw: PI / 2 });
+      for (const sgn of [-1, 1]) put({ id: 'pl-terracotta-urn', x: rwalk[1][0] + 1.2, z: rz + sgn * 1.9, tint: 0xd8342c });
+      for (const bx of [AX - 20, AX - 40]) {
+        for (const sgn of [-1, 1]) {
+          const z = rz + sgn * 2.2;
+          put({ id: 'park-bench', x: bx + 1.6, z, yaw: yawTo(bx + 1.6, z, bx + 1.6, rz), solid: { w: 1.8, d: 0.7, h: 0.9 } });
+        }
+      }
+      sign({ kind: 'poster', text: 'ROSE WALK.\nThe roses are looking. Behave.', x: AX - 13, z: rz + 2.4, yaw: PI });
     }
   }
-  for (let u = -5; u <= 5; u += 2) for (let v = -5; v <= 5; v += 2) { const [x, z] = par(u, v); tile(x, z); }
+
+  // -- The pruner, and the sign that protects him: a gardener clips the second lime of the north avenue.
+  {
+    const lz = limesN[1] ?? CZ - 36.6, gx = AX + 2.1, gz = lz + 0.6;
+    put({ id: 'hedge-shears', x: gx + 0.7, z: gz + 0.7, y: 0.03, rot: [PI / 2, 0.3, 0] });
+    put({ id: 'tin-pail', x: gx - 0.9, z: gz + 1.1 });
+    put({ id: 'crate', x: gx - 1.1, z: gz - 1.0, yaw: 0.4, solid: { r: 0.4, h: 0.8 } });
+    [[0.2, 1.6], [-0.5, -0.4], [0.9, -0.9], [-0.1, 2.3]].forEach(([dx, dz], i) => {
+      put({ id: 'boxwood-ball', x: gx + dx, z: gz + dz, scale: 0.16 + 0.03 * i, y: 0.02 });   // clippings
+    });
+    sign({ kind: 'poster', text: 'PLEASE DO NOT PRUNE THE PRUNERS.', x: AX - 2.25, z: gz + 2.6, yaw: PI / 2 });
+    vignettes.push({
+      id: 'gd-pruners', name: 'The pruner on the avenue', x: gx, z: gz,
+      story: 'A gardener on the lime avenue clips the crown of one tree flat for the third time this week, with a pail, a crate and a drift of clippings, under a sign asking visitors not to prune him in turn.',
+    });
+    residents.push({
+      id: 'pl-gd-pruner', name: 'Hubert Secateur', x: gx, z: gz, yaw: yawTo(gx, gz, AX + LIME, lz), idle: 'paint-wall',
+      look: { hat: 0x3f7a3a, shirt: 0xd8c9a0, pants: 0x5a4a32, beard: 0x9a8a78 },
+      bubble: 'Flat. Flat is the whole of the art. The tree disagrees; the tree is wrong.',
+    });
+  }
 
   // -- The river avenue: planes, lavender and benches along the Thymes' east bank, which is the view from the first shot.
   // trail/thymes-walk runs along the bank from (-1592, -700) to (-1607, -520): keep off it.
@@ -192,8 +341,8 @@ export function planGardens(): DistrictPlan {
   sign({ kind: 'poster', text: 'The hedge is not a shortcut. The hedge is a decision.', x: -1535, z: -716, yaw: -PI / 2 });
   sign({ kind: 'poster', text: 'Please do not feed the topiary. It has opinions.', x: -1485, z: -724, yaw: PI / 2 });
   sign({ kind: 'poster', text: 'Boules: not in the box hedge. Not even a little.', x: -1494.5, z: -708.5, yaw: PI / 2 });
-  sign({ kind: 'poster', text: 'No ball games.\nNo ball.\nNo games.', x: -1510, z: -748.5, yaw: 0 });
-  sign({ kind: 'poster', text: 'Gates close at dusk.\nDusk is announced by the gardener.', x: -1507, z: -690.5, yaw: PI });
+  sign({ kind: 'poster', text: 'No ball games.\nNo ball.\nNo games.', x: -1521.5, z: -748.4, yaw: PI });
+  sign({ kind: 'poster', text: 'Gates close at dusk.\nDusk is announced by the gardener.', x: -1498.5, z: -691.6, yaw: 0 });
   sign({ kind: 'poster', text: 'SOURCE OF THE THYMES\nPlease do not ask which drop.', x: -1598, z: -872, yaw: yawTo(-1598, -872, -1620, -880) });
   sign({ kind: 'street', text: 'Allée des Plane Trees\nOne way (for the river)', x: -1598, z: -840, yaw: PI / 2 });
 
@@ -319,7 +468,7 @@ export function planGardens(): DistrictPlan {
   // ======================================================================================================================
   const PX = -1451;                                 // the central path
   const Z_TOP = 526, ROW = 24, ROWS = 14;
-  for (let z = 524; z <= 878; z += 2) tile(PX, z);
+  walk('gravel', [PX, 523], [PX, 879], 3.2);                     // the central path, gravel between the lamps
   // Entrance arch, lamps down the path, the committee's noticeboards (facing south so the shot reads them).
   put({ id: 'euro-rose-arch', x: PX, z: 523, yaw: 0 });
   for (let k = 0; k <= ROWS; k++) {
@@ -444,21 +593,93 @@ export function planGardens(): DistrictPlan {
   // BASIN QUAY
   // ======================================================================================================================
   const taken: Footprint[] = [];
+  const TERRACE = ['euro-townhouse-mansard', 'euro-townhouse-tall', 'euro-half-timbered', 'euro-bakery', 'euro-bistro', 'euro-shopfront-cheese', 'euro-shopfront-chemist', 'euro-shopfront-antiques'];
   const buildings: EuroPlacement[] = [
-    { id: 'euro-canal-boathouse', x: -1540.5, z: 1040, yaw: -PI / 2, scale: 1 },
+    { id: 'euro-canal-boathouse', x: -1541.5, z: 1067.4, yaw: -PI / 2, scale: 1 },
     { id: 'euro-tabac-kiosk', x: -1472, z: 1021, yaw: 0, scale: 1 },
+    // The Basin's far shores: a terrace row along the west bank (fronts to the east, the view from the quay) and one along the
+    // south bank (fronts to the north), so the water has a town behind it instead of the edge of the world.
+    ...planStreetRow({ x: -1651.8, z: 1090, yaw: PI / 2, length: 76, seed: 17, mix: TERRACE, setback: 0.4 }),
+    ...planStreetRow({ x: -1562, z: 1085.5, yaw: PI, length: 82, seed: 29, mix: TERRACE, setback: 0.4 }),
   ];
   plan.buildings.push(...keepClear(buildings, taken, rects));
 
-  // Promenade (a single column of paving), lamps and benches facing the water, railings on the water's edge.
-  for (let z = 1008; z <= 1094; z += 2) tile(-1531, z);
+  // Ground: the stone slipway down to the water, the setts apron of the harbour, the flagged promenade, the kiosk's queue
+  // square (the Captain's), the angler's landing, and the footways in front of the two terraces.
+  // The slipway is laid in 2 m columns on the terrain's own 2 m grid lines (x = even): a decal's vertices then sit on the
+  // terrain's nodes, and the stone cannot dip under the grass on the slope's shoulder.
+  for (let x = -1556; x < -1546; x += 2) rect('quay', x, 1020, x + 2, 1060);
+  rect('setts', -1546, 1015, -1533.8, 1071);
+  rect('flags', -1533.8, 1008, -1529, 1094);
+  for (let x = -1550; x < -1544; x += 2) rect('quay', x, 1072.5, x + 2, 1079.5);
+  rect('setts', -1479, 1023.4, -1457.5, 1031.5);
+  ground.push({ kind: 'flags', line: [[-1648.8, 1014], [-1648.8, 1089]], width: 3.8 });
+  ground.push({ kind: 'flags', line: [[-1646.9, 1083.6], [-1562, 1083.6]], width: 3.6 });
+
+  // Lamps and benches facing the water, railings along the top of the slipway (gaps for the gangway, the boathouse and the angler).
+  const PONT_X = -1559, PONT_Z = 1043;                           // the quay's axis: the pontoon, the allée and the two shots line up on it
   for (let z = 1012; z <= 1092; z += 20) put({ id: 'euro-lamp-post', x: -1528.8, z, solid: { r: 0.2, h: 4.2 } });
   for (const z of [1022, 1058, 1086]) put({ id: 'park-bench', x: -1527, z, yaw: -PI / 2, solid: { w: 1.8, d: 0.7, h: 0.9 } });
   for (let z = 1009; z <= 1093; z += 2.06) {
-    if (Math.abs(z - 1040) < 6.5 || Math.abs(z - 1076) < 5) continue;
-    put({ id: 'euro-iron-railing', x: -1547.5, z, yaw: PI / 2, solid: { w: 2, d: 0.15, h: 1 } });
+    if (Math.abs(z - PONT_Z) < 6.5 || z > 1062.5 && z < 1081.5) continue;
+    put({ id: 'euro-iron-railing', x: -1547.2, z, yaw: PI / 2, solid: { w: 2, d: 0.15, h: 1 } });
   }
-  for (const z of [1033.5, 1046.5, 1070.5, 1081.5]) put({ id: 'euro-bollard', x: -1546.6, z, solid: { r: 0.15, h: 1 } });
+  for (const z of [PONT_Z - 6.5, PONT_Z + 6.5, 1061, 1070.5, 1081.5]) put({ id: 'euro-bollard', x: -1546.4, z, solid: { r: 0.15, h: 1 } });
+
+  // The water's edge: low stone coping along the straight of the shore (a gap for the gangway), mooring rings on the water face.
+  for (const z of [1026, 1030, 1034, 1038, 1048, 1052, 1056, 1060]) put({ id: 'pl-basin-coping', x: shoreX(z) + 0.2, z, yaw: -PI / 2, y: -0.12 });
+
+  // The pontoon: a gangway down from the slipway to a floating deck, the pedalo and two dinghies tied up to it, a cruiser
+  // anchored off the north end, a swan keeping an eye on them.
+  afloat('pl-pontoon', PONT_X, PONT_Z, 0, 0.15);
+  afloat('walnut-dinghy', -1562.2, PONT_Z - 2.5, -PI / 2 + 0.06, 0.1);
+  afloat('walnut-dinghy', -1560.6, PONT_Z + 2.6, -PI / 2 - 0.08, 0.1);
+  afloat('pl-swan-pedalo', -1567.8, PONT_Z + 0.5, -PI / 2 + 0.1, 0.02);
+  afloat('clog-cruiser', -1566.5, 1029.5, -PI / 2 + 0.3, 0.12);
+  afloat('bird-swan', -1563, 1052, 2.2, 0.02);
+  put({ id: 'rope-coil', x: PONT_X - 4.6, z: PONT_Z + 0.8, y: 0.54 + (waterAt(PONT_X, PONT_Z)?.surface ?? -4.9) - 0.15 - heightAt(PONT_X - 4.6, PONT_Z + 0.8), yaw: 0.6 });
+  put({ id: 'tin-pail', x: PONT_X - 3.2, z: PONT_Z - 0.7, y: 0.54 + (waterAt(PONT_X, PONT_Z)?.surface ?? -4.9) - 0.15 - heightAt(PONT_X - 3.2, PONT_Z - 0.7) });
+
+  // The harbourmaster's hut on the apron, with its notices, and the nets and crates of the working quay.
+  put({ id: 'pl-harbour-hut', x: -1541.2, z: 1031, yaw: -PI / 2, solid: { w: 3.1, d: 2.5, h: 3 } });
+  sign({ kind: 'plaque', text: 'HARBOURMASTER. Office hours: high tide.\nThe Basin has no tide.', x: -1542.45, z: 1031, yaw: -PI / 2, y: 2.2, w: 2.5, h: 0.5 });
+  sign({ kind: 'poster', text: 'Lifebuoy: for lifebuoy emergencies only.', x: -1544, z: 1027.6, yaw: PI / 2 });
+  put({ id: 'pl-net-rack', x: -1541.2, z: 1057.5, yaw: -PI / 2 });
+  put({ id: 'barrel', x: -1537.4, z: 1059.6, solid: { r: 0.4, h: 0.9 } });
+  put({ id: 'barrel', x: -1536.5, z: 1060.5, yaw: 1 });
+  put({ id: 'cargo-crate', x: -1537.2, z: 1054, yaw: 0.2, solid: { w: 1.4, d: 1.4, h: 1.4 } });
+  put({ id: 'cargo-crate', x: -1537.1, z: 1054, y: 1.4, yaw: -0.3 });
+  put({ id: 'crate', x: -1538.5, z: 1056.1, yaw: 0.7, solid: { r: 0.4, h: 0.8 } });
+  put({ id: 'rope-coil', x: -1543.4, z: 1054.3, yaw: 0.4 });
+  sign({ kind: 'poster', text: 'NETS: for drying.\nNot for opinions.', x: -1544.4, z: 1060.6, yaw: PI / 2 });
+
+  // The allée: a gravel walk down the quay's axis from the east, between two rows of plane trees with lavender borders, lamps
+  // and benches, so the lawn becomes a promenade that ends at the pontoon (the second shot stands in it, looking west).
+  {
+    walk('gravel', [-1529, PONT_Z], [-1436, PONT_Z], 4.2);
+    for (let x = -1524; x <= -1437; x += 11) {
+      for (const sgn of [-1, 1]) put({ id: 'euro-plane-tree', x, z: PONT_Z + sgn * 5.6, solid: { r: 0.45, h: 9 } });
+    }
+    for (let x = -1527; x <= -1439; x += 2) {
+      for (const sgn of [-1, 1]) put({ id: 'euro-box-hedge', x, z: PONT_Z + sgn * 3.1, yaw: 0 });
+    }
+    for (let x = -1518.5; x <= -1440; x += 22) {
+      for (const sgn of [-1, 1]) put({ id: 'euro-lamp-post', x, z: PONT_Z + sgn * 3.7, solid: { r: 0.2, h: 4.2 } });
+    }
+    for (let x = -1507; x <= -1445; x += 22) {
+      for (const sgn of [-1, 1]) {
+        const z = PONT_Z + sgn * 4.4;
+        put({ id: 'park-bench', x, z, yaw: yawTo(x, z, x, PONT_Z), solid: { w: 1.8, d: 0.7, h: 0.9 } });
+      }
+    }
+    for (const sgn of [-1, 1]) put({ id: 'pl-terracotta-urn', x: -1437.5, z: PONT_Z + sgn * 2.4, tint: 0xe8708a });
+  }
+
+  // The terraces' footways: plane trees and lamps between the pavement and the water, bollards on the edge of the west bank.
+  for (let z = 1022; z <= 1084; z += 15) put({ id: 'euro-plane-tree', x: -1647.6, z, solid: { r: 0.45, h: 9 } });
+  for (let z = 1029.5; z <= 1080; z += 15) put({ id: 'euro-lamp-post', x: -1646.6, z, solid: { r: 0.2, h: 4.2 } });
+  for (let x = -1634; x <= -1568; x += 15) put({ id: 'euro-plane-tree', x, z: 1080.6, solid: { r: 0.45, h: 9 } });
+  for (let x = -1626; x <= -1572; x += 15) put({ id: 'euro-lamp-post', x, z: 1081.2, solid: { r: 0.2, h: 4.2 } });
   for (let x = -1545; x <= -1410; x += 3.2) put({ id: 'euro-flower-trough', x, z: 1007.5, yaw: 0 });
   for (let x = -1520; x <= -1410; x += 36) put({ id: 'euro-lamp-post', x, z: 1009.6, solid: { r: 0.2, h: 4.2 } });
   for (const x of [-1510, -1440]) put({ id: 'park-bench', x, z: 1011.5, yaw: PI, solid: { w: 1.8, d: 0.7, h: 0.9 } });
@@ -475,20 +696,18 @@ export function planGardens(): DistrictPlan {
   sign({ kind: 'poster', text: 'Boat inspection: Tuesdays. Boats: please be present.', x: -1425, z: 1015, yaw: 0 });
   sign({ kind: 'poster', text: 'Lost: one oar. Found: the other oar. Reward: the first oar.', x: -1460, z: 1010, yaw: 0 });
 
-  // -- The vignette: the swan pedalo's retirement.
+  // -- The vignette: the swan pedalo's retirement. It is tied up at the pontoon; its owner sits at the top of the gangway.
   {
-    const px = -1511, pz = 1054;
-    put({ id: 'pl-swan-pedalo', x: px, z: pz, yaw: -0.5, solid: { r: 1.5, h: 1.5 } });
-    put({ id: 'crate', x: px + 2.9, z: pz + 0.4, rot: [PI, 0.4, 0], y: 0.8 });          // the upside-down crate it is propped on
-    put({ id: 'glaze-extra-toolbox', x: px - 2.5, z: pz + 1.2, yaw: 0.7 });
-    put({ id: 'tin-pail', x: px - 1.9, z: pz - 2.2 });
-    put({ id: 'rope-coil', x: px + 1.4, z: pz + 2.6, yaw: 1.2 });
-    put({ id: 'euro-cafe-chair', x: px - 4.1, z: pz - 0.6, yaw: 1.2 });
-    put({ id: 'bird-swan', x: px - 7.4, z: pz - 1.6, yaw: yawTo(px - 7.4, pz - 1.6, px, pz) });  // a real swan comes to look, and judge
-    sign({ kind: 'poster', text: 'FOR SALE: one swan, slightly used. Does not honk.', x: px - 3.2, z: pz + 3.8, yaw: 0.3 });
+    const px = -1544.6, pz = 1050.4;
+    put({ id: 'crate', x: px, z: pz, yaw: 0.4, solid: { r: 0.4, h: 0.8 } });
+    put({ id: 'glaze-extra-toolbox', x: px - 0.05, z: pz + 0.05, y: 0.8, yaw: 0.7 });
+    put({ id: 'tin-pail', x: px - 1.1, z: pz - 1.4 });
+    put({ id: 'rope-coil', x: px - 0.2, z: pz + 1.6, yaw: 1.2 });
+    put({ id: 'euro-cafe-chair', x: px + 1.7, z: pz - 0.5, yaw: -PI / 2 + 0.3 });
+    sign({ kind: 'poster', text: 'FOR SALE: one swan, slightly used. Does not honk.', x: px + 1.6, z: pz - 2.6, yaw: PI / 2 });
     vignettes.push({
       id: 'gd-pedalo-retired', name: "The swan pedalo's retirement", x: px, z: pz,
-      story: 'The pedalo has been hauled onto the quay for repairs and is for sale: toolbox, rope, a chair for the supervising gnome, and a real swan watching from the edge with the air of a competitor.',
+      story: 'The pedalo is tied up at the end of the gangway and is for sale: a toolbox on a crate, a coil of rope, a chair for the supervising gnome, and a real swan on the water with the air of a competitor.',
     });
   }
 
@@ -514,12 +733,12 @@ export function planGardens(): DistrictPlan {
   }
 
   // -- Crates, a stall and the east end of the quay.
-  const crates: [number, number][] = [[-1426, 1036], [-1422, 1040], [-1430, 1044]];
+  const crates: [number, number][] = [[-1426, 1060], [-1421.5, 1063.6], [-1431, 1064.6]];
   for (const [x, z] of crates) {
     put({ id: 'cargo-crate', x, z, yaw: x * 0.1, solid: { w: 1.4, d: 1.4, h: 1.4 } });
     put({ id: 'cargo-crate', x: x + 0.1, z: z - 0.1, y: 1.4, yaw: x * 0.3 });
   }
-  put({ id: 'crate', x: -1424, z: 1048, yaw: 0.3, solid: { r: 0.4, h: 0.8 } });
+  put({ id: 'crate', x: -1424, z: 1067.5, yaw: 0.3, solid: { r: 0.4, h: 0.8 } });
   put({ id: 'market-stall', x: -1448, z: 1068, yaw: -PI / 2, solid: { w: 1.6, d: 2.6, h: 1.8 } });
   put({ id: 'bread-loaf', x: -1448.3, z: 1067.4, y: 0.95 });
   sign({ kind: 'poster', text: 'FRESH TIDE TABLES\n(a little late)', x: -1445.8, z: 1071.2, yaw: -PI / 2 });

@@ -26,7 +26,7 @@ The parterre is a pattern, and the pattern is the point. The head gardener clips
 
 ## In the games
 
-North of town, around x -1600, z -620 (a screenshot spot of the parterre). Aurèle Clippe works here.
+North of town, around x -1600, z -620 (a screenshot spot of the parterre). Aurèle Clippe works here. Gravel walks run out of the parterre's gaps in the four directions: the main axis is a double avenue of pleached limes (clipped flat on stilts) between urns of geraniums, a rill court with benches lies to the east, a round with a stone urn to the west. Hubert Secateur clips the limes, under a sign asking that the pruners not be pruned.
 
 ## Loose threads
 

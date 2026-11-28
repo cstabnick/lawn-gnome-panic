@@ -21,7 +21,9 @@ A comedy cellar off the Grand Platz in Pardonlin: a brick wall, one mic, ten sea
 
 ## In the games
 
-Planned (E24). The comedy job: the player takes the mic at Le Petit Groan. See R-198 for how the room reacts.
+Built (E24, entrance moved in FX09). The comedy job: the player takes the mic at Le Petit Groan. See R-198 for how the room reacts.
+
+The way in is a cellar door at the south-west corner of the Grand Platz, at the foot of the plain east wall of the corner cafe: a stone arch, a deep red door, a lantern on an iron arm, a wooden cellar hatch and a barrel beside it. Over the door a banner reads "LE PETIT GROAN. Laughter by appointment." and a chalkboard gives tonight's bill ("a gnome. Then another gnome."). It is no longer a stair well standing alone in the open square.
 
 ## Loose threads
 

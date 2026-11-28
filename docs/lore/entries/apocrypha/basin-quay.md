@@ -26,7 +26,7 @@ The Thymes ends in the Basin, and Basin Quay is where the town pretends it is a 
 
 ## In the games
 
-South of town, near x -1510, z 1020 (a screenshot spot), by the Harbour Wicket. Captain Anchois keeps the quay.
+South of town, near x -1510, z 1020 (a screenshot spot), by the Harbour Wicket. Captain Anchois keeps the quay. The east shore is a setts apron and a stone slipway with a coping, a plane-tree allee running down to a pontoon (swan pedalo and two dinghies tied up, a clog cruiser at anchor), the harbourmaster's clapboard hut (office hours: high tide; the Basin has no tide), a net rack and crates; a terrace of small houses faces the water from the west and south banks.
 
 ## Everyday
 

@@ -4,6 +4,7 @@
 import type { AmbientGnomeDef } from '../ambientGnomes';
 import { euroBuilding } from '../eurokit/catalog';
 import type { EuroPlacement } from '../eurokit/street';
+import type { GroundPatch } from './groundPlan';
 import { cornersOf, footprintProblem, footprintsOverlap, inRect, type DistrictId, type Footprint, type Rect } from './layout';
 
 /**
@@ -61,10 +62,12 @@ export interface DistrictPlan {
   vignettes: Vignette[];
   /** Continentals standing about doing something place-specific (createAmbientGnomes defs). */
   residents: AmbientGnomeDef[];
+  /** Laid ground (FX09): squares, courtyards, walks (ground.ts drapes them; pavements along roads are automatic). */
+  ground: GroundPatch[];
 }
 
 export function emptyPlan(id: DistrictId): DistrictPlan {
-  return { id, buildings: [], props: [], signs: [], vignettes: [], residents: [] };
+  return { id, buildings: [], props: [], signs: [], vignettes: [], residents: [], ground: [] };
 }
 
 /**

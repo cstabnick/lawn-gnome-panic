@@ -83,6 +83,16 @@ export interface SetProp {
   lift?: number;
   /** Collider half-width (x), half-depth (z) and height, for props the player should bump into (before yaw). */
   solid?: readonly [number, number, number];
+  /**
+   * GR3 (FX05): a story stage's set is shown only while its quest window is open (stageSets.ts). `always`: this prop is
+   * part of the place itself (a door, a sign that is there before and after the story) and stays for good.
+   */
+  always?: boolean;
+  /**
+   * GR3: a solid prop may stand on a road (stageSets.test.ts checks) only when it is marked here and is scene-only (a
+   * roadblock that exists while its quest runs). Never with `always`.
+   */
+  overRoad?: boolean;
 }
 
 export interface Stage {
@@ -117,6 +127,8 @@ export interface Stage {
   vehicles: readonly VehicleMark[];
   paths: readonly DrivePath[];
   set: readonly SetProp[];
+  /** GR3: keep this story stage's set once its quest is done (a world change keeps it); default: hidden again. */
+  setStays?: boolean;
 }
 
 /** A named character and where they belong. */

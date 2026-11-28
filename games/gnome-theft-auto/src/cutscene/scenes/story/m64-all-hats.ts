@@ -26,7 +26,7 @@
 //   hats." Triumph, and the crane-high wide of the camp (batch-3 notes 6.4: one of the five).
 // The camp props stand on W16's spots (worldChanges/rows/coalitionCamp.ts: the crate table at (246, 82), the rail 5.6 m south
 // of it facing the table, the fire to the south-west), so the camp the player sees afterwards is the one in these scenes.
-import type { ScriptActor, ScriptProp, SceneScript, Step, Vec2, Vec3 } from '../../script';
+import type { SceneKeyLight, ScriptActor, ScriptProp, SceneScript, Step, Vec2, Vec3 } from '../../script';
 import { beat, coverage, cut, insert, pushIn, reaction, shot } from '../../direct';
 import { carMark, markOf, pathOf, rideOf, spot, up } from './kit';
 
@@ -98,7 +98,7 @@ export const P3_INTRO: SceneScript = {
     { do: 'sfx', id: 'crunch', at: 'bike', gain: 0.4, async: true },
     { do: 'shake', amp: 0.04, s: 0.5 },
     // 2. Setup: Lulu, sitting high for once, low angle against the sky; she laughs before the joke, as she does.
-    { do: 'face', who: 'player', at: 'lulu', s: 0.3, async: true },
+    { do: 'face', who: 'player', at: B_LULU.at, s: 0.3, async: true },
     cut(LP.single('lulu', 'mcu', { height: 'low' })),
     { do: 'gesture', who: 'lulu', name: 'laugh', s: 1.2, async: true },
     { do: 'say', who: 'lulu', text: 'Ha! Look who found Rutbottom twice.' },
@@ -186,6 +186,8 @@ const LR = coverage('lulu', 'player', -1);
 export const P3_OUTRO: SceneScript = {
   id: 'all-hats-p3-outro',
   stage: { kind: 'world' },
+  weather: 'clear',
+  keyLights: [{ at: 'fire', lift: 0.8, color: 0xff8a3a, intensity: 10, range: 12, flicker: true }],
   sky: 'golden',
   music: 'turfton-dusk',
   ambience: 'wind',
@@ -299,6 +301,14 @@ function campProps(): ScriptProp[] {
   ];
 }
 
+/** The camp by firelight (D49): the fire flickers orange, the two lantern posts and a low lamp over the table fill the ring. */
+const CAMP_LIGHTS: SceneKeyLight[] = [
+  { at: 'fire', lift: 0.8, color: 0xff8a3a, intensity: 14, range: 14, flicker: true },
+  { at: 'lamp-w', lift: 1.5, color: 0xffb066, intensity: 8, range: 9 },
+  { at: 'lamp-e', lift: 1.5, color: 0xffb066, intensity: 8, range: 9 },
+  { at: [MID[0], 1.7, MID[1]], color: 0xffa24a, intensity: 6, range: 8, flicker: true },
+];
+
 const C_PIP = markOf(CAMP, 'pip');
 const C_TANSY = markOf(CAMP, 'tansy');
 const C_YOU = markOf(CAMP, 'player');
@@ -311,13 +321,15 @@ const C_PIP_BOARD: Vec2 = [252.6, 81.0];
 const FAR_LANTERNS: Vec2[] = [[219.0, 90.4], [216.8, 88.6], [217.6, 92.2]];
 const FAR_WALK: Vec2[] = [[222.6, 89.4], [220.4, 87.8], [221.2, 91.2]];
 /** Tansy and Pip at the board: one side of their line. */
-const TP = coverage('tansy', 'pip', 1);
+const TP = coverage('tansy', 'pip', 1, 45);
 /** Saxifrage and Pip across the firelight: one side of their line. */
 const SP = coverage('saxifrage', 'pip', 1);
 
 export const P4_INTRO: SceneScript = {
   id: 'all-hats-p4-intro',
   stage: { kind: 'world' },
+  weather: 'clear',
+  keyLights: CAMP_LIGHTS,
   title: 'All Hats: By Root',
   sky: 'night',
   music: 'warm',
@@ -403,7 +415,7 @@ export const P4_INTRO: SceneScript = {
     cut(TP.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: "You don't know that." },
     { do: 'face', who: 'tansy', at: 'pip', s: 0.6 },
-    cut(pushIn('tansy', 'mcu', 3.6, { toward: 'pip', side: 20 })),
+    cut(pushIn('tansy', 'mcu', 3.6, { toward: 'pip', side: 45 })),
     beat('beat'),
     { do: 'say', who: 'tansy', text: 'I asked them. Myself. Every one.' },
     ...reaction('pip', { toward: 'tansy', size: 'mcu', side: 20, hold: 'pause' }),
@@ -436,6 +448,8 @@ const MOLE_ELDER = coverage('tumblesoil', 'bracken', 1);
 export const P4_ROOTS: SceneScript = {
   id: 'all-hats-p4-roots',
   stage: { kind: 'world' },
+  weather: 'clear',
+  keyLights: CAMP_LIGHTS,
   sky: 'night',
   music: 'fescue',
   ambience: 'night',
@@ -541,6 +555,8 @@ const DIGGS_GRANNY = coverage('diggs', 'granny', -1);
 export const P4_GUARD: SceneScript = {
   id: 'all-hats-p4-guard',
   stage: { kind: 'world' },
+  weather: 'clear',
+  keyLights: CAMP_LIGHTS,
   sky: 'night',
   music: 'sandpit',
   ambience: 'night',
@@ -621,6 +637,7 @@ const T_BRACKEN = markOf(CAMP, 'bracken', 1);
 const T_TUMBLE = markOf(CAMP, 'tumblesoil', 1);
 const T_DIGGS = markOf(CAMP, 'diggs', 1);
 const T_HOGWEED = markOf(CAMP, 'hogweed');
+const DIGGS_AT: Vec2 = [248.6, 80.7];
 const T_SAX = markOf(CAMP, 'saxifrage', 1);
 const T_GRANNY = markOf(CAMP, 'granny', 1);
 const T_NUBBIN = markOf(CAMP, 'nubbin', 2);
@@ -640,6 +657,8 @@ const TABLE_IDS = ['lulu', 'bracken', 'tumblesoil', 'diggs', 'hogweed', 'saxifra
 export const P4_OUTRO: SceneScript = {
   id: 'all-hats-outro',
   stage: { kind: 'world' },
+  weather: 'clear',
+  keyLights: CAMP_LIGHTS,
   sky: 'night',
   music: 'warm',
   ambience: 'night',
@@ -660,7 +679,8 @@ export const P4_OUTRO: SceneScript = {
     { id: 'bracken', preset: 'bracken', held: null, at: T_BRACKEN.at, yaw: T_BRACKEN.yaw },
     { id: 'tumblesoil', preset: 'tumblesoil', held: null, at: T_TUMBLE.at, yaw: T_TUMBLE.yaw },
     { id: 'nubbin', preset: 'nubbin', at: T_NUBBIN.at, yaw: T_NUBBIN.yaw },
-    { id: 'diggs', preset: 'diggs', held: null, at: T_DIGGS.at, yaw: T_DIGGS.yaw },
+    // Diggs stands at the table's north-east corner, at attention: out of the south side's lines of sight to Tansy.
+    { id: 'diggs', preset: 'diggs', held: null, at: DIGGS_AT, yaw: towards(DIGGS_AT, MID) },
     { id: 'hogweed', preset: 'hogweed', held: null, at: T_HOGWEED.at, yaw: T_HOGWEED.yaw },
     { id: 'saxifrage', preset: 'saxifrage', at: T_SAX.at, yaw: T_SAX.yaw },
     { id: 'granny', preset: 'granny', held: 'pie-tin', at: T_GRANNY_FROM, yaw: towards(T_GRANNY_FROM, T_GRANNY.at) },
@@ -687,17 +707,20 @@ export const P4_OUTRO: SceneScript = {
     { do: 'spawn', id: 'pie' },
     { do: 'sfx', id: 'clink', at: 'pie', gain: 0.6, async: true },
     // 2. The one gag: the pie rung, said at last. Locked off, the whole table in it.
-    cut(shot('granny', 'mcu', { toward: 'diggs', side: 25 })),
+    // Granny turns to the open north-east side of the ring for the line: nobody stands between her face and the lens.
+    { do: 'face', who: 'granny', at: [248.6, 78.8], s: 0.3, async: true },
+    cut({ kind: 'cut', pos: up(248.0, 78.9, 1.0), look: up(T_GRANNY.at[0], T_GRANNY.at[1], 0.85), fov: 38 }),
     { do: 'say', who: 'granny', text: 'I brought pie.' },
     cut(spot(CAMP, 'rail-back')),
     { do: 'gesture', who: 'diggs', name: 'nod', s: 1.0, async: true },
     { do: 'wait', s: 2.2 },
     // 3. The turn into the sincere minute: Pip asks for a speech; Tansy does inventory, as she always has.
     ...TABLE_IDS.map((id): Step => ({ do: 'face', who: id, at: 'tansy', s: 0.5, async: true })),
-    cut(shot('pip', 'mcu', { toward: 'tansy', side: 30 })),
+    cut(shot('pip', 'mcu', { toward: 'tansy', side: -45 })),
     { do: 'say', who: 'pip', text: 'Speech!' },
     { do: 'music', track: null, fade: 0.8 },
-    cut(shot('tansy', 'mcu', { toward: 'pip', side: -40 })),
+    { do: 'face', who: 'tansy', at: 'pip', s: 0.3, async: true },
+    cut(shot('tansy', 'mcu', { toward: 'pip', side: 40 })),
     beat('beat'),
     { do: 'say', who: 'tansy', text: 'No speech. Inventory.' },
     // 4. The count: she walks to the rail and counts the caps out loud, three to a breath, like her wrenches.

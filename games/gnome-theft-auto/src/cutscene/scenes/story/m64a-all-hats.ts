@@ -104,9 +104,10 @@ export const P1_INTRO: SceneScript = {
     cut(pushIn('tansy', 'mcu', 3.0, { toward: 'player', side: -25 })),
     { do: 'gesture', who: 'tansy', name: 'think', s: 1.0, async: true },
     beat('pause'),
+    // She answers the player to their face, and only then hands the sock across.
+    { do: 'say', who: 'tansy', text: 'Ask the planner.' },
     { do: 'face', who: 'tansy', at: 'pip', s: 0.5 },
     { do: 'give', from: 'tansy', to: 'pip', prop: 'sock-map', s: 1.0 },
-    { do: 'say', who: 'tansy', text: 'Ask the planner.' },
     // He was not ready for that.
     cut(shot('pip', 'cu', { toward: 'tansy', side: 30 })),
     { do: 'sfx', id: 'gulp', at: 'pip', gain: 0.5, async: true },
@@ -118,7 +119,7 @@ export const P1_INTRO: SceneScript = {
     cut(SOCK_TALK.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'She takes four.' },
     // Button: Pip's arithmetic, locked off, and Tansy's flat look on top of it.
-    cut(PIP_TALK.two('ms')),
+    cut(shot('pip', 'ms', { toward: 'tansy', side: 45 })),
     { do: 'say', who: 'pip', text: 'Then bring five. Rounding!' },
     { do: 'sfx', id: 'tap', at: 'tansy', gain: 0.4, async: true },
     cut(SOCK_TALK.single('tansy', 'mcu')),
@@ -380,7 +381,7 @@ const L_U1 = markOf(LINE, 'underspanner', 0);
 const L_U2 = markOf(LINE, 'underspanner', 1);
 const HOPPER = carMark(LINE, 'm64a-line-hopper');
 const BUGGY = carMark(LINE, 'm64a-hogweed-buggy');
-const DEW_RUN: Vec2[] = [[432, -78], [470, -78], [520, -80]];
+const DEW_RUN: Vec2[] = [[432, -79.5], [470, -79.5], [520, -80]];
 const BUGGY_OFF: Vec2[] = [[450, -60], [450, -20]];
 /** Hogweed's chalk board on its easel, beside the Hedge-Hopper's nose. */
 const BOARD: Vec2 = [461.0, -81.6];

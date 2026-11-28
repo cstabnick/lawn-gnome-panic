@@ -103,6 +103,15 @@ const MID: SceneScript = {
   music: 'mystery',
   ambience: 'garden',
   sky: 'night',
+  // Lantern light: the candelabra on the terrace for the Countess, a lantern on the gravel for Vesper's turn, the posts for the party.
+  keyLights: [
+    { at: 'candles-a', lift: 1.2, color: 0xffb066, intensity: 9, range: 10, flicker: true },
+    { at: 'candles-b', lift: 1.2, color: 0xffb066, intensity: 9, range: 10, flicker: true },
+    { at: [-1137.4, 1.6, 12.6], color: 0xffb066, intensity: 8, range: 9 },
+    { at: [-1139.6, 3.0, 17.0], color: 0xffa24d, intensity: 10, range: 6, from: 0, until: 14 },
+    { at: 'post-a', lift: 3.0, color: 0xffb066, intensity: 8, range: 12 },
+    { at: 'post-b', lift: 3.0, color: 0xffb066, intensity: 8, range: 12 },
+  ],
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/m50-trellisdown-tasting-mid.md', kind: 'arrival' },
   actors: [
     { id: 'player', player: true, look: WAITER, held: 'tasting-tray', at: T_PLAYER.at, yaw: T_PLAYER.yaw },

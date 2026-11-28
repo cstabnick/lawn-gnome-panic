@@ -22,9 +22,9 @@ const WATCH_B = markOf(LOCK, 'hoa-watch', 1);
 const RIDE = carMark(LOCK, 'cam-ride');
 
 /** The broom against the lockup's tin, inside the pen (the pen's west edge is the unit face at x 114.6). */
-const BROOM_AT: Vec2 = [114.95, -97.2];
+const BROOM_AT: Vec2 = [111.4, -97.2];
 /** The middle of the gap in the pen's east fence, where the gate panel hangs when it is shut. */
-const GAP: Vec2 = [118.5, -97.6];
+const GAP: Vec2 = [114.85, -97.6];
 /** Bunk top: the bunk prefab at scale 1.3 is about 0.6 m tall, so a seated gnome is lifted that much. */
 const BUNK_LIFT = 0.55;
 const WATCH_LOOK = { hat: 0x18181e, shirt: 0xc9b99b };
@@ -67,7 +67,7 @@ export const CAMS_CELL_INTRO: SceneScript = {
     { do: 'say', who: 'cam', text: 'Sorry about the cell. You said the charter was a lie. I did not listen.' },
     { do: 'gesture', who: 'cam', name: 'slump', s: 1.0, async: true },
     // The broom does not answer.
-    cut({ kind: 'cut', pos: up(117.0, -98.6, 0.9), look: 'broom-lean', fov: 36 }),
+    cut({ kind: 'cut', pos: up(113.4, -98.6, 0.9), look: 'broom-lean', fov: 36 }),
     { do: 'sfx', id: 'rustle', at: 'broom-lean', gain: 0.35, async: true },
     beat('pause'),
     cut(shot('cam', 'cu', { height: 'high', side: -25 })),
@@ -93,7 +93,7 @@ export const CAMS_CELL_INTRO: SceneScript = {
     { do: 'say', who: 'juniper', text: 'What you do with him afterwards is your own business.' },
     // Button: the tunnel's speaker clears its throat over a gnome who has already flinched from it twice today.
     cut(spot(LOCK, 'pen-high')),
-    { do: 'sfx', id: 'static', at: up(117, -98, 6.5), gain: 0.5, async: true },
+    { do: 'sfx', id: 'static', at: up(111.4, -98, 3.9), gain: 0.5, async: true },
     { do: 'gesture', who: 'cam', name: 'flinch', s: 1.0, async: true },
     { do: 'wait', s: 2.6 },
   ],
@@ -149,7 +149,7 @@ export const CAMS_CELL_MID: SceneScript = {
     cut(TALK.single('cam', 'mcu')),
     { do: 'say', who: 'cam', text: 'That is all of it. The route is on the map.' },
     // Turn: the speaker. A throat cleared over a tunnel, then a voice that has all the time in the world.
-    { do: 'sfx', id: 'static', at: up(117, -98, 6.5), gain: 0.5, async: true },
+    { do: 'sfx', id: 'static', at: up(111.4, -98, 3.9), gain: 0.5, async: true },
     { do: 'stinger', id: 'villain' },
     cut(TALK.single('cam', 'cu', { height: 'low' })),
     { do: 'gesture', who: 'cam', name: 'flinch', s: 0.8, async: true },
@@ -200,7 +200,7 @@ export const CAMS_CELL_OUTRO: SceneScript = {
     ...reaction('player', { toward: 'cam', gesture: 'nod', hold: 'pause', side: -25 }),
     // Setup: he goes to it like a man going to a friend.
     cut(spot(LOCK, 'pen-wide')),
-    { do: 'walk', who: 'cam', path: [[115.6, -97.4]], speed: 0.7 },
+    { do: 'walk', who: 'cam', path: [[112.0, -97.4]], speed: 0.7 },
     { do: 'despawn', id: 'broom-lean' },
     { do: 'hold', who: 'cam', prop: 'broom' },
     { do: 'sfx', id: 'cloth', at: 'cam', gain: 0.3, async: true },
@@ -210,14 +210,14 @@ export const CAMS_CELL_OUTRO: SceneScript = {
     beat('silence'),
     // Turn: he sweeps the floor of his own cell on the way out. Of course he does.
     cut(spot(LOCK, 'pen-high')),
-    { do: 'walk', who: 'cam', path: [[117.2, -99.0], [117.4, -96.6], [117.9, -97.6]], speed: 0.8, async: true },
+    { do: 'walk', who: 'cam', path: [[113.6, -99.0], [113.8, -96.6], [114.3, -97.6]], speed: 0.8, async: true },
     { do: 'sfx', id: 'crunch', at: 'cam', gain: 0.5, async: true },
     { do: 'wait', s: 2.6 },
     { do: 'sfx', id: 'crunch', at: 'cam', gain: 0.5, async: true },
     { do: 'wait', s: 1.8 },
     // The ride: he walks out through the gap and climbs into the passenger seat, broom between his knees.
     cut({ kind: 'track', pos: up(123.6, -94.0, 1.6), who: 'cam', fov: 46 }),
-    { do: 'walk', who: 'cam', path: [[119.6, -97.6], [120.6, -95.4], [121.4, -93.4]], speed: 1.4 },
+    { do: 'walk', who: 'cam', path: [[116.0, -97.6], [120.6, -95.4], [121.4, -93.4]], speed: 1.4 },
     { do: 'enter', who: 'cam', vehicle: 'ride', seat: 1 },
     cut(shot('cam', 'mcu', { toward: 'player', side: 40 })),
     { do: 'say', who: 'cam', text: 'Take me anywhere with leaves.' },

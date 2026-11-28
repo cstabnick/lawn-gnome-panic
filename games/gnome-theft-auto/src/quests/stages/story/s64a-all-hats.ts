@@ -143,7 +143,7 @@ export const STAGES: readonly Stage[] = [
       car('m64a-hogweed-buggy', 'parked', 'barrow-buggy', [446, -72], Math.PI, 'hogweed', 'Hogweed\'s Barrow Buggy, parked at the top of the spur'),
     ],
     paths: [
-      { id: 'dewdrop-run', role: 'patrol', kind: 'bubble-mobile', points: [[432, -78], [470, -78], [499, -82]], offRoad: true, note: 'the Dewdrop rolls along the apron ahead of the Underspanners' },
+      { id: 'dewdrop-run', role: 'patrol', kind: 'bubble-mobile', points: [[432, -79.5], [470, -79.5], [499, -82]], offRoad: true, note: 'the Dewdrop rolls along the apron ahead of the Underspanners, north of the caravan' },
       { id: 'buggy-off', role: 'getaway', kind: 'barrow-buggy', points: [[446, -72], [450, -60], [450, -20]], note: 'Hogweed down the airfield spur, by road' },
     ],
     set: [],

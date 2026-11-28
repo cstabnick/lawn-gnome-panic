@@ -22,7 +22,7 @@ Thorne Lawn & Order's tower over the street, built from two giant flower pots si
 
 ## In the games
 
-Planned (batch 3). The mega block at (90,-90) and (150,-90) with its tunnel, built by epic E01. #21 `m21-penthouse-viewing` (it tops out, W05: crane gone, banner, sales floor lit); #62 `m62-cams-cell` (the HOA lockup, entered through the tunnel; see `hoa-lockup`).
+Planned (batch 3). The mega block at (90,-90) and (150,-90) with its tunnel, built by epic E01. #21 `m21-penthouse-viewing` (the viewing is held on a beige roof garden on the tunnel slab, R-240; it tops out, W05: crane gone, banner, sales floor lit); #62 `m62-cams-cell` (the HOA lockup, entered through the tunnel; see `hoa-lockup`).
 
 Walk-in (R-170, `docs/lore/rulings.md#r-170`): the Thorne Even-Estates sales floor sits inside the Double Pot, entered by the door in the Double Pot Tunnel. The roof is the Thorne Helipad (R-171, `docs/lore/rulings.md#r-171`), reached by copter or by the sales floor's lift; gnomes do not climb.
 

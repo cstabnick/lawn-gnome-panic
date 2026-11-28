@@ -5,7 +5,7 @@
 // Driftwood in a deckchair with the sea in front of him, no jokes: the sincere payoff of rows 25 and 32. What is across the Saltwater
 // is not answered.
 // Notes: docs/design/gnome-theft-auto/direction/scenes/m43-saltbucket-boardwalk-{intro,mid,outro}.md
-import type { SceneScript, Vec2, Vec3 } from '../../script';
+import type { CamShot, SceneScript, Vec2, Vec3 } from '../../script';
 import { beat, coverage, cut, pushIn, reaction, shot } from '../../direct';
 import { markOf, spot, up } from './kit';
 
@@ -173,7 +173,11 @@ export const M43_MID: SceneScript = {
 // ---- 3. Outro: the Last Tube at dusk ----------------------------------------------------------------------------------------
 const H_DRIFT = markOf(HUT, 'driftwood');
 const H_YOU = markOf(HUT, 'player');
-const HUT_TALK = coverage('driftwood', 'player', 1);
+// Both face the sea, so the whole exchange is shot from the sea side (side -1): faces, not the backs of heads.
+const HUT_TALK = coverage('driftwood', 'player', -1);
+
+/** Driftwood from the sea side, 50 deg to his west (dead ahead is the hand-painted board, east is the player's tube), pushing in. */
+const dwPush = (s: number): CamShot => ({ kind: 'frame', who: 'driftwood', size: 'mcu', side: -50, push: { to: 'cu', s } });
 
 /**
  * Dusk at the Last Tube. Driftwood in a deckchair with the Saltwater in front of him; the player sits on a tube at his shoulder.
@@ -192,7 +196,7 @@ export const M43_OUTRO: SceneScript = {
     { id: 'driftwood', preset: 'driftwood', held: null, at: H_DRIFT.at, yaw: H_DRIFT.yaw },
   ],
   props: [
-    { id: 'chair', prefab: 'deck-chair', at: H_DRIFT.at, yaw: H_DRIFT.yaw, size: 1.7, by: 'h' },
+    { id: 'chair', prefab: 'deck-chair', at: H_DRIFT.at, yaw: H_DRIFT.yaw + Math.PI, size: 1.7, by: 'h' },
     { id: 'tube', prefab: 'tow-tube', at: H_YOU.at, yaw: 0, size: 1.8, by: 'w' },
     { id: 'tubes', prefab: 'tube-rack', at: [153.4, 1161.2], yaw: Math.PI, size: 3.2, by: 'w' },
   ],
@@ -204,33 +208,34 @@ export const M43_OUTRO: SceneScript = {
     { do: 'walk', who: 'player', path: [H_YOU.at], speed: 1.2, async: true },
     { do: 'wait', s: 2.8 },
     { do: 'gesture', who: 'player', name: 'sit', s: 0.1 },
+    { do: 'face', who: 'player', at: [156, 1182], s: 0.3, async: true },
     // Setup: he does not turn round.
-    cut(HUT_TALK.single('driftwood', 'mcu')),
+    cut(shot('driftwood', 'mcu', { side: -50 })),
     { do: 'say', who: 'driftwood', text: 'Sit, friend. The sea does not mind company.' },
-    cut(HUT_TALK.single('player', 'mcu')),
+    cut(shot('player', 'mcu', { toward: 'driftwood', side: 100 })),
     beat('pause'),
-    cut(HUT_TALK.single('driftwood', 'mcu')),
+    cut(shot('driftwood', 'mcu', { side: -50 })),
     { do: 'say', who: 'driftwood', text: 'Six months I said it was real. Now it is only there.' },
     // The look: the two of them from behind, and the whole Saltwater.
     cut(spot(HUT, 'behind')),
     { do: 'music', track: null, fade: 1.2 },
     { do: 'ambience', bed: 'shore', fade: 1.0 },
     beat('silence'),
-    cut(HUT_TALK.single('player', 'mcu')),
+    cut(shot('player', 'mcu', { toward: 'driftwood', side: 100 })),
     { do: 'say', who: 'player', text: 'It is real.' },
     // Turn: he says what it is, and that he is still on the edge of it.
-    cut(pushIn('driftwood', 'mcu', 3.6, { to: 'cu', toward: 'player', side: 25 })),
+    cut(dwPush(3.6)),
     { do: 'music', track: 'turfton-dusk', fade: 2.0 },
     { do: 'say', who: 'driftwood', text: 'It is enormous, is what it is. And I am only at the edge.' },
-    cut(HUT_TALK.single('player', 'mcu')),
+    cut(shot('player', 'mcu', { toward: 'driftwood', side: 100 })),
     { do: 'say', who: 'player', text: 'The glow?' },
-    cut(HUT_TALK.single('driftwood', 'mcu')),
+    cut(shot('driftwood', 'mcu', { side: -50 })),
     { do: 'say', who: 'driftwood', text: 'Still out there. I will not ask what it is tonight.' },
-    cut(HUT_TALK.single('player', 'mcu')),
+    cut(shot('player', 'mcu', { toward: 'driftwood', side: 100 })),
     { do: 'say', who: 'player', text: 'And tomorrow?' },
-    cut(HUT_TALK.single('driftwood', 'mcu')),
+    cut(shot('driftwood', 'mcu', { side: -50 })),
     { do: 'say', who: 'driftwood', text: 'Tomorrow, the hut. Somebody has to open the door.' },
-    cut(pushIn('driftwood', 'mcu', 3.0, { to: 'cu', toward: 'player', side: 25 })),
+    cut(dwPush(3.0)),
     { do: 'say', who: 'driftwood', text: 'Thank you for coming to see it.' },
     // Button: the bell, once, far out on the water; the two of them small against a very large sea.
     cut(spot(HUT, 'behind')),

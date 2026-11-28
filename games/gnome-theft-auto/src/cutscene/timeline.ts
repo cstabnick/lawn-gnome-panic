@@ -698,3 +698,39 @@ export function scenePaths(tl: Timeline, env: StageEnv): ScenePath[] {
   });
   return out;
 }
+
+// ---- GR6: scene weather and key light ---------------------------------------------------------------------------------
+
+/**
+ * The weather a world scene plays in (SceneScript.weather): the scene's own pick, else rain under a 'rain' / 'storm'
+ * bed, snow under a 'snow' bed, else clear. null: keep the world's weather (a room stage, or `weather: 'world'`).
+ */
+export function sceneWeather(script: SceneScript): Exclude<SceneScript['weather'], 'world' | undefined> | null {
+  if (script.stage.kind !== 'world') return null;
+  const w = script.weather;
+  if (w === 'world') return null;
+  if (w) return w;
+  if (script.ambience === 'rain' || script.ambience === 'storm') return 'rain';
+  if (script.ambience === 'snow') return 'snow';
+  return 'clear';
+}
+
+/** 0..1: how much of a key light (SceneKeyLight from / until) is on at scene time t, eased over 0.8 s each way. */
+export function keyLightLevel(from: number | undefined, until: number | undefined, t: number): number {
+  const EASE = 0.8;
+  const on = from === undefined ? 1 : Math.min(1, Math.max(0, (t - from) / EASE));
+  const off = until === undefined ? 1 : Math.min(1, Math.max(0, (until - t) / EASE));
+  return Math.min(on, off);
+}
+
+/**
+ * Does a scene want the camera-side face fill (SceneScript.faceFill)? `night` is the world's own night factor (0 day ..
+ * 1 night), used when the scene holds no `sky`. Rooms are lit by their own lamps, so they never get one unless asked.
+ */
+export function wantsFaceFill(script: SceneScript, night: number): boolean {
+  if (script.faceFill === false) return false;
+  if (script.faceFill !== undefined) return true;
+  if (script.stage.kind !== 'world') return false;
+  if (script.sky) return script.sky !== 'noon';
+  return night > 0.35;
+}

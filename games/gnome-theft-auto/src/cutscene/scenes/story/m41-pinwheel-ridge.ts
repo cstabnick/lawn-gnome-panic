@@ -187,14 +187,14 @@ export const PINWHEEL_RIDGE_OUTRO: SceneScript = {
     { do: 'cam', shot: { kind: 'dolly', from: up(935, -1194, 0.9), to: up(932, -1196, 1.4), look: up(928, -1200, 34), s: 4, fov: 56 } },
     { do: 'sfx', id: 'whoosh', at: up(925, -1201, 20), gain: 0.7, async: true },
     { do: 'wait', s: 4 },
-    // 2. Ragwort, hat tipped back, looking south, says it.
-    cut(shot('ragwort', 'mcu', { toward: 'player', side: -25 })),
+    // 2. Ragwort, hat tipped back, looking south, says it. Her singles sit on her facing side (no `toward`), so the face reads.
+    cut(shot('ragwort', 'mcu', { side: -25 })),
     { do: 'face', who: 'ragwort', at: [900, -1100], s: 0.4, async: true },
     { do: 'say', who: 'ragwort', text: 'All ten. I forgot how loud that is.' },
     cut(OR.single('player', 'mcu')),
     { do: 'face', who: 'player', at: 'ragwort', s: 0.4 },
     { do: 'say', who: 'player', text: 'Is it done?' },
-    cut(OR.single('ragwort', 'mcu')),
+    cut(shot('ragwort', 'mcu', { side: -25 })),
     { do: 'say', who: 'ragwort', text: 'Power is cut. Part one of four. The Combine charges at nought percent.' },
     // 3. The view: Turfton, far down the valley, dusk, the neon coming up steady.
     { do: 'music', track: 'turfton-dusk', fade: 2.4 },
@@ -202,11 +202,11 @@ export const PINWHEEL_RIDGE_OUTRO: SceneScript = {
     { do: 'sfx', id: 'bell', gain: 0.3, async: true },
     { do: 'wait', s: 5 },
     // 4. Ragwort's quiet line over the view; then the thermos: the tiny gag lands last.
-    cut(OR.single('ragwort', 'mcu')),
+    cut(shot('ragwort', 'mcu', { side: -25 })),
     { do: 'say', who: 'ragwort', text: 'There. Steady. The wind was always willing.' },
     { do: 'sfx', id: 'pour', at: 'ragwort', gain: 0.5, async: true },
     { do: 'gesture', who: 'ragwort', name: 'point', s: 1, async: true },
-    cut(OR.single('ragwort', 'ms')),
+    cut(shot('ragwort', 'ms', { side: -25 })),
     { do: 'say', who: 'ragwort', text: 'Tea is cold. Naturally.' },
     { do: 'wait', s: 1.4 },
   ],

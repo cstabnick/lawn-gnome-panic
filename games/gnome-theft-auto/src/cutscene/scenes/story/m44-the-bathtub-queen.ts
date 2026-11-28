@@ -205,6 +205,11 @@ export const M44_OUTRO: SceneScript = {
   sky: 'night',
   music: 'triumph',
   ambience: 'shore',
+  // The two hung lanterns light the deck; a third warm spot sits beside the camera side of the helm so the Captain's face reads.
+  keyLights: [
+    { at: 'lantern-1', lift: 2.0, color: 0xffb066, intensity: 12, range: 12, flicker: true },
+    { at: 'lantern-2', lift: 2.0, color: 0xffb066, intensity: 12, range: 12, flicker: true },
+  ],
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/m44-the-bathtub-queen-outro.md', kind: 'outro' },
   actors: [
     { id: 'player', player: true, held: 'banner-scrap-flag', at: deck(O_YOU.at), yaw: towards(O_YOU.at, O_BILGE.at) },

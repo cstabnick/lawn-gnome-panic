@@ -19,7 +19,7 @@ import { createCueAudio, type CueAudio, type EngineVoice } from './cueAudio';
 import { ROOM_ORIGIN, ROOM_THEMES, buildRoom, fitPrefab, type BuiltRoom } from './rooms';
 import { poseSceneVehicle, removeSceneVehicle, seatLocal, spawnSceneVehicle, vehicleGroundFor } from './sceneVehicles';
 import type { SceneScript, ScriptActor, StageEnv, Timeline, TimedStep, SceneFrame, Vec3 } from './script';
-import { compile, eventsBetween, sampleFrame, targetPoint } from './timeline';
+import { compile, eventsBetween, keyLightLevel, sampleFrame, sceneWeather, targetPoint, wantsFaceFill } from './timeline';
 import { lineTiming } from './textSpeed';
 import { liveWorldFor, type LiveWorld } from './liveArea';
 import { CAST_INTROS, introFor } from './castIntros';
@@ -41,6 +41,12 @@ export interface DirectorHooks {
   placePlayer?(x: number, z: number, yaw: number): void;
   /** World stages with `sky`: time-lapse the sky to that hour; returns the seconds the director holds the first shot while it runs (0 or nothing: no hold). null scrubs the sky back to world time. */
   setSky?(mode: 'noon' | 'golden' | 'night' | null): number | void;
+  /** World stages (GR6, timeline.ts sceneWeather): pin the weather while the scene plays; null gives the world's back. */
+  setWeather?(kind: 'clear' | 'cloud' | 'mist' | 'rain' | 'snow' | null): void;
+  /** The world's night factor (0 day .. 1 night), for the default face fill (timeline.ts wantsFaceFill). */
+  night?(): number;
+  /** A scene starts (its script) or ends (null): app.ts shows the quest-scoped stage sets it needs (stageSets.ts). */
+  onScene?(script: SceneScript | null): void;
 }
 
 export interface ScenePlayOptions {
@@ -101,6 +107,13 @@ interface Playing {
   camStep: number;
   camPos: THREE.Vector3;
   live: LiveWorld | null;
+  /** GR6: the scene's key lights (SceneScript.keyLights) and the camera-side face fill, in the stage group. */
+  keys: { def: NonNullable<SceneScript['keyLights']>[number]; light: THREE.PointLight; base: number }[];
+  fill: THREE.PointLight | null;
+  /** The weather was pinned for this scene (hooks.setWeather). */
+  weatherPinned: boolean;
+  /** World objects hidden for the scene (SceneScript.hideWorld) and whether each was visible before. */
+  hidden: { obj: THREE.Object3D; was: boolean }[];
 }
 
 const ZERO = new THREE.Vector3();
@@ -152,6 +165,8 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
   let phaseT = 0;
   let cur: Playing | null = null;
   const camTmp = new THREE.Vector3();
+  const fillTmp = new THREE.Vector3();
+  const fillRight = new THREE.Vector3();
 
   // ---- Helpers --------------------------------------------------------------------------------------------------------
 
@@ -305,6 +320,9 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     hideIntro();
     if (world) hooks.setPlayerVisible?.(true);
     if (world && c.script.sky) hooks.setSky?.(null);
+    if (c.weatherPinned) hooks.setWeather?.(null);
+    for (const h of c.hidden) h.obj.visible = h.was;
+    hooks.onScene?.(null);
     timeEl.style.opacity = '0';
     hooks.setUiVisible(true);
 
@@ -393,6 +411,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         savedBg: scene.background, savedFog: scene.fog,
         lightsSaved: [], savedFov: null, camStep: -2, camPos: new THREE.Vector3(),
         live: liveWorldFor(script, tl, env),
+        keys: [], fill: null, weatherPinned: false, hidden: [],
       };
       for (const ts of tl.steps) if (ts.step.do === 'say') c.lastSayOrder = Math.max(c.lastSayOrder, ts.order);
 
@@ -449,6 +468,28 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       cue.radio(script.radio ?? 0.25);
       if (!room) hooks.setPlayerVisible?.(false);
       if (!room && script.sky) { const s = hooks.setSky?.(script.sky); c.holdT = typeof s === 'number' && s > 0 ? s : 0; }
+      // GR6: the scene's weather (clear unless it asks for rain or snow), its practical lights and the face fill.
+      const weather = sceneWeather(script);
+      if (weather && hooks.setWeather) { hooks.setWeather(weather); c.weatherPinned = true; }
+      for (const def of script.keyLights ?? []) {
+        const base = def.intensity ?? 7;
+        const light = new THREE.PointLight(def.color ?? 0xffb066, 0, def.range ?? 9, 1.4);
+        light.castShadow = false;
+        stage.add(light);
+        c.keys.push({ def, light, base });
+      }
+      if (wantsFaceFill(script, hooks.night?.() ?? 0)) {
+        c.fill = new THREE.PointLight(0xffd2a0, 0, 7, 1.2);
+        c.fill.castShadow = false;
+        stage.add(c.fill);
+      }
+      if (!room) {
+        for (const name of script.hideWorld ?? []) {
+          const obj = scene.getObjectByName(name);
+          if (obj) { c.hidden.push({ obj, was: obj.visible }); obj.visible = false; }
+        }
+      }
+      hooks.onScene?.(script);
 
       cur = c;
       phase = 'in';
@@ -593,6 +634,27 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
       camera.updateProjectionMatrix();
       camera.position.copy(camTmp);
       camera.lookAt(lookAt);
+
+      // GR6 key lights: on their prop / actor (stage-local), eased in and out on their from / until, fires flicker.
+      for (const k of c.keys) {
+        const p = targetPoint(frame, k.def.at);
+        if (p) k.light.position.set(p[0], p[1] + (k.def.lift ?? (typeof k.def.at === 'string' ? 0.6 : 0)), p[2]);
+        const flick = k.def.flicker ? 0.82 + 0.1 * Math.sin(c.clock * 13.1) + 0.08 * Math.sin(c.clock * 7.3 + 1.7) : 1;
+        k.light.intensity = k.base * flick * keyLightLevel(k.def.from, k.def.until, c.clock) * (p ? 1 : 0);
+      }
+      // Face fill: a soft lamp just off the camera's right shoulder, part of the way to what it looks at, strongest in
+      // close shots (camera within 4 m of its aim) and gone by 9 m, so a wide shot gets no pool of light on the ground.
+      if (c.fill) {
+        const toLook = fillTmp.copy(lookAt).sub(camTmp);
+        const dist = toLook.length();
+        const near = clamp((9 - dist) / 5, 0, 1);
+        toLook.normalize();
+        const right = fillRight.set(-toLook.z, 0, toLook.x).normalize();
+        c.fill.position.copy(camTmp).addScaledVector(toLook, Math.min(dist * 0.35, 1.2)).addScaledVector(right, 0.45).sub(origin);
+        c.fill.position.y += 0.3;
+        c.fill.distance = dist + 3;
+        c.fill.intensity = (typeof c.script.faceFill === 'number' ? c.script.faceFill : 3.2) * near;
+      }
 
       // Dialogue, titles, caption, fade, skip.
       if (frame.say) {

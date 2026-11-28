@@ -162,7 +162,7 @@ const P2_INTRO: SceneScript = {
     { do: 'sfx', id: 'tap', at: 'ant', gain: 0.6 },
     { do: 'wait', s: 1.0 },
     // 2. Setup: Pip, as far from the door as he can stand and still be at it.
-    cut(LAWN.single('pip', 'ms', { handheld: 0.015 })),
+    cut(shot('pip', 'ms', { toward: 'betony', side: 10, handheld: 0.015 })),
     { do: 'say', who: 'pip', text: 'Ants. I do not like ants.' },
     { do: 'face', who: 'pip', at: 'betony', s: 0.3 },
     { do: 'say', who: 'pip', text: 'That one is holding a bowl at me. Why a bowl?' },
@@ -187,7 +187,7 @@ const P2_INTRO: SceneScript = {
     { do: 'wait', s: 0.9 },
     cut(LAWN.single('pip', 'mcu')),
     { do: 'say', who: 'pip', text: 'It is pointing. Why is it pointing?' },
-    cut(LAWN.single('betony', 'mcu')),
+    cut(shot('betony', 'mcu', { side: -25 })),
     { do: 'say', who: 'betony', text: 'At the Trencher. That is where the sugar is kept.' },
     // 4. The job, to the player, three clauses.
     { do: 'face', who: 'betony', at: 'player', s: 0.4 },
@@ -196,7 +196,7 @@ const P2_INTRO: SceneScript = {
     ...reaction('player', { toward: 'betony', gesture: 'nod', size: 'mcu', side: 25, hold: 'pause' }),
     // 5. Button: Pip tries a shortcut. He raises a fist to knock; the landlord turns back, and taps once.
     { do: 'face', who: 'pip', at: ANT, s: 0.4 },
-    cut(shot('pip', 'ms', { toward: 'betony', side: 60 })),
+    cut(shot('pip', 'ms', { toward: 'betony', side: 15 })),
     { do: 'say', who: 'pip', text: 'Or we could just knock?' },
     { do: 'gesture', who: 'pip', name: 'handsUp', s: 0.8, async: true },
     { do: 'despawn', id: 'ant-pointing' },
@@ -239,7 +239,7 @@ const P2_OUTRO: SceneScript = {
     ...[0, 1, 2, 3, 4].flatMap((i): Step[] => [{ do: 'sfx', id: 'tap', at: 'ant', gain: 0.5 + i * 0.03 }, { do: 'wait', s: 0.4 }]),
     // 2. Pip, whispering, and Betony on the custom.
     { do: 'face', who: 'betony', at: 'pip', s: 0.4, async: true },
-    cut(LAWN.single('pip', 'mcu')),
+    cut(shot('pip', 'mcu', { toward: 'betony', side: 10 })),
     { do: 'say', who: 'pip', text: 'It is counting.' },
     cut(LAWN.single('betony', 'mcu')),
     { do: 'say', who: 'betony', text: 'Twice. They always count twice.' },
@@ -257,11 +257,11 @@ const P2_OUTRO: SceneScript = {
     { do: 'sfx', id: 'rustle', at: up(1166.4, 76.6, 0.2), gain: 0.5 },
     { do: 'wait', s: 2.0 },
     // 4. Pip, who does not like ants, takes his hat off to one.
-    cut(LAWN.single('pip', 'mcu')),
+    cut(shot('pip', 'mcu', { toward: 'betony', side: 10 })),
     { do: 'say', who: 'pip', text: 'They are letting us up.' },
     { do: 'face', who: 'pip', at: ANT, s: 0.4 },
     { do: 'gesture', who: 'pip', name: 'tipHat', s: 1.2, async: true },
-    cut(shot('pip', 'ms', { toward: 'betony', side: 50 })),
+    cut(shot('pip', 'ms', { toward: 'betony', side: 15 })),
     { do: 'say', who: 'pip', text: 'Thank you, sir. Or madam. Thank you.' },
     // Button: the landlord taps once. Pip, beaming.
     cut(spot(DOOR, 'ant-eye')),
@@ -328,11 +328,11 @@ const P3_INTRO: SceneScript = {
     { do: 'say', who: 'tech-1', text: 'Lens is true. Level to the grain.' },
     // 3. The three by the step, in the lee of the dome.
     { do: 'sfx', id: 'cloth', at: 'betony', gain: 0.4, async: true },
-    cut(RIM.single('betony', 'mcu')),
+    cut(shot('betony', 'mcu', { toward: 'pip', side: 25 })),
     { do: 'say', who: 'betony', text: 'My lens. Out in the cold, on a stick, like a teacup.' },
     { do: 'face', who: 'pip', at: 'player', s: 0.4, async: true },
     { do: 'face', who: 'player', at: 'pip', s: 0.4 },
-    cut(RIM.single('pip', 'mcu', { handheld: 0.015 })),
+    cut(PIP_YOU.single('pip', 'mcu', { handheld: 0.015 })),
     { do: 'say', who: 'pip', text: 'Six of them. In little white coats.' },
     cut(PIP_YOU.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'Will they fight?' },
@@ -405,7 +405,7 @@ const P3_OUTRO: SceneScript = {
     { do: 'say', who: 'HOA Radio', text: 'Anthill, report. Anthill, your lens is off the line.' },
     { do: 'sfx', id: 'alarm', at: 'radio', gain: 0.8 },
     { do: 'face', who: 'pip', at: 'radio', s: 0.3, async: true },
-    cut(RIM.single('pip', 'mcu', { handheld: 0.02 })),
+    cut(shot('pip', 'mcu', { side: 25, handheld: 0.02 })),
     { do: 'say', who: 'pip', text: 'That is an alarm. I know alarms.' },
     // 4. Button: far down the east flank, headlights start up the Anthill road.
     { do: 'drive', vehicle: 'van', path: VAN_UP, speed: 6, arrive: false, async: true },
@@ -552,11 +552,11 @@ const FINAL_OUTRO: SceneScript = {
     cut(spot(FIELD, 'chair')),
     { do: 'sfx', id: 'flutter', gain: 0.5, async: true },
     { do: 'wait', s: 1.6 },
-    cut(CHAIR.single('wally', 'mcu', { height: 'high' })),
+    cut(shot('wally', 'mcu', { side: -25 })),
     { do: 'say', who: 'wally', text: 'Saw that. Four seconds of air. Not bad, kid.' },
     { do: 'intro', who: 'wally' },
     // 2. He stands. Wally stands only for something in the air.
-    cut(CHAIR.single('wally', 'ms')),
+    cut(shot('wally', 'ms', { side: -25 })),
     { do: 'face', who: 'wally', at: 'player', s: 0.4 },
     { do: 'gesture', who: 'wally', name: 'stand', s: 0.8 },
     { do: 'hold', who: 'wally', prop: null },

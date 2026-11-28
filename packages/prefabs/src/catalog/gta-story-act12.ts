@@ -258,4 +258,57 @@ export const GTA_STORY_ACT12: readonly PrefabDef[] = [
     grip: [0, 0.2, 0],
     wear: { rot: [90, 0, 0] },
   },
+  {
+    id: 'beige-garden-table', name: 'Beige Garden Table', category: 'furniture', uses: ['place'],
+    tags: ['table', 'beige', 'garden', 'roof', 'penthouse', 'patio', 'sand', 'thorne', 'gta'], emoji: [],
+    about: 'Gnome Theft Auto: the penthouse roof-garden table, a round beige top on one beige pedestal. 0.7 m across, 0.6 m tall.',
+    examine: [
+      'A round beige table on a single beige pedestal, as level as a table can be made to look.',
+      'Gnome saying: nothing is ever spilled on a beige table, because nothing is ever put on it.',
+      'It has no wobble. A gnome has checked, twice, with a coin.',
+      'The top is the exact beige of the card that arrived on the mat.',
+      'Under the rim a small label reads: even, with no conditions.',
+    ],
+    parts: [
+      { s: 'cyl', d: [0.2, 0.22, 0.03], at: [0, 0.015, 0], c: 'sand', seg: 10, name: 'foot' },
+      { s: 'cyl', d: [0.04, 0.04, 0.55], at: [0, 0.3, 0], c: 'sand', seg: 8, name: 'pedestal' },
+      { s: 'cyl', d: [0.35, 0.35, 0.04], at: [0, 0.58, 0], c: 'chalk', seg: 12, name: 'top' },
+    ],
+  },
+  {
+    id: 'beige-garden-chair', name: 'Beige Garden Chair', category: 'furniture', uses: ['place', 'sit'],
+    tags: ['chair', 'beige', 'garden', 'roof', 'penthouse', 'patio', 'sand', 'thorne', 'gta'], emoji: [],
+    seat: [0, 0.3, 0],
+    about: 'Gnome Theft Auto: a beige slat-back garden chair for the penthouse roof. Faces +z, 0.4 m wide, 0.65 m tall.',
+    examine: [
+      'A plain beige chair with a straight back, the only chair design the roof allows.',
+      'Gnome saying: sit down and the chair will agree with you, whatever you said.',
+      'The seat is neither warm nor cool, which is the point.',
+      'It is exactly as comfortable as it needs to be and not a degree more.',
+      'There is a neat gap behind it for a coat, in case you have decided to stay.',
+    ],
+    parts: [
+      { s: 'box', d: [0.4, 0.04, 0.4], at: [0, 0.3, 0], c: 'sand', name: 'seat' },
+      { s: 'box', d: [0.04, 0.3, 0.04], at: [0.17, 0.15, 0.17], c: 'sand', mirror: true, name: 'front-legs' },
+      { s: 'box', d: [0.04, 0.3, 0.04], at: [0.17, 0.15, -0.17], c: 'sand', mirror: true, name: 'rear-legs' },
+      { s: 'box', d: [0.4, 0.3, 0.03], at: [0, 0.5, -0.185], c: 'chalk', name: 'back' },
+    ],
+  },
+  {
+    id: 'beige-garden-planter', name: 'Beige Garden Planter', category: 'prop', uses: ['place'],
+    tags: ['planter', 'pot', 'beige', 'garden', 'roof', 'penthouse', 'box', 'sand', 'thorne', 'gta'], emoji: [],
+    about: 'Gnome Theft Auto: a beige box planter with a clipped green shrub, for the penthouse roof. 0.5 m wide, 0.6 m tall.',
+    examine: [
+      'A beige box with a green shrub clipped into a perfect ball, which is the only thing up here that is green.',
+      'Gnome saying: a shrub that never needs watering is not a shrub, it is a promise.',
+      'The shrub has been trimmed so evenly that it looks painted on.',
+      'The soil is the same beige as the box. Nobody asks where the green comes from.',
+      'A small card tucked in the leaves says: permitted.',
+    ],
+    parts: [
+      { s: 'box', d: [0.5, 0.3, 0.5], at: [0, 0.15, 0], c: 'sand', name: 'box' },
+      { s: 'box', d: [0.44, 0.02, 0.44], at: [0, 0.31, 0], c: 'dirt', name: 'soil' },
+      { s: 'ball', d: [0.2], at: [0, 0.5, 0], c: 'leaf-dark', seg: 8, name: 'shrub' },
+    ],
+  },
 ];

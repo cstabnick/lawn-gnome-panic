@@ -69,7 +69,7 @@ export function buildBoardwalk(scene: THREE.Scene, boxes: Box[]): void {
     for (const z of lampZs) {
       const lamp = place(scene, 'boardwalk-lamp', x, z, 0, 2.2, bw.deckLift);
       // A warm pool of light on the planks under the lamp (night only), kept inside the deck edge.
-      scene.add(lightPool(x, deckTop, z, Math.min(4.2, z - R.minZ, R.maxZ - z, x - R.minX, R.maxX - x)));
+      scene.add(lightPool(x, deckTop, z, Math.min(4.2, z - R.minZ, R.maxZ - z, x - R.minX, R.maxX - x), 0xffd08a, 0.85));
       if (lamp) boxes.push({ minX: x - 0.3, maxX: x + 0.3, minZ: z - 0.3, maxZ: z + 0.3, h: deckTop + 5.4 });
     }
   }

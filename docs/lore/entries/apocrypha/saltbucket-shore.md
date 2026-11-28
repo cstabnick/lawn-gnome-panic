@@ -7,8 +7,8 @@ setting: apocrypha
 era: now
 status: draft
 games: [gnome-theft-auto]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158, games/gnome-theft-auto/src/data/levels/south-shore.level.json, games/gnome-theft-auto/src/sites.ts]
-related: [the-saltwater, saltbucket-boardwalk, long-spoon-pier, the-spokewheel, the-bathtub-queen, the-puddle-sea, new-puddle-marina, driftwood-castaway, turfton]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158, docs/lore/rulings.md#r-241, games/gnome-theft-auto/src/data/levels/south-shore.level.json, games/gnome-theft-auto/src/sites.ts]
+related: [old-skerrick, winkle-pennant, hessian-nap, the-saltwater, saltbucket-boardwalk, long-spoon-pier, the-spokewheel, the-bathtub-queen, the-puddle-sea, new-puddle-marina, driftwood-castaway, turfton]
 ---
 
 The seaside south of the Puddle Sea, past a line of dunes: a bucket-and-spade town built round a giant sunk Tall-One bucket, with a boardwalk, a pier, a wheel, a pirate ship and the open sea.
@@ -24,7 +24,9 @@ The bucket and spade were left by a Tall One long ago and sank to the rim. The t
 
 ## In the games
 
-The south band of the map (code region `south-shore`, x -1400 to 1400, z 900 to 1400), built by E01. Roads: `south-band` runs on from Route South at (0, 870) west, `south-band-east` runs east, and `coast-spur` runs south to the boardwalk. The Saltwater fills the whole south edge (z 1190 to 1390) with a beach at z 1140 to 1190. Saltbucket Boardwalk (0, 1115) is 420 x 46 m, at the end of the coast spur. The Spokewheel stands at (-260, 1100) and the Bathtub Queen lies moored at the end of Long Spoon Pier at (300, 1268).
+The south band of the map (code region `south-shore`, x -1400 to 1400, z 900 to 1400), built by E01. Roads: `south-band` runs on from Route South at (0, 870) west, `south-band-east` runs east, and `coast-spur` runs south to the boardwalk. The Saltwater fills the whole south edge (z 1190 to 1390) with a beach at z 1140 to 1190. Saltbucket Boardwalk (0, 1117) is a 410 x 30 m deck (x -200 to 210, z 1102 to 1132; R-240), at the end of the coast spur. The Spokewheel stands at (-260, 1100) and the Bathtub Queen lies moored at the end of Long Spoon Pier at (300, 1268).
+
+The bucket (FX11, R-241, R-242): its rim, about 40 m across, breaks the sand at (0, 1028) in two arcs either side of the coast spur and its handle arches about 14 m over the spur as the town's gateway; the Tall One's spade stands blade-down in a dune at (-60, 1045). The dune band (z about 1026 to 1062) has marram grass and a weathered picket fence at its southern foot; the sand reaches z 1000 within about 460 m of the spur. Along the two kilometres of strand are small scenes and people ([old-skerrick](old-skerrick.md) at the winch, [winkle-pennant](winkle-pennant.md) at the rock pool, [hessian-nap](hessian-nap.md) at Dunelow, R-248), and one fishing smack works the horizon at about z 1560.
 
 Quest rows 32 `m32-driftwoods-chart` (planted from the dune line), 43 `m43-saltbucket-boardwalk`, 44 `m44-the-bathtub-queen`, 64 `m64-all-hats` (By Water) use the region tag `saltbucket-shore`.
 

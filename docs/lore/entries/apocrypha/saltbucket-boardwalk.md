@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-158]
-related: [saltbucket-shore, long-spoon-pier, the-spokewheel, marram-teaspoon, driftwood-castaway, the-saltwater, the-boardwalk-stalls]
+related: [winkle-and-agatha-dunmore, hob-pennywhistle, little-pip, old-fenn, mabel-crumb, tuppence-of-the-queue, saltbucket-shore, long-spoon-pier, the-spokewheel, marram-teaspoon, driftwood-castaway, the-saltwater, the-boardwalk-stalls]
 ---
 
 The plank promenade of Saltbucket Shore: stalls, candyfloss, tube and ski rental, and Driftwood's beach hut, with Long Spoon Pier running out to sea from its east end.
@@ -24,9 +24,9 @@ The stalls are run by a handful of families who have not left in years. Marram T
 
 ## In the games
 
-The plank promenade lies at (0, 1115) with the beach below it. Rows 43 `m43-saltbucket-boardwalk` (Driftwood's hut, Marram, the Spokewheel) and 44 `m44-the-bathtub-queen`. Built by E01 and the south-shore area epic: planned (batch 3).
+The plank promenade lies at (0, 1117) with the beach below it. Rows 43 `m43-saltbucket-boardwalk` (Driftwood's hut, Marram, the Spokewheel) and 44 `m44-the-bathtub-queen`. Built by E01 and the south-shore area epic: planned (batch 3).
 
-Built by E11 (`coast/config.ts`): x -210 to 210, z 1092 to 1138 (420 x 46 m), lamps every 30 m, benches facing the sea and stairs to the sand at x -120, 0 and 120. The six stalls stand at z 1100 at x -150, -95, -40, 40, 95 and 150. A spur joins the east end to Long Spoon Pier. Driftwood's tube and ski hut is [the-last-tube](the-last-tube.md) on the sand at (150, 1150).
+Built by E11 (`coast/config.ts`): x -200 to 210, z 1102 to 1132 (410 x 30 m; narrowed and trimmed by FX11, R-240), lamps every 30 m with bunting between them, benches facing the sea, coin telescopes at the rail and stairs to the sand at x -120, 0 and 120. The six stalls stand along the north edge at z 1105.5 at x -150, -95, -40, 40, 95 and 150, each with its keeper ([the-boardwalk-stalls](the-boardwalk-stalls.md)); a south row (helter-skelter, Punch booth, mini carousel, ice-cream kiosk, shell grotto) faces them across the walkway, and the folk out for a stroll are [winkle-and-agatha-dunmore](winkle-and-agatha-dunmore.md), [hob-pennywhistle](hob-pennywhistle.md) and [little-pip](little-pip.md), [old-fenn](old-fenn.md) and [mabel-crumb](mabel-crumb.md), and [tuppence-of-the-queue](tuppence-of-the-queue.md) (R-248). A spur joins the east end to Long Spoon Pier. Driftwood's tube and ski hut is [the-last-tube](the-last-tube.md) on the sand at (150, 1150).
 
 ## Everyday
 

@@ -25,7 +25,7 @@ Home: the captain's cabin on the Bathtub Queen. Work: the Bathtub Queen. She kee
 
 ## In the games
 
-Gives row 44 `m44-the-bathtub-queen`; appears in row 64 `m64-all-hats` (p1 By Water) and holds the sea route in the finale, row 70 (`ch5-even-cut`). Planned (batch 3). Her cabin is the pirate-ship site (E01).
+Gives row 44 `m44-the-bathtub-queen`; appears in row 64 `m64-all-hats` (p1 By Water) and holds the sea route in the finale, row 70 (`ch5-even-cut`). Planned (batch 3). Her cabin is the pirate-ship site (E01); the chest of the queen's treasure sits at the foot of her bed. Outside the cabin she stands at the head of Long Spoon Pier at (300, 1168), by a chalk A-board of tour times, and says "Tours at noon. Ask me about midnight and I will ask you about noon." (R-244). Her quest "Pirate Tours, Mostly" has four stops and a report-back (R-247).
 
 ## Loose threads
 

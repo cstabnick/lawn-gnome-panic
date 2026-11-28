@@ -147,7 +147,7 @@ export function buildPirateShip(scene: THREE.Scene, boxes: Box[]): void {
 function addNightLights(scene: THREE.Scene, hullX: number): void {
   const d = SHIP.deck;
   const g = SHIP.gangplank;
-  const glow = nightGlowMat(0xffc46b, 2.2);
+  const glow = nightGlowMat(0xffc46b, 3.2);
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 1 });
   const hullY = DECK_Y - 0.4 * S;
   const ball = new THREE.SphereGeometry(1, 10, 8);
@@ -167,11 +167,11 @@ function addNightLights(scene: THREE.Scene, hullX: number): void {
     scene.add(m);
   }
   // Stern lanterns, the masthead and the bow lantern.
-  for (const lx of [-0.4, 0.4]) lantern(hullX - 1.42 * S, hullY + 0.82 * S, SHIP.z - lx * S, 0.45);
-  lantern(hullX + 0.2 * S + 0.9, DECK_Y + 28.4, SHIP.z, 0.45);
+  for (const lx of [-0.4, 0.4]) lantern(hullX - 1.42 * S, hullY + 0.84 * S, SHIP.z - lx * S, 0.75);
+  lantern(hullX + 0.2 * S + 0.9, DECK_Y + 28.4, SHIP.z, 0.7);
   const bowX = d.maxX - 1.6;
   mesh(scene, new THREE.CylinderGeometry(0.06, 0.06, 2.2, 6), darkMat, bowX, DECK_Y + 1.1, SHIP.z);
-  lantern(bowX, DECK_Y + 2.4, SHIP.z, 0.4);
+  lantern(bowX, DECK_Y + 2.4, SHIP.z, 0.6);
 
   // Bulbs on a thin line along the north and south rails (a gap at the gangplank).
   const bulbs: THREE.Vector3[] = [];
@@ -185,13 +185,26 @@ function addNightLights(scene: THREE.Scene, hullX: number): void {
       for (let x = a; x <= b + 0.01; x += 3) bulbs.push(new THREE.Vector3(x, bulbY - 0.12, bz));
     }
   }
-  const bulbMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.14, 8, 6), glow, bulbs.length);
+  // Dressing lights: a sagging string of bulbs from the bow up over both mastheads and down to the stern, the classic
+  // night picture of a moored ship (seen from the whole beach).
+  const dress: [number, number][] = [
+    [bowX, DECK_Y + 2.4], [hullX + 0.9 * S, DECK_Y + 19], [hullX + 0.2 * S + 0.9, DECK_Y + 27.5], [hullX - 1.42 * S, hullY + 0.84 * S],
+  ];
+  for (let k = 0; k + 1 < dress.length; k++) {
+    const [ax, ay] = dress[k], [bx, by] = dress[k + 1];
+    const len = Math.hypot(bx - ax, by - ay), n = Math.max(2, Math.round(len / 1.6));
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      bulbs.push(new THREE.Vector3(ax + (bx - ax) * t, ay + (by - ay) * t - Math.sin(Math.PI * t) * len * 0.06, SHIP.z));
+    }
+  }
+  const bulbMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.26, 8, 6), glow, bulbs.length);
   const mat4 = new THREE.Matrix4();
   bulbs.forEach((p, i) => bulbMesh.setMatrixAt(i, mat4.makeTranslation(p.x, p.y, p.z)));
   scene.add(bulbMesh);
 
   // Warm pools on the deck: aft under the stern lanterns, amidships, forward by the bow lantern.
-  for (const px of [d.minX + 7, SHIP.x, bowX - 3]) scene.add(lightPool(px, DECK_Y, SHIP.z, 3.6));
+  for (const px of [d.minX + 7, SHIP.x, bowX - 3]) scene.add(lightPool(px, DECK_Y, SHIP.z, 5.5, 0xffd08a, 0.75));
 }
 
 /** Set at install: leaving the cabin stands this player back on the deck. */

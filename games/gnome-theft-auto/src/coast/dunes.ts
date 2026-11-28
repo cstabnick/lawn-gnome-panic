@@ -15,6 +15,8 @@ import { shadowed } from './deckKit';
 const WHEEL_SITE: Rect = { minX: -300, maxX: -220, minZ: 1060, maxZ: 1140 };
 /** Rim middle height in local units (giant-bucket-rim-arc about: 0.19 at the middle). */
 const RIM_TOP = 0.19;
+/** The rim arcs are stretched upwards so the bucket's wall shows as a wall, not a kerb, from the road. */
+const RIM_STRETCH = 1.8;
 const RIM_ARC = Math.PI / 3;
 
 const inRect = (r: Rect, x: number, z: number, m = 0): boolean => x > r.minX - m && x < r.maxX + m && z > r.minZ - m && z < r.maxZ + m;
@@ -111,7 +113,7 @@ function groundRange(cx: number, cz: number, sign: number, r: number): { lo: num
 
 function buildBucket(scene: THREE.Scene, boxes: Box[]): void {
   const { x: bx, z: bz, r } = COAST.bucket;
-  const rimTop = RIM_TOP * r;
+  const rimTop = RIM_TOP * r * RIM_STRETCH;
   let midGround = 0;
   for (const sign of [1, -1]) {
     if (!getPrefab('giant-bucket-rim-arc')) break;
@@ -120,6 +122,7 @@ function buildBucket(scene: THREE.Scene, boxes: Box[]): void {
     const base = Math.min(lo - 1.2, hi + 1 - rimTop);
     midGround += heightAt(ox, bz);
     const arc = buildPrefab('giant-bucket-rim-arc', { lights: false, scale: r });
+    arc.scale.y = r * RIM_STRETCH;
     arc.position.set(ox, base, bz);
     arc.rotation.y = sign > 0 ? 0 : Math.PI;
     scene.add(shadowed(arc));
@@ -149,13 +152,13 @@ function buildBucket(scene: THREE.Scene, boxes: Box[]): void {
 function buildSpade(scene: THREE.Scene, boxes: Box[]): void {
   if (!getPrefab('giant-spade')) return;
   const S = COAST.spade;
-  const g = buildPrefab('giant-spade', { lights: false, scale: 8 });
-  const y = heightAt(S.x, S.z) - 0.5;
+  const g = buildPrefab('giant-spade', { lights: false, scale: 13 });
+  const y = heightAt(S.x, S.z) - 1.0;
   g.position.set(S.x, y, S.z);
   g.rotation.set(0, S.yaw, 0.12, 'YXZ');
   scene.add(shadowed(g));
   registerCull(g, 'prop');
-  boxes.push({ minX: S.x - 1, maxX: S.x + 1, minZ: S.z - 0.9, maxZ: S.z + 0.9, h: y + 12 });
+  boxes.push({ minX: S.x - 1, maxX: S.x + 1, minZ: S.z - 0.9, maxZ: S.z + 0.9, h: y + 18 });
 }
 
 function buildMarram(scene: THREE.Scene): void {

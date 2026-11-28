@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { groundHeight, insideBox, pushOutOfBoxes, roundBox, sweepCircleBoxes, wallBounce } from './collide';
+import { capsuleGap, groundHeight, insideBox, pushOutOfBoxes, roundBox, sweepCapsuleBoxes, sweepCircleBoxes, vehicleCapsule, wallBounce } from './collide';
+import { VEHICLES } from './config';
 import type { Box } from './types';
 
 describe('swept circle vs boxes', () => {
@@ -102,5 +103,58 @@ describe('round colliders (Box.shape round)', () => {
   it('a square box keeps its old behaviour (no shape field)', () => {
     const boxes: Box[] = [{ minX: -2, maxX: 2, minZ: -2, maxZ: 2, h: 5 }];
     expect(pushOutOfBoxes(2.4, 2.4, 1, boxes, 0).hit).toBe(true);
+  });
+});
+
+describe('vehicle capsule (D36)', () => {
+  const box = (minX: number, maxX: number, minZ: number, maxZ: number): Box => ({ minX, maxX, minZ, maxZ, h: 3 });
+
+  it('vehicleCapsule: width from halfWidth, ends reach spec.radius', () => {
+    const van = vehicleCapsule(VEHICLES['hoa-van']);
+    expect(van.r).toBeCloseTo(1.24, 5);
+    expect(van.off).toBeCloseTo(0.86, 5);
+    const bike = vehicleCapsule(VEHICLES['dirt-bike']);
+    expect(bike.r).toBeCloseTo(0.43, 5);
+    expect(bike.off).toBeCloseTo(0.47, 5);
+    const flyer = Object.values(VEHICLES).find((s) => s.halfWidth === undefined)!;
+    expect(vehicleCapsule(flyer)).toEqual({ r: flyer.radius, off: 0 });
+  });
+
+  it('off 0 equals sweepCircleBoxes on the thin wall', () => {
+    const wall = [box(-5, 5, 0, 0.2)];
+    const a = sweepCapsuleBoxes(0, -1.2, 0, 1.4, 0, { r: 0.9, off: 0 }, wall, 0);
+    expect(a).toEqual(sweepCircleBoxes(0, -1.2, 0, 1.4, 0.9, wall, 0));
+  });
+
+  it('a dirt bike threads a 1.2 m gap', () => {
+    const walls = [box(-5, -0.6, 0, 0.4), box(0.6, 5, 0, 0.4)];
+    const s = sweepCapsuleBoxes(0, -3, 0, 3, 0, vehicleCapsule(VEHICLES['dirt-bike']), walls, 0);
+    expect(s.hit).toBe(false);
+    expect(s.z).toBeCloseTo(3, 5);
+  });
+
+  it('a van slides along a wall within 0.15 m of its body', () => {
+    const wall = [box(2, 4, -50, 50)];
+    const x0 = 2 - 1.19 - 0.1;
+    const s = sweepCapsuleBoxes(x0, 0, x0 + 0.5, 10, 0, vehicleCapsule(VEHICLES['hoa-van']), wall, 0);
+    expect(2 - (s.x + 1.19)).toBeLessThanOrEqual(0.15);
+    expect(s.z).toBeGreaterThan(9);
+  });
+
+  it('a capsule turned 90 degrees is pushed out by its length, not its width', () => {
+    const wall = [box(2, 4, -50, 50)];
+    const c = vehicleCapsule(VEHICLES['hoa-van']);
+    const s = sweepCapsuleBoxes(0, 0, 1, 0, Math.PI / 2, c, wall, 0);
+    expect(s.hit).toBe(true);
+    expect(s.x).toBeCloseTo(2 - c.r - c.off, 2);
+  });
+
+  it('capsuleGap measures segment to segment', () => {
+    const c = { r: 1, off: 2 };
+    const g = capsuleGap(0, 0, 0, c, 5, 0, 0, c);
+    expect(g.dist).toBeCloseTo(5, 5);
+    expect(g.nx).toBeCloseTo(1, 5);
+    const h = capsuleGap(0, 0, 0, c, 0, 5, 0, c); // nose to tail
+    expect(h.dist).toBeCloseTo(1, 5);
   });
 });

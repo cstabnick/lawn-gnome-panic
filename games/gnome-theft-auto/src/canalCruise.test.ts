@@ -81,7 +81,7 @@ describe('the Clog Cruiser on the canal', () => {
     } finally {
       restore();
     }
-  });
+  }, 120_000); // builds the whole world: slow under the full suite (G7#20)
 
   // L24: the raft sits in a pocket against the north bank with a deck-sized collider, leaving ~6 m of open channel.
   it('sails the real world with every collider', async () => {
@@ -92,5 +92,5 @@ describe('the Clog Cruiser on the canal', () => {
     } finally {
       restore();
     }
-  });
+  }, 120_000); // builds the whole world: slow under the full suite (G7#20)
 });

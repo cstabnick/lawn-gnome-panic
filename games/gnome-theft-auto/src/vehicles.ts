@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { buildPrefab, colorOf, getPrefab, prefabDamageLevels, setPrefabDamage } from '@lawn/prefabs';
 import { FLY, GROUND_DRAG, MOUNT, MOWER_TINTS, VEHICLES } from './config';
 import { play } from './audio';
-import { clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
+import { capsuleGap, clampToWorld, sweepCapsuleBoxes, vehicleCapsule, wallBounce } from './collide';
 import { seatPos } from './seats';
 import { coverLift } from './seatCover';
 import { surfaceAt } from './surfaces';
@@ -15,6 +15,7 @@ import { GLAZE_KINDS, isCraftKind } from './glazeStore';
 import { initAir, PLANE_REVERSE_FRAC } from './craft/flight';
 import { stepAircraft } from './craft/aircraft';
 import { createSuspension, stepSuspension, type SuspensionBody } from './suspension';
+import { bodyRollOf, stepBodyRoll } from './bodyRoll';
 import { poseControl, registerDriveControls } from './driveGrips';
 import { clearWaterlog, waterlogSpeedMult } from './waterlog';
 import { forgetLostParts, hideLostParts, restoreLostParts, stripLooseParts } from './debris';
@@ -540,7 +541,7 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
   v.z += (Math.cos(v.yaw) * v.speed + (v.slideZ ?? 0)) * dt;
 
   // Collide with boxes along the whole move (flyers above a box pass over it), then keep inside the world.
-  const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+  const sw = sweepCapsuleBoxes(x0, z0, v.x, v.z, v.yaw, vehicleCapsule(v.spec), world.boxes, v.y);
   v.x = sw.x;
   v.z = sw.z;
   if (sw.hit) {
@@ -565,6 +566,8 @@ function moveVehicle(v: Vehicle, dt: number, world: World): void {
 const suspensionBodies = new WeakMap<Vehicle, SuspensionBody>();
 const suspensionOut = { heave: 0, pitch: 0, roll: 0 };
 const SUSPENSION_REST = { heave: 0, pitch: 0, roll: 0 };
+const bankQ = new THREE.Quaternion();
+const BANK_AXIS = new THREE.Vector3(0, 0, 1);
 
 /** Frame number from beginVehicleFrame (0 until app.ts calls it: then every sync steps, as in tests). */
 let meshFrame = 0;
@@ -590,10 +593,13 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     roll = v.steerVis * 0.35;
     pitch = clamp(v.speed / spec.maxSpeed, -1, 1) * 0.15;
   }
+  // Visual body roll (bodyRoll.ts, D31): a two-wheeler banks into the turn, a soft car without a rig rolls a little.
+  const bank = !spec.flies && !spec.boat ? bodyRollOf(v).bank : 0;
   if (v.sim) {
     const s = v.sim;
     v.object.position.set(s.px, s.py, s.pz);
     v.object.quaternion.set(s.qx, s.qy, s.qz, s.qw);
+    if (bank !== 0) v.object.quaternion.multiply(bankQ.setFromAxisAngle(BANK_AXIS, bank));
   } else {
     v.object.position.set(v.x, v.y, v.z);
     // A boat pitches and rolls on the water (boats.ts); a ground vehicle on a slope tilts onto the ground normal.
@@ -609,7 +615,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
         roll = Math.atan2(-(n.x * c - n.z * s), n.y);
       }
     }
-    v.object.rotation.set(pitch, v.yaw, roll, 'YXZ');
+    v.object.rotation.set(pitch, v.yaw, roll + bank, 'YXZ');
   }
 
   // A second timed sync of the same vehicle in one frame (traffic.ts or police.ts syncs its cars, then app.ts syncs every
@@ -619,6 +625,8 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
     if (syncedAt.get(v) === meshFrame) return;
     syncedAt.set(v, meshFrame);
   }
+
+  if (dt > 0 && !spec.flies && !spec.boat) stepBodyRoll(v, dt);
 
   // An online driver's steering is not sent: read it off their turn rate (yaw -= steer * turnRate * dt), so their wheel turns and
   // their gnome's hands turn with it.
@@ -653,6 +661,7 @@ export function syncVehicleMesh(v: Vehicle, dt: number): void {
         dt, speed: v.speed, yaw: v.yaw, groundY: v.y,
         grounded: !spec.flies && aboveGround(v.x, v.y, v.z) <= 0.15, hop,
       }, suspensionOut);
+      suspensionOut.roll += bodyRollOf(v).shell;
       v.rig.setSuspension(suspensionOut);
     }
   }
@@ -754,7 +763,8 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
     const a = list[i];
     for (let j = i + 1; j < list.length; j++) {
       const b = list[j];
-      const rr = a.spec.radius + b.spec.radius;
+      const ca = vehicleCapsule(a.spec), cb = vehicleCapsule(b.spec);
+      const rr = ca.r + cb.r;
       if (Math.abs(a.y - b.y) >= 1.5) continue;
 
       // Relative position of b from a now (p1) and at the start of the frame (p0), from the frame's velocities.
@@ -767,18 +777,22 @@ export function collideVehicles(list: Vehicle[], dt = 1 / 60): void {
       const seg2 = sgx * sgx + sgz * sgz;
       const t = seg2 > 1e-12 ? Math.max(0, Math.min(1, -(p0x * sgx + p0z * sgz) / seg2)) : 0;
       const cxp = p0x + sgx * t, czp = p0z + sgz * t;
+      const gap = capsuleGap(a.x, a.z, a.yaw, ca, b.x, b.z, b.yaw, cb);
+      const crossed = Math.hypot(cxp, czp) < rr;
+      if (gap.dist >= rr && !crossed) continue;
+
+      // Contact normal (from a to b): the capsules' closest points; when only the centres crossed this frame (a tunnel), from p0.
+      let nx = gap.nx;
+      let nz = gap.nz;
+      let overlap = rr - gap.dist;
       const d = Math.hypot(p1x, p1z);
-      if (d >= rr && Math.hypot(cxp, czp) >= rr) continue;
-
-      // Contact normal (from a to b): from p0 when the centres crossed this frame, otherwise from p1.
-      let nx = 1;
-      let nz = 0;
-      const p0l = Math.hypot(p0x, p0z);
-      if ((p0x * p1x + p0z * p1z < 0 || d < 1e-6) && p0l > 1e-6) { nx = p0x / p0l; nz = p0z / p0l; }
-      else if (d > 1e-6) { nx = p1x / d; nz = p1z / d; }
-
-      const sep = p1x * nx + p1z * nz;
-      const overlap = rr - sep;
+      if (gap.dist >= rr || p0x * p1x + p0z * p1z < 0 || d < 1e-6) {
+        const p0l = Math.hypot(p0x, p0z);
+        if (p0l > 1e-6) {
+          nx = p0x / p0l; nz = p0z / p0l;
+          overlap = rr - (p1x * nx + p1z * nz);
+        }
+      }
 
       const ma = a.spec.mass;
       const mb = b.spec.mass;
@@ -844,7 +858,7 @@ export function stepKnock(list: Vehicle[], dt: number, world: World): void {
     v.x += k.x * dt;
     v.z += k.z * dt;
     v.yaw += k.spin * dt;
-    const sw = sweepCircleBoxes(x0, z0, v.x, v.z, v.spec.radius, world.boxes, v.y);
+    const sw = sweepCapsuleBoxes(x0, z0, v.x, v.z, v.yaw, vehicleCapsule(v.spec), world.boxes, v.y);
     v.x = sw.x;
     v.z = sw.z;
     if (sw.hit) {

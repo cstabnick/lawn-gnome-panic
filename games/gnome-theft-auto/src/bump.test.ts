@@ -184,3 +184,25 @@ describe('bump damage', () => {
     expect(parked.hp).toBeLessThan(1);
   });
 });
+
+describe('capsule contacts (D36)', () => {
+  it('two Snail-Coaches pass in opposite lanes without contact', () => {
+    const a = make(1, 'snail-coach', 0, -15, 0, 10);
+    const b = make(2, 'snail-coach', 5, 15, Math.PI, 10);
+    run([a, b], 3);
+    expect(a.damage).toBe(0);
+    expect(b.damage).toBe(0);
+    expect(a.speed).toBe(10);
+    expect(b.speed).toBe(10);
+  });
+
+  it('a side-by-side pair of hoa-vans 2.6 m apart do not touch', () => {
+    const a = make(1, 'hoa-van', 0, 0, 0, 8);
+    const b = make(2, 'hoa-van', 2.6, 0, 0, 8);
+    run([a, b], 1);
+    expect(a.damage).toBe(0);
+    expect(a.x).toBeCloseTo(0, 5);
+    expect(b.x).toBeCloseTo(2.6, 5);
+    expect(a.speed).toBe(8);
+  });
+});

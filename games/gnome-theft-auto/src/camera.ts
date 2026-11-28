@@ -37,6 +37,50 @@ const VIEW: Record<CameraMode, View> = {
   fly: { dist: 16, distPerSpeed: 0.1, lookHeight: 1.5, pitch: 0.22, followAfter: 0.8, followRate: 2.5, followMinSpeed: 0, smoothing: 7 },
 };
 
+/** Drive and fly distance, look height and pitch scale with the driven vehicle's size (G7#2). */
+export const SIZE_VIEW = { distBase: 6.2, distPerRadius: 1.6, lookFrac: 0.9, lookMin: 1.8, tallFrom: 2.5, pitchPerMetre: 0.05, pitchMax: 0.36, distPerTall: 0.8, flyDistBase: 13, ease: 3 };
+
+/** Drive/fly view numbers for a vehicle of this size: dist, lookHeight, pitch. */
+export function sizedView(mode: 'drive' | 'fly', size: { radius: number; height: number }): { dist: number; lookHeight: number; pitch: number } {
+  if (mode === 'fly') {
+    return {
+      dist: Math.max(VIEW.fly.dist, SIZE_VIEW.flyDistBase + SIZE_VIEW.distPerRadius * size.radius),
+      lookHeight: Math.max(VIEW.fly.lookHeight, 0.5 * size.height),
+      pitch: VIEW.fly.pitch,
+    };
+  }
+  return {
+    // A tall body (the Combine, the Boot Float) also pulls the camera back, so the road shows over its roof.
+    dist: SIZE_VIEW.distBase + SIZE_VIEW.distPerRadius * size.radius + SIZE_VIEW.distPerTall * Math.max(0, size.height - SIZE_VIEW.tallFrom),
+    lookHeight: Math.max(SIZE_VIEW.lookMin, SIZE_VIEW.lookFrac * size.height),
+    pitch: VIEW.drive.pitch + clamp((size.height - SIZE_VIEW.tallFrom) * SIZE_VIEW.pitchPerMetre, 0, SIZE_VIEW.pitchMax - VIEW.drive.pitch),
+  };
+}
+
+const frameCache = new WeakMap<THREE.Object3D, { radius: number; height: number }>();
+
+/** The driven vehicle's size for the chase camera: bounding radius (spec.radius) and body height (top of its meshes above its origin, m). Measured once per object. */
+export function vehicleFrame(obj: THREE.Object3D, radius: number): { radius: number; height: number } {
+  const cached = frameCache.get(obj);
+  if (cached) return cached;
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  obj.traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || !o.visible) return;
+    // Headlight beams and glows are see-through: they do not make the vehicle taller.
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    if (mats.some((m) => m.transparent || m.depthWrite === false)) return;
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+    if (!o.geometry.boundingBox) return;
+    box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));
+  });
+  const originY = obj.getWorldPosition(new THREE.Vector3()).y;
+  const top = box.isEmpty() ? 0 : box.max.y - originY;
+  const frame = { radius, height: clamp(top, 0.3, 12) };
+  frameCache.set(obj, frame);
+  return frame;
+}
+
 const PITCH_MIN = -0.5;
 const PITCH_MAX = 1.2;
 /** Seconds without a drag before the pitch eases back to the mode's default. */
@@ -121,6 +165,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       if ((target === null) !== (room === null)) {
         smoothed = null;
         clippedDist = -1;
+        sized = false;
       }
       room = target;
       if (target) roomSinceDrag = Infinity;
@@ -136,7 +181,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       mode: CameraMode,
       input: InputState,
       world: World,
-      extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number } },
+      extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number }; size?: { radius: number; height: number } },
     ) {
       time += dt;
       // The showroom orbits its vehicle instead: the target, mode and world are ignored while it is set.
@@ -145,6 +190,26 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
         return;
       }
       const v = VIEW[mode];
+      // Drive and fly size their view to the vehicle (G7#2), easing when the size changes. Other modes use their own numbers,
+      // and the eased numbers restart (snap) on the next drive.
+      let view: { dist: number; lookHeight: number; pitch: number } = v;
+      if ((mode === 'drive' || mode === 'fly') && extra?.size) {
+        const want = sizedView(mode, extra.size);
+        if (!sized) {
+          sized = true;
+          curDist = want.dist;
+          curLook = want.lookHeight;
+          curPitch = want.pitch;
+        } else {
+          const k = 1 - Math.exp(-SIZE_VIEW.ease * dt);
+          curDist += (want.dist - curDist) * k;
+          curLook += (want.lookHeight - curLook) * k;
+          curPitch += (want.pitch - curPitch) * k;
+        }
+        view = { dist: curDist, lookHeight: curLook, pitch: curPitch };
+      } else {
+        sized = false;
+      }
       // Aim blend: foot view only (the other modes ignore setAim).
       const a = mode === 'foot' ? aimT : 0;
       const fp = firstPerson && extra?.eye ? extra.eye : null;
@@ -220,7 +285,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       }
       // While aiming the pitch stays where the player put it.
       if (sinceDrag > PITCH_RETURN_AFTER && a <= 0) {
-        const diff = v.pitch - chase.pitch;
+        const diff = view.pitch - chase.pitch;
         chase.pitch += clamp(diff, -PITCH_RETURN_RATE * dt, PITCH_RETURN_RATE * dt);
       }
       chase.pitch = clamp(chase.pitch, PITCH_MIN, PITCH_MAX);
@@ -238,8 +303,8 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
 
       // Desired position: behind the look point along the view direction. Recoil lifts the view, so the
       // placement uses the pitch minus the kick.
-      const pivot = new THREE.Vector3(target.x, target.y + v.lookHeight, target.z);
-      const rawLook = new THREE.Vector3(target.x + rightX * shoulder, target.y + v.lookHeight, target.z + rightZ * shoulder);
+      const pivot = new THREE.Vector3(target.x, target.y + view.lookHeight, target.z);
+      const rawLook = new THREE.Vector3(target.x + rightX * shoulder, target.y + view.lookHeight, target.z + rightZ * shoulder);
       // Ground under the player: the clip march treats rising ground as a wall (see isBlocked).
       const baseGround = heightAt(target.x, target.z);
       let look = pivot;
@@ -260,7 +325,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
       const fy = -Math.sin(effPitch);
       const fz = Math.cos(chase.yaw) * cp;
       const stuntPull = extra?.airborne ? 2.8 : 0;
-      const baseDist = mode === 'foot' ? lerp(v.dist, AIM.cameraDist, a) : v.dist;
+      const baseDist = mode === 'foot' ? lerp(view.dist, AIM.cameraDist, a) : view.dist;
       const distance = baseDist + v.distPerSpeed * speed + stuntPull;
       const desired = new THREE.Vector3(look.x - fx * distance, look.y - fy * distance, look.z - fz * distance);
 
@@ -443,6 +508,11 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera): ChaseCamera 
   /** Aim blend (0..1) and total zoom at full aim, set every frame by setAim. */
   let aimT = 0;
   let aimZoom = 1;
+  /** Drive/fly sizing (G7#2): the eased view numbers, and whether they have been set for the current drive. */
+  let sized = false;
+  let curDist = 0;
+  let curLook = 0;
+  let curPitch = 0;
 
   return chase;
 }

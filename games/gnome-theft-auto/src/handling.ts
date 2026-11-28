@@ -28,8 +28,22 @@ export const DEFAULT_MODE_ID = 'casual';
 export const TUNES: Tune[] = [
   { id: 'arcade', name: 'Arcade', blurb: 'The original flat model: no weight, no sliding.', base: 'casual', arcade: true, group: 'realism' },
   { id: 'casual', name: 'Casual', blurb: 'Grippy and forgiving. Full assists. The default.', base: 'casual', group: 'realism' },
-  { id: 'hybrid', name: 'Open World', blurb: 'Action-game balance: some slide, some help.', base: 'hybrid', group: 'realism' },
-  { id: 'simcade', name: 'Simcade', blurb: 'Real weight transfer, light assists. Easy to spin.', base: 'simcade', group: 'realism' },
+  { id: 'hybrid', name: 'Open World', blurb: 'Action-game balance: some slide, some help.', base: 'hybrid', group: 'realism',
+    // A held key at speed must not spin a bike or a bus: more yaw damping and curvature limit, and a slower keyboard ramp.
+    over: {
+      steeringAndAssists: { speedCurvatureLimitStrength: 0.9, counterSteerAssist: 0.7, escYawDampingGain: 2400 },
+      mobileInput: { binarySteerOutRate: 1.2 },
+    },
+  },
+  {
+    id: 'simcade', name: 'Simcade', blurb: 'Real weight transfer, light assists. Easy to spin.', base: 'simcade', group: 'realism',
+    // Still the most "real" mode (lightest assists), but it pulls away like a car and a held key does not instantly spin a bike.
+    over: {
+      drivetrain: { driveBiasFront: 0.25, limitedSlipRear: 0.55, limitedSlipFront: 0.55 },
+      steeringAndAssists: { speedCurvatureLimitStrength: 0.7, counterSteerAssist: 0.4, tractionControlStrength: 0.6, escYawDampingGain: 1800 },
+      mobileInput: { binarySteerOutRate: 1.2 },
+    },
+  },
   {
     id: 'drift', name: 'Drift Mower', blurb: 'Loose rear, keeps the slide going. Hold the handbrake.', base: 'hybrid', group: 'silly',
     over: {
@@ -56,6 +70,12 @@ export interface VehicleProfile {
   ranges: TuningRanges;
   /** How far the rider leans into weight shift: 1 is the default gnome, 0 is a statue. Not physics. */
   lean: number;
+  /**
+   * Visual body roll (D31), radians at full sideways acceleration (LEAN_FULL_ACCEL). + = the body rolls to the OUTSIDE of a
+   * turn on its springs (soft cars, vans); - = the whole vehicle banks INTO the turn (two-wheelers). 0 or absent: flat.
+   * Visual only (bodyRoll.ts): it never touches the chassis physics.
+   */
+  roll?: number;
 }
 
 /** A reference car is about this long (m); a vehicle's collision radius scales the whole family from it. */
@@ -66,86 +86,100 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
   'push-bike': {
     stock: { acceleration: 1.1, grip: 0.95, balance: -0.1, steering: 1.15, assists: 0.85, handbrake: 1.2, stiffness: 0.9, comHeight: 1.15 },
     ranges: { grip: [0.7, 1.3], balance: [-0.5, 0.4], steering: [0.8, 1.4], assists: [0, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4] },
-    lean: 1.4,
+    lean: 0.5,
+    roll: -0.2, // two-wheelers bank into the turn and the rider goes with the bike, so their outward lean is small
   },
   // Knobbly Dirt-Mower: lighter and quicker than the push-bike, soft long-travel suspension for landings, a loose tail on tarmac
   // (surfaces.ts scales grip per surface for every kind, so the bite on loose ground comes from quick steering and the assists).
   'dirt-bike': {
     stock: { acceleration: 1.1, grip: 0.9, balance: -0.15, steering: 1.25, assists: 1.0, handbrake: 1.3, stiffness: 0.75, comHeight: 1.05 },
     ranges: { grip: [0.65, 1.3], balance: [-0.5, 0.4], steering: [0.8, 1.5], assists: [0, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4], stiffness: [0.6, 1.1] },
-    lean: 1.5,
+    lean: 0.5,
+    roll: -0.24,
   },
   // The reference mower: balanced, a touch of understeer, forgiving.
   'ride-on': {
     stock: { balance: 0.1 },
     ranges: { balance: [-0.4, 0.6], steering: [0.7, 1.4], assists: [0.2, 1.8] },
     lean: 1,
+    roll: 0.03,
   },
   // A racer: grips, pivots on a dime, and the tail comes round on the handbrake.
   'zero-turn': {
     stock: { grip: 1.1, balance: -0.1, steering: 1.3, assists: 0.85, brakes: 1.1, handbrake: 1.3, stiffness: 1.1, comHeight: 0.9 },
     ranges: { grip: [0.8, 1.4], balance: [-0.5, 0.5], steering: [0.9, 1.5], assists: [0, 1.6], topSpeed: [0.7, 1.4], acceleration: [0.7, 1.6] },
     lean: 1.15,
+    roll: 0.02,
   },
   // A barge: pushes wide, rolls on its soft suspension, slow to change its mind. Not a drift car.
   combine: {
     stock: { grip: 1.05, balance: 0.35, steering: 0.8, assists: 1.25, brakes: 0.8, handbrake: 0.6, stiffness: 0.75, comHeight: 1.15 },
     ranges: { grip: [0.8, 1.3], balance: [0.1, 0.9], steering: [0.6, 1.1], assists: [0.8, 2], handbrake: [0.3, 1], mass: [0.9, 1.5], topSpeed: [0.8, 1.2] },
     lean: 0.4,
+    roll: 0.03,
   },
   // Ride-On Lowrider: nimble hydraulic cruiser with soft bounce and plush steering.
   lowrider: {
     stock: { grip: 1.05, balance: 0.05, steering: 1.15, assists: 1.0, stiffness: 0.95, comHeight: 0.95 },
     ranges: { grip: [0.8, 1.3], balance: [-0.4, 0.5], steering: [0.8, 1.4], assists: [0.2, 1.6], stiffness: [0.75, 1.3] },
     lean: 1.1,
+    roll: 0.05,
   },
   // Gnorwin's Boot Parade Float: massive ramming tractor; stiff suspension & low CoM so 30ft of boot doesn't tip.
   'boot-float': {
     stock: { grip: 1.1, balance: 0.3, steering: 0.85, assists: 1.3, brakes: 0.85, handbrake: 0.6, stiffness: 1.1, comHeight: 0.85 },
     ranges: { grip: [0.9, 1.3], balance: [0.1, 0.8], steering: [0.6, 1.1], assists: [0.8, 1.8], mass: [0.9, 1.5] },
     lean: 0.35,
+    roll: 0.02,
   },
-  // Snail-Coach: boxy transit bus with a loose, tail-happy drift profile.
+  // Snail-Coach: a steady transit bus that sways on its soft body.
   'snail-coach': {
-    stock: { grip: 0.95, balance: -0.15, steering: 1.0, assists: 0.75, handbrake: 1.3, stiffness: 1.0, comHeight: 0.85 },
+    stock: { grip: 0.95, balance: 0.05, steering: 1.0, assists: 0.75, handbrake: 1.3, stiffness: 1.0, comHeight: 0.85 },
     ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.4], steering: [0.7, 1.3], assists: [0.2, 1.5], handbrake: [0.8, 1.6] },
     lean: 0.6,
+    roll: 0.04,
   },
   // Pressurized Mulch-Spreader: utility Ride-On carrying a rear compost hopper.
   'mulch-spreader': {
     stock: { grip: 1.0, balance: 0.15, steering: 1.05, assists: 1.0, stiffness: 0.95, comHeight: 1.0 },
     ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
     lean: 0.9,
+    roll: 0.04,
   },
   // HOA Code-Enforcement Van: armored, planted municipal interceptor.
   'hoa-van': {
     stock: { grip: 1.1, balance: 0.1, steering: 1.05, assists: 1.15, brakes: 1.1, stiffness: 1.1, comHeight: 0.88 },
     ranges: { grip: [0.85, 1.35], balance: [-0.3, 0.5], steering: [0.75, 1.3], assists: [0.5, 1.7] },
     lean: 0.6,
+    roll: 0.03,
   },
   // Pot-Rod: a light, tail-happy scrap of a car that leans hard and twitches on every bump.
   'pot-rod': {
     stock: { grip: 0.9, balance: -0.2, steering: 1.2, assists: 0.8, stiffness: 0.85, comHeight: 1.1 },
     ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.3], steering: [0.8, 1.4], assists: [0, 1.5], stiffness: [0.7, 1.2] },
     lean: 1.2,
+    roll: 0.07,
   },
   // Lawn-Roller: a slow, planted brick. Heavy, low, and it takes its time to turn.
   'lawn-roller': {
     stock: { grip: 1.2, balance: 0.4, steering: 0.75, assists: 1.4, brakes: 1.2, stiffness: 1.2, comHeight: 0.8 },
     ranges: { grip: [0.8, 1.3], balance: [0.1, 0.9], steering: [0.6, 1.1], assists: [0.8, 2], mass: [0.9, 1.5], topSpeed: [0.8, 1.2] },
     lean: 0.3,
+    roll: 0.01,
   },
   // Teacup-Trundler: pivots on the spot and wobbles about on its tiny wheels.
   'teacup-trundler': {
     stock: { grip: 0.85, balance: 0, steering: 1.4, assists: 0.9, stiffness: 0.8, comHeight: 1.2 },
     ranges: { grip: [0.7, 1.2], balance: [-0.4, 0.4], steering: [0.8, 1.4], assists: [0.2, 1.6], mass: [0.8, 1.3], comHeight: [0.9, 1.4] },
     lean: 1.5,
+    roll: 0.06,
   },
   // Barrow-Buggy: nose-heavy and wanders off line unless you keep it honest.
   'barrow-buggy': {
     stock: { grip: 0.95, balance: 0.3, steering: 0.95, assists: 1.0, stiffness: 0.9, comHeight: 1.1 },
     ranges: { grip: [0.8, 1.3], balance: [-0.3, 0.6], steering: [0.7, 1.3], assists: [0.3, 1.6] },
     lean: 1.1,
+    roll: 0.05,
   },
   // Dewdrop: a clear hamster ball. Barely grips, soft steering, rolls on after you let go.
   'bubble-mobile': {
@@ -158,54 +192,84 @@ export const PROFILES: Partial<Record<VehicleKind, VehicleProfile>> = {
     stock: { grip: 1.1, balance: 0.05, steering: 1.25, assists: 1.1, stiffness: 1.05, comHeight: 0.95 },
     ranges: { grip: [0.8, 1.4], balance: [-0.4, 0.5], steering: [0.9, 1.5], assists: [0.3, 1.8], stiffness: [0.8, 1.3], comHeight: [0.85, 1.3] },
     lean: 0.7,
+    roll: 0.04,
   },
   // Deux-Pots: soft, leans hugely, never quite rolls.
   'deux-pots': {
     stock: { grip: 0.95, balance: 0, steering: 1.0, assists: 1.1, stiffness: 0.7, comHeight: 1.15 },
     ranges: { grip: [0.75, 1.2], balance: [-0.3, 0.4], steering: [0.7, 1.3], assists: [0.3, 1.8], stiffness: [0.6, 1.0], comHeight: [0.9, 1.4] },
     lean: 1.8,
+    roll: 0.16,
   },
   // Wespa: light and twitchy scooter.
   wespa: {
     stock: { grip: 0.9, balance: -0.1, steering: 1.35, assists: 0.9, stiffness: 0.9, comHeight: 1.1 },
     ranges: { grip: [0.7, 1.2], balance: [-0.5, 0.3], steering: [0.9, 1.5], assists: [0.2, 1.6], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
-    lean: 1.4,
+    lean: 0.5,
+    roll: -0.22,
   },
   // Baguette-Trike: tippy three-wheeler.
   'baguette-trike': {
     stock: { grip: 0.9, balance: 0.25, steering: 1.0, assists: 1.2, stiffness: 0.85, comHeight: 1.2 },
     ranges: { grip: [0.7, 1.2], balance: [-0.2, 0.6], steering: [0.7, 1.3], assists: [0.5, 1.8], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
     lean: 1.3,
+    roll: 0.12,
   },
   // Crepe-Van: tall and wallowy.
   'crepe-van': {
     stock: { grip: 1.0, balance: 0.2, steering: 0.9, assists: 1.3, brakes: 1.1, stiffness: 0.9, comHeight: 1.15 },
     ranges: { grip: [0.8, 1.3], balance: [-0.2, 0.6], steering: [0.7, 1.2], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
     lean: 0.9,
+    roll: 0.07,
+  },
+  // Cone Van: the Crepe Van's twin, a touch taller with the cone on the roof.
+  'cone-van': {
+    stock: { grip: 1.0, balance: 0.2, steering: 0.9, assists: 1.3, brakes: 1.1, stiffness: 0.9, comHeight: 1.2 },
+    ranges: { grip: [0.8, 1.3], balance: [-0.2, 0.6], steering: [0.7, 1.2], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [0.9, 1.4] },
+    lean: 0.9,
+    roll: 0.07,
+  },
+  // Putting-Green Cart: light, grippy and gentle.
+  'golf-cart': {
+    stock: { grip: 1.1, balance: 0.1, steering: 1.05, assists: 1.2, stiffness: 1.0, comHeight: 1.0 },
+    ranges: { grip: [0.8, 1.4], balance: [-0.3, 0.5], steering: [0.8, 1.3], assists: [0.4, 1.8], stiffness: [0.7, 1.3], comHeight: [0.85, 1.3] },
+    lean: 0.8,
+    roll: 0.04,
+  },
+  // Turfton Taxi: a planted city car like the Euro-Hatch, a touch softer.
+  taxi: {
+    stock: { grip: 1.05, balance: 0.1, steering: 1.15, assists: 1.1, stiffness: 0.95, comHeight: 1.0 },
+    ranges: { grip: [0.8, 1.4], balance: [-0.3, 0.5], steering: [0.85, 1.4], assists: [0.3, 1.8], stiffness: [0.75, 1.3], comHeight: [0.85, 1.3] },
+    lean: 0.7,
+    roll: 0.05,
   },
   // E31 rides. Ranger Buggy: grippy and planted off-road.
   'ranger-buggy': {
     stock: { grip: 1.15, balance: 0.05, steering: 1.1, assists: 1.1, stiffness: 1.1, comHeight: 0.95 },
     ranges: { grip: [0.8, 1.5], balance: [-0.4, 0.5], steering: [0.8, 1.4], assists: [0.3, 1.8], stiffness: [0.8, 1.4], comHeight: [0.85, 1.3] },
     lean: 0.9,
+    roll: 0.03,
   },
   // Snail-Shell Camper: heavy, slow to turn, top-heavy with a shell on the back.
   'shell-camper': {
     stock: { grip: 0.95, balance: 0.3, steering: 0.75, assists: 1.4, brakes: 0.95, stiffness: 0.85, comHeight: 1.25 },
     ranges: { grip: [0.75, 1.25], balance: [-0.1, 0.7], steering: [0.55, 1.1], assists: [0.7, 2], brakes: [0.7, 1.3], stiffness: [0.6, 1.1], comHeight: [1.0, 1.5] },
     lean: 1.2,
+    roll: 0.08,
   },
   // Bin Lorry: grippy, understeery and top-heavy; it leans a lot and takes its time.
   'bin-lorry': {
     stock: { grip: 1.15, balance: 0.4, steering: 0.8, assists: 1.3, brakes: 1.1, stiffness: 0.9, comHeight: 1.25 },
     ranges: { grip: [0.9, 1.4], balance: [0, 0.8], steering: [0.6, 1.1], assists: [0.7, 2], brakes: [0.8, 1.4], stiffness: [0.7, 1.2], comHeight: [1, 1.5] },
     lean: 1.0,
+    roll: 0.05,
   },
   // Watering-Can Pumper: like the HOA van, a bit livelier.
   'fire-engine': {
     stock: { grip: 1.05, balance: 0.1, steering: 1.1, assists: 1.1, brakes: 1.1, stiffness: 1.0, comHeight: 1.0 },
     ranges: { grip: [0.8, 1.35], balance: [-0.3, 0.5], steering: [0.75, 1.35], assists: [0.4, 1.7], brakes: [0.8, 1.4], comHeight: [0.85, 1.3] },
     lean: 0.8,
+    roll: 0.04,
   },
 };
 const FALLBACK: VehicleProfile = { stock: {}, ranges: {}, lean: 1 };

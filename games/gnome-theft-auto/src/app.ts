@@ -10,7 +10,7 @@ import { WEATHER_LINES, WEATHER_LOOK } from './weather/config';
 import { createWeatherView } from './weather/render';
 import { initWeatherOptions } from './weather/options';
 import { createWeatherAchievements } from './weather/achievements';
-import { createChaseCamera } from './camera';
+import { createChaseCamera, vehicleFrame } from './camera';
 import { createCasings } from './casings';
 import { KEYS, isTyping } from './keys';
 import { registerAction } from './ui/actions';
@@ -2603,7 +2603,7 @@ function frame(now: number): void {
   // Hide our own gnome while first person is on, and restore only what we hid.
   if (fp && !fpHid && player.model.object.visible) { player.model.object.visible = false; fpHid = true; }
   else if (!fp && fpHid) { if (deathT <= 0) player.model.object.visible = true; fpHid = false; }
-  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne, eye: fp ? eyePos : undefined });
+  chase.update(dt, target, v ? v.yaw : player.yaw, mode, inp, world, { boost: !!v?.boostActive, airborne: stuntRes.airborne, eye: fp ? eyePos : undefined, size: v ? vehicleFrame(v.object, v.spec.radius) : undefined });
   // The birding scope takes the camera to the gnome's eye; the chase camera follows its aim so the view stays when it comes down.
   const scopeAim = birding.applyCamera(dt);
   // Golf: the address view behind the ball and the camera that follows a shot (golf/view.ts).
@@ -3024,7 +3024,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     sky,
     // Weather (weather/, E06): weather.force('rain', 0.8, true), weather.force(null), weather.get(), weather.at('pardonlin').
     weather: { force: forceWeather, get: getWeather, at: weatherAt, region: weatherRegion, enabled: isWeatherEnabled },
-    // Garage (no UI yet): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
+    // Garage (the Handling modal in garages.ts and the Pay 'n' Glaze Handling tab use it too): read or change a vehicle model's setup knobs, then the driven chassis is rebuilt to feel it. Mode: setMode('arcade' | 'casual' | ...).
     garage: { get: getSetup, set: (k: VehicleKind, patch: Record<string, number>) => { const r = setSetup(k, patch); refreshDriving(); return r; }, reset: (k: VehicleKind) => { const r = resetSetup(k); refreshDriving(); return r; } },
     setMode: (id: string) => { setTune(id); refreshDriving(); return getTune().id; },
     damageVehicle, repairVehicle, repaintVehicle, spawn: (k: VehicleKind, x: number, z: number, yaw: number) => { const nv = createVehicle(scene, k, x, z, yaw, 0xd8342c); vehicles.push(nv); shareVehicle(nv); return nv; }, fleet, lockup, phone, player, vehicles, traffic, npcs, watch, world, chase, hud, weapons, aim, muzzle, radio, economy, easterEggs, garages, vibeNpcs, quests, worldEvents, tessie: tessieWorld, taxi, route: () => route, cutscene, scenes: SCENES,

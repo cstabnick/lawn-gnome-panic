@@ -49,5 +49,5 @@ describe('Fort Sandpit Wall Vault', () => {
     } finally {
       restore();
     }
-  });
+  }, 120_000); // builds the whole world: slow under the full suite (G7#20)
 });

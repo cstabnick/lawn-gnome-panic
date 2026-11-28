@@ -4,7 +4,7 @@
 // Online play works: remote players see the driven vehicle's broadcast pose (see main.ts).
 import { VehicleController, qRotate, qYaw, v3, type GroundProbe, type TuningValues, type VehicleInput } from '@lawn/vehicle';
 import { play } from './audio';
-import { angleDiff, clampToWorld, sweepCircleBoxes, wallBounce } from './collide';
+import { angleDiff, clampToWorld, sweepCapsuleBoxes, vehicleCapsule, wallBounce } from './collide';
 import {
   DEFAULT_MODE_ID, TUNES, clampSetup, profileFor, riderLean, stockSetup, tuneById, vehicleConfig, type Tune,
 } from './handling';
@@ -51,7 +51,7 @@ export function setTune(id: string): Tune {
   return current;
 }
 
-// ---- Garage: each vehicle's setup (the 11 knobs), stock until changed. No UI yet; ?debug exposes it as __gta.garage ------------
+// ---- Garage: each vehicle's setup (the 11 knobs), stock until changed. Edited in the Handling modal (garages.ts) and Pay 'n' Glaze's Handling tab; ?debug exposes it as __gta.garage ------------
 const garage: Partial<Record<VehicleKind, Partial<TuningValues>>> = (() => {
   try { return JSON.parse(readStore(GARAGE_KEY) ?? '{}') as Partial<Record<VehicleKind, Partial<TuningValues>>>; } catch { return {}; }
 })();
@@ -247,7 +247,7 @@ export function stepChassis(v: Vehicle, sd: SimDrive, input: VehicleInput, dt: n
   // Buildings: sweep the chassis from where it started the frame, so it cannot tunnel through a wall; a hit bounces it off
   // the wall's normal (a glancing hit keeps most of its speed along the wall, as the arcade model's wall slide does).
   // The altitude is the chassis's own height, not the terrain under it: a car flying over a wall (a ramp jump) clears it (L16).
-  const sw = sweepCircleBoxes(x0, z0, body.pos.x, body.pos.z, v.spec.radius, world.boxes, Math.max(groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.y - sd.ctrl.rideHeight));
+  const sw = sweepCapsuleBoxes(x0, z0, body.pos.x, body.pos.z, v.yaw, vehicleCapsule(v.spec), world.boxes, Math.max(groundAt(body.pos.x, body.pos.z, body.pos.y), body.pos.y - sd.ctrl.rideHeight));
   if (sw.hit) {
     body.pos.x = sw.x; body.pos.z = sw.z;
     const b = wallBounce(body.vel.x, body.vel.z, sw.nx, sw.nz);

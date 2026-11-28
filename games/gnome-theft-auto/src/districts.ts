@@ -351,7 +351,7 @@ export function buildDistrictDressing(
     pushCollider(boxes, px, pz, 0.65, 0.65, 3.3);
   }
   for (const [fx, fz, w, d] of [
-    [-35, 48, 14, 2.2],
+    [-38, 48, 8, 2.2], // FX04 (D21): stops short of the cab-rank booth (-31, 46.5), whose floor buried it
     [-48, 35, 2.2, 14],
   ] as const) {
     if (overlapsBoxes(fx - w / 2, fx + w / 2, fz - d / 2, fz + d / 2, boxes, 0.3)) continue;

@@ -94,7 +94,7 @@ export const QUEST_PLANS: Readonly<Record<string, QuestPlan>> = {
   'sr-skyway-midnight': { suite: 'races', expect: 'pass' },
   'sr-boucle': { suite: 'races', expect: 'pass' },
   'sr-saltbucket-dash': { suite: 'races', expect: 'pass' },
-  'sr-ring-road': { suite: 'races', expect: 'pass' },
+  'sr-ring-road': { suite: 'races', expect: 'pass', budget: 900 }, // two laps per attempt, ~210 s each; the bot wins on attempt 2 or 3
   'sq-rutbottom-heats': { suite: 'races', expect: 'pass' },
   'race-capwood-open': { suite: 'races', expect: 'pass' },
   'sq-capwood-cap-count': { suite: 'side', expect: 'pass' },

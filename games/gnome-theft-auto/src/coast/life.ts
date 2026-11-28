@@ -14,6 +14,9 @@ import { playAt } from '../sound/bus';
 import { CAST } from '../cutscene/cast';
 import { COAST } from './config';
 import { coastSign } from './sign';
+import { STALL_KEEPERS } from './stalls';
+import { PROMENADE_FOLK } from './promenade';
+import { BEACH_FOLK } from './beachScenes';
 import type { CoastPart } from './types';
 
 export type CoastDistrict = 'boardwalk' | 'pier' | 'beach' | 'ship';
@@ -316,7 +319,7 @@ export function installCoastLife(deps: JobsDeps): CoastPart {
     }
   }
 
-  const residents = createAmbientGnomes(deps.scene, COAST_RESIDENTS);
+  const residents = createAmbientGnomes(deps.scene, [...COAST_RESIDENTS, ...STALL_KEEPERS, ...PROMENADE_FOLK, ...BEACH_FOLK]);
 
   let surfT = 6 + Math.random() * 6;
   let bellT = 10 + Math.random() * 10;

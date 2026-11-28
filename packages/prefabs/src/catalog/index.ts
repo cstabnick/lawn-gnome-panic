@@ -118,6 +118,8 @@ import { GTA_JOBS } from './gta-jobs';
 import { GTA_COAST } from './gta-coast';
 import { GTA_COAST_KIT } from './gta-coast-kit';
 import { GTA_COAST_GEAR } from './gta-coast-gear';
+import { GTA_COAST_TOWN } from './gta-coast-town';
+import { GTA_COAST_BEACH } from './gta-coast-beach';
 import { GTA_JOBS_GEAR } from './gta-jobs-gear';
 import { GTA_PEBBLEWICK } from './gta-pebblewick';
 import { GTA_PEBBLEWICK_B } from './gta-pebblewick-b';
@@ -247,7 +249,7 @@ export const CATALOG: readonly PrefabDef[] = [
   ...GTA_EURO_BUILDINGS_A, ...GTA_EURO_BUILDINGS_B, ...GTA_EURO_BUILDINGS_C, ...GTA_EURO_BUILDINGS_D,
   ...GTA_EURO_STREET, ...GTA_EURO_STREET_B, ...GTA_EURO_GARDEN, ...GTA_EURO_GARDEN_B,
   ...GTA_EURO_FLEET, ...GTA_EURO_FLEET_B, ...GTA_EURO_GEAR, ...GTA_HOMES, ...GTA_PARDONLIN_PROPS, ...GTA_PARDONLIN_GEAR,
-  ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR,
+  ...GTA_COAST, ...GTA_COAST_KIT, ...GTA_COAST_GEAR, ...GTA_COAST_TOWN, ...GTA_COAST_BEACH,
 
   ...GTA_WINTER_RIDES, ...GTA_WINTER_LODGE, ...GTA_WINTER_GEAR, ...GTA_FISH_ICE,
   ...GTA_DIRT_RALLY, ...GTA_DIRT_RALLY_GEAR, ...GTA_STREET_RACE_GEAR,

@@ -266,4 +266,20 @@ export const COSMETICS_NECK: PrefabDef[] = [
       { s: 'box', d: [0.07, 0.006, 0.004], at: [0, 0.1, 0.168], c: 'leather-dark' },              // lashing
     ],
   },
+  {
+    id: 'trick-chalk-pendant', name: 'Blue Chalk Pendant', category: 'trinket', uses: ['wear-neck'],
+    tags: ['chalk', 'cube', 'pendant', 'pool', 'billiards', 'neck', 'reward'], emoji: [],
+    about: 'A cube of blue billiard chalk hung on a cord round the neck. Reward for clearing a Challenge.',
+    examine: [
+      'A neat cube of blue billiard chalk hung on a dark cord at the chest, ready for an emergency bank shot.',
+      'Saying: a gnome with chalk on a cord never has to borrow from Big Lou.',
+      'Tip: twist the cube gently on the cue tip; grinding it down only ruins the bevel.',
+      'Joke: it has been used so rarely in Challenges that the cube is still perfectly square.',
+      'A faint blue smudge sits on the knot where the cord meets the chalk.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.18, 0.008], at: [0, 0.02, -0.04], rot: [90, 0, 0], c: 'iron-dark', seg: 12 },
+      { s: 'box', d: [0.045, 0.045, 0.045], at: [0, 0.025, 0.15], c: 'blue' },
+    ],
+  },
 ];

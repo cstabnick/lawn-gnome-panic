@@ -125,4 +125,21 @@ export const COSMETICS_BACK: PrefabDef[] = [
       { s: 'cyl', d: [0.006, 0.006, 0.2], at: [-0.05, 0.33, 0], c: 'iron', seg: 6 },
     ],
   },
+  {
+    id: 'high-roller-rack', name: 'Gilded Triangle Rack', category: 'armor', uses: ['wear-back'],
+    tags: ['rack', 'triangle', 'pool', 'billiards', 'gold', 'back', 'reward'], emoji: [],
+    about: 'A gilded wooden billiard triangle strapped to the back. Reward for winning a wagered match.',
+    examine: [
+      'A gleaming gilded triangle rack strapped across the back like a trophy from the high-roller felt.',
+      'Saying at the Gnomecino: only gnomes who back their cue with chips get to wear the gold frame.',
+      'Tip: rack the 8-ball dead center and keep the apex tight before every break.',
+      'Joke: three gnomes tried to fit a 9-ball diamond inside it before reading the label.',
+      'The corners are buffed bright from leaning against the velvet rope.',
+    ],
+    parts: [
+      { s: 'box', d: [0.22, 0.024, 0.026], at: [0, 0.012, 0], c: 'gold' },
+      { s: 'box', d: [0.024, 0.22, 0.026], at: [-0.055, 0.107, 0], rot: [0, 0, -28], c: 'gold' },
+      { s: 'box', d: [0.024, 0.22, 0.026], at: [0.055, 0.107, 0], rot: [0, 0, 28], c: 'gold' },
+    ],
+  },
 ];

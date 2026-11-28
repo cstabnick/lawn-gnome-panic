@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { createGnomeModel, type GnomeLook, type GnomeModel, type PlayerState } from '@lawn/gnome';
 import { createEmotePlayer, type EmotePlayer } from '@lawn/emotes';
-import { aimLine } from './aim';
+import { aimLine, aimTargetRay } from './aim';
 import { BALL_R, CUE_BALL, PULL_MAX, RAIL, TABLE_H, TABLE_W } from './config';
 import { newWalker, type Walker } from './gnomes';
 import { POCKETS, type Ball } from './physics';
@@ -29,12 +29,14 @@ const BALL_COLOURS: Record<number, string> = {
   1: '#f2c230', 2: '#2b5fd6', 3: '#d8332b', 4: '#6a2fb0', 5: '#f0742b', 6: '#2e8f3e', 7: '#7a2222', 8: '#111111',
 };
 
-export type CameraMode = 'table' | 'follow' | 'orbit';
+export type CameraMode = 'table' | 'follow' | 'orbit' | 'aim';
 
 export interface SceneFrame {
   balls: readonly Ball[];
-  /** The shot being lined up: its direction in table units (unit length), how far the cue is pulled, 0..1, and whether aim is locked. */
-  aim: { dx: number; dy: number; pull: number; locked?: boolean } | null;
+  /** The shot being lined up: its direction in table units (unit length), how far the cue is pulled, 0..1, whether aim is locked, and whether fine aim is active. */
+  aim: { dx: number; dy: number; pull: number; locked?: boolean; fine?: boolean } | null;
+  /** Optional CPU cue visualization while the CPU winds up its shot. */
+  cpuAim?: { dx: number; dy: number; pull: number } | null;
   /** Ball in hand: the spot under the pointer and whether it is legal. */
   placing: { x: number; y: number; ok: boolean } | null;
   /** Whose shot it is (0 or 1), or -1 while the table is moving. */
@@ -116,6 +118,7 @@ export class BilliardsScene {
   private readonly camLook = new THREE.Vector3(0, Y0, 0);
   private camReady = false;
   private time = 0;
+  private lastAim: { cx: number; cy: number; dx: number; dy: number } | null = null;
   private readonly cutout = {
     uCutActive: { value: 0 },
     uCutOrigin: { value: new THREE.Vector3() },
@@ -433,7 +436,11 @@ if (!inCut) discard;`,
   private updateCamera(dt: number): void {
     const follow = this.actors[this.followSeat];
     let want: THREE.Vector3;
-    if (this.camMode === 'follow' && follow) {
+    if (this.camMode === 'aim' && this.lastAim) {
+      const [wx, wz] = toWorld(this.lastAim.cx, this.lastAim.cy);
+      want = new THREE.Vector3(wx - this.lastAim.dx * 0.72, Y0 + 0.32, wz - this.lastAim.dy * 0.72);
+      this.camLook.set(wx + this.lastAim.dx * 0.85, TOP, wz + this.lastAim.dy * 0.85);
+    } else if ((this.camMode === 'follow' || this.camMode === 'aim') && follow) {
       const w = follow.walker;
       const len = Math.hypot(w.x, w.z) || 1;
       // Behind the gnome, as seen from the table: the camera sits on the far side of it, looking back at the cloth.
@@ -483,18 +490,20 @@ if (!inCut) discard;`,
       this.prev.set(b.id, { x: wx, z: wz });
     }
 
-    // The cue stick and the aim line, while a shot is being lined up.
+    // The cue stick and the aim line, while a shot is being lined up (or CPU is winding up).
     const cue = f.balls.find((b) => b.id === CUE_BALL);
-    const showAim = !!f.aim && !!cue && !cue.pocketed && f.activeSeat >= 0;
+    const activeAim = f.aim ?? (f.cpuAim ? { ...f.cpuAim, locked: true, fine: false } : null);
+    const showAim = !!activeAim && !!cue && !cue.pocketed && f.activeSeat >= 0;
+    this.lastAim = f.aim && cue && !cue.pocketed ? { cx: cue.x, cy: cue.y, dx: f.aim.dx, dy: f.aim.dy } : null;
     this.cueStick.visible = showAim;
     this.aimObj.visible = showAim;
     this.targetObj.visible = false;
     this.ghost.visible = false;
     this.ghostTableGroup.visible = showAim;
     this.cutout.uCutActive.value = showAim ? 1 : 0;
-    if (showAim && f.aim && cue) {
-      const { dx, dy, pull, locked } = f.aim;
-      this.aimMat.color.setHex(locked ? 0xffd54f : 0xffffff);
+    if (showAim && activeAim && cue) {
+      const { dx, dy, pull, locked, fine } = activeAim;
+      this.aimMat.color.setHex(locked ? 0xffd54f : fine ? 0x5ef2ff : 0xffffff);
       const line = aimLine(f.balls, cue.x, cue.y, dx, dy);
       const [sx, sz] = toWorld(cue.x, cue.y);
       const [ex, ez] = toWorld(line.ex, line.ey);
@@ -507,14 +516,15 @@ if (!inCut) discard;`,
         const hitBall = f.balls.find((b) => b.id === line.contact?.hitId);
         if (hitBall) {
           const [hx, hz] = toWorld(hitBall.x, hitBall.y);
-          const nx = hx - gx;
-          const nz = hz - gz;
-          const nlen = Math.hypot(nx, nz) || 1;
-          const len = 0.35;
-          this.targetGeo.setFromPoints([
-            new THREE.Vector3(hx, TOP, hz),
-            new THREE.Vector3(hx + (nx / nlen) * len, TOP, hz + (nz / nlen) * len),
-          ]);
+          const ray = aimTargetRay(f.balls, hitBall.id, line.contact.x, line.contact.y, fine ? 1.25 : 0.65);
+          const [rx, rz] = toWorld(ray.ex, ray.ey);
+          this.targetMat.color.setHex(ray.pocketed ? 0x5cff7a : 0xffd54f);
+          const pts = [new THREE.Vector3(hx, TOP, hz), new THREE.Vector3(rx, TOP, rz)];
+          if (fine && ray.bounce) {
+            const [bx, bz] = toWorld(ray.bounce.bx, ray.bounce.by);
+            pts.push(new THREE.Vector3(bx, TOP, bz));
+          }
+          this.targetGeo.setFromPoints(pts);
           this.targetObj.visible = true;
         }
       }

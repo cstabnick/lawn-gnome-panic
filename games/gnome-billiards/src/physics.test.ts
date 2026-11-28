@@ -53,4 +53,12 @@ describe('table physics', () => {
     expect(canPlaceCue(balls, 0.02, 0.02)).toBe(false);
     expect(canPlaceCue(balls, 1.0, 0.5 + BALL_R)).toBe(false);
   });
+
+  it('tracks cushionHits for cue and object balls', () => {
+    const balls = [ball(CUE_BALL, 0.7, 0.5), ball(1, 0.7, 0.8)];
+    const t = beginShot(balls, 0, 2.2);
+    settle(t);
+    expect(t.events.cushionHits?.[1]).toBeGreaterThanOrEqual(1);
+    expect(t.events.cushionHits?.[CUE_BALL]).toBeGreaterThanOrEqual(0);
+  });
 });

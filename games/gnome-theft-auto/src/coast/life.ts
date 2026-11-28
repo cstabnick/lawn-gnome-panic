@@ -11,6 +11,7 @@ import { heightAt } from '../terrain';
 import { registerCull } from '../cull';
 import { createAmbientGnomes, type AmbientGnomeDef } from '../ambientGnomes';
 import { playAt } from '../sound/bus';
+import { CAST } from '../cutscene/cast';
 import { COAST } from './config';
 import { coastSign } from './sign';
 import type { CoastPart } from './types';
@@ -179,19 +180,19 @@ export const COAST_VIGNETTES: readonly CoastVignette[] = [
   },
 ];
 
-/** The residents (AmbientGnomeDef, made by createAmbientGnomes). Deck residents stand on the ground beside the deck, since
- *  an ambient gnome is posed on the ground only. Lore voices: saltbucket-boardwalk, the-last-tube, the-bathtub-queen. */
+/** The residents (AmbientGnomeDef, made by createAmbientGnomes). Deck residents use `surface: 'rooftop'` so they stand ON
+ *  the planks (boardwalk, pier, the Queen's deck). Marram, Driftwood and Bilge wear their cast looks (R-238). Lore voices: saltbucket-boardwalk, the-last-tube, the-bathtub-queen. */
 export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
   {
     id: 'coast-marram-spokewheel', name: 'Marram Teaspoon', idle: 'point',
     x: -256, z: 1110, yaw: Math.PI,
-    look: { hat: 0x3b6ea5, shirt: 0xf4f4f8, beard: 0xcfcfcf, glasses: true },
+    look: CAST.marram.look,
     bubble: 'Hat on, hands in, wait for the bell.',
   },
   {
     id: 'coast-driftwood-tube', name: 'Driftwood', idle: 'wrench-fix',
     x: 146, z: 1152, yaw: 0.2,
-    look: { hat: 0xc9b99b, shirt: 0x4a6b3b, beard: 0x9e9e9e, freckles: true },
+    look: CAST.driftwood.look,
     bubble: 'The sharks are lawn sharks. Smaller. Meaner. Mostly grass.',
   },
   {
@@ -202,7 +203,7 @@ export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'coast-sal-candyfloss', name: 'Spun Sugar Sal', idle: 'vendor-call',
-    x: -152, z: 1112, yaw: 0,
+    x: -152, z: 1112, yaw: 0, surface: 'rooftop',
     look: { hat: 0xff3b9a, shirt: 0xf4f4f8, beard: null, hair: { color: 0x6b3a1e, style: 'pigtails' }, dress: true },
     bubble: 'Candyfloss is a vegetable. Sal says so. Do not argue with the cart.',
   },
@@ -220,15 +221,27 @@ export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
   },
   {
     id: 'coast-angler-spur', name: 'Reel Ruth', idle: 'fish',
-    x: 232, z: 1125, yaw: Math.PI / 2,
-    look: { hat: 0x4f9d92, shirt: 0xd9c79e, beard: 0xbbbbbb, glasses: true },
+    x: 297.4, z: 1176, yaw: -Math.PI / 2, surface: 'rooftop',
+    look: { hat: 0xc9892b, shirt: 0x24324f, beard: 0xbbbbbb, glasses: true },
     bubble: 'Nothing bites the pier. Something bit the pier once. Long story.',
   },
   {
     id: 'coast-captain-bilge', name: 'Captain Samphire Bilge', idle: 'look-around',
     x: 262, z: 1160, yaw: -Math.PI / 2,
-    look: { hat: 0x2c3e50, shirt: 0x3b2a1a, beard: 0xdddddd, glasses: false },
+    look: CAST.samphire.look,
     bubble: 'Mind the cannons. They are for show. Mostly.',
+  },
+  {
+    id: 'coast-queen-deckhand', name: 'Mopsy Brine', idle: 'sweep',
+    x: 306, z: 1271, yaw: 0.6, surface: 'rooftop',
+    look: { hat: 0xe8e4d4, shirt: 0xb23a3a, beard: null, hair: { color: 0x4a2f22, style: 'pigtails' } },
+    bubble: 'Swabbed it Tuesday. The sea put it back. I take it personally.',
+  },
+  {
+    id: 'coast-queen-lookout', name: 'Pennant Pru', idle: 'look-around',
+    x: 319, z: 1272, yaw: Math.PI / 2, surface: 'rooftop',
+    look: { hat: 0x2d5a7b, shirt: 0xeadfc2, beard: 0xcfcfcf, glasses: true },
+    bubble: 'Nothing on the horizon but the HOA. And that is a hedge.',
   },
 ];
 

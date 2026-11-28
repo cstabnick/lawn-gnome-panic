@@ -9,6 +9,7 @@ import { distToPolyline } from './landforms/noise';
 import { borderDistAt } from './landforms';
 import { regionAt } from './levels';
 import { REGION_THEMES } from './regionThemes';
+import { GROUND_TRACKS } from './raceTrack/tracks';
 
 installFakeDom();
 const { planScenery } = await import('./scenery');
@@ -72,6 +73,22 @@ describe('countryside scenery plan', () => {
       for (const h of HIGHWAYS) best = Math.min(best, distToPolyline(p.x, p.z, h.points));
       expect(best).toBeGreaterThanOrEqual(7);
     }
+  });
+
+  it('stands no tree, rock or planting on a race road or mountain route, nor inside its barriers (G4#16)', () => {
+    let checked = 0;
+    for (const p of a.placements) {
+      if (LINEAR.has(p.id)) continue;
+      for (const t of GROUND_TRACKS) {
+        const reach = t.def.barrierOffset;
+        const b = t.bounds();
+        if (p.x < b.minX || p.x > b.maxX || p.z < b.minZ || p.z > b.maxZ) continue;
+        checked++;
+        const spot = t.locate(p.x, p.z, reach);
+        expect(spot !== null && Math.abs(spot.lat) <= reach, `${p.id} at ${p.x.toFixed(0)},${p.z.toFixed(0)} on ${t.def.id}`).toBe(false);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 
   it('stands on the ground (linear pieces may sit up to 1.5 m lower)', () => {

@@ -8,7 +8,7 @@ import {
 import { fbm, ridged, valueNoise } from '../landforms/noise';
 import { REGION_PRIORITY, regionAt, trails } from '../levels';
 import { GRID_N, heightGrid, normalAt, resetTerrainOptions, setTerrainOptions } from '../terrain';
-import { paintGridBytes } from '../terrainPaint';
+import { paintRawBytes } from '../terrainPaint';
 import { bridges } from '../water';
 import {
   getGtaKernelRuntime, initGtaWasm, wasmBuildChunkPosNormals, wasmBuildDistanceFields, wasmSyncChunkGridAndBridges,
@@ -66,7 +66,7 @@ describe('GTA Wasm kernel parity', () => {
       expect(roadDistAt(0, -200)).toBeLessThan(10);
 
       // Paint: re-derive the JS rule for sampled cells (terrainPaint.ts buildPaint) and compare with the kernel's grid.
-      const paint = paintGridBytes()!;
+      const paint = paintRawBytes()!;
       const C = GRID_N - 1;
       expect(paint.length).toBe(C * C);
       const S = TERRAIN.step;

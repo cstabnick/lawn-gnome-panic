@@ -198,6 +198,11 @@ export function buildBoardwalk(scene: THREE.Scene, boxes: Box[]): void {
   const y0 = heightAt(cx, cz);
   const deckTop = y0 + bw.deckLift;
 
+  // The promenade is a walkable deck: bodies stand on the planks (22 cm above the flat ground; a step is 2 m), not in them.
+  if (!rooftopById('saltbucket-boardwalk')) {
+    addRooftop({ id: 'saltbucket-boardwalk', name: 'Saltbucket Boardwalk', minX: R.minX, maxX: R.maxX, minZ: R.minZ, maxZ: R.maxZ, y: deckTop, solid: false, parapet: false });
+  }
+
   // ---- Deck: 0.3 m boxes, top 22 cm proud of the (flat) ground, bottom below it; two wood tones every 1.2 m ----------
   deckSlabs(bins, R.minX, R.maxX, deckTop, R.minZ, R.maxZ, 'woodA', 'x');
 

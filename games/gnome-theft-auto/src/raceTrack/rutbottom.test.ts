@@ -1,6 +1,7 @@
 // The Rutbottom Dirt Bowl: a bumpy dirt circuit with big banks, whoops and two jumps, inside the dirt-track site.
 import { describe, expect, it } from 'vitest';
 import { siteRect } from '../sites';
+import { heightAt } from '../terrain';
 import { TRACKS } from './tracks';
 
 const T = TRACKS.rutbottom;
@@ -42,6 +43,14 @@ describe('rutbottom', () => {
       expect(w.from).toBeGreaterThanOrEqual(25);
       expect(w.to).toBeLessThanOrEqual(L - 25);
     }
+  });
+
+  it('stands its corners on gentle banks, not walls (north of the start straight)', () => {
+    let worst = 0;
+    for (let x = 1100; x <= 1250; x += 10) {
+      for (let d = 9; d < 25; d += 2) worst = Math.max(worst, Math.abs(heightAt(x, -543 - d) - heightAt(x, -543 - d - 2)) / 2);
+    }
+    expect(worst, 'steepest bank (rise/run)').toBeLessThan(0.55);
   });
 
   it('leaves the entrance lane clear', () => {

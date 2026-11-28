@@ -1360,3 +1360,10 @@ Mabel sends newcomers to them.
 **Ruling:** Deckchair hire at Dunelow is **1 Acorn**, "falling over included". There are no pence in the Yard; every price is in Acorns.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
 **Why:** R1 editorial review G3#28 (FX01): a small fact, so the lore follows the corrected sign (GR1).
+
+## R-238
+
+**Question:** The R1 editorial review (G3#1-3) found the coast's people standing in the planks or beside the decks, and Driftwood, Marram and Captain Bilge in different colours in each place. Where does everyone stand, and what do they wear?
+**Ruling:** (1) **Everyone stands ON the decks:** the Saltbucket Boardwalk's promenade is a walkable deck like the pier's, and Spun Sugar Sal, the player and the cars stand on its planks. (2) **Reel Ruth fishes from the Long Spoon Pier's handle**, at the west rail about (297, 1176), facing out to sea; she wears a mustard oilskin sou'wester, a navy jumper, glasses and her grey beard (no longer Driftwood's teal and sand). (3) **The Bathtub Queen has a deck crew besides her captain:** Mopsy Brine, the deckhand, who mops the same planks every day and takes it personally when the sea puts the wet back, and Pennant Pru, the lookout at the bow, who reports the HOA on the horizon and is told, each time, that it is a hedge. (4) **Driftwood, Marram Teaspoon and Captain Samphire Bilge wear their cast looks everywhere:** Driftwood a teal hat and sand shirt, Marram a yellow hat and teal shirt with pigtails, Bilge a navy hat and dark brown coat; the cutscene preset is the look in quests, on the boardwalk and in the captain's cabin.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** R1 editorial review G3#1, G3#2, G3#3 (FX06): positions and colours of named people changed in the game, so the lore follows (GR1).

@@ -11,7 +11,7 @@ export const RUTBOTTOM: TrackDef = {
   closed: true,
   width: 11,
   shoulder: 3,
-  fade: 8,
+  fade: 10,
   barrierOffset: 10,
   surface: 'dirt',
   relief: 'raise',

@@ -1,0 +1,10 @@
+## Environment (same for every FX06 issue)
+
+- Repo worktree: `C:\Users\cpsai\cstabnick\lawn-gnome-panic\.claude\worktrees\agent-a5201ffcd1b9bc548` (branch `fix/FX06`). Work only there, use absolute paths. Game: `games/gnome-theft-auto` (Vite + TypeScript + three.js). Paths below starting `src/` are under `games/gnome-theft-auto/src/`.
+- Git Bash; if node is missing: `export PATH="/c/Program Files/nodejs:$PATH"`. Dependencies are installed.
+- Four other workers edit other files of this game at the same time. Touch only the files your issue owns. Do not commit, do not stash, do not run `git checkout`/`git reset`.
+- Keep line endings as they are (`src/ambientGnomes.ts` is CRLF, the rest LF). Prefer the Edit tool. Check `git diff --stat` shows no whole-file rewrite.
+- Type-check: `npx tsc --noEmit -p games/gnome-theft-auto` (other workers' files may be mid-edit; only errors in your files count). Tests: `cd games/gnome-theft-auto && npx vitest run <files>`. Do not run `vite build` (writes dist/).
+- Screenshots: start your own dev server on YOUR port only: `cd games/gnome-theft-auto && npx vite --port <port> --strictPort` (background), then `node tools/gta-shots.mjs http://localhost:<port>/ <scratch-dir> <name>:<x>,<z>,<yaw> [--size 390x844]` from the repo root (yaw: 0 = facing +z/south, Math.PI = north, Math.PI/2 = east). Save shots outside the repo (e.g. `C:\Users\cpsai\AppData\Local\Temp\fx06-<issue>\`), look at them with the Read tool, iterate until it looks right, and stop your server at the end. The editors' original shots for comparison are in `C:\Users\cpsai\orca\workspaces\lawn-gnome-panic\cowfish\docs\roadmaps\gta-batch-3\review\shots\G<n>\`.
+- Repo rules that apply: anything flat on the ground takes a draw layer (`flatLayer(material, LAYER.<x>)` from `@lawn/depth`), never a bare lift; free assets only; no new systems; the goal is polish that feels hand-crafted without losing charm.
+- Report at the end: what you changed (files), what you checked (commands + results), screenshot paths you looked at, anything left undone.

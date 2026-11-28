@@ -88,6 +88,7 @@ export const STORY: StoryFile = {
     ],
   },
   plans: {
-    [ID]: { suite: 'story', expect: 'pass' },
+    // 900 s: the bot's racing line wins on its third or fourth attempt (rivals sit within metres of it; FX04 narrowed the collision).
+    [ID]: { suite: 'story', expect: 'pass', budget: 900 },
   },
 };

@@ -198,8 +198,11 @@ export interface VehicleSpec {
   accel: number;
   /** Turn rate at full steer, radians/s (ground vehicles scale it down at very low speed). */
   turnRate: number;
-  /** Collision circle radius. */
+  /** Bounding radius (about half the length): culling, the camera, spawn spacing, bump thresholds. Ground vehicles with a
+   *  `halfWidth` collide as a capsule instead (collide.ts vehicleCapsule); without one they collide as this circle. */
   radius: number;
+  /** Half the body's width, metres (measured from the built prefab). The collision capsule's radius is halfWidth + 0.05 (D36). */
+  halfWidth?: number;
   /** Where the rider's feet go, in the vehicle root's local space (after scaling). */
   seat: [number, number, number];
   /** Passenger seats for online riders (seat 1 is [0]), same space as `seat`. Absent: the driver rides alone. */
@@ -408,8 +411,10 @@ export interface ChaseCamera {
     mode: CameraMode,
     input: InputState,
     world: World,
-    extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number } },
+    extra?: { boost?: boolean; airborne?: boolean; eye?: { x: number; y: number; z: number }; size?: { radius: number; height: number } },
   ): void;
+  // update: `extra.size` is the driven vehicle's bounding radius and body height (camera.ts vehicleFrame): drive and fly
+  // frame big vehicles from further back and higher up (G7#2). Absent: the fixed view.
   // update: `extra.eye` is the world point of the gnome's eyes (on foot: head height; seated: the seat plus head height).
   // While firstPerson is on and eye is given, the camera sits there; without eye it falls back to the chase view.
   /** Unit vector of the camera's forward direction (the crosshair ray goes from the camera along it). */

@@ -5,6 +5,7 @@ import {
   type VehicleConfig,
 } from '@lawn/vehicle';
 import { VEHICLES } from './config';
+import { DEALERS } from './dealers/config';
 import {
   LEAN_CAP, LEAN_MAX, PROFILES, REFERENCE_RADIUS, TUNES, comHeightFor, profileFor, rangeFor, riderLean, stockSetup, tuneById, vehicleConfig,
   clampSetup, HANDLING_KNOBS, type Tune,
@@ -156,5 +157,68 @@ describe('rider weight shift', () => {
   });
   it('is bigger on the bike than the combine', () => {
     expect(Math.abs(riderLean(10, profileFor('push-bike')))).toBeGreaterThan(Math.abs(riderLean(10, profileFor('combine'))));
+  });
+});
+
+// ---- Keyboard feel (G7#6) and profile coverage (G7#8) -----------------------------------------------------------------
+const isGround = (kind: VehicleKind): boolean => {
+  const s = VEHICLES[kind];
+  return !s.flies && !s.boat && !s.stand && !s.air;
+};
+const GROUND_ALL = (Object.keys(VEHICLES) as VehicleKind[]).filter((k) => isGround(k) && PROFILES[k]);
+
+/** 0 to 90 % of top speed from rest, stock setup, keyboard, straight: seconds (Infinity if never). */
+function zeroTo90(kind: VehicleKind, tune: Tune): number {
+  const spec = VEHICLES[kind];
+  const c = new VehicleController(vehicleConfig(spec, tune));
+  c.place(v3(0, 0, 0), 0, 0);
+  for (let i = 0; i < 60 * 25; i++) {
+    c.update(1 / 60, { steer: 0, throttle: 1, brake: 0, handbrake: 0, source: 'keyboard' });
+    if (c.telemetry.forwardSpeed >= spec.maxSpeed * 0.9) return (i + 1) / 60;
+  }
+  return Infinity;
+}
+
+/** Hold full keyboard lock and throttle for 3 s from 0.9 of top speed: worst sideslip (rad) and the final forward speed. */
+function fullLock(kind: VehicleKind, tune: Tune): { slip: number; fwd: number } {
+  const spec = VEHICLES[kind];
+  const c = new VehicleController(vehicleConfig(spec, tune));
+  c.place(v3(0, 0, 0), 0, spec.maxSpeed * 0.9);
+  let slip = 0;
+  for (let i = 0; i < 60 * 3; i++) {
+    c.update(1 / 60, { steer: 1, throttle: 1, brake: 0, handbrake: 0, source: 'keyboard' });
+    slip = Math.max(slip, Math.abs(c.telemetry.sideslip));
+  }
+  return { slip, fwd: c.telemetry.forwardSpeed };
+}
+
+describe('profile coverage', () => {
+  it('every kind a dealer sells that drives on the ground has a PROFILES row', () => {
+    const kinds = new Set<VehicleKind>();
+    for (const d of Object.values(DEALERS)) for (const s of d.stock) {
+      const spec = VEHICLES[s.kind as VehicleKind];
+      if (spec && isGround(spec.kind)) kinds.add(spec.kind);
+    }
+    expect(kinds.size).toBeGreaterThan(10);
+    for (const k of kinds) expect(PROFILES[k], k).toBeDefined();
+    for (const k of ['cone-van', 'golf-cart', 'taxi'] as VehicleKind[]) expect(PROFILES[k], k).toBeDefined();
+  });
+});
+
+describe('keyboard feel', () => {
+  const KINDS = [...new Set<VehicleKind>([...GROUND_ALL, 'ride-on', 'golf-cart', 'taxi', 'cone-van'])];
+  for (const id of ['casual', 'hybrid']) {
+    it(`${id}: no stock ground vehicle spins at keyboard full lock`, () => {
+      const tune = tuneById(id)!;
+      for (const kind of KINDS) {
+        const r = fullLock(kind, tune);
+        expect(r.slip, `${kind} sideslip`).toBeLessThan(0.6);
+        expect(r.fwd, `${kind} forward speed`).toBeGreaterThan(0);
+      }
+    });
+  }
+  it('simcade reaches 90 % of top speed within 6 s for every ground vehicle', () => {
+    const tune = tuneById('simcade')!;
+    for (const kind of KINDS) expect(zeroTo90(kind, tune), kind).toBeLessThan(6);
   });
 });

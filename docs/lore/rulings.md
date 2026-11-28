@@ -1360,3 +1360,10 @@ Mabel sends newcomers to them.
 **Ruling:** Deckchair hire at Dunelow is **1 Acorn**, "falling over included". There are no pence in the Yard; every price is in Acorns.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
 **Why:** R1 editorial review G3#28 (FX01): a small fact, so the lore follows the corrected sign (GR1).
+
+## R-238
+
+**Question:** The stunt ramps were all one black-and-cyan kit (D21). What does each ramp look like, and what do its signs say?
+**Ruling:** Each ramp is built from its place: the Turfton Park Fountain Vault in Gnorwin Clayfoot Park is timber with a turf top, and the council has put a sign beside it that reads "NO RAMPING (PLEASE)"; Dean's Leap is old planks over packed earth, with a faded painted wheelchair symbol on the slope (the Dean's story that it was a wheelchair ramp for a very ambitious professor) and a brass plate reading "DONATED BY THE CLASS OF ——" (the year was never engraved); the desert, wood and farm ramps are packed earth with tyre piles; the city ramps are painted plywood on steel, the Clay-Mart ramp is the shop's steel loading ramp, and the Frostbite Ice Ridge is packed snow on timber. Every ramp carries a painted white lip line and yellow chevrons. The cyan glow is not on any ramp: it is only the ring the player sees while a stunt is under way.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** FX04 (D21) dressed the ramps to their places; the signs' words and the ramps' materials are small facts the lore should agree with.

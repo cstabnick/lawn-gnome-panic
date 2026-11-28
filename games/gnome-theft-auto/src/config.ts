@@ -294,22 +294,22 @@ export const DEFAULT_LOOK: GnomeLook = {
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'push-bike': {
     kind: 'push-bike', mountStyle: 'hop', name: 'Push-Mower Bike', prefab: 'push-mower-bike', scale: 1.6,
-    maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, seat: [0, 0.3, -0.6], flies: false, mass: 1,
+    maxSpeed: 20, accel: 17.5, turnRate: 2.8, radius: 0.9, halfWidth: 0.6, seat: [0, 0.3, -0.6], flies: false, mass: 1,
     passengerSeats: [[0, 0.3, -1.25]],
   },
   'ride-on': {
     kind: 'ride-on', mountStyle: 'vault', name: 'Ride-On Mower', prefab: 'ride-on-mower', scale: 1.5,
-    maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, seat: [0, 0.42, -0.52], flies: false, mass: 2,
+    maxSpeed: 25, accel: 12.5, turnRate: 2.0, radius: 1.4, halfWidth: 1.05, seat: [0, 0.42, -0.52], flies: false, mass: 2,
     passengerSeats: [[0.55, 0.42, -0.52]],
   },
   'zero-turn': {
     kind: 'zero-turn', mountStyle: 'vault', name: 'Zero-Turn Racer', prefab: 'zero-turn-mower', scale: 1.5,
-    maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, seat: [0, 0.45, -0.45], flies: false, mass: 2,
+    maxSpeed: 34, accel: 20, turnRate: 3.4, radius: 1.4, halfWidth: 0.95, seat: [0, 0.45, -0.45], flies: false, mass: 2,
     passengerSeats: [[-0.55, 0.45, -0.45]],
   },
   'combine': {
     kind: 'combine', mountStyle: 'clamber', name: 'Combine Harvester', prefab: 'combine-harvester', scale: 3,
-    maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, seat: [0, 3.4, 0.45], flies: false, mass: 6,
+    maxSpeed: 15, accel: 6.25, turnRate: 1.1, radius: 3.2, halfWidth: 3, seat: [0, 3.4, 0.45], flies: false, mass: 6,
     passengerSeats: [[-1.4, 3.4, 0.45], [1.4, 3.4, 0.45], [0, 3.4, -0.9]],
   },
   'plane': {
@@ -325,24 +325,24 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   },
   'lowrider': {
     kind: 'lowrider', mountStyle: 'hop', name: 'Ride-On Lowrider', prefab: 'ride-on-mower', scale: 1.55,
-    maxSpeed: 26, accel: 14, turnRate: 2.3, radius: 1.4, seat: [0, 0.44, -0.52], flies: false, mass: 2.2,
+    maxSpeed: 26, accel: 14, turnRate: 2.3, radius: 1.4, halfWidth: 1.1, seat: [0, 0.44, -0.52], flies: false, mass: 2.2,
     passengerSeats: [[-0.6, 0.44, -0.52], [0.6, 0.44, -1.1], [-0.6, 0.44, -1.1]],
   },
   'boot-float': {
     kind: 'boot-float', mountStyle: 'clamber', name: "Gnorwin's Boot Float", prefab: 'boot-parade-float', scale: 3.2,
-    maxSpeed: 13, accel: 5.5, turnRate: 1.0, radius: 3.8, seat: [0, 1.48, 2.64], flies: false, mass: 10,
+    maxSpeed: 13, accel: 5.5, turnRate: 1.0, radius: 3.8, halfWidth: 1.9, seat: [0, 1.48, 2.64], flies: false, mass: 10,
     passengerSeats: [[-1.6, 1.48, 2.64], [1.6, 1.48, 2.64], [0, 1.48, 0.9], [0, 1.48, 4.2]],
   },
   'snail-coach': {
     kind: 'snail-coach', mountStyle: 'door', openTop: false, doors: [
       { side: 'right', pivot: 'door-right', at: [-1.22, 1.0, 1.96] },
     ], name: 'Snail-Coach', prefab: 'snail-coach', scale: 2.0,
-    maxSpeed: 22, accel: 9.5, turnRate: 1.6, radius: 2.5, seat: [0, 1.04, 1.5], flies: false, mass: 5,
+    maxSpeed: 22, accel: 9.5, turnRate: 1.6, radius: 2.5, halfWidth: 1.3, seat: [0, 1.04, 1.5], flies: false, mass: 5,
     // No passenger seats yet: the coach is a closed box, so riders inside it cannot be seen.
   },
   'mulch-spreader': {
     kind: 'mulch-spreader', mountStyle: 'vault', name: 'Mulch-Spreader Mower', prefab: 'mulch-spreader-mower', scale: 1.6,
-    maxSpeed: 23, accel: 12, turnRate: 2.0, radius: 1.6, seat: [0, 0.9, 0.08], flies: false, mass: 2.6,
+    maxSpeed: 23, accel: 12, turnRate: 2.0, radius: 1.6, halfWidth: 0.95, seat: [0, 0.9, 0.08], flies: false, mass: 2.6,
     passengerSeats: [[0, 0.9, -0.6]],
   },
   'hoa-van': {
@@ -350,7 +350,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [1.04, 0.99, 1.26] },
       { side: 'right', pivot: 'door-right', at: [-1.04, 0.99, 1.26] },
     ], name: 'HOA Code-Enforcement Van', prefab: 'hoa-van', scale: 1.8,
-    maxSpeed: 27, accel: 13, turnRate: 1.9, radius: 2.1, seat: [0, 0.94, 0.63], flies: false, mass: 4.5,
+    maxSpeed: 27, accel: 13, turnRate: 1.9, radius: 2.1, halfWidth: 1.19, seat: [0, 0.94, 0.63], flies: false, mass: 4.5,
     // No passenger seats yet: the van is an enclosed cab, so riders inside it cannot be seen.
   },
   // ---- Boats (Epic 4: boats.ts; prefabs in packages/prefabs/src/catalog/gta-boats.ts, modelled life-size, nose +z) ----
@@ -388,36 +388,36 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   // ---- The Turfton Taxi (taxi.ts): the gta-taxi prefab is 0.9 wide, 2.0 long, 0.8 tall; scale 2.2. Closed cabin, no door pivots. ----
   taxi: {
     kind: 'taxi', mountStyle: 'door', openTop: false, name: 'Turfton Taxi', prefab: 'gta-taxi', scale: 2.2,
-    maxSpeed: 24, accel: 11, turnRate: 2.0, radius: 2.3, seat: [0.45, 0.55, -0.2], flies: false, mass: 3,
+    maxSpeed: 24, accel: 11, turnRate: 2.0, radius: 2.3, halfWidth: 1, seat: [0.45, 0.55, -0.2], flies: false, mass: 3,
   },
   // ---- Odd rides (prefabs in packages/prefabs/src/catalog/gta-odd-rides.ts, lore in docs/lore/entries/apocrypha/): slow,
   // impractical garden-scale vehicles that join ambient traffic now and then and can be stolen like any other. ----
   'pot-rod': {
     kind: 'pot-rod', mountStyle: 'hop', name: 'Pot Rod', prefab: 'gta-pot-rod', scale: 1.5,
-    maxSpeed: 13, accel: 7, turnRate: 2.2, radius: 1.2, seat: [0, 0.39, -0.08], flies: false, mass: 1.6,
+    maxSpeed: 13, accel: 7, turnRate: 2.2, radius: 1.2, halfWidth: 0.58, seat: [0, 0.39, -0.08], flies: false, mass: 1.6,
   },
   'lawn-roller': {
     kind: 'lawn-roller', mountStyle: 'vault', name: 'Lawn Roller', prefab: 'gta-lawn-roller', scale: 1.6,
-    maxSpeed: 7, accel: 3, turnRate: 1.2, radius: 1.6, seat: [0, 0.75, -0.48], flies: false, mass: 5,
+    maxSpeed: 7, accel: 3, turnRate: 1.2, radius: 1.6, halfWidth: 0.77, seat: [0, 0.75, -0.48], flies: false, mass: 5,
   },
   'teacup-trundler': {
     kind: 'teacup-trundler', mountStyle: 'hop', name: 'Teacup Trundler', prefab: 'gta-teacup-trundler', scale: 1.5,
-    maxSpeed: 9, accel: 5, turnRate: 3.0, radius: 1.3, seat: [0, 0.3, 0], flies: false, mass: 1.4,
+    maxSpeed: 9, accel: 5, turnRate: 3.0, radius: 1.3, halfWidth: 0.75, seat: [0, 0.3, 0], flies: false, mass: 1.4,
   },
   'barrow-buggy': {
     kind: 'barrow-buggy', mountStyle: 'hop', name: 'Barrow Buggy', prefab: 'gta-barrow-buggy', scale: 1.5,
-    maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
+    maxSpeed: 11, accel: 6, turnRate: 1.8, radius: 1.2, halfWidth: 0.51, seat: [0, 0.48, -0.15], flies: false, mass: 1.5,
   },
   // ---- The Dewdrop (E18, dewdrop/): Hogweed's clear hamster ball. Slow to turn, gentle top speed, bouncy. ----
   'bubble-mobile': {
     kind: 'bubble-mobile', mountStyle: 'hop', name: 'The Dewdrop', prefab: 'gta-dewdrop', scale: 1.5,
-    maxSpeed: 10, accel: 4, turnRate: 1.2, radius: 1.2, seat: [0, 0.3, 0], flies: false, mass: 1.2,
+    maxSpeed: 10, accel: 4, turnRate: 1.2, radius: 1.2, halfWidth: 1.11, seat: [0, 0.3, 0], flies: false, mass: 1.2,
   },
   // ---- The Putting-Green Cart (fleet.ts; lore: the Country Club's silent carts): the golf-cart prefab is 1.3 wide, 2.1 long,
   // bench top at y 0.75, steering wheel on the left (+x). Two-seat bench; parked now and then in place of a ride-on. ----
   'golf-cart': {
     kind: 'golf-cart', mountStyle: 'vault', name: 'Putting-Green Cart', prefab: 'golf-cart', scale: 1.3,
-    maxSpeed: 21, accel: 11, turnRate: 2.1, radius: 1.5, seat: [0.42, 0.72, -0.3], flies: false, mass: 1.8,
+    maxSpeed: 21, accel: 11, turnRate: 2.1, radius: 1.5, halfWidth: 1.04, seat: [0.42, 0.72, -0.3], flies: false, mass: 1.8,
     passengerSeats: [[-0.42, 0.72, -0.3]],
   },
   // ---- Air and sea (craft/, docs/roadmaps/gta-air-and-sea.md; prefabs in packages/prefabs/src/catalog/gta-aircraft.ts,
@@ -464,23 +464,23 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   // E11 the Spokewheel (coast/spokewheel.ts): a teacup gondola the coast runtime moves round the wheel; never driven.
   'spoke-gondola': {
     kind: 'spoke-gondola', mountStyle: 'hop', name: 'Spokewheel Gondola', prefab: 'spokewheel-gondola', scale: 2.2,
-    maxSpeed: 0, accel: 0, turnRate: 0, radius: 1.4, seat: [0, 0.18, 0], flies: false, mass: 1,
+    maxSpeed: 0, accel: 0, turnRate: 0, radius: 1.4, halfWidth: 1.17, seat: [0, 0.18, 0], flies: false, mass: 1,
   },
   // Winter sports (E12, winter/runtime.ts steps them with winter/slideRider.ts): a Tall-One tea tray for a sled and a
   // pair of skis (the gnome stands). Rented at the Woolly Sock Lodge; nothing else drives them.
   'tea-tray-sled': {
     kind: 'tea-tray-sled', mountStyle: 'hop', name: 'Tea-Tray Sled', prefab: 'tea-tray-sled', scale: 1.3,
-    maxSpeed: 4, accel: 2, turnRate: 1.6, radius: 0.7, seat: [0, 0.08, -0.05], flies: false, mass: 0.5,
+    maxSpeed: 4, accel: 2, turnRate: 1.6, radius: 0.7, halfWidth: 0.51, seat: [0, 0.08, -0.05], flies: false, mass: 0.5,
   },
   'snow-skis': {
     kind: 'snow-skis', mountStyle: 'hop', name: 'Skis', prefab: 'snow-skis', scale: 1.2,
-    maxSpeed: 4, accel: 2, turnRate: 1.8, radius: 0.6, seat: [0, 0.06, 0], flies: false, mass: 0.5, stand: true,
+    maxSpeed: 4, accel: 2, turnRate: 1.8, radius: 0.6, halfWidth: 0.35, seat: [0, 0.06, 0], flies: false, mass: 0.5, stand: true,
   },
   // E19 the Gutter Bowls (skate/runtime.ts steps it with skate/board.ts): a wooden board with wheels, nose +z; the gnome
   // stands. From the Board Library at the park, or your own from the bag. Slower than any vehicle.
   skateboard: {
     kind: 'skateboard', mountStyle: 'hop', name: 'Skateboard', prefab: 'gta-skateboard', scale: 1,
-    maxSpeed: 4, accel: 2, turnRate: 2, radius: 0.45, seat: [0, 0.12, 0], flies: false, mass: 0.3, stand: true,
+    maxSpeed: 4, accel: 2, turnRate: 2, radius: 0.45, halfWidth: 0.3, seat: [0, 0.12, 0], flies: false, mass: 0.3, stand: true,
   },
   // ---- European rides (E29; prefabs in packages/prefabs/src/catalog/gta-euro-fleet.ts and gta-euro-fleet-b.ts, nose +z,
   // contract in docs/roadmaps/gta-batch-3/E29/contracts.md). Seats and doors are the prefab's numbers times `scale`. ----
@@ -489,28 +489,28 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.64, 0.58, 0] },
       { side: 'right', pivot: 'door-right', at: [-0.64, 0.58, 0] },
     ], name: 'Petit Pois', prefab: 'gta-euro-hatch', scale: 1.8,
-    maxSpeed: 24, accel: 13, turnRate: 2.4, radius: 1.1, seat: [0.27, 0.4, -0.14], flies: false, mass: 2.2,
+    maxSpeed: 24, accel: 13, turnRate: 2.4, radius: 1.1, halfWidth: 0.76, seat: [0.27, 0.4, -0.14], flies: false, mass: 2.2,
     passengerSeats: [[-0.27, 0.4, -0.14]],
   },
   'deux-pots': {
     kind: 'deux-pots', mountStyle: 'hop', name: 'Deux-Pots', prefab: 'gta-deux-pots', scale: 1.7,
-    maxSpeed: 20, accel: 9, turnRate: 2.0, radius: 1.2, seat: [0.27, 0.41, -0.2], flies: false, mass: 2,
+    maxSpeed: 20, accel: 9, turnRate: 2.0, radius: 1.2, halfWidth: 0.65, seat: [0.27, 0.41, -0.2], flies: false, mass: 2,
     passengerSeats: [[-0.27, 0.41, -0.2], [0, 0.41, -0.75]],
   },
   wespa: {
     kind: 'wespa', mountStyle: 'hop', name: 'Wespa', prefab: 'gta-wespa', scale: 1.6,
-    maxSpeed: 26, accel: 16, turnRate: 2.9, radius: 0.8, seat: [0, 0.58, -0.16], flies: false, mass: 0.9,
+    maxSpeed: 26, accel: 16, turnRate: 2.9, radius: 0.8, halfWidth: 0.38, seat: [0, 0.58, -0.16], flies: false, mass: 0.9,
     passengerSeats: [[0, 0.58, -0.72]],
   },
   // Dirt country (E14): a push-mower bike rebuilt for the dirt. Light and quick to turn; handling.ts gives it its grip.
   'dirt-bike': {
     kind: 'dirt-bike', mountStyle: 'hop', name: 'Knobbly Dirt-Mower', prefab: 'dirt-mower-bike', scale: 1.6,
-    maxSpeed: 27, accel: 22, turnRate: 3.1, radius: 0.9, seat: [0, 0.58, -0.19], flies: false, mass: 1,
+    maxSpeed: 27, accel: 22, turnRate: 3.1, radius: 0.9, halfWidth: 0.38, seat: [0, 0.58, -0.19], flies: false, mass: 1,
     passengerSeats: [[0, 0.58, -0.75]],
   },
   'baguette-trike': {
     kind: 'baguette-trike', mountStyle: 'hop', name: 'Baguette Trike', prefab: 'gta-baguette-trike', scale: 1.5,
-    maxSpeed: 15, accel: 8, turnRate: 2.1, radius: 1.0, seat: [0, 0.6, 0.12], flies: false, mass: 1.4,
+    maxSpeed: 15, accel: 8, turnRate: 2.1, radius: 1.0, halfWidth: 0.59, seat: [0, 0.6, 0.12], flies: false, mass: 1.4,
     passengerSeats: [[0, 0.45, -0.52]],
   },
   'crepe-van': {
@@ -518,14 +518,14 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.8, 0.76, 0.81] },
       { side: 'right', pivot: 'door-right', at: [-0.8, 0.76, 0.81] },
     ], name: 'Crepe Van', prefab: 'gta-crepe-van', scale: 1.8,
-    maxSpeed: 19, accel: 8, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
+    maxSpeed: 19, accel: 8, turnRate: 1.6, radius: 1.5, halfWidth: 1.16, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
     // No passenger seats: an enclosed cab with a griddle where the second seat would be.
   },
   // E31 living world (prefabs: packages/prefabs gta-living-rides.ts; life-size metres, front +z, then scaled here).
   // Seats and doors are in prefab units times `scale`; the prefab issue checks them against its own parts.
   'ranger-buggy': {
     kind: 'ranger-buggy', mountStyle: 'hop', name: 'Unmown Ranger Buggy', prefab: 'gta-ranger-buggy', scale: 1.6,
-    maxSpeed: 21, accel: 12, turnRate: 2.3, radius: 1.1, seat: [0.256, 0.496, -0.096], flies: false, mass: 1.6,
+    maxSpeed: 21, accel: 12, turnRate: 2.3, radius: 1.1, halfWidth: 0.66, seat: [0.256, 0.496, -0.096], flies: false, mass: 1.6,
     passengerSeats: [[-0.256, 0.496, -0.096]],
   },
   'shell-camper': {
@@ -533,7 +533,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.78, 0.76, 0.86] },
       { side: 'right', pivot: 'door-right', at: [-0.78, 0.76, 0.86] },
     ], name: 'Snail-Shell Camper', prefab: 'gta-shell-camper', scale: 1.8,
-    maxSpeed: 17, accel: 6, turnRate: 1.4, radius: 1.7, seat: [0.324, 0.558, 0.846], flies: false, mass: 4,
+    maxSpeed: 17, accel: 6, turnRate: 1.4, radius: 1.7, halfWidth: 0.81, seat: [0.324, 0.558, 0.846], flies: false, mass: 4,
     passengerSeats: [[-0.324, 0.558, 0.846]],
   },
   'cone-van': {
@@ -541,7 +541,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.8, 0.76, 0.81] },
       { side: 'right', pivot: 'door-right', at: [-0.8, 0.76, 0.81] },
     ], name: 'Ninety-Nine Cone Van', prefab: 'gta-cone-van', scale: 1.8,
-    maxSpeed: 18, accel: 7, turnRate: 1.6, radius: 1.5, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
+    maxSpeed: 18, accel: 7, turnRate: 1.6, radius: 1.5, halfWidth: 1.11, seat: [0.32, 0.54, 0.76], flies: false, mass: 3.5,
     // Driver only: the freezer and the serving hatch fill the back.
   },
   // ---- E25 work vehicles (prefabs in packages/prefabs/src/catalog/gta-jobs3-fleet.ts, nose +z). Seats and doors are
@@ -551,7 +551,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.9, 0.95, 1.1] },
       { side: 'right', pivot: 'door-right', at: [-0.9, 0.95, 1.1] },
     ], name: 'Bin Lorry', prefab: 'gta-bin-lorry', scale: 1.8,
-    maxSpeed: 18, accel: 8, turnRate: 1.6, radius: 2.0, seat: [0.3, 0.85, 1.0], flies: false, mass: 5,
+    maxSpeed: 18, accel: 8, turnRate: 1.6, radius: 2.0, halfWidth: 1.19, seat: [0.3, 0.85, 1.0], flies: false, mass: 5,
     // No passenger seats: the second seat is full of bin bags that did not fit.
   },
   'fire-engine': {
@@ -559,7 +559,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
       { side: 'left', pivot: 'door-left', at: [0.9, 0.95, 1.1] },
       { side: 'right', pivot: 'door-right', at: [-0.9, 0.95, 1.1] },
     ], name: 'Watering-Can Pumper', prefab: 'gta-fire-engine', scale: 1.8,
-    maxSpeed: 25, accel: 11, turnRate: 1.8, radius: 2.0, seat: [0.3, 0.85, 1.0], flies: false, mass: 4.8,
+    maxSpeed: 25, accel: 11, turnRate: 1.8, radius: 2.0, halfWidth: 1.01, seat: [0.3, 0.85, 1.0], flies: false, mass: 4.8,
   },
 };
 

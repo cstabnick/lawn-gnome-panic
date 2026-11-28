@@ -177,6 +177,105 @@ export function sweepCircleBoxes(x0: number, z0: number, x1: number, z1: number,
   return { x, z, hit, nx: hit ? nx : 0, nz: hit ? nz : 0 };
 }
 
+/** Padding beyond the body's half-width (D36). */
+export const CAPSULE_PAD = 0.05;
+
+/** A vehicle's collision capsule: circles of radius r at the centre +- off along the heading (off 0 = one circle). */
+export interface Capsule { r: number; off: number }
+
+/**
+ * r = halfWidth + CAPSULE_PAD, off = max(0, radius - r) (the ends reach spec.radius along the heading).
+ * No halfWidth: { r: radius, off: 0 } (the old circle).
+ */
+export function vehicleCapsule(spec: { radius: number; halfWidth?: number }): Capsule {
+  if (spec.halfWidth === undefined) return { r: spec.radius, off: 0 };
+  const r = spec.halfWidth + CAPSULE_PAD;
+  return { r, off: Math.max(0, spec.radius - r) };
+}
+
+/**
+ * Like sweepCircleBoxes, for a capsule whose heading is yaw (forward = (sin yaw, cos yaw)). With off 0 it returns exactly
+ * what sweepCircleBoxes(x0, z0, x1, z1, c.r, boxes, y) returns. Returns the capsule centre.
+ */
+export function sweepCapsuleBoxes(x0: number, z0: number, x1: number, z1: number, yaw: number, c: Capsule, boxes: readonly Box[], y = 0): Pushed {
+  if (c.off <= 0) return sweepCircleBoxes(x0, z0, x1, z1, c.r, boxes, y);
+  const r = c.r;
+  const fx = Math.sin(yaw), fz = Math.cos(yaw);
+  const offs = c.off > 0.5 * r ? [0, c.off, -c.off] : [c.off, -c.off];
+  const dist = Math.hypot(x1 - x0, z1 - z0);
+  const n = Math.min(32, Math.max(1, Math.ceil(dist / (0.4 * r))));
+  let rx = x1 - x0, rz = z1 - z0;
+  let x = x0, z = z0;
+  let hit = false, nx = 0, nz = 0;
+  for (let s = 0; s < n; s++) {
+    const left = n - s;
+    const sx = rx / left, sz = rz / left;
+    rx -= sx; rz -= sz;
+    x += sx; z += sz;
+    let stepHit = false, hnx = 0, hnz = 0;
+    for (let pass = 0; pass < 2; pass++) {
+      for (const o of offs) {
+        const p = pushOutOfBoxes(x + fx * o, z + fz * o, r, boxes, y);
+        if (!p.hit) continue;
+        x += p.x - (x + fx * o);
+        z += p.z - (z + fz * o);
+        stepHit = true; hnx = p.nx; hnz = p.nz;
+      }
+    }
+    if (stepHit) {
+      hit = true; nx = hnx; nz = hnz;
+      const into = Math.min(0, rx * nx + rz * nz);
+      rx -= into * nx;
+      rz -= into * nz;
+    }
+  }
+  return { x, z, hit, nx: hit ? nx : 0, nz: hit ? nz : 0 };
+}
+
+/** Distance between two segments (p + s*d, s in [0,1]) with closest points; standard clamped solution. */
+function segClosest(p1x: number, p1z: number, d1x: number, d1z: number, p2x: number, p2z: number, d2x: number, d2z: number): { ax: number; az: number; bx: number; bz: number } {
+  const rx = p1x - p2x, rz = p1z - p2z;
+  const a = d1x * d1x + d1z * d1z, e = d2x * d2x + d2z * d2z;
+  const f = d2x * rx + d2z * rz;
+  const cl = (v: number): number => Math.max(0, Math.min(1, v));
+  let s: number, t: number;
+  if (a <= 1e-12 && e <= 1e-12) { s = 0; t = 0; }
+  else if (a <= 1e-12) { s = 0; t = cl(f / e); }
+  else {
+    const cc = d1x * rx + d1z * rz;
+    if (e <= 1e-12) { t = 0; s = cl(-cc / a); }
+    else {
+      const b = d1x * d2x + d1z * d2z;
+      const den = a * e - b * b;
+      s = den > 1e-12 ? cl((b * f - cc * e) / den) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) { t = 0; s = cl(-cc / a); }
+      else if (t > 1) { t = 1; s = cl((b - cc) / a); }
+    }
+  }
+  return { ax: p1x + d1x * s, az: p1z + d1z * s, bx: p2x + d2x * t, bz: p2z + d2z * t };
+}
+
+/**
+ * Closest distance between two capsules' centre segments, and the unit normal from a to b at the closest points
+ * (falls back to the centre-to-centre direction, then (1, 0), when the segments touch).
+ */
+export function capsuleGap(ax: number, az: number, ayaw: number, a: Capsule, bx: number, bz: number, byaw: number, b: Capsule): { dist: number; nx: number; nz: number } {
+  const c = segClosest(
+    ax - Math.sin(ayaw) * a.off, az - Math.cos(ayaw) * a.off, Math.sin(ayaw) * 2 * a.off, Math.cos(ayaw) * 2 * a.off,
+    bx - Math.sin(byaw) * b.off, bz - Math.cos(byaw) * b.off, Math.sin(byaw) * 2 * b.off, Math.cos(byaw) * 2 * b.off,
+  );
+  let dx = c.bx - c.ax, dz = c.bz - c.az;
+  let dist = Math.hypot(dx, dz);
+  if (dist < 1e-6) {
+    dx = bx - ax; dz = bz - az;
+    const cd = Math.hypot(dx, dz);
+    if (cd < 1e-6) return { dist: 0, nx: 1, nz: 0 };
+    return { dist: 0, nx: dx / cd, nz: dz / cd };
+  }
+  return { dist, nx: dx / dist, nz: dz / dist };
+}
+
 /**
  * Bounce a velocity off a wall with normal (nx, nz): the into-wall part rebounds by `restitution`, and the along-wall part
  * loses `mu` times the impact speed (Coulomb friction: a scrape at a shallow angle keeps nearly all its speed, a car

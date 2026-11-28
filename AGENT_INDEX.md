@@ -224,6 +224,7 @@ Not every task touches these; open the file only when the condition applies.
 | `thumbnails.cjs` | 480x270 `thumbnail.jpg` per game for the landing page |
 | `record-demo.mjs` | Scripted MP4/GIF demos (`npm run demo`) |
 | `gta-shots.mjs` | Gnome Theft Auto screenshot pass: one PNG per `name:x,z,yaw` spot, on foot (`node tools/gta-shots.mjs <url> <out-dir> name:x,z,yaw ... [--size 960x600] [--wait 6]`; add `?perf` to the url for the overlay) |
+| `gta-touch-check.mjs` | Gnome Theft Auto touch-layout check: PNG per spec with touch emulation, lists visible buttons and fails on any two overlapping button rects (`node tools/gta-touch-check.mjs <out-dir> "<name>|<query>|<WxH>|<touch 0|1>|<wait s>" ...`, dev server running; R1 FX03 activity mode `src/activityMode.ts`) |
 | `gta-perf.mjs` | Gnome Theft Auto phone-viewport frame-time, draw-call and triangle check, driving across every region, with a scene census and the profiler's CPU ms per system per leg (`node tools/gta-perf.mjs [url] [--cpu 4] [--query '&quality=low'] [--json out]`, dev server running) |
 | `smoke.sh` | Headless console-error + DOM-marker check |
 | `zfight.mjs` | Headless z-fighting audit of a running three.js game (`npm run zfight -- <url>`): coplanar overlaps that flicker inside the camera's range |

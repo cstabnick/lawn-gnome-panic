@@ -8,6 +8,7 @@ class FakeEl {
   children: FakeEl[] = [];
   parent: FakeEl | null = null;
   style: Record<string, string> = {};
+  classList = { add() {}, remove() {} };
   id = '';
   private _text = '';
   private listeners: Record<string, Array<(e: unknown) => void>> = {};
@@ -62,7 +63,8 @@ let savedDoc: unknown;
 
 beforeAll(() => {
   savedDoc = g.document;
-  g.document = { createElement: (tag: string) => new FakeEl(tag) };
+  g.document = { createElement: (tag: string) => new FakeEl(tag), head: { appendChild() {} }, body: { dataset: {}, style: { setProperty() {}, removeProperty() {} } } };
+  (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame = () => 0;
 });
 
 afterAll(() => {

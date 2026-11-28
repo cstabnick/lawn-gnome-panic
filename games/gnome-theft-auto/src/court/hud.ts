@@ -2,6 +2,8 @@
 // basketball action, the shootaround strip and the result card. DOM only, no game logic: the runtime calls the setters
 // every frame and reads touch(). courtControl() is the pure mapping from input and touch to the player's control.
 import type { InputState } from '../types';
+import { registerActivityPanel, setActivityOn, setTouchActivity } from '../activityMode';
+import { currentGlyphSet, onInputSourceChange } from '../ui/inputSource';
 import type { CourtControl, CourtTouch, PickupView } from './types';
 
 export interface CourtHud {
@@ -72,6 +74,12 @@ function bar(caption: string, band: boolean): { wrap: HTMLDivElement; fill: HTML
   return { wrap, fill };
 }
 
+/** The activity mode for the court: holster the gun and keep only the stick (the court's own buttons replace the cluster). */
+function setActivity(on: boolean): void {
+  setActivityOn('court', on);
+  try { setTouchActivity('court', on ? { stick: true, buttons: [] } : null); } catch { /* no real DOM (tests) */ }
+}
+
 export function createCourtHud(ui: HTMLElement): CourtHud {
   let mode: 'none' | 'game' | 'shootaround' = 'none';
   const pressed = { shootHeld: false, turboHeld: false, passPressed: false, fakePressed: false, quitPressed: false };
@@ -84,38 +92,73 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
   box.addEventListener('mousedown', stop);
   box.addEventListener('touchstart', stop);
 
-  // Top strip: the game scoreboard, or the shootaround line. Below the game's own top HUD.
-  const topCss = ABS + 'left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 64px);'
-    + 'max-width:min(92vw,520px);box-sizing:border-box;padding:6px 12px;text-align:center;pointer-events:none;'
-    + 'white-space:normal;' + CHALK;
-  const gameStrip = div(topCss);
-  const stripScore = div('font-weight:700;font-size:17px;line-height:1.25;');
-  const stripSub = div('font-size:13px;line-height:1.3;');
-  gameStrip.appendChild(stripScore);
-  gameStrip.appendChild(stripSub);
-  const shootStrip = div(topCss + 'font-weight:700;font-size:16px;line-height:1.25;');
+  // Scoreboard: one chalk panel in the shared activity slot (top centre, under the top button row on a phone). It holds
+  // the game score (two lines) or the shootaround line, and the QUIT button at its right end.
+  const board = div('display:none;align-items:center;gap:8px;padding:5px 6px 5px 12px;pointer-events:auto;' + FONT + CHALK);
+  board.id = 'court-board';
+  const texts = div('flex:1 1 auto;min-width:0;text-align:center;');
+  const stripScore = div('font-weight:700;font-size:16px;line-height:1.25;white-space:normal;');
+  const stripSub = div('font-size:12px;line-height:1.3;opacity:0.9;');
+  const shootLine = div('font-weight:700;font-size:16px;line-height:1.25;display:none;');
+  texts.appendChild(stripScore);
+  texts.appendChild(stripSub);
+  texts.appendChild(shootLine);
+  board.appendChild(texts);
+  let unregisterBoard = (): void => {};
+  try { unregisterBoard = registerActivityPanel(board); } catch { /* no real DOM: the board keeps no slot */ }
 
   // Bars: the shot charge (both modes) and the turbo (game only), bottom centre.
   const charge = bar('Shot', true);
   const turbo = bar('Turbo', false);
   turbo.wrap.style.bottom = 'calc(env(safe-area-inset-bottom) + 58px)';
 
-  // Touch buttons, right side, stacked above the game's own bottom-right buttons (landscape: lower, see placeStack).
-  const stack = div(ABS + SAFE_R + 'bottom:calc(env(safe-area-inset-bottom) + 170px);display:flex;flex-direction:column;'
-    + 'align-items:flex-end;gap:8px;pointer-events:none;' + FONT);
+  // Touch buttons: a bottom-right arc around SHOOT (the biggest). Key sub-labels show only for keyboard and pad players.
+  const hints: HTMLElement[] = [];
   const button = (label: string, hint: string, css: string, aria: string): HTMLButtonElement => {
     const b = document.createElement('button');
     b.style.cssText = BTN + css;
     b.textContent = label;
     b.setAttribute?.('aria-label', aria);
-    b.appendChild(div('font-size:10px;font-weight:400;opacity:0.85;margin-top:2px;', hint));
+    if (hint) {
+      const h = div('font-size:10px;font-weight:400;opacity:0.85;margin-top:2px;', hint);
+      hints.push(h);
+      b.appendChild(h);
+    }
     return b;
   };
-  const btnShoot = button('SHOOT', 'F / click', 'width:72px;height:72px;min-width:72px;min-height:72px;border-radius:50%;'
+  // The arc's slots: right/bottom of each button from the corner (SHOOT is 76 px at 12/16).
+  const slot = (right: number, bottom: number, w: number, h: number): string => ABS
+    + `right:calc(env(safe-area-inset-right) + ${right}px);bottom:calc(env(safe-area-inset-bottom) + ${bottom}px);`
+    + `width:${w}px;height:${h}px;min-width:${w}px;min-height:${h}px;padding:0;`;
+  const btnShoot = button('SHOOT', 'F / click', 'border-radius:50%;'
     + 'font-size:15px;background:radial-gradient(circle at 35% 30%, #f9f3d8, #b9b08f);color:#1b2a1f;', 'Shoot (hold)');
   const btnTurbo = button('TURBO', 'Shift', '', 'Turbo (hold)');
   const btnPass = button('PASS', 'Space', '', 'Pass');
   const btnFake = button('FAKE', 'Q', '', 'Fake');
+  // Portrait / desktop: SHOOT in the corner, TURBO beside it, PASS and FAKE curving up. Landscape phones are short and keep
+  // the minimap column free: the three small buttons form a tight cluster to the left of SHOOT instead.
+  const compact = (): boolean => {
+    try { return window.innerWidth < 700 || window.innerHeight < 500; } catch { return false; }
+  };
+  const placeArc = (): void => {
+    const low = (() => { try { return window.innerHeight < 500; } catch { return false; } })();
+    // The dock (🔭 and friends) hides in activity mode (activityMode.ts), so the arc keeps the corner on every screen.
+    const dx = 0;
+    const at = (b: HTMLElement, r: number, bt: number, w: number, h = 48): void => {
+      b.style.position = 'absolute';
+      b.style.right = `calc(env(safe-area-inset-right) + ${r + dx}px)`;
+      b.style.bottom = `calc(env(safe-area-inset-bottom) + ${bt}px)`;
+      b.style.width = b.style.minWidth = `${w}px`;
+      b.style.height = b.style.minHeight = `${h}px`;
+      b.style.padding = '0';
+    };
+    at(btnShoot, 12, 16, 76, 76);
+    at(btnTurbo, 98, low ? 16 : 36, 68);
+    at(btnPass, low ? 98 : 92, low ? 72 : 100, 68);
+    at(btnFake, low ? 174 : 20, low ? 44 : 110, 60);
+  };
+  placeArc();
+  const stack = div(ABS + 'left:0;top:0;right:0;bottom:0;pointer-events:none;' + FONT);
   stack.appendChild(btnShoot);
   stack.appendChild(btnTurbo);
   stack.appendChild(btnPass);
@@ -132,10 +175,10 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
     b.addEventListener('pointerdown', (e) => { swallow(e); pressed[key] = true; });
   }
 
-  // QUIT, top right, below the strip.
-  const quitBtn = button('QUIT', 'E', ABS + 'top:calc(env(safe-area-inset-top) + 132px);'
-    + 'right:calc(env(safe-area-inset-right) + 12px);', 'Quit court');
+  // QUIT lives inside the scoreboard, right end.
+  const quitBtn = button('QUIT', 'E', 'position:static;flex:0 0 auto;width:56px;height:46px;padding:0;border-radius:10px;', 'Quit court');
   quitBtn.addEventListener('pointerdown', (e) => { swallow(e); pressed.quitPressed = true; });
+  board.appendChild(quitBtn);
 
   // Result card: centred, with a Close button.
   const card = div(ABS + 'left:50%;top:50%;transform:translate(-50%,-50%);width:min(360px,92vw);box-sizing:border-box;'
@@ -150,39 +193,52 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
   card.appendChild(closeBtn);
   card.addEventListener('pointerdown', stop);
 
-  box.appendChild(gameStrip);
-  box.appendChild(shootStrip);
+  box.appendChild(board);
   box.appendChild(charge.wrap);
   box.appendChild(turbo.wrap);
   box.appendChild(stack);
-  box.appendChild(quitBtn);
   box.appendChild(card);
   ui.appendChild(box);
 
-  // Landscape phones are short: the stack drops to the corner so it fits above the edge.
-  const isLandscape = (): boolean => {
-    try { return typeof matchMedia === 'function' && matchMedia('(orientation: landscape)').matches; } catch { return false; }
+  // The meters sit bottom centre on a wide screen; on a phone they move up and left so the arc and the stick stay clear.
+  const placeBars = (): void => {
+    for (const [bw, lift] of [[charge.wrap, 16], [turbo.wrap, 52]] as const) {
+      if (compact()) {
+        bw.style.left = 'calc(env(safe-area-inset-left) + 16px)';
+        bw.style.transform = 'none';
+        bw.style.width = 'min(200px,calc(100vw - 260px))';
+        bw.style.bottom = `calc(env(safe-area-inset-bottom) + ${lift + 190}px)`;
+      } else {
+        bw.style.left = '50%';
+        bw.style.transform = 'translateX(-50%)';
+        bw.style.width = 'min(60vw,320px)';
+        bw.style.bottom = `calc(env(safe-area-inset-bottom) + ${lift}px)`;
+      }
+    }
   };
-  const placeStack = (): void => {
-    stack.style.bottom = isLandscape()
-      ? 'calc(env(safe-area-inset-bottom) + 12px)'
-      : 'calc(env(safe-area-inset-bottom) + 170px)';
+  const showHints = (): void => {
+    const on = currentGlyphSet() !== 'touch';
+    for (const h of hints) h.style.display = on ? 'block' : 'none';
   };
-  const onResize = (): void => placeStack();
-  placeStack();
+  const onResize = (): void => { placeBars(); placeArc(); };
+  placeBars();
+  showHints();
+  const offSource = onInputSourceChange(showHints);
   try { window.addEventListener('resize', onResize); } catch { /* no window: no relayout */ }
 
   const applyMode = (): void => {
     const on = mode !== 'none';
     const game = mode === 'game';
     box.style.display = on ? 'block' : 'none';
-    gameStrip.style.display = game ? 'block' : 'none';
-    shootStrip.style.display = mode === 'shootaround' ? 'block' : 'none';
+    board.style.display = on ? 'flex' : 'none';
+    stripScore.style.display = game ? 'block' : 'none';
+    stripSub.style.display = game ? 'block' : 'none';
+    shootLine.style.display = on && !game ? 'block' : 'none';
     turbo.wrap.style.display = game ? 'flex' : 'none';
     for (const b of [btnTurbo, btnPass, btnFake]) b.style.display = game ? 'flex' : 'none';
     btnShoot.style.display = on ? 'flex' : 'none';
     quitBtn.style.display = on ? 'flex' : 'none';
-    stack.style.display = on ? 'flex' : 'none';
+    stack.style.display = on ? 'block' : 'none';
   };
   applyMode();
 
@@ -194,6 +250,7 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
     show(next: 'none' | 'game' | 'shootaround'): void {
       mode = next;
       applyMode();
+      setActivity(next !== 'none');
     },
 
     setGame(v: PickupView, names: [string, string]): void {
@@ -205,7 +262,7 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
     },
 
     setShoot(s: { charge: number; makes: number; shots: number; three: boolean }): void {
-      shootStrip.textContent = `Shootaround ${s.makes}/${s.shots}${s.three ? ' - three!' : ''}`;
+      shootLine.textContent = `Shootaround ${s.makes}/${s.shots}${s.three ? ' - three!' : ''}`;
       setFill(charge.fill, s.charge);
     },
 
@@ -235,6 +292,9 @@ export function createCourtHud(ui: HTMLElement): CourtHud {
 
     dispose(): void {
       try { window.removeEventListener('resize', onResize); } catch { /* none */ }
+      offSource();
+      unregisterBoard();
+      setActivity(false);
       box.remove?.();
     },
   };

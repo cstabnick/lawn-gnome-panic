@@ -388,6 +388,10 @@ export interface Input {
   refresh(): void;
   /** Change the label of the touch enter/exit button (e.g. "Steal", "Exit", hidden when null). */
   setEnterLabel(label: string | null): void;
+  /** R1 FX03 activity mode: keep only these cluster buttons (and the stick or not); null gives the mode's buttons back. */
+  setActivity(t: import('./activityMode').TouchActivity | null): void;
+  /** D30: the gun is put away (activityMode.activityHidesGun()): hide Guns / Reload / Aim / Fire on foot. */
+  setHolstered(on: boolean): void;
 }
 
 /** 'chute' is free fall and parachuting (the touch controls match 'foot', without Jump). */

@@ -14,7 +14,7 @@ import { heightAt } from '../../terrain';
 import type { World } from '../../types';
 
 export interface Station {
-  /** Where the Pumper is parked for a shift (in the bay, facing out). */
+  /** Where the Pumper is parked for a shift (on the apron outside the bay, facing out). */
   engine: { x: number; z: number; yaw: number };
   /** The "Answer the bell" spot (on foot). */
   bell: { x: number; z: number };
@@ -41,6 +41,8 @@ const E = Math.PI / 2;
 // The house is 18 m wide (local x) and 6 m deep, bays on local +z. Turned by PI/2 the bays open east (+x). Its centre
 // is picked so the second bay (local x = -4.5) lines up with the engine anchor row (z 135).
 const HOUSE = { x: -230, z: 130.5 };
+
+const APRON_ENGINE_X = -216.5;
 
 let built: Station | null = null;
 let residents: Resident[] = [];
@@ -102,8 +104,21 @@ export function buildStation(scene: THREE.Scene, world: World): Station {
 
   // The house: wall piers as thin boxes around the two bays (openings z 123.75..128.25 and 132.75..137.25), so the
   // engine drives in and out. The lintel above the bays starts at 3.4 m, clear of the Pumper.
-  place(scene, 'fire-station-house', HOUSE.x, HOUSE.z, E);
+  const house = place(scene, 'fire-station-house', HOUSE.x, HOUSE.z, E);
   for (const [a, b] of [[121.5, 123.75], [128.25, 132.75], [137.25, 139.5]]) box(world, HOUSE.x - 3, HOUSE.x + 3, a, b, 3.4);
+  // The back wall behind the bays (the prefab is open at the back): 0.4 m thick, overlapping the piers and the upper
+  // storey by 0.1 m so no two faces share a plane, in the house's own brick material. Local z -3.3..-2.9 is world x.
+  let wallMat: THREE.Material | null = null;
+  house?.traverse((o) => { if (!wallMat && (o as THREE.Mesh).isMesh) wallMat = (o as THREE.Mesh).material as THREE.Material; });
+  const wx = HOUSE.x - 3.1;
+  const gy = heightAt(wx, HOUSE.z);
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 17.9), wallMat ?? new THREE.MeshStandardMaterial({ color: 0x9c3b2e, roughness: 0.9 }));
+  wall.position.set(wx, gy + 1.7, HOUSE.z);
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+  scene.add(wall);
+  registerCull(wall, 'prop');
+  box(world, wx - 0.2, wx + 0.2, HOUSE.z - 8.95, HOUSE.z + 8.95, 3.7);
   // The apron: from the bays east to the site edge, then on to the road at the north-east corner.
   pad(scene, -227, -217, 123, 147);
   pad(scene, -217, -213.5, 122, 136);
@@ -175,7 +190,9 @@ export function buildStation(scene: THREE.Scene, world: World): Station {
   resident(scene, d.x - 1.6, d.z + 1.2, E, false, randomTownLook({ hat: 0xd4af37, shirt: 0xc0392b }));
   resident(scene, rack.x, rack.z, -E, true, randomTownLook({ hat: 0xc0392b, shirt: 0x2f64c9 }));
 
-  built = { engine: { x: e.x, z: e.z, yaw: e.yaw ?? E }, bell, hydrants };
+  // The Pumper starts on the apron outside the bay doors (not in the bay, where the follow camera ends up inside the
+  // walls): far enough out that the camera behind it is clear of the house front (x -227).
+  built = { engine: { x: Math.max(e.x, APRON_ENGINE_X), z: e.z, yaw: e.yaw ?? E }, bell, hydrants };
   return built;
 }
 

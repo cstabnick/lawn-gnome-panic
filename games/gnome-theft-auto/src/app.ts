@@ -149,6 +149,7 @@ import { createDirectorViews } from './trafficDirectorsView';
 import { createWaveWatch, nowSeconds } from './trafficDirectors';
 import { createLapWatch } from './roundabouts';
 import { installCityDressing } from './cityScenery/install';
+import { buildHoaLockupDoor } from './city/megaBlock';
 import { buildStageMarks, buildStageSets, noStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createEventDirector } from './events/director';
@@ -349,6 +350,8 @@ function preRender(focusX: number, focusZ: number): void {
 const stageParams = new URLSearchParams(location.search);
 // GR3 (FX05): story sets are quest-scoped (shown while their quest or scene runs; stageSets.bind below); ?stagesets=all shows every one.
 const stageSets = stageParams.get('stagesets') !== '0' ? buildStageSets(scene, world.boxes, QUESTS, { all: stageParams.get('stagesets') === 'all' }) : noStageSets();
+// D3 (FX05): the HOA lockup's permanent door in the Double Pot Tunnel wall (city/megaBlock.ts), outside the golden world.
+buildHoaLockupDoor(scene);
 if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 // Everything buildWorld and the stage sets placed is static scenery: the culler (cull.ts) stops drawing it past its
 // class's distance and stops its shadows sooner. ?cull=0 turns this off to compare.

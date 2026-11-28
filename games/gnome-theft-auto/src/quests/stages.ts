@@ -361,9 +361,14 @@ export function stageSetBoxes(): Box[] {
   return out;
 }
 
-/** One set prop's collider as a world box (null when it is not solid). */
+/**
+ * One set prop's collider as a world box (null when it is not solid). A box is solid from the ground up, so a prop
+ * lifted onto a deck over open ground (the Double Pot slab over the tunnel road) whose solid height is less than its
+ * lift gets none: it would wall off the street under it. A lifted prop whose height reaches down to the ground (s68's
+ * viewing platform on a building) keeps its box.
+ */
 export function setPropBox(p: SetProp): Box | null {
-  if (!p.solid) return null;
+  if (!p.solid || p.solid[2] < (p.lift ?? 0)) return null;
   const [hw, hd, h] = p.solid;
   const c = Math.abs(Math.cos(p.yaw)), sn = Math.abs(Math.sin(p.yaw));
   const ex = hw * c + hd * sn, ez = hw * sn + hd * c;

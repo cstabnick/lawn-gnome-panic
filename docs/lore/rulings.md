@@ -1360,3 +1360,10 @@ Mabel sends newcomers to them.
 **Ruling:** Deckchair hire at Dunelow is **1 Acorn**, "falling over included". There are no pence in the Yard; every price is in Acorns.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
 **Why:** R1 editorial review G3#28 (FX01): a small fact, so the lore follows the corrected sign (GR1).
+
+## R-238
+
+**Question:** The HOA lockup stood in the Double Pot Tunnel's traffic lane from game start, #21's "penthouse" viewing played on a rainy street, and the Reeve's hay barn stood across the east highway (G1#1, G10#6, GR3). Where are these places now?
+**Ruling:** (1) The lockup's door is a beige door in the tunnel's west wall at about (111, -98), "HOA HOLDING (WAIT HERE)" over it and a loudspeaker over that; it is there from the start. (2) In #62 Cam is held in the **holding yard**: a chain-link pen with a bunk on the pavement in front of that door (the cells behind it are never seen), put up for the night and gone when the row is done. (3) #21's viewing is held on the **roof garden** of the Double Pot slab: a beige table, beige chairs and beige planters beside the helipad, reached by the sales-floor lift; the key choice is made back down in the tunnel. (4) The Reeve's hay barn stands at about (709, 22), north of the east highway, its doors facing the road; its yard with the hay (706, 47) is across the road.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
+**Why:** R1 editorial review FX05 (D3, D5, GR3): story dressing may not stand on a road, so these positions change and the lore follows (GR1).

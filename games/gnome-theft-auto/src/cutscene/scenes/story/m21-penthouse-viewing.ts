@@ -2,15 +2,19 @@
 // tone, an even beige light, and every shot of him low, alone and still. The beige card on the mat of flat 3B, Gary and Cam
 // at the Patio Gate, the tour through the Double Pot Tunnel (the lantern, never explained), and two outros for the only
 // choice that is cosmetic. Notes: docs/design/gnome-theft-auto/direction/scenes/m21-penthouse-viewing-*.md.
-import type { SceneScript, ScriptActor, Vec2 } from '../../script';
+import type { SceneScript, ScriptActor, Vec2, Vec3 } from '../../script';
 import { beat, coverage, cut, pushIn, reaction, shot } from '../../direct';
-import { markOf, spot, up } from './kit';
+import { markOf, spot } from './kit';
 
 type Look = NonNullable<ScriptActor['look']>;
 
 const COURT = 'saucer-court-mat';
 const GATE = 'patio-gate';
+/** The Double Pot roof garden (stage id kept from the tunnel it replaced). */
 const TUNNEL = 'double-pot-tunnel';
+/** The slab top, metres above the tunnel floor: every roof actor, prop and camera point lifts by this. */
+const ROOF = 9;
+const onRoof = (p: Vec2, h = 0): Vec3 => [p[0], ROOF + h, p[1]];
 
 /** Beige: the HOA courier's coat and Cam's new vest. */
 const BEIGE = 0xd8c8a8;
@@ -27,13 +31,17 @@ const MAT: Vec2 = [30.9, 83.8];
 const GATE_PLAYER = markOf(GATE, 'player');
 const GATE_GARY = markOf(GATE, 'gary');
 const GATE_CAM = markOf(GATE, 'turncoat-cam');
-const TUNNEL_VESPER = markOf(TUNNEL, 'vesper');
+const TUNNEL_VESPER = markOf(TUNNEL, 'vesper', 0);
 const TUNNEL_PLAYER = markOf(TUNNEL, 'player', 0);
 const TABLE_PLAYER = markOf(TUNNEL, 'player', 1);
-/** The table at the tunnel's far end, its top, and the stairwell door where the lantern hangs. */
-const TABLE: Vec2 = [125.4, -99];
+const TABLE_VESPER = markOf(TUNNEL, 'vesper', 1);
+/** The beige table on the north half of the roof, its top, and the lantern post by the stairwell. */
+const TABLE: Vec2 = [121.5, -105.5];
 const TABLE_TOP = 0.84;
-const LANTERN_STOP: Vec2 = [117.5, -84];
+const LANTERN_STOP: Vec2 = [116.2, -84.2];
+const LANTERN: Vec3 = [113.5, ROOF + 1.4, -84.8];
+/** Warm practical on the lantern post. */
+const LANTERN_LIGHT = { at: LANTERN, color: 0xffb066, intensity: 7, range: 9, flicker: true } as const;
 
 const towards = (a: Vec2, b: Vec2): number => Math.atan2(b[0] - a[0], b[1] - a[1]);
 
@@ -147,10 +155,11 @@ export const M21_MID: SceneScript = {
   radio: 0.15,
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/m21-penthouse-viewing-mid.md', kind: 'arrival', waive: [{ code: 'crosses-line', match: 'None?', why: 'Vesper is framed head-on after the walk so he never shows his back; the player reverse swings once' }] },
   actors: [
-    { id: 'player', player: true, held: null, at: TUNNEL_PLAYER.at, yaw: TUNNEL_PLAYER.yaw },
-    { id: 'vesper', preset: 'vesper', held: null, at: TUNNEL_VESPER.at, yaw: TUNNEL_VESPER.yaw },
+    { id: 'player', player: true, held: null, at: onRoof(TUNNEL_PLAYER.at), yaw: TUNNEL_PLAYER.yaw },
+    { id: 'vesper', preset: 'vesper', held: null, at: onRoof(TUNNEL_VESPER.at), yaw: TUNNEL_VESPER.yaw },
   ],
-  props: [{ id: 'key', prefab: 'penthouse-key', at: up(TABLE[0], TABLE[1], TABLE_TOP), size: 0.4, by: 'h', hidden: true }],
+  keyLights: [LANTERN_LIGHT],
+  props: [{ id: 'key', prefab: 'penthouse-key', at: onRoof(TABLE, TABLE_TOP), size: 0.4, by: 'h', hidden: true }],
   steps: [
     // Hook: he is already standing there. Low, alone, still.
     cut(VESPER_P.single('vesper', 'mcu', { height: 'low' })),
@@ -160,12 +169,12 @@ export const M21_MID: SceneScript = {
     cut(VESPER_P.single('vesper', 'mcu', { height: 'low' })),
     { do: 'say', who: 'vesper', text: 'A flat above the street. Beige. Even. Silent. Nothing is asked of you.' },
     // The walk: south down the tunnel, Vesper first, the player a pace behind.
-    { do: 'walk', who: 'vesper', path: [LANTERN_STOP], speed: 1.7, async: true },
-    { do: 'walk', who: 'player', path: [[120, -80]], speed: 1.7, async: true },
+    { do: 'walk', who: 'vesper', path: [onRoof(LANTERN_STOP)], speed: 1.7, async: true },
+    { do: 'walk', who: 'player', path: [onRoof([120, -80])], speed: 1.7, async: true },
     cut(VESPER_P.single('vesper', 'ms', { height: 'low' })),
     { do: 'wait', s: 4.4 },
     // The turn: the lantern. He flinches, and says nothing of it.
-    { do: 'sfx', id: 'creak', at: [113.5, 1.4, -84.8], gain: 0.5, async: true },
+    { do: 'sfx', id: 'creak', at: LANTERN, gain: 0.5, async: true },
     cut(spot(TUNNEL, 'lantern')),
     { do: 'wait', s: 1.4 },
     cut(VESPER_P.single('vesper', 'cu', { height: 'low' })),
@@ -179,8 +188,8 @@ export const M21_MID: SceneScript = {
     { do: 'gesture', who: 'vesper', name: 'tipHat', s: 0.8, async: true },
     { do: 'say', who: 'vesper', text: 'This way, friend.' },
     // The table: the key appears. No conditions.
-    { do: 'walk', who: 'vesper', path: [[123.2, -96.2]], speed: 1.6, async: true },
-    { do: 'walk', who: 'player', path: [[TABLE_PLAYER.at[0], TABLE_PLAYER.at[1]]], speed: 1.6, async: true },
+    { do: 'walk', who: 'vesper', path: [onRoof(TABLE_VESPER.at)], speed: 1.6, async: true },
+    { do: 'walk', who: 'player', path: [onRoof(TABLE_PLAYER.at)], speed: 1.6, async: true },
     cut(spot(TUNNEL, 'table')),
     { do: 'wait', s: 2.8 },
     { do: 'spawn', id: 'key' },
@@ -200,8 +209,8 @@ export const M21_MID: SceneScript = {
 
 // ---- 4. Outros: the key, or the table -----------------------------------------------------------------------------------
 
-/** Vesper at the tunnel mouth, dusk, facing down the tunnel. */
-const OUTRO_VESPER = { at: TUNNEL_VESPER.at, yaw: 0 };
+/** Vesper by the lift kiosk, dusk, facing the table across the roof. */
+const OUTRO_VESPER = { at: onRoof(TUNNEL_VESPER.at), yaw: Math.PI };
 
 /** Outro A, dusk: the key goes in the player's pocket. He says only what a host says, and it is enough. */
 export const M21_OUTRO: SceneScript = {
@@ -209,13 +218,14 @@ export const M21_OUTRO: SceneScript = {
   stage: { kind: 'world' },
   sky: 'golden',
   ambience: 'office',
+  keyLights: [LANTERN_LIGHT],
   radio: 0.15,
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/m21-penthouse-viewing-outro.md', kind: 'outro' },
   actors: [
-    { id: 'player', player: true, held: null, at: [124.2, -96.2], yaw: towards([124.2, -96.2], TABLE) },
+    { id: 'player', player: true, held: null, at: onRoof(TABLE_PLAYER.at), yaw: towards(TABLE_PLAYER.at, TABLE) },
     { id: 'vesper', preset: 'vesper', held: null, at: OUTRO_VESPER.at, yaw: OUTRO_VESPER.yaw },
   ],
-  props: [{ id: 'key', prefab: 'penthouse-key', at: up(TABLE[0], TABLE[1], TABLE_TOP), size: 0.4, by: 'h' }],
+  props: [{ id: 'key', prefab: 'penthouse-key', at: onRoof(TABLE, TABLE_TOP), size: 0.4, by: 'h' }],
   steps: [
     // Hook: the hand takes the key.
     cut(shot('player', 'cu', { height: 'high', side: 30 })),
@@ -240,13 +250,14 @@ export const M21_OUTRO_TABLE: SceneScript = {
   stage: { kind: 'world' },
   sky: 'golden',
   ambience: 'office',
+  keyLights: [LANTERN_LIGHT],
   radio: 0.15,
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/m21-penthouse-viewing-outro-table.md', kind: 'outro' },
   actors: [
-    { id: 'player', player: true, held: null, at: [120, -108], yaw: 0 },
+    { id: 'player', player: true, held: null, at: onRoof([114.8, -106.4]), yaw: towards([114.8, -106.4], TABLE) },
     { id: 'vesper', preset: 'vesper', held: null, at: OUTRO_VESPER.at, yaw: OUTRO_VESPER.yaw },
   ],
-  props: [{ id: 'key', prefab: 'penthouse-key', at: up(TABLE[0], TABLE[1], TABLE_TOP), size: 0.4, by: 'h' }],
+  props: [{ id: 'key', prefab: 'penthouse-key', at: onRoof(TABLE, TABLE_TOP), size: 0.4, by: 'h' }],
   steps: [
     // Hook: the key, alone on the table, the tunnel behind it going dark at the edges.
     cut(spot(TUNNEL, 'table')),

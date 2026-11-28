@@ -362,6 +362,11 @@ export interface SceneScript {
    */
   faceFill?: boolean | number;
   /**
+   * World stages only: world objects (by `name`) hidden while the scene plays and shown again after it: a resident who
+   * sits where the scene's actors sit, or the ambient double of a cast member who is acting in the scene.
+   */
+  hideWorld?: string[];
+  /**
    * World stages only. 'live' (the default on a world stage): ambient traffic, pedestrians, critters, boats and world
    * sounds keep running around the scene, while the player stays safe (no Hat Watch, no damage, no quest updates) and
    * the scene's area and drive paths are kept clear of traffic and pedestrians (liveArea.ts). 'paused': the whole game

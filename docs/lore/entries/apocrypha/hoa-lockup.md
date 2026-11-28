@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [the lockup, the Double Pot lockup, the beige cells]
-sources: [docs/design/gnome-theft-auto/story-outline.md, docs/lore/rulings.md#r-166, docs/lore/rulings.md#r-170, docs/lore/rulings.md#r-233]
+sources: [docs/design/gnome-theft-auto/story-outline.md, docs/lore/rulings.md#r-166, docs/lore/rulings.md#r-170, docs/lore/rulings.md#r-233, docs/lore/rulings.md#r-238]
 related: [the-double-pot, thorne-lawn-and-order, thorne-even-estates, turncoat-cam, vesper-thorne, juniper-vance, hoa, thorne-tower]
 ---
 
@@ -26,7 +26,7 @@ The Double Pot was built as the Even-Estates sales floor and the lockup is its o
 
 ## In the games
 
-Gnome Theft Auto (act IV): an interior entered through the Double Pot Tunnel (an `interior-visit` objective, E05); the story-row scenes are `cams-cell-intro`, `-mid` and `-outro`. The stub of `m62-cams-cell` places it as the row's writer chooses.
+Gnome Theft Auto: the beige door, its plate and its speaker stand in the tunnel's west wall at about (111, -98) from the start (R-238). In `m62-cams-cell` (act IV) Cam is held in the holding yard, a chain-link pen with a bunk on the pavement in front of the door, which is only there while the row runs; the scenes are `cams-cell-intro`, `-mid` and `-outro`. The cells behind the door are not built.
 
 ## Loose threads
 

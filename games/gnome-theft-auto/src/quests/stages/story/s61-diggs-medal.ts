@@ -63,9 +63,9 @@ export const STAGES: readonly Stage[] = [
     ],
     paths: [],
     set: [
-      { prefab: 'portacabin', at: [404, 58], yaw: -Math.PI / 2, scale: 1, solid: [3, 1.3, 2.6] },
-      { prefab: 'hat-rail', at: [399.7, 58.4], yaw: -Math.PI / 2, scale: 1.3 },
-      { prefab: 'lost-property-bin', at: [399.6, 62.4], yaw: -Math.PI / 2, scale: 1.2, solid: [0.5, 0.5, 0.9] },
+      { prefab: 'portacabin', at: [404, 58], yaw: -Math.PI / 2, scale: 1, solid: [3, 1.3, 2.6], always: true },
+      { prefab: 'hat-rail', at: [399.7, 58.4], yaw: -Math.PI / 2, scale: 1.3, always: true },
+      { prefab: 'lost-property-bin', at: [399.6, 62.4], yaw: -Math.PI / 2, scale: 1.2, solid: [0.5, 0.5, 0.9], always: true },
       { prefab: 'site-cone', at: [397.4, 54.4], yaw: 0, scale: 1.2 },
       { prefab: 'site-cone', at: [397.4, 64], yaw: 0, scale: 1.2 },
     ],

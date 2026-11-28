@@ -8,11 +8,11 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [the hay barn, Yarrow's barn]
-sources: [docs/design/gnome-theft-auto/story-outline.md, games/gnome-theft-auto/src/outskirts/town.ts, docs/design/gnome-theft-auto/world-changes.md]
+sources: [docs/design/gnome-theft-auto/story-outline.md, games/gnome-theft-auto/src/outskirts/town.ts, docs/design/gnome-theft-auto/world-changes.md, docs/lore/rulings.md#r-238]
 related: [pebblewick, pebblewick-square, yarrow-potsherd, the-whirligig, pebblewick-water-tower, dust-flats]
 ---
 
-The barn on the north-east edge of Pebblewick, at (706, 34), where the reeve keeps the town's hay and, after `m58-the-reeves-barn`, the Whirligig under a tarpaulin. It is the one place in the east where an aircraft can be hidden in plain sight, because no gnome in Pebblewick will tell.
+The barn on the north-east edge of Pebblewick, at about (709, 22) north of the east highway (R-238), where the reeve keeps the town's hay and, after `m58-the-reeves-barn`, the Whirligig under a tarpaulin. It is the one place in the east where an aircraft can be hidden in plain sight, because no gnome in Pebblewick will tell.
 
 ## What gnomes say
 
@@ -22,11 +22,11 @@ The barn on the north-east edge of Pebblewick, at (706, 34), where the reeve kee
 
 ## The truth
 
-The barn stands at (706, 34), at the north-east edge of town, its doors on +z; the yard in front of it (706, 47) is where the Whirligig lands. The hay bales at (630, 148) among the dry plots are the town's older, smaller store. Reeve Yarrow Potsherd offers it in exchange for the town's water (the crew fixes the pump before the HOA's cut-off) and pulls the tarp over the rotor himself. The Whirligig stays there, can be fetched from it, and nobody in town has been asked about it by anyone, and the HOA has not asked.
+The barn stands at about (709, 22), at the north-east edge of town, its doors on +z facing the east highway; the hay yard across the road (706, 47) is where the Whirligig lands. The hay bales at (630, 148) among the dry plots are the town's older, smaller store. Reeve Yarrow Potsherd offers it in exchange for the town's water (the crew fixes the pump before the HOA's cut-off) and pulls the tarp over the rotor himself. The Whirligig stays there, can be fetched from it, and nobody in town has been asked about it by anyone, and the HOA has not asked.
 
 ## In the games
 
-`m58-the-reeves-barn`: land the Whirligig in the hay, tarp up, the bell rings once. Afterwards the Whirligig can be fetched from the barn, and Pebblewick is friendly to the crew. The barn is a stage set built into the world by the quest (`quests/stages/story/s58-the-reeves-barn.ts`); the hay bales at (630, 148) are the town's own dressing.
+`m58-the-reeves-barn`: land the Whirligig in the hay, tarp up, the bell rings once. Afterwards the Whirligig can be fetched from the barn, and Pebblewick is friendly to the crew. The barn, its haystacks and its bales are part of the world from the start (set props marked `always` in `quests/stages/story/s58-the-reeves-barn.ts`); the hay bales at (630, 148) are the town's own dressing.
 
 ## Everyday
 

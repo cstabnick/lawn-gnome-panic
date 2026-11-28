@@ -42,15 +42,20 @@ const DIR: Vec2 = [(LINE_B[0] - LINE_A[0]) / LINE_LEN, (LINE_B[1] - LINE_A[1]) /
 const LINE_YAW = Math.atan2(DIR[0], DIR[1]);
 const onLine = (t: number, side = 0): Vec2 => [LINE_A[0] + DIR[0] * t - DIR[1] * side, LINE_A[1] + DIR[1] * t + DIR[0] * side];
 /** The deck stands this far ahead of the Combine's centre (its nose is about 7 m ahead at size 14). */
-const DECK_AHEAD = 8.8;
+const DECK_AHEAD = 26.4;
+/** The machine is three times the size the first cut drew it (FX05 I8): a deck 24 m across and about 10 m tall, wrong for a golf course. */
+const DECK_SIZE = 24;
+const COMBINE_SIZE = 42;
 
 /** The Combine and its test deck, both hidden until a scene spawns them with combineAt(). */
 function combineProps(): ScriptProp[] {
   return [
-    { id: 'combine', prefab: 'grand-combine-boss', at: onLine(-DECK_AHEAD), yaw: LINE_YAW, size: 14, by: 'w', hidden: true },
-    { id: 'deck', prefab: 'combine-test-deck', at: onLine(0), yaw: LINE_YAW, size: 8, by: 'w', hidden: true },
+    { id: 'combine', prefab: 'grand-combine-boss', at: onLine(-DECK_AHEAD), yaw: LINE_YAW, size: COMBINE_SIZE, by: 'w', hidden: true },
+    { id: 'deck', prefab: 'combine-test-deck', at: onLine(0), yaw: LINE_YAW, size: DECK_SIZE, by: 'w', hidden: true },
   ];
 }
+/** Where the machine stands in the p2 intro's reveal: its deck's front, 62 m along the line, 34 m from the lens. */
+const REVEAL_T = 62;
 /** Spawn (or move) the machine so its deck's front stands `t` metres along the line. Use between cuts only. */
 function combineAt(t: number): Step[] {
   return [
@@ -146,7 +151,8 @@ export const P1_INTRO: SceneScript = {
     cut(BIB.single('player', 'mcu')),
     { do: 'say', who: 'player', text: 'It says six.' },
     // The gag, locked off and wide enough for both: Peony does not look down at it.
-    cut(BIB.two('ms')),
+    // (the swing is 50 deg, not 75: Peony's face stays in the frame)
+    cut({ kind: 'frame', who: 'peony', size: 'ms', toward: 'player', side: 50 }),
     { do: 'say', who: 'peony', text: 'It is a nine, sewn on by a committee. Stand up straight.' },
     ...reaction('basil', { toward: 'peony', gesture: 'facepalm', size: 'mcu', side: 20, hold: 'pause' }),
     // 4. The turn: why a caddy. Peony quieter, and closer.
@@ -193,7 +199,7 @@ export const P1_MID: SceneScript = {
     cut(shot('wisteria', 'mcu', { side: 20 })),
     { do: 'say', who: 'wisteria', text: "Little flags, Vesper. All the way across Peony's lawn." },
     // Her view: the survey flags in a dead-straight row across the ninth, in the last of the light.
-    cut({ kind: 'cut', pos: up(-1040, 1.3, 652), look: up(-1110, 0.7, 680.6), fov: 30 }),
+    cut({ kind: 'cut', pos: up(-1040, 652, 1.3), look: up(-1110, 680.6, 0.7), fov: 30 }),
     { do: 'sfx', id: 'flutter', at: 'stake-136', gain: 0.4 },
     { do: 'wait', s: 2.0 },
     // 2. Vesper: low, alone, still, looking out at the course and not at her. His stinger, once.
@@ -252,7 +258,8 @@ export const P2_INTRO: SceneScript = {
   direction: { notes: `${NOTES}m52-the-test-cut-p2-intro.md`, kind: 'intro' },
   actors: [
     { id: 'player', player: true, at: N_PLAYER.at, yaw: N_PLAYER.yaw },
-    { id: 'thrift', preset: 'thrift', at: N_THRIFT.at, yaw: N_THRIFT.yaw },
+    // Hands empty: his tool crossed his face in the close shots.
+    { id: 'thrift', preset: 'thrift', at: N_THRIFT.at, yaw: N_THRIFT.yaw, held: null },
     { id: 'tumblesoil', preset: 'tumblesoil', at: N_TUMBLE.at, yaw: N_TUMBLE.yaw },
     { id: 'peony', preset: 'peony', at: N_PEONY.at, yaw: N_PEONY.yaw },
     { id: 'basil', preset: 'basil', at: N_BASIL.at, yaw: N_BASIL.yaw },
@@ -289,14 +296,17 @@ export const P2_INTRO: SceneScript = {
     { do: 'wait', s: 1.4 },
     cut(shot('peony', 'mcu', { side: -20, height: 'low' })),
     { do: 'wait', s: 1.1 },
-    ...combineAt(0),
-    cut({ kind: 'cut', pos: up(-1066, 0.6, 637), look: up(-1162, 6.8, 697.5), fov: 28 }),
+    // The reveal: low on the ninth, the hedge in the middle distance, and the deck climbs over it, enormous and wrong;
+    // the crane lifts the lens up its hood to the porcelain crown (the cut hides the machine arriving).
+    ...combineAt(REVEAL_T),
     { do: 'stinger', id: 'reveal' },
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.7 },
-    { do: 'wait', s: 2.6 },
+    { do: 'cam', shot: { kind: 'dolly', from: up(-1090, 662, 0.4), to: up(-1090, 662, 1.6), look: up(-1114, 682, 3.2), lookTo: up(-1114, 682, 8), s: 4.2, ease: 'smooth', fov: 62 } },
+    { do: 'wait', s: 4.2 },
     // 4. Basil knows what the little flags were for. His club goes down.
     { do: 'hold', who: 'basil', prop: null },
     { do: 'sfx', id: 'clatter', at: 'basil', gain: 0.6 },
+    { do: 'face', who: 'basil', at: 'peony', s: 0.3 },
     cut(shot('basil', 'mcu', { toward: 'peony', side: 25 })),
     { do: 'say', who: 'basil', text: 'The little flags, ma\'am. They run straight across the ninth.' },
     // 5. Peony gives the order, and Thrift answers for the moles.
@@ -313,7 +323,7 @@ export const P2_INTRO: SceneScript = {
     { do: 'say', who: 'peony', text: '...Moles first. Fetch a cart, my dear. Quickly.' },
     // 6. Button: the machine, low and alone, its deck discs turning over the hedge's tail.
     { do: 'music', track: 'villain', fade: 0.4 },
-    cut({ kind: 'cut', pos: up(-1150, 0.5, 682), look: up(-1168, 2.4, 702.5), fov: 40 }),
+    cut({ kind: 'cut', pos: up(-1086, 676, 0.5), look: up(-1114, 683, 4.5), fov: 55 }),
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.8 },
     { do: 'wait', s: 2.0 },
   ],
@@ -382,10 +392,10 @@ export const P2_OUTRO: SceneScript = {
     { do: 'say', who: 'saxifrage', text: 'It is stood. Now we stand over there.' },
     // 3. The Flock part on one leg, two each way, in order. The long wide hold: nobody hurries.
     cut(spot(LINE, 'flock-wide')),
-    { do: 'walk', who: 'flock-0', path: [HOP(L_FLOCK[0], -5)], speed: 1.6, async: true },
-    { do: 'walk', who: 'saxifrage', path: [HOP(L_SAX.at, -5.5)], speed: 1.6, async: true },
-    { do: 'walk', who: 'flock-1', path: [HOP(L_FLOCK[1], 5.5)], speed: 1.6, async: true },
-    { do: 'walk', who: 'flock-2', path: [HOP(L_FLOCK[2], 5)], speed: 1.6 },
+    { do: 'walk', who: 'flock-0', path: [HOP(L_FLOCK[0], -13)], speed: 3.6, async: true },
+    { do: 'walk', who: 'saxifrage', path: [HOP(L_SAX.at, -14.5)], speed: 3.6, async: true },
+    { do: 'walk', who: 'flock-1', path: [HOP(L_FLOCK[1], 14.5)], speed: 3.6, async: true },
+    { do: 'walk', who: 'flock-2', path: [HOP(L_FLOCK[2], 13)], speed: 3.6 },
     { do: 'gesture', who: 'saxifrage', name: 'one-leg', s: 8, async: true },
     { do: 'gesture', who: 'flock-0', name: 'one-leg', s: 8, async: true },
     { do: 'gesture', who: 'flock-1', name: 'one-leg', s: 8, async: true },
@@ -394,7 +404,7 @@ export const P2_OUTRO: SceneScript = {
     // 4. The deck goes through the gap where they stood, and on across the ninth: the gala flag goes under it.
     ...eat(56, 96),
     ...combineAt(70),
-    { do: 'cam', shot: { kind: 'dolly', from: up(-1104, 1.5, 665.5), to: up(-1099.5, 1.5, 667.5), look: up(-1112, 2.4, 681), s: 2.0, fov: 44 } },
+    { do: 'cam', shot: { kind: 'dolly', from: up(-1094, 661, 1.5), to: up(-1089.5, 663, 1.5), look: up(-1112, 681, 4.5), s: 2.0, fov: 50 } },
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.8 },
     { do: 'wait', s: 2.0 },
     ...combineAt(98),
@@ -418,8 +428,8 @@ export const P2_OUTRO: SceneScript = {
 
 // ---- p3: against the deck --------------------------------------------------------------------------------------------
 /** The deck's escort: two HOA mowers that come round in front of it, lamps on. */
-const ESCORT_A: Vec2[] = [onLine(70, -9), onLine(96, -7), onLine(104, -3)];
-const ESCORT_B: Vec2[] = [onLine(68, 8), onLine(94, 7), onLine(103, 3.5)];
+const ESCORT_A: Vec2[] = [onLine(78, -17), onLine(96, -7), onLine(104, -3)];
+const ESCORT_B: Vec2[] = [onLine(78, 17), onLine(94, 7), onLine(103, 3.5)];
 function escort(at: 'in' | 'out'): ScriptVehicle[] {
   const a = at === 'in' ? ESCORT_A[0] : ESCORT_A[2];
   const b = at === 'in' ? ESCORT_B[0] : ESCORT_B[2];
@@ -473,7 +483,7 @@ export const P3_INTRO: SceneScript = {
     // 3. The turn: the escort mowers peel out from behind the deck and come round in front of it, lamps on.
     { do: 'drive', vehicle: 'escort-a', path: ESCORT_A, speed: 8, async: true },
     { do: 'drive', vehicle: 'escort-b', path: ESCORT_B, speed: 8, async: true },
-    cut({ kind: 'track', pos: up(-1064, 1.2, 657), who: 'escort-a', fov: 46 }),
+    cut({ kind: 'track', pos: up(-1064, 657, 1.2), who: 'escort-a', fov: 46 }),
     { do: 'sfx', id: 'engine-rev', at: 'escort-a', gain: 0.6 },
     { do: 'wait', s: 2.6 },
     // 4. Peony, to the player, and means it.
@@ -484,7 +494,7 @@ export const P3_INTRO: SceneScript = {
     // 5. Button: the machine, low, alone, its escort in front of it.
     { do: 'music', track: 'chase', fade: 0.4 },
     { do: 'stinger', id: 'danger' },
-    cut({ kind: 'cut', pos: up(-1066, 0.5, 660), look: up(-1092, 2.6, 672.4), fov: 42 }),
+    cut({ kind: 'cut', pos: up(-1066, 660, 0.5), look: up(-1092, 672.4, 2.6), fov: 42 }),
     { do: 'sfx', id: 'engine-rev', at: 'escort-b', gain: 0.8 },
     { do: 'wait', s: 1.4 },
   ],
@@ -517,7 +527,7 @@ export const P3_OUTRO: SceneScript = {
     // 1. Hook: the last escort mower spins away to the machine's side, its minute done. The deck has not stopped.
     ...combineAt(90),
     { do: 'drive', vehicle: 'escort-a', path: [onLine(108, -6), onLine(110, -14)], speed: 7, arrive: false, async: true },
-    cut({ kind: 'track', pos: up(-1066, 1.1, 655), who: 'escort-a', fov: 48 }),
+    cut({ kind: 'track', pos: up(-1066, 655, 1.1), who: 'escort-a', fov: 48 }),
     { do: 'sfx', id: 'skid', at: 'escort-a', gain: 0.6 },
     { do: 'wait', s: 1.6 },
     { do: 'face', who: 'tansy', at: 'player', s: 0.4 },
@@ -541,30 +551,33 @@ export const P3_OUTRO: SceneScript = {
     { do: 'sfx', id: 'tap', at: 'ball', gain: 0.9 },
     { do: 'despawn', id: 'ball' },
     { do: 'wait', s: 0.6 },
-    cut({ kind: 'cut', pos: up(-1074, 1.4, 660), look: up(-1084.4, 2.6, 669.2), fov: 36 }),
+    cut({ kind: 'cut', pos: up(-1074, 660, 1.4), look: up(-1084.4, 669.2, 2.6), fov: 36 }),
     { do: 'wait', s: 0.6 },
     { do: 'sfx', id: 'clink', at: 'deck', gain: 0.8 },
     { do: 'wait', s: 0.9 },
     { do: 'spawn', id: 'ball', at: up(BALL_LANDS[0], BALL_LANDS[1], 0.08) },
+    // Pip walks out ahead of the others, off to the east of the machine's path, and turns back to look at it.
+    { do: 'walk', who: 'pip', path: [[-1052, 656]], speed: 2.2, async: true },
     // 4. Ground level: the ball lying in the grass, the deck's brass discs coming on behind it. Then over it.
     { do: 'cam', shot: { kind: 'dolly', from: up(BALL_LANDS[0] + 4.4, 0.3, BALL_LANDS[1] - 1.3), to: up(BALL_LANDS[0] + 3.2, 0.26, BALL_LANDS[1] - 0.9), look: up(BALL_LANDS[0] - 2, 0.6, BALL_LANDS[1] + 0.8), s: 2.4, fov: 36 } },
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.7 },
     { do: 'wait', s: 2.4 },
     ...combineAt(99.5),
     { do: 'despawn', id: 'ball' },
-    cut({ kind: 'cut', pos: up(-1074.6, 0.45, 671.4), look: up(-1083.2, 0.8, 668.4), fov: 38 }),
+    cut({ kind: 'cut', pos: up(-1074.6, 671.4, 0.45), look: up(-1083.2, 668.4, 0.8), fov: 38 }),
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.8 },
     { do: 'wait', s: 2.8 },
     // 5. Nobody jokes. Pip, quietly; then Tansy says it.
-    { do: 'face', who: 'pip', at: onLine(100), s: 0.3 },
-    cut(shot('pip', 'mcu', { side: 10 })),
+    // Pip turns from the machine to the others; the lens is behind them, so the deck stands up in the frame behind him.
+    { do: 'face', who: 'pip', at: [-1048.4, 654.4], s: 0.3 },
+    cut({ kind: 'cut', pos: up(-1048.4, 654.4, 1.0), look: up(-1052, 656, 1.15), fov: 56 }),
     { do: 'say', who: 'pip', text: "...It didn't even slow down." },
     cut(pushIn('tansy', 'mcu', 3.2, { toward: 'player', side: 15 })),
     beat('beat'),
     { do: 'say', who: 'tansy', text: 'Nothing works.' },
     // Button: the deck rolling on alone, low, its discs turning. The camera stays with it.
     ...combineAt(102),
-    cut({ kind: 'cut', pos: up(-1066.2, 0.5, 660.8), look: up(-1080.4, 1.2, 667.4), fov: 40 }),
+    cut({ kind: 'cut', pos: up(-1066.2, 660.8, 0.5), look: up(-1080.4, 667.4, 1.2), fov: 40 }),
     { do: 'sfx', id: 'engine-rev', at: 'deck', gain: 0.7 },
     { do: 'wait', s: 2.2 },
   ],
@@ -622,8 +635,8 @@ export const FINAL_INTRO: SceneScript = {
     cut(shot('thrift', 'mcu', { toward: 'peony', side: -25 })),
     { do: 'say', who: 'thrift', text: 'And out by the board. I know every blade of the way.' },
     // 5. Button: Peony turns to the horn on its post, which has asked her to remain.
-    { do: 'face', who: 'peony', at: HORN_W, s: 0.6 },
-    cut(pushIn('peony', 'mcu', 3, { toward: 'thrift', side: 25, height: 'low' })),
+    { do: 'face', who: 'peony', at: [-1070.5, 460.6], s: 0.6 },
+    cut(pushIn('peony', 'mcu', 3, { toward: 'thrift', side: 12, height: 'low' })),
     { do: 'say', who: 'peony', text: 'One does not remain, Mr Thorne. Basil. The cart.' },
     { do: 'walk', who: 'basil', path: [[-1062, 466.6]], run: true, async: true },
     { do: 'music', track: 'chase', fade: 0.3 },
@@ -666,6 +679,11 @@ export const FINAL_OUTRO: SceneScript = {
     ...combineProps(),
     { id: 'road-horn', prefab: 'pl-horn-speaker', at: ROAD_HORN, yaw: -Math.PI / 2 - 0.3, size: 3.4, by: 'h' },
   ],
+  // The cart's lamps and the horn's work light: the crew's faces are lit while the voice plays.
+  keyLights: [
+    { at: 'cart', lift: 1.4, color: 0xffb066, intensity: 7, range: 14 },
+    { at: [-996, 2.4, 641], color: 0xffb066, intensity: 5, range: 12 },
+  ],
   vehicles: [
     { id: 'cart', kind: 'golf-cart', at: [-980.2, 636.4], yaw: -Math.PI / 2 + 0.25, headlights: true },
     // An HOA van inside the fence behind the deck: its lamps are the light in the gap.
@@ -685,10 +703,12 @@ export const FINAL_OUTRO: SceneScript = {
     { do: 'say', who: 'thrift', text: 'It stopped at my fence. Pointing at the town.' },
     // 3. The voice, a long way off, from every horn in Turfton; the crane over the fence along the line it cut.
     { do: 'sfx', id: 'static', at: 'road-horn', gain: 0.5, async: true },
-    { do: 'cam', shot: { kind: 'dolly', from: up(-970, 8.5, 630), to: up(-968, 13, 627), look: up(-1040, 1.0, 652), s: 4.5, fov: 52 } },
+    // The voice is heard over faces: the whole crew in the cart lamps, the lens drifting in from the broken board.
+    { do: 'cam', shot: { kind: 'dolly', from: up(-1000.5, 641.6, 1.15), to: up(-997.5, 640.8, 1.3), look: up(-987, 641, 1.4), s: 4.5, fov: 48 } },
     { do: 'say', who: 'pa', text: 'Friends of Turfton. Good evening. A date, for your calendars.' },
-    // The date, on the picture of the horn that says it: low under the post, the night sky behind.
-    cut({ kind: 'cut', pos: up(ROAD_HORN[0] - 2.6, 0.6, ROAD_HORN[1] - 3.2), look: up(ROAD_HORN[0], 3.0, ROAD_HORN[1]), fov: 40 }),
+    // The date, over the faces that hear it: Tansy (and Pip beside her) turned to the horn on the fence road, the cart lamp on them.
+    { do: 'face', who: 'tansy', at: 'road-horn', s: 0.4, async: true },
+    cut(shot('tansy', 'ms', { toward: 'road-horn', side: 25 })),
     { do: 'say', who: 'pa', text: 'The Even Cut will take place on the longest day.' },
     cut(spot(BOARD, 'road-wide')),
     { do: 'say', who: 'pa', text: 'Every garden. One height. Thank you.' },
@@ -707,6 +727,7 @@ export const FINAL_OUTRO: SceneScript = {
     { do: 'wait', s: 1.0 },
     { do: 'music', track: 'sad', fade: 1.2 },
     cut(shot('basil', 'mcu', { toward: 'peony', side: 25 })),
+    { do: 'face', who: 'basil', at: 'peony', s: 0.3 },
     { do: 'gesture', who: 'basil', name: 'nod', s: 1.0, async: true },
     { do: 'say', who: 'basil', text: 'All of it, champ.' },
     // 5. Tansy, to the player: the four parts, and the one they could not stop.

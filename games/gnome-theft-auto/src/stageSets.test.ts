@@ -42,7 +42,7 @@ describe('stage sets', () => {
     const sets = buildStageSets(new THREE.Scene(), boxes, QUESTS);
     expect(sets.count).toBe(STAGES.reduce((n, s) => n + s.set.length, 0));
     const windows = stageWindows(QUESTS);
-    const permanent = STAGES.flatMap((s) => s.set.filter((p) => p.solid && (!windows.has(s.id) || p.always)));
+    const permanent = STAGES.flatMap((s) => s.set.filter((p) => setPropBox(p) && (!windows.has(s.id) || p.always)));
     expect(boxes.length).toBe(permanent.length);
     expect(stageSetBoxes().length).toBeGreaterThanOrEqual(boxes.length);
   });

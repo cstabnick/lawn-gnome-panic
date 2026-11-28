@@ -29,12 +29,12 @@ export const STAGES: readonly Stage[] = [
     marks: [
       mark('sage', [8.2, 254.4], [3.8, 255.6], 'work', 'at the front door with a tray stacked high, plating as she talks'),
       mark('player', [3.8, 255.6], [8.2, 254.4], 'stand', 'arrives with a clipboard-sized ticket and no appetite'),
-      mark('frank', [4.4, 263.7], [4.4, 261.2], 'sit', 'on his stool at the outdoor counter, a cocoa and a grass blade'),
-      mark('player', [7.4, 261.6], [4.4, 263.7], 'stand', 'at the counter, hat in hand'),
+      mark('frank', [6.0, 263.7], [6.0, 261.2], 'sit', 'on his stool at the outdoor counter, a cocoa and a grass blade'),
+      mark('player', [9.0, 261.6], [6.0, 263.7], 'stand', 'at the counter, hat in hand'),
     ],
     cameras: [
       cam('wide', [-8, 3.2, 246], [9, 1.4, 256], 'establishing: the front of the diner, the tables beyond and the highway on the left'),
-      cam('counter', [9.6, 1.7, 267.6], [4.4, 1.2, 262.6], 'across the outdoor counter onto Frank and the lit window'),
+      cam('counter', [14.6, 1.7, 267.6], [6.0, 1.2, 262.6], 'across the outdoor counter onto Frank and the lit window'),
     ],
     walks: [],
     vehicles: [
@@ -49,11 +49,12 @@ export const STAGES: readonly Stage[] = [
       ...table(15, 268.5),
       ...table(22.5, 268.5),
       ...table(30, 268.5),
-      // The outdoor counter by the front: a table with three stools, Frank's the middle one.
-      { prefab: 'gsr-cafe-table', at: [4.4, 262], yaw: 0, scale: 1.2, solid: [0.6, 0.6, 0.9] },
-      { prefab: 'bar-stool', at: [4.4, 263.7], yaw: 0 },
-      { prefab: 'bar-stool', at: [2.7, 262], yaw: 0 },
-      { prefab: 'bar-stool', at: [6.1, 262], yaw: 0 },
+      // The outdoor counter by the front: a table with three stools, Frank's the middle one. Moved 1.6 m east, off the
+      // highway's carriageway (x 0, 10 m wide), clear of the waitress's walk.
+      { prefab: 'gsr-cafe-table', at: [6.0, 262], yaw: 0, scale: 1.2, solid: [0.6, 0.6, 0.9] },
+      { prefab: 'bar-stool', at: [6.0, 263.7], yaw: 0 },
+      { prefab: 'bar-stool', at: [4.3, 262], yaw: 0 },
+      { prefab: 'bar-stool', at: [7.7, 262], yaw: 0 },
     ],
   },
 ];

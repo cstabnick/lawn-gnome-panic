@@ -164,9 +164,12 @@ const D_YOU = markOf(DRAIN, 'player');
 const D_PIP = markOf(DRAIN, 'pip');
 const CRATE: Vec2 = [-9.2, -7.0];
 /** Where Tansy and Pip meet: a pace short of the player, away from the crate. */
-const MEET_TANSY: Vec2 = [-6.7, -8.6];
+const MEET_TANSY: Vec2 = [-7.2, -8.6];
 const MEET_PIP: Vec2 = [-5.7, -8.5];
-const TP = coverage('tansy', 'pip', -1);
+/** The player stands off to the side of the reunion (not between the camera and the two of them). */
+const PLAYER_AT: Vec2 = [-4.4, -5.6];
+const towards = (a: Vec2, b: Vec2): number => Math.atan2(b[0] - a[0], b[1] - a[1]);
+const TP = coverage('tansy', 'pip', -1, 40);
 const SAL_TP = coverage('sal', 'tansy', -1);
 const SOCKS = coverage('sal', 'pip', -1);
 
@@ -182,19 +185,25 @@ export const M39_OUTRO: SceneScript = {
   music: 'mystery',
   ambience: 'cave',
   radio: 0,
+  // Torchlight: the crate lamp and a small fire at the drain mouth warm the faces; the weather stays clear (default).
+  keyLights: [
+    { at: 'lamp', lift: 0.5, color: 0xffb066, intensity: 9, range: 10 },
+    { at: 'fire', lift: 0.7, color: 0xff8a3a, intensity: 9, range: 10, flicker: true },
+  ],
   direction: {
     notes: 'docs/design/gnome-theft-auto/direction/scenes/m39-couch-surfing-outro.md',
     kind: 'outro',
     waive: [{ code: 'shot-long', why: 'the held hug and the only silence: the sincere beat is let to breathe' }],
   },
   actors: [
-    { id: 'player', player: true, held: null, at: D_YOU.at, yaw: D_YOU.yaw },
+    { id: 'player', player: true, held: null, at: PLAYER_AT, yaw: towards(PLAYER_AT, MEET_PIP) },
     { id: 'pip', preset: 'pip', held: null, at: D_PIP.at, yaw: D_PIP.yaw },
     { id: 'tansy', preset: 'tansy', held: null, at: D_TANSY.at, yaw: D_TANSY.yaw, hidden: true },
     { id: 'sal', preset: 'silt-diver sal', name: 'Silt-Diver Sal', at: D_SAL.at, yaw: D_SAL.yaw, hidden: true },
   ],
   props: [
     { id: 'crate', prefab: 'crate', at: CRATE, yaw: 0.3 },
+    { id: 'fire', prefab: 'campfire', at: [-7.6, -10.6], yaw: 0 },
     { id: 'lamp', prefab: 'mole-lamp-lit', at: up(CRATE[0] + 0.1, CRATE[1] - 0.1, 0.55), size: 0.5, by: 'h' },
     { id: 'map', prefab: 'rolled-scroll', at: up(CRATE[0] - 0.35, CRATE[1] + 0.15, 0.58), yaw: 0.2, size: 0.7, by: 'w', hidden: true },
     { id: 'sock', prefab: 'sock-map', at: up(CRATE[0] + 0.45, CRATE[1] + 0.2, 0.58), yaw: -0.3, size: 0.55, by: 'w', hidden: true },

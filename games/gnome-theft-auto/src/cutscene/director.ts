@@ -112,6 +112,8 @@ interface Playing {
   fill: THREE.PointLight | null;
   /** The weather was pinned for this scene (hooks.setWeather). */
   weatherPinned: boolean;
+  /** World objects hidden for the scene (SceneScript.hideWorld) and whether each was visible before. */
+  hidden: { obj: THREE.Object3D; was: boolean }[];
 }
 
 const ZERO = new THREE.Vector3();
@@ -319,6 +321,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
     if (world) hooks.setPlayerVisible?.(true);
     if (world && c.script.sky) hooks.setSky?.(null);
     if (c.weatherPinned) hooks.setWeather?.(null);
+    for (const h of c.hidden) h.obj.visible = h.was;
     hooks.onScene?.(null);
     timeEl.style.opacity = '0';
     hooks.setUiVisible(true);
@@ -408,7 +411,7 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         savedBg: scene.background, savedFog: scene.fog,
         lightsSaved: [], savedFov: null, camStep: -2, camPos: new THREE.Vector3(),
         live: liveWorldFor(script, tl, env),
-        keys: [], fill: null, weatherPinned: false,
+        keys: [], fill: null, weatherPinned: false, hidden: [],
       };
       for (const ts of tl.steps) if (ts.step.do === 'say') c.lastSayOrder = Math.max(c.lastSayOrder, ts.order);
 
@@ -479,6 +482,12 @@ export function createDirector(scene: THREE.Scene, ui: HTMLElement, hooks: Direc
         c.fill = new THREE.PointLight(0xffd2a0, 0, 7, 1.2);
         c.fill.castShadow = false;
         stage.add(c.fill);
+      }
+      if (!room) {
+        for (const name of script.hideWorld ?? []) {
+          const obj = scene.getObjectByName(name);
+          if (obj) { c.hidden.push({ obj, was: obj.visible }); obj.visible = false; }
+        }
       }
       hooks.onScene?.(script);
 

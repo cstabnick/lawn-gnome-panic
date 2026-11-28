@@ -34,7 +34,7 @@ export const STAGES: readonly Stage[] = [
     ],
     cameras: [
       cam('wide', [255.6, 1.9, 43.5], [273, 1.3, 36.5], 'low from the west of the camp over the tent corner: Tansy and Pip in the foreground, the board beyond, the fort glinting behind it', 48),
-      cam('fort', [280, 1.9, 40.6], [374, 1.8, 35.5], 'long lens from the rail across the highway at the fort: the north wall, the gate, a banner on a pole', 30),
+      cam('fort', [277, 1.9, 40.6], [374, 1.8, 35.5], 'long lens from the rail across the highway at the fort: the north wall, the gate, a banner on a pole', 30),
       cam('table', [268.2, 0.9, 42.6], [270, 0.8, 40], 'low across the plank table at the Stopping Stone holding a chart down', 36),
       cam('dusk-wide', [262, 2.6, 30], [272, 1.3, 37.5], 'from the north of the camp, over the tent roof onto the board and the group at its foot', 46),
       cam('board', [271.2, 1.5, 33], [273.4, 1.5, 36], 'close from the north-west corner onto the board: the map, the red string, the three photographs', 42),
@@ -44,9 +44,10 @@ export const STAGES: readonly Stage[] = [
     paths: [],
     set: [
       // The rail along the rim: three 4 m W-beam rails facing east (front +z turned to +x), the photograph points just inside it.
-      { prefab: 'mountain-guard-rail', at: [282.5, 40.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
-      { prefab: 'mountain-guard-rail', at: [282.5, 36.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
-      { prefab: 'mountain-guard-rail', at: [282.5, 32.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
+      // Set 3 m west of the highway's shoulder (the south rail stood on the carriageway); the three stay in line.
+      { prefab: 'mountain-guard-rail', at: [279.5, 40.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
+      { prefab: 'mountain-guard-rail', at: [279.5, 36.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
+      { prefab: 'mountain-guard-rail', at: [279.5, 32.6], yaw: Math.PI / 2, solid: [2, 0.15, 0.8] },
     ],
   },
   {
@@ -62,13 +63,13 @@ export const STAGES: readonly Stage[] = [
     look: 'A round-ended caravan on four blocks at the north edge of the apron, its door open and a brass key hanging in the lock, a windsock on a pole beyond it, the parked Crop Dusters on the apron and the runway shimmering in the heat.',
     sounds: 'A windsock snapping, a clipboard clapped shut, keys jingled and dropped, a stall speed muttered as comfort, the runway ticking in the sun.',
     marks: [
-      mark('wally', [466.9, -78], [466, -86], 'stand', 'on the step by his open door, patting every pocket in turn'),
-      mark('player', [466, -85.6], [466.9, -78], 'stand', 'pulled up on the apron below the step, engine ticking'),
+      mark('wally', [466.9, -79.4], [466, -86], 'stand', 'on the step by his open door, patting every pocket in turn'),
+      mark('player', [466, -87], [466.9, -79.4], 'stand', 'pulled up on the apron below the step, engine ticking'),
     ],
     cameras: [
-      cam('door', [460.6, 1.5, -88.2], [466.9, 1.3, -78], 'from the apron, level, onto Wally on his step and the open door behind him', 40),
-      cam('wide', [446, 3.4, -86], [466, 1.2, -79], 'the caravan, the parked Crop Duster, the apron and the runway from the west', 50),
-      cam('lock', [468.6, 1.5, -79.4], [466.9, 1.3, -76.6], 'close and low onto the door lock and a brass key hanging in it', 34),
+      cam('door', [460.6, 1.5, -89.6], [466.9, 1.3, -79.4], 'from the apron, level, onto Wally on his step and the open door behind him', 40),
+      cam('wide', [446, 3.4, -87.4], [466, 1.2, -80.4], 'the caravan, the parked Crop Duster, the apron and the runway from the west', 50),
+      cam('lock', [468.6, 1.5, -80.8], [466.9, 1.3, -78], 'close and low onto the door lock and a brass key hanging in it', 34),
     ],
     walks: [],
     vehicles: [
@@ -76,7 +77,8 @@ export const STAGES: readonly Stage[] = [
     ],
     paths: [],
     set: [
-      { prefab: 'caravan', at: [466, -75.6], yaw: Math.PI, solid: [2.3, 1.05, 2.4] },
+      // Moved 1.4 m north, off the airfield spur's carriageway (z -75 to -65); the marks and cameras moved with it.
+      { prefab: 'caravan', at: [466, -77], yaw: Math.PI, solid: [2.3, 1.05, 2.4], always: true },
     ],
   },
 ];

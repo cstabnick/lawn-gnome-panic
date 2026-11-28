@@ -3,6 +3,9 @@
 // table). The Patio Gate is the existing `patio-gate` stage (turftonB.ts), listed in USES.
 import { cam, mark, type Stage } from '../kit';
 
+/** The Double Pot slab top, metres above the tunnel floor (city/megaBlock.ts MEGA_BLOCK.roof). */
+const ROOF = 9;
+
 export const STAGES: readonly Stage[] = [
   {
     id: 'saucer-court-mat',
@@ -33,35 +36,38 @@ export const STAGES: readonly Stage[] = [
   },
   {
     id: 'double-pot-tunnel',
-    name: 'The Double Pot Tunnel, the viewing',
+    name: 'The Double Pot roof garden, the viewing',
     region: 'turfton',
-    center: [120, -90],
+    center: [120, -92],
     radius: 22,
     facing: 0,
     time: 'day',
     built: 'dressed',
     usedBy: ['m21-penthouse-viewing'],
-    look: 'The Double Pot Tunnel, a long even passage under the roof slab, beige to the vanishing point, a stairwell door in the west wall with one lantern hung beside it, and a plain table at the far end with a beige key on it.',
-    sounds: 'A lift tone and nothing else: no birds, no wind, no traffic, footsteps that echo in even steps.',
+    look: 'A beige roof garden on the Double Pot slab, nine metres up: a beige table with beige chairs and two pots on the north half, a lantern post by the stairwell, the lift kiosk at the south parapet, the helipad kept clear, and Turfton laid out beyond the open edges.',
+    sounds: 'A lift tone and nothing else: no birds, no traffic, only a high even wind and footsteps in even steps.',
     marks: [
-      mark('vesper', [120, -76], [120, -70.5], 'stand', 'already standing at the tunnel mouth, hands folded, a long beige shadow behind him'),
-      mark('player', [120, -70.5], [120, -76], 'stand', 'arrives at the north mouth of the tunnel from the lobby of Thorne Tower'),
-      mark('player', [121.4, -92], [125.4, -99], 'stand', 'stands in front of the table with the key on it'),
+      mark('vesper', [120, -79.5], [120, -75.5], 'stand', 'already standing outside the lift kiosk, hands folded, a long beige shadow behind him', ROOF),
+      mark('player', [120, -75.5], [120, -79.5], 'stand', 'steps out of the lift kiosk onto the roof', ROOF),
+      mark('player', [124.4, -105.5], [121.5, -105.5], 'stand', 'stands at the east side of the beige table with the key on it', ROOF),
+      mark('vesper', [118.6, -105.5], [121.5, -105.5], 'stand', 'at the west side of the table, the open edge and the city behind him', ROOF),
     ],
     cameras: [
-      cam('mouth', [120, 3, -66], [120, 1.4, -80], 'from outside the north mouth, down the tunnel to Vesper standing in it'),
-      cam('lantern', [117.2, 1.5, -82.4], [113.4, 2.0, -84.6], 'an insert on the lantern hung beside the stairwell door'),
-      cam('table', [119.2, 1.5, -93.2], [125.4, 0.9, -99], 'the table with the key on it, the tunnel running on behind'),
-      cam('long', [120, 2.2, -72], [120, 1.6, -107], 'the whole tunnel, beige to the vanishing point'),
+      cam('kiosk', [120, ROOF + 1.6, -90], [120, ROOF + 1.3, -73], 'from the helipad, up the roof to the lift kiosk with Vesper standing in front of it'),
+      cam('lantern', [117, ROOF + 1.5, -82.8], [113.5, ROOF + 1.4, -84.8], 'an insert on the lantern post by the stairwell'),
+      cam('table', [126.2, ROOF + 1.6, -101.6], [121.5, ROOF + 0.9, -105.5], 'the table with the key on it, the open edge and the city beyond'),
+      cam('long', [120, ROOF + 1.8, -78], [121, ROOF + 1.4, -108], 'the whole roof garden, the helipad and the table beyond it'),
     ],
     walks: [],
     vehicles: [],
     paths: [],
     set: [
-      { prefab: 'camp-lantern-post', at: [113.5, -84.8], yaw: Math.PI / 2, scale: 1.6 },
-      { prefab: 'table', at: [125.4, -99], yaw: 0, scale: 1.4, solid: [0.85, 0.55, 0.55] },
-      { prefab: 'chair', at: [125.4, -97.6], yaw: Math.PI, scale: 1.4 },
-      { prefab: 'chair', at: [123.8, -99], yaw: -Math.PI / 2, scale: 1.4 },
+      { prefab: 'camp-lantern-post', at: [113.5, -84.8], yaw: Math.PI / 2, scale: 1.6, lift: ROOF },
+      { prefab: 'beige-garden-table', at: [121.5, -105.5], yaw: 0, scale: 1.6, lift: ROOF, solid: [0.6, 0.6, 0.6] },
+      { prefab: 'beige-garden-chair', at: [121.5, -107.0], yaw: 0, scale: 1.5, lift: ROOF },
+      { prefab: 'beige-garden-chair', at: [121.5, -104.0], yaw: Math.PI, scale: 1.5, lift: ROOF },
+      { prefab: 'beige-garden-planter', at: [113.6, -108.6], yaw: 0, scale: 1.8, lift: ROOF },
+      { prefab: 'beige-garden-planter', at: [127.2, -108.6], yaw: 0, scale: 1.8, lift: ROOF },
     ],
   },
 ];

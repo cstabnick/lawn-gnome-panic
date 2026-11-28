@@ -1,6 +1,6 @@
 // Chapter 1 story scenes, fourth file: Founder's Boot (intro) and the chapter 1 closer.
 // Owner: the Story A re-direction lane; E20 row 15 extended the outro. Played by ch1-founders-boot (quests/story/15-founders-boot.ts).
-import type { ScriptActor, SceneScript, Vec2 } from '../../script';
+import type { ScriptActor, SceneScript, Step, Vec2 } from '../../script';
 import { beat, coverage, cut, pushIn, shot } from '../../direct';
 import { carMark, markOf, pathOf, spot, up } from './kit';
 
@@ -28,6 +28,30 @@ const AMPH_PULL_UP = carMark('amphitheater', 'amphitheater-pull-up');
 const GREEN_JUNIPER: Vec2 = [-90, -91.2];
 /** Vesper behind the Glaze & Tax counter, against the glass of Thorne Tower (stage glaze-tax-office). */
 const WINDOW_VESPER: Vec2 = [23.6, -43.4];
+
+/**
+ * The Founders' Green crowd: Turfton townsfolk standing on the tiers, facing Juniper at the ribbon. Mixed hats and coats;
+ * nobody in HOA black. Rows rise to the south; the middle stays clear for the Boot in the jury box.
+ */
+const TIER_CROWD: ReadonlyArray<{ x: number; z: number; hat: number; shirt: number; beard?: number }> = [
+  { x: -95, z: -84, hat: 0xc0392b, shirt: 0xd9b26a, beard: 0xdddddd },
+  { x: -92.5, z: -85, hat: 0x2e86c1, shirt: 0xf0e6c8 },
+  { x: -87.5, z: -85, hat: 0xf1c40f, shirt: 0x7a5a8a, beard: 0x8a5a2b },
+  { x: -85, z: -84, hat: 0x27ae60, shirt: 0xb04a3a },
+  { x: -96.5, z: -81, hat: 0x8e44ad, shirt: 0x5f7fa8, beard: 0xeeeeee },
+  { x: -93, z: -81.5, hat: 0xe67e22, shirt: 0x3d7a4a },
+  { x: -87, z: -81.5, hat: 0x16a085, shirt: 0xe0c040 },
+  { x: -83.5, z: -81, hat: 0xd35400, shirt: 0xa7c4a0, beard: 0xbbbbbb },
+  { x: -98, z: -86.5, hat: 0xf39c12, shirt: 0x6d8f3a },
+  { x: -82, z: -86.5, hat: 0x2980b9, shirt: 0xd98880 },
+];
+const CROWD_ACTORS: ScriptActor[] = TIER_CROWD.map((c, i) => ({
+  id: `crowd-${i}`,
+  name: 'Townsfolk',
+  look: { hat: c.hat, shirt: c.shirt, ...(c.beard ? { beard: c.beard } : {}) },
+  at: [c.x, c.z] as Vec2,
+  yaw: towards([c.x, c.z], GREEN_JUNIPER),
+}));
 
 const BODEGA = markOf('bodega-front', 'bodega');
 /** Asphalt, on the crate-side of John's counter: 1.6 m from him (the bottlecap's cat). */
@@ -102,6 +126,7 @@ export const FOUNDERS_BOOT_INTRO: SceneScript = {
     { do: 'say', who: 'pip', text: 'We steal the Boot and park it in the jury box.' },
     beat('pause'),
     { do: 'cam', shot: BAY.single('tansy', 'mcu') },
+    { do: 'face', who: 'tansy', at: [-136, 82], s: 0.3 },
     { do: 'say', who: 'tansy', text: '...Yes.' },
   ],
 };
@@ -116,6 +141,7 @@ export const FOUNDERS_BOOT_OUTRO: SceneScript = {
   id: 'founders-boot-outro',
   stage: { kind: 'world' },
   sky: 'golden',
+  weather: 'clear',
   music: 'turfton-dusk',
   ambience: 'crowd',
   direction: { notes: 'docs/design/gnome-theft-auto/direction/scenes/founders-boot-outro.md' },
@@ -127,6 +153,7 @@ export const FOUNDERS_BOOT_OUTRO: SceneScript = {
     { id: 'juror-a', name: 'Juror', look: { hat: 0x6d8f3a, shirt: 0xd9b26a }, at: [-88.5, -83.2], yaw: Math.PI },
     { id: 'juror-b', name: 'Juror', look: { hat: 0xb04a3a, shirt: 0x5f7fa8 }, at: [-92.5, -82.8], yaw: Math.PI },
     { id: 'juror-c', name: 'Juror', look: { hat: 0xe0c040, shirt: 0x7a5a8a }, at: [-82.2, -88.8], yaw: towards([-82.2, -88.8], GREEN_JUNIPER) },
+    ...CROWD_ACTORS,
     { id: 'bodega', preset: 'bodega', at: BODEGA.at, yaw: BODEGA.yaw },
     { id: 'vesper', preset: 'vesper', at: WINDOW_VESPER, yaw: towards(WINDOW_VESPER, [-90, -88]) },
     { id: 'reginald', preset: 'reginald', at: [19.5, -48], yaw: towards([19.5, -48], WINDOW_VESPER) },
@@ -137,6 +164,9 @@ export const FOUNDERS_BOOT_OUTRO: SceneScript = {
   ],
   props: [
     { id: 'ribbon', prefab: 'opening-ribbon', at: [-90, -89.3], yaw: 0, size: 3.2 },
+    // Bunting over the ribbon and along the tiers.
+    { id: 'bunting-ribbon', prefab: 'bunting-span', at: [-90, -86.5], yaw: 0, size: 12 },
+    { id: 'bunting-tiers', prefab: 'bunting-span', at: [-90, -80.6], yaw: 0, size: 18 },
     { id: 'cat', prefab: 'asphalt-cat', at: CAT_AT, yaw: towards(CAT_AT, BODEGA.at), size: 0.55 },
   ],
   steps: [
@@ -156,6 +186,7 @@ export const FOUNDERS_BOOT_OUTRO: SceneScript = {
     { do: 'gesture', who: 'pip', name: 'cheer', s: 1.6, async: true },
     { do: 'gesture', who: 'juror-a', name: 'cheer', s: 1.6, async: true },
     { do: 'gesture', who: 'juror-c', name: 'wave', s: 1.6, async: true },
+    ...CROWD_ACTORS.map((c, i): Step => ({ do: 'gesture', who: c.id, name: i % 3 === 1 ? 'wave' : 'cheer', s: 1.4 + (i % 4) * 0.2, async: true })),
     { do: 'wait', s: 1.6 },
     // 3. The crew's win, and the press.
     cut(shot('tansy', 'mcu', { toward: 'juniper', side: -25 })),

@@ -57,7 +57,7 @@ export const STAGES: readonly Stage[] = [
     ],
     cameras: [
       cam('wide', [686, 3.6, 70], [706, 1.8, 47], 'from the south-west across the yard: the Whirligig in the hay, the barn behind it, gold light along the roof', 50),
-      cam('door', [706, 1.5, 62], [706, 2.0, 40], 'low on the yard from the south: the barn doors, the haystacks either side and the rotor in front of them', 46),
+      cam('door', [706, 1.5, 62], [709.2, 2.0, 28.4], 'low on the yard from the south: the barn doors, the haystacks either side and the rotor in front of them', 46),
       cam('tower', [690, 6.5, 62], [720, 15, 176], 'long lens north-to-south over the roofs to the tin water tower, lit gold', 28),
     ],
     walks: [],
@@ -66,15 +66,17 @@ export const STAGES: readonly Stage[] = [
     ],
     paths: [],
     set: [
-      { prefab: 'croft-barn', at: [706, 34], yaw: 0, scale: 1, solid: [7, 6, 4] },
-      { prefab: 'haystack', at: [693.5, 42], yaw: 0.6, scale: 1.2, solid: [1.75, 1.75, 2.4] },
-      { prefab: 'haystack', at: [718.5, 42.5], yaw: 2.1, scale: 1.2, solid: [1.75, 1.75, 2.4] },
-      { prefab: 'hay-bale', at: [700.2, 44.2], yaw: 0.3, scale: 2.6 },
-      { prefab: 'hay-bale', at: [701.9, 45.0], yaw: 1.2, scale: 2.6 },
-      { prefab: 'hay-bale', at: [711.8, 44.4], yaw: 0.9, scale: 2.6 },
-      { prefab: 'hay-bale', at: [713.4, 45.4], yaw: 2.4, scale: 2.6 },
-      { prefab: 'hay-bale', at: [708.6, 53.8], yaw: 0.1, scale: 2.6 },
-      { prefab: 'hay-bale', at: [703.2, 52.6], yaw: 1.7, scale: 2.6 },
+      // The barn sat across the east-outer highway (its carriageway runs through the yard at z 28 to 42). Turning or
+      // shrinking cannot clear it, so it moves 12 m north across the road, doors to the south face, the road between it and the yard.
+      { prefab: 'croft-barn', at: [709.2, 22.4], yaw: 0, scale: 1, solid: [7, 6, 4], always: true },
+      { prefab: 'haystack', at: [693.5, 42], yaw: 0.6, scale: 1.2, solid: [1.75, 1.75, 2.4], always: true },
+      { prefab: 'haystack', at: [718.5, 47.5], yaw: 2.1, scale: 1.2, solid: [1.75, 1.75, 2.4], always: true },
+      { prefab: 'hay-bale', at: [700.2, 44.2], yaw: 0.3, scale: 2.6, always: true },
+      { prefab: 'hay-bale', at: [701.9, 45.0], yaw: 1.2, scale: 2.6, always: true },
+      { prefab: 'hay-bale', at: [711.8, 44.4], yaw: 0.9, scale: 2.6, always: true },
+      { prefab: 'hay-bale', at: [713.4, 45.4], yaw: 2.4, scale: 2.6, always: true },
+      { prefab: 'hay-bale', at: [708.6, 53.8], yaw: 0.1, scale: 2.6, always: true },
+      { prefab: 'hay-bale', at: [703.2, 52.6], yaw: 1.7, scale: 2.6, always: true },
     ],
   },
 ];

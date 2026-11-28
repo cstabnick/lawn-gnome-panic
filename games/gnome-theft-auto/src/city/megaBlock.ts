@@ -2,6 +2,7 @@
 // runs through a tunnel in one long 2x1 tower. The two halves are ordinary TowerSpecs (world.ts addTower, styled by
 // src/towers/); this file adds the slab. Numbers match the `double-pot` site (src/sites.ts): x 69..171, z -111..-69.
 import * as THREE from 'three';
+import { buildPrefab } from '@lawn/prefabs';
 import { buildStaticCells } from '../cull';
 import { textPlate } from '../homes/pieces';
 import { siteRect } from '../sites';
@@ -79,4 +80,26 @@ export function buildMegaBlock(
   scene.add(textPlate('THORNE', east.minX - 0.03, 5.5, -90, -Math.PI / 2, logo));
   // Sales floor sign by the door at (112.4, -84), on the west half's east facade.
   scene.add(textPlate('SALES FLOOR →', west.maxX + 0.03, 2.6, -84, Math.PI / 2, { w: 1.6, h: 0.45, bg: 0xf5f0e0, fg: 0x1d2a3a }));
+}
+
+/**
+ * FX05 (D3): the HOA lockup's door (lore `hoa-lockup`: "entered by a door in the Double Pot Tunnel"), a permanent beige
+ * door in the tunnel's west wall, a plate over it and a loudspeaker over that, each 0.05..0.3 m proud of x = 111. Built
+ * by app.ts after the world (with the stage sets), so the golden layout stays pinned. #62's pen stands in front of it.
+ */
+export function buildHoaLockupDoor(scene: THREE.Scene): void {
+  const doorZ = -98, wallX = MEGA_BLOCK.west.maxX;
+  const door = buildPrefab('panelled-door', { tint: 0xd8c9a2, lights: false });
+  door.position.set(wallX + 0.15, 0, doorZ);
+  door.rotation.y = Math.PI / 2;
+  door.scale.setScalar(1.2);
+  door.name = 'hoa-lockup-door';
+  scene.add(door);
+  scene.add(textPlate('HOA HOLDING (WAIT HERE)', wallX + 0.05, 3.2, doorZ, Math.PI / 2, { w: 2.8, h: 0.4, bg: 0xd8c9a2, fg: 0x2b2a26 }));
+  const speaker = buildPrefab('pl-horn-speaker', { lights: false });
+  speaker.position.set(wallX + 0.3, 3.64, doorZ);
+  speaker.rotation.y = Math.PI / 2;
+  speaker.scale.setScalar(0.3);
+  speaker.name = 'hoa-lockup-speaker';
+  scene.add(speaker);
 }

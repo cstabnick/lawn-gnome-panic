@@ -1134,24 +1134,53 @@ function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, height: f64, rDis
     return 12; // meadow
   }
   if (reg == 7) {
-    // north-highlands: Pail Pond ice (pond, kind 6) and Snowdrop Slope snow (snowfield, kind 11) first (E12)
+    // north-highlands (D12, FX12; mirrors src/landforms/northHighlands.ts paint and its SNOW_PAINT numbers):
+    // 1. Pail Pond ice (pond, kind 6).
+    for (let k = 0; k < fCount; k++) {
+      const fp = LF_FEAT_PTR + <usize>((fStart + k) * 48);
+      if (<i32>load<f64>(fp) != 6) continue;
+      const ptCount = <i32>load<f64>(fp + 32);
+      if (ptCount <= 0) continue;
+      const p0 = LF_PTS_PTR + (<usize>(<i32>load<f64>(fp + 24)) << 4);
+      if (hypot2(x - load<f64>(p0), z - load<f64>(p0 + 8)) < load<f64>(fp + 8)) return 5; // ice
+    }
+    // 2. Snow aprons round ponds and snowfields (kind 11): r + 30 + 10 * wobble.
+    const wobble = fbmStd(x / 40.0, z / 40.0, 1201, 2);
     for (let k = 0; k < fCount; k++) {
       const fp = LF_FEAT_PTR + <usize>((fStart + k) * 48);
       const kind = <i32>load<f64>(fp);
-      const r = load<f64>(fp + 8);
+      if (kind != 6 && kind != 11) continue;
       const ptStart = <i32>load<f64>(fp + 24);
       const ptCount = <i32>load<f64>(fp + 32);
       if (ptCount <= 0) continue;
+      const reach = load<f64>(fp + 8) + 30.0 + 10.0 * wobble;
       if (kind == 6) {
         const p0 = LF_PTS_PTR + (<usize>ptStart << 4);
-        if (hypot2(x - load<f64>(p0), z - load<f64>(p0 + 8)) < r) return 5; // ice
-      } else if (kind == 11) {
-        if (distToPts(LF_PTS_PTR, ptStart, ptCount, x, z) < r) return 6; // snow
-      }
+        if (hypot2(x - load<f64>(p0), z - load<f64>(p0 + 8)) < reach) return 6; // snow
+      } else if (distToPts(LF_PTS_PTR, ptStart, ptCount, x, z) < reach) return 6; // snow
     }
-    if (height > 32.0) return 6; // snow
-    if (slope > 0.3) return 3; // gravel
-    return 12; // meadow
+    // 3. Steep faces are gravel.
+    if (slope > 0.45) return 3; // gravel
+    // 4. Thaws (kind 14): meadow inside r, frost out to r + 28.
+    const edge = 12.0 * fbmStd(x / 60.0, z / 60.0, 1203, 2);
+    let s = 1.0;
+    for (let k = 0; k < fCount; k++) {
+      const fp = LF_FEAT_PTR + <usize>((fStart + k) * 48);
+      if (<i32>load<f64>(fp) != 14) continue;
+      const ptCount = <i32>load<f64>(fp + 32);
+      if (ptCount <= 0) continue;
+      const d = distToPts(LF_PTS_PTR, <i32>load<f64>(fp + 24), ptCount, x, z) - load<f64>(fp + 8) + edge;
+      if (d < 0.0) return 12; // meadow
+      if (d < 28.0) { const q = d / 28.0; if (q < s) s = q; }
+    }
+    // 5. The border frost band (45 m): 0.35 snowy at the border.
+    const bd = borderDistAt(x, z) + edge;
+    if (bd < 45.0) {
+      const q = 0.35 + (0.65 * (bd > 0.0 ? bd : 0.0)) / 45.0;
+      if (q < s) s = q;
+    }
+    if (s < 1.0) return 0.5 + 0.5 * fbmStd(x / 11.0, z / 11.0, 1207, 2) < s ? 6 : 12; // snow : meadow
+    return 6; // snow
   }
   if (reg == 8) return z > 1130.0 ? 7 : 8; // south-shore: sand beach, grass inland
   if (reg == 9) {

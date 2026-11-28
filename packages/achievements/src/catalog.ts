@@ -1423,7 +1423,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'gta-black-diamond', game: 'gnome-theft-auto', gameTitle: 'Gnome Theft Auto',
-    title: 'Black Diamond', description: 'A clean Wool Run (every gate) in 18 seconds or less.',
+    title: 'Black Diamond', description: 'A clean Wool Run (every gate) in 36 seconds or less.',
     reward: { slot: 'back', prefabId: 'crossed-skis-pack', label: 'Crossed Skis' },
   },
   {

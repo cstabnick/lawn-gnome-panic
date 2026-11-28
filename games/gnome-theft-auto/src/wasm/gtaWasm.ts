@@ -100,7 +100,7 @@ let wasmDisabled = false;
 let staticUploaded = false;
 
 const LF_KIND_CODE: Record<string, number> = {
-  calm: 1, mesa: 2, canyon: 3, crag: 4, glacier: 5, pond: 6, terrace: 7, pen: 8, island: 9, hill: 10, snowfield: 11, anthill: 13,
+  calm: 1, mesa: 2, canyon: 3, crag: 4, glacier: 5, pond: 6, terrace: 7, pen: 8, island: 9, hill: 10, snowfield: 11, anthill: 13, thaw: 14,
 };
 
 function innerEdges(id: RegionId): [number, number, number, number][] {

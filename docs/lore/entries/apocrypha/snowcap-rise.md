@@ -8,7 +8,7 @@ era: now
 status: draft
 games: [gnome-theft-auto]
 aliases: [The High North]
-sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, games/gnome-theft-auto/src/data/levels/north-highlands.level.json, games/gnome-theft-auto/src/sites.ts]
+sources: [docs/roadmaps/gta-batch-3/E04/spine.md, docs/lore/rulings.md#r-160, docs/lore/rulings.md#r-241, games/gnome-theft-auto/src/data/levels/north-highlands.level.json, games/gnome-theft-auto/src/sites.ts]
 related: [frostbite-fells, snowdrop-slope, pail-pond, capwood, pinwheel-ridge, thermos-theo, ash-shovel-ernie, hatbrim]
 ---
 
@@ -25,21 +25,23 @@ The Rise is the Fells' older, quieter neighbour. The wind is steady there, the g
 
 ## In the games
 
-The north band of the map (code region `north-highlands`, x -1400 to 1400, z -1400 to -900), built by E01. Roads: `north-band` runs on from the north highway at (20, -870) west to (-950, -950), and `north-band-east` runs east along the top edge to Pinwheel Ridge's end. Snowdrop Slope (-350, -1150) is 220 x 300 m on a mountain peaking about 65 m near (-350, -1340). Pail Pond (-640, -1060) is 180 x 140 m. Capwood (250, -1180) is 300 x 200 m on the Fells mountain's north side. Pinwheel Ridge (850, -1200) is 300 x 90 m on a ridge. The Capwood Run starts at a paddock (90, -760) in Frostbite Fells and finishes near (150, -1300).
+The north band of the map (code region `north-highlands`, x -1400 to 1800, z -1800 to -900 since the second expansion; west of x -200 it stops at z -1400, where the Unmown begins), built by E01. Roads: `north-band` runs on from the north highway at (20, -870) west to (-950, -950), and `north-band-east` runs east along the top edge to Pinwheel Ridge's end. Snowdrop Slope (-350, -1175) is 220 x 350 m on a mountain peaking about 65 m near (-350, -1340). The Wool Run starts near the summit and the old short course below it is the Nursery (R-241). Pail Pond (-640, -1060) is 180 x 140 m. Capwood (250, -1180) is 300 x 200 m on the Fells mountain's north side. Pinwheel Ridge (850, -1200) is 300 x 90 m on a ridge. The Capwood Run starts at a paddock (90, -760) in Frostbite Fells and finishes near (150, -1300).
 
 Quest rows 37 (m37-snowdrop-slope) and 38 (m38-pail-pond) use the region tag `snowcap-rise`; row 27 (m27-heap-of-trouble) ends with a convoy vanishing toward it. It is act III's northern base.
+
+The Rise is under snow (R-241): white everywhere above the band road, with a patchy frost edge where it meets greener ground, a snow apron round Pail Pond and the slope, Capwood's hollow thawed green and Mittenholt's green kept clear.
 
 Since the second expansion the band reaches the north edge, where the High Tarn sits (R-177). The Hatbrim (R-230) stands on that north edge with the Brim Gap Road, the Hatband, the Brim Walk and the Spine Cut (batch 3, E33).
 
 ## Look and motifs
 
 - Motifs: bare high ground above the Fells; drystone walls; cairns; wind-bent pines; slate bothies.
-- Palette: stone and slate walls, slate roofs, sapphire flowers.
+- Palette: snow, stone and slate walls, slate roofs; sapphire flowers only on the thawed ground (Capwood, Mittenholt's green).
 - In the game: theme `north-highlands` in `src/data/regionThemes.json`.
 
 ## Everyday
 
-**Shops.** None on the Rise itself: the Lodge at Snowdrop Slope sells the cocoa, Mittenholt sells nothing, and everything else is carried up in a pocket.
+**Shops.** Almost none: the Lodge at Snowdrop Slope sells the cocoa, Mittenholt sells nothing, and Velma Crown's Top Hat at Brim Gap sells tea, buns and the view. Everything else is carried up in a pocket.
 
 **Notices.**
 - A cairn at every road bend carries a flat stone with one number chalked on it: the hats advised.

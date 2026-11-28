@@ -2953,7 +2953,7 @@ if (interiorParam) {
 }
 // Dev / demos (E12): ?winter=wool-run|tea-tray-run puts the player on that run's skis or tea tray at its start line.
 const winterParam = startParams.get('winter');
-if (winterParam === 'wool-run' || winterParam === 'tea-tray-run') {
+if (winterParam === 'wool-run' || winterParam === 'tea-tray-run' || winterParam === 'nursery') {
   setTimeout(() => {
     const why = winter.api.startRun(winterParam);
     if (why) hud.toast(why, 3000);

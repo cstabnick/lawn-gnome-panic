@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { _resetGnomletApps, getGnomletApp } from '../gnomlet/registry';
 import { ITEMS, itemDef } from '../inventory';
 import { createWinterStore } from './save';
+import { BLACK_DIAMOND_S } from './types';
 import { registerWinterApp, registerWinterItems, type WinterAppCtx } from './winterApp';
 
 class FakeEl {
@@ -31,6 +32,9 @@ class FakeEl {
   }
   text(): string {
     return this.textContent + this.children.map((c) => c.text()).join(' ');
+  }
+  findAll(pred: (e: FakeEl) => boolean): FakeEl[] {
+    return this.children.flatMap((c) => [...(pred(c) ? [c] : []), ...c.findAll(pred)]);
   }
   find(pred: (e: FakeEl) => boolean): FakeEl | undefined {
     for (const c of this.children) {
@@ -96,5 +100,23 @@ describe('Snowdrop app', () => {
     first?.click();
     expect(calls).toEqual(['wool-run']);
     expect(closed).toEqual(['closed']);
+  });
+
+  it('has a Nursery card after the Wool Run card, with its own Ski it button', () => {
+    _resetGnomletApps();
+    const calls: string[] = [];
+    registerWinterApp(fakeCtx(calls));
+    const root = new FakeEl('div') as unknown as HTMLElement;
+    const tablet = { close: () => {}, home: () => {}, setTitle: () => {} };
+    getGnomletApp('ski-runs')?.open?.(root, tablet);
+    const rootEl = root as unknown as FakeEl;
+    const text = rootEl.text();
+    expect(text).toContain('the Nursery');
+    expect(text.indexOf('the Nursery')).toBeGreaterThan(text.indexOf('the Wool Run'));
+    expect(text.indexOf('the Nursery')).toBeLessThan(text.indexOf('the Tea-Tray Run'));
+    expect(text).toContain(`clean in ≤ ${BLACK_DIAMOND_S.toFixed(1)} s`);
+    const buttons = rootEl.findAll((e) => e.tagName === 'button');
+    buttons[1]?.click();
+    expect(calls).toEqual(['nursery']);
   });
 });

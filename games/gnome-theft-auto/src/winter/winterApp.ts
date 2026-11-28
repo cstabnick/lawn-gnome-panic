@@ -3,11 +3,13 @@
 import { registerGnomletApp, type GnomletCtx } from '../gnomlet/registry';
 import { itemDef, registerItem } from '../inventory';
 import type { WinterStore } from './save';
+import type { RunId } from './types';
 import { formatTime } from './course';
 import {
   BEAR_HUG_TARGET,
   BLACK_DIAMOND_S,
   ICE_STATION_TARGET,
+  NURSERY_RUN,
   TEA_TRAY_RUN,
   WINTER_APP_ID,
   WOOL_RUN,
@@ -34,7 +36,7 @@ export interface WinterAppCtx {
   /** Drop the player's own sled at their feet and sit on it. Null on success, else why not (no sled owned, not on snow...). */
   dropSled(): string | null;
   /** Put the player on a run's ride at its start (WinterApi.startRun). */
-  startRun(id: 'wool-run' | 'tea-tray-run'): string | null;
+  startRun(id: RunId): string | null;
   toast(text: string): void;
 }
 
@@ -88,7 +90,7 @@ export function registerWinterApp(ctx: WinterAppCtx): void {
 
       box.appendChild(el('h3', 'Snowdrop Slope', 'margin:0;font-size:18px;overflow-wrap:anywhere;'));
 
-      for (const run of [WOOL_RUN, TEA_TRAY_RUN]) {
+      for (const run of [WOOL_RUN, NURSERY_RUN, TEA_TRAY_RUN]) {
         const card = el('div', undefined, CARD_CSS);
         box.appendChild(card);
         const best = data.best[run.id];
@@ -99,7 +101,7 @@ export function registerWinterApp(ctx: WinterAppCtx): void {
           const tick = best !== undefined && best <= BLACK_DIAMOND_S && data.clean > 0 ? ' ✓' : '';
           line(`Black Diamond: clean in ≤ ${BLACK_DIAMOND_S.toFixed(1)} s${tick}`, card);
         }
-        button(run.id === WOOL_RUN.id ? 'Ski it' : 'Sled it', card, () => act(ctx.startRun(run.id)));
+        button(run.ride === 'snow-skis' ? 'Ski it' : 'Sled it', card, () => act(ctx.startRun(run.id)));
       }
 
       const pond = el('div', undefined, CARD_CSS);

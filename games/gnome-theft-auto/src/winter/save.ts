@@ -4,10 +4,10 @@ import { WINTER_SAVE_KEY, type RunId, type WinterSave } from './types';
 
 export { WINTER_SAVE_KEY };
 
-const RUN_IDS: readonly RunId[] = ['wool-run', 'tea-tray-run'];
+const RUN_IDS: readonly RunId[] = ['wool-run', 'tea-tray-run', 'nursery'];
 
 export function emptyWinterSave(): WinterSave {
-  return { v: 1, best: {}, runs: {}, clean: 0, sled: false, iceCatches: 0, holes: 0, hugged: [] };
+  return { v: 2, best: {}, runs: {}, clean: 0, sled: false, iceCatches: 0, holes: 0, hugged: [] };
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -41,6 +41,14 @@ export function parseWinterSave(raw: string | null): WinterSave {
     for (const [id, n] of Object.entries(src)) {
       if (isRunId(id) && typeof n === 'number' && Number.isFinite(n) && n > 0) target[id] = n;
     }
+  }
+
+  // v1 (no marker): the old short Wool Run is now the Nursery, so its best time moves there. The run count stays on
+  // 'wool-run' (quest probes count it). Saved as v 2 afterwards, so this never runs twice.
+  if (parsed.v !== 2) {
+    const old = out.best['wool-run'];
+    if (old !== undefined && out.best.nursery === undefined) out.best.nursery = old;
+    delete out.best['wool-run'];
   }
 
   if (isNonNegInt(parsed.clean)) out.clean = parsed.clean;

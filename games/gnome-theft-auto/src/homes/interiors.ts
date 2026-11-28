@@ -167,7 +167,8 @@ defineInterior({
 
     // Signs.
     kit.sign('FINDERS KEEPERS.\nLOSERS: HOA.', -2.6, 1.7, -3.92, 0, { w: 1.3, h: 0.5, bg: 0xfff8dc, fg: 0x3e2723 });
-    kit.sign('DO NOT DIG INDOORS\n(AGAIN)', -5.45, 1.5, -1.2, Math.PI / 2, {
+    // Over the camp bed with the hand-fork tucked in (not by the door, where it sat at the edge of the entry view).
+    kit.sign('DO NOT DIG INDOORS\n(AGAIN)', -5.45, 1.6, 1.6, Math.PI / 2, {
       w: 1.0, h: 0.45, bg: 0xfff176, fg: 0x263238,
     });
 

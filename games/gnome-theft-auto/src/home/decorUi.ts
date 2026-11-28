@@ -14,6 +14,8 @@ export interface DecorDeps {
   ui: HTMLElement;
   economy: Pick<Economy, 'spend' | 'state'>;
   toast(text: string): void;
+  /** FX02 (G1#24): true = show the flat from above (portrait phone, panel open inside the flat), false = back to the follow camera. */
+  view?(on: boolean): void;
 }
 export interface DecorPanel { open(tab?: DecorTab): void; close(): void; isOpen(): boolean }
 
@@ -46,11 +48,42 @@ const CSS = `
 .gta-decor-sw{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;width:64px;text-align:center;}
 .gta-decor-sw button{width:44px;height:44px;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,0.3);}
 .gta-decor-sw button.gta-decor-on{border:3px solid #ffd23f;box-shadow:0 0 0 2px #181c20 inset;}
+@media (max-aspect-ratio:1/1) and (max-width:600px){
+  .gta-decor{max-height:46vh;gap:6px;padding-top:8px;}
+  .gta-decor-plan{min-height:0;height:24vh;aspect-ratio:auto;}
+  .gta-decor-store{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .gta-decor-store .gta-decor-tile{flex:0 0 auto;}
+}
 `;
 
 const hex = (c: number): string => '#' + c.toString(16).padStart(6, '0');
 const colourOf = (list: readonly { id: string; color: number }[], id: string): number => (list.find((c) => c.id === id) ?? list[0]).color;
 const layer = (prefab: string): number => (stockOf(prefab)?.flat ? 0 : stockOf(prefab)?.wall ? 2 : 1);
+
+// Floor-plan labels: short names so a piece's label fits on the plan (FX02 I3).
+const SHORT_NAMES: Record<string, string> = {
+  bed: 'Bed', bedroll: 'Bedroll', couch: 'Couch', armchair: 'Armchair', 'rocking-chair': 'Rocker', chair: 'Chair',
+  stool: 'Stool', table: 'Table', 'side-table': 'Side', rug: 'Rug', lamp: 'Lamp', plant: 'Plant', painting: 'Art',
+  wardrobe: 'Wardrobe', cupboard: 'Cupboard', bookshelf: 'Shelf', 'chest-of-drawers': 'Drawers',
+  'grandfather-clock': 'Clock', 'coat-rack': 'Coats', 'tv-set': 'TV', fridge: 'Fridge', stove: 'Stove', sink: 'Sink',
+  crate: 'Crate',
+};
+export function shortName(prefab: string): string {
+  const mapped = SHORT_NAMES[prefab];
+  if (mapped) return mapped;
+  const name = stockOf(prefab)?.name;
+  if (name) return name.split(' ').pop() || prefab;
+  return prefab;
+}
+
+// Portrait phone: the sheet is short, the plan letterboxes the 6:5 room inside whatever box it gets (FX02 I3).
+const portraitPhone = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-aspect-ratio:1/1) and (max-width:600px)').matches;
+
+/** Scale and offset (canvas pixels) that fit the room inside the canvas, centred. Used by drawPlan and roomPoint. */
+function planFit(c: HTMLCanvasElement): { k: number; ox: number; oy: number } {
+  const k = Math.min(c.width / FLAT_ROOM.w, c.height / FLAT_ROOM.d);
+  return { k, ox: (c.width - FLAT_ROOM.w * k) / 2, oy: (c.height - FLAT_ROOM.d * k) / 2 };
+}
 
 type Kid = HTMLElement | string | null;
 function h(tag: string, cls: string, ...kids: Kid[]): HTMLElement {
@@ -95,6 +128,7 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
   let unsub: (() => void) | null = null;
   let canvas: HTMLCanvasElement | null = null;
   let drag: Drag | null = null;
+  let viewOn = false;
 
   const inside = (): boolean => currentInterior() === FLAT_ID;
   const apply = (): void => {
@@ -106,14 +140,15 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
   // ---- Floor plan ------------------------------------------------------------------------------------------------
 
   function drawPlan(): void {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const cv = canvas;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
     if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
-    const k = canvas.width / FLAT_ROOM.w;
+    const { k, ox, oy } = planFit(cv);
     const W = FLAT_ROOM.w, D = FLAT_ROOM.d;
-    const X = (x: number): number => (x + W / 2) * k;
-    const Z = (z: number): number => (z + D / 2) * k;
+    const X = (x: number): number => ox + (x + W / 2) * k;
+    const Z = (z: number): number => oy + (z + D / 2) * k;
 
     const drawPiece = (prefab: string, x: number, z: number, yaw: number, outline: string | null, alpha: number, label: string): void => {
       const s = stockOf(prefab);
@@ -136,19 +171,34 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
       ctx.moveTo(cx + fx * rw / 2, cz + fz * rh / 2);
       ctx.lineTo(cx + fx * (rw / 2 + 6 * dpr), cz + fz * (rh / 2 + 6 * dpr));
       ctx.stroke();
-      if (label && !wallBar) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `${Math.max(9, 0.32 * k / dpr) * dpr}px system-ui,sans-serif`;
+      if (label) {
+        const fontPx = Math.max(9, 0.32 * k / dpr) * dpr;
+        ctx.font = `${fontPx}px system-ui,sans-serif`;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label.split(' ')[0], cx, cz, rw - 2);
+        const tw = ctx.measureText(label).width;
+        const lx = Math.min(cv.width - tw / 2 - 2 * dpr, Math.max(tw / 2 + 2 * dpr, cx));
+        if (tw <= rw - 4 * dpr && rh >= fontPx + 2 * dpr) {
+          ctx.fillStyle = '#ffffff';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, lx, cz);
+        } else {
+          // Too wide or too short for the piece: draw it beside the piece, with a dark halo.
+          const below = cz + rh / 2 + 2 * dpr + fontPx <= cv.height;
+          const ly = below ? cz + rh / 2 + 2 * dpr : cz - rh / 2 - 2 * dpr;
+          ctx.textBaseline = below ? 'top' : 'bottom';
+          ctx.lineWidth = 3 * dpr;
+          ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+          ctx.strokeText(label, lx, ly);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(label, lx, ly);
+        }
       }
     };
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.fillStyle = hex(colourOf(FLOOR_COLOURS, layout.floor));
-    ctx.fillRect(0, 0, W * k, D * k);
+    ctx.fillRect(ox, oy, W * k, D * k);
     // The door square nothing may stand in (hatched).
     const dc = FLAT_ROOM.doorClear;
     const dx0 = X(FLAT_ROOM.door.x - dc / 2);
@@ -169,7 +219,7 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
     const sorted = [...layout.items].sort((a, b) => layer(a.prefab) - layer(b.prefab));
     for (const it of sorted) {
       const faded = drag?.moved && drag.uid === it.uid;
-      drawPiece(it.prefab, it.x, it.z, it.yaw, it.uid === selected ? '#ff9a2e' : null, faded ? 0.35 : 1, stockOf(it.prefab)?.name ?? '');
+      drawPiece(it.prefab, it.x, it.z, it.yaw, it.uid === selected ? '#ff9a2e' : null, faded ? 0.35 : 1, shortName(it.prefab));
     }
     if (drag?.moved && drag.ghost) {
       const it = pieceById(layout, drag.uid);
@@ -179,20 +229,25 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
     ctx.strokeStyle = hex(colourOf(WALL_COLOURS, layout.wall));
     ctx.lineWidth = 0.3 * k;
     const t = 0.15 * k;
+    const x0 = X(-W / 2), x1 = X(W / 2), z0 = Z(-D / 2), z1 = Z(D / 2);
     ctx.beginPath();
-    ctx.moveTo(X(FLAT_ROOM.door.x - 0.6), D * k - t);
-    ctx.lineTo(t, D * k - t);
-    ctx.lineTo(t, t);
-    ctx.lineTo(W * k - t, t);
-    ctx.lineTo(W * k - t, D * k - t);
-    ctx.lineTo(X(FLAT_ROOM.door.x + 0.6), D * k - t);
+    ctx.moveTo(X(FLAT_ROOM.door.x - 0.6), z1 - t);
+    ctx.lineTo(x0 + t, z1 - t);
+    ctx.lineTo(x0 + t, z0 + t);
+    ctx.lineTo(x1 - t, z0 + t);
+    ctx.lineTo(x1 - t, z1 - t);
+    ctx.lineTo(X(FLAT_ROOM.door.x + 0.6), z1 - t);
     ctx.stroke();
   }
 
   function roomPoint(e: PointerEvent): { x: number; z: number } {
-    const r = canvas!.getBoundingClientRect();
-    const k = (r.width || 360) / FLAT_ROOM.w;
-    return { x: (e.clientX - r.left) / k - FLAT_ROOM.w / 2, z: (e.clientY - r.top) / k - FLAT_ROOM.d / 2 };
+    const c = canvas!;
+    const r = c.getBoundingClientRect();
+    const { k, ox, oy } = planFit(c);
+    // Client pixels to canvas pixels, then out of the letterbox.
+    const px = (e.clientX - r.left) * (r.width ? c.width / r.width : 1);
+    const py = (e.clientY - r.top) * (r.height ? c.height / r.height : 1);
+    return { x: (px - ox) / k - FLAT_ROOM.w / 2, z: (py - oy) / k - FLAT_ROOM.d / 2 };
   }
 
   function pieceAt(x: number, z: number): string | null {
@@ -299,6 +354,12 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
     c.addEventListener('pointerup', onUp);
     c.addEventListener('pointercancel', onUp);
     body.appendChild(c);
+    // Match the buffer to the element's real box (the phone sheet sets its height in CSS); planFit letterboxes the room.
+    const rect = c.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      c.width = Math.round(rect.width * dpr);
+      c.height = Math.round(rect.height * dpr);
+    }
 
     const tools = h('div', 'gta-decor-tools');
     tools.appendChild(toolButton('⟳', 'Rotate', () => { if (selected) change(rotatePiece(layout, selected)); }));
@@ -421,6 +482,8 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
         window.addEventListener('keydown', onKey, true);
         document.body?.setAttribute('data-decor', 'open');
         root.classList.add('gta-decor-open');
+        // Portrait phone inside the flat: look down on the room while the sheet is open.
+        if (inside() && portraitPhone() && !viewOn) { viewOn = true; deps.view?.(true); }
       }
       render();
     },
@@ -428,6 +491,7 @@ export function createDecorPanel(deps: DecorDeps): DecorPanel {
       if (!opened) return;
       opened = false;
       drag = null;
+      if (viewOn) { viewOn = false; deps.view?.(false); }
       unsub?.();
       unsub = null;
       window.removeEventListener('keydown', onKey, true);

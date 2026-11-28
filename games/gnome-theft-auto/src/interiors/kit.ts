@@ -28,6 +28,21 @@ const NPC_HALF = 0.35;
 const NPC_H = 1.2;
 const RUG_MAX_TOP = 0.25;
 const FLAT_MAX_H = 0.08;
+const CEILING_LIP = 6; // the ceiling overhangs the walls, so the cut-away top of the frame shows ceiling, not sky
+const SIGN_BACK_OFF = 0.01; // the sign backing sits this far behind the text plane (towards the wall)
+const SIGN_BACK_PAD = 0.08; // the backing is this much larger than the text plane
+const SIGN_MAX_WALL_DIST = 0.4;
+const WALL_HANG_MIN_Y = 0.25;
+const WALL_MAX_THICK = 0.6;
+const WALL_FAR_SIDE = 0.45;
+
+/** A wall's decor: the kit's direct children that hang on it. Its inward normal points into the room. */
+export interface WallDecor {
+  /** A point on the wall plane and the wall's inward normal (local coordinates, y ignored). */
+  x: number; z: number; nx: number; nz: number;
+  /** Direct children of the kit group that hang on this wall. */
+  objects: THREE.Object3D[];
+}
 
 /** A plane facing the room: `yaw` turns its front to the direction (sin yaw, cos yaw). */
 function frontPlane(w: number, h: number, material: THREE.Material): THREE.Mesh {
@@ -41,13 +56,15 @@ function standard(color: number, roughness = 0.9): THREE.MeshStandardMaterial {
 }
 
 /** A fresh kit for one build of `placed`, and the record it fills. The group is in local coordinates (not yet placed). */
-export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: InteriorBuild } {
+export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: InteriorBuild; walls: () => WallDecor[] } {
   const group = new THREE.Group();
   group.name = `interior-${placed.def.id}`;
   const build: InteriorBuild = { boxes: [], spots: [], npcs: [], spawn: null, exitDoor: null, windows: [] };
   const theme: InteriorTheme = placed.theme;
   const size = { ...placed.def.size };
   let roomBuilt = false;
+  /** Half the room's width and depth, set by room(); null until then. */
+  let shell: { hw: number; hd: number } | null = null;
 
   const add = (o: THREE.Object3D): THREE.Object3D => {
     group.add(o);
@@ -67,11 +84,13 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     const t = opts?.theme !== undefined ? themeOf(opts.theme as InteriorThemeId | InteriorTheme) : theme;
     const hw = w / 2;
     const hd = d / 2;
+    shell = { hw, hd };
 
     // Floor: top at y = 0.
     const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.2, d + 0.6), standard(t.floor));
     floor.position.set(0, -0.1, 0);
     floor.castShadow = false;
+    floor.userData.shell = true;
     add(floor);
 
     // Walls: single-sided planes whose front faces into the room, so a camera outside sees through them.
@@ -86,6 +105,7 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
       const wall = frontPlane(len, h, standard(t.wall));
       wall.position.set(x, h / 2, z);
       wall.rotation.y = ry;
+      wall.userData.shell = true;
       add(wall);
       // Skirting: a strip just in front of the wall.
       const skirt = frontPlane(len, SKIRT_H, flatLayer(standard(t.trim), LAYER.decal)); // on the wall plane: a draw layer, no z-fight
@@ -93,13 +113,19 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
       const nz = Math.cos(ry);
       skirt.position.set(x + nx * SKIRT_OUT, SKIRT_H / 2, z + nz * SKIRT_OUT);
       skirt.rotation.y = ry;
+      skirt.userData.shell = true;
       add(skirt);
     }
 
-    // Ceiling: facing down into the room.
-    const ceiling = frontPlane(w, d, standard(t.ceiling));
+    // Ceiling: facing down into the room, overhanging the walls (CEILING_LIP) so the cut-away top shows ceiling.
+    // No light reaches a downward face but the hemisphere's ground colour, so a dark ceiling read as a black void: a
+    // little of its own colour as glow keeps it a ceiling.
+    const ceilingMat = standard(t.ceiling);
+    ceilingMat.emissive.setHex(t.ceiling).multiplyScalar(0.4);
+    const ceiling = frontPlane(w + 2 * CEILING_LIP, d + 2 * CEILING_LIP, ceilingMat);
     ceiling.position.set(0, h, 0);
     ceiling.rotation.x = Math.PI / 2;
+    ceiling.userData.shell = true;
     add(ceiling);
 
     // Wall colliders, just outside the inner size. Only 2 m tall: a gnome jumps ~1.1 m, so it cannot get over, but the
@@ -126,16 +152,19 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
       const post = frontPlane(POST_W, POST_H, frame);
       post.position.set(x + tx * off * side + sin * fo, POST_H / 2, z + tz * off * side + cos * fo);
       post.rotation.y = yaw;
+      post.userData.shell = true;
       add(post);
     }
     const lintel = frontPlane(DOOR_W + POST_W * 2, LINTEL_H, frame);
     lintel.position.set(x + sin * fo, POST_H + LINTEL_H / 2, z + cos * fo);
     lintel.rotation.y = yaw;
+    lintel.userData.shell = true;
     add(lintel);
 
     const panel = frontPlane(DOOR_W, DOOR_H, flatLayer(standard(0x5d4037), LAYER.decal));
     panel.position.set(x + sin * DOOR_PROUD, DOOR_H / 2, z + cos * DOOR_PROUD);
     panel.rotation.y = yaw;
+    panel.userData.shell = true;
     add(panel);
 
     build.exitDoor = { x, z, yaw };
@@ -219,6 +248,7 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
       const fo = PANE_PROUD + 0.01;
       m.position.set(x + tx * cx + sin * fo, cy, z + tz * cx + cos * fo);
       m.rotation.y = yaw;
+      m.userData.shell = true;
       add(m);
     };
     bar(w + FRAME_BAR * 2, FRAME_BAR, FRAME_DEPTH, 0, y - FRAME_BAR / 2); // sill
@@ -229,6 +259,7 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     const pane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), flatLayer(new THREE.MeshBasicMaterial({ color: 0xbfe3ff }), LAYER.decal));
     pane.position.set(x + sin * PANE_PROUD, y + h / 2, z + cos * PANE_PROUD);
     pane.rotation.y = yaw;
+    pane.userData.shell = true;
     add(pane);
     build.windows.push(pane);
   };
@@ -276,10 +307,23 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     const material = map
       ? flatLayer(new THREE.MeshBasicMaterial({ map }), LAYER.decal)
       : flatLayer(new THREE.MeshBasicMaterial({ color: bg }), LAYER.decal);
+    // The sign is a pair: a darker backing board on the marking layer, and the text plane on the decal layer, so the
+    // text always draws over it. Grouped so the pair hides together with its wall.
+    const pair = new THREE.Group();
+    pair.name = 'sign';
+    pair.userData.wallSign = true;
+    const backing = new THREE.Mesh(
+      new THREE.PlaneGeometry(w + SIGN_BACK_PAD, h + SIGN_BACK_PAD),
+      flatLayer(new THREE.MeshBasicMaterial({ color: new THREE.Color(bg).multiplyScalar(0.55) }), LAYER.marking),
+    );
+    backing.position.set(x - Math.sin(yaw) * SIGN_BACK_OFF, y, z - Math.cos(yaw) * SIGN_BACK_OFF);
+    backing.rotation.y = yaw;
+    pair.add(backing);
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material);
     plane.position.set(x, y, z);
     plane.rotation.y = yaw;
-    add(plane);
+    pair.add(plane);
+    add(pair);
   };
 
   const spot = (s: InteriorSpot): void => {
@@ -291,6 +335,7 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     model.update(gnomeStateFor(n) as never, 0);
     model.object.position.set(n.x, 0, n.z);
     model.object.rotation.y = n.yaw;
+    model.object.userData.interiorNpc = true;
     build.npcs.push(n);
     if (n.line) {
       const line = n.line;
@@ -335,6 +380,55 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     }
   };
 
+  /** The room's wall decor, classified from the group's children as they stand now (call after build). */
+  const walls = (): WallDecor[] => {
+    if (!shell) return [];
+    const { hw, hd } = shell;
+    // axis 'z' walls lie on a z plane (north, south); 'x' walls on an x plane (west, east).
+    const list: { decor: WallDecor; axis: 'x' | 'z' }[] = [
+      { decor: { x: 0, z: -hd, nx: 0, nz: 1, objects: [] }, axis: 'z' }, // north
+      { decor: { x: 0, z: hd, nx: 0, nz: -1, objects: [] }, axis: 'z' }, // south
+      { decor: { x: -hw, z: 0, nx: 1, nz: 0, objects: [] }, axis: 'x' }, // west
+      { decor: { x: hw, z: 0, nx: -1, nz: 0, objects: [] }, axis: 'x' }, // east
+    ];
+    const planeOf = (wl: (typeof list)[number]): number => (wl.axis === 'z' ? wl.decor.z : wl.decor.x);
+    const normalOf = (wl: (typeof list)[number]): number => (wl.axis === 'z' ? wl.decor.nz : wl.decor.nx);
+    for (const c of group.children) {
+      if (c.userData.shell || c.userData.interiorNpc) continue;
+      c.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(c);
+      if (bb.isEmpty()) continue;
+      if (c.userData.wallSign) {
+        const mid = bb.getCenter(new THREE.Vector3());
+        let best: (typeof list)[number] | null = null;
+        let bestD = Infinity;
+        for (const wl of list) {
+          const along = wl.axis === 'z' ? mid.z : mid.x;
+          const dist = Math.abs(along - planeOf(wl));
+          if (dist < bestD) { bestD = dist; best = wl; }
+        }
+        if (best && bestD < SIGN_MAX_WALL_DIST) best.decor.objects.push(c);
+        continue;
+      }
+      if (bb.min.y < WALL_HANG_MIN_Y) continue; // it stands on the floor: not wall decor
+      let best: (typeof list)[number] | null = null;
+      let bestD = Infinity;
+      for (const wl of list) {
+        const lo = wl.axis === 'z' ? bb.min.z : bb.min.x;
+        const hi = wl.axis === 'z' ? bb.max.z : bb.max.x;
+        if (hi - lo > WALL_MAX_THICK) continue;
+        const plane = planeOf(wl);
+        // The far side (the side away from the room) must reach the wall.
+        const reaches = normalOf(wl) > 0 ? lo <= plane + WALL_FAR_SIDE : hi >= plane - WALL_FAR_SIDE;
+        if (!reaches) continue;
+        const dist = Math.abs((lo + hi) / 2 - plane);
+        if (dist < bestD) { bestD = dist; best = wl; }
+      }
+      if (best) best.decor.objects.push(c);
+    }
+    return list.map((wl) => wl.decor);
+  };
+
   const kit: InteriorKit = {
     id: placed.def.id,
     name: placed.def.name,
@@ -352,7 +446,7 @@ export function createKit(placed: PlacedInterior): { kit: InteriorKit; build: In
     npc,
     stairsTo,
   };
-  return { kit, build };
+  return { kit, build, walls };
 }
 
 function gnomeStateFor(n: InteriorNpc) {

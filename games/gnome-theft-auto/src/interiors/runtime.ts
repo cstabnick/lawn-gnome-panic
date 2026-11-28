@@ -4,11 +4,15 @@ import * as THREE from 'three';
 import { addInteractSpot } from '../interactables';
 import { setAmbienceOverride } from '../sound/bus';
 import { createKit, disposeGroup } from './kit';
+import type { WallDecor } from './kit';
+import { setInteriorCeiling } from './ceiling';
 import { interiorById, onInteriorDefined } from './registry';
 import type { Hud, Player, Sfx, World } from '../types';
 
 export interface InteriorDeps {
   scene: THREE.Scene;
+  /** The view camera (FX02): wall decor on a cut-away wall hides when the camera is outside that wall. Optional (tests). */
+  camera?: THREE.Camera;
   /** The shared #ui element: the fade overlay appends its own child to it. */
   ui: HTMLElement;
   world: World;
@@ -67,6 +71,11 @@ export function createInteriors(deps: InteriorDeps): Interiors {
   const nightCol = new THREE.Color(0xffb860);
   const hemiCol = new THREE.Color();
   const hemiGround = new THREE.Color();
+  /** While inside: a dark warm neutral for the scene background and fog, so no sky shows above the cut-away ceiling. */
+  const indoorBg = new THREE.Color();
+  const WARM_DARK = new THREE.Color(0x1c1610);
+  /** The current room's wall decor (FX02): hidden while the camera is outside its wall. */
+  let wallDecor: WallDecor[] = [];
 
   if (hasDom) {
     fadeEl = document.createElement('div');
@@ -92,8 +101,10 @@ export function createInteriors(deps: InteriorDeps): Interiors {
     const p = interiorById(id);
     if (!p) return;
     const { def, origin } = p;
-    const { kit, build } = createKit(p);
+    const { kit, build, walls } = createKit(p);
     def.build(kit);
+    wallDecor = walls();
+    setInteriorCeiling(def.size.h);
     kit.group.position.set(origin.x, 0, origin.z);
     deps.scene.add(kit.group);
     group = kit.group;
@@ -135,6 +146,7 @@ export function createInteriors(deps: InteriorDeps): Interiors {
     }
     group = null;
     windows = [];
+    wallDecor = [];
     current = null;
     doEnter(id, true);
   };
@@ -167,6 +179,8 @@ export function createInteriors(deps: InteriorDeps): Interiors {
     }
     group = null;
     windows = [];
+    wallDecor = [];
+    setInteriorCeiling(null);
     setAmbienceOverride(null);
     if (def) {
       if (to) deps.teleport(to.x, to.z, to.yaw, to.y);
@@ -213,6 +227,24 @@ export function createInteriors(deps: InteriorDeps): Interiors {
       if (current === null || phase === 'out') return;
       const p = interiorById(current);
       if (!p) return;
+      // Wall decor hides with its wall while the camera is outside it (the group is never rotated or scaled).
+      if (deps.camera && group) {
+        const cx = deps.camera.position.x - group.position.x;
+        const cz = deps.camera.position.z - group.position.z;
+        for (const wl of wallDecor) {
+          const outside = (cx - wl.x) * wl.nx + (cz - wl.z) * wl.nz < 0;
+          for (const o of wl.objects) o.visible = !outside;
+        }
+      }
+      // Background and fog: a dark warm neutral from the theme's ceiling colour. atmosphere.update restores them on leaving.
+      indoorBg.setHex(p.theme.ceiling).multiplyScalar(0.35).lerp(WARM_DARK, 0.5);
+      if (deps.scene.background instanceof THREE.Color) deps.scene.background.copy(indoorBg);
+      else deps.scene.background = indoorBg.clone();
+      if (deps.scene.fog instanceof THREE.Fog) {
+        deps.scene.fog.color.copy(indoorBg);
+        deps.scene.fog.near = 80;
+        deps.scene.fog.far = 600;
+      }
       const w = deps.world;
       if (w.hemi) {
         w.hemi.color.copy(hemiCol.setHex(p.theme.light));

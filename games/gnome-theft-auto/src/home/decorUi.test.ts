@@ -1,7 +1,7 @@
 // The decorate panel: opening the shop and buying puts the piece in storage. Uses a tiny fake DOM (fakeDom.ts has no
 // events or children, which the panel needs).
 import { describe, expect, it } from 'vitest';
-import { createDecorPanel } from './decorUi';
+import { createDecorPanel, shortName } from './decorUi';
 import { loadLayout, resetLayoutCache } from './layout';
 
 class El {
@@ -51,5 +51,12 @@ describe('decor panel', () => {
     expect(toasts[0]).toContain('delivered');
     panel.close();
     expect(panel.isOpen()).toBe(false);
+  });
+
+  it('plan labels use short names, falling back to the stock name, then the id', () => {
+    expect(shortName('plant')).toBe('Plant');
+    expect(shortName('chest-of-drawers')).toBe('Drawers');
+    expect(shortName('lamp')).toBe('Lamp');
+    expect(shortName('no-such-prefab')).toBe('no-such-prefab');
   });
 });

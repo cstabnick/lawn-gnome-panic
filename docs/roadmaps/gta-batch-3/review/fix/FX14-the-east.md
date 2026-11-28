@@ -264,3 +264,9 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Rutbottom jumps give a full-speed Knobbly 0.6-1 s of air (test).
 - All 1 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX02 (orchestrator)
+
+- `uni-lecture` (lecture hall interior): `campus/interiors.ts` scales the bench rows to 18 m wide, so each row stands
+  ~4 m tall right in front of the spawn. FX02's entry-view test (`interiors/entryView.test.ts`) exempts it for now;
+  fix the benches and remove the exemption.

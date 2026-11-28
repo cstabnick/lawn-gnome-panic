@@ -5,7 +5,7 @@ import { createAchievementTracker } from '@lawn/achievements';
 import { play, playHorn, setEngine, setSkid, unlockAudio } from './audio';
 import { createWorldSound, playAt, soundStats } from './sound';
 import { createAtmosphere, TIME_LAPSE } from './atmosphere';
-import { forceWeather, getWeather, isWeatherEnabled, onWeather, updateWeather, weatherAt, weatherRegion } from './weather';
+import { forceWeather, forcedWeather, getWeather, isWeatherEnabled, onWeather, updateWeather, weatherAt, weatherRegion } from './weather';
 import { WEATHER_LINES, WEATHER_LOOK, weatherOvercast } from './weather/config';
 import { createWeatherView } from './weather/render';
 import { initWeatherOptions } from './weather/options';
@@ -75,7 +75,7 @@ import { nearestTownSpeaker } from './pardonlin/speakers';
 import './pardonlin/interiors';
 import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
-import { questById } from './quests/defs';
+import { QUESTS, questById } from './quests/defs';
 import { storyGrants, storyMarkers, type StoryGrant } from './quests/storyMarks';
 import { STORY_ROWS } from './quests/storyRows';
 import { PLACE_STYLE } from './mapIcons';
@@ -149,7 +149,7 @@ import { createDirectorViews } from './trafficDirectorsView';
 import { createWaveWatch, nowSeconds } from './trafficDirectors';
 import { createLapWatch } from './roundabouts';
 import { installCityDressing } from './cityScenery/install';
-import { buildStageMarks, buildStageSets } from './stageSets';
+import { buildStageMarks, buildStageSets, noStageSets } from './stageSets';
 import { createWorldEvents } from './worldEvents';
 import { createEventDirector } from './events/director';
 import { bindWorldEvents } from './events/api';
@@ -347,7 +347,8 @@ function preRender(focusX: number, focusZ: number): void {
 }
 // Stage set dressing for story and side-quest scenes (src/quests/stages.ts); ?stagesets=0 leaves it out, ?stagemarks shows the stage marks.
 const stageParams = new URLSearchParams(location.search);
-if (stageParams.get('stagesets') !== '0') buildStageSets(scene, world.boxes);
+// GR3 (FX05): story sets are quest-scoped (shown while their quest or scene runs; stageSets.bind below); ?stagesets=all shows every one.
+const stageSets = stageParams.get('stagesets') !== '0' ? buildStageSets(scene, world.boxes, QUESTS, { all: stageParams.get('stagesets') === 'all' }) : noStageSets();
 if (stageParams.has('stagemarks')) scene.add(buildStageMarks(scene));
 // Everything buildWorld and the stage sets placed is static scenery: the culler (cull.ts) stops drawing it past its
 // class's distance and stops its shadows sooner. ?cull=0 turns this off to compare.
@@ -681,6 +682,8 @@ let emoteHidGun = false;
 /** Left standing, the player's gnome fidgets (anim/playerIdle.ts). */
 const idleFidget = createIdleFidget();
 // Quests: data in quests/defs.ts; the cutscene plays when the player enters a giver's building.
+/** The forced weather before a scene pinned its own (undefined: no scene is pinning). */
+let sceneWeatherSaved: ReturnType<typeof forcedWeather> | undefined;
 const cutscene = createCutscene(scene, ui, {
   setUiVisible(v) { hud.setVisible(v); input.setVisible(v); document.body.classList.toggle('gta-in-scene', !v); },
   setPlayerVisible(v) { player.model.object.visible = v; weapons.setVisible(v); },
@@ -699,6 +702,20 @@ const cutscene = createCutscene(scene, ui, {
     atmosphere.releaseLapse(TIME_LAPSE.outSeconds);
     return 0;
   },
+  // GR6 (FX05): a world scene pins its weather (clear unless it asks for rain); the forced weather from before (a
+  // ?weather= override, the trainer) comes back after it, else the schedule fades back in.
+  setWeather(kind) {
+    if (kind) {
+      if (sceneWeatherSaved === undefined) sceneWeatherSaved = forcedWeather();
+      forceWeather(kind, 0.8, true);
+    } else if (sceneWeatherSaved !== undefined) {
+      forceWeather(sceneWeatherSaved?.kind ?? null, sceneWeatherSaved?.intensity ?? 1);
+      sceneWeatherSaved = undefined;
+    }
+  },
+  night: () => atmosphere?.nightFactor() ?? 0,
+  // GR3 (FX05): a playing scene shows the quest-scoped stage sets it needs (stageSets.ts).
+  onScene: (script) => stageSets.scene(script?.id ?? null),
 });
 // ?race=1..4 (demos, scripted checks): that Fizz Cup race is the active quest from the start (written into this browser's quest save).
 {
@@ -763,6 +780,7 @@ const quests = createQuests({
   },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
+stageSets.bind(() => { const j = quests.getJournal(); return { activeId: j.activeId, saves: j.saves }; });
 // E26 street racing (streetRace/): the meets, the bookies, race modes (pickup, time trial, online) and the Race Club app.
 const racingStore = createRacingStore();
 const streetRacing = createStreetRacing(scene, world, {
@@ -2322,6 +2340,7 @@ function frame(now: number): void {
   societies?.update(dt);
   dewdrop.update(dt);
   worldChanges.update(dt);
+  stageSets.update(dt);
   hobbyIntros.update(dt);
   if (taxiEvent === 'jump' && player.vehicle) chase.yaw = player.vehicle.yaw;
   else if (taxiEvent === 'dropoff' && player.vehicle && player.vehicle === taxi.vehicle()) getOut();

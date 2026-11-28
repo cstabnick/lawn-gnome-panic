@@ -333,6 +333,85 @@ export function checkPacing(script: SceneScript, env: StageEnv, opts: PacingOpti
   };
 }
 
+// ---- GR6 key frames ----------------------------------------------------------------------------------------------------
+
+/** GR6 thresholds for key frames (close lines and intro cards). */
+export const KEY_FRAME = {
+  /** A line counts as a close line when its speaker fills at least this share of the frame height. */
+  closeFill: 0.6,
+  /** Seen from more than this many degrees off their facing, a close-up shows an ear and the back of the hat. */
+  faceAngle: 60,
+  /** Looked down on more steeply than this (degrees below level, camera to head), a close-up shows the hat crown. */
+  topAngle: 40,
+} as const;
+
+/** Is someone else standing between the camera and `a`'s face? Bodies are upright cylinders, hat tip included. */
+function blockerOf(frame: SceneFrame, a: ActorSample): string | null {
+  const px = a.x, py = a.y + a.head * 0.85, pz = a.z;
+  const [cx, cy, cz] = frame.camera.pos;
+  const len = Math.hypot(px - cx, py - cy, pz - cz);
+  for (const b of Object.values(frame.actors)) {
+    if (b.id === a.id || !b.visible) continue;
+    const r = 0.3 * (b.head / 0.9), top = b.y + b.head * 1.55;
+    // A camera at someone's shoulder has their hat brim across the lens, whatever the ray does.
+    if (cy >= b.y - 0.2 && cy <= top + 0.15 && Math.hypot(cx - b.x, cz - b.z) < r + 0.45) return b.id;
+    for (let k = 1; k < 24; k++) {
+      const t = k / 24;
+      // Stop 0.35 m short of the face: the speaker's own beard and a hand on a shoulder do not count.
+      if ((1 - t) * len < 0.35) break;
+      const x = cx + (px - cx) * t, y = cy + (py - cy) * t, z = cz + (pz - cz) * t;
+      if (y >= b.y && y <= top && Math.hypot(x - b.x, z - b.z) < r) return b.id;
+    }
+  }
+  return null;
+}
+
+/** Why `a`'s face does not read from the camera (back of the head, hat crown from above, someone in front), or null. */
+export function faceProblem(frame: SceneFrame, a: ActorSample): { code: PacingCode; detail: string } | null {
+  const g = framing(frame.camera, a);
+  if (g.offFacing > KEY_FRAME.faceAngle && !a.seatedIn) return { code: 'face-hidden', detail: `seen ${Math.round(g.offFacing)} deg off their facing (max ${KEY_FRAME.faceAngle}): the back of the head` };
+  const [cx, cy, cz] = frame.camera.pos;
+  const down = Math.atan2(cy - (a.y + a.head * 0.85), Math.hypot(cx - a.x, cz - a.z)) * 180 / Math.PI;
+  if (down > KEY_FRAME.topAngle) return { code: 'face-hidden', detail: `looked down on at ${Math.round(down)} deg (max ${KEY_FRAME.topAngle}): the hat crown, not the face` };
+  const by = blockerOf(frame, a);
+  if (by) return { code: 'speaker-blocked', detail: `${by} stands between the camera and the face` };
+  return null;
+}
+
+/**
+ * GR6 key-frame faults: every close line (the speaker fills >= KEY_FRAME.closeFill of the frame) and every intro card
+ * must show the face: not the back of the head, not the hat from above, nobody in front. Sampled at the middle of the
+ * line's typing (the intro card: half a second in). Waivers in `direction.waive` apply as in checkPacing.
+ */
+export function keyFrameFaults(script: SceneScript, env: StageEnv): PacingFault[] {
+  const tl: Timeline = compile(script, lineTiming('normal'));
+  const faults: PacingFault[] = [];
+  const actorIds = new Set((script.actors ?? []).map((a) => a.id));
+  for (const ts of tl.steps) {
+    const st = ts.step;
+    if (st.do === 'say' && actorIds.has(st.who)) {
+      const f = sampleFrame(tl, Math.min(ts.start + Math.max(ts.typeDur ?? 0, 0.6) / 2, tl.duration), env);
+      const a = f.actors[st.who];
+      if (!a?.visible) continue;
+      const g = framing(f.camera, a);
+      if (!g.inFrame || g.fill < KEY_FRAME.closeFill) continue;
+      const p = faceProblem(f, a);
+      if (p) faults.push({ code: p.code, t: ts.start, detail: `close line: ${st.who} ${p.detail}`, text: st.text });
+    } else if (st.do === 'intro' && actorIds.has(st.who)) {
+      const f = sampleFrame(tl, Math.min(ts.start + 0.5, tl.duration), env);
+      const a = f.actors[st.who];
+      if (!a?.visible) continue;
+      const g = framing(f.camera, a);
+      if (!g.inFrame) { faults.push({ code: 'face-hidden', t: ts.start, detail: `intro card: ${st.who} is out of frame` }); continue; }
+      const p = faceProblem(f, a);
+      if (p) faults.push({ code: p.code, t: ts.start, detail: `intro card: ${st.who} ${p.detail}` });
+    }
+  }
+  const waive: PacingWaiver[] = script.direction?.waive ?? [];
+  return faults.filter((f) => !waive.some((w) => w.code === f.code && w.why.trim().length > 0
+    && (!w.match || (f.text ?? '').includes(w.match) || f.detail.includes(w.match))));
+}
+
 /** True when `id` is in the baseline list (exact ids, or a prefix ending in '*'). */
 export function inBaseline(id: string, baseline: readonly string[]): boolean {
   return baseline.some((b) => (b.endsWith('*') ? id.startsWith(b.slice(0, -1)) : b === id));

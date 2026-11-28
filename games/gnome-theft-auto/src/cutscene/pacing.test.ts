@@ -10,7 +10,7 @@ import { lineTiming } from './textSpeed';
 installFakeDom();
 const g = globalThis as Record<string, unknown>;
 if (!g.window) g.window = { addEventListener: () => {}, removeEventListener: () => {} };
-const { checkPacing, countByCode, formatPacing, formatTally, inBaseline, lineIndex, PACING, framing, tallyShots } = await import('./pacing');
+const { checkPacing, countByCode, formatPacing, formatTally, inBaseline, keyFrameFaults, lineIndex, PACING, framing, tallyShots } = await import('./pacing');
 const { PACING_BASELINE } = await import('./pacing.baseline');
 const { LANES, laneOf, sceneUses } = await import('./lanes');
 const { coverage } = await import('./direct');
@@ -24,6 +24,29 @@ const index = lineIndex(all);
 const results = all.map((s) => checkPacing(s, envFor(s), { kindHint: uses.get(s.id)?.kind, lines: index }));
 const byId = new Map(results.map((r) => [r.id, r]));
 const tallies = new Map(all.map((s) => [s.id, tallyShots(s)] as const));
+const keyFrames = new Map(all.map((s) => [s.id, keyFrameFaults(s, envFor(s))] as const));
+/**
+ * GR6 (FX05): the scenes whose key frames were re-shot must keep every close line and intro card on a face. Every other
+ * scene is only reported (the act epics add theirs here as they re-shoot them).
+ */
+const KEY_FRAME_STRICT = new Set([
+  'drainpipe-court-intro', 'drainpipe-court-mid', 'drainpipe-court-outro',
+  'founders-boot-intro', 'founders-boot-outro',
+  'm21-penthouse-viewing-intro', 'm21-penthouse-viewing-gate', 'm21-penthouse-viewing-mid', 'm21-penthouse-viewing-outro', 'm21-penthouse-viewing-outro-table',
+  'm34-forty-seven-wrenches-intro', 'm34-forty-seven-wrenches-mid', 'm34-forty-seven-wrenches-outro',
+  'm39-couch-surfing-intro', 'm39-couch-surfing-mid', 'm39-couch-surfing-outro',
+  'm41-pinwheel-ridge-intro', 'm41-pinwheel-ridge-mid', 'm41-pinwheel-ridge-outro',
+  'm43-saltbucket-boardwalk-intro', 'm43-saltbucket-boardwalk-mid', 'm43-saltbucket-boardwalk-outro',
+  'm44-the-bathtub-queen-intro', 'm44-the-bathtub-queen-mid', 'm44-the-bathtub-queen-outro',
+  'm46-starfall-at-the-anthill-p1-intro', 'm46-starfall-at-the-anthill-p2-intro', 'm46-starfall-at-the-anthill-p2-outro',
+  'm46-starfall-at-the-anthill-p3-intro', 'm46-starfall-at-the-anthill-p3-outro', 'm46-starfall-at-the-anthill-intro',
+  'm46-starfall-at-the-anthill-mid', 'm46-starfall-at-the-anthill-outro',
+  'm50-trellisdown-tasting-intro', 'm50-trellisdown-tasting-mid', 'm50-trellisdown-tasting-outro',
+  'm52-the-test-cut-p1-intro', 'm52-the-test-cut-p1-mid', 'm52-the-test-cut-p2-intro', 'm52-the-test-cut-p2-outro',
+  'm52-the-test-cut-p3-intro', 'm52-the-test-cut-p3-outro', 'm52-the-test-cut-intro', 'm52-the-test-cut-outro',
+  'all-hats-p1-intro', 'all-hats-p1-toll', 'all-hats-p1-cut', 'all-hats-p1-outro', 'all-hats-p2-intro', 'all-hats-p2-gap', 'all-hats-p2-outro',
+  'all-hats-p3-intro', 'all-hats-p3-outro', 'all-hats-p4-intro', 'all-hats-p4-roots', 'all-hats-p4-guard', 'all-hats-outro',
+]);
 
 // npm sets npm_lifecycle_event to the script's name: the report prints for `npm run cutscene-report` (or CUTSCENE_REPORT=1).
 const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
@@ -43,6 +66,14 @@ function report(): string {
       out.push(`${inBaseline(r.id, PACING_BASELINE) ? '[baseline] ' : '[directed] '}${formatPacing(r)}`, formatTally(tallies.get(r.id)!));
     }
   }
+  // GR6 key frames (pacing.ts keyFrameFaults): close lines and intro cards that hide the face.
+  out.push('', '=== Key frames (GR6: close lines and intro cards show the face) ===');
+  const kf = all.map((s) => [s.id, keyFrames.get(s.id)!] as const).filter(([, f]) => f.length > 0);
+  for (const [id, fs] of kf) {
+    out.push(`${KEY_FRAME_STRICT.has(id) ? '[strict] ' : ''}${id}: ${fs.length} key-frame fault(s)`);
+    for (const f of fs) out.push(`    t=${f.t.toFixed(1).padStart(5)}  ${f.code.padEnd(16)} ${f.detail}${f.text ? `  "${f.text.length > 50 ? `${f.text.slice(0, 47)}...` : f.text}"` : ''}`);
+  }
+  if (kf.length === 0) out.push('(none)');
   const codes = Object.entries(countByCode(results)).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${c} ${k}`).join(', ');
   out.push('', '=== Totals ===', ...totals, `By code: ${codes}`);
   const monotone = all.filter((s) => tallies.get(s.id)!.monotone).map((s) => s.id);
@@ -76,6 +107,17 @@ describe('pacing checker', () => {
     }
     expect(stale).toEqual([]);
   });
+
+  it('GR6: the strict scenes are real scenes', () => {
+    expect([...KEY_FRAME_STRICT].filter((id) => !SCENES[id])).toEqual([]);
+  });
+
+  it.each([...KEY_FRAME_STRICT].filter((id) => SCENES[id]).map((id) => [id] as const))(
+    '%s (GR6) shows the face on every close line and intro card', (id) => {
+      const fs = keyFrames.get(id)!;
+      expect(fs.map((f) => `t=${f.t.toFixed(1)} ${f.code}: ${f.detail}${f.text ? ` "${f.text}"` : ''}`)).toEqual([]);
+    },
+  );
 
   it('every waiver says why', () => {
     const bad = all.flatMap((s) => (s.direction?.waive ?? []).filter((w) => w.why.trim().length < 4).map((w) => `${s.id}: ${w.code}`));

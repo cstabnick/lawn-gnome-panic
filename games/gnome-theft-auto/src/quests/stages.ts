@@ -14,7 +14,7 @@ import { heightAt } from '../terrain';
 import type { Box } from '../types';
 import { CLOVERFIELD_STAGES } from './stages/cloverfield';
 import { EAST_STAGES } from './stages/east';
-import type { CastMember, Stage, VehicleMark } from './stages/kit';
+import type { CastMember, SetProp, Stage, VehicleMark } from './stages/kit';
 import { TURFTON_STAGES } from './stages/turfton';
 import { TURFTON_B_STAGES } from './stages/turftonB';
 import { TURFTON_C_STAGES } from './stages/turftonC';
@@ -354,13 +354,19 @@ export function stageSetBoxes(): Box[] {
   const out: Box[] = [];
   for (const s of STAGES) {
     for (const p of s.set) {
-      if (!p.solid) continue;
-      const [hw, hd, h] = p.solid;
-      const c = Math.abs(Math.cos(p.yaw)), sn = Math.abs(Math.sin(p.yaw));
-      const ex = hw * c + hd * sn, ez = hw * sn + hd * c;
-      const [x, z] = p.at;
-      out.push({ minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, h: heightAt(x, z) + h });
+      const b = setPropBox(p);
+      if (b) out.push(b);
     }
   }
   return out;
+}
+
+/** One set prop's collider as a world box (null when it is not solid). */
+export function setPropBox(p: SetProp): Box | null {
+  if (!p.solid) return null;
+  const [hw, hd, h] = p.solid;
+  const c = Math.abs(Math.cos(p.yaw)), sn = Math.abs(Math.sin(p.yaw));
+  const ex = hw * c + hd * sn, ez = hw * sn + hd * c;
+  const [x, z] = p.at;
+  return { minX: x - ex, maxX: x + ex, minZ: z - ez, maxZ: z + ez, h: heightAt(x, z) + h };
 }

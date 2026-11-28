@@ -6,6 +6,7 @@ import type { Loadout } from '@lawn/glaze';
 import type { AnimId } from '../anim/types';
 import type { CutsceneRoom } from '../quests/types';
 import type { Sfx, VehicleKind } from '../types';
+import type { WeatherKind } from '../weather/types';
 
 export type Vec2 = [number, number];
 export type Vec3 = [number, number, number];
@@ -275,7 +276,10 @@ export const INTRO_SECONDS = 3.2;
 export type PacingCode =
   | 'line-long' | 'line-outruns-shot' | 'shot-short' | 'shot-long' | 'dead-shot' | 'dead-air' | 'speaker-unseen'
   | 'speaker-small' | 'speaker-back' | 'crosses-line' | 'lines-per-shot' | 'speaker-run' | 'narration' | 'no-hook'
-  | 'opens-on-narration' | 'scene-long' | 'repeat-line';
+  | 'opens-on-narration' | 'scene-long' | 'repeat-line'
+  /** GR6 key-frame checks (pacing.ts keyFrameFaults): a close line or an intro card shows the back of the head or the hat
+   * from above, or someone stands between the camera and the speaker. */
+  | 'face-hidden' | 'speaker-blocked';
 
 /** A deliberate break of a pacing rule, with the reason (direction/bible.md, Waivers). */
 export interface PacingWaiver {
@@ -297,6 +301,25 @@ export interface SceneDirection {
   /** The scene's director notes (path from the repo root), once it has been re-directed. */
   notes?: string;
   waive?: PacingWaiver[];
+}
+
+/** A warm practical light in a scene (SceneScript.keyLights, GR6). */
+export interface SceneKeyLight {
+  /** A prop, actor or vehicle id (followed as it moves), or a fixed point (world, or room-local on a room stage). */
+  at: Target;
+  /** Metres above the target point. Default 0.6 for an id (a lantern's flame over the prop's centre), 0 for a point. */
+  lift?: number;
+  /** Default 0xffb066 (lamplight). Firelight: 0xff8a3a. */
+  color?: number;
+  /** Default 7 (a lantern lighting the faces 2-3 m round it). */
+  intensity?: number;
+  /** Metres it reaches. Default 9. */
+  range?: number;
+  /** Scene seconds it comes on and goes off (eased over 0.8 s). Default: the whole scene. */
+  from?: number;
+  until?: number;
+  /** A fire's flicker. */
+  flicker?: boolean;
 }
 
 export interface SceneScript {
@@ -321,6 +344,23 @@ export interface SceneScript {
   skippable?: boolean;
   /** World stage only: hold the sky at this time of day while the scene plays; the old sky comes back afterwards. */
   sky?: 'noon' | 'golden' | 'night';
+  /**
+   * World stages only (GR6): the weather while the scene plays; the world's own weather comes back afterwards. Default:
+   * 'rain' when the ambience bed is 'rain' or 'storm', 'snow' when it is 'snow', else 'clear'. 'world' keeps whatever the
+   * schedule has (a scene that does not mind the rain).
+   */
+  weather?: WeatherKind | 'world';
+  /**
+   * GR6: warm practical lights for night and dusk scenes (a lantern, a campfire, a lamp post), added while the scene
+   * plays. Each sits on a prop or actor id (followed) or a fixed point.
+   */
+  keyLights?: SceneKeyLight[];
+  /**
+   * GR6: a soft warm fill beside the camera that lights the faces in close shots (cu / mcu). Default: on for world scenes
+   * played at night or at golden hour (`sky`, or the world's own night), off by day and in rooms. A number sets the
+   * intensity (default 3.2); false turns it off.
+   */
+  faceFill?: boolean | number;
   /**
    * World stages only. 'live' (the default on a world stage): ambient traffic, pedestrians, critters, boats and world
    * sounds keep running around the scene, while the player stays safe (no Hat Watch, no damage, no quest updates) and

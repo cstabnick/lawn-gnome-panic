@@ -10,10 +10,14 @@ import type { Blip } from '../types';
 import { heightAt } from '../terrain';
 import { registerCull } from '../cull';
 import { createAmbientGnomes, type AmbientGnomeDef } from '../ambientGnomes';
-import { playAt } from '../sound/bus';
 import { CAST } from '../cutscene/cast';
 import { COAST } from './config';
+import { currentInterior } from '../interiors';
 import { coastSign } from './sign';
+import { QUEEN_CABIN_INTERIOR } from './pirateShip';
+import { STALL_KEEPERS } from './stalls';
+import { PROMENADE_FOLK } from './promenade';
+import { BEACH_FOLK } from './beachScenes';
 import type { CoastPart } from './types';
 
 export type CoastDistrict = 'boardwalk' | 'pier' | 'beach' | 'ship';
@@ -24,6 +28,8 @@ export interface VignetteProp {
   z: number;
   yaw?: number;
   scale?: number;
+  /** Extra height above the surface (a prop piled on another), metres. */
+  y?: number;
 }
 
 export interface VignetteDecal {
@@ -61,10 +67,10 @@ export const COAST_VIGNETTES: readonly CoastVignette[] = [
     district: 'boardwalk',
     id: 'candyfloss-dropped',
     props: [
-      { prefab: 'beach-ball', x: -120, z: 1122 },
-      { prefab: 'bird-gull', x: -117.5, z: 1120.5, yaw: 0.5 },
-      { prefab: 'bird-gull', x: -123, z: 1124, yaw: -1 },
-      { prefab: 'site-cone', x: -126, z: 1119 },
+      { prefab: 'dropped-candyfloss', x: -120, z: 1118, yaw: 0.4 },
+      { prefab: 'bird-gull', x: -120.6, z: 1118.7, yaw: 3.6 },
+      { prefab: 'bird-gull', x: -118.4, z: 1117.2, yaw: 2.2 },
+      { prefab: 'bird-gull', x: -121.8, z: 1117, yaw: 0.9 },
     ],
   },
   {
@@ -84,10 +90,12 @@ export const COAST_VIGNETTES: readonly CoastVignette[] = [
     district: 'boardwalk',
     id: 'lost-property',
     props: [
-      { prefab: 'straw-boater', x: 176, z: 1120 },
-      { prefab: 'pointy-hat', x: 178, z: 1120.6, yaw: 0.8 },
-      { prefab: 'fc-sun-hat', x: 177, z: 1122.6 },
-      { prefab: 'umbrella-hat', x: 180.4, z: 1122.2, yaw: -0.4 },
+      // Piled against the office counter's front, under the LOST PROPERTY plate (x ~150, z 1106.65).
+      { prefab: 'straw-boater', x: 149.2, z: 1107.5, yaw: 0.3 },
+      { prefab: 'pointy-hat', x: 150.8, z: 1107.6, yaw: 0.8 },
+      { prefab: 'fc-sun-hat', x: 150, z: 1107.3, yaw: 2.1, y: 0.1 },
+      { prefab: 'umbrella-hat', x: 149.8, z: 1107.8, yaw: -0.4, y: 0.2 },
+      { prefab: 'saltbucket-boater', x: 150.2, z: 1107.5, yaw: 1.2, y: 0.3 },
     ],
   },
 
@@ -105,8 +113,7 @@ export const COAST_VIGNETTES: readonly CoastVignette[] = [
     district: 'pier',
     id: 'boots-by-the-bowl',
     props: [
-      { prefab: 'court-boots', x: 306.5, z: 1240 },
-      { prefab: 'court-boots', x: 308.5, z: 1240 },
+      { prefab: 'wellies', x: 306.5, z: 1240, yaw: 0.3 },
     ],
   },
   {
@@ -167,33 +174,44 @@ export const COAST_VIGNETTES: readonly CoastVignette[] = [
     props: [
       { prefab: 'cargo-crate', x: 310, z: 1264 },
       { prefab: 'cargo-crate', x: 312.4, z: 1264.3 },
-      { prefab: 'mower-scrap-panel', x: 309.8, z: 1263.4, yaw: 0.4 },
+      { prefab: 'souvenir-rack', x: 308, z: 1263.6, yaw: 0.3 },
+      { prefab: 'rubber-seagull', x: 310, z: 1264, yaw: 0.5, y: 0.6 },
+      { prefab: 'saltbucket-boater', x: 312.4, z: 1264.3, yaw: 0.9, y: 0.6 },
     ],
   },
   {
     district: 'ship',
     id: 'tour-rope-and-a-hat',
     props: [
-      { prefab: 'site-barrier', x: 318, z: 1263 },
-      { prefab: 'fc-sun-hat', x: 317, z: 1264.4 },
+      { prefab: 'rope-stanchion', x: 316.8, z: 1263 },
+      { prefab: 'rope-stanchion', x: 319.2, z: 1263 },
+      { prefab: 'fc-sun-hat', x: 317.9, z: 1264.4 },
     ],
   },
 ];
 
 /** The residents (AmbientGnomeDef, made by createAmbientGnomes). Deck residents use `surface: 'rooftop'` so they stand ON
  *  the planks (boardwalk, pier, the Queen's deck). Marram, Driftwood and Bilge wear their cast looks (R-239). Lore voices: saltbucket-boardwalk, the-last-tube, the-bathtub-queen. */
+/** Captain Bilge: head of the pier beside her chalk tour board, facing up the beach. Hidden while the player is in her cabin. */
+export const BILGE: AmbientGnomeDef = {
+  id: 'coast-captain-bilge', name: 'Captain Samphire Bilge', idle: 'look-around',
+  x: 300, z: 1168, yaw: Math.PI, surface: 'rooftop',
+  look: CAST.samphire.look,
+  bubble: 'Tours at noon. Ask me about midnight and I will ask you about noon.',
+};
+
 export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
   {
     id: 'coast-marram-spokewheel', name: 'Marram Teaspoon', idle: 'point',
     x: -256, z: 1110, yaw: Math.PI,
     look: CAST.marram.look,
-    bubble: 'Hat on, hands in, wait for the bell.',
+    bubble: 'Six stalls, six prices, one change-counter. I count it twice.',
   },
   {
     id: 'coast-driftwood-tube', name: 'Driftwood', idle: 'wrench-fix',
     x: 146, z: 1152, yaw: 0.2,
     look: CAST.driftwood.look,
-    bubble: 'The sharks are lawn sharks. Smaller. Meaner. Mostly grass.',
+    bubble: 'I tow. You hold on.',
   },
   {
     id: 'coast-lifeguard-chair', name: 'Lookout Lenny', idle: 'guard-stand',
@@ -205,7 +223,7 @@ export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
     id: 'coast-sal-candyfloss', name: 'Spun Sugar Sal', idle: 'vendor-call',
     x: -152, z: 1112, yaw: 0, surface: 'rooftop',
     look: { hat: 0xff3b9a, shirt: 0xf4f4f8, beard: null, hair: { color: 0x6b3a1e, style: 'pigtails' }, dress: true },
-    bubble: 'Candyfloss is a vegetable. Sal says so. Do not argue with the cart.',
+    bubble: 'Pink, or the other pink. There is no third pink.',
   },
   {
     id: 'coast-sunbather-ned', name: 'Burnt Ned', idle: 'lean-back',
@@ -217,19 +235,13 @@ export const COAST_RESIDENTS: readonly AmbientGnomeDef[] = [
     id: 'coast-sunbather-bev', name: 'Bev Nell', idle: 'lean-back',
     x: -66, z: 1177.5, yaw: Math.PI,
     look: { hat: 0xf08bb4, shirt: 0x7cf0ff, beard: null, dress: true },
-    bubble: 'Four hours on the deck chair. The sea has not moved. Neither have I.',
+    bubble: 'Driftwood has a hut now. We do not mention the sharks.',
   },
   {
     id: 'coast-angler-spur', name: 'Reel Ruth', idle: 'fish',
     x: 297.4, z: 1176, yaw: -Math.PI / 2, surface: 'rooftop',
     look: { hat: 0xc9892b, shirt: 0x24324f, beard: 0xbbbbbb, glasses: true },
     bubble: 'Nothing bites the pier. Something bit the pier once. Long story.',
-  },
-  {
-    id: 'coast-captain-bilge', name: 'Captain Samphire Bilge', idle: 'look-around',
-    x: 262, z: 1160, yaw: -Math.PI / 2,
-    look: CAST.samphire.look,
-    bubble: 'Mind the cannons. They are for show. Mostly.',
   },
   {
     id: 'coast-queen-deckhand', name: 'Mopsy Brine', idle: 'sweep',
@@ -276,7 +288,7 @@ function shadowed<T extends THREE.Object3D>(g: T): T {
 function propAt(scene: THREE.Scene, p: VignetteProp, y: number): void {
   if (!getPrefab(p.prefab)) return;
   const obj = buildPrefab(p.prefab, { lights: false });
-  obj.position.set(p.x, y, p.z);
+  obj.position.set(p.x, y + (p.y ?? 0), p.z);
   obj.rotation.y = p.yaw ?? 0;
   obj.scale.setScalar(p.scale ?? 1);
   scene.add(shadowed(obj));
@@ -301,7 +313,6 @@ const BLIPS: Blip[] = [
 ];
 
 /** Sound timers: surf and the buoy bell now and then, gulls less often; only within this range of the player. */
-const SOUND_RANGE = 120;
 
 export function installCoastLife(deps: JobsDeps): CoastPart {
   for (const v of COAST_VIGNETTES) {
@@ -316,40 +327,18 @@ export function installCoastLife(deps: JobsDeps): CoastPart {
     }
   }
 
-  const residents = createAmbientGnomes(deps.scene, COAST_RESIDENTS);
-
-  let surfT = 6 + Math.random() * 6;
-  let bellT = 10 + Math.random() * 10;
-  let gullT = 20 + Math.random() * 15;
-
-  const inRange = (x: number, z: number, px: number, pz: number): boolean => Math.hypot(x - px, z - pz) <= SOUND_RANGE;
+  const residents = createAmbientGnomes(deps.scene, [...COAST_RESIDENTS, ...STALL_KEEPERS, ...PROMENADE_FOLK, ...BEACH_FOLK]);
+  // Bilge lives in her own layer so she can vanish while the player is inside her cabin.
+  const bilgeLayer = new THREE.Scene();
+  deps.scene.add(bilgeLayer);
+  const bilge = createAmbientGnomes(bilgeLayer, [BILGE]);
 
   return {
     update(dt: number): void {
       const p = deps.player;
       residents.update(dt, p.x, p.z);
-
-      surfT -= dt;
-      if (surfT <= 0) {
-        surfT = 8 + Math.random() * 12;
-        const spots = COAST.soundSpots.surf;
-        const near = spots[Math.floor(Math.random() * spots.length)];
-        if (inRange(near[0], near[1], p.x, p.z)) playAt('surf-wash', { x: near[0], z: near[1] }, { bus: 'ambience' });
-      }
-      bellT -= dt;
-      if (bellT <= 0) {
-        bellT = 8 + Math.random() * 12;
-        const spots = COAST.soundSpots.buoyBell;
-        const at = spots[Math.floor(Math.random() * spots.length)];
-        if (inRange(at[0], at[1], p.x, p.z)) playAt('buoy-bell', { x: at[0], z: at[1] }, { bus: 'ambience' });
-      }
-      gullT -= dt;
-      if (gullT <= 0) {
-        gullT = 20 + Math.random() * 15;
-        const spots = COAST.soundSpots.surf;
-        const at = spots[Math.floor(Math.random() * spots.length)];
-        if (inRange(at[0], at[1], p.x, p.z)) playAt('gull', { x: at[0], z: at[1] }, { bus: 'ambience' });
-      }
+      bilgeLayer.visible = currentInterior() !== QUEEN_CABIN_INTERIOR;
+      bilge.update(dt, p.x, p.z);
     },
     blips: () => BLIPS,
   };

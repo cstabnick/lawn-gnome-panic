@@ -1,14 +1,18 @@
 // The Spokewheel (E11 issue 2B): a standing wheel that turns on the shared wave clock, and a one-turn ride.
 import * as THREE from 'three';
-import { buildPrefab } from '@lawn/prefabs';
+import { buildPrefab, getPrefab } from '@lawn/prefabs';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { registerCull } from '../cull';
 import { addInteractSpot } from '../interactables';
 import type { JobsDeps } from '../jobs/types';
+import { parseSavesJson } from '../quests/questSave';
+import { playAt } from '../sound/bus';
 import { heightAt } from '../terrain';
-import type { Vehicle } from '../types';
+import type { Box, Vehicle } from '../types';
 import { createVehicle, removeVehicle, syncVehicleMesh } from '../vehicles';
 import { waveTime } from '../waves';
 import { COAST, COAST_ACH } from './config';
+import { nightGlowMat, onCoastNight } from './nightLights';
 import { coastSign } from './sign';
 import type { CoastPart } from './types';
 
@@ -34,6 +38,60 @@ let rides = 0;
 /** Rides completed (a full turn, back at the bottom) this session. */
 export function spokewheelRides(): number {
   return rides;
+}
+
+const QUEST_SAVE_KEY = 'gta-quests-v1';
+/** Marram's quest is done (the wheel is free). Reads the quest save, same pattern as societies/achievements.ts. */
+function questDone(id: string): boolean {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(QUEST_SAVE_KEY) : null;
+    return parseSavesJson(raw)[id]?.state === 'done';
+  } catch {
+    return false;
+  }
+}
+
+/** Where the stand prefab's four feet stand, in prefab-local metres at scale 1 (A-frame legs). */
+const FOOT_X = 0.85, FOOT_Z = 0.4;
+const LEG_SIZE = 1.6, LEG_H = 8;
+const BELL_SIZE = 0.8, BELL_H = 1.6;
+/** Where a rider is set down after a full turn (on the platform, clear of every collider below). */
+export function spokewheelSetDown(): { x: number; z: number; yaw: number } {
+  const w = COAST.spokewheel;
+  const x = w.board.x + 1.5, z = w.board.z + 2;
+  return { x, z, yaw: Math.atan2(-195 - x, 1115 - z) };
+}
+
+/** The colliders this module adds: four stand feet and the bell post. */
+export function spokewheelLegBoxes(): Box[] {
+  const w = COAST.spokewheel;
+  const S = w.radius / 1.25;
+  const out: Box[] = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const cx = w.x + sx * FOOT_X * S, cz = w.z + sz * FOOT_Z * S;
+    out.push({ minX: cx - LEG_SIZE / 2, maxX: cx + LEG_SIZE / 2, minZ: cz - LEG_SIZE / 2, maxZ: cz + LEG_SIZE / 2, h: LEG_H });
+  }
+  out.push({
+    minX: w.bell.x - BELL_SIZE / 2, maxX: w.bell.x + BELL_SIZE / 2,
+    minZ: w.bell.z - BELL_SIZE / 2, maxZ: w.bell.z + BELL_SIZE / 2, h: BELL_H,
+  });
+  return out;
+}
+
+// The bell: a tiny timer queue, stepped by update().
+const bellQueue: number[] = [];
+/** Ring the platform bell `times` times, about 0.6 s apart. */
+export function ringSpokewheelBell(times = 1): void {
+  for (let i = 0; i < times; i++) bellQueue.push(i * 0.6);
+}
+function stepBell(dt: number): void {
+  for (let i = bellQueue.length - 1; i >= 0; i--) {
+    bellQueue[i] -= dt;
+    if (bellQueue[i] <= 0) {
+      bellQueue.splice(i, 1);
+      playAt('buoy-bell', COAST.spokewheel.bell, { gain: 0.9 });
+    }
+  }
 }
 
 interface Ride { v: Vehicle; k: number; turned: number; lastA: number; half: boolean }
@@ -63,12 +121,56 @@ export function installSpokewheel(deps: JobsDeps): CoastPart {
     root.add(g);
   }
 
-  const big = coastSign('THE SPOKEWHEEL\nHat on, hands in,\nwait for the bell', { w: 4, h: 1.6, post: 2 });
-  big.position.set(w.board.x - 5, heightAt(w.board.x - 5, w.board.z + 2), w.board.z + 2);
-  root.add(big);
-  const small = coastSign(`${w.fare} ACORNS\nCOME DOWN WHERE YOU WENT UP`, { w: 2.6, h: 1, post: 1 });
-  small.position.set(w.board.x + 4, heightAt(w.board.x + 4, w.board.z + 2), w.board.z + 2);
-  root.add(small);
+  const at = (obj: THREE.Object3D, x: number, z: number, yaw = 0): void => {
+    obj.position.set(x, heightAt(x, z), z);
+    obj.rotation.y = yaw;
+    root.add(obj);
+  };
+  at(coastSign('THE SPOKEWHEEL\nHat on, hands in,\nwait for the bell', { w: 4, h: 1.6, post: 2 }), w.board.x - 5, w.board.z + 2);
+  at(coastSign(`${w.fare} ACORNS\nChildren free. Gulls not.`, { w: 2.6, h: 1, post: 1 }), w.board.x + 4, w.board.z + 2);
+  at(coastSign("MARRAM'S WHEEL\nMARRAM'S RULES", { w: 2.2, h: 0.9, post: 1 }), w.board.x - 3, w.board.z - 1.8);
+  at(coastSign('THE TOP IS FOR LOOKING.\nTHE BOTTOM IS FOR PAYING.', { w: 2.8, h: 1, post: 0.8 }), w.board.x + 5.5, w.board.z - 2.6);
+  at(coastSign('DO NOT RISE\nFROM YOUR TEACUP', { w: 2.2, h: 0.9, post: 0.8 }), w.board.x + 9, w.board.z - 2.6);
+
+  // Platform dressing: a rope queue from the east towards the boarding spot (2.4 m clear lane), the bell, Marram's stool, the fare tin.
+  const prop = (id: string, x: number, z: number, scale: number, yaw = 0): void => {
+    if (!getPrefab(id)) return;
+    at(buildPrefab(id, { lights: false, scale }), x, z, yaw);
+  };
+  for (const px of [3, 5, 7]) for (const sz of [-1.2, 1.2]) prop('rope-stanchion', w.board.x + px, w.board.z + sz, 2);
+  prop('spokewheel-bell', w.bell.x, w.bell.z, 2.2, w.bell.yaw);
+  prop('stool', w.bell.x - 1.4, w.bell.z - 0.4, 1.4, 0.5);
+  prop('fare-tin', w.board.x - 1.8, w.board.z + 0.4, 2.4, 0.4);
+
+  // Lit at night: bulbs round the rim and along the spokes, turning with the wheel, two alternating chase sets.
+  const bulbGeo = (pts: [number, number][]): THREE.BufferGeometry => {
+    const gs = pts.map(([x, y]) => new THREE.SphereGeometry(0.34, 6, 4).translate(x, y, 0.05));
+    const m = mergeGeometries(gs, false);
+    for (const g of gs) g.dispose();
+    return m;
+  };
+  const setA: [number, number][] = [], setB: [number, number][] = [];
+  for (let i = 0; i < 48; i++) {
+    const a = (i / 48) * TAU;
+    (i % 2 ? setB : setA).push([Math.sin(a) * w.radius, Math.cos(a) * w.radius]);
+  }
+  for (let sp = 0; sp < 12; sp++) {
+    const a = (sp / 12) * TAU;
+    for (let j = 0; j < 4; j++) {
+      const r = 3.5 + j * 3.6;
+      ((sp + j) % 2 ? setB : setA).push([Math.sin(a) * r, Math.cos(a) * r]);
+    }
+  }
+  const matA = nightGlowMat(0xfff1c4, 3.2), matB = nightGlowMat(0xff7fb0, 3.2, 0xf6dce6);
+  pivot.add(new THREE.Mesh(bulbGeo(setA), matA), new THREE.Mesh(bulbGeo(setB), matB));
+  let clock = 0;
+  onCoastNight((night, dt) => {
+    clock += dt;
+    matA.emissiveIntensity = 3.2 * night * (0.55 + 0.45 * Math.sin(clock * 3));
+    matB.emissiveIntensity = 3.2 * night * (0.55 - 0.45 * Math.sin(clock * 3));
+  });
+
+  deps.world.boxes.push(...spokewheelLegBoxes());
 
   deps.scene.add(root);
   registerCull(root, 'landmark');
@@ -103,7 +205,9 @@ export function installSpokewheel(deps: JobsDeps): CoastPart {
     const why = deps.blocked();
     if (why) { deps.hud.toast(why); return true; }
     if (deps.player.vehicle || ride) { deps.hud.toast('Get out first.'); return true; }
-    if (!deps.economy.spend(w.fare, 'Spokewheel')) { deps.hud.toast('Not enough acorns.'); return true; }
+    const free = questDone('coast-spokewheel-gondola');
+    if (!free && !deps.economy.spend(w.fare, 'Spokewheel')) { deps.hud.toast('Not enough acorns.'); return true; }
+    ringSpokewheelBell();
     const a = spokewheelAngle(waveTime());
     let k = 0, best = Infinity;
     for (let i = 0; i < w.gondolas; i++) {
@@ -116,20 +220,23 @@ export function installSpokewheel(deps: JobsDeps): CoastPart {
     deps.vehicles.push(v);
     gondolas[k].visible = false;
     deps.seatPlayer(v);
-    deps.hud.toast('Hat on, hands in.');
+    deps.hud.toast(free ? 'Marram waves you through. Within reason.' : 'Hat on, hands in.');
     ride = { v, k, turned: 0, lastA: a, half: false };
     return true;
   }
 
-  addInteractSpot({
+  const spot = {
     x: w.board.x,
     z: w.board.z,
     prompt: `Ride the Spokewheel (${w.fare} 🌰)`,
     run: start,
-  });
+  };
+  addInteractSpot(spot);
 
   return {
-    update(): void {
+    update(dt = 1 / 60): void {
+      stepBell(dt);
+      if (!spot.prompt.includes('free') && questDone('coast-spokewheel-gondola')) spot.prompt = 'Ride the Spokewheel (free)';
       if (ride && deps.player.vehicle !== ride.v) endRide();
       if (!root.visible && !ride) return;
       place(spokewheelAngle(waveTime()));
@@ -161,7 +268,13 @@ export function installSpokewheel(deps: JobsDeps): CoastPart {
         rides++;
         deps.unlock(COAST_ACH.fullCircle);
         window.dispatchEvent(new CustomEvent('gta:spokewheel-ride'));
-        deps.throwPlayer(v, 0, 2, 3);
+        const hp = deps.player.health;
+        const sd = spokewheelSetDown();
+        deps.throwPlayer(v, 0, 0, 0);
+        deps.player.respawn(sd.x, sd.z, sd.yaw);
+        deps.player.health = hp;
+        deps.hud.toast('The bell. You may get out now.');
+        ringSpokewheelBell();
         endRide();
       }
     },

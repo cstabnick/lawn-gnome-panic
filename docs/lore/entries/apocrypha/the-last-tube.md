@@ -24,12 +24,13 @@ The hut stands on the sand at (150, 1150), with the tube rack at (150, 1172). Tu
 
 ## In the games
 
-The hut is the rental point for the tube run and the water-skiing slalom (E11, row 43 `m43-saltbucket-boardwalk` and the side quest `coast-boardwalk-tubing`). The tow boat is the free ride for gnomes without a boat.
+The hut stands at (150, 1150) with its door to the sea; the price board, the refunds note and the ski rack (at (150, 1172)) face the sea too, where customers come back from the water, and the tow boat waits at the launch (150, 1224) (R-247). Driftwood's side quest is "The Buoy Run" (`coast-boardwalk-tubing`, R-246). The hut is the rental point for the tube run and the water-skiing slalom (E11, row 43 `m43-saltbucket-boardwalk` and the side quest `coast-boardwalk-tubing`). The tow boat is the free ride for gnomes without a boat.
 
 ## Everyday
 
 - Price board: tube 8 Acorns; skis 11; "wake ramp: yours to find". Under it: "Refunds: stories only."
-- Notices: "NO TUBES IN THE BOWL"; "IF YOU LOSE YOUR HAT, I'LL LOOK FIRST"; the rack's tags are written on bits of driftwood, with an owner and a date.
+- Price board: its back reads "Driftwood tows. Driftwood is not sorry."
+- Notices: "NO TUBES IN THE BOWL" (back: "The bowl is east. We checked."); "IF YOU LOSE YOUR HAT, I'LL LOOK FIRST"; the rack's tags are written on bits of driftwood, with an owner and a date.
 - House rule: "I tow. You hold on."
 - Habit: Driftwood raises one hand to every boat that goes past. They are rarely his.
 - Saying: "The last tube out" for a late decision that works.

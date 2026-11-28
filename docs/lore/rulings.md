@@ -1381,3 +1381,58 @@ Mabel sends newcomers to them.
 **Ruling:** (1) The lockup's door is a beige door in the tunnel's west wall at about (111, -98), "HOA HOLDING (WAIT HERE)" over it and a loudspeaker over that; it is there from the start. (2) In #62 Cam is held in the **holding yard**: a chain-link pen with a bunk on the pavement in front of that door (the cells behind it are never seen), put up for the night and gone when the row is done. (3) #21's viewing is held on the **roof garden** of the Double Pot slab: a beige table, beige chairs and beige planters beside the helipad, reached by the sales-floor lift; the key choice is made back down in the tunnel. (4) The Reeve's hay barn stands at about (709, 22), north of the east highway, its doors facing the road; its yard with the hay (706, 47) is across the road.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
 **Why:** R1 editorial review FX05 (D3, D5, GR3): story dressing may not stand on a road, so these positions change and the lore follows (GR1).
+
+## R-241
+
+**Question:** The boardwalk deck was 46 m deep and its stalls stood at z 1100 (G3#6). What are its size and the stalls' places now?
+**Ruling:** Saltbucket Boardwalk is a deck 410 x 30 m: x -200 to 210, z 1102 to 1132 (it was 420 x 46 m; the west end is trimmed from -210 to -200 where the ground rises above the planks). The freed strips north and south are sand again. The six stalls stand along the north edge at z 1105.5 (x -150, -95, -40, 40, 95, 150) with their fronts to the promenade; a south row of rides and kiosks (helter-skelter, Punch booth, mini carousel, ice-cream kiosk, shell grotto) faces them across a walkway kept open the whole length. The entrance is at (0, 1100) and the stairs to the sand are still at x -120, 0 and 120.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14, G3#6) narrowed and re-laid the deck; `coast/config.ts` (`COAST.boardwalk`) and `coast/promenade.ts` are the fixed point (GR1).
+
+## R-242
+**Question:** The town is "built round a giant sunk bucket" but players never saw one (G3#5). Where is it, and what stands in the dune?
+**Ruling:** The bucket's rim is about 40 m across, centred at (0, 1028), and breaks the sand in two arcs either side of the coast spur; its handle arches about 14 m over the spur as the town's gateway, so the road into Saltbucket runs under the bucket's handle. The Tall One's spade is stuck blade-down in a dune at (-60, 1045), leaning a little. They are scenery, not a place: nobody has ever been inside.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14, G3#5) built them (`COAST.bucket`, `COAST.spade`, `coast/dunes.ts`); signature images change the game, but their numbers are lore facts now (GR1).
+
+## R-243
+**Question:** Where are the dunes, and how far does the sand reach?
+**Ruling:** The dune band lies between the bucket and the boardwalk at z about 1026 to 1062, with clumps of marram grass (denser on the crests and the landward side) and a weathered picket fence along its southern foot at z about 1071 to 1074, in runs with gaps. The coast spur's sand path keeps a gap of 9 m either side of x = 0. Sand, not grass, reaches z 1000 within about 460 m of the spur, so the dunes are the edge of the lawn and not a stripe on it.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (D14) moved the band north so the boardwalk's flat site does not flatten it; `COAST.dunes` and `coast/dunes.ts` are the fixed point (GR1).
+
+## R-244
+**Question:** Who keeps the stalls (G3#7, G3#15)?
+**Ruling:** Five new people, one to a stall besides Sal, each standing behind the counter at z 1109.5: **Gil Brinewater** (Plank & Pickle, x -97; "The fork is the expensive part"), **Tam Tinsley** (Tin Shy, x -45; sulks when somebody wins, "I am in a very good mood"), **Dot Scoopwell** (Scoop & Spade, x 38; "whichever is left"), **Madame Limpet** (The Lucky Limpet, x 93; the strip always says "Something will turn up") and **Penny Stubbs** (Marram's Office, x 148; counts the change, has read every stub twice). Spun Sugar Sal keeps her own stall at x -152. The stallholders' noon swap is kept.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#7, G3#15) put a keeper in each stall (`coast/stalls.ts` `STALL_KEEPERS`); the people are new, so the lore records them (GR1).
+
+## R-245
+**Question:** Where is Captain Bilge when she is not in her cabin, and where is the treasure chest (G3#4, G3#14)?
+**Ruling:** Captain Samphire Bilge stands at the head of Long Spoon Pier at (300, 1168), facing up the beach, beside a chalk A-board of tour times ("PIRATE TOURS / Noon. Also noon. / Midnight is cargo. Not a tour."); she is hidden while the player is inside her cabin. The chest of the queen's treasure sits at the foot of her bed.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#4, G3#14): `BILGE` in `coast/life.ts`, the board in `coast/pier.ts`, `COAST.ship.treasureLocal` (GR1).
+
+## R-246
+**Question:** What is the boardwalk tubing side quest called (G3#16)?
+**Ruling:** `coast-boardwalk-tubing` is titled **"The Buoy Run"**: Driftwood has set a new slalom of buoy gates out past the boardwalk, and when it is done his rack is the player's "at a friend's price". Its giver is Driftwood.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#16) titled the quest in `quests/coastQuests.ts`; the lore follows (GR1).
+
+## R-247
+**Question:** Which way does the Last Tube face, and what changed at the Spokewheel (G3#19, G3#17, G3#15)?
+**Ruling:** Driftwood's hut at (150, 1150) has its door to the sea, where customers come back from the water; the price board (tubes 8, skis 11, "Wake ramp: yours to find"; on its back "Driftwood tows. Driftwood is not sorry."), the refunds note and the rack face the sea too, and "NO TUBES IN THE BOWL" stands at the water's edge (back: "The bowl is east. We checked."). The Spokewheel has a brass bell on its boarding platform at (-253.5, 1110), rung at boarding and at the end of a turn, with Marram beside it; after "The Wobbly Gondola" the wheel is free ("Marram waves you through. Within reason.").
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#19, G3#17, G3#15): `tubing/view.ts` `buildLastTube`, `COAST.spokewheel.bell`, `coast/spokewheel.ts` (GR1).
+
+## R-248
+**Question:** Where does the Saltcut meet the sea, and which stop of Pirate Tours is on the pier bowl (G3#26, G3#31)?
+**Ruling:** The Saltcut bends on its way down from the Puddle Sea (out east to about x 752, then back west) and meets the Saltwater at about (728, 1200); a daymark, a painted post, stands on its east bank at (743, 1186), by the tour's stop three at (746, 1186). The four stops of "Pirate Tours, Mostly" are: the Queen's anchor on the beach (360, 1175); the head of the pier handle (300, 1165); the mouth of the Saltcut; and the pier bowl (300, 1250), where the Hat Watch patrol noses about the gangplank. The report-back is in Bilge's cabin.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#26, G3#31): `data/levels/south-shore.level.json` (path `saltcut`), `coast/beachScenes.ts` (`DAYMARK`), `quests/coastQuests.ts` (GR1).
+
+## R-249
+**Question:** Who else lives on the promenade and the sand, and what is on the horizon (G3#13, G3#15)?
+**Ruling:** New named gnomes. On the promenade (standing on the planks, facing what they watch): **Winkle and Agatha Dunmore** at the coin telescope (about (-55, 1129)), **Hob Pennywhistle** and **Little Pip** at the carousel (about (29, 1121); Hob is "the one holding the coat"), **Old Fenn** and **Mabel Crumb** at the Punch booth (about (-90, 1121)), and **Tuppence**, third in a queue of one (90, 1121). Tuppence is not Tuppence Pomfret, and Winkle Dunmore is not Winkle Pennant (R-235: same-name gnomes are separate). On the beach: **Hessian Nap**, who hires out deckchairs at Dunelow (-594, 1164.5), **Old Skerrick**, who pushes the winch that hauls a rowing boat up the sand (-936, 1159.5), and **Winkle Pennant**, who has named all the crabs at the rock pool (-852, 1165). The two kilometres of strand also hold small scenes (a picnic behind windbreaks, a wreck rib, groynes at x 385 to 590, an upturned boat, nets drying east of the Saltcut, sandcastle works, a sign "BEACH CLOSED (By the HOA. The sea disagrees.)" at (957, 1158), the treasure X at (-520, 1170) with its hole and a boot). One fishing smack works slowly back and forth along the horizon line at about z 1560 and is never reached.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** FX11 (G3#13, G3#15) added these people and scenes (`coast/promenade.ts` `PROMENADE_FOLK`, `coast/beachScenes.ts` `BEACH_FOLK`, `boatTraffic.ts`); the lore records them (GR1).

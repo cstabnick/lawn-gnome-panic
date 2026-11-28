@@ -459,7 +459,7 @@ export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
   'tow-ski': {
     kind: 'tow-ski', mountStyle: 'hop', name: 'Water-Skis', prefab: 'water-skis', scale: 1,
     maxSpeed: 1.5, accel: 0.8, turnRate: 1.6, radius: 0.8, seat: [0, 0.05, 0], flies: false, mass: 0.4,
-    boat: true, draft: 0.05,
+    boat: true, draft: 0.05, stand: true,
   },
   // E11 the Spokewheel (coast/spokewheel.ts): a teacup gondola the coast runtime moves round the wheel; never driven.
   'spoke-gondola': {

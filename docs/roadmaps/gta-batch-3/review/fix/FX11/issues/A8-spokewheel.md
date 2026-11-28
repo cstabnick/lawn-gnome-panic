@@ -1,0 +1,35 @@
+Epic: FX11 A (coast fixes, parallel) · Issue A8: the Spokewheel: a bell, a gentle set-down, leg colliders, a dressed platform, lit at night, free after Marram's quest (G3#17, G3#12 wheel, G3#15 free ride, G3#23 wheel notices)
+Depends on: none · Agent: Sonnet · Dev port 5528
+
+(The Environment section the lead gave you applies.)
+
+## Goal
+Editor (G3#17): "The signs, Marram, the lore and the stage ('a brass bell on the boarding platform') all say 'wait for the bell', but there is no bell prop and no bell sound. At the end of a full turn the rider is thrown out (`throwPlayer(v, 0, 2, 3)`) instead of stepping off at the platform. The stand legs still have no colliders, so cars drive through them. The boarding platform is a bare frame." G3#12: "The Spokewheel ... unlit" at night. G3#15: Marram's quest outro promises "Ride free, any time" but `start()` always charges.
+
+## Read first
+- `games/gnome-theft-auto/src/coast/spokewheel.ts` (all of it, 169 lines) and `spokewheel.test.ts`.
+- `games/gnome-theft-auto/src/coast/config.ts` `COAST.spokewheel` (hub at (-260, ground + 21, 1100), radius 18, 12 gondolas, `board` (-260, 1106), `bell` (-253.5, 1110), fare 3).
+- `packages/prefabs/src/catalog/gta-coast.ts` `spokewheel-wheel` (rim radius 1.25 around hub (0, 1.34, 0), 12 spokes) and `spokewheel-stand` (A-frame legs: four boxes, each foot at about local (+-0.85, 0, +-0.4); a platform at +z) - the game scales both by `S = radius / 1.25` (14.4).
+- `games/gnome-theft-auto/src/coast/nightLights.ts` (new this epic: `nightGlowMat(color, peak?, day?)` for bulbs that are pale by day and glow at night, `onCoastNight(fn(night, dt))` called every frame with the eased night factor 0..1; coast/index.ts steps it).
+- `games/gnome-theft-auto/src/coast/sign.ts` (`coastSign(text, { w, h, post, back? })`).
+- `games/gnome-theft-auto/src/sound/bus.ts` (`playAt(id, { x, z }, { gain?, maxDist?, param? })`) and `src/sound/ids.ts` (ids: `buoy-bell`, `shop-bell`, `bell-toll`, ...).
+- `games/gnome-theft-auto/src/societies/achievements.ts` lines 1-20 (`questDone(id)` reads the quest save from localStorage key `'gta-quests-v1'` with `parseSavesJson` from `../quests/questSave`).
+- `games/gnome-theft-auto/src/types.ts` `Player` (has `respawn(x, z, yaw)`, which also sets `health = 1`, and `health`).
+
+## Change: `src/coast/spokewheel.ts` (and `spokewheel.test.ts`)
+1. The bell: place prefab `spokewheel-bell` (being added this epic: a brass bell on a little gallows, about 1.2 tall at scale 1, front +z; guard with `getPrefab`) at `COAST.spokewheel.bell` on the ground (`heightAt`), scale 2.2, yaw from the spot. Ring it (`playAt('buoy-bell', bell, { gain: 0.9 })`, or `shop-bell` if it sounds better) when a ride starts and once more when it ends; export a small `ringSpokewheelBell(times = 1)` that rings it `times` times about 0.6 s apart (the m43 scene may call it with 3 later), using a tiny timer queue stepped in `update`.
+2. Gentle set-down (no ragdoll): at the end of a full turn replace `deps.throwPlayer(v, 0, 2, 3)` with: `const hp = deps.player.health; deps.throwPlayer(v, 0, 0, 0); deps.player.respawn(board.x + 1.5, board.z + 2, yawToBoardwalk); deps.player.health = hp;` where yawToBoardwalk faces the boardwalk entrance (yaw = `Math.atan2(dx, dz)` from the set-down point to (-195, 1115)). Keep the achievement unlock, the `gta:spokewheel-ride` event and `endRide()`. Toast `'The bell. You may get out now.'`.
+3. Leg colliders: push four boxes into `deps.world.boxes` at install, one round each stand foot (compute the foot positions from the stand prefab's legs at scale S; each box about 1.6 x 1.6 m, from the ground up to about 8 m) so cars and the player bump into the legs, not through them. Also one for the bell post. Make sure none covers the boarding spot `board` or the set-down point.
+4. Platform dressing (prefabs, guard each with `getPrefab`): a `rope-stanchion` queue (2-3 pairs, scale 2, leading from the boardwalk side to the boarding spot, being added this epic: two brass posts 0.5 apart along x with a red rope), Marram's stool (use an existing stool or chair prefab: search `packages/prefabs/src/catalog` for `stool`), and a `fare-tin` (scale 2.4, being added: a tin money box on a post) by the boarding spot. Keep a clear 2 m path to `board`.
+5. Notices (the lore's, all via `coastSign`): change the fare sign to `"3 ACORNS\nChildren free. Gulls not."` (use `w.fare` in the text); add `"MARRAM'S WHEEL\nMARRAM'S RULES"` on the stand by the platform, `"THE TOP IS FOR LOOKING.\nTHE BOTTOM IS FOR PAYING."` and `"DO NOT RISE\nFROM YOUR TEACUP"` near the queue. Keep the big "THE SPOKEWHEEL / Hat on, hands in, / wait for the bell" sign. Free-standing signs print both faces (coastSign's default once its worker lands it); you may give a back face a second joke with `back: '...'`.
+6. Lit at night: bulbs on the rim and along each spoke, attached to the turning `pivot` group (so they turn with the wheel): small spheres (radius about 0.18 m in the world, about 48 on the rim and 4 per spoke), merged into 2 meshes (two alternating sets) with two `nightGlowMat` materials (warm white `0xfff1c4` and a pink `0xff7fb0`, or gold), and a gentle chase: in an `onCoastNight` hook, at night set set A's `emissiveIntensity` to `peak * night * (0.55 + 0.45 * Math.sin(t * 3))` and set B's with the opposite phase. A ring of bulbs on each gondola's hoop is not needed. Keep it cheap: merged geometry, no real lights.
+7. Free after Marram's quest: in `start()`, if `questDone('coast-spokewheel-gondola')` (same pattern as societies/achievements.ts), do not charge; toast `'Marram waves you through. Within reason.'`. Keep the interact spot object and set its `prompt` in `update()` to `'Ride the Spokewheel (free)'` once the quest is done (ExtraSpot.prompt is a plain field).
+8. Tests (`spokewheel.test.ts`): add a test that the four leg colliders do not cover the boarding spot and that the set-down point is outside every collider you add (export the pure helpers you need, e.g. `spokewheelLegBoxes(groundY)`).
+
+## Done when
+- `cd games/gnome-theft-auto && npx vitest run src/coast/spokewheel.test.ts` passes; `npx tsc --noEmit -p games/gnome-theft-auto` clean in your file.
+- Shots (dev server port 5528): `wheel:-230,1060,-0.6 wheelS:-262,1140,3.14159 plat:-250,1118,-2.6` by day and `wheelN:-230,1060,-0.6` with `?time=night`, plus `wheelP:-230,1060,-0.6 --size 390x844`. Compare with the editors' `a05-wheel.png` and `b05-wheelS.png`. The bell must be visible on the platform; at night the wheel must read as a lit fairground wheel. Iterate.
+- To try a ride quickly, `?debug` exposes `__gta` in the console; otherwise walk up and press E. Check you land on your feet on the platform (a ride takes 96 s; you may temporarily lower `periodS` while testing, but restore it).
+
+## Out of scope
+`src/coast/config.ts` (read only), the prefab catalog (other workers add the bell, stanchions and fare tin), `src/coast/ambience.ts` (the wheel's creak is another worker's), other coast files.

@@ -20,24 +20,35 @@ export const COAST = {
   /** North shore of the open sea (the water starts about here at x -1000..1000). */
   shoreZ: 1190,
 
-  /** Saltbucket Boardwalk: the plank promenade (site `boardwalk`, flat). Deck top = ground + deckLift. */
+  /** Saltbucket Boardwalk: the plank promenade (site `boardwalk`, flat). Deck top = ground + deckLift. FX11 (D14): narrowed
+   *  from 46 m to 30 m deep; the freed strips north and south are sand again. */
   boardwalk: {
-    rect: { minX: -210, maxX: 210, minZ: 1092, maxZ: 1138 } as Rect,
-    /** Where the coast spur arrives (0, 1060) and the boardwalk steps begin. */
-    entrance: { x: 0, z: 1090, yaw: Math.PI } as Spot,
+    // minX -200 (was -210): the ground rises above the planks west of x -204, so the deck starts where it stays below.
+    rect: { minX: -200, maxX: 210, minZ: 1102, maxZ: 1132 } as Rect,
+    /** Where the coast spur's sand path (from the road's end at (0, 1060), through the dunes) reaches the deck. */
+    entrance: { x: 0, z: 1100, yaw: Math.PI } as Spot,
     deckLift: 0.22,
     /** Six stalls along the north edge, fronts facing south (+z) onto the promenade. Lore: saltbucket-boardwalk.md. */
     stalls: [
-      { id: 'spun-sugar-sal', name: "Spun Sugar Sal's", x: -150, z: 1100, yaw: 0 },
-      { id: 'plank-and-pickle', name: 'Plank & Pickle', x: -95, z: 1100, yaw: 0 },
-      { id: 'tin-shy', name: 'Tin Shy', x: -40, z: 1100, yaw: 0 },
-      { id: 'scoop-and-spade', name: 'Scoop & Spade', x: 40, z: 1100, yaw: 0 },
-      { id: 'lucky-limpet', name: 'The Lucky Limpet', x: 95, z: 1100, yaw: 0 },
-      { id: 'boardwalk-office', name: "Marram's Office", x: 150, z: 1100, yaw: 0 },
+      { id: 'spun-sugar-sal', name: "Spun Sugar Sal's", x: -150, z: 1105.5, yaw: 0 },
+      { id: 'plank-and-pickle', name: 'Plank & Pickle', x: -95, z: 1105.5, yaw: 0 },
+      { id: 'tin-shy', name: 'Tin Shy', x: -40, z: 1105.5, yaw: 0 },
+      { id: 'scoop-and-spade', name: 'Scoop & Spade', x: 40, z: 1105.5, yaw: 0 },
+      { id: 'lucky-limpet', name: 'The Lucky Limpet', x: 95, z: 1105.5, yaw: 0 },
+      { id: 'boardwalk-office', name: "Marram's Office", x: 150, z: 1105.5, yaw: 0 },
     ] as const,
     /** Lamp posts every lampStep m along both long edges. */
     lampStep: 30,
   },
+
+  /** D14: the giant sunk Tall-One bucket the town is built round. Its rim breaks the sand round the coast spur (centre
+   *  x, z, radius r); its handle arches east-west over the spur road as the town's gateway (apex handleH above ground). */
+  bucket: { x: 0, z: 1028, r: 20, handleH: 14 },
+  /** The Tall One's spade, stuck blade-down in a dune west of the bucket (yaw turns the handle's lean). */
+  spade: { x: -60, z: 1045, yaw: 0.5 },
+  /** D14: the dune band between the bucket and the boardwalk (terrain stamps in south-shore.level.json), with marram grass
+   *  and a weathered picket fence. The coast spur's sand path keeps a gap of +-gapHalf m round x = 0. */
+  dunes: { minZ: 1026, maxZ: 1062, minX: -1000, maxX: 1000, gapHalf: 9 },
 
   /** Long Spoon Pier: a giant spoon laid out to sea from the boardwalk's east end. Deck is a walkable rooftop
    *  (interiors/rooftops.ts addRooftop, solid: false) at a constant height. */
@@ -63,6 +74,8 @@ export const COAST = {
     periodS: 96,
     /** Boarding platform in front of the lowest gondola (E prompt "Ride the Spokewheel"). */
     board: { x: -260, z: 1106, yaw: Math.PI } as Spot,
+    /** The brass bell on the boarding platform (rung at boarding and at the end of a turn), where Marram stands by it. */
+    bell: { x: -253.5, z: 1110, yaw: Math.PI } as Spot,
     fare: 3,
   },
 
@@ -76,8 +89,8 @@ export const COAST = {
     gangplank: { minX: 297, maxX: 303, minZ: 1253, maxZ: 1261 } as Rect,
     /** Captain Samphire Bilge's cabin door on the aft deck (E05 interior 'bathtub-queen-cabin'). */
     cabinDoor: { x: 288, z: 1268, yaw: Math.PI / 2 } as Spot,
-    /** Where the treasure chest of the treasure quest sits (cabin, local coordinates of the interior). */
-    treasureLocal: [3, -2] as [number, number],
+    /** Where the treasure chest of the treasure quest sits (cabin, local coordinates of the interior): at the foot of the bed. */
+    treasureLocal: [-3.8, 2.8] as [number, number],
     cannons: [
       { x: 290, z: 1275.2, yaw: 0 }, { x: 304, z: 1275.2, yaw: 0 }, { x: 318, z: 1275.2, yaw: 0 },
     ] as Spot[],
@@ -130,10 +143,6 @@ export const COAST_QUESTS = [
   'coast-queens-treasure',
 ] as const;
 export type CoastQuestId = (typeof COAST_QUESTS)[number];
-
-/** The `coast` unlock: the story quest after which Saltbucket's side quests are offered (quests/unlocks.ts rows).
- *  Placeholder on today's story; E20/E21 move it to spine rows #45/#46 (side-quest-schedule.md). */
-export const COAST_UNLOCK_AFTER = 'ch4-runway-flares';
 
 /** Achievement ids (packages/achievements catalog, game 'gnome-theft-auto'). */
 export const COAST_ACH = {

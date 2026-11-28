@@ -24,7 +24,7 @@ The tide did the digging over a very long time, and Driftwood was there for the 
 
 ## In the games
 
-The Saltcut is the water between the Puddle Sea and the south shore band (E11). Boats pass through it; the road bridge at (728, 1000) carries traffic over it.
+The Saltcut is the water between the Puddle Sea and the south shore band (E11). It bends on its way down (out east to about x 752, then back west) and meets the Saltwater at about (728, 1200); a daymark stands on its east bank at (743, 1186), by the tour's stop three (R-248). Boats pass through it; the road bridge at (728, 1000) carries traffic over it.
 
 ## Loose threads
 

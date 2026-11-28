@@ -9,7 +9,7 @@ import type { Box } from '../types';
 import { buildBoardwalk } from './boardwalk';
 import { COAST } from './config';
 import { buildPirateShip } from './pirateShip';
-import { COAST_RESIDENTS, COAST_VIGNETTES, type CoastDistrict } from './life';
+import { BILGE, COAST_RESIDENTS, COAST_VIGNETTES, type CoastDistrict } from './life';
 
 const DISTRICTS: CoastDistrict[] = ['boardwalk', 'pier', 'beach', 'ship'];
 
@@ -66,6 +66,13 @@ describe('deck residents stand on their decks', () => {
     expect(ambientFeetY(r)).toBe(COAST.pier.deckY);
     expect(r.x).toBeGreaterThan(COAST.pier.handle.minX + 0.45);
     expect(r.x).toBeLessThan(COAST.pier.handle.maxX - 0.45);
+  });
+
+  it('puts Captain Bilge on the pier handle by her board, inside the rails', () => {
+    expect(ambientFeetY(BILGE)).toBe(COAST.pier.deckY);
+    expect(BILGE.x).toBeGreaterThan(COAST.pier.handle.minX + 0.45);
+    expect(BILGE.x).toBeLessThan(COAST.pier.handle.maxX - 0.45);
+    expect(COAST_RESIDENTS.some((r) => r.id === BILGE.id)).toBe(false);
   });
 
   it("puts the Queen's crew on her deck", () => {

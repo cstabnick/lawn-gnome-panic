@@ -26,7 +26,7 @@ The wheel turns on its own hub and is pushed round by a gnome in a treadmill und
 
 Ridden in row 43 `m43-saltbucket-boardwalk` as the new kind `ride-passenger` (E11) to spot HOA barges at sea. Built by E01 and the south-shore area epic: planned (batch 3).
 
-It stands at (-260, 1100), its hub 21 m up and its rim 18 m in radius, boarded from a platform at (-260, 1106). Rideable as a passenger in E11: one turn every 96 seconds, 12 teacup gondolas, fare 3 acorns. Side quest `coast-spokewheel-gondola`.
+It stands at (-260, 1100), its hub 21 m up and its rim 18 m in radius, boarded from a platform at (-260, 1106). Rideable as a passenger in E11: one turn every 96 seconds, 12 teacup gondolas, fare 3 acorns. Side quest `coast-spokewheel-gondola` ("The Wobbly Gondola"). A brass bell stands on the boarding platform at (-253.5, 1110), rung at boarding and at the end of a turn, with Marram beside it; once the quest is done the wheel is free to ride ("Ride the Spokewheel (free)": "Marram waves you through. Within reason.") (R-247).
 
 ## Everyday
 

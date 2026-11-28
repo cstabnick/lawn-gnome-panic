@@ -10,6 +10,8 @@ import { CAST } from '../cutscene/cast';
 import { addRooftop, rooftopById } from '../interiors/rooftops';
 import { defineInterior, interiorById } from '../interiors/registry';
 import { COAST } from './config';
+import { parseSavesJson } from '../quests/questSave';
+import { lightPool, nightGlowMat } from './nightLights';
 import { coastSign } from './sign';
 import type { CoastPart } from './types';
 
@@ -133,10 +135,90 @@ export function buildPirateShip(scene: THREE.Scene, boxes: Box[]): void {
   deckSign.position.set(g.maxX + 3, DECK_Y, d.minZ + 2.2);
   deckSign.rotation.y = Math.PI;
   scene.add(deckSign);
+
+  addNightLights(scene, hullX);
+}
+
+/**
+ * The Queen after dusk (FX11, G3#12): glowing stern windows and lanterns, a masthead and a bow lantern, a string of rail
+ * bulbs and warm pools on the deck. Emissive materials only; nightLights switches them on and off. Positions follow the
+ * hull prefab's contract (stern windows at local x -0.25/0/0.25, y 0.55, z -1.47; lanterns at +-0.4, 0.82, -1.42).
+ */
+function addNightLights(scene: THREE.Scene, hullX: number): void {
+  const d = SHIP.deck;
+  const g = SHIP.gangplank;
+  const glow = nightGlowMat(0xffc46b, 3.2);
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 1 });
+  const hullY = DECK_Y - 0.4 * S;
+  const ball = new THREE.SphereGeometry(1, 10, 8);
+  const lantern = (x: number, y: number, z: number, r: number): void => {
+    const m = new THREE.Mesh(ball, glow);
+    m.scale.setScalar(r);
+    m.position.set(x, y, z);
+    scene.add(m);
+  };
+
+  // Stern windows: a thin pane just outside each one, on the stern face (world -x).
+  const sternX = hullX - 1.47 * S - 0.04;
+  const pane = new THREE.BoxGeometry(0.05, 1.7, 2.0);
+  for (const lx of [-0.25, 0, 0.25]) {
+    const m = new THREE.Mesh(pane, glow);
+    m.position.set(sternX, hullY + 0.55 * S, SHIP.z - lx * S);
+    scene.add(m);
+  }
+  // Stern lanterns, the masthead and the bow lantern.
+  for (const lx of [-0.4, 0.4]) lantern(hullX - 1.42 * S, hullY + 0.84 * S, SHIP.z - lx * S, 0.75);
+  lantern(hullX + 0.2 * S + 0.9, DECK_Y + 28.4, SHIP.z, 0.7);
+  const bowX = d.maxX - 1.6;
+  mesh(scene, new THREE.CylinderGeometry(0.06, 0.06, 2.2, 6), darkMat, bowX, DECK_Y + 1.1, SHIP.z);
+  lantern(bowX, DECK_Y + 2.4, SHIP.z, 0.6);
+
+  // Bulbs on a thin line along the north and south rails (a gap at the gangplank).
+  const bulbs: THREE.Vector3[] = [];
+  const bulbY = DECK_Y + 1.5;
+  for (const [bz, gap] of [[d.minZ + 0.6, true], [d.maxZ - 0.6, false]] as const) {
+    const runs: [number, number][] = gap ? [[d.minX + 1, g.minX - 0.3], [g.maxX + 0.3, d.maxX - 1]] : [[d.minX + 1, d.maxX - 1]];
+    for (const [a, b] of runs) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(b - a, 0.03, 0.03), darkMat);
+      line.position.set((a + b) / 2, bulbY, bz);
+      scene.add(line);
+      for (let x = a; x <= b + 0.01; x += 3) bulbs.push(new THREE.Vector3(x, bulbY - 0.12, bz));
+    }
+  }
+  // Dressing lights: a sagging string of bulbs from the bow up over both mastheads and down to the stern, the classic
+  // night picture of a moored ship (seen from the whole beach).
+  const dress: [number, number][] = [
+    [bowX, DECK_Y + 2.4], [hullX + 0.9 * S, DECK_Y + 19], [hullX + 0.2 * S + 0.9, DECK_Y + 27.5], [hullX - 1.42 * S, hullY + 0.84 * S],
+  ];
+  for (let k = 0; k + 1 < dress.length; k++) {
+    const [ax, ay] = dress[k], [bx, by] = dress[k + 1];
+    const len = Math.hypot(bx - ax, by - ay), n = Math.max(2, Math.round(len / 1.6));
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      bulbs.push(new THREE.Vector3(ax + (bx - ax) * t, ay + (by - ay) * t - Math.sin(Math.PI * t) * len * 0.06, SHIP.z));
+    }
+  }
+  const bulbMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.26, 8, 6), glow, bulbs.length);
+  const mat4 = new THREE.Matrix4();
+  bulbs.forEach((p, i) => bulbMesh.setMatrixAt(i, mat4.makeTranslation(p.x, p.y, p.z)));
+  scene.add(bulbMesh);
+
+  // Warm pools on the deck: aft under the stern lanterns, amidships, forward by the bow lantern.
+  for (const px of [d.minX + 7, SHIP.x, bowX - 3]) scene.add(lightPool(px, DECK_Y, SHIP.z, 5.5, 0xffd08a, 0.75));
 }
 
 /** Set at install: leaving the cabin stands this player back on the deck. */
 let cabinPlayer: { y: number } | null = null;
+
+/** The treasure quest's save entry, or undefined (no save, no storage, bad JSON). */
+function treasureQuest(): { state: string; step: number } | undefined {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('gta-quests-v1') : null;
+    return parseSavesJson(raw)['coast-queens-treasure'];
+  } catch {
+    return undefined;
+  }
+}
 
 /** Defined at import time (E05 rule), so quests that give from the cabin find it before the coast installs. */
 function defineCabin(): void {
@@ -150,7 +232,7 @@ function defineCabin(): void {
     exit: { x: door.x + 2, z: door.z, yaw: door.yaw ?? 0 },
     size: { w: 14, d: 10, h: 4 },
     theme: { floor: 0x6b4a2f, wall: 0x8a5a38, trim: 0xc9a227, ceiling: 0x5a3a24, light: 0xffc98a },
-    ambience: 'silent',
+    ambience: 'coast', // the sea, heard through the walls
     // Leaving puts the player on the deck, not on the sea bed below it.
     onLeave: () => { if (cabinPlayer) cabinPlayer.y = DECK_Y; },
     build(kit) {
@@ -179,14 +261,16 @@ function defineCabin(): void {
       });
       kit.spot({
         id: 'queen-treasure',
-        x: tx,
-        z: tz + 1.2,
+        // On the floor side of the chest (towards the room's middle), clear of the bed.
+        x: tx + 1.1,
+        z: tz,
         prompt: 'Open the sea chest',
         run: () => {
           window.dispatchEvent(new CustomEvent('gta:queen-chest'));
-          window.dispatchEvent(new CustomEvent('gta:interior-say', {
-            detail: { name: 'Captain Samphire Bilge', line: 'Not that one. That one is for the tourists.' },
-          }));
+          const q = treasureQuest();
+          if (q?.state === 'active' && q.step === 1) return; // the quest's own "You found it." follows
+          const line = q?.state === 'done' ? 'Empty. I spent it on rope. Good rope, mind.' : 'Not that one. That one is for the tourists.';
+          window.dispatchEvent(new CustomEvent('gta:interior-say', { detail: { name: 'Captain Samphire Bilge', line } }));
         },
       });
     },

@@ -1153,7 +1153,7 @@ function evalRegionPaint(reg: i32, x: f64, z: f64, slope: f64, height: f64, rDis
     if (slope > 0.3) return 3; // gravel
     return 12; // meadow
   }
-  if (reg == 8) return z > 1130.0 ? 7 : 8; // south-shore: sand beach, grass inland
+  if (reg == 8) return z > 1130.0 || (Math.abs(x) <= 460.0 && z > 1000.0) ? 7 : 8; // south-shore: sand beach and town sand, grass inland
   if (reg == 9) {
     // east-campus: the Anthill (anthill, kind 13): gravel forecourt within 32 m of its point, dirt to its r, else grass (E13)
     for (let k = 0; k < fCount; k++) {

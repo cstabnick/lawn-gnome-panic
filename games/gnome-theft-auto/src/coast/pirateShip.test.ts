@@ -32,6 +32,14 @@ describe('the Bathtub Queen', () => {
     }
   });
 
+  it('keeps the sea chest in the cabin, at the foot of the bed', () => {
+    const [tx, tz] = COAST.ship.treasureLocal;
+    expect(Math.abs(tx)).toBeLessThan(6.5);
+    expect(Math.abs(tz)).toBeLessThan(4.5);
+    // The bed sits at (-5.6, 2.8), turned so its foot (1 m from the middle) points to the room's centre.
+    expect(Math.hypot(tx - -4.6, tz - 2.8)).toBeLessThan(2.5);
+  });
+
   it('floats in water', () => {
     expect(waterDepthAt(COAST.ship.x, COAST.ship.z)).toBeGreaterThan(1);
   });

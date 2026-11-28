@@ -9,7 +9,7 @@ status: draft
 games: [gnome-theft-auto]
 aliases: [the six stalls, Marram's Row]
 sources: [games/gnome-theft-auto/src/coast/config.ts, games/gnome-theft-auto/src/coast/boardwalk.ts, docs/lore/rulings.md#r-158]
-related: [saltbucket-boardwalk, marram-teaspoon, spun-sugar-sal, the-spokewheel, the-last-tube]
+related: [gil-brinewater, tam-tinsley, dot-scoopwell, madame-limpet, penny-stubbs, saltbucket-boardwalk, marram-teaspoon, spun-sugar-sal, the-spokewheel, the-last-tube]
 ---
 
 The six stalls along the north edge of Saltbucket Boardwalk, west to east: Spun Sugar Sal's, Plank & Pickle, Tin Shy, Scoop & Spade, The Lucky Limpet and Marram's Office. Each has a house rule, a short menu and a regular who has never been seen to buy anything.
@@ -33,7 +33,16 @@ The six stalls along the north edge of Saltbucket Boardwalk, west to east: Spun 
 
 ## In the games
 
-Positions and names are in `coast/config.ts` (`COAST.boardwalk.stalls`); the name boards are drawn by `coast/boardwalk.ts`. The stalls are scenery with a name board each; the signs and lost-property pile come from `coast/life.ts`.
+Positions and names are in `coast/config.ts` (`COAST.boardwalk.stalls`): the stalls stand along the north edge of the deck at z 1105.5 (R-241), fronts to the promenade; `coast/stalls.ts` draws them, with a name board, counter dressing, a lore sign beside each, Tin Shy's tin pyramid and Sal's candyfloss cart. Each stall has a keeper standing behind the counter at z 1109.5 (R-244):
+
+- Spun Sugar Sal at x -152: [spun-sugar-sal](spun-sugar-sal.md).
+- [gil-brinewater](gil-brinewater.md), Plank & Pickle: "Two acorns a cup. Three with a fork. The fork is the expensive part."
+- [tam-tinsley](tam-tinsley.md), Tin Shy: "Nobody has won today. I am in a very good mood."
+- [dot-scoopwell](dot-scoopwell.md), Scoop & Spade: "Vanilla, sand-coloured, or whichever is left. It is usually whichever."
+- [madame-limpet](madame-limpet.md), The Lucky Limpet: "Something will turn up. That will be one acorn."
+- [penny-stubbs](penny-stubbs.md), Marram's Office: "Every fare since the bucket sank. I have read them all twice."
+
+The signs: "Ask about the brine. Do not ask what is in the brine."; "NO DIPPING HATS"; "3 CHIPPED ACORNS: 1 ACORN / Prizes: a seagull, a hat (nearly), nothing"; "Vanilla. Sand-coloured. Whichever is left."; "FORTUNES 1 ACORN / Something will turn up."; and on the office counter front, "LOST PROPERTY / Hats, mostly".
 
 ## Loose threads
 

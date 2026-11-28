@@ -26,6 +26,10 @@ export interface BriefingShowOptions {
   mode?: 'briefing' | 'call';
   /** Card heading, e.g. the quest title. */
   title?: string;
+  /** GR5 (FX21): the reward chip's text (quests/story/rewards.ts rewardChip(q).text), shown on a 'briefing' card. */
+  reward?: string;
+  /** D7 (FX21): a short frame shown before the title in the card's tag, e.g. 'Before the Even Cut'. */
+  kicker?: string;
   /** Called once when the last line is done or the panel is skipped / hidden. */
   onDone?: () => void;
 }
@@ -79,6 +83,10 @@ const STYLE = `
 #gta-briefing .gb-next{border:2px solid #ffd23f;background:rgba(255,210,63,.18);color:#ffd23f;}
 #gta-briefing .gb-skip{border:2px solid rgba(255,255,255,.65);background:rgba(0,0,0,.55);color:#fff;}
 #gta-briefing .gb-icon{display:none;}
+#gta-briefing .gb-chip{flex:none;align-self:flex-start;max-width:42%;padding:4px 10px;border-radius:999px;background:rgba(255,210,63,.16);
+  border:1px solid rgba(255,210,63,.6);color:#ffe9a8;font-size:13px;font-weight:700;line-height:1.3;text-align:right;overflow:hidden;
+  text-overflow:ellipsis;display:none;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+#gta-briefing .gb-chip.gb-chip-on{display:-webkit-box;}
 /* Phone portrait: a compact strip under the minimap, scrollable text, icon buttons. */
 @media (max-width:700px) and (orientation:portrait){
   #gta-briefing .gb-card{top:calc(env(safe-area-inset-top,0px) + max(18px,4vw) + var(--gta-map,128px) + 60px);bottom:auto;
@@ -89,6 +97,10 @@ const STYLE = `
   #gta-briefing .gb-portrait{width:36px;height:36px;}
   #gta-briefing .gb-who{display:flex;align-items:baseline;gap:6px;}
   #gta-briefing .gb-tag{font-size:10px;flex:0 1 auto;min-width:0;}
+  /* The chip takes its own row under the name, so the speaker's name is never cut short. */
+  #gta-briefing .gb-head{flex-wrap:wrap;row-gap:4px;}
+  #gta-briefing .gb-who{flex:1 1 calc(100% - 50px);}
+  #gta-briefing .gb-chip{font-size:11px;padding:2px 8px;margin-left:50px;max-width:calc(100% - 50px);-webkit-line-clamp:1;text-align:left;}
   #gta-briefing .gb-name{margin-top:0;font-size:14px;min-width:0;flex:0 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
   #gta-briefing .gb-text{flex:1 1 auto;min-height:4.2em;font-size:13px;margin-bottom:8px;overflow-y:auto;touch-action:pan-y;}
   #gta-briefing .gb-actions{flex:none;}
@@ -105,6 +117,7 @@ const STYLE = `
   #gta-briefing .gb-head{margin-bottom:4px;}
   #gta-briefing .gb-text{flex:1 1 auto;min-height:2.9em;font-size:13px;margin-bottom:6px;overflow-y:auto;touch-action:pan-y;}
   #gta-briefing .gb-name{font-size:14px;}
+  #gta-briefing .gb-chip{font-size:11px;padding:2px 8px;max-width:44%;-webkit-line-clamp:2;border-radius:10px;}
   #gta-briefing .gb-actions{flex:none;}
   #gta-briefing .gb-icon{display:inline;}
   #gta-briefing .gb-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
@@ -148,7 +161,10 @@ export function createBriefing(ui: HTMLElement): Briefing {
   const nameEl = document.createElement('div');
   nameEl.className = 'gb-name';
   who.append(tagEl, nameEl);
-  head.append(ring, who);
+  // The reward chip: shown on a 'briefing' card only (toggled with a class, not an inline display).
+  const chipEl = document.createElement('div');
+  chipEl.className = 'gb-chip';
+  head.append(ring, who, chipEl);
 
   // Typed part and the untyped rest; the rest is hidden, not removed, so the card keeps its size while typing.
   const textEl = document.createElement('div');
@@ -191,6 +207,8 @@ export function createBriefing(ui: HTMLElement): Briefing {
   let active = false;
   let mode: 'briefing' | 'call' = 'call';
   let title = '';
+  let kicker = '';
+  let reward = '';
   let lines: readonly BriefingLine[] = [];
   let index = 0;
   let onDone: (() => void) | undefined;
@@ -251,7 +269,20 @@ export function createBriefing(ui: HTMLElement): Briefing {
     }
   };
 
-  const tagFor = (): string => (mode === 'briefing' ? `Briefing${title ? ` · ${title}` : ''}` : '📞 Call');
+  const tagFor = (): string =>
+    mode === 'briefing' ? `${kicker ? `${kicker} · ` : ''}Briefing${title ? ` · ${title}` : ''}` : '📞 Call';
+
+  const paintChip = (): void => {
+    const on = mode === 'briefing' && reward.length > 0;
+    chipEl.classList.toggle('gb-chip-on', on);
+    if (on) {
+      chipEl.textContent = reward;
+      chipEl.setAttribute('aria-label', `Reward: ${reward}`);
+    } else {
+      chipEl.textContent = '';
+      chipEl.removeAttribute('aria-label');
+    }
+  };
 
   const startLine = (i: number): void => {
     index = i;
@@ -342,10 +373,13 @@ export function createBriefing(ui: HTMLElement): Briefing {
       }
       mode = opts?.mode ?? 'call';
       title = opts?.title ?? '';
+      kicker = opts?.kicker ?? '';
+      reward = opts?.reward ?? '';
       lines = newLines;
       onDone = opts?.onDone;
       active = true;
       el.style.display = 'block';
+      paintChip();
       startLine(0);
     },
     hide() {

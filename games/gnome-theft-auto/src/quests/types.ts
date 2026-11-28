@@ -334,6 +334,11 @@ export interface QuestDef {
   chapter?: number;
   /** Acorn reward on completion (defaults to 250). */
   rewardAcorns?: number;
+  /**
+   * GR4 (FX21): the story so far, one line in the narrator's voice (the spine's journal line), shown on the journal's
+   * Active card; never spoken. Story rows get theirs from quests/story/previously.ts (PREVIOUSLY) when this is absent.
+   */
+  previously?: string;
   /** Turfton FM bulletin id triggered on completion (defaults to quest id). */
   radioBulletin?: string;
   /** Plays when the quest is taken. */

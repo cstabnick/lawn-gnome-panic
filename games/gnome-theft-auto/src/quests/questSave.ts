@@ -1,6 +1,7 @@
 // The quest save text (localStorage SAVE_KEY 'gta-quests-v1': { [questId]: QuestSave }) and how two copies merge.
 // Pure and import-light, so cloudSave.ts can merge quests before the game (and quests.ts with it) loads.
 import type { QuestSave } from './types';
+import { STORY_ROWS } from './storyRows';
 
 export function parseSavesJson(raw: string | null): Record<string, QuestSave> {
   if (!raw) return {};
@@ -72,4 +73,67 @@ export function migrateFinaleSave(saves: Record<string, QuestSave>): boolean {
   for (const id of FINALE_PARTS) saves[id] = done();
   saves['ch5-even-cut'] = { state: 'active', step: Math.min(step - 2, 2), cracked: [...(fin.cracked ?? [])] };
   return true;
+}
+
+// ---- D7 (FX21): veteran saves and act IV, the catch-up chain queue ---------------------------------------------------
+// Rows with a new id (`mNN-...`) were inserted into the story after old saves existed; a save that already finished the
+// kept row after one (its "old-chain successor") meets it as a catch-up quest. Catch-ups come one at a time, in story
+// order (the chain queue), and act IV catch-ups played after the finale are framed "Before the Even Cut".
+
+/** Spine row -> the row's own quest id (the final part, which keeps the row id). */
+const ROW_IDS: ReadonlyMap<number, string> = new Map(
+  Object.entries(STORY_ROWS).filter(([id]) => !/-p\d+$/.test(id)).map(([id, row]) => [row, id]),
+);
+const FINALE = 'ch5-even-cut';
+const doneIn = (saves: Record<string, QuestSave>, id: string | undefined): boolean => !!id && saves[id]?.state === 'done';
+
+/** A row whose id was there before batch 3 (old saves may have it done); rows `mNN-...` were inserted later. */
+function isKeptRow(row: number): boolean {
+  const id = ROW_IDS.get(row);
+  return !!id && !/^m\d\d-/.test(id);
+}
+
+/** The first kept row after `row` (the row's successor in the old chain), or undefined. */
+function oldSuccessor(row: number): string | undefined {
+  for (let r = row + 1; r <= 70; r++) if (isKeptRow(r)) return ROW_IDS.get(r);
+  return undefined;
+}
+
+/** True when quest `id` (a row id or one of its parts) is an inserted row whose old-chain successor is already done. */
+export function isCatchUp(id: string, saves: Record<string, QuestSave>): boolean {
+  const row = STORY_ROWS[id];
+  if (row === undefined || isKeptRow(row)) return false;
+  return doneIn(saves, oldSuccessor(row));
+}
+
+/**
+ * D7 chain queue: a catch-up row waits while an earlier catch-up row is still unfinished, so a save that skipped
+ * several inserted rows gets them one at a time, in story order (m54, then m56, then m58, ...). Normal play is never
+ * held (it has no catch-ups).
+ */
+export function catchUpHeld(id: string, saves: Record<string, QuestSave>): boolean {
+  if (!isCatchUp(id, saves)) return false;
+  const row = STORY_ROWS[id];
+  for (let r = 1; r < row; r++) {
+    const rid = ROW_IDS.get(r);
+    if (rid && !isKeptRow(r) && !doneIn(saves, rid) && isCatchUp(rid, saves)) return true;
+  }
+  return false;
+}
+
+/**
+ * D7: an act IV row (54-69) met by a save whose finale is already done: not yet played, or played after the finale.
+ * Such a row files under "Before the Even Cut" in the journal, its `previously` line reads "Before the Even Cut: ...",
+ * and while W17 is on its world change and its Turfton FM bulletin are skipped. A row finished before the finale is not.
+ */
+export function isBeforeTheEvenCut(id: string, saves: Record<string, QuestSave>): boolean {
+  const row = STORY_ROWS[id];
+  if (row === undefined || row < 54 || row > 69) return false;
+  const fin = saves[FINALE];
+  if (fin?.state !== 'done') return false;
+  const s = saves[id];
+  if (s?.state !== 'done') return true;
+  if (s.doneAt !== undefined && fin.doneAt !== undefined) return s.doneAt > fin.doneAt;
+  // No stamps to compare: an inserted row cannot have been finished before an old finale; a kept row was.
+  return !isKeptRow(row);
 }

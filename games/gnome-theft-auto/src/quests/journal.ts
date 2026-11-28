@@ -8,7 +8,10 @@ import { registerAction } from '../ui/actions';
 import { fillHint } from '../ui/glyphs';
 import type { Hud } from '../types';
 import { isPaced, sidePacing } from './pacing';
+import { isBeforeTheEvenCut } from './questSave';
 import { isQuestAvailable, type Quests } from './quests';
+import { previouslyLine } from './story/previously';
+import { rewardChip } from './story/rewards';
 import { storyItems } from './storyMarks';
 import type { QuestDef } from './types';
 import { MAIN_COLOR, sideColor, unlockRule } from './unlocks';
@@ -31,6 +34,12 @@ const CSS = `
 #gta-journal .j-item{padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:left;color:#fff;font-family:inherit;}
 #gta-journal button.j-item{cursor:pointer;min-height:44px;}
 #gta-journal .j-item-title{font-size:14px;font-weight:800;color:#ffd23f;display:flex;justify-content:space-between;gap:8px;}
+#gta-journal .j-item-title > span:first-child{min-width:0;}
+#gta-journal .j-right{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;align-items:center;flex:0 1 auto;max-width:60%;}
+#gta-journal .j-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(255,210,63,.16);border:1px solid rgba(255,210,63,.55);color:#ffe9a8;font-size:12px;font-weight:700;line-height:1.4;white-space:normal;text-align:right;}
+#gta-journal .j-prev{font-size:13px;font-style:italic;line-height:1.4;color:#e8e3d4;opacity:.95;margin-top:6px;padding-left:8px;border-left:2px solid rgba(255,210,63,.45);}
+#gta-journal .j-frame{font-style:normal;font-weight:800;color:#ffd23f;}
+#gta-journal .j-section{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ffd23f;}
 #gta-journal .j-item-sub{font-size:12px;opacity:.85;margin-top:3px;line-height:1.35;}
 #gta-journal .j-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
 #gta-journal .j-act{min-height:44px;padding:0 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:700 13px system-ui,sans-serif;cursor:pointer;}
@@ -45,6 +54,12 @@ type Snap = ReturnType<Quests['getJournal']>;
 function tagHtml(q: QuestDef): string {
   if (q.chapter !== undefined) return `<span style="color:${MAIN_COLOR}">★ Ch.${q.chapter}</span>`;
   return `<span style="color:${sideColor(q.giver)}">? Side</span>`;
+}
+
+/** The reward chip (rewards.ts), or '' when there is nothing to show. */
+function chipHtml(q: QuestDef): string {
+  const text = rewardChip(q).text;
+  return text ? `<span class="j-chip">${text}</span>` : '';
 }
 
 export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): { isOpen(): boolean; toggle(): void; close(): void } {
@@ -95,7 +110,7 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     b.className = 'j-item';
     const pinnedHere = snap.pinned === q.giver;
     b.innerHTML = `
-      <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
+      <div class="j-item-title"><span>${q.title}</span><span class="j-right">${tagHtml(q)}${chipHtml(q)}</span></div>
       <div class="j-item-sub">Giver: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} (${Math.round(g?.x ?? 0)}, ${Math.round(g?.z ?? 0)})${pinnedHere ? ' · 📍 Waypoint' : ''}</div>
       ${perkHtml(q, false)}
     `;
@@ -114,13 +129,14 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
     const pace = sidePacing(snap.saves, snap.quests);
     const offeredSet = new Set(pace.offered);
     const availAll = snap.quests.filter((q) => isQuestAvailable(q, snap.saves));
-    const storyAvail = availAll.filter((q) => q.chapter !== undefined);
+    const storyAvail = availAll.filter((q) => q.chapter !== undefined && !isBeforeTheEvenCut(q.id, snap.saves));
+    const storyBefore = availAll.filter((q) => q.chapter !== undefined && isBeforeTheEvenCut(q.id, snap.saves));
     const sideAvail = availAll.filter((q) => q.chapter === undefined && (!isPaced(q.id) || offeredSet.has(q.id)));
     const sideOrder = [
       ...pace.offered.map((id) => sideAvail.find((q) => q.id === id)).filter((q): q is QuestDef => !!q),
       ...sideAvail.filter((q) => !offeredSet.has(q.id)),
     ];
-    const avail = [...storyAvail, ...sideOrder];
+    const avail = [...storyAvail, ...sideOrder, ...storyBefore];
     const later = pace.later.map((id) => snap.quests.find((q) => q.id === id)).filter((q): q is QuestDef => !!q);
     const doneList = snap.quests.filter((q) => snap.saves[q.id]?.state === 'done');
     const labels: Record<Tab, string> = {
@@ -144,11 +160,16 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         return;
       }
       const g = snap.givers[q.giver];
+      const prev = previouslyLine(q, snap.saves);
+      // D7: the "Before the Even Cut:" frame reads as a heading over the narrator's line.
+      const framed = prev?.replace(/^(Before the Even Cut:)\s*/, '<b class="j-frame">$1</b> ');
+      const prevLine = framed ? `<div class="j-prev">${framed}</div>` : '';
       const box = document.createElement('div');
       box.className = 'j-item';
       box.innerHTML = `
-        <div class="j-item-title"><span>${q.title}</span><span>${tagHtml(q)} · 🌰 ${q.rewardAcorns ?? 250}</span></div>
+        <div class="j-item-title"><span>${q.title}</span><span class="j-right">${tagHtml(q)}${chipHtml(q)}</span></div>
         <div class="j-item-sub">From: ${g ? `${g.name} · ${placeName(g.x, g.z)}` : q.giver} · Step ${snap.activeStep + 1} of ${q.objectives.length}</div>
+        ${prevLine}
         ${perkHtml(q, false)}
         ${snap.activeLines.map((l) => `<div class="j-item-sub">• ${fillHint(stripTags(l))}</div>`).join('')}
       `;
@@ -191,7 +212,18 @@ export function createQuestJournal(ui: HTMLElement, quests: Quests, hud: Hud): {
         empty.textContent = 'Nothing on offer right now. Keep playing the story to open more.';
         body.appendChild(empty);
       }
-      for (const q of avail) body.appendChild(offerButton(q, snap));
+      for (const q of [...storyAvail, ...sideOrder]) body.appendChild(offerButton(q, snap));
+      if (storyBefore.length > 0) {
+        const head = document.createElement('div');
+        head.className = 'j-section';
+        head.textContent = 'Before the Even Cut';
+        body.appendChild(head);
+        const sub = document.createElement('div');
+        sub.className = 'j-item-sub';
+        sub.textContent = "From before the finale. The world has moved on; the story hasn't forgotten.";
+        body.appendChild(sub);
+        for (const q of storyBefore) body.appendChild(offerButton(q, snap));
+      }
       const coming: string[] = [];
       for (const id of pace.upcoming) {
         const q = snap.quests.find((x) => x.id === id);

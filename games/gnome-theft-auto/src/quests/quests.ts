@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { notifySaveChanged } from '../saveHook';
-import { mergeQuestSaves, migrateFinaleSave, parseSavesJson } from './questSave';
+import { catchUpHeld, isBeforeTheEvenCut, mergeQuestSaves, migrateFinaleSave, parseSavesJson } from './questSave';
 import type { GnomeLook } from '@lawn/gnome';
 import { randomTownLook } from '../gnomes';
 import { heightAt } from '../terrain';
@@ -417,6 +417,8 @@ export { mergeQuestSaves };
 export function isQuestAvailable(q: QuestDef, saves: Record<string, QuestSave>): boolean {
   if (saves[q.id]) return false;
   if (!unlockMet(q.id, saves)) return false;
+  // D7 (FX21): an old save's catch-up rows come one at a time, in story order.
+  if (catchUpHeld(q.id, saves)) return false;
   if (!q.prereq) return true;
   return saves[q.prereq]?.state === 'done';
 }
@@ -693,7 +695,8 @@ export function createQuests(
         deps.economy.payDebt(Math.min(reward, debtLeft));
       }
     }
-    deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
+    // D7 (FX21): an act IV row played after the finale is old news; Turfton FM stays on W17's world.
+    if (!isBeforeTheEvenCut(q.id, saves)) deps.onRadioBulletin?.(q.radioBulletin ?? q.id);
 
     const announce = (): void => {
       deps.hud.banner('CONTRACT COMPLETE', 3500);

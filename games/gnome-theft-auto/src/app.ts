@@ -76,6 +76,8 @@ import './pardonlin/interiors';
 import { createBriefing } from './briefing/briefing';
 import { briefingLines, COMMS, commsFor } from './quests/comms';
 import { questById } from './quests/defs';
+import { rewardChip } from './quests/story/rewards';
+import { isBeforeTheEvenCut } from './quests/questSave';
 import { storyGrants, storyMarkers, type StoryGrant } from './quests/storyMarks';
 import { STORY_ROWS } from './quests/storyRows';
 import { PLACE_STYLE } from './mapIcons';
@@ -760,7 +762,11 @@ const quests = createQuests({
   onObjectiveStart(q, step) {
     homeRuntime?.onQuestStep(q.id, step);
     const c = commsFor(q.id, step);
-    if (c) briefing.show(briefingLines(c), { mode: c.mode, title: q.title });
+    // GR5 / D7 (FX21): the briefing card shows the reward chip, and the Before the Even Cut frame on a veteran's act IV.
+    if (c) briefing.show(briefingLines(c), {
+      mode: c.mode, title: q.title, reward: step === 0 ? rewardChip(q).text : undefined,
+      kicker: step === 0 && isBeforeTheEvenCut(q.id, quests.getJournal().saves) ? 'Before the Even Cut' : undefined,
+    });
   },
   onTessieUnlock() { void achievements.unlock(TESSIE.achievements.rumour); hud.banner('BREAKING NEWS', 3500); hud.toast('Turfton FM: something big in Loch Moss. Driftwood is waiting for you on the loch shore.', 9000); play('whistle'); },
 });
@@ -2983,7 +2989,8 @@ if (sceneId) {
 {
   const [bq, bs] = (startParams.get('briefing') ?? '').split(':');
   const bc = bq ? commsFor(bq, Number(bs) || 0) : undefined;
-  if (bc) setTimeout(() => briefing.show(briefingLines(bc), { mode: bc.mode, title: questById(bq)?.title }), 1200);
+  const bqd = questById(bq);
+  if (bc) setTimeout(() => briefing.show(briefingLines(bc), { mode: bc.mode, title: bqd?.title, reward: bqd && bc.mode === 'briefing' ? rewardChip(bqd).text : undefined }), 1200);
   else if (bq) hud.toast(`No comms for "${bq}". Quests with comms: ${Object.keys(COMMS).join(', ')}`, 8000);
 }
 if (startParams.has('cutscenecheck')) {

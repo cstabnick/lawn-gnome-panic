@@ -11,6 +11,7 @@
 // itself (the change then stays dormant). worldChanges.test.ts fails once a planned quest exists and `after` was not
 // moved onto it. E20-E22: add rows W18+ the same way (data here, builder in rows/).
 import type { QuestSave } from '../quests/types';
+import { isBeforeTheEvenCut } from '../quests/questSave';
 
 export interface WorldChangeDef {
   /** 'W01'..'W17' (design table), W18+ for later epics. */
@@ -84,7 +85,11 @@ export function worldChangeDef(id: string): WorldChangeDef | undefined {
 
 /** The ids of the changes that are on for this save, in table order (earned and not hidden by another one that is on). */
 export function activeWorldChanges(saves: Record<string, QuestSave>): string[] {
-  const earned = WORLD_CHANGES.filter((w) => w.after.every((id) => saves[id]?.state === 'done'));
+  const w17 = saves['ch5-even-cut']?.state === 'done';
+  // D7 (FX21): while W17 is on, an act IV row played after the finale does not change the world (changes made for the
+  // world after the finale, which list ch5-even-cut themselves, still do).
+  const earned = WORLD_CHANGES.filter((w) => w.after.every((id) => saves[id]?.state === 'done')
+    && !(w17 && !w.after.includes('ch5-even-cut') && w.after.some((id) => isBeforeTheEvenCut(id, saves))));
   const hidden = new Set(earned.flatMap((w) => w.hides ?? []));
   return earned.filter((w) => !hidden.has(w.id)).map((w) => w.id);
 }

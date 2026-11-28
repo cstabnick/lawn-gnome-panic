@@ -362,3 +362,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Quest-sim suites and cutscene-report green; FX21 allow-lists contain no act III row.
 - All 3 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX05 (orchestrator)
+
+- The Test Cut deck blades (#52) still do not turn (carried from FX05, could). The cutscene report now flags bad close shots (back of head, hat from above, face blocked) in the 65 scenes FX05 did not own: fix the ones in your act.

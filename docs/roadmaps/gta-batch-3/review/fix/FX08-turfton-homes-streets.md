@@ -226,3 +226,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Flat 3B with and without `?worldchange=W09`, and with choice A set, shows the right dressing and key.
 - All 0 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX05 (orchestrator)
+
+- D5: the key that "will hang in flat 3B" (from #21) belongs to you (FX05 left it).

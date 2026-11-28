@@ -348,3 +348,7 @@ The editors' pointers are in each finding's "Where" line above (file, function, 
 - Quest-sim suites and cutscene-report green; the GR2 test green; FX21 allow-lists contain no act I-II row.
 - All 4 must findings are resolved; should and could findings are resolved or listed as deferred (with the reason) in the lead's report.
 - The lead reports in at most 30 lines: branch, what landed per finding ID, what was deferred, perf numbers (if a density pass), known issues.
+
+## Added after FX05 (orchestrator)
+
+- The cutscene report now flags bad close shots (back of head, hat from above, face blocked) in the scenes FX05 did not own: fix the ones in your act. FX05 did not re-shoot m13, m54, m58 after their props moved.

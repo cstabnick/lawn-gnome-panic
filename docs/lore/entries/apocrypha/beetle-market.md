@@ -26,7 +26,7 @@ The market is named for a beetle that sold lettuce here once and was so charming
 
 ## In the games
 
-The Left Bank, around x -1733, z 120 to 170 (the stall radio is at z 170). Roquette Fromage keeps the cheese stall.
+The Left Bank, around x -1733, z 120 to 205, with an annex to the north at z 55 to 100: a cobbled square of striped-canopy stalls along a crooked central aisle, each trade (cheese, beetles in jars, bric-a-brac, books, records, prints, old hats, bread, produce) in clusters with side alleys between. The stall radio is at z 170. Roquette Fromage keeps the cheese stall in the annex.
 
 ## Loose threads
 

@@ -28,6 +28,8 @@ The Thymes is fed from a garden tap at the north end of the Jardin, so it has a 
 
 A 16 m water path (id `thymes`) running north to south at about x -1600 to -1625, from z -880 to Pardonlin Basin (still water centred at (-1600, 1040), 90 x 60 m). The river is named after the herb and is crossed by four bridges, north to south: Pont Nord, Pont Neuf, Pont Sud and the Basin Bridge. The Source is the garden tap at the north end of the Jardin.
 
+Through the town it runs in a stone box: the water sits 1.8 m below the quays between dressed-stone walls (coping, iron railings, a stair cut every 130 m or so, alternating banks), with houseboats, péniches and a few sunk rowing boats moored at the walls and swans on the landings. The Jardin's stretch has a low mossy bank instead. The bouquinistes keep their green boxes on the Thymes Walk (Pont Nord to Pont Neuf); the bridges have stone parapets, lamps and a board with the rowing hours, and the Pont Neuf has the padlock railing ("The bridge is spoken for").
+
 ## Look and motifs
 
 - Motifs: clipped willows along the bank, a stone lip at each bridge, reeds in the shallows.

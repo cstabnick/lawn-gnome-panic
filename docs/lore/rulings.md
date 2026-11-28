@@ -1374,3 +1374,24 @@ Mabel sends newcomers to them.
 **Ruling:** (1) **Everyone stands ON the decks:** the Saltbucket Boardwalk's promenade is a walkable deck like the pier's, and Spun Sugar Sal, the player and the cars stand on its planks. (2) **Reel Ruth fishes from the Long Spoon Pier's handle**, at the west rail about (297, 1176), facing out to sea; she wears a mustard oilskin sou'wester, a navy jumper, glasses and her grey beard (no longer Driftwood's teal and sand). (3) **The Bathtub Queen has a deck crew besides her captain:** Mopsy Brine, the deckhand, who mops the same planks every day and takes it personally when the sea puts the wet back, and Pennant Pru, the lookout at the bow, who reports the HOA on the horizon and is told, each time, that it is a hedge. (4) **Driftwood, Marram Teaspoon and Captain Samphire Bilge wear their cast looks everywhere:** Driftwood a teal hat and sand shirt, Marram a yellow hat and teal shirt with pigtails, Bilge a navy hat and dark brown coat; the cutscene preset is the look in quests, on the boardwalk and in the captain's cabin.
 **Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-27.
 **Why:** R1 editorial review G3#1, G3#2, G3#3 (FX06): positions and colours of named people changed in the game, so the lore follows (GR1).
+
+## R-240
+
+**Question:** The R1 editorial review (G2#1-4, G2#10, D9) found Pardonlin's streets lined with lawn verges, its blocks empty inside, the Grand Platz bare and the Thymes level with the grass. What is Pardonlin's ground made of?
+**Ruling:** (1) **Wall to wall:** every street in Pardonlin has a granite kerb and a pale limestone pavement out to the house fronts; the squares are granite setts with cobble rings round their fountains and statues, and grass is kept for the Jardin, the gardens and the backyards. (2) **Lanes:** the blocks of the Old Town, the Left Bank and Teacup Row are cut by crooked cobbled lanes (the Ruelle des Pas Perdus, "The steps are found. The way is not.", the Passage des Violons, the Ruelle de la Tasse and others) with houses close on both sides and small courtyards. (3) **The Grand Platz** has a paved heart round the fountain and the bandstand (a carousel with its own queue, a flower market, news kiosks, café terraces, toy boats on the fountain and a crowd round Marcel) inside a gravel ring of plane trees in a quincunx. (4) **The Thymes** runs through town about 1.8 m below its dressed-stone quays, between iron railings, with river stairs every hundred and some metres, houseboats, péniches and a rowing boat sunk "for sale" moored at the walls, the bouquinistes' green boxes on the Thymes Walk, stone parapets and lamps on the bridges, the love-lock railing on the Pont Neuf ("The bridge is spoken for"), and a swans' nest on a quay stair; the Jardin's stretch keeps a low mossy bank.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#1-4 and G2#10 (FX09, D9): Pardonlin's signature image is a European town, so the game changed (GR1); the lore records what it now looks like.
+
+## R-241
+
+**Question:** Where is Le Petit Groan's street entrance (G2#15)?
+**Ruling:** Le Petit Groan's door is a red cellar door under a stone arch in the plain east wall of the south-west corner café on the Grand Platz, beside a wooden cellar hatch, with the banner "LE PETIT GROAN. Laughter by appointment." over it and tonight's bill on a chalkboard. There is no stair well in the open square.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#15 (FX09): a position in the build, so the lore follows (GR1).
+
+## R-242
+
+**Question:** What do the Beetle Market, Radio Adagio's forecourt, the Jardin and Basin Quay look like (G2#7, #8, #9, #26)?
+**Ruling:** (1) **The Beetle Market** is a cobbled square of striped-canopy stalls, one trade per cluster (cheese, beetles in jars, bric-a-brac, books, records, prints, old hats, bread, produce), along a crooked central aisle hung with bunting; Madame Rabais haggles over a beetle that is not negotiable. (2) **Radio Adagio's forecourt** is paved to the Boulevard's kerb, with a ticket kiosk whose queue is one cellist, posters for the Fifth (Act 1 of 3, of 3), a cellist waiting at the stage door and the Maestro's maroon scooter, "resting". (3) **The Jardin** is planted in pleached limes along its gravel axes, with a rill court, a rose walk and terracotta urns, kept by Hubert Secateur ("PLEASE DO NOT PRUNE THE PRUNERS."). (4) **Basin Quay** has a stone edge with bollards, a slipway, a pontoon, a harbourmaster's hut ("Office hours: high tide. The Basin has no tide."), nets and crates, boats on the water, and terraces along the west and south banks.
+**Applies to:** apocrypha, gnome-theft-auto.  **Date:** 2026-11-28.
+**Why:** R1 editorial review G2#7, #8, #9, #26 (FX09): small facts and dressing of named places in the build, so the lore follows (GR1).

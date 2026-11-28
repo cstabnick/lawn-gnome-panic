@@ -11,8 +11,12 @@ import { heightAt, slopeAt, waterAt } from '../../terrain';
 import { boxesBlocked, findSafeSpot } from '../../lockup/safeSpot';
 import { CLUB, COMEDY_CLUB_ID, COMEDY_START_EVENT } from './types';
 
-/** The stairs down, off the Grand Platz. yaw = facing out of the stairs (toward the square). */
-export const CLUB_DOOR = { x: -1498, z: -209, yaw: 0 };
+/**
+ * Le Petit Groan's cellar door, off the Grand Platz (FX09): in the plain east wall of the corner cafe at the square's
+ * south-west corner (the wall is at x -1555.5 and faces east), at the foot of that wall. yaw = facing out of the
+ * doorway (east, into the square).
+ */
+export const CLUB_DOOR = { x: -1555.52, z: -183.9, yaw: Math.PI / 2 };
 
 /** Cellar: dark brick-red walls, black floor, low warm light. */
 const CELLAR_THEME: InteriorTheme = { floor: 0x141214, wall: 0x6b2a24, trim: 0x2a1614, ceiling: 0x1a1010, light: 0xffb878 };
@@ -173,19 +177,29 @@ export function buildClubStreet(scene: THREE.Scene, world: World): void {
     world.boxes.push(b);
   };
 
-  // The stairs: the opening faces out along CLUB_DOOR.yaw; the stone surround sits 1.2 m behind the door spot.
+  // The cellar door: a stone arch, red door, hatch and barrel against the cafe wall (the prefab's back is the wall face).
+  // Its name over the door and tonight's bill are signs in the Old Town plan (pardonlin/districts/oldTown.ts).
   const sx = Math.sin(CLUB_DOOR.yaw);
   const sz = Math.cos(CLUB_DOOR.yaw);
-  place('groan-cellar-entrance', CLUB_DOOR.x, CLUB_DOOR.z, CLUB_DOOR.yaw);
-  if (getPrefab('groan-cellar-entrance')) addBox(CLUB_DOOR.x - sx * 1.2, CLUB_DOOR.z - sz * 1.2, 1.0, 1.0, 1.2);
-
-  // Chalkboard and poster column beside it, on clear ground.
-  const sideX = Math.cos(CLUB_DOOR.yaw);
+  const sideX = Math.cos(CLUB_DOOR.yaw);     // the prefab's local +x: along the wall
   const sideZ = -Math.sin(CLUB_DOOR.yaw);
-  const opts = { radius: 0.8, minDist: 0, maxDist: 12, maxSlope: 0.25, maxWater: 0 };
-  const board = findSafeSpot(CLUB_DOOR.x + sideX * 3.0 + sx, CLUB_DOOR.z + sideZ * 3.0 + sz, probe, opts);
-  if (board && getPrefab('groan-chalkboard-sign')) place('groan-chalkboard-sign', board.x, board.z, CLUB_DOOR.yaw);
-  const column = findSafeSpot(CLUB_DOOR.x - sideX * 3.5, CLUB_DOOR.z - sideZ * 3.5, probe, { ...opts, radius: 1.0 });
+  /** Door-local (u along the wall, v out of it) to world. */
+  const at = (u: number, v: number): [number, number] => [CLUB_DOOR.x + sideX * u + sx * v, CLUB_DOOR.z + sideZ * u + sz * v];
+  if (getPrefab('pl-cellar-door')) {
+    place('pl-cellar-door', CLUB_DOOR.x, CLUB_DOOR.z, CLUB_DOOR.yaw);
+    // The barrel and the hatch's kerb are low colliders; the doorway and the 2.5 m in front of it stay open.
+    const [bx, bz] = at(2.0, 0.55);
+    addBox(bx, bz, 0.3, 0.3, 0.7);
+    const [hx, hz] = at(-2.2, 0.6);
+    addBox(hx, hz, 0.6, 1.0, 0.2);   // yaw PI / 2: the hatch runs along world z
+  } else {
+    place('groan-cellar-entrance', CLUB_DOOR.x, CLUB_DOOR.z, CLUB_DOOR.yaw);
+  }
+
+  // A poster column a few metres along the wall, on clear ground.
+  const opts = { radius: 1.0, minDist: 0, maxDist: 8, maxSlope: 0.25, maxWater: 0 };
+  const [cx, cz] = at(3.8, 2.4);
+  const column = findSafeSpot(cx, cz, probe, opts);
   if (column && getPrefab('groan-poster-column')) {
     place('groan-poster-column', column.x, column.z, CLUB_DOOR.yaw);
     addBox(column.x, column.z, 0.45, 0.45, 3);

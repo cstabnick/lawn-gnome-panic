@@ -31,6 +31,8 @@ export type GroundPatch = { kind: PavingKind; accent?: boolean } & (
   | { band: readonly (readonly [number, number])[]; from: number; to: number }
 );
 
+/** How far a laid footpath reaches past its trail's edge (m). */
+export const FOOTPATH_SKIRT = 2;
 /** Road half-width in town (m). */
 export const ROAD_HALF = 3.5;
 /** Pavements reach this far from a road's centre line (the street rows' fronts stand at 8-8.6 m). */
@@ -203,7 +205,9 @@ export function footpathStrips(): Strip[] {
   for (const p of townFootpaths()) {
     const rows = ribbonRows(p.points, 1.5);
     for (const run of runsOf(rows, (r) => inTown(r.x, r.z))) {
-      out.push({ kind: p.kind, rows: run, from: -p.width / 2 - 0.25, to: p.width / 2 + 0.25, layer: 'tint' });
+      // The terrain paints a trail's 2 m cells dirt (feathered by a cell), so the surface reaches FOOTPATH_SKIRT past
+      // the trail's edge to cover that border; lane houses stand over its outer metre.
+      out.push({ kind: p.kind, rows: run, from: -p.width / 2 - FOOTPATH_SKIRT, to: p.width / 2 + FOOTPATH_SKIRT, layer: 'tint' });
     }
   }
   return out;

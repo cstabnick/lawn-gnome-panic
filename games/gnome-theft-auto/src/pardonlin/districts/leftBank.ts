@@ -4,6 +4,7 @@
 import { euroBuilding } from '../../eurokit/catalog';
 import { planStreetRow, type EuroPlacement } from '../../eurokit/street';
 import { districtById, footprintsOverlap, frontage, roadClearance, type Footprint, type RowStart } from '../layout';
+import type { GroundPatch } from '../groundPlan';
 import { buildingFootprint, emptyPlan, keepClear, local, type DistrictPlan, type PlanProp, type PlanSign } from '../plan';
 
 const PI = Math.PI;
@@ -56,16 +57,9 @@ export function planLeftBank(): DistrictPlan {
   const rows = (starts: RowStart[], seed: number, mix?: readonly string[], corner = false): void => {
     starts.forEach((s, i) => { addBuildings(keepClear(planStreetRow({ ...s, seed: seed + i * 7, mix, corner }), taken, rects)); });
   };
-  /** Paving tiles on a 2 m grid inside a rectangle (centres at x0 + 1, x0 + 3 ...). Never on roads or under buildings. */
-  const pave = (x0: number, x1: number, z0: number, z1: number, id = 'euro-paving-tile'): void => {
-    for (let x = x0 + 1; x < x1; x += 2) {
-      for (let z = z0 + 1; z < z1; z += 2) {
-        if (roadClearance(x, z) <= 2.2) continue;
-        const f: Footprint = { x, z, w: 2, d: 2, yaw: 0 };
-        if (bfps.some((o) => footprintsOverlap(f, o))) continue;
-        prop(id, x, z);
-      }
-    }
+  /** Laid ground (FX09): a rectangle of paving. Plain patches never overlap each other; an accent sits on top of one. */
+  const pave = (kind: GroundPatch['kind'], x0: number, x1: number, z0: number, z1: number, accent = false): void => {
+    plan.ground.push({ kind, accent, rect: { x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 } });
   };
 
   // ---- Reserved ground (kept free of terraces) -------------------------------------------------------------------
@@ -247,8 +241,13 @@ export function planLeftBank(): DistrictPlan {
   }
 
   // ---- Radio Adagio (block x -1686..-1638, z -150..-50) -----------------------------------------------------------
-  pave(-1696, -1678, -118, -82); // forecourt (x -1696 .. -1678; the apron starts at -1678)
-  pave(-1696, -1678, -82, -52);
+  // The forecourt is paved from the Boulevard's kerb (its pavement runs out to x -1690.4 here and draws over the patch's
+  // west edge) to the hall's apron, and along the whole block from the Pont Neuf's pavement up to Rue E's end.
+  // One floor of setts: the forecourt, the yards either side of the hall and behind it (to the lawn at x -1648).
+  pave('setts', -1698, -1648, -153, -40);
+  // A flagstone carpet from the Boulevard to the steps, and a flagged edge along the block's north end.
+  pave('flags', -1690, -1677, -104, -96, true);
+  pave('flags', -1690, -1648, -153.6, -152.8, true);
   // The door spot (-1680, -100) stays clear: no props within x -1684..-1676, z -104..-96.
   prop('pl-horn-speaker', -1684, -106, { solid: { r: 0.3, h: 4 } });
   prop('pl-cello', -1690.5, -113, { yaw: 1.1 });
@@ -287,6 +286,42 @@ export function planLeftBank(): DistrictPlan {
     id: 'pl-lb-stage-door', name: 'The Opera stage door', x: -1667, z: -112,
     story: 'A cello case leans on the stage door, a music stand stands guard and a second one has fallen over, and the queue posts line up pointing away from the door: the orchestra is queueing the polite way round.',
   });
+  // The stage door itself (a real door in the hall's north wall, left of the plaque) and the cellist waiting at it.
+  prop('panelled-door', -1672.2, -108.02, { yaw: PI, tint: 0x2c2a38, trim: 0xd9cfae });
+  plan.residents.push({
+    id: 'pl-lb-stage-cellist', name: 'Basile Cordes', x: -1671.4, z: -111.4, yaw: 0, idle: 'wait-bus',
+    look: { hat: 0x2a2a2a, shirt: 0x1f1f26, pants: 0x1f1f26, boots: 0x222222, beard: 0x9a9a9a, skin: 0xe9b98a, glasses: true },
+    bubble: 'I am early. The door is late. We have agreed not to discuss who is more on time.',
+  });
+  // The ticket kiosk and its queue of one (the cellist is first, and last).
+  prop('pl-ticket-kiosk', -1683, -131, { yaw: -PI / 2, tint: 0x2e5a45, trim: 0xe8dfc4, solid: { w: 1.5, d: 1.3, h: 2.7 } });
+  sign('plaque', 'TICKETS', -1683.57, -131, -PI / 2, { y: 1.95, w: 1.1, h: 0.27 });
+  for (const z of [-129.2, -132.8]) {
+    for (let k = 0; k < 4; k++) prop('pl-queue-post', -1685.4 - k * 1.5, z, { yaw: PI });
+  }
+  sign('menu', 'QUEUE HERE.\nThe queue is one cellist.\nPlease wait behind him.', -1692.2, -131, -PI / 2);
+  prop('pl-cello', -1685.9, -129.9, { yaw: 1.7 });
+  prop('euro-flower-trough', -1682.2, -135.2, { yaw: 0, solid: { w: 1.6, d: 0.5, h: 0.6 }, tint: 0xd6459f });
+  sign('poster', 'THE FIFTH\nAct 1 of 3.\nOf 3.\nEntry by queue only', -1684.4, -127.4, -PI / 2);
+  sign('poster', 'TONIGHT, SLOWLY\nBeethoven (we think)\nBring a cushion\nand a day', -1684.4, -134.6, -PI / 2);
+  plan.vignettes.push({
+    id: 'pl-lb-queue-of-one', name: 'The queue of one', x: -1686, z: -131,
+    story: 'A ticket kiosk with a barred window has a rope queue for forty gnomes and exactly one cellist in it, who has been first since the matinee. The chalkboard asks anyone new to wait behind him, and nobody has dared pass him to see whether the window is open.',
+  });
+  plan.residents.push({
+    id: 'pl-lb-queue-cellist', name: 'Hector Fermata', x: -1686.4, z: -131, yaw: PI / 2, idle: 'wait-bus',
+    look: { hat: 0x6a1b3a, shirt: 0xd8cfb8, pants: 0x222222, beard: 0xbbbbbb, skin: 0xf1c27d },
+    bubble: 'I am the queue. Please wait behind me. The window opens when I have finished being first.',
+  });
+  // The Maestro's scooter, parked in the stage yard (he does not park it. It stops, and he steps off).
+  prop('pl-scooter', -1657.6, -115.4, { yaw: -PI / 2 + 0.32, scale: 1.1, tint: 0x7a1f3d, solid: { w: 0.7, d: 1.6, h: 1 } });
+  prop('pl-music-stand', -1659.6, -119.8, { yaw: 0.4 });
+  prop('pl-espresso-cup', -1659.6, -117.4, { y: 0.02 });
+  sign('poster', 'RESERVED FOR\nTHE MAESTRO.\nDo not touch.\nIt is resting.', -1654.4, -113, -PI / 2);
+  plan.vignettes.push({
+    id: 'pl-lb-maestro-scooter', name: 'The Maestro\'s scooter', x: -1658, z: -116,
+    story: 'The Maestro\'s scooter stands in the stage yard with a rolled-up score on its rack and a notice that it is resting. A cold espresso and a music stand wait beside it, in case the scooter wants to conduct.',
+  });
   // Easel by the river (the artist left for lunch some days ago).
   prop('pl-easel', -1640.5, -92, { yaw: PI / 2 });
   prop('euro-cafe-chair', -1641.8, -89.2, { rot: [0, 0.7, PI / 2], y: 0.25 });
@@ -309,7 +344,8 @@ export function planLeftBank(): DistrictPlan {
     look: { hat: 0x2a1a3a, shirt: 0x6a1b3a, pants: 0x222222, beard: 0xdddddd, skin: 0xf1c27d, glasses: true },
     bubble: 'You may approach. Slowly. Adagio.',
   });
-  // Lay-by opposite the hall (west pavement): benches facing the hall, the lost beret, the poet's board.
+  // Lay-by opposite the hall (west pavement): flagstones out to the Boulevard's pavement, benches facing the hall, the lost beret, the poet's board.
+  pave('flags', -1730, -1706, -128, -72);
   prop('park-bench', -1713, -112, { yaw: PI / 2, solid: { w: 1.8, d: 0.6, h: 0.9 } });
   prop('park-bench', -1713, -88, { yaw: PI / 2, solid: { w: 1.8, d: 0.6, h: 0.9 } });
   prop('euro-plane-tree', -1721, -118, { solid: { r: 0.45, h: 9 } });
@@ -387,7 +423,8 @@ export function planLeftBank(): DistrictPlan {
   });
 
   // ---- The artists' terrace by the river (a paved square with cafe tables and easels) -----------------------------
-  pave(-1682, -1648, 30, 64);
+  pave('flags', -1682, -1648, 30, 64);
+  plan.ground.push({ kind: 'setts', accent: true, circle: { x: -1665, z: 47, r: 4.4, r0: 2.4 } });
   prop('euro-fountain', -1665, 47, { solid: { r: 2, h: 1 } });
   for (const [x, z, y] of [[-1676, 36, 0.5], [-1654, 58, 3.5], [-1676, 58, 2], [-1654, 36, 1.4]] as const) {
     prop('euro-cafe-table', x, z, { solid: { r: 0.35, h: 0.77 } });
@@ -402,90 +439,306 @@ export function planLeftBank(): DistrictPlan {
   sign('plaque', 'FOUNTAIN OF INDECISION\n(on, off, on, off)', -1665, 44.7, PI, { y: 1.1, w: 2.2, h: 0.5 });
   sign('poster', 'TERRACE OF DOUBT\nOpen all day.\nClosed, on reflection.', -1688.5, 32, PI / 2);
 
-  // ---- The Beetle Market (block x -1755..-1711, z 125..235) and its north annex (z 52..104) ---------------------------
+  // ---- The Beetle Market (the square x -1760..-1707, z 119..242, and its north annex z 51..102) -------------------
+  // Cobbles under all of it, with a setts spine down each aisle (the main one jogs 2 m east at z 160, a dog-leg).
+  pave('cobble', -1760, -1707, 119, 242);
+  pave('cobble', -1757, -1708, 51, 102);
+  pave('setts', -1735.2, -1730.8, 120.5, 158.6, true);
+  pave('setts', -1733.2, -1728.8, 161.4, 207, true);
+  pave('setts', -1735.2, -1730.8, 63, 100, true);
   addBuildings(keepClear([{ id: 'euro-market-hall', x: -1733, z: 215, yaw: PI, scale: 1, tint: 0xe6dcb8, trim: 0x9a5a3c }], [], rects));
   {
     const [hx, hz] = local(-1733, 215, PI, 0, 5.05);
     sign('banner', 'THE BEETLE MARKET\nCovered hall (the beetles are inside)', hx, hz, PI, { y: 4.2, w: 7, h: 0.9 });
   }
-  const stall = (x: number, z: number, yaw: number, i: number): void => {
-    prop('market-stall', x, z, { yaw, scale: 1.7, solid: { w: 1.6, d: 0.8, h: 1 } });
-    const sin = Math.sin(yaw), cos = Math.cos(yaw);
-    // Goods sit along the stall: lay them out in the stall's own frame (x along the counter, front +z).
-    const wrap = (gx: number, gz: number, id: string, o: PropOpts = {}): void => {
-      prop(id, x + gx * cos + gz * sin, z - gx * sin + gz * cos, { yaw, ...o });
-    };
-    const g = i % 5;
-    if (g === 0) { wrap(-0.45, 0.05, 'pl-produce-crate', { y: 0.9, scale: 0.7, tint: [0xd93636, 0x8bc34a, 0xff9a3c, 0xa84a00][i % 4] }); wrap(0.45, 0.05, 'pl-produce-crate', { y: 0.9, scale: 0.7, tint: [0xffe066, 0x5cd67a, 0xd6459f, 0xff6b6b][(i + 1) % 4] }); }
-    else if (g === 1) { for (let k = 0; k < 3; k++) wrap(-0.4, 0.05, 'pl-cheese-wheel', { y: 0.9 + k * 0.17, scale: 0.8 - k * 0.1 }); wrap(0.5, 0.05, 'cheese-wedge', { y: 0.9 }); }
-    else if (g === 2) { wrap(-0.4, 0.05, 'pl-bread-basket', { y: 0.9 }); wrap(0.2, 0.05, 'bread-loaf', { y: 0.9 }); wrap(0.55, 0.1, 'pl-baguette', { y: 0.92 }); }
-    else if (g === 3) { wrap(-0.4, 0.05, 'pl-marrow', { y: 0.9 }); wrap(0.1, 0.05, 'pl-marrow', { y: 0.9, yaw: yaw + 1 }); wrap(0.55, 0.05, 'pl-produce-crate', { y: 0.9, scale: 0.6, tint: 0x5cd67a }); }
-    else { wrap(0, 0.05, 'red-book', { y: 0.9 }); wrap(0.5, 0.9, 'crate', { scale: 0.6 }); }
+
+  let mseed = 20271;
+  const rnd = (): number => { mseed = (mseed * 1664525 + 1013904223) >>> 0; return mseed / 4294967296; };
+  const STRIPES = [0xc8352f, 0x3466b8, 0xf0c63a, 0x4f9a3c, 0xe58fb0, 0x7d4bb0, 0xe8822e, 0x2fa8a0, 0xa83232, 0x2c4f9a];
+  type Trade = 'beetles' | 'cheese' | 'bric' | 'books' | 'records' | 'bread' | 'prints' | 'hats' | 'produce' | 'radio';
+  const TRADE_ORDER: readonly Trade[] = ['beetles', 'cheese', 'bric', 'records', 'books', 'produce', 'hats', 'bread', 'prints', 'beetles', 'bric', 'cheese'];
+  const TRADE_SIGN: Record<Trade, string> = {
+    beetles: 'BEETLES\n(live, mostly)', cheese: 'CHEESE\n(aged by argument)', bric: 'BRIC-A-BRAC\n(the brac is extra)',
+    books: 'BOOKS\n(read once, gently)', records: 'RECORDS\n(all the same one)', bread: 'BREAD\n(Tuesday\'s opinion)',
+    prints: 'PRINTS\n(of this market)', hats: 'OLD HATS\n(heads extra)', produce: 'PRODUCE\n(it was a marrow)', radio: 'STALL RADIO\n(Adagio. Always.)',
   };
-  const MARKET_X = [-1751, -1747, -1743, -1739, -1735, -1731, -1727, -1723, -1719, -1715];
-  // Main market: two pairs of back-to-back stall rows around two tiled aisles (hall at z 215).
-  pave(-1756, -1710, 138, 146);
-  pave(-1756, -1710, 162, 170);
-  let si = 0;
-  for (const [z, yaw] of [[136, 0], [148, PI], [160, 0], [172, PI]] as const) {
-    for (const x of MARKET_X) {
-      if ((z === 172 || z === 160) && Math.abs(x + 1733) < 3.5) continue;
-      stall(x, z, yaw, si++);
+  type Spot = { x: number; z: number; yaw: number; s: number; tint: number; trade: Trade };
+  type Look = DistrictPlan['residents'][number]['look'];
+  type Idle = DistrictPlan['residents'][number]['idle'];
+  const stalls: Spot[] = [];
+  const alleys: { x: number; z: number }[] = []; // the side alleys between clusters of stalls
+  let tradeIx = 0, tintIx = 0;
+  /** One column of stalls down an aisle: clusters of touching stalls (a trade each), a side alley between them. */
+  const column = (
+    xAt: (z: number) => number, face: 1 | -1, z0: number, z1: number,
+    gaps: readonly (readonly [number, number])[], sizes: readonly number[], tradeStart: number,
+  ): Spot[] => {
+    const out: Spot[] = [];
+    tradeIx = tradeStart;
+    let z = z0, k = 0, ci = 0, size = sizes[0], trade = TRADE_ORDER[tradeIx++ % TRADE_ORDER.length];
+    while (z < z1) {
+      const gap = gaps.find(([a, b]) => z > a - 1 && z < b);
+      if (gap) { z = gap[1] + 1.4; k = 0; size = sizes[++ci % sizes.length]; trade = TRADE_ORDER[tradeIx++ % TRADE_ORDER.length]; continue; }
+      const s = 1.08 + rnd() * 0.14;
+      const yaw = (face * PI) / 2 + (rnd() - 0.5) * 0.26;
+      const x = xAt(z) + (rnd() - 0.5) * 0.5 + (rnd() < 0.22 ? face * 0.45 : 0);
+      tintIx += 1 + Math.floor(rnd() * 3);
+      out.push({ x, z, yaw, s, tint: STRIPES[tintIx % STRIPES.length], trade });
+      k++;
+      z += 1.9 * s + 0.3 + rnd() * 0.25;
+      if (k >= size) {
+        const alley = 3.0 + rnd() * 1.3;
+        alleys.push({ x: xAt(z), z: z - 0.5 + alley / 2 });
+        z += alley; k = 0; size = sizes[++ci % sizes.length]; trade = TRADE_ORDER[tradeIx++ % TRADE_ORDER.length];
+      }
+    }
+    stalls.push(...out);
+    return out;
+  };
+  // The main aisle: columns at +-3.2 m from its centre (x -1733, jogging to -1731 south of z 160). The west column leaves
+  // a side alley open at z 142..156 (the market's west door), both leave a crossing at z 156..164.
+  const westMain = column((z) => (z < 160 ? -1736.3 : -1734.3), 1, 125, 199, [[143, 167]], [3, 3, 2, 3], 0);
+  const eastMain = column((z) => (z < 160 ? -1729.7 : -1727.7), -1, 126, 199, [[157, 164]], [2, 3, 2, 3], 1);
+  // The annex avenue: columns at +-3.2 m from x -1733, up to the fountain.
+  column(() => -1736.3, 1, 68, 99, [], [2, 3], 5);
+  column(() => -1729.7, -1, 69, 99, [], [3, 2], 8);
+
+  /** A stall's own frame: world position of a point (gx along the counter, gz from its middle toward the front). */
+  const frameOf = (sp: { x: number; z: number; yaw: number; s: number }) => {
+    const sin = Math.sin(sp.yaw), cos = Math.cos(sp.yaw);
+    const at = (gx: number, gz: number): [number, number] => [sp.x + (gx * cos + gz * sin) * sp.s, sp.z + (-gx * sin + gz * cos) * sp.s];
+    const put = (id: string, gx: number, gz: number, o: PropOpts = {}): void => {
+      const [wx, wz] = at(gx, gz);
+      prop(id, wx, wz, { yaw: sp.yaw, ...o, scale: (o.scale ?? 1) * sp.s, ...(o.y !== undefined ? { y: o.y * sp.s } : {}) });
+    };
+    return { at, put };
+  };
+  const TOP = 0.87; // counter top height at stall scale 1
+  const dealStall = (sp: Spot, i: number): void => {
+    prop('pl-stall-canopy', sp.x, sp.z, { yaw: sp.yaw, scale: sp.s, tint: sp.tint, solid: { w: 1.6 * sp.s, d: 1.3 * sp.s, h: 1.4 } });
+    const { at, put } = frameOf(sp);
+    const [px, pz] = at(0, 0.64);
+    sign('plaque', TRADE_SIGN[sp.trade], px, pz, sp.yaw, { y: 0.5 * sp.s, w: 1.3 * sp.s, h: 0.42 * sp.s });
+    const v = i % 3;
+    switch (sp.trade) {
+      case 'cheese':
+        put('pl-cheese-wheel', -0.42, 0.3, { y: TOP, scale: 1.0 + v * 0.1, tint: [0xa8741d, 0x8a5a2b, 0xb98a3a][v] });
+        put('pl-cheese-wheel', 0.12, 0.3, { y: TOP, scale: 0.7, tint: 0xd9a066, yaw: sp.yaw + 0.5 });
+        put('cheese-wedge', 0.5, 0.4, { y: TOP, yaw: sp.yaw + 0.3 });
+        put('cheese-wedge', 0.62, 0.18, { y: TOP, yaw: sp.yaw - 0.8, scale: 0.8 });
+        break;
+      case 'beetles':
+        put('pl-beetle-jar', -0.15, 0.3, { y: TOP, scale: 1.45 });
+        put('pl-beetle-jar', 0.5, 0.35, { y: TOP, scale: 0.9, yaw: sp.yaw - 0.35 });
+        break;
+      case 'bric':
+        put('pl-bric-a-brac-pile', 0, 0.3, { y: TOP, scale: 1.35, tint: [0xa65cff, 0xe0245e, 0x2fd07a][v] });
+        put('stool', 1.0, 0.95, { yaw: sp.yaw + 0.5 });
+        break;
+      case 'books':
+        put('pl-book-pile', -0.35, 0.3, { y: TOP, scale: 1.6 });
+        put('pl-book-pile', 0.4, 0.28, { y: TOP, scale: 1.3, yaw: sp.yaw + PI + 0.4 });
+        break;
+      case 'records':
+        put('pl-record-crate', -0.4, 0.3, { y: TOP, scale: 1.5 });
+        put('pl-record-crate', 0.22, 0.3, { y: TOP, scale: 1.5, yaw: sp.yaw + 0.2 });
+        put('pl-record-crate', 0.7, 0.9, { scale: 1.5, yaw: sp.yaw - 0.4 });
+        break;
+      case 'bread':
+        put('pl-bread-basket', -0.42, 0.3, { y: TOP, scale: 1.2 });
+        put('bread-loaf', 0.1, 0.3, { y: TOP });
+        put('pl-baguette', 0.55, 0.36, { y: TOP + 0.02, yaw: sp.yaw + 0.3 });
+        put('pl-baguette', 0.6, 0.2, { y: TOP + 0.02, yaw: sp.yaw - 0.15 });
+        break;
+      case 'prints':
+        put('pl-prints-rack', 0, 0.38, { yaw: sp.yaw + 0.04 });
+        put('pl-prints-rack', -1.25, 0.9, { yaw: sp.yaw + 0.5, scale: 0.8 });
+        break;
+      case 'hats':
+        put('pl-hat-stand', -0.5, 0.35, { yaw: sp.yaw + 0.3, scale: 0.85 });
+        put('pl-hat-stand', 0.5, 0.4, { yaw: sp.yaw - 0.5, scale: 0.85 });
+        break;
+      case 'produce':
+        put('pl-produce-crate', -0.42, 0.3, { y: TOP, scale: 1.0, tint: [0xd93636, 0x8bc34a, 0xff9a3c][v] });
+        put('pl-produce-crate', 0.18, 0.3, { y: TOP, scale: 1.0, tint: [0xffe066, 0x5cd67a, 0xd6459f][v] });
+        put('pl-marrow', 0.62, 0.35, { y: TOP, yaw: sp.yaw + 0.5 });
+        put('pl-produce-crate', 1.05, 0.95, { scale: 1.1, tint: 0xff9a3c, yaw: sp.yaw + 0.3 });
+        break;
+      case 'radio':
+        put('pl-gramophone', 0, 0.3, { y: TOP });
+        break;
+    }
+  };
+  // The stall radio keeps its post at the middle of the market: the east stall nearest z 170 (speakers.ts has the sound at -1733, 170).
+  const radio = eastMain.reduce((a, b) => (Math.abs(b.z - 170) < Math.abs(a.z - 170) ? b : a));
+  radio.trade = 'radio';
+  // Hand-picked trades where the camera looks: the first stalls south of Rue F.
+  westMain[0].trade = 'beetles'; westMain[1].trade = 'beetles'; westMain[2].trade = 'books';
+  eastMain[0].trade = 'cheese'; eastMain[1].trade = 'cheese'; eastMain[2].trade = 'cheese';
+  stalls.forEach(dealStall);
+  // Bunting across the aisles, hung from the canopy fronts of most pairs of facing stalls.
+  let pairNo = 0;
+  for (const w of stalls.filter((o) => Math.sin(o.yaw) > 0)) {
+    const e = stalls.find((o) => Math.sin(o.yaw) < 0 && Math.abs(o.z - w.z) < 1.1 && o.x - w.x > 4 && o.x - w.x < 9);
+    if (!e || pairNo++ % 3 === 2) continue;
+    const [ax, az] = frameOf(w).at(0, 0.74);
+    const [bx2, bz2] = frameOf(e).at(0, 0.74);
+    const span = Math.hypot(bx2 - ax, bz2 - az);
+    const sc = span / 2.9;
+    const top = (2.12 * (w.s + e.s)) / 2;
+    prop('pl-bunting', (ax + bx2) / 2, (az + bz2) / 2, { yaw: Math.atan2(-(bz2 - az), bx2 - ax), scale: sc, y: top - 0.45 * sc, tint: STRIPES[(pairNo * 3) % STRIPES.length] });
+  }
+  const nth = (trade: Trade, n: number, from: readonly Spot[] = stalls): Spot => from.filter((p) => p.trade === trade)[n] ?? from[0];
+  // Chalkboard prices beside the stalls they are about (in the aisle, off the stalls' front corner).
+  const board = (sp: Spot, text: string, gx: number): void => {
+    const [bx2, bz2] = frameOf(sp).at(gx, 1.5);
+    sign('menu', text, bx2, bz2, sp.yaw);
+  };
+  board(nth('cheese', 4), 'Cheese, aged: 12 acorns\nCheese, ageing: 9\nCheese, young and hopeful: 4', 1.25);
+  board(nth('bread', 0), 'BREAD (today\'s opinion)\nRound: strong\nLong: stronger\nSliced: we don\'t talk', 1.25);
+  board(nth('produce', 0), 'PRODUCE\nMarrows: large\nMarrows: larger\nMarrows: do not ask', -1.25);
+  board(nth('produce', 1), 'PEARS (espaliered):\nlook, do not touch.\n6 acorns to look', 1.25);
+  board(nth('beetles', 3), 'FRESH BEETLES\nCaught this week,\nmore or less', -1.25);
+  {
+    const [rx, rz] = frameOf(radio).at(1.2, 1.5);
+    sign('menu', 'STALL RADIO\nPlays only what it was\nplaying yesterday', rx, rz, radio.yaw);
+  }
+  sign('poster', 'MARKET RULES\n1. Queue to browse.\n2. Queue to buy.\n3. Queue to leave.', -1755.4, 134, PI / 2);
+
+  // Side alleys: a lamp post on every other one, a hand cart or a stack of crates on the rest.
+  alleys.forEach((a, i) => {
+    if (Math.abs(a.z - 160) < 6 || a.z > 200) return;
+    const east = a.x > -1733;
+    if (i % 2 === 0) prop('euro-lamp-post', a.x + (east ? -0.4 : 0.4), a.z, { solid: { r: 0.2, h: 4.2 } });
+    else if (i % 4 === 1) prop('pl-hand-cart', a.x + (east ? 0.3 : -0.3), a.z, { yaw: (east ? -PI / 2 : PI / 2) + 0.3 * (i % 3 - 1), tint: [0xff9a3c, 0x8bc34a, 0xd93636][i % 3], solid: { w: 1.0, d: 1.5, h: 0.8 } });
+    else {
+      prop('crate', a.x, a.z, { yaw: i * 0.9, scale: 0.9, solid: { r: 0.45, h: 0.8 } });
+      prop('crate', a.x + 0.15, a.z + 0.05, { y: 0.75, yaw: i * 1.7, scale: 0.7 });
+    }
+  });
+  // The tasting of nothing, in the west door's alley: a table, two chairs, a parasol and three empty cups.
+  prop('euro-cafe-table', -1744.5, 156, { solid: { r: 0.35, h: 0.77 } });
+  prop('euro-cafe-chair', -1745.6, 156.2, { yaw: PI / 2 });
+  prop('euro-cafe-chair', -1743.4, 155.8, { yaw: -PI / 2 });
+  prop('pl-cafe-parasol', -1744.5, 156, { solid: { r: 0.15, h: 2.4 }, tint: 0xe58fb0 });
+  for (const [dx, dz] of [[-0.15, 0.1], [0.12, -0.12], [0.1, 0.18]] as const) prop('pl-espresso-cup', -1744.5 + dx, 156 + dz, { y: 0.77, yaw: dx * 9 });
+  sign('menu', 'TASTING OF NOTHING\nFree. Seconds also free.\nThirds: not offered.', -1744.5, 153.4, 0);
+  plan.vignettes.push({
+    id: 'pl-lb-tasting-of-nothing', name: 'The tasting of nothing', x: -1744.5, z: 156,
+    story: 'A table, two chairs and three empty cups stand under a pink parasol, and a chalkboard offers a free tasting of nothing. The taster has been at it all morning and says the nothing is excellent this year.',
+  });
+  plan.residents.push({
+    id: 'pl-lb-taster', name: 'Bertrand Savour', x: -1745.7, z: 154.6, yaw: PI / 2 - 0.4, idle: 'think',
+    look: { hat: 0xe8dfc4, shirt: 0x6a1b3a, pants: 0x333333, beard: 0xdddddd, skin: 0xf1c27d, glasses: true },
+    bubble: 'Notes of absence, a confident finish. Nothing at all, beautifully. Do try the second nothing.',
+  });
+  prop('wheelbarrow', -1742, 147.4, { yaw: 0.6 });
+  prop('pl-produce-crate', -1741.2, 148.4, { yaw: 0.2, tint: 0xff9a3c, solid: { w: 0.8, d: 0.6, h: 0.5 } });
+  // The crossing at z 156..164 (where the aisle jogs): the market's hub. A cart, spilled crates and a bench.
+  prop('pl-hand-cart', -1738.6, 160.8, { yaw: 1.2, tint: 0xd93636, solid: { w: 1.0, d: 1.5, h: 0.8 } });
+  prop('park-bench', -1726.6, 159, { yaw: PI / 2, solid: { w: 1.8, d: 0.6, h: 0.9 } });
+  prop('pl-produce-crate', -1739.4, 163.2, { yaw: 0.4, tint: 0xffe066, solid: { w: 0.8, d: 0.6, h: 0.5 } });
+  prop('pl-produce-crate', -1739.0, 163.4, { y: 0.5, yaw: 1.4, tint: 0xd6459f });
+  prop('bird-pigeon', -1731.6, 157.6, { yaw: 2.1 });
+  prop('bird-pigeon', -1730.7, 158.4, { yaw: 4.1 });
+  prop('pl-baguette', -1731.2, 157.2, { y: 0.03, yaw: 0.9 });
+
+  // Back lanes behind the columns: stacked crates, barrels, barrows and a bench or two (never on a stall).
+  const camSpots: readonly (readonly [number, number])[] = [[-1733, 124], [-1740, 150], [-1733, 160]];
+  const free2 = (x: number, z: number, m: number): boolean =>
+    !stalls.some((p) => Math.hypot(p.x - x, p.z - z) < m) && !camSpots.some(([cx, cz]) => Math.hypot(cx - x, cz - z) < 2.2);
+  for (let z = 126; z <= 200; z += 5.2) {
+    for (const bxx of [-1746.5, -1741.8, -1722.6, -1717.5]) {
+      const x = bxx + (rnd() - 0.5) * 2;
+      const zz = z + (rnd() - 0.5) * 2.4;
+      if (!free2(x, zz, 2.6) || roadClearance(x, zz) < 1.2) continue;
+      const pick = Math.floor(rnd() * 6);
+      if (pick === 0) { prop('crate', x, zz, { yaw: rnd() * 6, scale: 0.9, solid: { r: 0.45, h: 0.8 } }); prop('crate', x + 0.1, zz, { y: 0.75, yaw: rnd() * 6, scale: 0.75 }); }
+      else if (pick === 1) prop('barrel', x, zz, { solid: { r: 0.4, h: 0.9 } });
+      else if (pick === 2) prop('wheelbarrow', x, zz, { yaw: rnd() * 6 });
+      else if (pick === 3) { prop('pl-produce-crate', x, zz, { yaw: rnd() * 6, tint: STRIPES[Math.floor(rnd() * STRIPES.length)], solid: { w: 0.8, d: 0.6, h: 0.5 } }); prop('pl-produce-crate', x + 0.7, zz + 0.3, { yaw: rnd() * 6, tint: 0x8bc34a }); }
+      else if (pick === 4) prop('pl-hat-stand', x, zz, { yaw: rnd() * 6, scale: 0.9 });
+      else prop('euro-geranium-pot', x, zz, { tint: [0xd93636, 0xd6459f, 0xff9a3c][Math.floor(rnd() * 3)] });
     }
   }
-  // The gramophone stall: the market's crackling stall radio, in the middle of the back row.
-  prop('market-stall', -1733, 170, { yaw: PI, scale: 1.7, solid: { w: 1.6, d: 0.8, h: 1 } });
-  prop('pl-gramophone', -1733, 170, { y: 0.9 });
-  sign('menu', 'STALL RADIO\nPlays only what it was\nplaying yesterday', -1733, 167.4, 0);
-  // Produce piled loose in the open ground between the rows and the hall.
-  for (let i = 0; i < 9; i++) {
-    const x = -1752 + i * 4.6;
-    if (Math.abs(x + 1733) < 6) continue;
-    prop('pl-produce-crate', x, 192 + (i % 3) * 1.3, { yaw: i * 0.7, tint: [0xff9a3c, 0x8bc34a, 0xd93636][i % 3], solid: { w: 0.8, d: 0.6, h: 0.5 } });
-    if (i % 2) prop('pl-produce-crate', x + 0.4, 192.05 + (i % 3) * 1.3, { y: 0.5, yaw: i, tint: 0xffe066 });
+  prop('park-bench', -1752, 186, { yaw: PI, solid: { w: 1.8, d: 0.6, h: 0.9 } });
+  prop('euro-plane-tree', -1754, 205, { solid: { r: 0.45, h: 9 } });
+  prop('euro-plane-tree', -1712.4, 228, { solid: { r: 0.45, h: 9 } });
+  prop('euro-plane-tree', -1754.5, 140, { solid: { r: 0.45, h: 9 } });
+  prop('euro-plane-tree', -1752.5, 168, { solid: { r: 0.45, h: 9 } });
+  // The hall plaza (z 199..209, between the last stalls and the hall): produce piled loose, a cheese tower.
+  for (let i = 0; i < 7; i++) {
+    const x = -1752 + i * 4.4 + (i > 3 ? 8 : 0);
+    if (Math.abs(x + 1733) < 3) continue;
+    prop('pl-produce-crate', x, 203 + (i % 3) * 1.3, { yaw: i * 0.7, tint: [0xff9a3c, 0x8bc34a, 0xd93636][i % 3], solid: { w: 0.8, d: 0.6, h: 0.5 } });
+    if (i % 2) prop('pl-produce-crate', x + 0.4, 203.05 + (i % 3) * 1.3, { y: 0.5, yaw: i, tint: 0xffe066 });
   }
-  for (let k = 0; k < 4; k++) prop('pl-cheese-wheel', -1729 + (k % 2) * 0.5, 197 + (k >> 1) * 0.1 + (k > 1 ? 0 : 0), { y: k > 1 ? 0.2 * (k - 1) : 0, scale: 1.2 });
+  for (let k = 0; k < 4; k++) prop('pl-cheese-wheel', -1729.5 + (k % 2) * 0.5, 204 + (k >> 1) * 0.1, { y: k > 1 ? 0.2 * (k - 1) : 0, scale: 1.2 });
   // The crepe-van parking spot: two bollards and a sign.
   prop('euro-bollard', -1714, 198, { solid: { r: 0.15, h: 1 } });
   prop('euro-bollard', -1714, 203.6, { solid: { r: 0.15, h: 1 } });
   sign('menu', 'CREPE VAN BAY\nVan reserved.\nParking reserved.\nPatience reserved.', -1716.4, 200.8, -PI / 2);
-  // Market menus and prices, in the aisles.
-  sign('menu', 'Cheese, aged: 12 acorns\nCheese, ageing: 9\nCheese, young and hopeful: 4', -1745, 141, 0);
-  sign('menu', 'BREAD (today\'s opinion)\nRound: strong\nLong: stronger\nSliced: we don\'t talk', -1739, 143.5, 0);
-  sign('menu', 'PRODUCE\nMarrows: large\nMarrows: larger\nMarrows: do not ask', -1725, 141, 0);
-  sign('menu', 'PEARS (espaliered):\nlook, do not touch.\n6 acorns to look', -1722, 165, 0);
-  sign('menu', 'FRESH EGGS\nLaid this week,\nmore or less', -1749, 165, 0);
-  sign('poster', 'MARKET RULES\n1. Queue to browse.\n2. Queue to buy.\n3. Queue to leave.', -1755.4, 155, PI / 2);
-  // Tables for the tasting of nothing, and a bench to wait in.
-  prop('park-bench', -1752, 186, { yaw: PI, solid: { w: 1.8, d: 0.6, h: 0.9 } });
-  prop('wheelbarrow', -1747, 188, { yaw: 0.9 });
-  prop('euro-plane-tree', -1754, 205, { solid: { r: 0.45, h: 9 } });
-  prop('euro-plane-tree', -1712.4, 228, { solid: { r: 0.45, h: 9 } });
 
-  // North annex: stalls facing south toward the camera spot (-1733, 120), a central avenue ending at a fountain.
-  pave(-1738, -1728, 56, 104, 'euro-cobble-tile');
-  let sj = 100;
-  for (const z of [100, 84, 68]) {
-    for (const x of [-1751, -1747, -1743, -1739, -1727, -1723, -1719, -1715]) {
-      if (z === 100 && x === -1747) continue; // the cheese standoff stall is hand-placed below
-      stall(x, z, 0, sj++);
-    }
-  }
+  // ---- Market residents and the haggles --------------------------------------------------------------------------------
+  const holder = (id: string, name: string, sp: Spot, look: Look, bubble: string, idle: Idle = 'vendor-call'): void => {
+    const [x, z] = frameOf(sp).at(0.15, -0.28);
+    plan.residents.push({ id, name, x, z, yaw: sp.yaw, idle, look, bubble });
+  };
+  const shopper = (id: string, name: string, sp: Spot, gx: number, look: Look, bubble: string, idle: Idle = 'point'): void => {
+    const [x, z] = frameOf(sp).at(gx, 1.7);
+    plan.residents.push({ id, name, x, z, yaw: sp.yaw + PI + 0.15, idle, look, bubble });
+  };
+  const beetle = westMain[0];
+  holder('pl-lb-beetle-seller', 'Cornelius Carapace', beetle, { hat: 0x2f3a2c, shirt: 0x4f9a3c, pants: 0x444444, beard: 0xbbbbbb, skin: 0xe0ac69, glasses: true },
+    'BEETLE, slightly used. Price: negotiable. Beetle: not.');
+  shopper('pl-lb-beetle-haggler', 'Madame Rabais', beetle, -0.1, { hat: 0xd6459f, shirt: 0xf3d6cf, pants: 0x4a4f57, beard: null, dress: true, skin: 0xf1c27d, hair: { color: 0x8a5a2b, style: 'pigtails' } },
+    'Three acorns. For the beetle AND the jar. I will not say it twice. I have said it nine times.', 'hands-on-hips');
+  frameOf(beetle).put('stool', -1.0, 1.1, { yaw: beetle.yaw + 0.6 });
+  plan.vignettes.push({
+    id: 'pl-lb-beetle-haggle', name: 'The beetle haggle', x: beetle.x, z: beetle.z,
+    story: 'A stallholder and a customer have been haggling over one beetle in a jar since the morning. The sign says the price is negotiable and the beetle is not, and the beetle, which has heard it all, has gone to sit at the back.',
+  });
+  const brac = nth('bric', 1, eastMain);
+  holder('pl-lb-clock-seller', 'Odile Tictoc', brac, { hat: 0xa65cff, shirt: 0x6a1b3a, pants: 0x333333, beard: null, dress: true, skin: 0xe9b98a, hair: { color: 0x555555, style: 'pigtails' } },
+    'Every clock here is right. They are just right at different times.');
+  shopper('pl-lb-clock-shopper', 'Remy Tempus', brac, 0.2, { hat: 0x333333, shirt: 0xd8cfb8, pants: 0x2c3e50, beard: 0xdddddd, skin: 0xf1c27d, glasses: true },
+    'It says ten past, but it said ten past an hour ago. Is it stuck or is it patient?', 'think');
+  plan.vignettes.push({
+    id: 'pl-lb-clock-argument', name: 'The clock argument', x: brac.x, z: brac.z,
+    story: 'A bric-a-brac stall sells six carriage clocks that all show different times, and a customer has been standing in front of them for an hour trying to decide which one to believe. The stallholder says that is what makes them antiques.',
+  });
+  const hatter = nth('hats', 0);
+  holder('pl-lb-hat-seller', 'Fedor Brim', hatter, { hat: 0x7a1f3d, shirt: 0x8a5a2b, pants: 0x444444, beard: 0xc8c8c8, skin: 0xe0ac69 },
+    'A hat remembers its head. Try it on and see whose it was.');
+  plan.vignettes.push({
+    id: 'pl-lb-hat-stall', name: 'The old-hats stall', x: hatter.x, z: hatter.z,
+    story: 'Two hat stands hold a top hat, a beret, a bowler and a fez, all very slightly too small. The hatter says each one is the right size for the head it left, and that choosing a new head to fit is the buyer\'s job.',
+  });
+  const recordman = nth('records', 0, eastMain);
+  holder('pl-lb-record-seller', 'Gaston Disque', recordman, { hat: 0x1d1d22, shirt: 0x2f64c9, pants: 0x222222, beard: 0x555555, skin: 0xf1c27d, glasses: true },
+    'All my records are by the Maestro. All of them are the same record. At different speeds.', 'idle-pompous');
+  shopper('pl-lb-print-shopper', 'Colette Cadre', nth('prints', 0), 0.9, { hat: 0x2fa8a0, shirt: 0xf2c230, pants: 0x4a4f57, beard: null, dress: true, skin: 0xe0ac69 },
+    'It is a picture of this market, painted before the market was here. I find that very forward-looking.', 'look-around');
+
+  // North annex: a central avenue ending at a fountain.
   prop('euro-fountain', -1733, 58, { solid: { r: 2, h: 1 } });
   prop('bird-pigeon', -1733.6, 56.6, { y: 1.05, yaw: 0.4 });
   sign('plaque', 'FOUNTAIN OF PLENTY\n(of questions)', -1733, 61.1, 0, { y: 0.7, w: 2, h: 0.45 });
-  for (const z of [64, 80, 96]) {
-    prop('euro-lamp-post', -1736.6, z, { solid: { r: 0.2, h: 4.2 } });
-    prop('euro-lamp-post', -1729.4, z, { solid: { r: 0.2, h: 4.2 } });
-  }
+  for (const x of [-1737.6, -1728.4]) prop('euro-lamp-post', x, 63, { solid: { r: 0.2, h: 4.2 } });
   sign('poster', 'WHICH IS OLDER?', -1750.4, 103, 0);
   sign('poster', 'MARKET TODAY\nAlso tomorrow.\nAlso yesterday.', -1727.5, 108.6, 0);
-  // The cheese standoff.
-  prop('market-stall', -1747, 100, { yaw: 0, scale: 1.7, solid: { w: 1.6, d: 0.8, h: 1 } });
-  prop('pl-cheese-wheel', -1747.55, 100.05, { y: 0.9, scale: 1.3, tint: 0xf2c230 });
-  prop('pl-cheese-wheel', -1746.45, 100.05, { y: 0.9, scale: 1.3, tint: 0xe6c27a });
-  prop('stool', -1745.2, 102.4, { yaw: 0.4 });
-  prop('pl-cheese-wheel', -1748.2, 104.2, { yaw: 0.2, scale: 0.9 });
+  // The cheese standoff: a hand-placed stall at the avenue's south-west corner, facing Rue F.
+  {
+    const cs = { x: -1747, z: 100, yaw: 0, s: 1.15 };
+    prop('pl-stall-canopy', cs.x, cs.z, { yaw: 0, scale: cs.s, tint: 0xf0c63a, solid: { w: 1.6 * cs.s, d: 1.3 * cs.s, h: 1.4 } });
+    const { at, put } = frameOf(cs);
+    const [px, pz] = at(0, 0.64);
+    sign('plaque', TRADE_SIGN.cheese, px, pz, 0, { y: 0.5 * cs.s, w: 1.3 * cs.s, h: 0.42 * cs.s });
+    put('pl-cheese-wheel', -0.3, 0.3, { y: TOP, scale: 1.3, tint: 0xf2c230 });
+    put('pl-cheese-wheel', 0.35, 0.3, { y: TOP, scale: 1.3, tint: 0xe6c27a });
+    prop('stool', -1745.2, 102.4, { yaw: 0.4 });
+    prop('pl-cheese-wheel', -1748.9, 103.6, { yaw: 0.2, scale: 0.9 });
+  }
   sign('menu', 'This one: 40 years.\nThat one: 41 years.\nThe matter is closed.\n(It is not closed.)', -1744.2, 104.4, 0);
   plan.vignettes.push({
     id: 'pl-lb-cheese-standoff', name: 'The cheese standoff', x: -1747, z: 101,

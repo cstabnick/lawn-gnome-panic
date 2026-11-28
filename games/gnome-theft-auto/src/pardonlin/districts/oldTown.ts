@@ -259,10 +259,26 @@ export function planOldTown(): DistrictPlan {
   const BX = -1500, BZ = -235;             // bandstand (fixed)
   const SX = -1515, SZ = -207;             // the Unknown Pigeon
   const CX = -1553, CZ = -222;             // the boules court
-  pave(-1562, -283, 28, 32, {
-    cobbleAround: [[FX, FZ, 7], [BX, BZ, 8], [SX, SZ, 4.6]],
-    skip: [[CX - 4.4, CX + 4.4, CZ - 6, CZ + 6]],
-  });
+  // The carousel and its cobbled ring: the paved core is dense; round it runs a gravel quincunx (FX09, D9 item 3).
+  const CAX = -1512, CAZ = -224;
+  const CORE = { x0: -1546, x1: -1496, z0: -266, z1: -203 };         // setts, 50 x 63 m
+  const PLATZ = { x0: -1562, x1: -1478, z0: -283, z1: -187 };        // the whole square
+  const box = (x0: number, x1: number, z0: number, z1: number) => ({ x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 });
+  plan.ground.push(
+    { kind: 'setts', rect: box(CORE.x0, CORE.x1, CORE.z0, CORE.z1) },
+    // Four gravel rectangles round the core, edge to edge and never overlapping.
+    { kind: 'gravel', rect: box(PLATZ.x0, PLATZ.x1, PLATZ.z0, CORE.z0) },
+    { kind: 'gravel', rect: box(PLATZ.x0, PLATZ.x1, CORE.z1, PLATZ.z1) },
+    { kind: 'gravel', rect: box(PLATZ.x0, CORE.x0, CORE.z0, CORE.z1) },
+    { kind: 'gravel', rect: box(CORE.x1, PLATZ.x1, CORE.z0, CORE.z1) },
+    // Cobble rings: the fountain, the bandstand, the Unknown Pigeon, the carousel.
+    { kind: 'cobble', accent: true, circle: { x: FX, z: FZ, r: 6.6 } },
+    { kind: 'cobble', accent: true, circle: { x: BX, z: BZ, r: 7.2 } },
+    { kind: 'cobble', accent: true, circle: { x: SX, z: SZ, r: 4.4 } },
+    { kind: 'cobble', accent: true, circle: { x: CAX, z: CAZ, r: 4.4 } },
+    // The cellar door's doorstep, in the corner by the south-west cafe (Le Petit Groan, workplaces/comedy/club.ts).
+    { kind: 'cobble', rect: box(-1555.5, -1548.5, PLATZ.z1, -180.4) },
+  );
   put('euro-fountain', FX, FZ, { solid: { r: 2, h: 1.1 } });
   put('bandstand', BX, BZ, { yaw: 0, solid: { r: 3.7, h: 1.0 } });
   put('pl-gramophone', BX + 0.5, BZ - 0.9, { yaw: 0.4, y: 0.8, lift: false });
@@ -289,24 +305,29 @@ export function planOldTown(): DistrictPlan {
     put('bird-pigeon', SX + dx, SZ + dz, { yaw: yw, scale: 0.9 });
   }
   put('pl-bread-basket', SX + 3.8, SZ + 1.6, { yaw: 0.6 });
-  // Lamp posts, bollards and plane trees round the square.
-  for (const [x, z] of [[-1558, -279], [-1520, -279], [-1560, -250], [-1560, -190], [-1480, -250], [-1480, -208], [-1520, -191]] as const) {
+  // Lamp posts and bollards round the square (the plane trees are the quincunx below).
+  for (const [x, z] of [[-1558, -279], [-1520, -279], [-1561, -250], [-1561, -204], [-1480, -250], [-1480, -208], [-1520, -191]] as const) {
     put('euro-lamp-post', x, z, {});
-  }
-  for (const [x, z] of [[-1544, -272], [-1498, -272], [-1544, -200], [-1470, -277]] as const) {
-    putFree('euro-plane-tree', x, z, { solid: { r: 0.45, h: 9 } });
   }
   for (const x of [-1556, -1548, -1540, -1532, -1524, -1516]) put('euro-bollard', x, -281.6, { solid: { r: 0.18, h: 1 } });
   put('euro-bike-rack', -1500, -279, { yaw: 0 }); put('euro-bike-rack', -1503.5, -279, { yaw: 0 });
   put('euro-bike-rack', -1479.6, -193, { yaw: PI / 2 });
-  // Cafe terraces spilling onto the square.
-  for (const [x, z] of [[-1560, -192.8], [-1556, -192.8], [-1552, -192.8], [-1560, -196.6], [-1556, -196.6], [-1552, -196.6]] as const) {
-    cafeSet(x, z, PI, { parasol: (x + z) % 2 < 1, paper: x === -1556 || x === -1560, cup: true });
-  }
-  cafeSet(-1548, -193, PI, { parasol: true, cup: true });
-  for (const [x, z] of [[-1490.5, -278.6], [-1486.5, -278.6], [-1482.5, -278.6], [-1490.5, -275], [-1482.5, -275]] as const) {
-    cafeSet(x, z, 0, { parasol: x !== -1486.5, paper: z > -277, cup: true });
-  }
+  // Cafe terraces spilling 10 m and more out of the two corner cafes: rows of table, chairs and parasol.
+  // The south-west cafe's front is at z -186.6 (it faces north); the north cafe's at z -285 (it faces south).
+  [-191.8, -195.6, -199.4].forEach((z, i) => [-1559.8, -1555.8, -1551.8, -1547.8].forEach((x, j) => {
+    cafeSet(x, z, PI, { parasol: (i + j) % 3 !== 2, paper: (i * 5 + j * 3) % 4 === 0, cup: (i + j) % 5 !== 3 });
+    if ((i + j) % 2 === 0) put('pl-croissant', x + 0.18, z + 0.12, { y: 0.79, yaw: i + j });
+  }));
+  [-281.5, -277.5, -273.5].forEach((z, i) => [-1492.5, -1488.5, -1484.5, -1480.5].forEach((x, j) => {
+    if (j === 3 && i === 2) return;   // the tabac kiosk
+    cafeSet(x, z, 0, { parasol: (i + j) % 3 !== 1, paper: (i * 3 + j) % 4 === 1, cup: true });
+    if ((i + j) % 2 === 1) put('pl-croissant', x + 0.18, z + 0.12, { y: 0.79, yaw: i * 2 + j });
+  }));
+  // Menu boards at the terrace ends, a planter at each corner of the south-west terrace.
+  put('sandwich-board', -1562.4, -190.6, { yaw: PI / 2 + 0.15 });
+  put('sandwich-board', -1545.6, -197.4, { yaw: -PI / 2 + 0.2 });
+  put('sandwich-board', -1478.4, -279.8, { yaw: -PI / 2 + 0.25 });
+  for (const [x, z] of [[-1562, -202], [-1545.8, -202.4], [-1494.2, -271.4]] as const) put('euro-flower-trough', x, z, { yaw: PI / 2 });
   // The Tuesday crossword quarrel: a knocked chair, two papers, two cups, a table turned away.
   cafeSet(-1546, -283.3, 0, { knocked: true, paper: true, cup: true });
   put('pl-newspaper', -1546.9, -281.5, { yaw: 2, y: 0.02 });
@@ -383,25 +404,53 @@ export function planOldTown(): DistrictPlan {
   put('pl-book-stall', -1555, -258, { yaw: PI / 2 });
   sign('menu', 'BOOKS: read, half-read, and\nread to someone else.', -1553.6, -262, PI / 2);
 
-  // ---- The Platz, lived in: avenues, a ringed fountain, terraces, kiosks, a flower market, pigeons -----------------------
+  // ---- The Platz, dense core and gravel quincunx ------------------------------------------------------------------------
+  // FX09 (D9 item 3): the paved core (setts, x -1546..-1496, z -266..-203) holds a carousel, a flower market, kiosks,
+  // the fountain's regatta, the crowd round the mime and the bandstand's audience; the gravel ring round it is a
+  // plane-tree quincunx with benches. The terraces spill out of the two corner cafes (above).
   {
     const noGo = (x: number, z: number): boolean =>
-      (x > -1490.5 && x < -1485.5 && z > -236 && z < -192) ||           // the queue and its clear strip
-      Math.hypot(x - -1500, z - -200) < 3.5 ||                          // the screenshot spot
+      (x > -1491 && x < -1485 && z > -236 && z < -192) ||               // the queue and its clear strip
+      Math.hypot(x - -1500, z - -200) < 5 ||                            // the screenshot spot
       Math.hypot(x - -1540, z - -266) < 5.5 ||                          // Odile, easel and sitter
       Math.hypot(x - BX, z - BZ) < 5.4 ||                               // the bandstand
       (x > -1563 && x < -1544 && z > -228.5 && z < -215.5);             // the boules court
+    const inCore = (x: number, z: number, m = 0): boolean => x > CORE.x0 - m && x < CORE.x1 + m && z > CORE.z0 - m && z < CORE.z1 + m;
     const open = (x: number, z: number, r = 1): boolean =>
       !noGo(x, z) && x > -1564 && x < -1477 && z > -283 && z < -187 && roadClearance(x, z) > 0.9 &&
       !props.some((p) => !p.id.includes('tile') && Math.hypot(p.x - x, p.z - z) < r + (p.solid ? ('r' in p.solid ? p.solid.r : Math.max(p.solid.w, p.solid.d) / 2) : 0.25));
-    const tree = (x: number, z: number): void => { if (open(x, z, 1)) put('euro-plane-tree', x, z, { solid: { r: 0.45, h: 9 } }); };
-    // Two pleached avenues down the long sides, a bench in each gap.
-    for (let z = -276; z <= -196; z += 8) {
-      tree(-1558.5, z); tree(-1481.2, z);
-      if (open(-1556.8, z + 4, 0.9)) put('bench', -1556.8, z + 4, { yaw: PI / 2, solid: { w: 0.7, d: 1.8, h: 0.9 } });
-      if (open(-1482.9, z + 4, 0.9)) put('bench', -1482.9, z + 4, { yaw: -PI / 2, solid: { w: 0.7, d: 1.8, h: 0.9 } });
+    const faceTo = (x: number, z: number, tx: number, tz: number): number => Math.atan2(tx - x, tz - z);
+
+    // The outer ring: a quincunx of plane trees on the gravel (staggered rows ~6.8 m apart), benches between them.
+    const trees: [number, number][] = [];
+    for (let i = 0; i < 18; i++) {
+      const z = -280.6 + i * 5.9;
+      for (let j = 0; j < 13; j++) {
+        const x = -1559.2 + j * 6.8 + (i % 2 ? 3.4 : 0);
+        if (x > -1479.5 || inCore(x, z, 1.7) || !open(x, z, 2.5)) continue;
+        if (Math.hypot(x - -1500, z - -200) < 9 || Math.hypot(x - -1510, z - -196) < 4.5) continue;   // keep the view from the south steps open
+        put('euro-plane-tree', x, z, { solid: { r: 0.45, h: 9 } });
+        trees.push([x, z]);
+      }
     }
-    // The fountain: a ring of troughs and a wider ring of bollards.
+    // Benches in the row gaps, turned toward the core (park-bench seats face local +z).
+    for (let i = 0; i < 18; i += 2) {
+      const z = -280.6 + i * 5.9;
+      for (let j = 0; j < 13; j++) {
+        const x = -1559.2 + j * 6.8 + (i % 2 ? 3.4 : 0) + 3.4;
+        if (inCore(x, z, 1.2) || !open(x, z, 1.5)) continue;
+        const north = z < CORE.z0, south = z > CORE.z1, west = x < CORE.x0;
+        const yaw = north ? 0 : south ? PI : west ? PI / 2 : -PI / 2;
+        const side = north || south;
+        put('park-bench', x, z, { yaw, solid: { w: side ? 1.8 : 0.7, d: side ? 0.7 : 1.8, h: 0.9 } });
+      }
+    }
+    // Lamp posts along the core's edge, in the gaps.
+    for (const [x, z] of [[-1537, -268.4], [-1511, -268.4], [-1547.8, -246], [-1547.8, -214], [-1494.2, -258], [-1494.2, -216], [-1520, -204.2], [-1534, -204.2]] as const) {
+      if (open(x, z, 1)) put('euro-lamp-post', x, z, {});
+    }
+
+    // ---- The fountain: a ring of troughs, a wider ring of bollards, a regatta, a child with a stick ----
     for (let k = 0; k < 4; k++) {
       const a = PI / 4 + k * PI / 2;
       put('euro-flower-trough', FX + Math.cos(a) * 3.1, FZ + Math.sin(a) * 3.1, { yaw: a + PI / 2, solid: { w: 1.5, d: 0.5, h: 0.6 } });
@@ -412,36 +461,110 @@ export function planOldTown(): DistrictPlan {
       const bx = FX + Math.cos(a) * 4.4, bz = FZ + Math.sin(a) * 4.4;
       if (open(bx, bz, 0.3)) put('euro-bollard', bx, bz, { solid: { r: 0.18, h: 1 } });
     }
-    // Cafe-terrace clusters out in the square: table, chairs, parasol, a cup, a paper, a croissant on the table top.
+    // Toy boats on the water (the basin's water top is 0.56 m above the ground; the central column is at the centre).
+    for (const [dx, dz, yw, sail] of [[1.25, -0.5, 0.7, 0xc8352f], [-0.85, 1.3, 2.4, 0x3466b8], [0.35, -1.45, -0.9, 0xf0c63a], [-1.35, -0.6, 3.9, 0x4f9a3c]] as const) {
+      put('pl-toy-sailboat', FX + dx, FZ + dz, { yaw: yw, y: 0.545, tint: sail, lift: false });
+    }
+    sign('menu', 'REGATTA TODAY.\nBoats: four. Winners: one,\nsmall, wet, undecided.', FX + 1.9, FZ + 5.6, 0.1);
+
+    // ---- The carousel and its queue ----
+    put('pl-carousel', CAX, CAZ, { yaw: 0.3, solid: { r: 2.8, h: 4.3 } });
+    queue([[-1507.6, -216.4], [-1507.6, -220.9]], PI / 2);
+    sign('poster', 'ONE RIDE: one acorn.\nTWO RIDES: you will be dizzy.', -1505.6, -218.9, -PI / 2 + 0.12);
+    put('stool', -1506.4, -224.6, { trim: 0x7a5a3a });
+    put('lost-suitcase', -1507.2, -222.8, { yaw: 0.9, scale: 0.8 });
+    put('candyfloss-cart', -1517.2, -218.6, { yaw: PI * 0.6, solid: { r: 1.0, h: 2.2 } });
+    sign('menu', 'CANDYFLOSS.\nFlavour: pink.\nAlso: pink.', -1519.8, -217.0, PI * 0.6);
+    put('litter-bin', -1509.2, -229.6, { solid: { r: 0.3, h: 1 } });
+    put('euro-bike-rack', -1516.8, -223.4, { yaw: PI / 2 }); put('euro-bike-rack', -1516.8, -226.4, { yaw: PI / 2 });
+
+    // ---- Newspaper kiosks and boxes ----
+    put('news-kiosk', -1533.4, -262.2, { yaw: 0, solid: { w: 2.6, d: 2.0, h: 2.8 } });
+    put('newspaper-box', -1536.3, -260.9, { yaw: 0.2, solid: { w: 0.5, d: 0.5, h: 1 } });
+    put('newspaper-box', -1530.6, -260.8, { yaw: -0.2, solid: { w: 0.5, d: 0.5, h: 1 } });
+    put('litter-bin', -1529.2, -260.6, { solid: { r: 0.3, h: 1 } });
+    put('pl-newspaper', -1534.4, -259.2, { yaw: 1, y: 0.02 });
+    put('news-kiosk', -1497.6, -249.4, { yaw: -PI / 2, solid: { w: 2.6, d: 2.0, h: 2.8 } });
+    put('newspaper-box', -1499.6, -246.6, { yaw: PI * 0.9, solid: { w: 0.5, d: 0.5, h: 1 } });
+    put('newspaper-box', -1499.6, -252.4, { yaw: PI * 1.05, solid: { w: 0.5, d: 0.5, h: 1 } });
+    put('sandwich-board', -1500.4, -244.4, { yaw: -PI / 2 + 0.3 });
+    sign('menu', 'NEWS: yesterday\'s.\nOLD NEWS: also yesterday\'s.', -1500.4, -249.6, -PI / 2 - 0.1);
+
+    // ---- A busker's corner on the gravel, left of the view from the south steps ----
+    put('stool', -1511, -197, { trim: 0x7a5a3a });
+    put('pl-accordion', -1511, -197, { y: 0.55, yaw: 0.5, scale: 1.2 });
+    put('pardonlin-beret', -1509.4, -196, { rot: [PI, 0.4, 0], y: 0.22 });
+    put('acorn', -1509.4, -196, { y: 0.05, scale: 0.7 });
+    sign('poster', 'BUSKING: one tune per acorn.\nRequests: noted, then ignored.', -1513.4, -194.8, 0.35);
+    put('bird-pigeon', -1508.2, -195, { yaw: 2, scale: 0.9 }); put('bird-pigeon', -1507.6, -196.2, { yaw: 4, scale: 0.9 });
+
+    // ---- The flower market: four stalls in a row, loose buckets, pots, troughs, a sign ----
+    [[-1517.5, 0x4f9a3c], [-1512, 0xd9544e], [-1506.5, 0x3466b8], [-1501, 0xe8822e]].forEach(([x, tint], i) => {
+      put('pl-flower-stall', x, -259.4, { yaw: [0.04, -0.03, 0.05, 0][i], tint, trim: 0xf4f4f0, solid: { w: 3.0, d: 2.4, h: 2.4 } });
+      put('pl-flower-bucket', x + 1.55, -256.1, { yaw: i, tint: [0xf2a3c4, 0xf0c63a, 0xe0245e, 0xa65cff][i], trim: 0xffffff });
+      put('pl-flower-bucket', x - 1.6, -256.3, { yaw: i + 2, tint: [0xe8822e, 0xf4f4f0, 0xf2a3c4, 0xf0c63a][i], trim: 0xe0245e });
+      put('euro-geranium-pot', x + 0.6, -255.9, {});
+    });
+    put('euro-flower-trough', -1509, -254.4, { yaw: 0 }); put('euro-flower-trough', -1504, -254.4, { yaw: 0 });
+    put('pl-produce-crate', -1521.4, -258.2, { yaw: 0.3 });
+    sign('poster', 'FLOWER MARKET.\nEvery bunch is the last bunch.\nSee also: tomorrow.', -1514.6, -254.2, 0.12, {}, true);
+    sign('menu', 'TULIPS: yes.\nTULIPS, AGAIN: also yes.', -1498.2, -255, -0.2, {}, true);
+
+    // ---- The bandstand's audience: two rows of folding chairs turned to the band ----
+    [-226.9, -225.1].forEach((z, r) => [-1505.2, -1503.4, -1501.6, -1499.8, -1498].forEach((x, k) => {
+      if (r === 1 && k === 3) return;
+      put('chair', x, z, { yaw: PI + (k - 2) * 0.04 });
+    }));
+    put('pl-newspaper', -1500.8, -224.2, { yaw: 2.2, y: 0.02 });
+    put('pl-espresso-cup', -1498.6, -224.0, { y: 0.02 });
+
+    // ---- Terrace-style clusters in the core, near the fountain, and more lamps ----
     const cluster = (x: number, z: number, yaw: number, extra: boolean): void => {
       if (!open(x, z, 1.9)) return;
       cafeSet(x, z, yaw, { parasol: true, paper: extra, cup: true });
       put('pl-croissant', x + 0.18, z + 0.12, { y: 0.79, yaw: yaw + 1 });
       if (extra) put('pl-espresso-cup', x - 0.25, z - 0.12, { y: 0.79 });
     };
-    cluster(-1546, -244, 0.3, true); cluster(-1542, -240, 2.6, false); cluster(-1511, -252, 1.1, true);
-    cluster(-1507, -256, 4, false); cluster(-1540, -208, PI, true); cluster(-1535, -204, 0, false);
-    cluster(-1512, -266, 0.5, true); cluster(-1480, -245, -PI / 2, false);
-    // Kiosks, a flower market corner, bike racks and a lamp grid.
-    if (open(-1546, -252, 1.4)) put('news-kiosk', -1546, -252, { yaw: PI / 2, solid: { w: 1.6, d: 1.6, h: 2.4 } });
-    if (open(-1472, -255, 1.4)) put('news-kiosk', -1472, -255, { yaw: -PI / 2, solid: { w: 1.6, d: 1.6, h: 2.4 } });
-    if (open(-1531, -194, 1.4)) put('newspaper-box', -1531, -194, { yaw: PI, solid: { w: 0.5, d: 0.5, h: 1 } });
-    for (const [mx, mz, my] of [[-1522, -270, 0], [-1517, -270, 0.1], [-1512, -270, -0.1]] as const) {
-      if (!open(mx, mz, 1.7)) continue;
-      put('market-stall', mx, mz, { yaw: my, solid: { w: 2.4, d: 1.6, h: 2.3 } });
-      put('euro-geranium-pot', mx - 1.9, mz + 1.2, {}); put('euro-geranium-pot', mx + 1.9, mz + 1.4, {});
-      put('euro-flower-trough', mx, mz + 1.6, { yaw: 0 });
-    }
-    sign('poster', 'FLOWER MARKET.\nEvery bunch is the last bunch.\nSee also: tomorrow.', -1517, -267.4, 0, {}, true);
-    for (let k = 0; k < 3; k++) if (open(-1556, -240 + k * 3.6, 1)) put('euro-bike-rack', -1556, -240 + k * 3.6, { yaw: PI / 2 });
-    for (let x = -1556; x <= -1484; x += 16) for (let z = -270; z <= -200; z += 14) if (open(x, z, 0.8)) put('euro-lamp-post', x, z, {});
-    // Pigeons, in small groups of opinion.
-    for (const [gx, gz] of [[-1534, -252], [-1522, -214], [-1546, -234], [-1505, -270], [-1470, -240], [-1531, -222]] as const) {
-      for (let k = 0; k < 3; k++) if (open(gx + k * 0.7, gz + (k % 2) * 0.6, 0.2)) put('bird-pigeon', gx + k * 0.7, gz + (k % 2) * 0.6, { yaw: k * 2.1 + gx, scale: 0.9 });
+    cluster(-1541, -250, 0.3, true); cluster(-1537, -246, 2.6, false); cluster(-1541, -241, 3.6, true);
+    cluster(-1541, -208.5, PI, true); cluster(-1530, -213.5, PI, false);
+
+    // ---- Pigeons, in small groups of opinion ----
+    for (const [gx, gz] of [[-1534, -252], [-1522, -214], [-1546.5, -232], [-1510, -246], [-1524.6, -240.4], [-1503.5, -218.6], [-1531, -222], [-1538, -258], [-1496.4, -224], [-1523.6, -209.2]] as const) {
+      for (let k = 0; k < 4; k++) {
+        const px = gx + Math.cos(k * 1.9 + gx) * 0.5 * (k + 1) * 0.55, pz = gz + Math.sin(k * 2.3 + gz) * 0.5 * (k + 1) * 0.5;
+        if (open(px, pz, 0.2)) put('bird-pigeon', px, pz, { yaw: k * 2.1 + gx, scale: 0.9 });
+      }
     }
     sign('poster', 'PIGEONS HAVE STANDING.\nPlease stand elsewhere.', -1534, -249.4, 0.2);
-    sign('menu', 'TERRACE: seat yourself.\nThe seat has views on that.', -1544, -246.5, 0.4);
+    sign('menu', 'TERRACE: seat yourself.\nThe seat has views on that.', -1544.4, -246.8, 0.4);
     sign('poster', 'BENCH WARMED BY A COMMITTEE.\nPlease ask it to move.', -1483.6, -258.5, -PI / 2);
+    sign('poster', 'GRAVEL: keep off the gravel.\nIt is the only quiet thing here.', -1560.6, -262, PI / 2 + 0.1);
+
+    // ---- Le Petit Groan's cellar door (workplaces/comedy/club.ts: CLUB_DOOR): its name and tonight's bill ----
+    const DOOR_X = -1555.52, DOOR_Z = -183.9;
+    sign('banner', 'LE PETIT GROAN\nLaughter by appointment.', DOOR_X + 0.02, DOOR_Z, PI / 2, { y: 3.55, w: 2.9, h: 0.8 });
+    sign('menu', 'TONIGHT: a gnome. Then another gnome.\nLaughter by appointment.', DOOR_X + 2.0, DOOR_Z - 1.5, PI / 2 - 0.12, {}, true);
+
+    // ---- Residents: the crowd round Marcel (loose ring, 2.6-4 m out on the audience's side, all facing him), the child at the regatta ----
+    const fan = (id: string, name: string, dx: number, dz: number, idle: AmbientGnomeDef['idle'], bubble: string, look: AmbientGnomeDef['look']): void => {
+      const x = MX + dx, z = MZ + dz;
+      plan.residents.push({ id, name, x: +x.toFixed(2), z: +z.toFixed(2), yaw: +faceTo(x, z, MX, MZ).toFixed(2), look, bubble, idle });
+    };
+    fan('pl-mime-fan-1', 'Mime Fan (Front Row)', 3.2, -1.5, 'idle-pompous', 'Is it a wall? It is a wall. Remarkable.',
+      { hat: 0x2b2f6b, shirt: 0xe9e1cf, pants: 0x4b4b52, skin: 0xe2b27e, boots: 0x2a2a2a, beard: 0x4a3a2a });
+    fan('pl-mime-fan-2', 'Mime Fan (Whisperer)', 3.4, 0.7, 'gossip', '[whispering] He has not moved in an hour. Brava.',
+      { hat: 0x6b2323, shirt: 0xd8b36a, pants: 0x3a3a44, skin: 0xf1c27d, boots: 0x3a2a1a, beard: null, dress: true });
+    fan('pl-mime-fan-3', 'Mime Fan (Sceptic)', 3.0, 2.4, 'cross-arms', 'I paid nothing and it is still too much.',
+      { hat: 0x1a1a1a, shirt: 0xb5483a, pants: 0x2f2f3a, skin: 0xe8b98a, boots: 0x111111, beard: 0xbdbdbd, glasses: true });
+    fan('pl-mime-fan-4', 'Mime Fan (Admirer)', 1.9, 3.7, 'lean-back', 'Bravo. Do not clap. He will hear it.',
+      { hat: 0x3a5a3a, shirt: 0xcbd6e4, pants: 0x4b3a2e, skin: 0xf1c27d, boots: 0x222222, beard: 0x7a5a3a });
+    fan('pl-mime-fan-5', 'Mime Fan (Pigeon Person)', -1.4, -3.1, 'feed-birds', 'I came for the pigeons. I stayed for the box.',
+      { hat: 0x7a4a2e, shirt: 0xf3d6cf, pants: 0x3a3a44, skin: 0xe2b27e, boots: 0x3a2a1a, beard: null, dress: true, glasses: true });
+    plan.residents.push({
+      id: 'pl-boat-child', name: 'Regatta Child', x: +(FX + 0.5).toFixed(2), z: +(FZ + 2.65).toFixed(2), yaw: +faceTo(FX + 0.5, FZ + 2.65, FX, FZ).toFixed(2),
+      look: { hat: 0xf0c63a, shirt: 0x3466b8, pants: 0x6b4a2e, skin: 0xf1c27d, boots: 0xc8352f, beard: null, freckles: true },
+      bubble: 'My boat is winning. The other boat is also mine. I am losing to myself, slowly.', idle: 'point',
+    });
   }
 
   // Street signs at the corners, in their own voice.
@@ -548,6 +671,14 @@ export function planOldTown(): DistrictPlan {
       story: 'Switchbacks of rope posts, a dozen suitcases, a folding stool someone has sat on since breakfast, a dropped croissant and Fifi Haricot\'s flag at the very front. Nobody has gone up yet.' },
     { id: 'ot-crossword-quarrel', name: 'The Tuesday crossword quarrel', x: -1546, z: -282,
       story: 'A knocked-over chair, two newspapers folded to the same page, two cups and a table left by two gnomes who still disagree on seven across.' },
+    { id: 'ot-carousel', name: 'The carousel and its queue', x: CAX, z: CAZ,
+      story: 'Six painted horses go round under a striped roof. Four rope posts, a stool and a suitcase make the queue, and the sign says: ONE RIDE one acorn, TWO RIDES you will be dizzy.' },
+    { id: 'ot-regatta', name: 'The fountain regatta', x: FX, z: FZ,
+      story: 'Four toy sailboats on the basin, one small child with a stick, and a notice that the winner is undecided. The child owns all four boats and is losing to himself.' },
+    { id: 'ot-mime-audience', name: 'Marcel\'s audience', x: MX + 2.5, z: MZ + 1,
+      story: 'Five gnomes stand round Marcel in a loose ring and admire a wall that is not there. One of them has come for the pigeons and stayed for the box.' },
+    { id: 'ot-flower-market', name: 'The flower market', x: -1509, z: -257,
+      story: 'Four stalls under four awnings, buckets of blooms on every counter and every shelf, and a poster promising that every bunch is the last bunch.' },
     { id: 'ot-washing-day', name: 'The shared washing line', x: -1484, z: -115,
       story: 'Two washing lines in an ordinary block, a basket, a chair and a marrow guarded in a row of allotment beds: a whole afternoon of someone else\'s business.' },
   );

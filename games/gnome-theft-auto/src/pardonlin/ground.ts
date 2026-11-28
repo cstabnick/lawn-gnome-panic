@@ -106,11 +106,19 @@ function makeTexture(kind: PavingKind): THREE.CanvasTexture {
     grain(6000, 0.15, '#ffffff', '#2c2a26');
   } else if (kind === 'gravel') {
     // Golden park gravel: a warm base, thousands of small stones.
-    g.fillStyle = '#c9b48a';
+    g.fillStyle = '#b39a6e';
     g.fillRect(0, 0, SIZE, SIZE);
-    for (let i = 0; i < 14000; i++) {
-      const x = r() * SIZE, y = r() * SIZE, rad = 0.8 + r() * 2.4;
-      g.fillStyle = stone([200, 182, 144], r() * 2.4 - 1.2);
+    // Raked, scuffed patches: soft lighter and darker blotches so it never reads as a flat sand plane.
+    for (let i = 0; i < 60; i++) {
+      const x = r() * SIZE, y = r() * SIZE, rad = 20 + r() * 60;
+      const col = r() < 0.5 ? 'rgba(230,214,176,0.18)' : 'rgba(110,90,60,0.16)';
+      wrapped((ox, oy) => { g.fillStyle = col; g.beginPath(); g.ellipse(x + ox, y + oy, rad, rad * 0.6, r() * 3, 0, Math.PI * 2); g.fill(); });
+    }
+    for (let i = 0; i < 16000; i++) {
+      const x = r() * SIZE, y = r() * SIZE, rad = 0.8 + r() * 2.6;
+      // Mostly buff and cream pebbles, with grey and rust ones mixed in.
+      const pick = r();
+      g.fillStyle = pick < 0.12 ? stone([128, 124, 118], r() * 2 - 1) : pick < 0.2 ? stone([150, 104, 70], r() * 2 - 1) : stone([206, 188, 150], r() * 3 - 1.5);
       g.beginPath();
       g.arc(x, y, rad, 0, Math.PI * 2);
       g.fill();

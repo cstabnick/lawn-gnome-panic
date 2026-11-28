@@ -49,7 +49,10 @@ export const DISTRICTS: readonly District[] = [
   {
     id: 'teacup-quays', name: 'Teacup Row and the Quays',
     // FX09: the river corridor (both quays, the Thymes Walk and the Rive Gauche) is the Quays' too.
-    rects: [{ minX: -1595, maxX: -1400, minZ: -8, maxZ: 500 }, { minX: -1626, maxX: -1595, minZ: -540, maxZ: 1005 }],
+    rects: [{ minX: -1595, maxX: -1400, minZ: -8, maxZ: 500 }, { minX: -1626, maxX: -1595, minZ: -540, maxZ: 1005 },
+      // ... and the quay edges where the river drifts out of that strip (north-west and the east bank south of z 500).
+      { minX: -1640, maxX: -1626, minZ: -540, maxZ: -460 }, { minX: -1595, maxX: -1585, minZ: -540, maxZ: -460 },
+      { minX: -1595, maxX: -1585, minZ: 500, maxZ: 1005 }],
     shots: [
       { id: 'tq-1-teacup-row', x: -1522, z: 116, yaw: 0, what: 'Teacup Row, looking south down the café lane' },
       { id: 'tq-2-quay', x: -1584, z: 200, yaw: Math.PI, what: 'the east quay and the Thymes Walk' },
@@ -73,7 +76,7 @@ export const DISTRICTS: readonly District[] = [
     rects: [
       { minX: -1795, maxX: -1400, minZ: -890, maxZ: -540 },
       { minX: -1495, maxX: -1405, minZ: 515, maxZ: 885 },
-      { minX: -1548, maxX: -1405, minZ: 1005, maxZ: 1095 },
+      { minX: -1660, maxX: -1405, minZ: 1005, maxZ: 1095 },
     ],
     shots: [
       { id: 'gd-1-jardin', x: -1510, z: -684, yaw: Math.PI, what: 'the Jardin parterre and its fountain' },

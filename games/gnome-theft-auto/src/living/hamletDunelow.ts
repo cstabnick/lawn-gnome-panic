@@ -6,6 +6,7 @@ import type { Box } from '../types';
 import type { AmbientGnomeDef } from '../ambientGnomes';
 import { heightAt } from '../terrain';
 import { textPlate } from '../homes/pieces';
+import { addNoticeSpot } from '../homes/notices';
 import { placePieces, pieceBox, type Piece } from './place';
 
 /** The green in the middle of the village. */
@@ -153,13 +154,19 @@ export function buildDunelow(scene: THREE.Scene, boxes: Box[]): void {
   // Notice board plate on the rules board (face centre 0, 1.45, 0.05; 1.4 x 0.9), 0.03 m in front.
   const bx = -578, bz = 936;
   scene.add(textPlate(
-    'VILLAGE NOTICES\nGULLS ARE NOT TO BE FED.\nGULLS ARE AWARE OF THIS AND DISAGREE.\nIce cream van Tuesdays\nand whenever it hears you.\nLost: one flip-flop. Left.\nPossibly at sea.',
+    'VILLAGE NOTICES\nGULLS ARE NOT TO BE FED.\nGULLS DISAGREE.\n(read on)',
     bx, heightAt(bx, bz) + 1.45, bz + 0.08, 0, { w: 1.3, h: 0.8, bg: 0xf5f0e0, fg: 0x2b2116 }));
+  // The full notices, one per press, from the approach side (the board faces +z).
+  addNoticeSpot({ x: bx, z: bz + 1.3, y: heightAt(bx, bz + 1.3) }, [
+    'GULLS ARE NOT TO BE FED. GULLS ARE AWARE OF THIS AND DISAGREE.',
+    'Ice cream van Tuesdays, and whenever it hears you.',
+    'Lost: one flip-flop. Left. Possibly at sea.',
+  ]);
   // Bus shelter timetable, on the inside of the back glass.
   scene.add(textPlate('SNAIL COACH\nMon-Sat: sometimes\nSun: see Mon', -600, heightAt(-600, 992) + 1.5, 992 - 0.7, 0,
     { w: 1.2, h: 0.5, bg: 0xf5f0e0, fg: 0x2f5d46 }));
   // Deckchair hire board.
-  scene.add(textPlate('DECKCHAIRS\nHIRE 50p\nFalling over included', -566, heightAt(-566, 1058) + 1.1, 1058.1, 0,
+  scene.add(textPlate('DECKCHAIRS\nHIRE 1 ACORN\nFalling over included', -566, heightAt(-566, 1058) + 1.1, 1058.1, 0,
     { w: 1.0, h: 0.5, bg: 0xf6e3a1, fg: 0x3b6ea5 }));
   // Judges' card for the sandcastles.
   scene.add(textPlate('JUDGES: 3 GULLS\nWinner: the tallest\n(bucket stays)', -503, heightAt(-503, 1050) + 0.5, 1049.4, 0,

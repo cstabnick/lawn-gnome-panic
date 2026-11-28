@@ -30,6 +30,22 @@ export const WEATHER_LOOK: Record<WeatherKind, { overcast: number; mist: number 
 };
 
 /**
+ * Rain greys the sky even when it is light (G9#26): its overcast is at least `floor` once the rain is past `fadeIn`
+ * intensity (a fading-in shower ramps to it), rising to WEATHER_LOOK.rain.overcast at full rain, so it is never darker
+ * than full rain was before.
+ */
+export const RAIN_OVERCAST = { floor: 0.45, fadeIn: 0.15 } as const;
+
+/** The overcast a kind applies at an intensity (0..1). Pure. */
+export function weatherOvercast(kind: WeatherKind, intensity: number): number {
+  const i = Math.max(0, Math.min(1, intensity));
+  const full = WEATHER_LOOK[kind].overcast;
+  if (kind !== 'rain') return full * i;
+  const ramp = Math.min(1, i / RAIN_OVERCAST.fadeIn);
+  return ramp * (RAIN_OVERCAST.floor + (full - RAIN_OVERCAST.floor) * i);
+}
+
+/**
  * Particle and cloud budgets per render tier (quality.ts). Phones start on 'medium': about 40 percent of the desktop
  * count, and no cloud layer on 'low' and 'min'.
  */

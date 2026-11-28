@@ -7,6 +7,7 @@ import type { Box } from '../types';
 import type { AmbientGnomeDef } from '../ambientGnomes';
 import { heightAt } from '../terrain';
 import { textPlate } from '../homes/pieces';
+import { addNoticeSpot } from '../homes/notices';
 import { HAMLETS } from './config';
 import { placePieces, prefabBounds, type Piece } from './place';
 
@@ -182,9 +183,16 @@ function build(scene: THREE.Scene, boxes: Box[]): void {
     const yaw = board.yaw ?? 0, y = heightAt(board.x, board.z);
     const [x, , z] = plateOn(board.x, board.z, yaw, 0, 0.09);
     scene.add(textPlate(
-      'NOTICES\nTOPIARY CONTEST: entries must not resemble the judges.\nLOST: one pear. Answers to nothing.\nThe hedge between No. 3 and No. 4 is 1.2 m. It is ALSO 1.4 m. Mediation Tuesday.',
+      'NOTICES\nTOPIARY CONTEST\nLOST: ONE PEAR\nHEDGE MEDIATION TUESDAY',
       x, y + 1.45, z, yaw, { w: 1.3, h: 0.82, bg: 0xe8dcc0, fg: 0x2b2116 },
     ));
+    // The full notices, one per press, from the board's facing side.
+    const sx = board.x + Math.sin(yaw) * 1.3, sz = board.z + Math.cos(yaw) * 1.3;
+    addNoticeSpot({ x: sx, z: sz, y: heightAt(sx, sz) }, [
+      'TOPIARY CONTEST: entries must not resemble the judges.',
+      'LOST: one pear. Answers to nothing.',
+      'The hedge between No. 3 and No. 4 is 1.2 m. It is ALSO 1.4 m. Mediation Tuesday.',
+    ]);
   }
 }
 

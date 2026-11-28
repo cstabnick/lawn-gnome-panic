@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
-import { buildPieces, textPlate, type HomePiece } from '../homes/pieces';
+import { buildPieces, signBoard, textPlate, type HomePiece } from '../homes/pieces';
 import { addRooftop, rooftopById } from '../interiors/rooftops';
 import { heightAt } from '../terrain';
 import type { Box } from '../types';
@@ -87,9 +87,6 @@ function rnd(seed: number): () => number {
   };
 }
 
-/** Facing vector of a yaw. */
-const fwd = (yaw: number): [number, number] => [Math.sin(yaw), Math.cos(yaw)];
-
 export function buildBottomGarden(scene: THREE.Scene): BottomGarden {
   const root = new THREE.Group();
   root.name = 'hedgeworth-bottom-garden';
@@ -100,13 +97,13 @@ export function buildBottomGarden(scene: THREE.Scene): BottomGarden {
   const signs = vignette(root, 'bottom-garden-signs');
   const swayers: { obj: THREE.Object3D; phase: number }[] = [];
 
-  /** A garden sign (the `garden-sign` prefab plus a text plate on its front face). yaw = the way the plate looks. */
+  /** A garden sign: the `garden-sign` board with its text printed flush on both faces (signBoard). yaw = the way the plate looks. */
   const sign = (text: string, x: number, z: number, yaw: number, w = 1.7, h = 0.85): void => {
     if (!getPrefab('garden-sign')) return;
-    pieces.push({ prefab: 'garden-sign', x, z, yaw, solid: false });
-    const [fx, fz] = fwd(yaw);
-    const px = x + fx * 0.05, pz = z + fz * 0.05;
-    signs.add(textPlate(text, px, ground(px, pz) + 1.4, pz, yaw, { w, h, bg: PLATE_BG }));
+    const sb = signBoard({ front: text, x, z, yaw, board: 'garden-sign', w, h, bg: PLATE_BG });
+    sb.piece.solid = false;
+    pieces.push(sb.piece);
+    signs.add(sb.plates);
   };
 
   // ---- Hole 7: the potting shed -----------------------------------------------------------------------------------

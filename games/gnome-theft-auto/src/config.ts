@@ -962,7 +962,7 @@ export const WATER = {
     'water/pardonlin-basin': { depth: 2.5, shelf: 0.4, bank: 6 },
     // E11: the Saltwater, the sea along the whole south edge (coast/config.ts). Shelves over half its radius, so the
     // beach wades in and the pier end is deep. meshStep: its surface grid is coarser than the lochs' (m).
-    'water/saltwater': { depth: 7, shelf: 0.5, bank: 14, meshStep: 6 },
+    'water/saltwater': { depth: 7, shelf: 0.5, bank: 14, meshStep: 6, colour: 0x2b6c94, crest: 0xf6fafc, opacity: 0.94, shoreM: 45 },
     // E31: Reedmere, the Unmown's marsh (shallow: waded on foot, crossed on the boardwalk), and the High Tarn on Snowcap Rise.
     'water/reedmere': { depth: 0.7, shelf: 0.8, bank: 6 },
     'water/high-tarn': { depth: 2.5, shelf: 0.5, bank: 8 },

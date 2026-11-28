@@ -26,6 +26,13 @@ const RAIN_BELOW = 12;
 const RAIN_HEIGHT = 30;
 const RAIN_SPEED = 24;
 const RAIN_LEN = 1.3;
+
+/** Rain streak length and opacity. Small screens (phones) get shorter, fainter streaks so they do not read as noise. */
+export function rainLook(small: boolean, intensity: number): { len: number; opacity: number } {
+  return small
+    ? { len: RAIN_LEN * 0.6, opacity: 0.25 + 0.2 * intensity }
+    : { len: RAIN_LEN, opacity: 0.4 + 0.3 * intensity };
+}
 const WIND_X = 1.5;
 const WIND_Z = 0.8;
 const SNOW_FALL = 1.4;
@@ -78,12 +85,14 @@ export function createWeatherView(scene: THREE.Scene): WeatherView {
   rainAttr.setUsage(THREE.DynamicDrawUsage);
   rainGeo.setAttribute('position', rainAttr);
   rainGeo.setDrawRange(0, 0);
+  const smallScreen = typeof window !== 'undefined' && Math.min(window.innerWidth, window.innerHeight) < 600;
+  const rainLen = rainLook(smallScreen, 1).len;
   const rainMat = new THREE.LineBasicMaterial({ color: 0xaecbe6, transparent: true, opacity: 0.4, depthWrite: false, fog: true });
   const rain = new THREE.LineSegments(rainGeo, rainMat);
   const vlen = Math.hypot(WIND_X, RAIN_SPEED, WIND_Z);
-  const tailX = (-WIND_X / vlen) * RAIN_LEN;
-  const tailY = (RAIN_SPEED / vlen) * RAIN_LEN;
-  const tailZ = (-WIND_Z / vlen) * RAIN_LEN;
+  const tailX = (-WIND_X / vlen) * rainLen;
+  const tailY = (RAIN_SPEED / vlen) * rainLen;
+  const tailZ = (-WIND_Z / vlen) * rainLen;
 
   // Snow
   const snowState = new Float32Array(maxSnow * 4); // x, y, z, seed
@@ -96,13 +105,29 @@ export function createWeatherView(scene: THREE.Scene): WeatherView {
   const flakeTex = makeCanvasTexture((g, s) => {
     const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.5, 'rgba(255,255,255,0.6)');
+    grad.addColorStop(0.35, 'rgba(255,255,255,0.75)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
     g.fillRect(0, 0, s, s);
   }, 32);
   const snowMat = new THREE.PointsMaterial({ size: 0.3, transparent: true, depthWrite: false, color: 0xf4f8ff });
   if (flakeTex) snowMat.map = flakeTex;
+  // Flakes: alpha-tested round sprites, capped in size on screen and faded out as they reach the camera (no hard squares).
+  const snowPixelRatio = typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio || 1) : 1;
+  snowMat.alphaTest = 0.02;
+  snowMat.customProgramCacheKey = () => 'gta-snow';
+  snowMat.onBeforeCompile = (shader) => {
+    shader.uniforms.uPixelRatio = { value: snowPixelRatio };
+    shader.vertexShader =
+      'uniform float uPixelRatio;\nvarying float vNear;\n' +
+      shader.vertexShader.replace(
+        '#include <logdepthbuf_vertex>',
+        '#include <logdepthbuf_vertex>\n\tgl_PointSize = min(gl_PointSize, 14.0 * uPixelRatio);\n\tvNear = smoothstep(1.0, 2.5, -mvPosition.z);',
+      );
+    shader.fragmentShader =
+      'varying float vNear;\n' +
+      shader.fragmentShader.replace('#include <map_particle_fragment>', '#include <map_particle_fragment>\n\tdiffuseColor.a *= vNear;');
+  };
   const snow = new THREE.Points(snowGeo, snowMat);
   const snowBase = new THREE.Color(0xf4f8ff);
   const snowNight = new THREE.Color(0x8a93a8);
@@ -231,7 +256,7 @@ export function createWeatherView(scene: THREE.Scene): WeatherView {
         rainPos[v + 5] = z;
       }
       rainAttr.needsUpdate = true;
-      rainMat.opacity = 0.4 + 0.3 * w.intensity;
+      rainMat.opacity = rainLook(smallScreen, w.intensity).opacity;
       rainMat.color.copy(rainDay).lerp(rainNight, f.night);
     }
 

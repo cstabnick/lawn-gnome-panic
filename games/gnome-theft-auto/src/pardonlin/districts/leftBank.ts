@@ -266,11 +266,12 @@ export function planLeftBank(): DistrictPlan {
   // The hall: front wall centre and the signs on it.
   {
     const [fx, fz] = local(-1668, -100, -PI / 2, 0, 7.05);
-    sign('banner', 'RADIO ADAGIO 96.1', fx, fz, -PI / 2, { y: 3.9, w: 3, h: 0.6 });
-    sign('banner', 'RADIO ADAGIO 96.1 — Now broadcasting: silence (scheduled)', fx, fz + 0.001, -PI / 2, { y: 10.6, w: 9, h: 0.9 });
+    sign('banner', 'RADIO ADAGIO 96.1', fx, fz, -PI / 2, { y: 3.9, w: 4.6, h: 0.95 });
+    sign('banner', 'RADIO ADAGIO 96.1', fx, fz + 0.001, -PI / 2, { y: 9.8, w: 8, h: 1.5 });
     sign('plaque', 'ON AIR\n(slowly)', fx, fz - 4.5, -PI / 2, { y: 2.4, w: 1.4, h: 0.6 });
   }
   sign('poster', 'OPERA HALL TONIGHT\nThe Fifth Symphony,\nvery slowly\n(Act 1 of 3. Of 3.)', -1693, -123, -PI / 2);
+  sign('poster', 'RADIO ADAGIO 96.1\nNow broadcasting:\nsilence\n(scheduled)', -1693.5, -104, -PI / 2);
   sign('poster', 'CONCERT SUNDAY\nThe Overture to an Overture\nBring a cushion\nand a day', -1693, -77, -PI / 2);
   sign('menu', 'FOYER BAR\nInterval snacks:\ncrackers (loud)\ncrackers (quiet)', -1691, -96, -PI / 2);
   // Stage door (hall's north wall at z -108).

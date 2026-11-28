@@ -13,6 +13,7 @@ import type { Box } from '../types';
 import { boundsOf, cornersOf, insideEuroYard } from './layout';
 import { buildingFootprint, propFootprint, type PlanSign } from './plan';
 import { pardonlinPlans } from './plans';
+import { plateCanvasWidth } from '../homes/pieces';
 
 const SIGN_PREFAB = { menu: 'euro-chalkboard-sign', poster: 'euro-poster-board', street: 'euro-street-sign' } as const;
 
@@ -71,9 +72,7 @@ function bodyBox(x: number, z: number, yaw: number, id: string, scale: number): 
 
 // ---- Sign text --------------------------------------------------------------------------------------------------
 const ATLAS = 2048;
-const CELL = 256;
-const PER_ROW = ATLAS / CELL;
-const PER_ATLAS = PER_ROW * PER_ROW;
+const GUTTER = 2;
 
 const STYLE: Record<PlanSign['kind'], { bg: string; ink: string; font: string; border?: string }> = {
   menu: { bg: '#262b27', ink: '#f2f0e6', font: 'italic 600 {px}px "Segoe Print", "Comic Sans MS", cursive' },
@@ -120,7 +119,8 @@ function paint(ctx: CanvasRenderingContext2D, s: PlanSign, ox: number, oy: numbe
   const pad = Math.min(pw, ph) * 0.1;
   let px = Math.floor(ph * 0.42);
   let lines: string[] = [];
-  for (; px >= 8; px -= 2) {
+  const minPx = Math.max(8, Math.round((18 * pw) / 512));
+  for (; px >= minPx; px -= 2) {
     ctx.font = st.font.replace('{px}', String(px));
     lines = wrap(ctx, s.text, pw - pad * 2);
     const wide = Math.max(...lines.map((l) => ctx.measureText(l).width));
@@ -141,36 +141,63 @@ export function buildSignText(signs: readonly PlanSign[]): THREE.Group {
   const root = new THREE.Group();
   root.name = 'pardonlin-sign-text';
   root.userData.cullCells = true;
-  for (let a = 0; a * PER_ATLAS < signs.length; a++) {
-    const batch = signs.slice(a * PER_ATLAS, (a + 1) * PER_ATLAS);
+  // Cell width from the plate's width and text, height from its aspect (capped at 1024 px), shelf-packed per atlas.
+  interface Item { s: PlanSign; p: ReturnType<typeof plate>; pw: number; ph: number; ox: number; oy: number }
+  const atlases: Item[][] = [];
+  let cur: Item[] = [];
+  let sx = 0, sy = 0, shelf = 0;
+  for (const s of signs) {
+    const p = plate(s);
+    let pw = plateCanvasWidth(p.w, s.text);
+    let ph = Math.round((pw * p.h) / p.w);
+    if (ph > 1024) { pw = Math.round((pw * 1024) / ph); ph = 1024; }
+    if (sx > 0 && sx + pw > ATLAS) { sy += shelf + GUTTER; sx = 0; shelf = 0; }
+    if (sy + ph > ATLAS) { atlases.push(cur); cur = []; sx = 0; sy = 0; shelf = 0; }
+    cur.push({ s, p, pw, ph, ox: sx, oy: sy });
+    sx += pw + GUTTER;
+    shelf = Math.max(shelf, ph);
+  }
+  if (cur.length) atlases.push(cur);
+  for (let a = 0; a < atlases.length; a++) {
+    const batch = atlases[a];
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = ATLAS;
     const ctx = canvas.getContext('2d');
     if (!ctx) break;
     const cells = new Map<string, THREE.BufferGeometry[]>();
-    batch.forEach((s, i) => {
-      const p = plate(s);
-      const ox = (i % PER_ROW) * CELL, oy = Math.floor(i / PER_ROW) * CELL;
-      // The plate keeps its aspect inside the square cell.
-      const aspect = p.w / p.h;
-      const pw = aspect >= 1 ? CELL - 4 : Math.round((CELL - 4) * aspect);
-      const ph = aspect >= 1 ? Math.round((CELL - 4) / aspect) : CELL - 4;
-      paint(ctx, s, ox + 2, oy + 2, pw, ph);
-      const g = new THREE.PlaneGeometry(p.w, p.h);
-      const uv = g.getAttribute('uv') as THREE.BufferAttribute;
-      const u0 = (ox + 2) / ATLAS, u1 = (ox + 2 + pw) / ATLAS;
-      const v1 = 1 - (oy + 2) / ATLAS, v0 = 1 - (oy + 2 + ph) / ATLAS;
-      for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) ? u1 : u0, uv.getY(k) ? v1 : v0);
-      const m = new THREE.Matrix4()
+    for (const { s, p, pw, ph, ox, oy } of batch) {
+      paint(ctx, s, ox, oy, pw, ph);
+      const u0 = ox / ATLAS, u1 = (ox + pw) / ATLAS;
+      const v1 = 1 - oy / ATLAS, v0 = 1 - (oy + ph) / ATLAS;
+      const base = new THREE.Matrix4()
         .makeTranslation(s.x, heightAt(s.x, s.z), s.z)
-        .multiply(new THREE.Matrix4().makeRotationY(s.yaw))
-        .multiply(new THREE.Matrix4().makeTranslation(p.cx, p.cy, p.cz));
-      g.applyMatrix4(m);
-      const key = `${Math.floor(s.x / STATIC_CELL)},${Math.floor(s.z / STATIC_CELL)}`;
-      let list = cells.get(key);
-      if (!list) cells.set(key, (list = []));
-      list.push(g);
-    });
+        .multiply(new THREE.Matrix4().makeRotationY(s.yaw));
+      // Each face is a plane on the same atlas cell; `local` places it in the sign's frame.
+      const face = (local: THREE.Matrix4): void => {
+        const g = new THREE.PlaneGeometry(p.w, p.h);
+        const uv = g.getAttribute('uv') as THREE.BufferAttribute;
+        for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) ? u1 : u0, uv.getY(k) ? v1 : v0);
+        g.applyMatrix4(base.clone().multiply(local));
+        const key = `${Math.floor(s.x / STATIC_CELL)},${Math.floor(s.z / STATIC_CELL)}`;
+        let list = cells.get(key);
+        if (!list) cells.set(key, (list = []));
+        list.push(g);
+      };
+      face(new THREE.Matrix4().makeTranslation(p.cx, p.cy, p.cz));
+      const flip = new THREE.Matrix4().makeRotationY(Math.PI);
+      if (s.kind === 'poster') {
+        // Behind the frame's back (z 0.01), so it never shares a plane with it.
+        face(new THREE.Matrix4().makeTranslation(p.cx, p.cy, 0).multiply(flip));
+      } else if (s.kind === 'menu') {
+        // On the A-frame's back board (tilted +12 deg about x, outer face 0.02 m off), reading from behind.
+        face(
+          new THREE.Matrix4()
+            .makeTranslation(0, 0.62, -0.04 - 0.015 - 0.02)
+            .multiply(new THREE.Matrix4().makeRotationX((12 * Math.PI) / 180))
+            .multiply(flip),
+        );
+      }
+    }
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;

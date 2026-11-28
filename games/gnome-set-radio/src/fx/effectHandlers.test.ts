@@ -15,6 +15,7 @@ function mockSfx(): GsrSfx {
     silence: vi.fn(),
     jump: vi.fn(),
     airJump: vi.fn(),
+    airDash: vi.fn(),
     land: vi.fn(),
     grindStart: vi.fn(),
     wallRideStart: vi.fn(),

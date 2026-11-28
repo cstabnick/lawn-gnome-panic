@@ -87,6 +87,30 @@ export interface GsrRail {
   color: string;
   glowColor: string;
   speedBoost?: number;
+  aetherRail?: boolean;
+  underWorld?: boolean;
+}
+
+export interface GsrSatelliteIsland {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  r: number;
+  color?: string;
+  bouncePower?: number;
+}
+
+export interface GsrShopNpcDef {
+  id: string;
+  name: string;
+  prefab: string;
+  x: number;
+  y: number;
+  z: number;
+  yaw?: number;
+  itemId: string;
+  greeting: string;
 }
 
 export interface GsrBillboard {
@@ -231,6 +255,9 @@ export interface GsrLevelData {
   events: GsrEventDef[];
   ambientNpcs?: GsrAmbientNpc[];
   details?: GsrWorldDetail[];
+  satellites?: GsrSatelliteIsland[];
+  shopNpc?: GsrShopNpcDef;
+  bossWaypoints?: [number, number, number][];
 }
 
 export type GsrLevelDoc = LevelDoc<GsrLevelData>;

@@ -7,6 +7,7 @@ export interface GsrSfx {
   silence(): void;
   jump(): void;
   airJump(): void;
+  airDash(): void;
   land(impactSpeed: number): void;
   grindStart(): void;
   wallRideStart(): void;
@@ -54,6 +55,7 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
   let boostGain: GainNode | null = null;
   let airWindGain: GainNode | null = null;
   let airWindFilter: BiquadFilterNode | null = null;
+  let lastBumpAt = -1;
 
   const getVol = (): number => volume.effective('sounds');
 
@@ -275,6 +277,11 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       tone('triangle', 640, 1280, 0.16, 0.12, 0.03);
       noiseBurst('bandpass', 2400, 5200, 1.4, 0.14, 0.08);
     },
+    airDash() {
+      tone('sawtooth', 260, 780, 0.14, 0.12);
+      tone('triangle', 520, 1180, 0.16, 0.11, 0.02);
+      noiseBurst('bandpass', 900, 3600, 1.1, 0.18, 0.09);
+    },
     land(impactSpeed) {
       const amt = clamp01(impactSpeed / 18);
       tone('sine', 120 + amt * 40, 42, 0.14, 0.16 + amt * 0.16);
@@ -341,7 +348,11 @@ export function createGsrSfx(volume: VolumeStore): GsrSfx {
       notes.forEach((n, i) => tone('triangle', n, n, 0.18, 0.12, i * 0.045));
     },
     bump() {
-      tone('sine', 110, 52, 0.1, 0.16);
+      const c = ensureCtx();
+      if (!c) return;
+      if (lastBumpAt >= 0 && c.currentTime - lastBumpAt < 0.32) return;
+      lastBumpAt = c.currentTime;
+      tone('triangle', 95, 48, 0.075, 0.11);
     },
     eventComplete() {
       [523.25, 659.25, 783.99, 1046.5].forEach((n, i) => tone('triangle', n, n, 0.2, 0.14, i * 0.06));

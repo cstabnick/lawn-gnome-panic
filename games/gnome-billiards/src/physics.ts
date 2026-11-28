@@ -27,10 +27,11 @@ export const POCKETS: readonly Pocket[] = [
   { x: TABLE_W, y: TABLE_H, r: 0.055 },
 ];
 
-/** What happened during one shot: the first object ball the cue touched, and every ball pocketed, in order. */
+/** What happened during one shot: the first object ball the cue touched, every ball pocketed, and cushion bounces per ball. */
 export interface ShotEvents {
   firstHit: number | null;
   pocketed: number[];
+  cushionHits?: Record<number, number>;
 }
 
 export interface Table {
@@ -63,7 +64,7 @@ export function beginShot(balls: readonly Ball[], vx: number, vy: number): Table
     cue.vx = sx;
     cue.vy = sy;
   }
-  return { balls: out, events: { firstHit: null, pocketed: [] }, steps: 0 };
+  return { balls: out, events: { firstHit: null, pocketed: [], cushionHits: {} }, steps: 0 };
 }
 
 export function isMoving(t: Table): boolean {
@@ -149,19 +150,28 @@ export function stepOnce(t: Table): void {
       }
     }
     if (sunk) continue;
+    let bounced = false;
     if (b.x < R) {
       b.x = R;
       b.vx = -b.vx * CUSHION_E;
+      bounced = true;
     } else if (b.x > TABLE_W - R) {
       b.x = TABLE_W - R;
       b.vx = -b.vx * CUSHION_E;
+      bounced = true;
     }
     if (b.y < R) {
       b.y = R;
       b.vy = -b.vy * CUSHION_E;
+      bounced = true;
     } else if (b.y > TABLE_H - R) {
       b.y = TABLE_H - R;
       b.vy = -b.vy * CUSHION_E;
+      bounced = true;
+    }
+    if (bounced) {
+      events.cushionHits ??= {};
+      events.cushionHits[b.id] = (events.cushionHits[b.id] ?? 0) + 1;
     }
   }
   t.steps++;

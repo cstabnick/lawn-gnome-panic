@@ -1,6 +1,6 @@
 # Gnome Billiards
 
-Eight-ball on the pool table in the Gnomecino, the Club Gnome casino, in 3D (three.js). Two gnomes walk round the table: yours, wearing your own gear, and Big Lou's. Play Big Lou (the CPU), pass and play with a friend on one device, find an online opponent (or join with a room code), or spectate two CPU gnomes.
+Pool on the Gnomecino table in 3D (three.js): **8-Ball**, **9-Ball**, **Straight Pool**, **6-Ball Blitz**, and **Challenge Mode** (8 handcrafted trick-shot & run-out puzzles). Two gnomes walk round the table: yours, wearing your own gear, and your opponent's. Play four CPU tiers (Burdock, Big Lou, Velvet Vesper, and **The Chalk Phantom**), wager up to 50% of your `@lawn/oakcount` chips, pass and play with a friend on one device, find an online opponent (8-ball), or spectate two CPU gnomes with live `@lawn/mutter` table talk.
 
 The question it answers: does a two-stroke cue (line up, then pull back and swipe through) feel like real skill on a phone?
 
@@ -24,6 +24,7 @@ URL: `#cpu` starts a match against Big Lou at once; `#spectate` watches two CPUs
 **A shot takes two strokes, both on the table:**
 
 1. **Line up.** Press on the table and drag. The cue's line follows the pointer (the shot leaves the cue ball away from the pointer). Let go to lock the line.
+   - **Fine Aim:** Toggle **🎯 Fine** (or hold **Shift** / press **F**) for 5.5× finer drag sensitivity and an extended target projection line. Use **◀ / ▶** (or **ArrowLeft / ArrowRight / A / D**) to micro-nudge by 0.2°.
 2. **Strike.** Press, pull back along the line (further pull = more power, shown on a bar), then swipe forward through the ball and let go.
    - A forward swipe shorter than about 4 cm of table is a cancelled stroke: nothing happens.
    - A sideways drift between the pull and the release bends the shot, up to about 11°. Keep it straight to pot.

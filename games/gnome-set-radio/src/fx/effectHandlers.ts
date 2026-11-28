@@ -8,6 +8,7 @@ import type { RiderView } from '../view/rider';
 export type GameEffectEvent =
   | { type: 'jump' }
   | { type: 'airJump'; x: number; y: number; z: number }
+  | { type: 'airDash'; x: number; y: number; z: number }
   | { type: 'wallKick'; x: number; y: number; z: number }
   | { type: 'onBeat' }
   | { type: 'land'; x: number; y: number; z: number; impact: number }
@@ -98,6 +99,7 @@ export function createAudioEffectHandler(sfx: GsrSfx): GameEffectHandler {
       switch (ev.type) {
         case 'jump': sfx.jump(); break;
         case 'airJump': sfx.airJump(); break;
+        case 'airDash': sfx.airDash(); break;
         case 'wallKick': sfx.wallKick(); break;
         case 'onBeat': sfx.onBeat(); break;
         case 'land': sfx.land(ev.impact); break;
@@ -128,6 +130,10 @@ export function createCameraEffectHandler(chaseCam: ChaseCamera): GameEffectHand
         case 'airJump':
           chaseCam.shake(0.14, 0.14);
           chaseCam.fovPunch(2.5);
+          break;
+        case 'airDash':
+          chaseCam.shake(0.18, 0.16);
+          chaseCam.fovPunch(4.5);
           break;
         case 'wallKick':
           chaseCam.shake(0.16, 0.14);
@@ -186,6 +192,12 @@ export function createVisualFxEffectHandler(fx: GsrFx): GameEffectHandler {
           fx.burst(ev.x, ev.y, ev.z, '#00e5ff', 18);
           fx.ring(ev.x, ev.y, ev.z, '#ff4ecd');
           break;
+        case 'airDash': {
+          const dashCol = fx.getTrailColor?.() ?? '#ff4ecd';
+          fx.burst(ev.x, ev.y, ev.z, dashCol, 22);
+          fx.ring(ev.x, ev.y, ev.z, '#00e5ff');
+          break;
+        }
         case 'wallKick':
           fx.burst(ev.x, ev.y, ev.z, '#69f0ae', 16);
           fx.ring(ev.x, ev.y, ev.z, '#00e5ff');

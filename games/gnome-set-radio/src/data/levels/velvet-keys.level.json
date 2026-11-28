@@ -4,58 +4,440 @@
   "game": "gnome-set-radio",
   "id": "velvet-keys",
   "name": "Velvet Keys Plaza",
-  "bounds": { "w": 150, "d": 150 },
+  "bounds": {
+    "w": 204,
+    "d": 204
+  },
   "stamps": [
-    { "op": "gauss", "x": -52, "z": -50, "sigma": 12, "amount": 1.4 },
-    { "op": "gauss", "x": 52, "z": 50, "sigma": 12, "amount": 1.2 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 38, "outer": 50, "to": 0 }
+    {
+      "op": "gauss",
+      "x": -52,
+      "z": -50,
+      "sigma": 12,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 52,
+      "z": 50,
+      "sigma": 12,
+      "amount": 1.2
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 0,
+      "inner": 38,
+      "outer": 50,
+      "to": 0
+    }
   ],
   "paths": [
-    { "id": "plaza-ave-ns", "kind": "road", "points": [[0, -60], [0, 62]], "width": 7 },
-    { "id": "courtyard-diag-w", "kind": "road", "points": [[-38, -26], [-30, 26]], "width": 5.5 },
-    { "id": "courtyard-diag-e", "kind": "road", "points": [[36, -28], [34, 16]], "width": 5.5 }
+    {
+      "id": "plaza-ave-ns",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          -60
+        ],
+        [
+          0,
+          62
+        ]
+      ],
+      "width": 7
+    },
+    {
+      "id": "courtyard-diag-w",
+      "kind": "road",
+      "points": [
+        [
+          -38,
+          -26
+        ],
+        [
+          -30,
+          26
+        ]
+      ],
+      "width": 5.5
+    },
+    {
+      "id": "courtyard-diag-e",
+      "kind": "road",
+      "points": [
+        [
+          36,
+          -28
+        ],
+        [
+          34,
+          16
+        ]
+      ],
+      "width": 5.5
+    }
   ],
   "props": [
-    { "prefab": "gsr-piano-fountain", "x": 16, "z": 22, "rot": 0.2, "scale": 1.7 },
-    { "prefab": "gsr-cafe-table", "x": 22, "z": 12, "rot": 0.4, "scale": 1.3 },
-    { "prefab": "gsr-cafe-table", "x": 22, "z": 20, "rot": -0.3, "scale": 1.3 },
-    { "prefab": "gsr-postcard-kiosk", "x": -20, "z": 31, "rot": 0.5, "scale": 1.4 },
-    { "prefab": "gsr-photo-cutout", "x": -14, "z": 34, "rot": 0.25, "scale": 1.35 },
-    { "prefab": "gsr-mist-bench", "x": 10, "z": 30, "rot": -0.6, "scale": 1.3 },
-    { "prefab": "gsr-mist-bench", "x": 24, "z": 28, "rot": 0.7, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": -8, "z": 22, "rot": 0.4, "scale": 1.1 },
-    { "prefab": "gsr-boombox", "x": 22, "z": -16, "rot": -0.7, "scale": 1.1 },
-    { "prefab": "street-lamp", "x": -12, "z": 12, "rot": 0, "scale": 1.2 },
-    { "prefab": "street-lamp", "x": 12, "z": 12, "rot": 0, "scale": 1.2 },
-    { "prefab": "gsr-telescope-stand", "x": -58, "z": 0, "rot": 1.57, "scale": 1.5 },
-    { "prefab": "gsr-mist-bench", "x": -56, "z": 6, "rot": 1.57, "scale": 1.3 },
-    { "prefab": "gsr-telescope-stand", "x": 58, "z": 0, "rot": -1.57, "scale": 1.5 },
-    { "prefab": "gsr-cafe-table", "x": 56, "z": -8, "rot": 0.3, "scale": 1.3 },
-    { "prefab": "gsr-boombox", "x": 0, "z": -60, "rot": 0, "scale": 1.3 },
-    { "prefab": "gsr-jazz-lamp", "x": -10, "z": 26, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-jazz-lamp", "x": 10, "z": 26, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-jazz-lamp", "x": -10, "z": -16, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-jazz-lamp", "x": 10, "z": -16, "rot": 0, "scale": 1.4 },
-    { "prefab": "flower-pot", "x": -15, "z": 26, "rot": 0, "scale": 1.3 },
-    { "prefab": "flower-pot", "x": 15, "z": 26, "rot": 0, "scale": 1.3 },
-    { "prefab": "gnome-statue", "x": -40, "z": 20, "rot": 0.8, "scale": 1.5 },
-    { "prefab": "candelabra", "x": 38, "z": -6, "rot": 0, "scale": 1.4 },
-    { "prefab": "grandfather-clock", "x": -42, "z": -24, "rot": 0.4, "scale": 1.4 },
-    { "prefab": "gsr-saxophone-woken", "x": 14, "z": 16, "rot": -0.5, "scale": 1.35 },
-    { "prefab": "gsr-dj-booth", "x": -6, "z": 34, "rot": 0.3, "scale": 1.35 },
-    { "prefab": "gsr-graffiti-rack", "x": 6, "z": 36, "rot": -0.2, "scale": 1.35 },
-    { "prefab": "gsr-gondola-dock", "x": -52, "z": 24, "rot": 1.57, "scale": 1.45 },
-    { "prefab": "gta-vending-cola", "x": 28, "z": 30, "rot": -0.8, "scale": 1.35 },
-    { "prefab": "picnic-table", "x": 42, "z": 24, "rot": -0.4, "scale": 1.3 }
+    {
+      "prefab": "gsr-piano-fountain",
+      "x": 16,
+      "z": 22,
+      "rot": 0.2,
+      "scale": 1.7
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 20,
+      "z": 12,
+      "rot": 0.4,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 20,
+      "z": 20,
+      "rot": -0.3,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-postcard-kiosk",
+      "x": -18,
+      "z": 31,
+      "rot": 0.5,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-photo-cutout",
+      "x": -14,
+      "z": 34,
+      "rot": 0.25,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 10,
+      "z": 30,
+      "rot": -0.6,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 24,
+      "z": 28,
+      "rot": 0.7,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": -8,
+      "z": 22,
+      "rot": 0.4,
+      "scale": 1.1
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 22,
+      "z": -16,
+      "rot": -0.7,
+      "scale": 1.1
+    },
+    {
+      "prefab": "street-lamp",
+      "x": -12,
+      "z": 12,
+      "rot": 0,
+      "scale": 1.2
+    },
+    {
+      "prefab": "street-lamp",
+      "x": 12,
+      "z": 12,
+      "rot": 0,
+      "scale": 1.2
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": -58,
+      "z": 0,
+      "rot": 1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": -56,
+      "z": 6,
+      "rot": 1.57,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-telescope-stand",
+      "x": 58,
+      "z": 0,
+      "rot": -1.57,
+      "scale": 1.5
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": 54,
+      "z": -8,
+      "rot": 0.3,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-boombox",
+      "x": 0,
+      "z": -60,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": -10,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": 10,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": -10,
+      "z": -20,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": 10,
+      "z": -20,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -15,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "flower-pot",
+      "x": 15,
+      "z": 26,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gnome-statue",
+      "x": -42,
+      "z": 20,
+      "rot": 0.8,
+      "scale": 1.5
+    },
+    {
+      "prefab": "candelabra",
+      "x": 38,
+      "z": -6,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "grandfather-clock",
+      "x": -52,
+      "z": -24,
+      "rot": 0.4,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-saxophone-woken",
+      "x": 14,
+      "z": 16,
+      "rot": -0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": -6,
+      "z": 34,
+      "rot": 0.3,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 6,
+      "z": 36,
+      "rot": -0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-gondola-dock",
+      "x": -52,
+      "z": 24,
+      "rot": 1.57,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gta-vending-cola",
+      "x": 28,
+      "z": 30,
+      "rot": -0.8,
+      "scale": 1.35
+    },
+    {
+      "prefab": "picnic-table",
+      "x": 42,
+      "z": 28,
+      "rot": -0.4,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-tea-pergola",
+      "x": -58,
+      "z": 34,
+      "rot": 0.3,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-cafe-table",
+      "x": -53,
+      "z": 38,
+      "rot": 0.1,
+      "scale": 1.3
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -62,
+      "z": 30,
+      "rot": 0,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-jazz-lamp",
+      "x": -54,
+      "z": 30,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": 56,
+      "z": -38,
+      "rot": -0.5,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 60,
+      "z": -32,
+      "rot": -0.8,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gnome-statue",
+      "x": 52,
+      "z": -42,
+      "rot": 0.4,
+      "scale": 1.45
+    },
+    {
+      "id": "velvet-keys-lore3-0",
+      "prefab": "gsr-jazz-lamp",
+      "x": -4,
+      "y": 0,
+      "z": 59.16,
+      "rotationY": 0.4,
+      "scale": 1.1
+    },
+    {
+      "id": "velvet-keys-lore3-1",
+      "prefab": "gsr-cafe-table",
+      "x": 0,
+      "y": 0,
+      "z": 61.16,
+      "rotationY": 0.2,
+      "scale": 1.1
+    },
+    {
+      "id": "velvet-keys-lore3-2",
+      "prefab": "gsr-saxophone-woken",
+      "x": 3.5,
+      "y": 0,
+      "z": 57.66,
+      "rotationY": -0.5,
+      "scale": 1.1
+    }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 38, "data": { "yaw": 3.14159 } },
-    { "id": "ev-vk-tag", "kind": "event", "x": -16, "z": 16, "data": { "eventId": "vk-tag-billboards" } },
-    { "id": "ev-vk-pluck", "kind": "event", "x": 18, "z": 16, "data": { "eventId": "vk-pluck-chase" } },
-    { "id": "ev-vk-dishes", "kind": "event", "x": -22, "z": -18, "data": { "eventId": "vk-tune-dishes" } },
-    { "id": "ev-vk-boss", "kind": "boss", "x": 0, "z": -4, "data": { "eventId": "vk-boss-maestro" } },
-    { "id": "ev-vk-tilda", "kind": "side", "x": 24, "z": 26, "data": { "eventId": "vk-side-tilda" } },
-    { "id": "ev-vk-vinyl", "kind": "side", "x": -28, "z": -18, "data": { "eventId": "vk-side-vinyl" } }
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 38,
+      "data": {
+        "yaw": 3.14159
+      }
+    },
+    {
+      "id": "ev-vk-tag",
+      "kind": "event",
+      "x": -16,
+      "z": 16,
+      "data": {
+        "eventId": "vk-tag-billboards"
+      }
+    },
+    {
+      "id": "ev-vk-pluck",
+      "kind": "event",
+      "x": 18,
+      "z": 16,
+      "data": {
+        "eventId": "vk-pluck-chase"
+      }
+    },
+    {
+      "id": "ev-vk-dishes",
+      "kind": "event",
+      "x": -22,
+      "z": -18,
+      "data": {
+        "eventId": "vk-tune-dishes"
+      }
+    },
+    {
+      "id": "ev-vk-boss",
+      "kind": "boss",
+      "x": 0,
+      "z": -4,
+      "data": {
+        "eventId": "vk-boss-maestro"
+      }
+    },
+    {
+      "id": "ev-vk-tilda",
+      "kind": "side",
+      "x": 24,
+      "z": 26,
+      "data": {
+        "eventId": "vk-side-tilda"
+      }
+    },
+    {
+      "id": "ev-vk-vinyl",
+      "kind": "side",
+      "x": -28,
+      "z": -18,
+      "data": {
+        "eventId": "vk-side-vinyl"
+      }
+    }
   ],
   "data": {
     "areaNumber": 1,
@@ -148,7 +530,7 @@
         "w": 14,
         "d": 12,
         "yBase": 0,
-        "h": 3.0,
+        "h": 3,
         "color": "#3e2e5c",
         "roofColor": "#ffd740",
         "accentColor": "#ffd740",
@@ -204,7 +586,7 @@
         "w": 14,
         "d": 10,
         "yBase": 0,
-        "h": 5.0,
+        "h": 5,
         "color": "#3d2f5e",
         "roofColor": "#171126",
         "accentColor": "#00e5ff",
@@ -213,124 +595,703 @@
       }
     ],
     "ramps": [
-      { "id": "ramp-cons-south", "x": 0, "z": 13, "w": 6, "length": 12, "yBottom": 0, "yTop": 3.5, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "ramp-cons-upper", "x": 10, "z": -4, "w": 4.5, "length": 10, "yBottom": 3.5, "yTop": 7.0, "yaw": -1.5708, "color": "#ffd740" },
-      { "id": "ramp-vinyl-rotunda", "x": -38, "z": -10, "w": 5.5, "length": 14, "yBottom": 0, "yTop": 5.2, "yaw": 3.14159, "color": "#00e5ff" },
-      { "id": "ramp-espresso-cafe", "x": 34, "z": 29, "w": 5, "length": 12, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ff9100" },
-      { "id": "ramp-amphitheater", "x": 36, "z": -12, "w": 5.5, "length": 14, "yBottom": 0, "yTop": 4.8, "yaw": 3.14159, "color": "#ff4ecd" },
-      { "id": "ramp-tourist-kiosk", "x": -30, "z": 15, "w": 5, "length": 10, "yBottom": 0, "yTop": 3.0, "yaw": 0, "color": "#ffd740" },
-      { "id": "ramp-plaza-kicker-w", "x": -18, "z": 0, "w": 5, "length": 8, "yBottom": 0, "yTop": 2.8, "yaw": -1.5708, "color": "#00e5ff" },
-      { "id": "ramp-plaza-kicker-e", "x": 18, "z": 0, "w": 5, "length": 8, "yBottom": 0, "yTop": 2.8, "yaw": 1.5708, "color": "#ff4ecd" },
-      { "id": "ramp-rim-south", "x": -48, "z": 46, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.4, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "ramp-rim-north", "x": 52, "z": -46, "w": 5.5, "length": 10, "yBottom": 0, "yTop": 3.4, "yaw": 0, "color": "#00e5ff" }
+      {
+        "id": "ramp-cons-south",
+        "x": 0,
+        "z": 13,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 3.5,
+        "yaw": 3.14159,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "ramp-cons-upper",
+        "x": 10,
+        "z": -4,
+        "w": 4.5,
+        "length": 10,
+        "yBottom": 3.5,
+        "yTop": 7,
+        "yaw": -1.5708,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ramp-vinyl-rotunda",
+        "x": -38,
+        "z": -10,
+        "w": 5.5,
+        "length": 14,
+        "yBottom": 0,
+        "yTop": 5.2,
+        "yaw": 3.14159,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ramp-espresso-cafe",
+        "x": 34,
+        "z": 29,
+        "w": 5,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 3.4,
+        "yaw": 3.14159,
+        "color": "#ff9100"
+      },
+      {
+        "id": "ramp-amphitheater",
+        "x": 36,
+        "z": -12,
+        "w": 5.5,
+        "length": 14,
+        "yBottom": 0,
+        "yTop": 4.8,
+        "yaw": 3.14159,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "ramp-tourist-kiosk",
+        "x": -30,
+        "z": 15,
+        "w": 5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3,
+        "yaw": 0,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ramp-plaza-kicker-w",
+        "x": -18,
+        "z": 0,
+        "w": 5,
+        "length": 8,
+        "yBottom": 0,
+        "yTop": 2.8,
+        "yaw": -1.5708,
+        "color": "#00e5ff"
+      },
+      {
+        "id": "ramp-plaza-kicker-e",
+        "x": 18,
+        "z": 0,
+        "w": 5,
+        "length": 8,
+        "yBottom": 0,
+        "yTop": 2.8,
+        "yaw": 1.5708,
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "ramp-rim-south",
+        "x": -48,
+        "z": 46,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.4,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      },
+      {
+        "id": "ramp-rim-north",
+        "x": 52,
+        "z": -46,
+        "w": 5.5,
+        "length": 10,
+        "yBottom": 0,
+        "yTop": 3.4,
+        "yaw": 0,
+        "color": "#00e5ff"
+      }
     ],
     "rails": [
       {
         "id": "rail-rotunda-to-cons",
-        "points": [[-29, 5.4, -22], [-18, 6.2, -14], [-8, 7.2, -6]],
+        "points": [
+          [
+            -29,
+            5.4,
+            -22
+          ],
+          [
+            -18,
+            6.2,
+            -14
+          ],
+          [
+            -8,
+            7.2,
+            -6
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.25
       },
       {
         "id": "rail-amphi-to-cons",
-        "points": [[27, 5.0, -24], [18, 6.0, -14], [8, 7.2, -6]],
+        "points": [
+          [
+            27,
+            5,
+            -24
+          ],
+          [
+            18,
+            6,
+            -14
+          ],
+          [
+            8,
+            7.2,
+            -6
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.25
       },
       {
         "id": "rail-cafe-to-amphi",
-        "points": [[34, 3.6, 9], [35, 4.4, -4], [36, 5.0, -19]],
+        "points": [
+          [
+            34,
+            3.6,
+            9
+          ],
+          [
+            35,
+            4.4,
+            -4
+          ],
+          [
+            36,
+            5,
+            -19
+          ]
+        ],
         "color": "#ff9100",
         "glowColor": "#ff9100",
         "speedBoost": 1.24
       },
       {
         "id": "rail-plaza-loop",
-        "points": [[-23, 3.2, 24], [-10, 1.4, 24], [8, 1.4, 24], [25, 3.6, 18]],
+        "points": [
+          [
+            -23,
+            3.2,
+            24
+          ],
+          [
+            -10,
+            1.4,
+            24
+          ],
+          [
+            8,
+            1.4,
+            24
+          ],
+          [
+            25,
+            3.6,
+            18
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.18
       },
       {
         "id": "rail-north-bridge",
-        "points": [[-29, 5.4, -28], [0, 6.6, -30], [27, 5.0, -28]],
+        "points": [
+          [
+            -29,
+            5.4,
+            -28
+          ],
+          [
+            0,
+            6.6,
+            -30
+          ],
+          [
+            27,
+            5,
+            -28
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.3
       },
       {
         "id": "rail-kiosk-to-rotunda",
-        "points": [[-30, 3.2, 20], [-34, 4.4, 2], [-38, 5.4, -17]],
+        "points": [
+          [
+            -30,
+            3.2,
+            20
+          ],
+          [
+            -34,
+            4.4,
+            2
+          ],
+          [
+            -38,
+            5.4,
+            -17
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.24
       },
       {
         "id": "rail-perimeter-west",
-        "points": [[-56, 2.2, 34], [-58, 2.6, 0], [-56, 2.2, -34]],
+        "points": [
+          [
+            -56,
+            2.2,
+            34
+          ],
+          [
+            -58,
+            2.6,
+            0
+          ],
+          [
+            -56,
+            2.2,
+            -34
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.26
       },
       {
         "id": "rail-perimeter-east",
-        "points": [[56, 2.2, -34], [58, 2.6, 0], [56, 2.2, 34]],
+        "points": [
+          [
+            56,
+            2.2,
+            -34
+          ],
+          [
+            58,
+            2.6,
+            0
+          ],
+          [
+            56,
+            2.2,
+            34
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.26
       },
       {
         "id": "rail-edge-west-office",
-        "points": [[-58, 2.8, -32], [-64, 5.8, -24], [-64, 5.8, -12], [-59, 2.8, -2]],
+        "points": [
+          [
+            -58,
+            2.8,
+            -32
+          ],
+          [
+            -64,
+            5.8,
+            -24
+          ],
+          [
+            -64,
+            5.8,
+            -12
+          ],
+          [
+            -59,
+            2.8,
+            -2
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.26
       },
       {
         "id": "rail-edge-east-north",
-        "points": [[52, 3.6, -40], [64, 6.0, -24], [64, 6.0, -12], [58, 2.8, -2]],
+        "points": [
+          [
+            52,
+            3.6,
+            -40
+          ],
+          [
+            64,
+            6,
+            -24
+          ],
+          [
+            64,
+            6,
+            -12
+          ],
+          [
+            58,
+            2.8,
+            -2
+          ]
+        ],
         "color": "#ff4ecd",
         "glowColor": "#ff4ecd",
         "speedBoost": 1.28
       },
       {
         "id": "rail-edge-east-south",
-        "points": [[58, 2.8, 2], [64, 5.0, 12], [64, 5.0, 24], [55, 2.4, 34]],
+        "points": [
+          [
+            58,
+            2.8,
+            2
+          ],
+          [
+            64,
+            5,
+            12
+          ],
+          [
+            64,
+            5,
+            24
+          ],
+          [
+            55,
+            2.4,
+            34
+          ]
+        ],
         "color": "#ffd740",
         "glowColor": "#ffd740",
         "speedBoost": 1.26
       },
       {
         "id": "rail-edge-south-west",
-        "points": [[-48, 3.6, 41], [-38, 5.2, 52], [-26, 5.2, 52], [-22, 3.2, 30]],
+        "points": [
+          [
+            -48,
+            3.6,
+            41
+          ],
+          [
+            -38,
+            5.2,
+            52
+          ],
+          [
+            -26,
+            5.2,
+            52
+          ],
+          [
+            -22,
+            3.2,
+            30
+          ]
+        ],
         "color": "#00e5ff",
         "glowColor": "#00e5ff",
         "speedBoost": 1.26
+      },
+      {
+        "id": "rail-velvet-keys-epic-aether",
+        "points": [
+          [
+            0,
+            7.6,
+            -4
+          ],
+          [
+            116.28,
+            11.5,
+            15.3
+          ],
+          [
+            120.36,
+            9.5,
+            -35.7
+          ],
+          [
+            38.4,
+            8.8,
+            -73.44
+          ],
+          [
+            64,
+            6.4,
+            -16
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.55,
+        "aetherRail": true
+      },
+      {
+        "id": "rail-velvet-keys-underworld",
+        "points": [
+          [
+            64,
+            6.4,
+            -16
+          ],
+          [
+            89.76,
+            -6,
+            -8
+          ],
+          [
+            56.1,
+            -21.8,
+            -12
+          ],
+          [
+            0,
+            -22.5,
+            8
+          ],
+          [
+            -56.1,
+            -21.8,
+            18
+          ],
+          [
+            -89.76,
+            -6,
+            -8
+          ],
+          [
+            -64,
+            6.2,
+            -16
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.65,
+        "aetherRail": true,
+        "underWorld": true
+      },
+      {
+        "id": "rail-velvet-keys-sat-east-loop",
+        "points": [
+          [
+            45.9,
+            2.5,
+            6
+          ],
+          [
+            116,
+            4.6,
+            16
+          ],
+          [
+            45.9,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.45,
+        "aetherRail": true
       }
     ],
     "billboards": [
-      { "id": "vk-bb-1", "x": -30, "y": 3.0, "z": 26, "yaw": 0.4, "w": 4.2, "h": 2.4, "gangName": "Ivory Syndicate", "eventId": "vk-tag-billboards", "color": "#ff4ecd" },
-      { "id": "vk-bb-2", "x": -38, "y": 5.2, "z": -28, "yaw": 1.2, "w": 4.4, "h": 2.4, "gangName": "Ivory Syndicate", "eventId": "vk-tag-billboards", "color": "#00e5ff" },
-      { "id": "vk-bb-3", "x": 34, "y": 3.4, "z": 16, "yaw": -0.8, "w": 4.2, "h": 2.4, "gangName": "Ivory Syndicate", "eventId": "vk-tag-billboards", "color": "#ff9100" },
-      { "id": "vk-bb-4", "x": 36, "y": 4.8, "z": -28, "yaw": -1.2, "w": 4.6, "h": 2.5, "gangName": "Ivory Syndicate", "eventId": "vk-tag-billboards", "color": "#ffd740" }
+      {
+        "id": "vk-bb-1",
+        "x": -30,
+        "y": 3,
+        "z": 26,
+        "yaw": 0.4,
+        "w": 4.2,
+        "h": 2.4,
+        "gangName": "Ivory Syndicate",
+        "eventId": "vk-tag-billboards",
+        "color": "#ff4ecd"
+      },
+      {
+        "id": "vk-bb-2",
+        "x": -38,
+        "y": 5.2,
+        "z": -28,
+        "yaw": 1.2,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "Ivory Syndicate",
+        "eventId": "vk-tag-billboards",
+        "color": "#00e5ff"
+      },
+      {
+        "id": "vk-bb-3",
+        "x": 34,
+        "y": 3.4,
+        "z": 16,
+        "yaw": -0.8,
+        "w": 4.2,
+        "h": 2.4,
+        "gangName": "Ivory Syndicate",
+        "eventId": "vk-tag-billboards",
+        "color": "#ff9100"
+      },
+      {
+        "id": "vk-bb-4",
+        "x": 36,
+        "y": 4.8,
+        "z": -28,
+        "yaw": -1.2,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "Ivory Syndicate",
+        "eventId": "vk-tag-billboards",
+        "color": "#ffd740"
+      }
     ],
     "interactives": [
-      { "id": "vk-hyd-1", "kind": "hydrant", "x": -16, "y": 0, "z": -4, "power": 15.5, "prefab": "gsr-fire-hydrant", "label": "Courtyard Hydrant" },
-      { "id": "vk-hyd-2", "kind": "hydrant", "x": 16, "y": 0, "z": -4, "power": 15.5, "prefab": "gsr-fire-hydrant", "label": "Cafe Hydrant" },
-      { "id": "vk-bongo-1", "kind": "bongo-pad", "x": 0, "y": 0, "z": -24, "power": 16.5, "prefab": "gsr-bongo-stack", "label": "Backstage Bongo" },
-      { "id": "vk-boom-1", "kind": "boombox", "x": -8, "y": 0, "z": 22, "prefab": "gsr-boombox", "label": "Plaza Boombox" },
-      { "id": "vk-boom-2", "kind": "boombox", "x": 22, "y": 0, "z": -16, "prefab": "gsr-boombox", "label": "Amphitheater Boombox" },
-      { "id": "vk-spray-1", "kind": "spray-pickup", "x": -12, "y": 0.4, "z": 14, "prefab": "gsr-spray-can" },
-      { "id": "vk-spray-2", "kind": "spray-pickup", "x": 0, "y": 7.4, "z": -4, "prefab": "gsr-spray-can" },
-      { "id": "vk-spray-3", "kind": "spray-pickup", "x": 34, "y": 3.8, "z": 16, "prefab": "gsr-spray-can" },
-      { "id": "vk-dish-1", "kind": "relay-dish", "x": -38, "y": 5.2, "z": -21, "prefab": "gsr-radio-dish", "eventId": "vk-tune-dishes", "label": "Rotunda Dish" },
-      { "id": "vk-dish-2", "kind": "relay-dish", "x": 36, "y": 4.8, "z": -22, "prefab": "gsr-radio-dish", "eventId": "vk-tune-dishes", "label": "Amphitheater Dish" },
-      { "id": "vk-dish-3", "kind": "relay-dish", "x": 34, "y": 3.4, "z": 12, "prefab": "gsr-radio-dish", "eventId": "vk-tune-dishes", "label": "Cafe Roof Dish" },
-      { "id": "vk-acorn-1", "kind": "tempo-acorn", "x": -38, "y": 5.8, "z": -31, "eventId": "vk-side-tilda", "label": "Tempo Acorn" },
-      { "id": "vk-acorn-2", "kind": "tempo-acorn", "x": -30, "y": 3.6, "z": 22, "eventId": "vk-side-tilda", "label": "Tempo Acorn" },
-      { "id": "vk-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 7.6, "z": 1, "eventId": "vk-side-tilda", "label": "Tempo Acorn" }
+      {
+        "id": "vk-hyd-1",
+        "kind": "hydrant",
+        "x": -16,
+        "y": 0,
+        "z": -4,
+        "power": 15.5,
+        "prefab": "gsr-fire-hydrant",
+        "label": "Courtyard Hydrant"
+      },
+      {
+        "id": "vk-hyd-2",
+        "kind": "hydrant",
+        "x": 16,
+        "y": 0,
+        "z": -4,
+        "power": 15.5,
+        "prefab": "gsr-fire-hydrant",
+        "label": "Cafe Hydrant"
+      },
+      {
+        "id": "vk-bongo-1",
+        "kind": "bongo-pad",
+        "x": 0,
+        "y": 0,
+        "z": -24,
+        "power": 16.5,
+        "prefab": "gsr-bongo-stack",
+        "label": "Backstage Bongo"
+      },
+      {
+        "id": "vk-boom-1",
+        "kind": "boombox",
+        "x": -8,
+        "y": 0,
+        "z": 22,
+        "prefab": "gsr-boombox",
+        "label": "Plaza Boombox"
+      },
+      {
+        "id": "vk-boom-2",
+        "kind": "boombox",
+        "x": 22,
+        "y": 0,
+        "z": -16,
+        "prefab": "gsr-boombox",
+        "label": "Amphitheater Boombox"
+      },
+      {
+        "id": "vk-spray-1",
+        "kind": "spray-pickup",
+        "x": -12,
+        "y": 0.4,
+        "z": 14,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "vk-spray-2",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 7.4,
+        "z": -4,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "vk-spray-3",
+        "kind": "spray-pickup",
+        "x": 34,
+        "y": 3.8,
+        "z": 16,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "vk-dish-1",
+        "kind": "relay-dish",
+        "x": -38,
+        "y": 5.2,
+        "z": -21,
+        "prefab": "gsr-radio-dish",
+        "eventId": "vk-tune-dishes",
+        "label": "Rotunda Dish"
+      },
+      {
+        "id": "vk-dish-2",
+        "kind": "relay-dish",
+        "x": 36,
+        "y": 4.8,
+        "z": -22,
+        "prefab": "gsr-radio-dish",
+        "eventId": "vk-tune-dishes",
+        "label": "Amphitheater Dish"
+      },
+      {
+        "id": "vk-dish-3",
+        "kind": "relay-dish",
+        "x": 34,
+        "y": 3.4,
+        "z": 12,
+        "prefab": "gsr-radio-dish",
+        "eventId": "vk-tune-dishes",
+        "label": "Cafe Roof Dish"
+      },
+      {
+        "id": "vk-acorn-1",
+        "kind": "tempo-acorn",
+        "x": -38,
+        "y": 5.8,
+        "z": -31,
+        "eventId": "vk-side-tilda",
+        "label": "Tempo Acorn"
+      },
+      {
+        "id": "vk-acorn-2",
+        "kind": "tempo-acorn",
+        "x": -30,
+        "y": 3.6,
+        "z": 22,
+        "eventId": "vk-side-tilda",
+        "label": "Tempo Acorn"
+      },
+      {
+        "id": "vk-acorn-3",
+        "kind": "tempo-acorn",
+        "x": 0,
+        "y": 7.6,
+        "z": 1,
+        "eventId": "vk-side-tilda",
+        "label": "Tempo Acorn"
+      }
     ],
     "events": [
       {
@@ -342,7 +1303,12 @@
         "introLine": "Paint over all 4 Ivory Syndicate billboards across the Kiosk, Rotunda, Cafe, and Amphitheater!",
         "completeLine": "Clean tags! The whole jazz quarter is broadcasting pirate Dorian!",
         "objectiveType": "tag",
-        "targetIds": ["vk-bb-1", "vk-bb-2", "vk-bb-3", "vk-bb-4"],
+        "targetIds": [
+          "vk-bb-1",
+          "vk-bb-2",
+          "vk-bb-3",
+          "vk-bb-4"
+        ],
         "targetCount": 4,
         "x": -16,
         "y": 0,
@@ -371,7 +1337,11 @@
         "introLine": "Ride the rails between the Rotunda, Cafe, and Amphitheater to retune all 3 dishes!",
         "completeLine": "All 3 dishes locked onto Pirate Frequency!",
         "objectiveType": "dish",
-        "targetIds": ["vk-dish-1", "vk-dish-2", "vk-dish-3"],
+        "targetIds": [
+          "vk-dish-1",
+          "vk-dish-2",
+          "vk-dish-3"
+        ],
         "targetCount": 3,
         "x": -22,
         "y": 0,
@@ -388,7 +1358,7 @@
         "objectiveType": "boss-upright",
         "targetCount": 3,
         "x": 0,
-        "y": 7.0,
+        "y": 7,
         "z": -4
       },
       {
@@ -400,7 +1370,11 @@
         "introLine": "Tick-tock! Three tempo acorns bounced onto the Rotunda, Kiosk, and Penthouse—bring them back!",
         "completeLine": "Four-four time restored! Even the espresso-dew mugs are clinking in time.",
         "objectiveType": "collect",
-        "targetIds": ["vk-acorn-1", "vk-acorn-2", "vk-acorn-3"],
+        "targetIds": [
+          "vk-acorn-1",
+          "vk-acorn-2",
+          "vk-acorn-3"
+        ],
         "targetCount": 3,
         "x": 24,
         "y": 0,
@@ -422,24 +1396,239 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "vk-npc-1", "name": "Critique Carl", "kind": "gnome", "hatColor": "#ff4ecd", "shirtColor": "#28223d", "x": 20, "y": 0, "z": 12, "yaw": -0.6, "line": "Hm. Adequate air-jump, though your Dorian phrasing lacks espresso-dew nuance." },
-      { "id": "vk-npc-2", "name": "Saxy Sal", "kind": "woken", "prefab": "gsr-saxophone-woken", "x": 11, "y": 0, "z": 22, "yaw": -0.5, "line": "Honk-shoo! Ignore Carl—the fountain plaza has the sweetest street reverb in the Aether!" },
-      { "id": "vk-npc-3", "name": "Photo Tourist Pip", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#4f3266", "x": -16, "y": 0, "z": 33, "yaw": 0.3, "line": "Quick! Stand behind the skater cutout—my clay glaze looks fabulous in neon pink!" },
-      { "id": "vk-npc-4", "name": "Keynote Fan", "kind": "woken", "prefab": "gsr-metronome", "x": 8, "y": 3.5, "z": -10, "yaw": -0.5, "line": "Tick-tock! 162 BPM Dorian—Maestro hates it when someone grinds the balcony!" },
-      { "id": "vk-npc-5", "name": "Crate-Digger Fern", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#342354", "x": -34, "y": 5.2, "z": -22, "yaw": 0.9, "line": "The Vinyl Rotunda presses every bootleg record that drifts up from Turfton." },
-      { "id": "vk-npc-6", "name": "Telescope Sightseer", "kind": "gnome", "hatColor": "#ff9100", "shirtColor": "#2f224f", "x": 36, "y": 4.8, "z": -24, "yaw": -0.8, "line": "From the Amphitheater roof you can almost spot Aether Board's snow peaks!" },
-      { "id": "vk-npc-7", "name": "Rim Skater Jax", "kind": "gnome", "hatColor": "#00e5ff", "shirtColor": "#ff4ecd", "x": -54, "y": 0, "z": 4, "yaw": 1.57, "line": "The outer rim rails wrap the whole island—hit the kicker ramps for huge air!" },
-      { "id": "vk-npc-8", "name": "Gondola Porter", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3d2f5e", "x": -48, "y": 0, "z": 24, "yaw": 1.2, "line": "Next pink gondola to Turfton leaves at bar 32—or just grind the sky-rails!" },
-      { "id": "vk-npc-9", "name": "DJ Booth Roadie", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#1b0b38", "x": -8, "y": 0, "z": 34, "yaw": 0.4, "line": "DJ Broadcast left his portable decks warm—spin a trick on the beat!" }
+      {
+        "id": "vk-npc-1",
+        "name": "Critique Carl",
+        "kind": "gnome",
+        "hatColor": "#ff4ecd",
+        "shirtColor": "#28223d",
+        "x": 20,
+        "y": 0,
+        "z": 12,
+        "yaw": -0.6,
+        "line": "Hm. Adequate air-jump, though your Dorian phrasing lacks espresso-dew nuance."
+      },
+      {
+        "id": "vk-npc-2",
+        "name": "Saxy Sal",
+        "kind": "woken",
+        "prefab": "gsr-saxophone-woken",
+        "x": 11,
+        "y": 0,
+        "z": 22,
+        "yaw": -0.5,
+        "line": "Honk-shoo! Ignore Carl—the fountain plaza has the sweetest street reverb in the Aether!"
+      },
+      {
+        "id": "vk-npc-3",
+        "name": "Photo Tourist Pip",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#4f3266",
+        "x": -16,
+        "y": 0,
+        "z": 33,
+        "yaw": 0.3,
+        "line": "Quick! Stand behind the skater cutout—my clay glaze looks fabulous in neon pink!"
+      },
+      {
+        "id": "vk-npc-4",
+        "name": "Keynote Fan",
+        "kind": "woken",
+        "prefab": "gsr-metronome",
+        "x": 8,
+        "y": 3.5,
+        "z": -10,
+        "yaw": -0.5,
+        "line": "Tick-tock! 162 BPM Dorian—Maestro hates it when someone grinds the balcony!"
+      },
+      {
+        "id": "vk-npc-5",
+        "name": "Crate-Digger Fern",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#342354",
+        "x": -34,
+        "y": 5.2,
+        "z": -22,
+        "yaw": 0.9,
+        "line": "The Vinyl Rotunda presses every bootleg record that drifts up from Turfton."
+      },
+      {
+        "id": "vk-npc-6",
+        "name": "Telescope Sightseer",
+        "kind": "gnome",
+        "hatColor": "#ff9100",
+        "shirtColor": "#2f224f",
+        "x": 36,
+        "y": 4.8,
+        "z": -24,
+        "yaw": -0.8,
+        "line": "From the Amphitheater roof you can almost spot Aether Board's snow peaks!"
+      },
+      {
+        "id": "vk-npc-7",
+        "name": "Rim Skater Jax",
+        "kind": "gnome",
+        "hatColor": "#00e5ff",
+        "shirtColor": "#ff4ecd",
+        "x": -54,
+        "y": 0,
+        "z": 4,
+        "yaw": 1.57,
+        "line": "The outer rim rails wrap the whole island—hit the kicker ramps for huge air!"
+      },
+      {
+        "id": "vk-npc-8",
+        "name": "Gondola Porter",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#3d2f5e",
+        "x": -48,
+        "y": 0,
+        "z": 24,
+        "yaw": 1.2,
+        "line": "Next pink gondola to Turfton leaves at bar 32—or just grind the sky-rails!"
+      },
+      {
+        "id": "vk-npc-9",
+        "name": "DJ Booth Roadie",
+        "kind": "gnome",
+        "hatColor": "#69f0ae",
+        "shirtColor": "#1b0b38",
+        "x": -8,
+        "y": 0,
+        "z": 34,
+        "yaw": 0.4,
+        "line": "DJ Broadcast left his portable decks warm—spin a trick on the beat!"
+      }
     ],
     "details": [
-      { "kind": "piano-walkway", "x": 0, "y": 0.05, "z": 29, "w": 5.4, "d": 16, "color": "#24193d" },
-      { "kind": "fountain-plaza", "x": 16, "y": 0, "z": 22, "scale": 1.15, "color": "#00e5ff", "accentColor": "#ff4ecd" },
-      { "kind": "banner-arch", "x": 0, "y": 0, "z": 31, "yaw": 0, "scale": 1.15, "color": "#ff4ecd", "accentColor": "#ffd740" },
-      { "kind": "eq-strip", "x": 0, "y": 3.52, "z": -12, "yaw": 0, "scale": 1.2, "color": "#ffd740" },
-      { "kind": "placed-prop", "prefab": "gsr-cafe-table", "x": 34, "y": 3.4, "z": 18, "yaw": 0.4, "scale": 1.25, "color": "#ff9100" },
-      { "kind": "placed-prop", "prefab": "gsr-telescope-stand", "x": 38, "y": 4.8, "z": -32, "yaw": 2.6, "scale": 1.35, "color": "#ffd740" },
-      { "kind": "cable-span", "x": -38, "y": 5.8, "z": -26, "x2": 36, "y2": 5.4, "z2": -28, "color": "#00e5ff" }
+      {
+        "kind": "piano-walkway",
+        "x": 0,
+        "y": 0.05,
+        "z": 29,
+        "w": 5.4,
+        "d": 16,
+        "color": "#24193d"
+      },
+      {
+        "kind": "fountain-plaza",
+        "x": 16,
+        "y": 0,
+        "z": 22,
+        "scale": 1.15,
+        "color": "#00e5ff",
+        "accentColor": "#ff4ecd"
+      },
+      {
+        "kind": "banner-arch",
+        "x": 0,
+        "y": 0,
+        "z": 31,
+        "yaw": 0,
+        "scale": 1.15,
+        "color": "#ff4ecd",
+        "accentColor": "#ffd740"
+      },
+      {
+        "kind": "eq-strip",
+        "x": 0,
+        "y": 3.52,
+        "z": -12,
+        "yaw": 0,
+        "scale": 1.2,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-cafe-table",
+        "x": 34,
+        "y": 3.4,
+        "z": 18,
+        "yaw": 0.4,
+        "scale": 1.25,
+        "color": "#ff9100"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-telescope-stand",
+        "x": 38,
+        "y": 4.8,
+        "z": -32,
+        "yaw": 2.6,
+        "scale": 1.35,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "cable-span",
+        "x": -38,
+        "y": 5.8,
+        "z": -26,
+        "x2": 36,
+        "y2": 5.4,
+        "z2": -28,
+        "color": "#00e5ff"
+      }
+    ],
+    "satellites": [
+      {
+        "id": "velvet-keys-sat-west",
+        "x": -116,
+        "y": 2.5,
+        "z": -16,
+        "r": 9.5,
+        "color": "#ff4ecd",
+        "bouncePower": 18
+      },
+      {
+        "id": "velvet-keys-sat-east",
+        "x": 116,
+        "y": 3.5,
+        "z": 16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      }
+    ],
+    "shopNpc": {
+      "id": "shop-vk",
+      "name": "Reed the Tuner",
+      "prefab": "gsr-saxophone-woken",
+      "x": 26,
+      "y": 0,
+      "z": 42,
+      "yaw": -0.6,
+      "itemId": "ivory-notes",
+      "greeting": "Fresh Ivory Note trails—tuned to D Dorian!"
+    },
+    "bossWaypoints": [
+      [
+        0,
+        7,
+        13.5
+      ],
+      [
+        -63.24,
+        7,
+        45.9
+      ],
+      [
+        63.24,
+        7,
+        48.96
+      ],
+      [
+        59.16,
+        7,
+        -56.1
+      ],
+      [
+        -59.16,
+        7,
+        -53.04
+      ]
     ]
   }
 }

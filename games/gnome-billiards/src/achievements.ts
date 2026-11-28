@@ -8,6 +8,9 @@ export interface BilliardsAchievements {
   cpuWin(): void;
   onlineWin(): void;
   gameDone(): void;
+  crackedWin(): void;
+  challengeClear(): void;
+  highRoller(): void;
 }
 
 export function createBilliardsAchievements(ui: HTMLElement): BilliardsAchievements {
@@ -19,5 +22,8 @@ export function createBilliardsAchievements(ui: HTMLElement): BilliardsAchieveme
     cpuWin: () => void tracker.unlock('billiards-cpu-win'),
     onlineWin: () => void tracker.unlock('billiards-online-win'),
     gameDone: () => void tracker.increment('billiards-regular'),
+    crackedWin: () => void tracker.unlock('billiards-cracked-win'),
+    challengeClear: () => void tracker.unlock('billiards-challenge-clear'),
+    highRoller: () => void tracker.unlock('billiards-high-roller'),
   };
 }

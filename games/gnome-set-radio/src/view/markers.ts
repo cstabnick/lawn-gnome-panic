@@ -181,7 +181,7 @@ export function createEtherealMarker(opts: {
 }
 
 export function createMarkerSystem(
-  scene: THREE.Scene,
+  scene: THREE.Object3D,
   doc: GsrLevelDoc,
   refs: {
     getBillboardDone: (id: string) => boolean;
@@ -343,8 +343,9 @@ export function createMarkerSystem(
         tgt.marker.ringA.rotation.z = Math.sin(t * 1.2 + i) * 0.45;
         tgt.marker.ringB.rotation.x = -t * 2.3 + i;
         tgt.marker.crystal.rotation.y = t * 2.8;
-        tgt.marker.crystal.position.y = 3.2 + Math.sin(t * 3.4 + i) * 0.35;
-        tgt.marker.badge.position.y = 4.45 + Math.sin(t * 3.4 + i) * 0.28;
+        const yScale = tgt.kind === 'boss' ? 1.45 : 1;
+        tgt.marker.crystal.position.y = 3.2 * yScale + Math.sin(t * 3.4 + i) * 0.35;
+        tgt.marker.badge.position.y = 4.45 * yScale + Math.sin(t * 3.4 + i) * 0.28;
 
         const pMat = tgt.marker.pillar.material as THREE.MeshBasicMaterial;
         pMat.opacity = 0.16 + beatPulse * 0.16;

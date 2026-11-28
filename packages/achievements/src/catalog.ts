@@ -1926,6 +1926,30 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     target: 5,
     reward: { slot: 'neck', prefabId: 'felt-scarf', label: 'Felt Table Scarf' },
   },
+  {
+    id: 'billiards-cracked-win',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Phantom Slayer',
+    description: 'Defeat The Chalk Phantom (Cracked CPU).',
+    reward: { slot: 'head', prefabId: 'phantom-visor', label: 'Phantom Visor', exclusive: true },
+  },
+  {
+    id: 'billiards-challenge-clear',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'Trick Shot Artist',
+    description: 'Complete a Gnome Billiards Challenge.',
+    reward: { slot: 'neck', prefabId: 'trick-chalk-pendant', label: 'Blue Chalk Pendant' },
+  },
+  {
+    id: 'billiards-high-roller',
+    game: 'gnome-billiards',
+    gameTitle: 'Gnome Billiards',
+    title: 'High Roller',
+    description: 'Win a wagered match of Gnome Billiards.',
+    reward: { slot: 'back', prefabId: 'high-roller-rack', label: 'Gilded Triangle Rack' },
+  },
 
   // ---- GBA GJAM ----
   {

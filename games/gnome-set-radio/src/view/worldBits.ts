@@ -137,7 +137,7 @@ export function createWorldBits(
     padGroup.position.set(px, py, pz);
 
     const disc = new THREE.Mesh(discGeo, discMat);
-    disc.position.y = 0.07;
+    disc.position.y = 0.14;
     padGroup.add(disc);
 
     const ringColor = idx === 0 ? '#00e5ff' : '#ff4ecd';
@@ -208,7 +208,7 @@ export function createWorldBits(
     ),
   );
   const boothFloor = new THREE.Mesh(boothFloorGeo, boothFloorMat);
-  boothFloor.position.y = 0.08;
+  boothFloor.position.y = 0.14;
   boothGroup.add(boothFloor);
 
   // Glowing golden arch

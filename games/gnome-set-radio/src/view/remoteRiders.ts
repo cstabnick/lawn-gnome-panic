@@ -190,10 +190,10 @@ export function createRemoteRiders(scene: THREE.Scene): RemoteRidersSystem {
       entry.trickKind = kind;
       entry.trickTimer = 0;
     },
-    update(currentArea, dt) {
+    update(_currentArea, dt) {
       const now = performance.now();
       for (const entry of riders.values()) {
-        if (entry.area !== currentArea || !entry.interp.sample(sampleOut, now)) {
+        if (!entry.interp.sample(sampleOut, now)) {
           entry.root.visible = false;
           continue;
         }

@@ -44,6 +44,7 @@ export function createInputController(canvas: HTMLElement): InputController {
   let touchBoost = false;
   let touchBrake = false;
   let touchDance = false;
+  let touchSpeedMode = false;
 
   const onKeyDown = (e: KeyboardEvent) => {
     const code = e.code;
@@ -179,6 +180,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     pad.appendChild(makeBtn('TRICK', '#ffd740', (v) => (touchGrind = v)));
     pad.appendChild(makeBtn('SPRAY', '#ff4ecd', (v) => (touchSpray = v)));
     pad.appendChild(makeBtn('BRAKE', '#ff5252', (v) => (touchBrake = v)));
+    pad.appendChild(makeBtn('TUCK', '#b388ff', (v) => (touchSpeedMode = v)));
     pad.appendChild(makeBtn('BOOST', '#00e5ff', (v) => (touchBoost = v)));
     pad.appendChild(makeBtn('JUMP', '#69f0ae', (v) => (touchJump = v)));
     touchRoot.appendChild(pad);
@@ -213,6 +215,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     let gpBoost = false;
     let gpBrake = false;
     let gpDance = false;
+    let gpSpeedMode = false;
     let gpOrbit = 0;
     if (gp) {
       if (Math.abs(gp.axes[0] ?? 0) > 0.15) lx += gp.axes[0];
@@ -221,7 +224,8 @@ export function createInputController(canvas: HTMLElement): InputController {
       gpJump = gp.buttons[0]?.pressed ?? false;
       gpSpray = gp.buttons[1]?.pressed ?? false;
       gpGrind = (gp.buttons[2]?.pressed || gp.buttons[3]?.pressed) ?? false;
-      gpBrake = (gp.buttons[4]?.pressed || gp.buttons[6]?.pressed) ?? false;
+      gpSpeedMode = gp.buttons[4]?.pressed ?? false;
+      gpBrake = gp.buttons[6]?.pressed ?? false;
       gpBoost = (gp.buttons[5]?.pressed || gp.buttons[7]?.pressed) ?? false;
       gpDance = (gp.buttons[8]?.pressed || gp.buttons[13]?.pressed) ?? false;
     }
@@ -240,6 +244,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') || touchBoost || gpBoost;
     const brake = keys.has('KeyX') || keys.has('ControlLeft') || keys.has('ControlRight') || touchBrake || gpBrake;
     const dance = keys.has('KeyB') || touchDance || gpDance;
+    const speedMode = keys.has('AltLeft') || keys.has('AltRight') || keys.has('KeyZ') || touchSpeedMode || gpSpeedMode;
     sprayDown = keys.has('KeyF') || keys.has('Enter') || touchSpray || gpSpray;
     const sprayEdge = sprayDown && !prevSpray;
     prevSpray = sprayDown;
@@ -261,7 +266,7 @@ export function createInputController(canvas: HTMLElement): InputController {
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     return {
-      skater: { moveX, moveZ, jump, grind, trick: grind, boost, brake, dance },
+      skater: { moveX, moveZ, jump, grind, trick: grind, boost, brake, dance, speedMode },
       sprayEdge,
       orbitDeltaX: deltaOrbit,
       toggleExplorer,

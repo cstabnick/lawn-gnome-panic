@@ -21,15 +21,17 @@ describe('Gnom Set Radio music', () => {
       expect([...new Set(conflicts)].slice(0, 5)).toEqual([]);
     });
 
-    it(`${track.id}: stays in its key/mode`, () => {
-      const theory = analyzeTheory(build, 32);
-      expect(theory.detectedKey.inScaleRatio).toBeGreaterThan(0.85);
+    it(`${track.id}: stays in its key/mode with clean harmony`, () => {
+      const theory = analyzeTheory(build, 48);
+      expect(theory.detectedKey.inScaleRatio, `${track.id} inScaleRatio`).toBeGreaterThan(0.9);
+      expect(theory.clashRatio, `${track.id} clashRatio (${theory.issues.map((i) => i.msg).join('; ')})`).toBeLessThan(0.08);
+      expect(theory.score, `${track.id} theory score`).toBeGreaterThanOrEqual(75);
     });
   }
 
-  it('Area 3 (chrome-kiln-funk) is pure aeolian minor acid', () => {
+  it('Area 3 (chrome-kiln-funk) is Dorian acid-funk in E', () => {
     const area3 = GSR_TRACKS.find((t) => t.id === 'chrome-kiln-funk');
-    expect(area3?.mode).toBe('aeolian');
+    expect(area3?.mode).toBe('dorian');
     expect(area3?.key).toBe('E');
   });
 

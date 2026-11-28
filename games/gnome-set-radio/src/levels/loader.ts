@@ -9,6 +9,7 @@ import hoaCitadelRaw from '../data/levels/hoa-citadel.level.json';
 import subsoilRelayRaw from '../data/levels/subsoil-relay.level.json';
 import zeroHzZenithRaw from '../data/levels/zero-hz-zenith.level.json';
 import { getPerimeterAdSpecs } from '../view/ads';
+import { ROUND_BUILDING_ARCHES, satelliteSurfaceAt } from './collision';
 import type { GsrBuilding, GsrLevelDoc, GsrRail, GsrRamp } from './schema';
 
 export type GsrLevelId =
@@ -70,10 +71,36 @@ export function rampHeightAt(ramp: GsrRamp, x: number, z: number): number | null
 
 /** Building roof height if (x, z) is inside footprint and skater's feet are near/above roof. */
 export function buildingRoofAt(b: GsrBuilding, x: number, z: number, feetY: number): number | null {
-  const halfW = b.w * 0.5 + 0.2;
-  const halfD = b.d * 0.5 + 0.2;
-  if (Math.abs(x - b.x) > halfW || Math.abs(z - b.z) > halfD) return null;
   const top = b.yBase + b.h;
+  if (b.arch === 'stepped-monolith') {
+    const upperHalfW = b.w * 0.34 + 0.2;
+    const upperHalfD = b.d * 0.34 + 0.2;
+    const upperTop = top + 1.8;
+    if (Math.abs(x - b.x) <= upperHalfW && Math.abs(z - b.z) <= upperHalfD && feetY >= upperTop - 0.85) {
+      return upperTop;
+    }
+  } else if (b.arch === 'cantilever-tower') {
+    const ledgeHalfW = (b.w + 1.6) * 0.5 + 0.2;
+    const ledgeHalfD = (b.d + 2.6) * 0.5 + 0.2;
+    const ledgeTop = b.yBase + b.h * 0.54;
+    if (
+      Math.abs(x - b.x) <= ledgeHalfW &&
+      Math.abs(z - (b.z + 1.1)) <= ledgeHalfD &&
+      feetY >= ledgeTop - 0.85 &&
+      feetY < top - 0.85
+    ) {
+      return ledgeTop;
+    }
+  }
+
+  if (b.arch && ROUND_BUILDING_ARCHES.has(b.arch)) {
+    const rad = Math.max(b.w, b.d) * 0.5 + 0.25;
+    if (Math.hypot(x - b.x, z - b.z) > rad) return null;
+  } else {
+    const halfW = b.w * 0.5 + 0.2;
+    const halfD = b.d * 0.5 + 0.2;
+    if (Math.abs(x - b.x) > halfW || Math.abs(z - b.z) > halfD) return null;
+  }
   if (feetY >= top - 0.85) return top;
   return null;
 }
@@ -83,6 +110,8 @@ export function buildingRoofAt(b: GsrBuilding, x: number, z: number, feetY: numb
  */
 export function sampleSurfaceHeight(doc: GsrLevelDoc, x: number, z: number, feetY: number): number {
   let best = groundHeightAt(doc, x, z);
+  const satY = satelliteSurfaceAt(doc.data.satellites, x, z, feetY);
+  if (satY !== null && satY > best) best = satY;
   for (const r of doc.data.ramps) {
     const rh = rampHeightAt(r, x, z);
     if (rh !== null && rh <= feetY + 1.1 && rh > best) best = rh;

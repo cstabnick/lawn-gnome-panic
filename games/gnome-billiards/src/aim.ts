@@ -1,7 +1,7 @@
 // Where the cue ball goes when it is struck along (dx, dy): the first object ball it touches (and the contact point),
 // or the cushion. Pure table geometry, shared by the 3D scene (the aim line) and the tests.
 import { BALL_R, CUE_BALL, TABLE_H, TABLE_W } from './config';
-import type { Ball } from './physics';
+import { POCKETS, type Ball } from './physics';
 
 export interface AimLine {
   /** Where the line ends (table units). */
@@ -64,4 +64,84 @@ export function backRoom(balls: readonly Ball[], cx: number, cy: number, ux: num
     if (perp < 2 * R + 0.02) room = Math.min(room, proj - 2 * R - 0.02);
   }
   return Math.max(0, room);
+}
+
+/** Drag sensitivity multiplier when Fine Aim is active (5.5x finer control). */
+export const FINE_AIM_SCALE = 0.18;
+/** Ultra-fine nudge step in radians (0.1 degrees). */
+export const FINE_NUDGE_RAD = (0.1 * Math.PI) / 180;
+/** Standard micro-nudge step in radians (0.2 degrees). */
+export const NUDGE_STEP_RAD = (0.2 * Math.PI) / 180;
+/** Coarse nudge step in radians (0.5 degrees). */
+export const COARSE_NUDGE_RAD = (0.5 * Math.PI) / 180;
+
+/** Rotates direction (dx, dy) by `radians` and returns a unit vector. */
+export function rotateDir(dx: number, dy: number, radians: number): { dx: number; dy: number } {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  const rx = dx * c - dy * s;
+  const ry = dx * s + dy * c;
+  const len = Math.hypot(rx, ry) || 1;
+  return { dx: rx / len, dy: ry / len };
+}
+
+/** Signed smallest angle in (-PI, PI] from (ax, ay) to (bx, by). */
+export function deltaAngle(ax: number, ay: number, bx: number, by: number): number {
+  return Math.atan2(ax * by - ay * bx, ax * bx + ay * by);
+}
+
+/**
+ * Traces the struck object ball (`hitId`) from ghost contact `(gx, gy)` up to `maxLen`.
+ * Reports whether it enters a pocket (`pocketed: true`) or hits a cushion with a 1-rail `bounce` preview.
+ */
+export function aimTargetRay(
+  balls: readonly Ball[],
+  hitId: number,
+  gx: number,
+  gy: number,
+  maxLen: number,
+): { ex: number; ey: number; pocketed: boolean; bounce?: { bx: number; by: number } } {
+  const hit = balls.find((b) => b.id === hitId && !b.pocketed);
+  if (!hit) return { ex: gx, ey: gy, pocketed: false };
+  const ux = hit.x - gx;
+  const uy = hit.y - gy;
+  const len = Math.hypot(ux, uy) || 1;
+  const nx = ux / len;
+  const ny = uy / len;
+
+  // Check distance to each pocket along the ray.
+  let bestPocketT = Infinity;
+  for (const p of POCKETS) {
+    const ox = p.x - hit.x;
+    const oy = p.y - hit.y;
+    const proj = ox * nx + oy * ny;
+    if (proj <= 0) continue;
+    const perp2 = ox * ox + oy * oy - proj * proj;
+    const pr = p.r + BALL_R * 0.25;
+    if (perp2 < pr * pr && proj < bestPocketT) {
+      bestPocketT = proj;
+    }
+  }
+
+  // Check distance to cushions.
+  const tx = nx > 1e-6 ? (TABLE_W - BALL_R - hit.x) / nx : nx < -1e-6 ? (BALL_R - hit.x) / nx : Infinity;
+  const ty = ny > 1e-6 ? (TABLE_H - BALL_R - hit.y) / ny : ny < -1e-6 ? (BALL_R - hit.y) / ny : Infinity;
+  const railT = Math.max(0, Math.min(tx, ty));
+
+  if (bestPocketT <= maxLen && bestPocketT <= railT + BALL_R * 2) {
+    return { ex: hit.x + nx * bestPocketT, ey: hit.y + ny * bestPocketT, pocketed: true };
+  }
+  if (railT < maxLen) {
+    const ex = hit.x + nx * railT;
+    const ey = hit.y + ny * railT;
+    const rx = tx <= ty ? -nx : nx;
+    const ry = ty < tx ? -ny : ny;
+    return {
+      ex,
+      ey,
+      pocketed: false,
+      bounce: { bx: ex + rx * 0.35, by: ey + ry * 0.35 },
+    };
+  }
+  return { ex: hit.x + nx * maxLen, ey: hit.y + ny * maxLen, pocketed: false };
 }

@@ -112,6 +112,7 @@ export function stepGroundChassis(
   moveZ: number,
   boosting: boolean,
   dt: number,
+  speedMode = false,
 ): void {
   // If external code or tests teleported the skater, re-sync the rigid body
   if (Math.hypot(state.x - chassis.lastX, state.z - chassis.lastZ) > 0.5) {
@@ -150,10 +151,10 @@ export function stepGroundChassis(
   let steer = 0;
 
   if (moveLen > 0.05) {
-    steer = Math.max(-1, Math.min(1, -leftDot * 1.85));
+    steer = Math.max(-1, Math.min(1, -leftDot * (speedMode ? 0.65 : 1.85)));
     if (fwdDot >= -0.15) {
       throttle = Math.min(1, Math.max(0.45, fwdDot + Math.abs(leftDot) * 0.55) * (boosting ? 1.25 : 1));
-    } else {
+    } else if (!speedMode) {
       // Carving hard back: brake + handbrake to pivot cleanly without engaging reverse
       brake = Math.min(1, -fwdDot);
       if (spd > 1.2) handbrake = 0.65;
@@ -167,7 +168,7 @@ export function stepGroundChassis(
     state.vx = 0;
     state.vz = 0;
     handbrake = 1;
-  } else {
+  } else if (!speedMode) {
     handbrake = 0.35; // smooth coasting stop without reverse gear
   }
 
@@ -179,13 +180,13 @@ export function stepGroundChassis(
     source: 'keyboard',
   });
 
-  // Gentle directional velocity alignment for crisp high-speed carving
+  // Gentle directional velocity alignment for crisp high-speed carving (reduced in speedMode)
   if (moveLen > 0.05 && fwdDot > 0.1 && spd > 2) {
     const bvx = chassis.ctrl.body.vel.x;
     const bvz = chassis.ctrl.body.vel.z;
     const bSpd = Math.hypot(bvx, bvz);
     if (bSpd > 0.5) {
-      const blend = Math.min(1, dt * 4.5);
+      const blend = Math.min(1, dt * (speedMode ? 1.4 : 4.5));
       const ax = bvx / bSpd + (nx - bvx / bSpd) * blend;
       const az = bvz / bSpd + (nz - bvz / bSpd) * blend;
       const aLen = Math.hypot(ax, az) || 1;

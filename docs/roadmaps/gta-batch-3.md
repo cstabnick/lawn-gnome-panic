@@ -15,7 +15,8 @@ Epic briefs: [gta-batch-3/](gta-batch-3/). Each workstream lead adds its own dec
 
 All 33 epics merged (+ F1, F2, main). **R1 round 1 done**: 12 editors (~375 findings `review/G*.md`), decider
 (`review/decisions.md`, GR1–GR10, 59 rulings), triage into 24 fix epics in 8 waves (`review/fix-plan.md`,
-`review/fix/FXnn-*.md`). Now running the fix waves (FX branches `fix/FXnn-*`); then re-review
+`review/fix/FXnn-*.md`). Now running the fix waves (branches `fix/FXnn`, lead prompt template `review/fix-lead-prompt.md`): wave 1 = FX01,
+FX02, FX03 running; then re-review
 until only nits remain. Then **R2**: an audit of every source item L01–L118 against what shipped (met / partly / not,
 with evidence), and fix epics for the gaps. Then the finish: demos (media-upload MCP), the PR description, a final merge-conflict check.
 

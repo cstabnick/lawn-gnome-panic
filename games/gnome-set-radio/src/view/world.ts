@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LAYER, flatLayer } from '@lawn/depth';
 import { createGnomeModel, GNORMAN_LOOK } from '@lawn/gnome';
 import { buildPrefab } from '@lawn/prefabs';
+import { buildArenaOutline2D } from '../levels/collision';
 import { groundHeightAt } from '../levels/loader';
 import type {
   GsrAmbientNpc,
@@ -80,17 +81,27 @@ export interface WorldVisuals {
   worldBits: WorldBitsSystem;
   transitGates: TransitGateEntry[];
   goldenVinyls: Map<string, { root: THREE.Group; def: GoldenVinylDef; collected: boolean }>;
+  shopNpcPos: { x: number; y: number; z: number; name: string; greeting: string } | null;
+  satellitePads: { x: number; y: number; z: number; power: number }[];
   markBillboardTagged(id: string, texture?: THREE.Texture): void;
   markInteractiveDone(id: string): void;
   markVinylCollected(id: string): void;
   showSpeechBubble(targetId: string, speaker: string, text: string, ttl?: number): void;
   triggerBossHit(): void;
   setFlowVisible(v: boolean): void;
-  update(t: number, beatPulse: number, bossActive: boolean, bossWavePhase: number, hype?: number, comboMult?: number): void;
+  update(
+    t: number,
+    beatPulse: number,
+    bossActive: boolean,
+    bossWavePhase: number,
+    hype?: number,
+    comboMult?: number,
+    bossPosOverride?: { x: number; y: number; z: number },
+  ): void;
   dispose(): void;
 }
 
-export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
+export function buildWorldVisuals(doc: GsrLevelDoc, opts?: { megaMode?: boolean }): WorldVisuals {
   const group = new THREE.Group();
   const disposables: { dispose(): void }[] = [];
   const track = <T extends { dispose(): void }>(x: T): T => {
@@ -98,22 +109,28 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     return x;
   };
 
-  // 1. Regional Skybox + Floating Vista Landmarks + Ambient Sky Traffic
-  const skybox = createRegionalSkybox(doc);
-  group.add(skybox.group);
-  disposables.push(skybox);
+  // 1. Regional Skybox + Floating Vista Landmarks + Ambient Sky Traffic (skipped in megaMode where MegaWorldView provides the shared sky)
+  const skybox = opts?.megaMode ? null : createRegionalSkybox(doc);
+  if (skybox) {
+    group.add(skybox.group);
+    disposables.push(skybox);
+  }
 
   const skyTraffic = createSkyTraffic(doc, track);
   group.add(skyTraffic.group);
   disposables.push(skyTraffic);
 
-  const skyVis = createSkyVisualizer(doc);
-  group.add(skyVis.group);
-  disposables.push(skyVis);
+  const skyVis = opts?.megaMode ? null : createSkyVisualizer(doc);
+  if (skyVis) {
+    group.add(skyVis.group);
+    disposables.push(skyVis);
+  }
 
-  const cartoonBackdrop = createCartoonBackdrop(doc);
-  group.add(cartoonBackdrop.group);
-  disposables.push(cartoonBackdrop);
+  const cartoonBackdrop = opts?.megaMode ? null : createCartoonBackdrop(doc);
+  if (cartoonBackdrop) {
+    group.add(cartoonBackdrop.group);
+    disposables.push(cartoonBackdrop);
+  }
 
   // 2. Floating Island Ground + Sculpted Cliff Skirt + Neon Perimeter Curb
   const w = doc.bounds.w;
@@ -379,15 +396,67 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       railBeads.push({ curve, mesh: bead, offset: bIdx * 0.5, speed: 0.28 * (rail.speedBoost ?? 1.2) });
     }
 
-    // Support pylons at endpoints
-    const postMat = track(new THREE.MeshStandardMaterial({ color: '#222633', metalness: 0.6, roughness: 0.4 }));
-    for (const p of [rail.points[0], rail.points[rail.points.length - 1]]) {
-      const gY = groundHeightAt(doc, p[0], p[2]);
-      const ph = Math.max(0.4, p[1] - gY);
-      const post = new THREE.Mesh(track(new THREE.CylinderGeometry(0.1, 0.14, ph, 8)), postMat);
-      post.position.set(p[0], gY + ph * 0.5, p[2]);
-      group.add(post);
+    // Support pylons at endpoints (skip for underWorld rails)
+    if (!rail.underWorld) {
+      const postMat = track(new THREE.MeshStandardMaterial({ color: '#222633', metalness: 0.6, roughness: 0.4 }));
+      for (const p of [rail.points[0], rail.points[rail.points.length - 1]]) {
+        const gY = groundHeightAt(doc, p[0], p[2]);
+        const ph = Math.max(0.3, p[1] - gY - 0.15);
+        const post = new THREE.Mesh(track(new THREE.CylinderGeometry(0.1, 0.14, ph, 8)), postMat);
+        post.position.set(p[0], gY + ph * 0.5, p[2]);
+        group.add(post);
+      }
     }
+    // Glowing tunnel rings along epic aether & underworld rails
+    if (rail.aetherRail || rail.underWorld) {
+      const ringGeo = track(new THREE.TorusGeometry(2.1, 0.1, 8, 20));
+      for (const u of [0.25, 0.5, 0.75]) {
+        const pt = curve.getPointAt(u);
+        const tan = curve.getTangentAt(u).normalize();
+        const ringMesh = new THREE.Mesh(ringGeo, tubeMat);
+        ringMesh.position.copy(pt);
+        ringMesh.lookAt(pt.clone().add(tan));
+        group.add(ringMesh);
+      }
+    }
+  }
+
+  // 6b. Floating Satellite Mini-Islands & Bounce Pads
+  const satellitePads: { x: number; y: number; z: number; power: number }[] = [];
+  for (const sat of doc.data.satellites ?? []) {
+    const col = sat.color ?? doc.data.accentColor;
+    const topGeo = track(new THREE.CylinderGeometry(sat.r, sat.r * 0.92, 0.45, 18));
+    const topMat = track(
+      flatLayer(
+        new THREE.MeshToonMaterial({ color: doc.data.groundColor, gradientMap: toonMap }),
+        LAYER.ground,
+      ),
+    );
+    const topMesh = new THREE.Mesh(topGeo, topMat);
+    topMesh.position.set(sat.x, sat.y - 0.24, sat.z);
+    topMesh.userData.sprayable = true;
+    group.add(topMesh);
+
+    const keelGeo = track(new THREE.ConeGeometry(sat.r * 0.88, 7.5, 10));
+    keelGeo.rotateX(Math.PI);
+    const keelMat = track(new THREE.MeshStandardMaterial({ color: '#1b122b', roughness: 0.92, flatShading: true }));
+    const keel = new THREE.Mesh(keelGeo, keelMat);
+    keel.position.set(sat.x, sat.y - 4.2, sat.z);
+    group.add(keel);
+
+    const rimGeo = track(new THREE.TorusGeometry(sat.r + 0.15, 0.18, 8, 28));
+    rimGeo.rotateX(Math.PI / 2);
+    const rimMat = track(new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.85 }));
+    const rim = new THREE.Mesh(rimGeo, rimMat);
+    rim.position.set(sat.x, sat.y + 0.05, sat.z);
+    group.add(rim);
+
+    const padObj = buildPrefab('gsr-bongo-stack', { scale: 1.3 });
+    if (padObj) {
+      padObj.position.set(sat.x, sat.y, sat.z);
+      group.add(padObj);
+    }
+    satellitePads.push({ x: sat.x, y: sat.y, z: sat.z, power: sat.bouncePower ?? 18 });
   }
 
   // 7. Spray-Taggable Gang & Brand Billboards
@@ -489,16 +558,16 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   let bossActor: { root: THREE.Object3D; ring: THREE.Mesh; baseX: number; baseY: number; baseZ: number; hits: number } | null = null;
 
   for (const ev of doc.data.events) {
-    const npc = buildPrefab(ev.characterPrefab, { scale: ev.kind === 'boss' ? 2.1 : 1.45 });
+    const npc = buildPrefab(ev.characterPrefab, { scale: ev.kind === 'boss' ? 3.8 : 1.45 });
     if (npc) {
       npc.position.set(ev.x, ev.y, ev.z);
       group.add(npc);
-      speechTargets.set(ev.id, { root: npc, height: ev.kind === 'boss' ? 3.5 : 2.5 });
+      speechTargets.set(ev.id, { root: npc, height: ev.kind === 'boss' ? 6.8 : 2.5 });
       if (ev.objectiveType === 'chase') {
         pluckNpc = { root: npc, baseX: ev.x, baseY: ev.y, baseZ: ev.z, surge: 0 };
         speechTargets.set('pluck', { root: npc, height: 2.6 });
       } else if (ev.kind === 'boss') {
-        const ringGeo = track(new THREE.RingGeometry(1.4, 2.2, 28));
+        const ringGeo = track(new THREE.RingGeometry(2.2, 3.2, 32));
         ringGeo.rotateX(-Math.PI / 2);
         const ringMat = track(
           flatLayer(
@@ -511,7 +580,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         ring.visible = false;
         group.add(ring);
         bossActor = { root: npc, ring, baseX: ev.x, baseY: ev.y, baseZ: ev.z, hits: 0 };
-        speechTargets.set('boss', { root: npc, height: 3.5 });
+        speechTargets.set('boss', { root: npc, height: 6.8 });
       }
     }
 
@@ -793,7 +862,7 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         ),
       );
       const pool = new THREE.Mesh(poolGeo, poolMat);
-      pool.position.set(det.x, det.y + 0.08, det.z);
+      pool.position.set(det.x, det.y + 0.02, det.z);
       group.add(pool);
 
       const rimGeo = track(new THREE.TorusGeometry(rad, 0.28, 8, 28));
@@ -884,6 +953,56 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
   const worldBits = createWorldBits(doc, group, track);
   disposables.push(worldBits);
 
+  // In-game Shop NPC & Booth
+  let shopNpcPos: { x: number; y: number; z: number; name: string; greeting: string } | null = null;
+  if (doc.data.shopNpc) {
+    const sn = doc.data.shopNpc;
+    const sy = sn.y === 0 ? groundHeightAt(doc, sn.x, sn.z) : sn.y;
+    const booth = buildPrefab('gsr-shop-booth', { scale: 1.5 });
+    if (booth) {
+      booth.position.set(sn.x, sy, sn.z);
+      booth.rotation.y = sn.yaw ?? 0;
+      group.add(booth);
+    }
+    const npcModel = createGnomeModel({
+      ...GNORMAN_LOOK,
+      hat: Number.parseInt((doc.data.accentColor || '#ff4ecd').replace('#', ''), 16) || 0xff4ecd,
+      shirt: 0x00e5ff,
+    });
+    npcModel.object.position.set(sn.x + Math.sin(sn.yaw ?? 0) * 1.4, sy + 0.05, sn.z + Math.cos(sn.yaw ?? 0) * 1.4);
+    npcModel.object.rotation.y = sn.yaw ?? 0;
+    npcModel.object.scale.setScalar(1.25);
+    group.add(npcModel.object);
+    speechTargets.set(sn.id, { root: npcModel.object, height: 2.3 });
+    shopNpcPos = { x: sn.x, y: sy, z: sn.z, name: sn.name, greeting: sn.greeting };
+
+    // Floating 3D Shop Signpost above booth
+    const signCanvas = document.createElement('canvas');
+    signCanvas.width = 256;
+    signCanvas.height = 96;
+    const sctx = signCanvas.getContext('2d');
+    if (sctx) {
+      sctx.fillStyle = 'rgba(12, 10, 28, 0.88)';
+      sctx.strokeStyle = '#ffd740';
+      sctx.lineWidth = 6;
+      sctx.beginPath();
+      sctx.roundRect(8, 8, 240, 80, 18);
+      sctx.fill();
+      sctx.stroke();
+      sctx.fillStyle = '#ffd740';
+      sctx.font = 'bold 34px system-ui, sans-serif';
+      sctx.textAlign = 'center';
+      sctx.textBaseline = 'middle';
+      sctx.fillText('★ GEAR SHOP', 128, 48);
+    }
+    const signTex = track(new THREE.CanvasTexture(signCanvas));
+    const signMat = track(new THREE.SpriteMaterial({ map: signTex, transparent: true, depthWrite: false }));
+    const signSprite = new THREE.Sprite(signMat);
+    signSprite.position.set(sn.x, sy + 4.4, sn.z);
+    signSprite.scale.set(4.2, 1.55, 1);
+    group.add(signSprite);
+  }
+
   // Collectible Golden Vinyls for this district
   const goldenVinyls = new Map<string, { root: THREE.Group; def: GoldenVinylDef; collected: boolean }>();
   const vinylDiscGeo = track(new THREE.CylinderGeometry(0.72, 0.72, 0.1, 18));
@@ -921,6 +1040,8 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
     worldBits,
     transitGates: transitGates.gates,
     goldenVinyls,
+    shopNpcPos,
+    satellitePads,
     triggerBossHit() {
       bossHitFlash = 0.35;
       bossHitRecoil = 1;
@@ -981,18 +1102,18 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
         entry.root.scale.setScalar(1.35);
       }
     },
-    update(t, beatPulse, bossActive, bossWavePhase, hype = 0.35, comboMult = 1) {
+    update(t, beatPulse, bossActive, bossWavePhase, hype = 0.35, comboMult = 1, bossPosOverride) {
       const dt = lastT > 0 ? Math.min(0.05, Math.max(0.001, t - lastT)) : 0.016;
       lastT = t;
       gangCrew.update(t, dt, beatPulse);
-      skybox.update(t, beatPulse, hype);
+      skybox?.update(t, beatPulse, hype);
       skyTraffic.update(t, beatPulse, hype);
-      skyVis.update(t, beatPulse, hype, comboMult);
-      cartoonBackdrop.update(t, beatPulse, hype, comboMult);
+      skyVis?.update(t, beatPulse, hype, comboMult);
+      cartoonBackdrop?.update(t, beatPulse, hype, comboMult);
       worldBits.update(t, beatPulse);
       bossHitRecoil = Math.max(0, bossHitRecoil - dt * 2.2);
       if (bossAnim) {
-        bossAnim.update(t, beatPulse, bossActive, bossWavePhase, bossHitRecoil);
+        bossAnim.update(t, beatPulse, bossActive, bossWavePhase, bossHitRecoil, bossPosOverride);
       }
       transitGates.update(t, beatPulse);
       atmosphereMotes.update(t, dt, beatPulse);
@@ -1064,19 +1185,10 @@ export function buildWorldVisuals(doc: GsrLevelDoc): WorldVisuals {
       }
       if (bossActor) {
         bossHitFlash = Math.max(0, bossHitFlash - dt);
-        const shiftX = bossActor.hits === 0 ? 0 : bossActor.hits === 1 ? -4.5 : 4.5;
-        const shiftZ = bossActor.hits === 0 ? 0 : 2.5;
-        bossActor.root.position.x += (bossActor.baseX + shiftX - bossActor.root.position.x) * 0.08;
-        bossActor.root.position.z += (bossActor.baseZ + shiftZ - bossActor.root.position.z) * 0.08;
-        const hitPop = bossHitFlash > 0 ? Math.sin((bossHitFlash / 0.35) * Math.PI) * 0.55 : 0;
-        bossActor.root.position.y = bossActor.baseY + Math.abs(Math.sin(t * 3.2)) * 0.35 + hitPop;
-        bossActor.root.scale.setScalar(1 + hitPop * 0.35);
-        bossActor.root.rotation.y = Math.sin(t * 0.9) * 0.5 + (bossHitFlash > 0 ? bossHitFlash * 6 : 0);
         bossActor.ring.visible = bossActive;
         if (bossActive) {
-          bossActor.ring.position.x = bossActor.root.position.x;
-          bossActor.ring.position.z = bossActor.root.position.z;
-          const rScale = 1 + (bossWavePhase % 1) * 5.2;
+          bossActor.ring.position.set(bossActor.root.position.x, bossActor.root.position.y + 0.12, bossActor.root.position.z);
+          const rScale = 1 + (bossWavePhase % 1) * 6.5;
           bossActor.ring.scale.setScalar(rScale);
           (bossActor.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.8 - (bossWavePhase % 1) * 0.75);
         }
@@ -1456,153 +1568,7 @@ function decorateBuilding(
 }
 
 export function buildArenaOutline(shape: GsrArenaShape | undefined, halfW: number, halfD: number): THREE.Vector2[] {
-  let pts: THREE.Vector2[];
-
-  if (shape === 'octagonal-plaza') {
-    const c = 0.28;
-    const cx = halfW * (1 - c);
-    const cz = halfD * (1 - c);
-    pts = [
-      new THREE.Vector2(halfW, -cz),
-      new THREE.Vector2(halfW, cz),
-      new THREE.Vector2(cx, halfD),
-      new THREE.Vector2(-cx, halfD),
-      new THREE.Vector2(-halfW, cz),
-      new THREE.Vector2(-halfW, -cz),
-      new THREE.Vector2(-cx, -halfD),
-      new THREE.Vector2(cx, -halfD),
-    ];
-  } else if (shape === 's-curve-viaduct') {
-    pts = [];
-    const steps = 12;
-    for (let i = 0; i <= steps; i++) {
-      const u = -1 + (2 * i) / steps;
-      const z = u * halfD;
-      const x = halfW * (0.68 + 0.28 * Math.sin(u * Math.PI));
-      pts.push(new THREE.Vector2(x, z));
-    }
-    for (let i = steps; i >= 0; i--) {
-      const u = -1 + (2 * i) / steps;
-      const z = u * halfD;
-      const x = -halfW * (0.68 - 0.28 * Math.sin(u * Math.PI));
-      pts.push(new THREE.Vector2(x, z));
-    }
-  } else if (shape === 'crucible-ring') {
-    const a = 0.45;
-    const b = 0.76;
-    pts = [
-      new THREE.Vector2(halfW, -a * halfD),
-      new THREE.Vector2(halfW, a * halfD),
-      new THREE.Vector2(b * halfW, a * halfD),
-      new THREE.Vector2(b * halfW, b * halfD),
-      new THREE.Vector2(a * halfW, b * halfD),
-      new THREE.Vector2(a * halfW, halfD),
-      new THREE.Vector2(-a * halfW, halfD),
-      new THREE.Vector2(-a * halfW, b * halfD),
-      new THREE.Vector2(-b * halfW, b * halfD),
-      new THREE.Vector2(-b * halfW, a * halfD),
-      new THREE.Vector2(-halfW, a * halfD),
-      new THREE.Vector2(-halfW, -a * halfD),
-      new THREE.Vector2(-b * halfW, -a * halfD),
-      new THREE.Vector2(-b * halfW, -b * halfD),
-      new THREE.Vector2(-a * halfW, -b * halfD),
-      new THREE.Vector2(-a * halfW, -halfD),
-      new THREE.Vector2(a * halfW, -halfD),
-      new THREE.Vector2(a * halfW, -b * halfD),
-      new THREE.Vector2(b * halfW, -b * halfD),
-      new THREE.Vector2(b * halfW, -a * halfD),
-    ];
-  } else if (shape === 'spiral-spire') {
-    const count = 20;
-    pts = [];
-    for (let i = 0; i < count; i++) {
-      const ang = (i / count) * Math.PI * 2;
-      const r = 0.92 + 0.08 * Math.cos(ang * 5);
-      pts.push(new THREE.Vector2(Math.cos(ang) * halfW * r, -Math.sin(ang) * halfD * r));
-    }
-  } else if (shape === 'canyon-alley') {
-    pts = [
-      new THREE.Vector2(0.68 * halfW, -halfD),
-      new THREE.Vector2(0.68 * halfW, -0.52 * halfD),
-      new THREE.Vector2(0.52 * halfW, -0.38 * halfD),
-      new THREE.Vector2(0.52 * halfW, -0.18 * halfD),
-      new THREE.Vector2(0.92 * halfW, -0.1 * halfD),
-      new THREE.Vector2(0.92 * halfW, 0.1 * halfD),
-      new THREE.Vector2(0.52 * halfW, 0.18 * halfD),
-      new THREE.Vector2(0.52 * halfW, 0.38 * halfD),
-      new THREE.Vector2(0.68 * halfW, 0.52 * halfD),
-      new THREE.Vector2(0.68 * halfW, halfD),
-      new THREE.Vector2(-0.68 * halfW, halfD),
-      new THREE.Vector2(-0.68 * halfW, 0.52 * halfD),
-      new THREE.Vector2(-0.52 * halfW, 0.38 * halfD),
-      new THREE.Vector2(-0.52 * halfW, 0.18 * halfD),
-      new THREE.Vector2(-0.92 * halfW, 0.1 * halfD),
-      new THREE.Vector2(-0.92 * halfW, -0.1 * halfD),
-      new THREE.Vector2(-0.52 * halfW, -0.18 * halfD),
-      new THREE.Vector2(-0.52 * halfW, -0.38 * halfD),
-      new THREE.Vector2(-0.68 * halfW, -0.52 * halfD),
-      new THREE.Vector2(-0.68 * halfW, -halfD),
-    ];
-  } else if (shape === 'dome-atrium') {
-    const count = 24;
-    pts = [];
-    for (let i = 0; i < count; i++) {
-      const ang = (i / count) * Math.PI * 2;
-      pts.push(new THREE.Vector2(Math.cos(ang) * halfW, -Math.sin(ang) * halfD));
-    }
-  } else if (shape === 'hedged-diamond') {
-    const tip = 0.22;
-    pts = [
-      new THREE.Vector2(halfW, -tip * halfD),
-      new THREE.Vector2(halfW, tip * halfD),
-      new THREE.Vector2(tip * halfW, halfD),
-      new THREE.Vector2(-tip * halfW, halfD),
-      new THREE.Vector2(-halfW, tip * halfD),
-      new THREE.Vector2(-halfW, -tip * halfD),
-      new THREE.Vector2(-tip * halfW, -halfD),
-      new THREE.Vector2(tip * halfW, -halfD),
-    ];
-  } else if (shape === 'relay-cross') {
-    const a = 0.46;
-    pts = [
-      new THREE.Vector2(halfW, -a * halfD),
-      new THREE.Vector2(halfW, a * halfD),
-      new THREE.Vector2(a * halfW, a * halfD),
-      new THREE.Vector2(a * halfW, halfD),
-      new THREE.Vector2(-a * halfW, halfD),
-      new THREE.Vector2(-a * halfW, a * halfD),
-      new THREE.Vector2(-halfW, a * halfD),
-      new THREE.Vector2(-halfW, -a * halfD),
-      new THREE.Vector2(-a * halfW, -a * halfD),
-      new THREE.Vector2(-a * halfW, -halfD),
-      new THREE.Vector2(a * halfW, -halfD),
-      new THREE.Vector2(a * halfW, -a * halfD),
-    ];
-  } else if (shape === 'vinyl-disc') {
-    const count = 28;
-    pts = [];
-    for (let i = 0; i < count; i++) {
-      const ang = (i / count) * Math.PI * 2;
-      pts.push(new THREE.Vector2(Math.cos(ang) * halfW, -Math.sin(ang) * halfD));
-    }
-  } else {
-    pts = [
-      new THREE.Vector2(halfW, -halfD),
-      new THREE.Vector2(halfW, halfD),
-      new THREE.Vector2(-halfW, halfD),
-      new THREE.Vector2(-halfW, -halfD),
-    ];
-  }
-
-  // Ensure consistent winding (negative signed area in XZ so (0, p_i, p_{i+1}) faces +Y)
-  let area2 = 0;
-  for (let i = 0; i < pts.length; i++) {
-    const p = pts[i]!;
-    const q = pts[(i + 1) % pts.length]!;
-    area2 += p.x * q.y - q.x * p.y;
-  }
-  if (area2 > 0) pts.reverse();
-  return pts;
+  return buildArenaOutline2D(shape, halfW, halfD).map(([x, z]) => new THREE.Vector2(x, z));
 }
 
 function subdividePolygon(outline: readonly THREE.Vector2[], maxSegLen: number): THREE.Vector2[] {

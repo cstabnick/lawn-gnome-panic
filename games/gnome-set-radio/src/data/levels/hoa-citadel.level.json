@@ -4,49 +4,364 @@
   "game": "gnome-set-radio",
   "id": "hoa-citadel",
   "name": "HOA Citadel Terrace",
-  "bounds": { "w": 175, "d": 175 },
+  "bounds": {
+    "w": 232,
+    "d": 232
+  },
   "stamps": [
-    { "op": "gauss", "x": -60, "z": 58, "sigma": 14, "amount": 1.4 },
-    { "op": "gauss", "x": 60, "z": 58, "sigma": 14, "amount": 1.4 },
-    { "op": "flatten", "x": 0, "z": 0, "inner": 48, "outer": 62, "to": 0 }
+    {
+      "op": "gauss",
+      "x": -60,
+      "z": 58,
+      "sigma": 14,
+      "amount": 1.4
+    },
+    {
+      "op": "gauss",
+      "x": 60,
+      "z": 58,
+      "sigma": 14,
+      "amount": 1.4
+    },
+    {
+      "op": "flatten",
+      "x": 0,
+      "z": 0,
+      "inner": 48,
+      "outer": 62,
+      "to": 0
+    }
   ],
   "paths": [
-    { "id": "hoa-axis", "kind": "road", "points": [[0, 66], [0, -48]], "width": 7.5 },
-    { "id": "hoa-cross", "kind": "road", "points": [[-46, 18], [46, 18]], "width": 6.0 }
+    {
+      "id": "hoa-axis",
+      "kind": "road",
+      "points": [
+        [
+          0,
+          66
+        ],
+        [
+          0,
+          -48
+        ]
+      ],
+      "width": 7.5
+    },
+    {
+      "id": "hoa-cross",
+      "kind": "road",
+      "points": [
+        [
+          -46,
+          18
+        ],
+        [
+          46,
+          18
+        ]
+      ],
+      "width": 6
+    }
   ],
   "props": [
-    { "prefab": "gsr-citation-gate", "x": 0, "z": 44, "rot": 0, "scale": 1.6 },
-    { "prefab": "gsr-citation-gate", "x": 0, "z": 12, "rot": 0, "scale": 1.6 },
-    { "prefab": "gsr-topiary-hedge", "x": -12, "z": 36, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-topiary-hedge", "x": 12, "z": 36, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-topiary-hedge", "x": -12, "z": 24, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-topiary-hedge", "x": 12, "z": 24, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-mist-bench", "x": -14, "z": 0, "rot": 1.57, "scale": 1.3 },
-    { "prefab": "gsr-mist-bench", "x": 14, "z": 0, "rot": -1.57, "scale": 1.3 },
-    { "prefab": "gsr-no-grinding-sign", "x": -10, "z": 30, "rot": 0.3, "scale": 1.4 },
-    { "prefab": "gsr-no-grinding-sign", "x": 10, "z": 30, "rot": -0.3, "scale": 1.4 },
-    { "prefab": "picket-fence", "x": -44, "z": 22, "rot": 1.57, "scale": 1.4 },
-    { "prefab": "picket-fence", "x": 44, "z": 22, "rot": -1.57, "scale": 1.4 },
-    { "prefab": "flowering-bush", "x": -44, "z": 8, "rot": 0, "scale": 1.4 },
-    { "prefab": "flowering-bush", "x": 44, "z": 8, "rot": 0, "scale": 1.4 },
-    { "prefab": "gnome-statue", "x": -44, "z": -18, "rot": 0.6, "scale": 1.5 },
-    { "prefab": "birdbath", "x": 44, "z": -18, "rot": 0, "scale": 1.4 },
-    { "prefab": "gsr-dj-booth", "x": -8, "z": 48, "rot": 0.2, "scale": 1.35 },
-    { "prefab": "gsr-graffiti-rack", "x": 8, "z": 48, "rot": -0.2, "scale": 1.35 },
-    { "prefab": "gsr-gazebo-urn", "x": -12, "z": 10, "rot": 0, "scale": 1.45 },
-    { "prefab": "gsr-gazebo-urn", "x": 12, "z": 10, "rot": 0, "scale": 1.45 },
-    { "prefab": "hoa-van", "x": -44, "z": 36, "rot": 0.8, "scale": 1.4 },
-    { "prefab": "boot-parade-float", "x": 44, "z": 36, "rot": -0.8, "scale": 1.3 }
+    {
+      "prefab": "gsr-citation-gate",
+      "x": 0,
+      "z": 44,
+      "rot": 0,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-citation-gate",
+      "x": 0,
+      "z": 12,
+      "rot": 0,
+      "scale": 1.6
+    },
+    {
+      "prefab": "gsr-topiary-hedge",
+      "x": -12,
+      "z": 36,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-topiary-hedge",
+      "x": 12,
+      "z": 36,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-topiary-hedge",
+      "x": -12,
+      "z": 24,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-topiary-hedge",
+      "x": 12,
+      "z": 24,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": -14,
+      "z": 0,
+      "rot": 1.57,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 14,
+      "z": 0,
+      "rot": -1.57,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-no-grinding-sign",
+      "x": -10,
+      "z": 30,
+      "rot": 0.3,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-no-grinding-sign",
+      "x": 10,
+      "z": 30,
+      "rot": -0.3,
+      "scale": 1.4
+    },
+    {
+      "prefab": "picket-fence",
+      "x": -44,
+      "z": 22,
+      "rot": 1.57,
+      "scale": 1.4
+    },
+    {
+      "prefab": "picket-fence",
+      "x": 44,
+      "z": 22,
+      "rot": -1.57,
+      "scale": 1.4
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": -44,
+      "z": 8,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "flowering-bush",
+      "x": 44,
+      "z": 8,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gnome-statue",
+      "x": -44,
+      "z": -18,
+      "rot": 0.6,
+      "scale": 1.5
+    },
+    {
+      "prefab": "birdbath",
+      "x": 44,
+      "z": -18,
+      "rot": 0,
+      "scale": 1.4
+    },
+    {
+      "prefab": "gsr-dj-booth",
+      "x": -8,
+      "z": 48,
+      "rot": 0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-graffiti-rack",
+      "x": 8,
+      "z": 48,
+      "rot": -0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-gazebo-urn",
+      "x": -12,
+      "z": 10,
+      "rot": 0,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-gazebo-urn",
+      "x": 12,
+      "z": 10,
+      "rot": 0,
+      "scale": 1.45
+    },
+    {
+      "prefab": "hoa-van",
+      "x": -44,
+      "z": 36,
+      "rot": 0.8,
+      "scale": 1.4
+    },
+    {
+      "prefab": "boot-parade-float",
+      "x": 44,
+      "z": 36,
+      "rot": -0.8,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gsr-hoa-gazebo-hedge",
+      "x": -52,
+      "z": 32,
+      "rot": 0.4,
+      "scale": 1.45
+    },
+    {
+      "prefab": "gsr-hoa-flamingo-plinth",
+      "x": -46,
+      "z": 36,
+      "rot": -0.2,
+      "scale": 1.35
+    },
+    {
+      "prefab": "flower-pot",
+      "x": -56,
+      "z": 38,
+      "rot": 0,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-hoa-flamingo-plinth",
+      "x": 60,
+      "z": -30,
+      "rot": 0.6,
+      "scale": 1.35
+    },
+    {
+      "prefab": "gsr-mist-bench",
+      "x": 56,
+      "z": -21,
+      "rot": -0.4,
+      "scale": 1.3
+    },
+    {
+      "prefab": "gnome-statue",
+      "x": 48,
+      "z": -43,
+      "rot": 0.2,
+      "scale": 1.45
+    },
+    {
+      "id": "hoa-citadel-lore3-0",
+      "prefab": "gsr-hoa-gazebo-hedge",
+      "x": 0,
+      "y": 0,
+      "z": 67.28,
+      "rotationY": 0.4,
+      "scale": 1.1
+    },
+    {
+      "id": "hoa-citadel-lore3-1",
+      "prefab": "gsr-hoa-flamingo-plinth",
+      "x": -4,
+      "y": 0,
+      "z": 69.78,
+      "rotationY": 0,
+      "scale": 1.15
+    },
+    {
+      "id": "hoa-citadel-lore3-2",
+      "prefab": "gsr-hoa-flamingo-plinth",
+      "x": 4,
+      "y": 0,
+      "z": 64.78,
+      "rotationY": 0,
+      "scale": 1.15
+    }
   ],
   "markers": [
-    { "id": "spawn", "kind": "spawn", "x": 0, "z": 56, "data": { "yaw": 3.14159 } },
-    { "id": "ev-hc-tags", "kind": "event", "x": -22, "z": 36, "data": { "eventId": "hc-tag-bylaws" } },
-    { "id": "ev-hc-sentries", "kind": "event", "x": 22, "z": 34, "data": { "eventId": "hc-no-grinding" } },
-    { "id": "ev-hc-jammers", "kind": "event", "x": -18, "z": -10, "data": { "eventId": "hc-tune-jammers" } },
-    { "id": "ev-hc-rings", "kind": "event", "x": 18, "z": -10, "data": { "eventId": "hc-defiance-rings" } },
-    { "id": "ev-hc-boss", "kind": "boss", "x": 0, "z": -42, "data": { "eventId": "hc-boss-vance" } },
-    { "id": "ev-hc-acorns", "kind": "side", "x": -42, "z": 40, "data": { "eventId": "hc-side-acorns" } },
-    { "id": "ev-hc-combo", "kind": "side", "x": 42, "z": 40, "data": { "eventId": "hc-side-combo" } }
+    {
+      "id": "spawn",
+      "kind": "spawn",
+      "x": 0,
+      "z": 56,
+      "data": {
+        "yaw": 3.14159
+      }
+    },
+    {
+      "id": "ev-hc-tags",
+      "kind": "event",
+      "x": -22,
+      "z": 36,
+      "data": {
+        "eventId": "hc-tag-bylaws"
+      }
+    },
+    {
+      "id": "ev-hc-sentries",
+      "kind": "event",
+      "x": 22,
+      "z": 34,
+      "data": {
+        "eventId": "hc-no-grinding"
+      }
+    },
+    {
+      "id": "ev-hc-jammers",
+      "kind": "event",
+      "x": -18,
+      "z": -10,
+      "data": {
+        "eventId": "hc-tune-jammers"
+      }
+    },
+    {
+      "id": "ev-hc-rings",
+      "kind": "event",
+      "x": 18,
+      "z": -10,
+      "data": {
+        "eventId": "hc-defiance-rings"
+      }
+    },
+    {
+      "id": "ev-hc-boss",
+      "kind": "boss",
+      "x": 0,
+      "z": -42,
+      "data": {
+        "eventId": "hc-boss-vance"
+      }
+    },
+    {
+      "id": "ev-hc-acorns",
+      "kind": "side",
+      "x": -42,
+      "z": 40,
+      "data": {
+        "eventId": "hc-side-acorns"
+      }
+    },
+    {
+      "id": "ev-hc-combo",
+      "kind": "side",
+      "x": 42,
+      "z": 40,
+      "data": {
+        "eventId": "hc-side-combo"
+      }
+    }
   ],
   "data": {
     "areaNumber": 7,
@@ -62,60 +377,753 @@
     "groundColor": "#233828",
     "accentColor": "#ffd740",
     "buildings": [
-      { "id": "permit-office", "x": -28, "z": 22, "w": 20, "d": 16, "yBase": 0, "h": 4.2, "color": "#5d4037", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Permit Office", "arch": "hoa-manor" },
-      { "id": "hedge-depot", "x": 28, "z": 22, "w": 20, "d": 16, "yBase": 0, "h": 5.5, "color": "#2e7d32", "roofColor": "#69f0ae", "accentColor": "#ffd740", "label": "Hedge Depot", "arch": "topiary-pavilion" },
-      { "id": "beige-archive", "x": -28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 8.0, "color": "#6d5c4d", "roofColor": "#fff59d", "accentColor": "#ffd740", "label": "Beige Swatch Archive", "arch": "hoa-manor" },
-      { "id": "gazebo-tribunal", "x": 28, "z": -18, "w": 20, "d": 18, "yBase": 0, "h": 9.5, "color": "#4e342e", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Gazebo Tribunal", "arch": "topiary-pavilion" },
-      { "id": "vance-base", "x": 0, "z": -42, "w": 30, "d": 18, "yBase": 0, "h": 10.5, "color": "#3e2723", "roofColor": "#6d5c4d", "accentColor": "#ffd740", "label": "Citadel Terrace", "arch": "hoa-manor" },
-      { "id": "vance-megaphone-spire", "x": 0, "z": -42, "w": 16, "d": 14, "yBase": 10.5, "h": 4.0, "color": "#2e7d32", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Vance-Bot's Megaphone Spire", "arch": "megaphone-tower" },
-      { "id": "hc-office-sw", "x": -58, "z": 16, "w": 12, "d": 14, "yBase": 0, "h": 5.0, "color": "#4e342e", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Zoning Annex West", "arch": "abstract-office-slab" },
-      { "id": "hc-office-se", "x": 58, "z": 16, "w": 12, "d": 14, "yBase": 0, "h": 5.5, "color": "#2e7d32", "roofColor": "#69f0ae", "accentColor": "#ffd740", "label": "Ordinance Overlook East", "arch": "cantilever-tower" },
-      { "id": "hc-office-nw", "x": -48, "z": -32, "w": 14, "d": 12, "yBase": 0, "h": 6.5, "color": "#5d4037", "roofColor": "#fff59d", "accentColor": "#ffd740", "label": "Covenant Bureau NW", "arch": "stepped-monolith" },
-      { "id": "hc-office-ne", "x": 48, "z": -32, "w": 14, "d": 12, "yBase": 0, "h": 6.8, "color": "#3e2723", "roofColor": "#ffd740", "accentColor": "#69f0ae", "label": "Bylaw Compliance Wing NE", "arch": "abstract-office-slab" }
+      {
+        "id": "permit-office",
+        "x": -28,
+        "z": 22,
+        "w": 20,
+        "d": 16,
+        "yBase": 0,
+        "h": 4.2,
+        "color": "#5d4037",
+        "roofColor": "#ffd740",
+        "accentColor": "#69f0ae",
+        "label": "Permit Office",
+        "arch": "hoa-manor"
+      },
+      {
+        "id": "hedge-depot",
+        "x": 28,
+        "z": 22,
+        "w": 20,
+        "d": 16,
+        "yBase": 0,
+        "h": 5.5,
+        "color": "#2e7d32",
+        "roofColor": "#69f0ae",
+        "accentColor": "#ffd740",
+        "label": "Hedge Depot",
+        "arch": "topiary-pavilion"
+      },
+      {
+        "id": "beige-archive",
+        "x": -28,
+        "z": -18,
+        "w": 20,
+        "d": 18,
+        "yBase": 0,
+        "h": 8,
+        "color": "#6d5c4d",
+        "roofColor": "#fff59d",
+        "accentColor": "#ffd740",
+        "label": "Beige Swatch Archive",
+        "arch": "hoa-manor"
+      },
+      {
+        "id": "gazebo-tribunal",
+        "x": 28,
+        "z": -18,
+        "w": 20,
+        "d": 18,
+        "yBase": 0,
+        "h": 9.5,
+        "color": "#4e342e",
+        "roofColor": "#ffd740",
+        "accentColor": "#69f0ae",
+        "label": "Gazebo Tribunal",
+        "arch": "topiary-pavilion"
+      },
+      {
+        "id": "vance-base",
+        "x": 0,
+        "z": -42,
+        "w": 30,
+        "d": 18,
+        "yBase": 0,
+        "h": 10.5,
+        "color": "#3e2723",
+        "roofColor": "#6d5c4d",
+        "accentColor": "#ffd740",
+        "label": "Citadel Terrace",
+        "arch": "hoa-manor"
+      },
+      {
+        "id": "vance-megaphone-spire",
+        "x": 0,
+        "z": -42,
+        "w": 16,
+        "d": 14,
+        "yBase": 10.5,
+        "h": 4,
+        "color": "#2e7d32",
+        "roofColor": "#ffd740",
+        "accentColor": "#69f0ae",
+        "label": "Vance-Bot's Megaphone Spire",
+        "arch": "megaphone-tower"
+      },
+      {
+        "id": "hc-office-sw",
+        "x": -58,
+        "z": 16,
+        "w": 12,
+        "d": 14,
+        "yBase": 0,
+        "h": 5,
+        "color": "#4e342e",
+        "roofColor": "#ffd740",
+        "accentColor": "#69f0ae",
+        "label": "Zoning Annex West",
+        "arch": "abstract-office-slab"
+      },
+      {
+        "id": "hc-office-se",
+        "x": 58,
+        "z": 16,
+        "w": 12,
+        "d": 14,
+        "yBase": 0,
+        "h": 5.5,
+        "color": "#2e7d32",
+        "roofColor": "#69f0ae",
+        "accentColor": "#ffd740",
+        "label": "Ordinance Overlook East",
+        "arch": "cantilever-tower"
+      },
+      {
+        "id": "hc-office-nw",
+        "x": -48,
+        "z": -32,
+        "w": 14,
+        "d": 12,
+        "yBase": 0,
+        "h": 6.5,
+        "color": "#5d4037",
+        "roofColor": "#fff59d",
+        "accentColor": "#ffd740",
+        "label": "Covenant Bureau NW",
+        "arch": "stepped-monolith"
+      },
+      {
+        "id": "hc-office-ne",
+        "x": 48,
+        "z": -32,
+        "w": 14,
+        "d": 12,
+        "yBase": 0,
+        "h": 6.8,
+        "color": "#3e2723",
+        "roofColor": "#ffd740",
+        "accentColor": "#69f0ae",
+        "label": "Bylaw Compliance Wing NE",
+        "arch": "abstract-office-slab"
+      }
     ],
     "ramps": [
-      { "id": "hc-ramp-permit", "x": -28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 4.2, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "hc-ramp-hedge", "x": 28, "z": 36, "w": 6, "length": 12, "yBottom": 0, "yTop": 5.5, "yaw": 3.14159, "color": "#69f0ae" },
-      { "id": "hc-ramp-beige", "x": -28, "z": 0, "w": 6, "length": 14, "yBottom": 4.2, "yTop": 8.0, "yaw": 3.14159, "color": "#fff59d" },
-      { "id": "hc-ramp-gazebo", "x": 28, "z": 0, "w": 6, "length": 14, "yBottom": 5.5, "yTop": 9.5, "yaw": 3.14159, "color": "#ffd740" },
-      { "id": "hc-ramp-vance-base", "x": 0, "z": -24, "w": 6.5, "length": 16, "yBottom": 0, "yTop": 10.5, "yaw": 3.14159, "color": "#69f0ae" },
-      { "id": "hc-ramp-vance-top", "x": 11, "z": -42, "w": 5, "length": 10, "yBottom": 10.5, "yTop": 14.5, "yaw": -1.5708, "color": "#ffd740" }
+      {
+        "id": "hc-ramp-permit",
+        "x": -28,
+        "z": 36,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 4.2,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      },
+      {
+        "id": "hc-ramp-hedge",
+        "x": 28,
+        "z": 36,
+        "w": 6,
+        "length": 12,
+        "yBottom": 0,
+        "yTop": 5.5,
+        "yaw": 3.14159,
+        "color": "#69f0ae"
+      },
+      {
+        "id": "hc-ramp-beige",
+        "x": -28,
+        "z": 0,
+        "w": 6,
+        "length": 14,
+        "yBottom": 4.2,
+        "yTop": 8,
+        "yaw": 3.14159,
+        "color": "#fff59d"
+      },
+      {
+        "id": "hc-ramp-gazebo",
+        "x": 28,
+        "z": 0,
+        "w": 6,
+        "length": 14,
+        "yBottom": 5.5,
+        "yTop": 9.5,
+        "yaw": 3.14159,
+        "color": "#ffd740"
+      },
+      {
+        "id": "hc-ramp-vance-base",
+        "x": 0,
+        "z": -24,
+        "w": 6.5,
+        "length": 16,
+        "yBottom": 0,
+        "yTop": 10.5,
+        "yaw": 3.14159,
+        "color": "#69f0ae"
+      },
+      {
+        "id": "hc-ramp-vance-top",
+        "x": 11,
+        "z": -42,
+        "w": 5,
+        "length": 10,
+        "yBottom": 10.5,
+        "yTop": 14.5,
+        "yaw": -1.5708,
+        "color": "#ffd740"
+      }
     ],
     "rails": [
-      { "id": "hc-rail-spawn", "points": [[0, 1.5, 48], [0, 1.8, 34]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.24 },
-      { "id": "hc-rail-permit-to-hedge", "points": [[-17, 4.5, 22], [0, 5.2, 22], [17, 5.8, 22]], "color": "#69f0ae", "glowColor": "#69f0ae", "speedBoost": 1.26 },
-      { "id": "hc-rail-beige-to-gazebo", "points": [[-17, 8.3, -18], [0, 9.0, -18], [17, 9.8, -18]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.3 },
-      { "id": "hc-rail-beige-to-vance", "points": [[-28, 8.3, -27], [-20, 9.6, -36], [-15, 10.8, -42]], "color": "#fff59d", "glowColor": "#fff59d", "speedBoost": 1.32 },
-      { "id": "hc-rail-gazebo-to-vance", "points": [[28, 9.8, -27], [20, 10.3, -36], [15, 10.8, -42]], "color": "#69f0ae", "glowColor": "#69f0ae", "speedBoost": 1.34 },
-      { "id": "hc-rail-spire-halo", "points": [[-16, 10.9, -42], [-8, 14.9, -42], [0, 15.3, -48], [8, 14.9, -42], [16, 10.9, -42]], "color": "#ffd740", "glowColor": "#ffd740", "speedBoost": 1.4 },
-      { "id": "hc-rail-edge-sw", "points": [[-36, 4.5, 28], [-48, 5.3, 22], [-56, 5.3, 12]], "color": "#ffd740", "glowColor": "#69f0ae", "speedBoost": 1.28 },
-      { "id": "hc-rail-edge-se", "points": [[36, 5.5, 28], [48, 5.8, 22], [56, 5.8, 12]], "color": "#69f0ae", "glowColor": "#ffd740", "speedBoost": 1.28 },
-      { "id": "hc-rail-edge-wnw", "points": [[-50, 5.3, 6], [-50, 6.2, -10], [-48, 6.8, -26]], "color": "#fff59d", "glowColor": "#ffd740", "speedBoost": 1.3 },
-      { "id": "hc-rail-edge-ene", "points": [[50, 5.8, 6], [50, 6.5, -10], [48, 7.1, -26]], "color": "#69f0ae", "glowColor": "#fff59d", "speedBoost": 1.3 }
+      {
+        "id": "hc-rail-spawn",
+        "points": [
+          [
+            0,
+            1.5,
+            48
+          ],
+          [
+            0,
+            1.8,
+            34
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.24
+      },
+      {
+        "id": "hc-rail-permit-to-hedge",
+        "points": [
+          [
+            -17,
+            4.5,
+            22
+          ],
+          [
+            0,
+            5.2,
+            22
+          ],
+          [
+            17,
+            5.8,
+            22
+          ]
+        ],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.26
+      },
+      {
+        "id": "hc-rail-beige-to-gazebo",
+        "points": [
+          [
+            -17,
+            8.3,
+            -18
+          ],
+          [
+            0,
+            9,
+            -18
+          ],
+          [
+            17,
+            9.8,
+            -18
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "hc-rail-beige-to-vance",
+        "points": [
+          [
+            -28,
+            8.3,
+            -27
+          ],
+          [
+            -20,
+            9.6,
+            -36
+          ],
+          [
+            -15,
+            10.8,
+            -42
+          ]
+        ],
+        "color": "#fff59d",
+        "glowColor": "#fff59d",
+        "speedBoost": 1.32
+      },
+      {
+        "id": "hc-rail-gazebo-to-vance",
+        "points": [
+          [
+            28,
+            9.8,
+            -27
+          ],
+          [
+            20,
+            10.3,
+            -36
+          ],
+          [
+            15,
+            10.8,
+            -42
+          ]
+        ],
+        "color": "#69f0ae",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.34
+      },
+      {
+        "id": "hc-rail-spire-halo",
+        "points": [
+          [
+            -16,
+            10.9,
+            -42
+          ],
+          [
+            -8,
+            14.9,
+            -42
+          ],
+          [
+            0,
+            15.3,
+            -48
+          ],
+          [
+            8,
+            14.9,
+            -42
+          ],
+          [
+            16,
+            10.9,
+            -42
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.4
+      },
+      {
+        "id": "hc-rail-edge-sw",
+        "points": [
+          [
+            -36,
+            4.5,
+            28
+          ],
+          [
+            -48,
+            5.3,
+            22
+          ],
+          [
+            -56,
+            5.3,
+            12
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "hc-rail-edge-se",
+        "points": [
+          [
+            36,
+            5.5,
+            28
+          ],
+          [
+            48,
+            5.8,
+            22
+          ],
+          [
+            56,
+            5.8,
+            12
+          ]
+        ],
+        "color": "#69f0ae",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.28
+      },
+      {
+        "id": "hc-rail-edge-wnw",
+        "points": [
+          [
+            -50,
+            5.3,
+            6
+          ],
+          [
+            -50,
+            6.2,
+            -10
+          ],
+          [
+            -48,
+            6.8,
+            -26
+          ]
+        ],
+        "color": "#fff59d",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "hc-rail-edge-ene",
+        "points": [
+          [
+            50,
+            5.8,
+            6
+          ],
+          [
+            50,
+            6.5,
+            -10
+          ],
+          [
+            48,
+            7.1,
+            -26
+          ]
+        ],
+        "color": "#69f0ae",
+        "glowColor": "#fff59d",
+        "speedBoost": 1.3
+      },
+      {
+        "id": "rail-hoa-citadel-epic-aether",
+        "points": [
+          [
+            0,
+            15.1,
+            -42
+          ],
+          [
+            132.24,
+            19,
+            17.4
+          ],
+          [
+            136.88,
+            17,
+            -40.6
+          ],
+          [
+            0,
+            13.5,
+            -83.52
+          ],
+          [
+            0,
+            11.1,
+            -42
+          ]
+        ],
+        "color": "#ffd740",
+        "glowColor": "#ff4ecd",
+        "speedBoost": 1.55,
+        "aetherRail": true
+      },
+      {
+        "id": "rail-hoa-citadel-underworld",
+        "points": [
+          [
+            0,
+            11.1,
+            -42
+          ],
+          [
+            102.08,
+            -6,
+            -21
+          ],
+          [
+            63.8,
+            -21.8,
+            -12
+          ],
+          [
+            0,
+            -22.5,
+            8
+          ],
+          [
+            -63.8,
+            -21.8,
+            18
+          ],
+          [
+            -102.08,
+            -6,
+            -9
+          ],
+          [
+            28,
+            10.1,
+            -18
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#69f0ae",
+        "speedBoost": 1.65,
+        "aetherRail": true,
+        "underWorld": true
+      },
+      {
+        "id": "rail-hoa-citadel-sat-east-loop",
+        "points": [
+          [
+            52.2,
+            2.5,
+            6
+          ],
+          [
+            130,
+            4.6,
+            16
+          ],
+          [
+            52.2,
+            2.2,
+            28
+          ]
+        ],
+        "color": "#00e5ff",
+        "glowColor": "#ffd740",
+        "speedBoost": 1.45,
+        "aetherRail": true
+      }
     ],
     "billboards": [
-      { "id": "hc-bb-1", "x": -28, "y": 4.2, "z": 22, "yaw": 0.4, "w": 4.4, "h": 2.4, "gangName": "The Bylaw Brass", "eventId": "hc-tag-bylaws", "color": "#ffd740" },
-      { "id": "hc-bb-2", "x": 28, "y": 5.5, "z": 22, "yaw": -0.4, "w": 4.4, "h": 2.4, "gangName": "The Bylaw Brass", "eventId": "hc-tag-bylaws", "color": "#69f0ae" },
-      { "id": "hc-bb-3", "x": -28, "y": 8.0, "z": -18, "yaw": 0.5, "w": 4.6, "h": 2.5, "gangName": "The Bylaw Brass", "eventId": "hc-tag-bylaws", "color": "#fff59d" },
-      { "id": "hc-bb-4", "x": 28, "y": 9.5, "z": -18, "yaw": -0.5, "w": 4.6, "h": 2.5, "gangName": "The Bylaw Brass", "eventId": "hc-tag-bylaws", "color": "#ffd740" }
+      {
+        "id": "hc-bb-1",
+        "x": -28,
+        "y": 4.2,
+        "z": 22,
+        "yaw": 0.4,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "The Bylaw Brass",
+        "eventId": "hc-tag-bylaws",
+        "color": "#ffd740"
+      },
+      {
+        "id": "hc-bb-2",
+        "x": 28,
+        "y": 5.5,
+        "z": 22,
+        "yaw": -0.4,
+        "w": 4.4,
+        "h": 2.4,
+        "gangName": "The Bylaw Brass",
+        "eventId": "hc-tag-bylaws",
+        "color": "#69f0ae"
+      },
+      {
+        "id": "hc-bb-3",
+        "x": -28,
+        "y": 8,
+        "z": -18,
+        "yaw": 0.5,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "The Bylaw Brass",
+        "eventId": "hc-tag-bylaws",
+        "color": "#fff59d"
+      },
+      {
+        "id": "hc-bb-4",
+        "x": 28,
+        "y": 9.5,
+        "z": -18,
+        "yaw": -0.5,
+        "w": 4.6,
+        "h": 2.5,
+        "gangName": "The Bylaw Brass",
+        "eventId": "hc-tag-bylaws",
+        "color": "#ffd740"
+      }
     ],
     "interactives": [
-      { "id": "hc-vent-1", "kind": "updraft-vent", "x": -14, "y": 0, "z": -10, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "Garden Vent West" },
-      { "id": "hc-vent-2", "kind": "updraft-vent", "x": 14, "y": 0, "z": -10, "power": 19.0, "prefab": "gsr-updraft-vent", "label": "Garden Vent East" },
-      { "id": "hc-vent-3", "kind": "updraft-vent", "x": 0, "y": 10.5, "z": -33, "power": 16.5, "prefab": "gsr-updraft-vent", "label": "Spire Vent" },
-      { "id": "hc-jam-1", "kind": "speaker-stack", "x": -28, "y": 4.2, "z": 26, "prefab": "gsr-radio-dish", "eventId": "hc-tune-jammers", "label": "Permit Jammer" },
-      { "id": "hc-jam-2", "kind": "speaker-stack", "x": -28, "y": 8.0, "z": -14, "prefab": "gsr-radio-dish", "eventId": "hc-tune-jammers", "label": "Archive Jammer" },
-      { "id": "hc-jam-3", "kind": "speaker-stack", "x": 28, "y": 9.5, "z": -14, "prefab": "gsr-radio-dish", "eventId": "hc-tune-jammers", "label": "Tribunal Jammer" },
-      { "id": "hc-ring-1", "kind": "aerial-ring", "x": 0, "y": 6.4, "z": 22, "eventId": "hc-defiance-rings", "label": "Bylaw Gate Ring" },
-      { "id": "hc-ring-2", "kind": "aerial-ring", "x": -14, "y": 10.2, "z": -14, "eventId": "hc-defiance-rings", "label": "Archive Ring" },
-      { "id": "hc-ring-3", "kind": "aerial-ring", "x": 14, "y": 10.8, "z": -14, "eventId": "hc-defiance-rings", "label": "Gazebo Ring" },
-      { "id": "hc-ring-4", "kind": "aerial-ring", "x": 0, "y": 16.0, "z": -46, "eventId": "hc-defiance-rings", "label": "Megaphone Ring" },
-      { "id": "hc-spray-1", "kind": "spray-pickup", "x": 0, "y": 0.4, "z": 30, "prefab": "gsr-spray-can" },
-      { "id": "hc-spray-2", "kind": "spray-pickup", "x": 28, "y": 9.9, "z": -18, "prefab": "gsr-spray-can" },
-      { "id": "hc-spray-3", "kind": "spray-pickup", "x": 0, "y": 14.9, "z": -42, "prefab": "gsr-spray-can" },
-      { "id": "hc-acorn-1", "kind": "tempo-acorn", "x": -28, "y": 4.8, "z": 18, "eventId": "hc-side-acorns", "label": "Bylaw Acorn" },
-      { "id": "hc-acorn-2", "kind": "tempo-acorn", "x": 28, "y": 6.1, "z": 18, "eventId": "hc-side-acorns", "label": "Bylaw Acorn" },
-      { "id": "hc-acorn-3", "kind": "tempo-acorn", "x": 0, "y": 15.1, "z": -45, "eventId": "hc-side-acorns", "label": "Bylaw Acorn" }
+      {
+        "id": "hc-vent-1",
+        "kind": "updraft-vent",
+        "x": -14,
+        "y": 0,
+        "z": -10,
+        "power": 19,
+        "prefab": "gsr-updraft-vent",
+        "label": "Garden Vent West"
+      },
+      {
+        "id": "hc-vent-2",
+        "kind": "updraft-vent",
+        "x": 14,
+        "y": 0,
+        "z": -10,
+        "power": 19,
+        "prefab": "gsr-updraft-vent",
+        "label": "Garden Vent East"
+      },
+      {
+        "id": "hc-vent-3",
+        "kind": "updraft-vent",
+        "x": 0,
+        "y": 10.5,
+        "z": -33,
+        "power": 16.5,
+        "prefab": "gsr-updraft-vent",
+        "label": "Spire Vent"
+      },
+      {
+        "id": "hc-jam-1",
+        "kind": "speaker-stack",
+        "x": -28,
+        "y": 4.2,
+        "z": 26,
+        "prefab": "gsr-radio-dish",
+        "eventId": "hc-tune-jammers",
+        "label": "Permit Jammer"
+      },
+      {
+        "id": "hc-jam-2",
+        "kind": "speaker-stack",
+        "x": -28,
+        "y": 8,
+        "z": -14,
+        "prefab": "gsr-radio-dish",
+        "eventId": "hc-tune-jammers",
+        "label": "Archive Jammer"
+      },
+      {
+        "id": "hc-jam-3",
+        "kind": "speaker-stack",
+        "x": 28,
+        "y": 9.5,
+        "z": -14,
+        "prefab": "gsr-radio-dish",
+        "eventId": "hc-tune-jammers",
+        "label": "Tribunal Jammer"
+      },
+      {
+        "id": "hc-ring-1",
+        "kind": "aerial-ring",
+        "x": 0,
+        "y": 6.4,
+        "z": 22,
+        "eventId": "hc-defiance-rings",
+        "label": "Bylaw Gate Ring"
+      },
+      {
+        "id": "hc-ring-2",
+        "kind": "aerial-ring",
+        "x": -14,
+        "y": 10.2,
+        "z": -14,
+        "eventId": "hc-defiance-rings",
+        "label": "Archive Ring"
+      },
+      {
+        "id": "hc-ring-3",
+        "kind": "aerial-ring",
+        "x": 14,
+        "y": 10.8,
+        "z": -14,
+        "eventId": "hc-defiance-rings",
+        "label": "Gazebo Ring"
+      },
+      {
+        "id": "hc-ring-4",
+        "kind": "aerial-ring",
+        "x": 0,
+        "y": 16,
+        "z": -46,
+        "eventId": "hc-defiance-rings",
+        "label": "Megaphone Ring"
+      },
+      {
+        "id": "hc-spray-1",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 0.4,
+        "z": 30,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "hc-spray-2",
+        "kind": "spray-pickup",
+        "x": 28,
+        "y": 9.9,
+        "z": -18,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "hc-spray-3",
+        "kind": "spray-pickup",
+        "x": 0,
+        "y": 14.9,
+        "z": -42,
+        "prefab": "gsr-spray-can"
+      },
+      {
+        "id": "hc-acorn-1",
+        "kind": "tempo-acorn",
+        "x": -28,
+        "y": 4.8,
+        "z": 18,
+        "eventId": "hc-side-acorns",
+        "label": "Bylaw Acorn"
+      },
+      {
+        "id": "hc-acorn-2",
+        "kind": "tempo-acorn",
+        "x": 28,
+        "y": 6.1,
+        "z": 18,
+        "eventId": "hc-side-acorns",
+        "label": "Bylaw Acorn"
+      },
+      {
+        "id": "hc-acorn-3",
+        "kind": "tempo-acorn",
+        "x": 0,
+        "y": 15.1,
+        "z": -45,
+        "eventId": "hc-side-acorns",
+        "label": "Bylaw Acorn"
+      }
     ],
     "events": [
       {
@@ -127,7 +1135,12 @@
         "introLine": "Cover all 4 HOA Citadel billboards in bright neon—Section 12-B be darned!",
         "completeLine": "Zero beige left! Even the topiaries look louder!",
         "objectiveType": "tag",
-        "targetIds": ["hc-bb-1", "hc-bb-2", "hc-bb-3", "hc-bb-4"],
+        "targetIds": [
+          "hc-bb-1",
+          "hc-bb-2",
+          "hc-bb-3",
+          "hc-bb-4"
+        ],
         "targetCount": 4,
         "x": -22,
         "y": 0,
@@ -156,7 +1169,11 @@
         "introLine": "Retune the 3 HOA Jammers on Permit Office, Beige Archive, and Gazebo Tribunal!",
         "completeLine": "100 MHz jammer cleared! Subsoil Relay Tower just lit up!",
         "objectiveType": "speakers",
-        "targetIds": ["hc-jam-1", "hc-jam-2", "hc-jam-3"],
+        "targetIds": [
+          "hc-jam-1",
+          "hc-jam-2",
+          "hc-jam-3"
+        ],
         "targetCount": 3,
         "x": -18,
         "y": 0,
@@ -171,7 +1188,12 @@
         "introLine": "Air-jump off the garden rails and updrafts to thread all 4 Defiance Rings!",
         "completeLine": "Unpermitted air-tricks—maximum HOA defiance!",
         "objectiveType": "rings",
-        "targetIds": ["hc-ring-1", "hc-ring-2", "hc-ring-3", "hc-ring-4"],
+        "targetIds": [
+          "hc-ring-1",
+          "hc-ring-2",
+          "hc-ring-3",
+          "hc-ring-4"
+        ],
         "targetCount": 4,
         "x": 18,
         "y": 0,
@@ -200,7 +1222,11 @@
         "introLine": "Three Tempo Acorns sit on Permit Office, Hedge Depot, and Vance's Spire—grab all 3!",
         "completeLine": "Grass-blade regulation officially ignored!",
         "objectiveType": "collect",
-        "targetIds": ["hc-acorn-1", "hc-acorn-2", "hc-acorn-3"],
+        "targetIds": [
+          "hc-acorn-1",
+          "hc-acorn-2",
+          "hc-acorn-3"
+        ],
         "targetCount": 3,
         "x": -42,
         "y": 0,
@@ -222,25 +1248,247 @@
       }
     ],
     "ambientNpcs": [
-      { "id": "hc-npc-1", "name": "Clipboard Clive", "kind": "gnome", "hatColor": "#2e7d32", "shirtColor": "#d7ccc8", "x": -12, "y": 0, "z": 38, "yaw": 0.4, "line": "Section 12-B forbids neon skate wax on approved eggshell curbs!" },
-      { "id": "hc-npc-2", "name": "Beige-Swatch Bertha", "kind": "gnome", "hatColor": "#a1887f", "shirtColor": "#d7ccc8", "x": 12, "y": 0, "z": 38, "yaw": -0.4, "line": "Your hat is dangerously brighter than regulation oatmeal!" },
-      { "id": "hc-npc-3", "name": "Permit Clerk", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#5d4037", "x": -28, "y": 4.2, "z": 18, "yaw": 0.3, "line": "Sorry, trick-skating permits take six to eight business summers." },
-      { "id": "hc-npc-4", "name": "Topiary Trimmer", "kind": "woken", "prefab": "gsr-topiary-hedge", "x": 28, "y": 5.5, "z": 18, "yaw": 0, "line": "Snip-snip! 4.0 centimeters exactly, not a millimeter more!" },
-      { "id": "hc-npc-5", "name": "Gazebo Juror", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#4e342e", "x": 28, "y": 9.5, "z": -22, "yaw": -0.5, "line": "Honestly, the ska-punk brass march slaps pretty hard up here." },
-      { "id": "hc-npc-6", "name": "Gate Sentinel", "kind": "woken", "prefab": "gsr-citation-gate", "x": 0, "y": 0, "z": 16, "yaw": 0, "line": "NO GRINDING! (Please do not grind directly above my sign.)" },
-      { "id": "hc-npc-7", "name": "Spire Watch", "kind": "gnome", "hatColor": "#ffd740", "shirtColor": "#3e2723", "x": 0, "y": 10.5, "z": -38, "yaw": 0, "line": "Vance-Bot's 100 MHz horn sits right at the top of the 14.5m spire!" },
-      { "id": "hc-npc-8", "name": "HOA Van Driver", "kind": "gnome", "hatColor": "#2e7d32", "shirtColor": "#d7ccc8", "x": -42, "y": 0, "z": 36, "yaw": 0.8, "line": "Wait—how did a skater paint neon stripes on the Code-Enforcement Van?!" },
-      { "id": "hc-npc-9", "name": "Urn Polisher", "kind": "gnome", "hatColor": "#69f0ae", "shirtColor": "#4e342e", "x": 12, "y": 0, "z": 12, "yaw": -0.4, "line": "Every marble urn is spaced exactly ten meters apart. Please do not kickflip over them." }
+      {
+        "id": "hc-npc-1",
+        "name": "Clipboard Clive",
+        "kind": "gnome",
+        "hatColor": "#2e7d32",
+        "shirtColor": "#d7ccc8",
+        "x": -12,
+        "y": 0,
+        "z": 38,
+        "yaw": 0.4,
+        "line": "Section 12-B forbids neon skate wax on approved eggshell curbs!"
+      },
+      {
+        "id": "hc-npc-2",
+        "name": "Beige-Swatch Bertha",
+        "kind": "gnome",
+        "hatColor": "#a1887f",
+        "shirtColor": "#d7ccc8",
+        "x": 12,
+        "y": 0,
+        "z": 38,
+        "yaw": -0.4,
+        "line": "Your hat is dangerously brighter than regulation oatmeal!"
+      },
+      {
+        "id": "hc-npc-3",
+        "name": "Permit Clerk",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#5d4037",
+        "x": -28,
+        "y": 4.2,
+        "z": 18,
+        "yaw": 0.3,
+        "line": "Sorry, trick-skating permits take six to eight business summers."
+      },
+      {
+        "id": "hc-npc-4",
+        "name": "Topiary Trimmer",
+        "kind": "woken",
+        "prefab": "gsr-topiary-hedge",
+        "x": 28,
+        "y": 5.5,
+        "z": 18,
+        "yaw": 0,
+        "line": "Snip-snip! 4.0 centimeters exactly, not a millimeter more!"
+      },
+      {
+        "id": "hc-npc-5",
+        "name": "Gazebo Juror",
+        "kind": "gnome",
+        "hatColor": "#69f0ae",
+        "shirtColor": "#4e342e",
+        "x": 28,
+        "y": 9.5,
+        "z": -22,
+        "yaw": -0.5,
+        "line": "Honestly, the ska-punk brass march slaps pretty hard up here."
+      },
+      {
+        "id": "hc-npc-6",
+        "name": "Gate Sentinel",
+        "kind": "woken",
+        "prefab": "gsr-citation-gate",
+        "x": 0,
+        "y": 0,
+        "z": 16,
+        "yaw": 0,
+        "line": "NO GRINDING! (Please do not grind directly above my sign.)"
+      },
+      {
+        "id": "hc-npc-7",
+        "name": "Spire Watch",
+        "kind": "gnome",
+        "hatColor": "#ffd740",
+        "shirtColor": "#3e2723",
+        "x": 0,
+        "y": 10.5,
+        "z": -38,
+        "yaw": 0,
+        "line": "Vance-Bot's 100 MHz horn sits right at the top of the 14.5m spire!"
+      },
+      {
+        "id": "hc-npc-8",
+        "name": "HOA Van Driver",
+        "kind": "gnome",
+        "hatColor": "#2e7d32",
+        "shirtColor": "#d7ccc8",
+        "x": -42,
+        "y": 0,
+        "z": 36,
+        "yaw": 0.8,
+        "line": "Wait—how did a skater paint neon stripes on the Code-Enforcement Van?!"
+      },
+      {
+        "id": "hc-npc-9",
+        "name": "Urn Polisher",
+        "kind": "gnome",
+        "hatColor": "#69f0ae",
+        "shirtColor": "#4e342e",
+        "x": 12,
+        "y": 0,
+        "z": 12,
+        "yaw": -0.4,
+        "line": "Every marble urn is spaced exactly ten meters apart. Please do not kickflip over them."
+      }
     ],
     "details": [
-      { "kind": "hedge-trim", "x": -16, "y": 0, "z": 16, "d": 28, "color": "#2e7d32" },
-      { "kind": "hedge-trim", "x": 16, "y": 0, "z": 16, "d": 28, "color": "#2e7d32" },
-      { "kind": "fountain-plaza", "x": 0, "y": 0.05, "z": 22, "scale": 1.35, "color": "#69f0ae", "accentColor": "#ffd740" },
-      { "kind": "banner-arch", "x": 0, "y": 0, "z": 40, "yaw": 0, "scale": 1.3, "color": "#ffd740", "accentColor": "#69f0ae" },
-      { "kind": "placed-prop", "prefab": "gsr-no-grinding-sign", "x": 28, "y": 9.5, "z": -14, "yaw": 0, "scale": 1.35, "color": "#ffd740" },
-      { "kind": "placed-prop", "prefab": "gsr-topiary-hedge", "x": -28, "y": 8.0, "z": -22, "yaw": 0, "scale": 1.3, "color": "#69f0ae" },
-      { "kind": "cable-span", "x": -28, "y": 4.7, "z": 22, "x2": 28, "y2": 6.0, "z2": 22, "color": "#ffd740" },
-      { "kind": "cable-span", "x": -28, "y": 8.5, "z": -18, "x2": 28, "y2": 10.0, "z2": -18, "color": "#69f0ae" }
+      {
+        "kind": "hedge-trim",
+        "x": -16,
+        "y": 0,
+        "z": 16,
+        "d": 28,
+        "color": "#2e7d32"
+      },
+      {
+        "kind": "hedge-trim",
+        "x": 16,
+        "y": 0,
+        "z": 16,
+        "d": 28,
+        "color": "#2e7d32"
+      },
+      {
+        "kind": "fountain-plaza",
+        "x": 0,
+        "y": 0.05,
+        "z": 22,
+        "scale": 1.35,
+        "color": "#69f0ae",
+        "accentColor": "#ffd740"
+      },
+      {
+        "kind": "banner-arch",
+        "x": 0,
+        "y": 0,
+        "z": 40,
+        "yaw": 0,
+        "scale": 1.3,
+        "color": "#ffd740",
+        "accentColor": "#69f0ae"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-no-grinding-sign",
+        "x": 28,
+        "y": 9.5,
+        "z": -14,
+        "yaw": 0,
+        "scale": 1.35,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "placed-prop",
+        "prefab": "gsr-topiary-hedge",
+        "x": -28,
+        "y": 8,
+        "z": -22,
+        "yaw": 0,
+        "scale": 1.3,
+        "color": "#69f0ae"
+      },
+      {
+        "kind": "cable-span",
+        "x": -28,
+        "y": 4.7,
+        "z": 22,
+        "x2": 28,
+        "y2": 6,
+        "z2": 22,
+        "color": "#ffd740"
+      },
+      {
+        "kind": "cable-span",
+        "x": -28,
+        "y": 8.5,
+        "z": -18,
+        "x2": 28,
+        "y2": 10,
+        "z2": -18,
+        "color": "#69f0ae"
+      }
+    ],
+    "satellites": [
+      {
+        "id": "hoa-citadel-sat-west",
+        "x": -130,
+        "y": 2.5,
+        "z": -16,
+        "r": 9.5,
+        "color": "#ffd740",
+        "bouncePower": 18
+      },
+      {
+        "id": "hoa-citadel-sat-east",
+        "x": 130,
+        "y": 3.5,
+        "z": 16,
+        "r": 9.5,
+        "color": "#00e5ff",
+        "bouncePower": 18
+      }
+    ],
+    "shopNpc": {
+      "id": "shop-hc",
+      "name": "Inspector Gavel",
+      "prefab": "gsr-hoa-flamingo-plinth",
+      "x": 26,
+      "y": 0,
+      "z": 48,
+      "yaw": -0.5,
+      "itemId": "golden-bylaw",
+      "greeting": "Golden Bylaw aura—technically compliant with Section 12-B!"
+    },
+    "bossWaypoints": [
+      [
+        0,
+        14.5,
+        -26.5
+      ],
+      [
+        -71.92,
+        14.5,
+        52.2
+      ],
+      [
+        71.92,
+        14.5,
+        55.68
+      ],
+      [
+        67.28,
+        14.5,
+        -63.8
+      ],
+      [
+        -67.28,
+        14.5,
+        -60.32
+      ]
     ]
   }
 }

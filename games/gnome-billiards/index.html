@@ -26,17 +26,44 @@
       .bil-emotes{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 92px);display:none;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 12px;pointer-events:none}
       .bil-emote{min-height:44px;padding:0 12px;font-size:15px}
       .bil-msg{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 58px);text-align:center;font-weight:700;font-size:16px;text-shadow:0 2px 6px #000;pointer-events:none}
-      .bil-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:space-between;padding:0 12px calc(env(safe-area-inset-bottom) + 8px)}
-      .bil-btn{min-height:44px;min-width:44px;padding:0 14px;border:0;border-radius:10px;background:#3a2a52;color:#fff;font-weight:700;cursor:pointer}
+      .bil-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:space-between;padding:0 12px calc(env(safe-area-inset-bottom) + 8px);flex-wrap:wrap}
+      .bil-btn{min-height:44px;min-width:44px;padding:0 12px;border:0;border-radius:10px;background:#3a2a52;color:#fff;font-weight:700;cursor:pointer;font-size:14px}
       .bil-btn.primary{background:#2e8f3e}
+      .bil-btn.active{background:#18788a;box-shadow:0 0 0 2px #5ef2ff inset}
       .bil-btn:disabled{opacity:.5}
-      .bil-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,6,18,.7);padding:16px;box-sizing:border-box}
-      .bil-card{background:#2a1c3e;border-radius:16px;padding:20px;max-width:360px;width:100%;box-sizing:border-box;text-align:center;box-shadow:0 10px 30px #000}
-      .bil-card h1{margin:0 0 6px;font-size:26px;color:#ffd54f}
-      .bil-card p{margin:6px 0 14px;opacity:.9;line-height:1.35}
-      .bil-card .row{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+      .bil-pot{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 74px);background:rgba(20,12,30,.88);border:1px solid #ffd54f;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;color:#ffd54f;display:none;pointer-events:none;white-space:nowrap}
+      .bil-bubble{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 102px);max-width:min(320px,82vw);background:rgba(24,14,38,.92);border:2px solid #ffd54f;border-radius:14px;padding:8px 14px;font-size:14px;line-height:1.3;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.55);display:none;pointer-events:none;z-index:5}
+      .bil-bubble.left{left:14px;right:auto;transform:none;text-align:left}
+      .bil-bubble.right{left:auto;right:14px;transform:none;text-align:right}
+      .bil-bubble .sp{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#ffd54f;margin-bottom:2px}
+      .bil-quips{width:100%;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:4px}
+      .bil-quip{min-height:36px;padding:0 10px;font-size:12px;background:#2b1e42;border:1px solid rgba(255,213,79,.35)}
+      .bil-fine-row{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 92px);display:none;align-items:center;gap:8px;pointer-events:none}
+      .bil-fine-pill{background:rgba(20,12,30,.82);border:1px solid rgba(94,242,255,.55);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;color:#5ef2ff;white-space:nowrap}
+      .bil-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,6,18,.74);padding:12px;box-sizing:border-box;z-index:10}
+      .bil-card{background:#2a1c3e;border-radius:16px;padding:18px;max-width:420px;width:100%;max-height:92dvh;overflow-y:auto;box-sizing:border-box;text-align:center;box-shadow:0 10px 30px #000}
+      .bil-card h1{margin:0 0 6px;font-size:24px;color:#ffd54f}
+      .bil-card p{margin:6px 0 12px;opacity:.9;line-height:1.35;font-size:14px}
+      .bil-card .row{display:flex;flex-direction:column;gap:8px;margin-top:8px}
       .bil-card .row.inline{flex-direction:row;gap:8px}
-      .bil-card input{flex:1;min-height:44px;border-radius:10px;border:0;padding:0 10px;background:#fff;color:#111;text-transform:uppercase;letter-spacing:2px;text-align:center;min-width:0}
+      .bil-card input[type=text],.bil-card input:not([type]){flex:1;min-height:44px;border-radius:10px;border:0;padding:0 10px;background:#fff;color:#111;text-transform:uppercase;letter-spacing:2px;text-align:center;min-width:0}
+      .bil-sec{margin-top:12px;text-align:left;background:rgba(14,8,24,.45);border-radius:12px;padding:10px}
+      .bil-sec-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#ffd54f;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+      .bil-pills{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+      .bil-pills.five{grid-template-columns:repeat(3,1fr)}
+      .bil-pill{min-height:44px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:#35254d;color:#fff;font-weight:700;font-size:12px;padding:6px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+      .bil-pill.on{background:#2e8f3e;border-color:#98f5a8}
+      .bil-pill.cracked.on{background:#6a1b9a;border-color:#ffd54f}
+      .bil-pill small{font-size:10px;opacity:.85;font-weight:600}
+      .bil-wager-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+      .bil-wager-row input[type=range]{flex:1;min-height:36px;accent-color:#ffd54f;cursor:pointer}
+      .bil-wager-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+      .bil-chal-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;text-align:left}
+      .bil-chal-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(14,8,24,.55);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;cursor:pointer;color:#fff;text-align:left;min-height:56px}
+      .bil-chal-item.done{border-color:#7ed957}
+      .bil-chal-item .ttl{font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}
+      .bil-chal-item .dsc{font-size:12px;opacity:.82;margin-top:2px}
+      .bil-chal-item .tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:#3a2a52;white-space:nowrap}
       .bil-status{min-height:20px;font-size:13px;opacity:.85;margin-top:10px}
       .bil-face{position:relative;width:36px;height:40px;flex:0 0 auto}
       .bil-face .hat{position:absolute;left:4px;top:0;width:28px;height:16px;clip-path:polygon(50% 0,100% 100%,0 100%)}
@@ -62,16 +89,20 @@
         .bil-btn:focus-visible{outline:2px solid #ffd54f;outline-offset:2px}
         .bil-emote{min-height:40px}
         .bil-overlay{background:rgba(10,6,18,.78)}
-        .bil-card{max-width:560px;padding:32px 36px;border-radius:18px}
-        .bil-card h1{font-size:32px}
-        .bil-card p{font-size:16px;margin:8px 0 22px}
-        .bil-card .row:not(.inline){display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .bil-card .row:not(.inline)>.bil-btn{min-height:52px}
+        .bil-card{max-width:600px;padding:24px 28px;border-radius:18px}
+        .bil-card h1{font-size:30px}
+        .bil-card p{font-size:15px;margin:8px 0 14px}
+        .bil-card .row:not(.inline){display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .bil-card .row:not(.inline)>.bil-btn{min-height:48px}
         .bil-card .row:not(.inline)>.bil-btn:first-child{grid-column:1 / -1}
-        .bil-card .row.inline{margin-top:16px}
-        .bil-card input{min-height:48px;font-size:16px;background:#fff}
+        .bil-card .row.inline{margin-top:12px}
+        .bil-card input[type=text],.bil-card input:not([type]){min-height:46px;font-size:16px;background:#fff}
         .bil-card .row.inline .bil-btn{min-width:110px}
         .bil-status{font-size:14px;min-height:22px}
+        .bil-fine-row{bottom:118px}
+        .bil-pills.five{grid-template-columns:repeat(5,1fr)}
+        .bil-bubble.left{left:calc(50% - 330px)}
+        .bil-bubble.right{right:calc(50% - 330px)}
       }
     </style>
   </head>

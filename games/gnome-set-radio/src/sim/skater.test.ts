@@ -458,4 +458,141 @@ describe('Gnom Set Radio level documents & rollerblade sim', () => {
       expect(s.railId).toBe(`rail-${ad.id}`);
     }
   });
+
+  it('air dash caps forward speed while leaving sideways strafe-dash uncapped', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = false;
+    s.y = 12;
+    s.yaw = 0; // facing +Z
+    s.vx = 0;
+    s.vz = 28;
+    s.boost = 100;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    // Forward air dash clamps forward speed at 34 m/s
+    const fwdDash = stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: 1, jump: false, grind: false, trick: false, boost: true },
+      1 / 60,
+      btn,
+    );
+    expect(fwdDash.airDashTriggered).toBe(true);
+    expect(s.vz).toBeLessThanOrEqual(34.01);
+
+    // Sideways air dash (+X) is uncapped and can stack past 34 m/s
+    s.vx = 32;
+    s.vz = 0;
+    s.yaw = 0;
+    s.airDashCooldown = 0;
+    btn.boost = false;
+    const sideDash = stepSkater(
+      s,
+      doc,
+      { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true },
+      1 / 60,
+      btn,
+    );
+    expect(sideDash.airDashTriggered).toBe(true);
+    expect(s.vx).toBeGreaterThan(40);
+  });
+
+  it('speed mode preserves high momentum and decays smoothly on exit instead of snapping', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = true;
+    s.vx = 0;
+    s.vz = -34;
+    s.yaw = Math.PI;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    // Hold speedMode for 10 frames: speed stays > 32
+    for (let i = 0; i < 10; i++) {
+      stepSkater(
+        s,
+        doc,
+        { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false, speedMode: true },
+        1 / 60,
+        btn,
+      );
+    }
+    const tuckSpd = Math.hypot(s.vx, s.vz);
+    expect(tuckSpd).toBeGreaterThan(31);
+
+    // Release speedMode for 1 frame: should decay smoothly, NOT snap to 22
+    stepSkater(
+      s,
+      doc,
+      { moveX: 0, moveZ: -1, jump: false, grind: false, trick: false, boost: false, speedMode: false },
+      1 / 60,
+      btn,
+    );
+    const afterExitSpd = Math.hypot(s.vx, s.vz);
+    expect(afterExitSpd).toBeGreaterThan(28);
+    expect(afterExitSpd).toBeLessThan(tuckSpd);
+  });
+
+  it('wall-bump cooldown prevents repeated bump events when rubbing against a wall', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    const prop = doc.props[0]!;
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.y = 0;
+    s.vx = -8;
+    const btn = { jump: false, trick: false, railCooldown: 0 };
+
+    const first = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(first.bumped).toBe(true);
+
+    // Immediate second impact within cooldown does not re-trigger bump SFX
+    s.x = prop.x + 0.1;
+    s.z = prop.z + 0.1;
+    s.vx = -8;
+    const second = stepSkater(s, doc, { moveX: 0, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    expect(second.bumped).toBe(false);
+  });
+
+  it('consecutive sideways air dashes stack past 34 m/s without resetting yaw', () => {
+    const doc = LEVELS['velvet-keys'];
+    const s = createSkater(doc);
+    s.grounded = false;
+    s.y = 14;
+    s.yaw = 0; // facing +Z
+    s.vx = 28;
+    s.vz = 0;
+    s.boost = 100;
+    const btn = { jump: false, trick: false, railCooldown: 0, boost: false };
+
+    stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    // Simulate 0.36s of air time (past 0.35s cooldown, inside 0.55s sideDashLockTimer)
+    for (let i = 0; i < 22; i++) {
+      stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: false }, 1 / 60, btn);
+    }
+    const second = stepSkater(s, doc, { moveX: 1, moveZ: 0, jump: false, grind: false, trick: false, boost: true }, 1 / 60, btn);
+    expect(second.airDashTriggered).toBe(true);
+    expect(s.vx).toBeGreaterThan(42);
+  });
+
+  it('billboardObbCollision matches Three.js +yaw rotation and buildingRoofAt supports stepped/cantilever tiers', async () => {
+    const { billboardObbCollision } = await import('../levels/collision');
+    const { buildingRoofAt } = await import('../levels/loader');
+    // Billboard rotated +45 deg around Y: local +Z is (sin(45), cos(45)) = (+0.707, +0.707)
+    // Point 0.6m along local +Z from center should collide; point 3m along local +Z should miss.
+    const bb = { id: 'b', x: 0, y: 0, z: 0, yaw: Math.PI / 4, w: 6, h: 4, style: 'wide' as const, gangName: 'Test', color: '#fff' };
+    const hit = billboardObbCollision(bb, 0.4, 0.4, 1.5, 0.5);
+    expect(hit).not.toBeNull();
+    // Point 2.2m along local +X = (2.2*cos(45), -2.2*sin(45)) = (+1.55, -1.55) is inside w=6 half-width 3
+    const onPlane = billboardObbCollision(bb, 1.55, -1.55, 1.5, 0.5);
+    expect(onPlane).not.toBeNull();
+    // Point perpendicular to plane at +2.2m (+1.55, +1.55) should NOT collide
+    const offPlane = billboardObbCollision(bb, 1.55, 1.55, 1.5, 0.5);
+    expect(offPlane).toBeNull();
+
+    const stepped = { id: 's', x: 0, yBase: 0, z: 0, w: 10, d: 10, h: 8, color: '#fff', roofColor: '#fff', arch: 'stepped-monolith' as const };
+    expect(buildingRoofAt(stepped, 0, 0, 9.8)).toBeCloseTo(9.8);
+    const canti = { id: 'c', x: 0, yBase: 0, z: 0, w: 10, d: 10, h: 10, color: '#fff', roofColor: '#fff', arch: 'cantilever-tower' as const };
+    expect(buildingRoofAt(canti, 0, 5.5, 5.4)).toBeCloseTo(5.4);
+  });
 });

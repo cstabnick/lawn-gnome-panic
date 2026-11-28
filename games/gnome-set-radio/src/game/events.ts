@@ -11,6 +11,10 @@ export interface ProgressState {
   bestRanks: Partial<Record<GsrLevelId, StyleRank>>;
   collectedVinyls: string[];
   competitionMedals: Partial<Record<GsrLevelId, 'bronze' | 'silver' | 'gold'>>;
+  tokens: number;
+  ownedCosmetics: string[];
+  equippedTrail: string | null;
+  equippedRide: string | null;
 }
 
 export function computeStyleRank(score: number, maxCombo: number, _sideCleared: number): StyleRank {
@@ -36,6 +40,10 @@ export function loadProgress(): ProgressState {
         collectedVinyls: Array.isArray(parsed.collectedVinyls) ? parsed.collectedVinyls : [],
         competitionMedals:
           parsed.competitionMedals && typeof parsed.competitionMedals === 'object' ? parsed.competitionMedals : {},
+        tokens: typeof parsed.tokens === 'number' && Number.isFinite(parsed.tokens) ? parsed.tokens : 0,
+        ownedCosmetics: Array.isArray(parsed.ownedCosmetics) ? parsed.ownedCosmetics : [],
+        equippedTrail: typeof parsed.equippedTrail === 'string' ? parsed.equippedTrail : null,
+        equippedRide: typeof parsed.equippedRide === 'string' ? parsed.equippedRide : null,
       };
     }
   } catch {
@@ -49,6 +57,10 @@ export function loadProgress(): ProgressState {
     bestRanks: {},
     collectedVinyls: [],
     competitionMedals: {},
+    tokens: 0,
+    ownedCosmetics: [],
+    equippedTrail: null,
+    equippedRide: null,
   };
 }
 

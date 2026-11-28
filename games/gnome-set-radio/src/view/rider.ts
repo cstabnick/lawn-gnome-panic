@@ -12,6 +12,7 @@ const DEFAULT_GSR_LOOK: GnomeLook = {
 export interface RiderView {
   root: THREE.Group;
   model: GnomeModel;
+  setCosmetics(opts: { trailId: string | null; rideId: string | null }): void;
   update(s: SkaterState, dt: number, beatPulse?: number, surfaceY?: number): void;
   triggerSpray(colorHex?: string): void;
   triggerAirJump(): void;
@@ -39,6 +40,7 @@ export function createRiderView(scene: THREE.Scene): RiderView {
   });
 
   const wheels: THREE.Mesh[] = [];
+  const skateGroups: THREE.Group[] = [];
   const makeSkate = (): THREE.Group => {
     const g = new THREE.Group();
     g.position.set(0, -0.3, 0.02);
@@ -52,12 +54,56 @@ export function createRiderView(scene: THREE.Scene): RiderView {
       g.add(w);
       wheels.push(w);
     }
+    skateGroups.push(g);
     return g;
   };
   if (model.legs) {
     model.legs.left.add(makeSkate());
     model.legs.right.add(makeSkate());
   }
+
+  // Hovering Aether Board (unlocked by beating Tier 9)
+  const aetherBoard = new THREE.Group();
+  const boardDeckMat = new THREE.MeshStandardMaterial({
+    color: 0x160c2e,
+    emissive: 0x00e5ff,
+    emissiveIntensity: 0.45,
+    roughness: 0.25,
+    metalness: 0.55,
+  });
+  const boardTrimMat = new THREE.MeshStandardMaterial({
+    color: 0xffd740,
+    emissive: 0xff4ecd,
+    emissiveIntensity: 1.0,
+    roughness: 0.2,
+  });
+  const boardDeck = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.055, 1.32), boardDeckMat);
+  const boardNose = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.28, 4), boardTrimMat);
+  boardNose.rotation.x = Math.PI / 2;
+  boardNose.rotation.y = Math.PI / 4;
+  boardNose.position.set(0, 0.02, 0.78);
+  const boardTrim = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 1.24), boardTrimMat);
+  boardTrim.position.y = -0.02;
+  aetherBoard.add(boardDeck, boardNose, boardTrim);
+  aetherBoard.position.set(0, -0.06, 0);
+  aetherBoard.visible = false;
+  model.rig.add(aetherBoard);
+
+  let activeTrailId: string | null = null;
+  let activeRideId: string | null = null;
+  const TRAIL_COLOR_MAP: Record<string, number> = {
+    'ivory-notes': 0xffd740,
+    'molten-acid': 0x76ff03,
+    'pixel-8bit': 0xff5252,
+    'golden-bylaw': 0xffd740,
+    'subsoil-dub': 0xb388ff,
+  };
+  const RIDE_COLOR_MAP: Record<string, number> = {
+    'solar-flame': 0xff6d00,
+    'prism-mist': 0xff66ff,
+    'vapor-chrome': 0xff80ab,
+    'aether-board': 0xffd740,
+  };
 
   // Stylized spray-paint can attached to right arm
   const canGroup = new THREE.Group();
@@ -219,7 +265,14 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     }
     trailL.attr.needsUpdate = true;
     trailR.attr.needsUpdate = true;
-    const trailCol = s.grinding ? 0xffd740 : s.boosting ? 0xff4ecd : Math.abs(s.carveSlip) > 0.2 ? 0x69f0ae : 0x00e5ff;
+    const customTrailCol = activeTrailId ? TRAIL_COLOR_MAP[activeTrailId] : undefined;
+    const trailCol = s.grinding
+      ? 0xffd740
+      : s.boosting || s.speedMode
+        ? customTrailCol ?? 0xff4ecd
+        : Math.abs(s.carveSlip) > 0.2
+          ? 0x69f0ae
+          : customTrailCol ?? 0x00e5ff;
     const trailAlpha = spd > 3.5 ? Math.min(0.85, (spd - 3.5) / 14) : 0;
     trailL.mat.color.setHex(trailCol);
     trailR.mat.color.setHex(trailCol);
@@ -239,10 +292,15 @@ export function createRiderView(scene: THREE.Scene): RiderView {
     root.rotation.z = s.wallRiding ? wallTilt : -s.lean - s.roll * 0.6 + wallTilt;
     root.rotation.x = s.grinding ? 0.06 : s.pitch * 0.7;
 
-    // Wheel spin & emissive intensity
+    // Wheel spin & emissive intensity (prismatic shimmer for prism-mist skates)
     const wheelSpin = spd * dt * 12;
     for (const w of wheels) w.rotation.x += wheelSpin;
     wheelMat.emissiveIntensity = s.boosting || s.grinding ? 1.5 : 0.85;
+    if (activeRideId === 'prism-mist') {
+      const hue = (performance.now() * 0.00045) % 1;
+      wheelMat.color.setHSL(hue, 0.95, 0.62);
+      wheelMat.emissive.setHSL(hue, 0.95, 0.55);
+    }
 
     // Landing & jump squash-and-stretch
     if (!wasGrounded && s.grounded) squashY = 0.82;
@@ -305,6 +363,31 @@ export function createRiderView(scene: THREE.Scene): RiderView {
       armLz = 0.2;
       armRx = -0.7;
       armRz = -1.25;
+    } else if (s.speedMode) {
+      // Speed Mode (Tuck): gnome leans forward and balls up to preserve momentum
+      rigRx = 0.86;
+      rigY = -0.22 + beatPulse * 0.02;
+      rigRy = activeRideId === 'aether-board' ? 0.72 : 0;
+      legLx = -0.68;
+      legRx = -0.58;
+      legLz = 0.08;
+      legRz = -0.08;
+      armLx = 1.05;
+      armRx = 1.05;
+      armLz = 0.28;
+      armRz = -0.28;
+    } else if (activeRideId === 'aether-board' && !s.wallRiding && s.grounded) {
+      // Hovering Aether Board stance
+      const carve = Math.max(-1, Math.min(1, s.carveSlip * 2.2 - s.lean * 1.8));
+      rigRy = 0.88 + carve * 0.22;
+      rigRx = 0.1 + Math.min(0.22, spd / 80);
+      rigY = 0.08 + Math.sin(idleTime * 5) * 0.04 + beatPulse * 0.03;
+      legLx = -0.22;
+      legRx = 0.22;
+      armLx = -0.35;
+      armRx = -0.35;
+      armLz = 0.95 + carve * 0.25;
+      armRz = -0.95 + carve * 0.25;
     } else if (s.grinding) {
       // Sideways Jet Set Radio grind stance with balancing arms
       const bal = Math.sin(idleTime * 9) * 0.16;
@@ -490,6 +573,16 @@ export function createRiderView(scene: THREE.Scene): RiderView {
   return {
     root,
     model,
+    setCosmetics({ trailId, rideId }) {
+      activeTrailId = trailId;
+      activeRideId = rideId;
+      const isBoard = rideId === 'aether-board';
+      aetherBoard.visible = isBoard;
+      for (const sg of skateGroups) sg.visible = !isBoard;
+      const col = rideId && RIDE_COLOR_MAP[rideId] ? RIDE_COLOR_MAP[rideId]! : 0x00e5ff;
+      wheelMat.color.setHex(col);
+      wheelMat.emissive.setHex(col);
+    },
     update,
     triggerSpray,
     triggerAirJump,
@@ -501,6 +594,8 @@ export function createRiderView(scene: THREE.Scene): RiderView {
       scene.remove(trailR.line);
       frameMat.dispose();
       wheelMat.dispose();
+      boardDeckMat.dispose();
+      boardTrimMat.dispose();
       canBodyGeo.dispose();
       canBodyMat.dispose();
       canCapGeo.dispose();

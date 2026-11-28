@@ -130,4 +130,21 @@ export const COSMETICS_HEAD_A: PrefabDef[] = [
       { s: 'ball', d: [0.012], at: [0.13, 0.02, 0.09], c: 'brass', seg: 6 },
     ],
   },
+  {
+    id: 'phantom-visor', name: 'Phantom Visor', category: 'armor', uses: ['wear-head'],
+    tags: ['visor', 'pool', 'billiards', 'phantom', 'gold', 'head', 'reward'], emoji: [],
+    about: 'A sleek obsidian-and-gold pool-hall visor worn by gnomes who beat The Chalk Phantom.',
+    examine: [
+      'A sleek obsidian headband with a wide gold visor brim and a tiny chalk-white crest at the front.',
+      'Saying at the Gnomecino: if you can beat the Phantom, you do not need to squint at the corner pocket.',
+      'Tip: tilt the brim just above the brow so the overhead lamp never catches your eye on a long cut.',
+      'Joke: the visor blocks out everything except the 8-ball and bad advice from the rail.',
+      'The inside of the band is signed in tiny chalk letters that never smudge.',
+    ],
+    parts: [
+      { s: 'ring', d: [0.145, 0.012], at: [0, 0.04, 0], rot: [90, 0, 0], c: 'iron-dark', seg: 12 },
+      { s: 'box', d: [0.18, 0.012, 0.11], at: [0, 0.032, 0.12], c: 'gold' },
+      { s: 'ball', d: [0.018], at: [0, 0.055, 0.14], c: 'chalk', seg: 8 },
+    ],
+  },
 ];

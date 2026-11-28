@@ -3,6 +3,7 @@
 import { boxesBlocked } from '../../lockup/safeSpot';
 import { addInteractSpot } from '../../interactables';
 import { WORK_ACHIEVEMENTS, WORK_JOBS, SPILL_FINE } from '../../jobs/workDefs';
+import { setTouchActivity } from '../../activityMode';
 import { play2d } from '../../sound/bus';
 import { heightAt, waterAt } from '../../terrain';
 import type { Blip, Vehicle } from '../../types';
@@ -231,14 +232,15 @@ export function installGarbage(deps: WorkDeps): WorkJobRuntime {
     const spills = results.filter((r) => r.spilled).length;
     const nb = nextBin();
     const p = deps.player;
+    const dist = nb ? Math.round(Math.hypot(nb.x - p.x, nb.z - p.z)) : 0;
     const line = nb
-      ? `Next bin: ${nb.street}, ${Math.round(Math.hypot(nb.x - p.x, nb.z - p.z))} m`
+      ? done === 0 ? `First bin: ${dist} m` : `Next bin: ${nb.street}, ${dist} m`
       : 'Back to the depot to tip';
     shiftHud.set({
       icon: '🗑️',
       title: `Bin round: ${done} of ${n} bins`,
-      lines: [line, `Spills: ${spills}`],
-      meter: { label: 'Round', frac: n > 0 ? done / n : 0 },
+      lines: spills > 0 ? [line, `Spills: ${spills}`] : [line],
+      meter: done === 0 ? null : { label: 'Round', frac: n > 0 ? done / n : 0 },
       action: action === 'lift' ? 'Lift bin' : action === 'tip' ? 'Tip the load' : null,
       color: WORK_JOBS.garbage.color,
     });
@@ -305,6 +307,7 @@ export function installGarbage(deps: WorkDeps): WorkJobRuntime {
           return;
         }
       }
+      setTouchActivity('lift', lift !== null ? { stick: false, buttons: [] } : null);
       updateHud(currentAction());
     },
     isOpen: () => lift !== null,

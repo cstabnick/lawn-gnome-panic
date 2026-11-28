@@ -12,6 +12,10 @@ export function promptVerb(text: string): string {
   if (/\btalk\b|\bask\b|\bchat\b|\bspeak\b/.test(t)) return 'Talk';
   if (/\bride\b|\bboard\b/.test(t)) return 'Ride';
   if (/\bfish\b|\bcast\b/.test(t)) return 'Fish';
+  // D30: at home or on the tee the context button names the thing to do (it takes the Fire slot while the gun is away).
+  if (/\bdecorate\b/.test(t)) return 'Decorate';
+  if (/\bsleep\b|\bbed\b|\bnap\b/.test(t)) return 'Sleep';
+  if (/\baddress the ball\b|\bswing\b|\btee off\b/.test(t)) return 'Swing';
   return 'Use';
 }
 

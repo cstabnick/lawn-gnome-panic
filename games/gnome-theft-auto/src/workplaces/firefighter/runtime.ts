@@ -21,6 +21,7 @@ import type { Blip, Box, Vehicle } from '../../types';
 import { createVehicle, removeVehicle } from '../../vehicles';
 import { finishShift, workLevel } from '../shift';
 import { createShiftHud } from '../shiftHud';
+import { setActivityOn, setTouchActivity } from '../../activityMode';
 import { registerJobs3Sounds } from '../sounds3';
 import type { WorkDeps, WorkJobRuntime, WorkWaypoint } from '../types';
 import { FOREST_PLACES, makeCall, scoreCall } from './calls';
@@ -40,6 +41,7 @@ const LEFTOVER_AWAY = 60;
 const SIREN_OFF_DIST = 40;
 const RESCUE_ANIM_S = 1.5;
 const ARC_POINTS = 24;
+const CALLER_NOTE_S = 6;
 const FIRE_COLOR = WORK_JOBS.firefighter.color;
 
 interface CallProp {
@@ -86,6 +88,8 @@ interface ActiveCall {
   water: number;
   siren: boolean;
   ending: boolean;
+  /** The "it has spread" line was shown for this call. */
+  spreadTold: boolean;
 }
 
 interface OldCall {
@@ -358,7 +362,7 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
     const group = `call-${call.id}`;
     const act: ActiveCall = {
       call, cx, cz, yaw, group, tracked: [], fuelPts: [], startFuel: 0, props: [], rescue: null, hydrants: [],
-      t: 0, outAt: null, water: 0, siren: true, ending: false,
+      t: 0, outAt: null, water: 0, siren: true, ending: false, spreadTold: false,
     };
     const c = Math.cos(yaw);
     const s = Math.sin(yaw);
@@ -407,7 +411,7 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
     active = act;
     SIREN_VEHICLES.add(engine!.id);
     play2d('fire-bell');
-    deps.hud.toast(`Call: ${call.title}. ${call.caller}: "${call.line}"`, 8000);
+    // The caller's line is shown in the shift panel (note) for the first seconds of the call, not toasted.
   }
 
   function clearActive(): void {
@@ -670,14 +674,13 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
     }
     const a = active;
     const frac = tank.cap > 0 ? tank.level / tank.cap : 0;
-    const tankLine = refilling ? 'Refilling at the hydrant' : `Tank ${Math.round(frac * 100)}%`;
     if (hose || cardOpen) {
       shiftHud.set(null);
       return;
     }
     if (!a) {
       shiftHud.set({
-        icon: '🚒', title: 'On duty: Fire Station No. 1', lines: ['Waiting for the bell', tankLine],
+        icon: '🚒', title: 'On duty: Fire Station No. 1', lines: refilling ? ['Waiting for the bell', 'Refilling at the hydrant'] : ['Waiting for the bell'],
         meter: { label: 'Tank', frac }, action: null, color: FIRE_COLOR,
       });
       return;
@@ -687,9 +690,10 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
     const d = engine ? Math.round(Math.hypot(engine.x - a.cx, engine.z - a.cz)) : 0;
     lines.push(left > 0 ? (d > FIRE_JOB.hoseRange ? `${d} m to the fire` : `${left} fire${left === 1 ? '' : 's'} burning`) : 'Fires out');
     if (a.rescue && a.rescue.state === 'up') lines.push(`${a.call.rescue?.name ?? 'Someone'} is stuck up high`);
-    lines.push(tankLine);
+    if (refilling) lines.push('Refilling at the hydrant');
     shiftHud.set({
       icon: '🚒', title: a.call.title, lines, meter: { label: 'Tank', frac },
+      note: a.t < CALLER_NOTE_S ? `${a.call.caller}: “${a.call.line}”` : null,
       action: canHose() ? 'Man the hose' : null, color: FIRE_COLOR,
     });
   }
@@ -734,6 +738,9 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
       window.addEventListener(FIRE_START_EVENT, () => startDuty());
     }
     updateStation(dt);
+    const hoseOpen = hose !== null;
+    setActivityOn('hose', hoseOpen);
+    setTouchActivity('hose', hoseOpen ? { stick: false, buttons: [] } : null);
     const act = active;
     stepFires(field, dt, act?.fuelPts ?? []);
     fireView.update(dt, field, deps.player.x, deps.player.z);
@@ -793,7 +800,13 @@ export function installFirefighter(deps: WorkDeps): WorkJobRuntime {
       act.t += dt;
       // Fires lit by spread join the tally.
       for (const f of field.fires) {
-        if (f.group === act.group && !act.tracked.some((t) => t.fire === f)) act.tracked.push({ fire: f, initial: f.fuel });
+        if (f.group === act.group && !act.tracked.some((t) => t.fire === f)) {
+          act.tracked.push({ fire: f, initial: f.fuel });
+          if (!act.spreadTold) {
+            act.spreadTold = true;
+            deps.hud.toast(`It has spread near ${act.call.place.name}!`, 4000);
+          }
+        }
       }
       if (act.siren && Math.hypot(engine.x - act.cx, engine.z - act.cz) < SIREN_OFF_DIST) {
         act.siren = false;

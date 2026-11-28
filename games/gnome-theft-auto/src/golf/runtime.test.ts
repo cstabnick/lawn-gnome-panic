@@ -10,7 +10,7 @@ import { heightAt } from '../terrain';
 
 /** An element that takes any call or property: enough for the HUD, the card and the intro cards. */
 function fakeEl(): unknown {
-  const target: Record<string, unknown> = { style: {}, children: [], dataset: {} };
+  const target: Record<string, unknown> = { style: {}, children: [], dataset: {}, classList: { add: () => undefined, remove: () => undefined } };
   return new Proxy(target, {
     get: (t, k) => (k in t ? t[k as string] : () => undefined),
     set: (t, k, v) => { t[k as string] = v; return true; },

@@ -1,6 +1,7 @@
 // Winter sports runtime (E12): rentals at the Woolly Sock Lodge, riding skis and the tea-tray sled (slideRider.ts), the
 // Bootlace Tow, the Wool Run and the Tea-Tray Run with best times, Hot Cocoa, ice holes on Pail Pond, Bear Hug, the HUD
 // line and the "ride again" button, achievements and the WinterApi hooks for story epics.
+import { quietRegionBanner, setActivityOn, setTouchActivity } from '../activityMode';
 import { clampToWorld, sweepCircleBoxes, wallBounce } from '../collide';
 import { WORLD_HALF } from '../config';
 import { addItem } from '../inventory';
@@ -153,8 +154,12 @@ function buildHud(ui: HTMLElement, hooks: HudHooks): WinterHud {
     + 'max-width:92vw;padding:6px 12px;border-radius:999px;background:rgba(10,16,24,.72);color:#e8f4ff;font:600 14px/1.3 system-ui,sans-serif;'
     + 'text-align:center;pointer-events:none;white-space:normal;';
   const col = document.createElement('div');
-  col.style.cssText = 'position:absolute;left:calc(env(safe-area-inset-left,0px) + 12px);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);'
+  // Above the activity cluster's Exit button (bottom-right) and the move stick. Lower on a short landscape phone.
+  const short = typeof matchMedia === 'function' ? matchMedia('(max-height:500px)') : null;
+  const colBottom = (): string => `calc(env(safe-area-inset-bottom,0px) + ${short?.matches ? 110 : 260}px)`;
+  col.style.cssText = `position:absolute;left:calc(env(safe-area-inset-left,0px) + 12px);bottom:${colBottom()};`
     + 'display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+  short?.addEventListener?.('change', () => { col.style.bottom = colBottom(); });
   const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   const make = (label: string, fn: () => void): HTMLElement => {
     const b = document.createElement('button');
@@ -526,6 +531,7 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       if (pv === v) rides.delete(v);
       else sit(v);
       againT = 0;
+      if (typeof document !== 'undefined' && document.body) quietRegionBanner(8000);
       return null;
     },
     isOnSlope: (x, z) => inSite('ski-hill', x, z) && surfaceAt(x, z) === 'snow',
@@ -632,6 +638,12 @@ export function installWinter(deps: WinterDeps, opts?: WinterOpts): Winter {
       for (const v of [...rented]) {
         if (v.driver === 'none' && Math.hypot(v.x - p.x, v.z - p.z) > AWAY_M) removeRide(v);
       }
+    }
+    // Touch: on a sled or skis the cluster shows only Exit (the winter buttons live in their own column).
+    const riding = myRide() !== null;
+    setActivityOn('winter', riding);
+    if (typeof document !== 'undefined' && document.body) {
+      setTouchActivity('winter', riding ? { stick: true, buttons: ['enter'] } : null);
     }
     refreshHud();
   }

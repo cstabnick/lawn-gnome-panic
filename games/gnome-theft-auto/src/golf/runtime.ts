@@ -27,6 +27,8 @@ import {
   type Golf, type GolfApi, type GolfStore, type HudAction, type RoundEvent, type RoundState,
 } from './types';
 import { createGolfView } from './view';
+import { setActivityOn } from '../activityMode';
+import { createSwingPose, nudgeOffMarkers, teeMarkerSpots } from './swingPose';
 import { buildYard } from './yard';
 import { buildBottomGarden } from './bottomGarden';
 
@@ -221,6 +223,8 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
   }
 
   // ---- The round ----
+  const swingPose = createSwingPose();
+  const markerSpots = HOLES.map((h) => teeMarkerSpots(h));
   const addressing = (): boolean => !!round && (round.phase === 'aim' || round.phase === 'swing' || round.phase === 'flight');
   const behind = (x: number, z: number, yaw: number, d: number): { x: number; z: number } => ({ x: x - Math.sin(yaw) * d, z: z - Math.cos(yaw) * d });
   /** Stand at (x, z) on the surface at ground level plus `rel` metres (a roof for rel > 0), facing yaw. */
@@ -233,9 +237,15 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
   }
   function standAtBall(s: RoundState): void {
     // Beside the ball on its left (left of the aim), facing the aim. A tee on a raised pad (the shed roof) keeps the gnome up there.
-    putPlayer(s.ball.x + Math.cos(s.aimYaw) * 0.6, s.ball.z - Math.sin(s.aimYaw) * 0.6, s.aimYaw, HOLES[s.hole].teeY ?? 0);
+    const spot = nudgeOffMarkers(s.ball.x + Math.cos(s.aimYaw) * 0.6, s.ball.z - Math.sin(s.aimYaw) * 0.6, markerSpots[s.hole] ?? []);
+    putPlayer(spot.x, spot.z, s.aimYaw, HOLES[s.hole].teeY ?? 0);
+  }
+  function endRound(): void {
+    setActivityOn('golf', false);
+    if (deps.player.model) swingPose.clear(deps.player.model);
   }
   function quitRound(): void {
+    if (round) endRound();
     round = null;
     aimHold = 0;
     cardOpen = false;
@@ -255,12 +265,14 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     const b = behind(round.ball.x, round.ball.z, round.aimYaw, 1.5);
     putPlayer(b.x, b.z, round.aimYaw, HOLES[h].teeY ?? 0);
     hud.show(true);
+    setActivityOn('golf', true);
     return null;
   }
   function handleEvents(events: RoundEvent[]): void {
     const s = round;
     if (!s) return;
     for (const e of events) {
+      if (e.kind === 'shot') swingPose.swing();
       if (e.kind === 'shot') playAt(e.club === 'PT' ? 'golf-putt' : 'golf-tock', ballWorld(s));
       else if (e.kind === 'water') playAt('golf-splash-reed', ballWorld(s));
       else if (e.kind === 'holed') {
@@ -346,6 +358,7 @@ export function installGolf(deps: GolfDeps, opts?: GolfOpts): Golf {
     const atBall = addressing() || (s.phase === 'walk' && Math.hypot(p.x - s.ball.x, p.z - s.ball.z) <= ADDRESS_RANGE);
     hud.set(hudView(s, atBall));
     view.update(dt, s);
+    if (p.model) swingPose.apply(p.model, s.phase, s.phase === 'swing' ? Math.min(1, s.swing.marker) : 0, dt);
   }
 
   // ---- Prompts ----

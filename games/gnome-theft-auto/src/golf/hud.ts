@@ -1,6 +1,7 @@
 // Hedgeworth's golf HUD (A4): the hole strip, the swing meter, touch buttons for every golf action, the banner and the
 // scorecard. DOM only, no game logic: the runtime calls set(view) every frame and listens to onAction.
 import { SWING } from '@lawn/golf';
+import { registerActivityPanel, setActivityOn, setTouchActivity } from '../activityMode';
 import type { CardView, GolfHud, HudAction, HudView } from './types';
 
 // Meter layout, in percent of the bar width (the same numbers as Gnome Golf's meter).
@@ -40,6 +41,56 @@ function toParText(n: number): string {
   return n > 0 ? '+' + n : String(n);
 }
 
+/** Short club names for the strip: Pitching Wedge -> PW, 7 Iron -> 7I, 3 Wood -> 3W, 4 Hybrid -> 4H. Others stay whole. */
+export function shortClub(name: string): string {
+  const wedge = /^(Pitching|Sand|Gap|Lob) Wedge$/.exec(name);
+  if (wedge) return wedge[1][0] + 'W';
+  const num = /^(\d+) (Iron|Wood|Hybrid)$/.exec(name);
+  if (num) return num[1] + num[2][0];
+  return name;
+}
+
+// Responsive layout lives in one stylesheet (media queries beat re-measuring on resize). Bottom right is the game's own
+// context button (64 px at right max(24px,9vw), bottom max(24px,7vh)): SWING sits to its left, never on it.
+const CSS = `
+#golf-hud .gh-left{position:absolute;left:calc(env(safe-area-inset-left) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);display:flex;gap:8px;pointer-events:none;}
+#golf-hud .gh-swing{position:absolute;right:calc(env(safe-area-inset-right) + max(24px,9vw) + 76px);bottom:calc(env(safe-area-inset-bottom) + max(24px,7vh));}
+#golf-hud .gh-meter{position:absolute;left:50%;right:auto;transform:translateX(-50%);width:min(78vw,360px);bottom:calc(env(safe-area-inset-bottom) + max(24px,7vh) + 110px);}
+#golf-hud .gh-banner{position:absolute;left:50%;transform:translateX(-50%);top:36vh;}
+#golf-hud .gh-strip{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;}
+#golf-hud .gh-info{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;}
+#golf-hud .gh-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#golf-hud .gh-sw{display:none;}
+#golf-hud .gh-sw + span::before{content:' · ';}
+#golf-hud .gh-acts{flex:0 0 auto;display:flex;gap:8px;}
+#golf-hud .gh-acts button{min-width:48px;padding:0 8px;font-size:14px;}
+@media (orientation:landscape){
+  #golf-hud .gh-meter{left:auto;transform:none;right:calc(env(safe-area-inset-right) + max(24px,9vw) + 76px);width:min(40vw,320px);}
+}
+@media (min-width:601px){
+  #golf-hud .gh-strip{min-width:min(480px,calc(100vw - 440px));}
+  #golf-hud .gh-sw{display:inline;}
+  #golf-hud .gh-sw + span::before{content:' ';}
+}
+@media (max-height:500px){
+  #golf-hud .gh-l{font-size:12px!important;}
+}
+@media (max-width:600px){
+  #golf-hud .gh-left{flex-wrap:wrap;width:152px;}
+  #golf-hud .gh-sq{width:72px;min-width:72px;padding:0!important;white-space:nowrap;font-size:14px!important;}
+  #golf-hud .gh-l{font-size:12px!important;}
+  #golf-hud .gh-banner{font-size:22px!important;}
+}
+`;
+let cssDone = false;
+function ensureCss(): void {
+  if (cssDone || typeof document === 'undefined') return;
+  cssDone = true;
+  const st = document.createElement('style');
+  st.textContent = CSS;
+  document.head?.appendChild(st);
+}
+
 function xOf(marker: number): number {
   let x: number;
   if (marker <= 1) x = LINE + Math.max(-0.3, marker) * (FULL - LINE);
@@ -61,36 +112,52 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
   box.addEventListener('mousedown', stop);
   box.addEventListener('touchstart', stop);
 
-  // Hole strip, top centre below the safe area and the top button row.
-  const strip = div(
-    ABS + 'left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 56px);max-width:92vw;box-sizing:border-box;'
-      + 'padding:6px 12px;text-align:center;pointer-events:none;white-space:nowrap;' + PANEL,
-  );
-  const stripHole = div('font-weight:700;font-size:15px;');
-  const stripStroke = div('font-size:13px;');
-  const stripShot = div('font-size:13px;');
-  const stripWind = div('display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;');
-  const windArrow = div('display:inline-block;font-size:12px;line-height:1;');
+  // Hole strip: a panel in the shared activity slot (top centre, full width under the top button row on a phone), two
+  // lines of text and Card / Quit on its right. The slot places it; this only styles it.
+  ensureCss();
+  const strip = div('pointer-events:none;' + PANEL);
+  strip.className = 'gh-strip';
+  const stripInfo = div('');
+  stripInfo.className = 'gh-info';
+  const stripHole = div('font-weight:700;font-size:14px;');
+  stripHole.className = 'gh-l';
+  const holeText = document.createElement('span');
+  const strokeWord = document.createElement('span');
+  strokeWord.className = 'gh-sw';
+  const strokeText = document.createElement('span');
+  stripHole.appendChild(holeText);
+  stripHole.appendChild(strokeWord);
+  stripHole.appendChild(strokeText);
+  const stripShot = div('display:flex;align-items:center;gap:6px;font-size:13px;');
+  stripShot.className = 'gh-l';
+  const shotText = document.createElement('span');
+  const windArrow = document.createElement('span');
+  windArrow.style.cssText = 'display:inline-block;font-size:11px;line-height:1;';
   windArrow.textContent = '▲';
-  const windText = div('');
-  stripWind.appendChild(windArrow);
-  stripWind.appendChild(windText);
-  strip.appendChild(stripHole);
-  strip.appendChild(stripStroke);
-  strip.appendChild(stripShot);
-  strip.appendChild(stripWind);
+  const windText = document.createElement('span');
+  stripShot.appendChild(shotText);
+  stripShot.appendChild(windArrow);
+  stripShot.appendChild(windText);
+  stripInfo.appendChild(stripHole);
+  stripInfo.appendChild(stripShot);
+  strip.appendChild(stripInfo);
+  const stripActs = div('');
+  stripActs.className = 'gh-acts';
+  strip.appendChild(stripActs);
+  const unregisterStrip = registerActivityPanel(strip);
 
-  // Banner, below the strip (upper third), fades when there is none.
+  // Banner, mid-screen (the strip and the toasts own the top), fades when there is none.
   const banner = div(
-    ABS + 'left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 180px);max-width:90vw;box-sizing:border-box;'
-      + 'padding:6px 14px;text-align:center;font:800 26px/1.15 system-ui,sans-serif;color:#fff8d6;' + SHADOW
-      + 'opacity:0;transition:opacity 0.3s;pointer-events:none;',
+    'box-sizing:border-box;max-width:90vw;padding:6px 14px;text-align:center;font:800 26px/1.15 system-ui,sans-serif;color:#fff8d6;'
+      + SHADOW + 'opacity:0;transition:opacity 0.3s;pointer-events:none;',
   );
+  banner.className = 'gh-banner';
 
-  // Swing meter. Portrait: above the buttons, centred. Landscape: above the SWING button's left edge.
+  // Swing meter. Portrait: above the buttons, centred. Landscape: above the SWING button.
   const meter = div(
-    ABS + 'display:none;flex-direction:column;align-items:stretch;gap:4px;box-sizing:border-box;pointer-events:none;' + FONT,
+    'display:none;flex-direction:column;align-items:stretch;gap:4px;box-sizing:border-box;pointer-events:none;' + FONT,
   );
+  meter.className = 'gh-meter';
   const meterHint = div('height:18px;text-align:center;font-size:13px;' + SHADOW + 'color:#f3e9d2;white-space:nowrap;');
   const bar = div('position:relative;height:26px;border-radius:13px;overflow:hidden;background:' + BAR_BG
     + ';box-shadow:0 0 0 2px rgba(0,0,0,0.35);');
@@ -114,28 +181,24 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
     b.setAttribute?.('aria-label', label2);
     return b;
   };
-  const SAFE_B = 'bottom:calc(env(safe-area-inset-bottom) + 16px);';
-  const SAFE_L = 'left:calc(env(safe-area-inset-left) + 16px);';
-  const SAFE_R = 'right:calc(env(safe-area-inset-right) + 16px);';
-
-  const swingBtn = button('SWING', ABS + SAFE_R + SAFE_B
-    + 'width:96px;height:96px;min-width:96px;min-height:96px;border-radius:50%;font-size:17px;'
+  const swingBtn = button('SWING', 'width:96px;height:96px;min-width:96px;min-height:96px;border-radius:50%;font-size:17px;'
     + 'background:radial-gradient(circle at 35% 30%, #ffe27a, #e0a526);color:#2a1c00;border:3px solid rgba(255,255,255,0.85);', 'Swing');
-  const aimLeft = button('◀ Aim', ABS + SAFE_L + SAFE_B, 'Aim left');
-  const aimRight = button('Aim ▶', ABS + SAFE_L + SAFE_B, 'Aim right');
-  const clubPrev = button('Club −', ABS + SAFE_L + SAFE_B, 'Previous club');
-  const clubNext = button('Club +', ABS + SAFE_L + SAFE_B, 'Next club');
-  const toBallBtn = button('To my ball', ABS + SAFE_L + SAFE_B, 'Walk to my ball');
-  const nextHoleBtn = button('Next hole', ABS + SAFE_L + SAFE_B, 'Next hole');
-  const cardBtn = button('Card', ABS + 'top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 60px);', 'Scorecard');
-  const quitBtn = button('Quit', ABS + 'top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 8px);', 'Quit golf');
-  const leftRow = [aimLeft, aimRight, clubPrev, clubNext, toBallBtn, nextHoleBtn];
-  // The buttons shown this phase sit side by side from the left edge.
-  const placeRow = (shown: HTMLButtonElement[]): void => {
-    shown.forEach((b, i) => {
-      b.style.left = `calc(env(safe-area-inset-left) + ${16 + i * 62}px)`;
-    });
-  };
+  swingBtn.className = 'gh-swing';
+  const aimLeft = button('◀ Aim', '', 'Aim left');
+  const aimRight = button('Aim ▶', '', 'Aim right');
+  const clubPrev = button('Club −', '', 'Previous club');
+  const clubNext = button('Club +', '', 'Next club');
+  for (const b of [aimLeft, aimRight, clubPrev, clubNext]) b.className = 'gh-sq';
+  const toBallBtn = button('To my ball', '', 'Walk to my ball');
+  const nextHoleBtn = button('Next hole', '', 'Next hole');
+  const cardBtn = button('Card', '', 'Scorecard');
+  const quitBtn = button('Quit', '', 'Quit golf');
+  // The buttons shown this phase sit side by side from the left edge (a 2x2 block on a phone).
+  const leftRow = div('');
+  leftRow.className = 'gh-left';
+  for (const b of [aimLeft, aimRight, clubPrev, clubNext, toBallBtn, nextHoleBtn]) leftRow.appendChild(b);
+  stripActs.appendChild(cardBtn);
+  stripActs.appendChild(quitBtn);
 
   swingBtn.addEventListener('pointerdown', (e) => { swallow(e); emit('swing'); });
   for (const [b, a] of [[aimLeft, 'aim-left'], [aimRight, 'aim-right']] as const) {
@@ -163,70 +226,25 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
   box.appendChild(banner);
   box.appendChild(meter);
   box.appendChild(swingBtn);
-  for (const b of leftRow) box.appendChild(b);
-  box.appendChild(cardBtn);
-  box.appendChild(quitBtn);
+  box.appendChild(leftRow);
   box.appendChild(cardPanel);
   ui.appendChild(box);
-
-  // Landscape puts the meter beside the SWING button, portrait above the buttons.
-  const isLandscape = (): boolean => {
-    try { return typeof matchMedia === 'function' && matchMedia('(orientation: landscape)').matches; } catch { return false; }
-  };
-  const placeMeter = (): void => {
-    const s = meter.style;
-    if (isLandscape()) {
-      s.left = 'auto';
-      s.right = 'calc(env(safe-area-inset-right) + 128px)';
-      s.transform = 'none';
-      s.bottom = 'calc(env(safe-area-inset-bottom) + 126px)';
-      s.width = 'min(40vw, 320px)';
-    } else {
-      s.left = '50%';
-      s.right = 'auto';
-      s.transform = 'translateX(-50%)';
-      s.bottom = 'calc(env(safe-area-inset-bottom) + 130px)';
-      s.width = 'min(78vw, 360px)';
-    }
-  };
-  // A narrow (phone portrait) screen: the game's own top HUD (money, minimap, Gnomlet buttons) fills the top 250 px,
-  // so the hole strip and Card / Quit move down below it.
-  const placeTop = (): void => {
-    let narrow = false;
-    try { narrow = typeof innerWidth === 'number' && innerWidth < 600 && !isLandscape(); } catch { /* no window */ }
-    strip.style.top = narrow ? 'calc(env(safe-area-inset-top) + 250px)' : 'calc(env(safe-area-inset-top) + 56px)';
-    // Phone portrait: anchored right so it clears the birding row (life-list pill, binoculars) at the left.
-    if (narrow) {
-      strip.style.left = 'auto';
-      strip.style.right = 'calc(env(safe-area-inset-right) + 8px)';
-      strip.style.transform = 'none';
-      strip.style.maxWidth = 'calc(100vw - 160px)';
-    } else {
-      strip.style.left = '50%';
-      strip.style.right = 'auto';
-      strip.style.transform = 'translateX(-50%)';
-      strip.style.maxWidth = '92vw';
-    }
-    const btnTop = narrow ? 'calc(env(safe-area-inset-top) + 352px)' : 'calc(env(safe-area-inset-top) + 8px)';
-    cardBtn.style.top = btnTop;
-    quitBtn.style.top = btnTop;
-    banner.style.top = narrow ? 'calc(env(safe-area-inset-top) + 420px)' : 'calc(env(safe-area-inset-top) + 180px)';
-  };
-  const onResize = (): void => { placeMeter(); placeTop(); };
-  placeTop();
-  try { window.addEventListener('resize', onResize); } catch { /* no window: no relayout */ }
-  placeMeter();
 
   return {
     show(on: boolean): void {
       box.style.display = on ? 'block' : 'none';
+      // Activity mode: the gun is holstered and the touch cluster keeps only its context button (Swing / Use near the ball).
+      setActivityOn('golf', on);
+      setTouchActivity('golf', on ? { stick: true, buttons: ['enter'] } : null);
     },
 
     set(view: HudView): void {
-      // Hole strip.
-      stripHole.textContent = `Hole ${view.holeNumber} · ${view.holeName} · Par ${view.par}`;
-      stripStroke.textContent = `Stroke ${view.strokes} · ${toParText(view.toPar)}`;
-      stripShot.textContent = `${view.clubName} ${Math.round(view.clubYards)} yd · ${view.lieName} · ${Math.round(view.pinYards)} yd to pin`;
+      // Hole strip: line 1 the hole and the score, line 2 the club, the distance and the wind.
+      holeText.textContent = `Hole ${view.holeNumber} · ${view.holeName} · Par ${view.par}`;
+      strokeWord.textContent = ' Stroke';
+      strokeText.textContent = `${view.strokes} · ${toParText(view.toPar)}`;
+      const lie = view.lieName === 'Fairway' || view.lieName === 'Tee' ? '' : ` · ${view.lieName}`;
+      shotText.textContent = `${shortClub(view.clubName)} ${Math.round(view.clubYards)}${lie} · ${Math.round(view.pinYards)} to pin ·`;
       windArrow.style.transform = `rotate(${(view.windRel * 180) / Math.PI}deg)`;
       windText.textContent = `${Math.round(view.windMph)} mph`;
 
@@ -238,7 +256,6 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
       const aiming = view.phase === 'aim';
       const showMeter = view.meter !== null || aiming;
       meter.style.display = showMeter ? 'flex' : 'none';
-      placeMeter();
       if (showMeter) {
         meterHint.textContent = view.meter ? (view.meter.stage === 'accuracy' ? 'Tap for accuracy' : '') : 'Tap SWING three times: start, power, accuracy';
         const m = view.meter;
@@ -253,12 +270,10 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
       const phase = view.phase;
       const swinging = phase === 'aim' || phase === 'swing';
       swingBtn.style.display = swinging ? 'flex' : 'none';
-      const aimRow: HTMLButtonElement[] = phase === 'aim' ? [aimLeft, aimRight, clubPrev, clubNext] : [];
-      for (const b of [aimLeft, aimRight, clubPrev, clubNext]) b.style.display = aimRow.includes(b) ? 'flex' : 'none';
+      for (const b of [aimLeft, aimRight, clubPrev, clubNext]) b.style.display = phase === 'aim' ? 'flex' : 'none';
       const toBall = phase === 'walk' && !view.atBall;
       toBallBtn.style.display = toBall ? 'flex' : 'none';
       nextHoleBtn.style.display = phase === 'holed' ? 'flex' : 'none';
-      placeRow(phase === 'aim' ? aimRow : toBall ? [toBallBtn] : phase === 'holed' ? [nextHoleBtn] : []);
     },
 
     card(view: CardView | null): void {
@@ -327,7 +342,9 @@ export function createGolfHud(ui: HTMLElement): GolfHud {
     },
 
     destroy(): void {
-      try { window.removeEventListener('resize', onResize); } catch { /* none */ }
+      unregisterStrip();
+      setActivityOn('golf', false);
+      setTouchActivity('golf', null);
       listeners.length = 0;
       box.remove?.();
     },

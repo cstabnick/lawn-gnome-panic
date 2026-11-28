@@ -74,6 +74,11 @@ vi.mock('../ui/inputSource', () => ({
   onInputSourceChange: () => () => {},
 }));
 vi.mock('@lawn/gamepad', () => ({ firstPad: () => null }));
+vi.mock('../activityMode', () => ({
+  registerActivityPanel: () => () => {},
+  setActivityOn: () => {},
+  quietRegionBanner: () => {},
+}));
 vi.mock('../jobs/defs', () => ({ JOB_PAD_BUTTON: 11 }));
 
 function findAll(node: FakeEl, pred: (n: FakeEl) => boolean): FakeEl[] {
@@ -138,6 +143,20 @@ describe('createShiftHud', () => {
     expect(root.style.display).toBe('none');
     hud.dispose();
     expect(findAll(ui, (n) => n.id === 'gta-shift-hud')).toHaveLength(0);
+  });
+
+  it('renders the note line when given, and hides it again', async () => {
+    const { createShiftHud } = await import('./shiftHud');
+    const ui = new FakeEl('div');
+    const hud = createShiftHud(ui as unknown as HTMLElement);
+    const root = findAll(ui, (n) => n.id === 'gta-shift-hud')[0];
+    const noteEl = () => findAll(root, (n) => n.className === 'gta-sh-note')[0];
+    hud.set({ ...view(), note: 'Hurry, it is the awning!' });
+    expect(noteEl().style.display).toBe('');
+    expect(noteEl().textContent).toContain('Hurry, it is the awning!');
+    hud.set({ ...view(), note: null });
+    expect(noteEl().style.display).toBe('none');
+    hud.dispose();
   });
 
   it('fires onAction from the I key only while the action button shows', async () => {

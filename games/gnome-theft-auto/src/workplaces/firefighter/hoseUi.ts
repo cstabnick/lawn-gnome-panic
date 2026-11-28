@@ -2,6 +2,8 @@
 // button (rescue calls), the tank gauge and "Back to the cab". Keys and pad too.
 import { firstPad } from '@lawn/gamepad';
 import { KEYS, isTyping } from '../../keys';
+import { ensureGlyphStyle } from '../../ui/glyphs';
+import { currentGlyphSet, onInputSourceChange, type GlyphSet } from '../../ui/inputSource';
 
 export interface HoseInput {
   /** Aim rates -1..1 (x: turn right +, y: raise +). */
@@ -36,6 +38,11 @@ const CSS = `
 #gta-hose-ui .hz-btn{position:absolute;border-radius:50%;border:3px solid #fff;color:#fff;font:700 13px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;padding:0}
 #gta-hose-ui .hz-spray{right:calc(env(safe-area-inset-right,0px) + 16px);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:96px;height:96px;background:rgba(40,130,220,.7);font-size:40px}
 #gta-hose-ui .hz-ladder{right:calc(env(safe-area-inset-right,0px) + 28px);bottom:calc(env(safe-area-inset-bottom,0px) + 124px);width:64px;height:64px;background:rgba(220,150,40,.75)}
+#gta-hose-ui .hz-btn{flex-direction:column;gap:2px}
+#gta-hose-ui .hz-chip{display:none;font-size:11px}
+#gta-hose-ui.hz-keys .hz-chip{display:inline-block}
+#gta-hose-ui.hz-keys .hz-pad{display:none}
+#gta-hose-ui .hz-first{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 130px);max-width:calc(100% - 32px);white-space:nowrap;text-shadow:0 1px 2px #000;background:rgba(0,0,0,.5);padding:6px 12px;border-radius:14px}
 #gta-hose-ui .hz-btn.on{filter:brightness(1.4);transform:scale(.95)}
 #gta-hose-ui .hz-gauge{position:absolute;width:18px;height:120px;border:2px solid #fff;border-radius:6px;background:rgba(0,0,0,.5);overflow:hidden}
 #gta-hose-ui .hz-fill{position:absolute;left:0;right:0;bottom:0;background:#4aa8ff}
@@ -48,6 +55,10 @@ const CSS = `
 #gta-hose-ui .hz-hint:empty{display:none}
 #gta-hose-ui .hz-back{position:absolute;right:calc(env(safe-area-inset-right,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 8px);min-width:44px;min-height:44px;padding:0 12px;border-radius:22px;border:2px solid #fff;background:rgba(20,30,40,.7);color:#fff;font:700 13px system-ui,sans-serif;pointer-events:auto;touch-action:manipulation}
 `;
+
+/** The "WASD aim, Space spray, L ladder" line shows the first time the hose opens in a session. */
+let firstHintShown = false;
+const FIRST_HINT_MS = 5000;
 
 const PAD_R = 75;
 const KNOB_R = 28;
@@ -69,14 +80,16 @@ export function openHoseUi(ui: HTMLElement): HoseUi {
   root.setAttribute('data-gnl-touch', 'none');
   root.innerHTML =
     '<div class="hz-pad"><div class="hz-knob"></div></div>' +
-    '<button type="button" class="hz-btn hz-spray" aria-label="Spray">\u{1F4A7}</button>' +
-    '<button type="button" class="hz-btn hz-ladder" aria-label="Ladder" style="display:none">Ladder</button>' +
+    '<button type="button" class="hz-btn hz-spray" aria-label="Spray">\u{1F4A7}<span class="gta-key hz-chip" data-chip="spray"></span></button>' +
+    '<button type="button" class="hz-btn hz-ladder" aria-label="Ladder" style="display:none">Ladder<span class="gta-key hz-chip" data-chip="ladder"></span></button>' +
     '<div class="hz-tanklbl">Tank</div>' +
     '<div class="hz-gauge hz-tank"><div class="hz-fill"></div></div>' +
     '<div class="hz-gauge hz-lgauge" style="display:none"><div class="hz-band"></div><div class="hz-fill hz-lfill" style="background:#ffd24a;opacity:.85"></div></div>' +
     '<div class="hz-hint"></div>' +
+    '<div class="hz-first" style="display:none"></div>' +
     '<button type="button" class="hz-back">Back to the cab</button>';
   ui.appendChild(root);
+  ensureGlyphStyle();
   const q = (sel: string): HTMLElement => root.querySelector(sel) as HTMLElement;
   const pad = q('.hz-pad');
   const knob = q('.hz-knob');
@@ -89,6 +102,7 @@ export function openHoseUi(ui: HTMLElement): HoseUi {
   const lFill = q('.hz-lfill');
   const hint = q('.hz-hint');
   const backBtn = q('.hz-back');
+  const firstEl = q('.hz-first');
 
   let open = true;
   let touchX = 0;
@@ -101,6 +115,24 @@ export function openHoseUi(ui: HTMLElement): HoseUi {
   let padB = false;
   const keys = new Set<string>();
   const cleanups: Array<() => void> = [];
+  let hintTimer = 0;
+
+  // Keyboard / pad players get key chips on the buttons and no on-screen stick.
+  const applySet = (set: GlyphSet): void => {
+    const touch = set === 'touch';
+    root.classList.toggle('hz-keys', !touch);
+    const gp = set !== 'keyboard' && !touch;
+    q('[data-chip="spray"]').textContent = gp ? 'A' : 'Space';
+    q('[data-chip="ladder"]').textContent = gp ? 'X' : 'L';
+    firstEl.textContent = gp ? 'Stick aim · A spray · X ladder' : 'WASD aim · Space spray · L ladder';
+  };
+  applySet(currentGlyphSet());
+  if (!firstHintShown) {
+    firstHintShown = true;
+    firstEl.style.display = 'block';
+    hintTimer = window.setTimeout(() => { firstEl.style.display = 'none'; }, FIRST_HINT_MS);
+  }
+  cleanups.push(onInputSourceChange(applySet), () => window.clearTimeout(hintTimer));
   const on = (t: EventTarget, type: string, fn: (e: never) => void): void => {
     t.addEventListener(type, fn as unknown as EventListener);
     cleanups.push(() => t.removeEventListener(type, fn as unknown as EventListener));
@@ -157,6 +189,7 @@ export function openHoseUi(ui: HTMLElement): HoseUi {
   on(window, 'keydown', (e: KeyboardEvent) => {
     if (isTyping(e)) return;
     if (e.code === KEYS.close) { leave = true; return; }
+    if (e.code === 'Space') e.preventDefault(); // no page scroll / focused-button click while spraying
     keys.add(e.code);
   });
   on(window, 'keyup', (e: KeyboardEvent) => { keys.delete(e.code); });

@@ -35,8 +35,11 @@ const OLLIE = { moveX: 0, moveY: 1, jump: true } as InputState;
 describe('skate runtime', () => {
   beforeAll(() => {
     installFakeDom();
+    (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame = () => 0;
     // The HUD needs plain elements: a tiny stand-in for div and button, canvases stay with the fake DOM.
-    const doc = globalThis.document as unknown as { createElement(tag: string): unknown };
+    const doc = globalThis.document as unknown as { createElement(tag: string): unknown; body?: unknown };
+    (doc as { head?: unknown }).head ??= { appendChild() {} };
+    doc.body ??= { dataset: {}, style: { setProperty() {}, removeProperty() {} } };
     const make = doc.createElement.bind(doc);
     doc.createElement = (tag: string) => {
       if (tag !== 'div' && tag !== 'button') return make(tag);
@@ -44,6 +47,7 @@ describe('skate runtime', () => {
       el.appendChild = (c: unknown) => c;
       el.addEventListener = () => {};
       el.remove = () => {};
+      el.classList = { add() {}, remove() {} };
       return el;
     };
   });

@@ -172,6 +172,7 @@ import { bindSkyTraffic } from './skyTraffic/api';
 import { createPhone } from './phone/phone';
 import { installJobs } from './jobs/runtime';
 import { installWorkplaces, type Workplaces } from './workplaces';
+import { activityHidesGun, setActivityOn, setInteriorSource } from './activityMode';
 import { isClientVehicle } from './glazeClient';
 import { registerJobsTrainer } from './jobs/trainer';
 import { installTubing } from './tubing/runtime';
@@ -2249,12 +2250,18 @@ function frame(now: number): void {
   // The gun pose (gunHold.ts): lowered at the ready on foot, along the camera's aim while aiming or firing.
   const gunOnFoot = !v && !mount && !player.swimming && deathT <= 0;
   const aimPitch = Math.asin(THREE.MathUtils.clamp(aim.y, -1, 1));
-  const gunRaised = aimT > 0.05 || !!inp.fire;
+  // D30 (activityMode.ts): golf, a stage, the court, a shift or a peaceful interior put the gun away and hold fire.
+  setInteriorSource(currentInterior);
+  setActivityOn('workplace', !!workplaces?.isOpen());
+  if (workplaces?.isOpen()) document.body.dataset.workpanel = '1'; else delete document.body.dataset.workpanel;
+  const holstered = activityHidesGun();
+  input.setHolstered(holstered);
+  const gunRaised = !holstered && (aimT > 0.05 || !!inp.fire);
   // An emote (src/anim/) owns the arms while it plays: the gun is put away, and raising it, a jump or a vehicle ends the emote.
   const emoteBlocked = !gunOnFoot || player.airborne || player.ragdolling || !player.grounded || gunRaised;
   const emoting = emote.active && !emoteBlocked;
   // Fishing (fishing/) owns the arms and holds the rod while the rod is out: the gun is put away like for an emote.
-  if (gunOnFoot && !emoting && !fishing.active()) weapons.poseArms(player.model, gunRaised, aimPitch);
+  if (gunOnFoot && !emoting && !fishing.active() && !holstered) weapons.poseArms(player.model, gunRaised, aimPitch);
   else weapons.relaxArms(player.model);
   emote.update(player.model, dt, { moving: Math.hypot(inp.moveX, inp.moveY) > 0.1 || !!inp.jump, blocked: emoteBlocked });
   if (fishing.active() && emote.active) emote.stop();
@@ -2265,7 +2272,7 @@ function frame(now: number): void {
   const fidget = idleFidget.update(dt, still, world.biomeAt(player.x, player.z), animNight);
   if (fidget) emote.playQuiet(fidget);
   fishing.pose(player.model, dt);
-  const hideGun = emote.active || fishing.active();
+  const hideGun = emote.active || fishing.active() || holstered;
   if (hideGun !== emoteHidGun) {
     emoteHidGun = hideGun;
     if (emoteHidGun || gunOnFoot || player.vehicle) weapons.setVisible(!emoteHidGun);
@@ -2278,12 +2285,12 @@ function frame(now: number): void {
   const ammoBefore = weapons.ammo;
   // Aim down sights on foot only: the camera pulls in, the spread tightens, scopes zoom further (gunMods.ts AIM).
   const canAim = !v && !player.airborne && !player.ragdolling && !player.swimming && deathT <= 0 && !mount && !garages.isOpen() && !gunStore.isOpen() && !modKit.isOpen();
-  aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim, dt);
+  aimT = stepAim(aimT, (!!inp.aim || aimHold) && canAim && !holstered, dt);
   const gunSpec = weapons.spec();
   weapons.setAim(aimT);
   chase.setAim(aimT, aimZoom(gunSpec, 1));
   aimHud.update(aimT, aimZoom(gunSpec, 1), !!gunSpec.loadout.optic);
-  const canFire = firing && !player.airborne && !player.ragdolling && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
+  const canFire = firing && !holstered && !player.airborne && !player.ragdolling && !player.swimming && v?.kind !== 'boot-float' && v?.kind !== 'mulch-spreader';
   weapons.update(dt, canFire, muzzle, camera.position, aim, hitTest, world, {
     npcs, vehicles, traffic, watch, onBlowUp: blowUp, onToast: (t) => hud.toast(t), onPlay: play,
   });

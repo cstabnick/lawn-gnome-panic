@@ -3,6 +3,7 @@
 // Walk off. The booker's verdict and the pay come through finishShift.
 import * as THREE from 'three';
 import { buildPrefab, getPrefab } from '@lawn/prefabs';
+import { setActivityOn } from '../../activityMode';
 import { currentInterior, interiorToWorld } from '../../interiors';
 import { TOMATO_HAZARD_PAY, WORK_ACHIEVEMENTS, WORK_JOBS } from '../../jobs/workDefs';
 import { play2d } from '../../sound/bus';
@@ -156,6 +157,8 @@ export function installComedy(deps: WorkDeps): WorkJobRuntime {
 
   return {
     update(dt: number): void {
+      // D30: no pistol on stage (activityMode.ts holsters while a set runs).
+      setActivityOn('comedy', show !== null);
       if (!built) { built = true; buildClubStreet(deps.scene, deps.world); }
       if (dev && !devFired) {
         inClub = currentInterior() === COMEDY_CLUB_ID ? inClub + dt : 0;

@@ -4,6 +4,9 @@
 import type { ComboView } from '@lawn/trickboard';
 import type { InputState } from '../types';
 import type { SkateInput } from './types';
+import { registerActivityPanel, setActivityOn, setTouchActivity } from '../activityMode';
+import { currentGlyphSet, onInputSourceChange, type GlyphSet } from '../ui/inputSource';
+import { glyphText } from '../ui/glyphs';
 
 /** Touch buttons for the board. The pressed flags are edges: touch() clears them. */
 export interface SkateTouch { olliePressed: boolean; flipPressed: boolean; grabHeld: boolean }
@@ -34,6 +37,8 @@ const LINK_FULL_S = 1.4;
 /** The big landed / bailed word: fully shown for BANK_HOLD_S seconds, then fades over BANK_FADE_S. */
 const BANK_HOLD_S = 1.1;
 const BANK_FADE_S = 0.4;
+/** The speed pill hides below this many km/h (about 1 m/s). */
+const MIN_SHOWN_KMH = 4;
 /** Trick names kept in the combo panel. */
 const LINES_SHOWN = 4;
 
@@ -72,12 +77,12 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
   box.addEventListener('mousedown', stop);
   box.addEventListener('touchstart', stop);
 
-  // Info and line strips, top-left under the game's top HUD.
-  // Top centre, under the game's toast line (the game's stats panel owns the top-left corner).
-  const info = div(ABS + 'left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 76px);'
+  // The speed / combo pill lives in the shared activity slot (activityMode places it); the line strip sits under it.
+  const info = div('box-sizing:border-box;padding:5px 12px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap;'
+    + 'pointer-events:none;display:none;' + PANEL);
+  const line = div(ABS + 'left:50%;transform:translateX(-50%);top:calc(var(--gta-act-bottom, 0px) + 44px);'
     + 'padding:4px 10px;font-size:13px;white-space:nowrap;pointer-events:none;display:none;' + PANEL);
-  const line = div(ABS + 'left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 108px);'
-    + 'padding:4px 10px;font-size:13px;white-space:nowrap;pointer-events:none;display:none;' + PANEL);
+  const unregisterInfo = registerActivityPanel(info);
 
   // Combo panel, lower middle: trick names, points x multiplier, the link bar.
   const combo = div(ABS + 'left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 200px);'
@@ -98,26 +103,65 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
     + 'font:900 44px/1.1 system-ui,sans-serif;text-shadow:0 2px 0 #000,0 4px 8px rgba(0,0,0,0.5);');
 
   // Touch buttons, right side above the game's own driving buttons.
-  const pad = div(ABS + 'right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 170px);'
+  // Clear of the cluster's Exit button (bottom-right, 64 px at right max(24px,9vw), bottom max(24px,7vh)): the pad sits above it.
+  const pad = div(ABS + 'right:calc(env(safe-area-inset-right) + max(14px,calc(9vw - 4px)));'
+    + 'bottom:calc(env(safe-area-inset-bottom) + max(24px,7vh) + 64px + 14px);'
     + 'display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none;' + FONT);
-  const hint = div('max-width:min(86vw,340px);font-size:11px;line-height:1.3;text-align:right;color:#f3e9d2;' + SHADOW,
-    'Ollie: Space - Flip: F/click + direction - Grab: right click + direction - Off: E');
+  // Key hint chips (keyboard and pad players only), bottom centre, clear of the minimap column and the weapon label.
+  const hint = div(ABS + 'left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 96px);'
+    + 'max-width:min(60vw,560px);display:none;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 10px;'
+    + 'pointer-events:none;font-size:11px;font-weight:700;letter-spacing:0.04em;color:#f3e9d2;' + SHADOW);
   const row = div('display:flex;align-items:flex-end;gap:8px;');
-  const button = (label: string, aria: string, css: string): HTMLButtonElement => {
+  // Each button keeps its word; keyboard and pad players also see the key under it (touch players do not).
+  const subs: Array<{ el: HTMLElement; text: (set: GlyphSet) => string }> = [];
+  const button = (label: string, aria: string, css: string, sub: (set: GlyphSet) => string): HTMLButtonElement => {
     const b = document.createElement('button');
-    b.style.cssText = BTN + css;
+    b.style.cssText = BTN + 'flex-direction:column;gap:2px;' + css;
     b.textContent = label;
     b.setAttribute?.('aria-label', aria);
+    const s = div('font-size:9px;font-weight:600;opacity:0.85;line-height:1;display:none;');
+    b.appendChild(s);
+    subs.push({ el: s, text: sub });
     return b;
   };
-  const flipBtn = button('FLIP', 'Flip', 'width:56px;height:56px;');
-  const grabBtn = button('GRAB', 'Grab (hold)', 'width:56px;height:56px;');
+  const flipBtn = button('FLIP', 'Flip', 'width:56px;height:56px;', (set) => (set === 'keyboard' ? 'F / click' : glyphText('fire', set)));
+  const grabBtn = button('GRAB', 'Grab (hold)', 'width:56px;height:56px;', (set) => (set === 'keyboard' ? 'R-click' : glyphText('aim', set)));
   const ollieBtn = button('OLLIE', 'Ollie', 'width:72px;height:72px;font-size:15px;'
-    + 'background:radial-gradient(circle at 35% 30%, #ffe27a, #e0a526);color:#2a1c00;');
+    + 'background:radial-gradient(circle at 35% 30%, #ffe27a, #e0a526);color:#2a1c00;', (set) => glyphText('jump', set));
+
+  const chip = (key: string): HTMLElement => div('display:inline-block;min-width:16px;box-sizing:border-box;padding:2px 6px;text-align:center;'
+    + 'border-radius:5px;border:1px solid rgba(255,255,255,0.55);border-bottom-width:2px;background:rgba(10,30,20,0.72);'
+    + 'color:#fff8d6;font-size:11px;font-weight:800;line-height:1.2;', key);
+  const hintItem = (word: string, key: string): HTMLElement => {
+    const it = div('display:flex;align-items:center;gap:5px;white-space:nowrap;');
+    it.appendChild(div('', word));
+    it.appendChild(chip(key));
+    return it;
+  };
+  const syncSource = (set: GlyphSet): void => {
+    const touch = set === 'touch';
+    for (const s of subs) {
+      const t = touch ? '' : s.text(set);
+      s.el.textContent = t;
+      s.el.style.display = t ? 'block' : 'none';
+    }
+    hint.textContent = '';
+    if (touch) {
+      hint.style.display = 'none';
+      return;
+    }
+    const kb = set === 'keyboard';
+    hint.appendChild(hintItem('OLLIE', glyphText('jump', set)));
+    hint.appendChild(hintItem('FLIP', kb ? 'F / click' : glyphText('fire', set)));
+    hint.appendChild(hintItem('GRAB', kb ? 'right-click' : glyphText('aim', set)));
+    hint.appendChild(hintItem('OFF', glyphText('interact', set)));
+    hint.style.display = 'flex';
+  };
+  syncSource(currentGlyphSet());
+  const offSource = onInputSourceChange(syncSource);
   row.appendChild(flipBtn);
   row.appendChild(grabBtn);
   row.appendChild(ollieBtn);
-  pad.appendChild(hint);
   pad.appendChild(row);
 
   ollieBtn.addEventListener('pointerdown', (e) => { swallow(e); touchState.olliePressed = true; });
@@ -131,6 +175,7 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
   box.appendChild(line);
   box.appendChild(combo);
   box.appendChild(bank);
+  box.appendChild(hint);
   box.appendChild(pad);
   ui.appendChild(box);
 
@@ -139,6 +184,8 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
   return {
     show(on: boolean): void {
       box.style.display = on ? 'block' : 'none';
+      setActivityOn('skate', on);
+      setTouchActivity('skate', on ? { stick: true, buttons: ['enter'] } : null);
     },
 
     setCombo(v: ComboView, now: number): void {
@@ -177,8 +224,12 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
     },
 
     setInfo(text: string): void {
-      info.textContent = text;
-      info.style.display = text ? 'block' : 'none';
+      // Hide the standing-still zero state; drop "best combo 0" (the pill then shows the speed alone).
+      const m = /^(\d+)\s*km\/h/.exec(text);
+      const still = m !== null && Number(m[1]) < MIN_SHOWN_KMH;
+      const shown = text.replace(/\s+best combo 0\s*$/, '');
+      info.textContent = shown;
+      info.style.display = shown && !still ? 'block' : 'none';
     },
 
     touch(): SkateTouch {
@@ -189,6 +240,10 @@ export function createSkateHud(ui: HTMLElement): SkateHud {
     },
 
     dispose(): void {
+      setActivityOn('skate', false);
+      setTouchActivity('skate', null);
+      offSource();
+      unregisterInfo();
       box.remove?.();
     },
   };

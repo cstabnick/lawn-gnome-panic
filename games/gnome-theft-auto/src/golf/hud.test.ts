@@ -1,6 +1,7 @@
 // Hedgeworth's golf HUD (A4). Node has no DOM, so this file brings a tiny element stand-in (as winterApp.test.ts does).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createGolfHud } from './hud';
+import { createGolfHud, shortClub } from './hud';
+import { activityHidesGun, currentTouchActivity, resetActivityMode } from '../activityMode';
 import type { CardView, HudAction, HudView } from './types';
 
 class FakeEl {
@@ -9,6 +10,9 @@ class FakeEl {
   style: Record<string, string> = {};
   colSpan = 1;
   id = '';
+  className = '';
+  classList = { add: (c: string): void => { this.className += ' ' + c; }, remove: (): void => {} };
+  isConnected = true;
   private _text = '';
   private listeners: Record<string, Array<(e: unknown) => void>> = {};
   constructor(readonly tagName: string) {
@@ -63,7 +67,8 @@ let savedDoc: unknown;
 
 beforeAll(() => {
   savedDoc = g.document;
-  g.document = { createElement: (tag: string) => new FakeEl(tag) };
+  g.document = { createElement: (tag: string) => new FakeEl(tag), head: new FakeEl('head'), body: { dataset: {} as Record<string, string>, style: { setProperty() {}, removeProperty() {} } } };
+  (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame = () => 0;
 });
 
 afterAll(() => {
@@ -115,8 +120,9 @@ describe('golf HUD', () => {
     hud.set(view());
     const text = box.text();
     expect(text).toContain('Hole 9 · The Ninth · Par 4');
-    expect(text).toContain('Stroke 2 · +1');
-    expect(text).toContain('7 Iron 138 yd · Fairway · 96 yd to pin');
+    expect(text).toContain('Stroke');
+    expect(text).toContain('2 · +1');
+    expect(text).toContain('7I 138 · 96 to pin');
     expect(text).toContain('6 mph');
   });
 
@@ -226,41 +232,32 @@ describe('golf HUD', () => {
     expect(total.text()).toContain('–');
   });
 
-  it('on a narrow portrait phone the hole strip anchors right, clear of the birding row', () => {
-    const g2 = globalThis as { innerWidth?: number; matchMedia?: unknown };
-    const savedW = g2.innerWidth;
-    const savedMM = g2.matchMedia;
-    try {
-      g2.innerWidth = 390;
-      g2.matchMedia = () => ({ matches: false });
-      const { box } = setup();
-      const strip = box.children[0];
-      expect(strip.style.left).toBe('auto');
-      expect(strip.style.right).toContain('8px');
-      expect(strip.style.transform).toBe('none');
-      expect(strip.style.maxWidth).toBe('calc(100vw - 160px)');
-    } finally {
-      g2.innerWidth = savedW;
-      g2.matchMedia = savedMM;
-    }
+  it('the hole strip is an activity-slot panel with Card and Quit inside it', () => {
+    const { box } = setup();
+    const strip = box.children[0];
+    expect(strip.className).toContain('gta-act-slot');
+    expect(strip.all((e) => e.tagName === 'button').map((e) => e.textContent)).toEqual(['Card', 'Quit']);
   });
 
-  it('on a wide screen the hole strip stays centred', () => {
-    const g2 = globalThis as { innerWidth?: number; matchMedia?: unknown };
-    const savedW = g2.innerWidth;
-    const savedMM = g2.matchMedia;
-    try {
-      g2.innerWidth = 1280;
-      g2.matchMedia = () => ({ matches: false });
-      const { box } = setup();
-      const strip = box.children[0];
-      expect(strip.style.left).toBe('50%');
-      expect(strip.style.transform).toBe('translateX(-50%)');
-      expect(strip.style.maxWidth).toBe('92vw');
-    } finally {
-      g2.innerWidth = savedW;
-      g2.matchMedia = savedMM;
-    }
+  it('shortClub abbreviates wedges, irons, woods and hybrids and leaves the rest', () => {
+    expect(shortClub('Pitching Wedge')).toBe('PW');
+    expect(shortClub('Sand Wedge')).toBe('SW');
+    expect(shortClub('7 Iron')).toBe('7I');
+    expect(shortClub('3 Wood')).toBe('3W');
+    expect(shortClub('4 Hybrid')).toBe('4H');
+    expect(shortClub('Driver')).toBe('Driver');
+    expect(shortClub('Putter')).toBe('Putter');
+  });
+
+  it('show(true) switches activity mode on (gun holstered, cluster keeps only the context button), show(false) off', () => {
+    resetActivityMode();
+    const { hud } = setup();
+    hud.show(true);
+    expect(activityHidesGun()).toBe(true);
+    expect(currentTouchActivity()).toEqual({ stick: true, buttons: ['enter'] });
+    hud.show(false);
+    expect(activityHidesGun()).toBe(false);
+    expect(currentTouchActivity()).toBeNull();
   });
 
   it('destroy removes the container and stops actions', () => {

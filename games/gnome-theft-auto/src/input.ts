@@ -1,4 +1,5 @@
 // Keyboard, mouse (pointer lock, right-drag, right-button aim) and touch (stick, camera drag, on-screen buttons, Aim toggle) folded into one InputState per frame.
+import { currentTouchActivity, ensureActivityCss, onTouchActivityChange, setTouchActivity, type ActivityButton, type TouchActivity } from './activityMode';
 import { createGamepad } from './gamepad';
 import { KEYS, MOVE_KEYS } from './keys';
 import { notePad } from './ui/inputSource';
@@ -21,7 +22,8 @@ function ensureTouchStyle(): void {
 #gta-touch .gta-cluster{position:fixed;right:calc(env(safe-area-inset-right) + max(24px, 9vw));bottom:calc(env(safe-area-inset-bottom) + max(24px, 7vh));display:flex;flex-direction:column;align-items:flex-end;}
 @media (max-height:500px){#gta-touch .gta-cluster{flex-direction:row;align-items:flex-end;bottom:calc(env(safe-area-inset-bottom) + max(16px,4vh));} #gta-touch .gta-cluster > div{flex-direction:row;}}
 body[data-touch-layout="left-handed"] #gta-touch .gta-cluster{left:calc(env(safe-area-inset-left) + max(24px,9vw));right:auto;align-items:flex-start;}
-body[data-touch-layout="minimal"] #gta-touch .gta-btn{transform:scale(.9);}`;
+body[data-touch-layout="minimal"] #gta-touch .gta-btn{transform:scale(.9);}
+#gta-touch .gta-btn.gta-btn--off{display:none!important;}`;
   document.head.appendChild(s);
 }
 
@@ -56,6 +58,9 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
   let aimToggle = false;
   let touchOn = false;
   let touchHidden = false;
+  // Activity mode (activityMode.ts): the cluster shows only the buttons the activity keeps; holstered hides the combat ones.
+  let activity: TouchActivity | null = currentTouchActivity();
+  let holstered = false;
 
   const locked = (): boolean => document.pointerLockElement === canvas;
 
@@ -223,8 +228,33 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     window.dispatchEvent(new Event('gta:mode'));
   }
 
-  /** Which buttons the cluster shows for a mode. The minimal layout drops Reload on foot (guns reload when empty). */
+  const byName: Record<ActivityButton, HTMLButtonElement> = {
+    enter: enterBtn, jump: jumpBtn, down: downBtn, horn: hornBtn, boost: boostBtn, radio: radioBtn, banger: bangerBtn,
+    swap: swapBtn, reload: reloadBtn, aim: aimBtn, fire: fireBtn,
+  };
+
+  /** Which buttons the cluster shows: the mode's set, then the activity mode and the holster take buttons away. */
   function showButtons(mode: CameraMode): void {
+    showModeButtons(mode);
+    if (activity) {
+      for (const [name, b] of Object.entries(byName) as [ActivityButton, HTMLButtonElement][]) {
+        if (name !== 'enter' && !activity.buttons.includes(name)) b.style.display = 'none';
+      }
+    } else if (holstered) {
+      // D30: the gun is put away (home, golf, a stage, a shift, on foot or at the wheel of a work vehicle): no Guns /
+      // Reload / Aim / Fire, and no 🔥 banger.
+      for (const b of [swapBtn, reloadBtn, aimBtn, fireBtn, bangerBtn]) b.style.display = 'none';
+    }
+    // setEnterLabel owns the Enter button's display; an activity that does not keep it hides it with a class.
+    enterBtn.classList.toggle('gta-btn--off', !!activity && !activity.buttons.includes('enter'));
+    // The context button (Decorate, Sleep, Leave) takes the Fire button's size while the gun is away.
+    enterBtn.classList.toggle('gta-btn--xl', holstered && !activity && mode === 'foot');
+    if (aimToggle && aimBtn.style.display === 'none') { aimToggle = false; paintAim(); }
+    if (fireBtn.style.display === 'none') fireIds.clear();
+  }
+
+  /** Which buttons the cluster shows for a mode. The minimal layout drops Reload on foot (guns reload when empty). */
+  function showModeButtons(mode: CameraMode): void {
     const hasHandbrake = !!opts.handbrake?.();
     const hasHop = mode === 'drive' && !!opts.hop?.();
     jumpBtn.textContent = mode === 'fly' ? 'Up' : mode === 'drive' ? (hasHandbrake ? 'Handbrake' : 'Hop') : 'Jump';
@@ -241,6 +271,17 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     fireBtn.style.display = '';
   }
   applyMode('foot');
+  ensureActivityCss();
+  onTouchActivityChange((t) => {
+    activity = t;
+    if (t && !t.stick && stick) {
+      stick = null;
+      stickX = 0;
+      stickY = 0;
+      base.style.display = 'none';
+    }
+    if (shownMode) showButtons(shownMode);
+  });
 
   function showTouch(): void {
     if (touchOn) return;
@@ -262,7 +303,7 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     showTouch();
     const inStickZone = leftHanded ? e.clientX > window.innerWidth * (1 - LEFT_ZONE) : e.clientX < window.innerWidth * LEFT_ZONE;
     if (inStickZone) {
-      if (stick) return;
+      if (stick || (activity && !activity.stick)) return;
       stick = { id: e.pointerId, cx: e.clientX, cy: e.clientY };
       base.style.left = `${e.clientX}px`;
       base.style.top = `${e.clientY}px`;
@@ -368,6 +409,18 @@ export function createInput(canvas: HTMLCanvasElement, ui: HTMLElement, opts: { 
     /** Re-read what the touch buttons show (the driving mode changed under a held mode). */
     refresh(): void {
       if (shownMode) applyMode(shownMode);
+    },
+
+    setActivity(t: TouchActivity | null): void {
+      setTouchActivity('input', t);
+    },
+
+    setHolstered(on: boolean): void {
+      if (on === holstered) return;
+      holstered = on;
+      if (on) document.body.dataset.holster = '1';
+      else delete document.body.dataset.holster;
+      if (shownMode) showButtons(shownMode);
     },
 
     setEnterLabel(label: string | null): void {
